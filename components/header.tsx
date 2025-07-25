@@ -10,7 +10,8 @@ export function Header({}: HeaderProps) {
     <header className="relative z-20 w-full bg-brutal-bg text-brutal-text border-b border-brutal-border shadow-lg">
       {/* Top Bar mit Laufschrift */}
       <div className="bg-brutal-accent-red py-2 text-center text-sm font-medium overflow-hidden whitespace-nowrap">
-        <span className="inline-block animate-marquee text-brutal-text text-base">
+        {/* Schriftgröße der Laufschrift für Mobilgeräte auf text-sm reduziert */}
+        <span className="inline-block animate-marquee text-brutal-text text-sm">
           EMOJIS DART COMPETITION2025 • 2 JULI - 31 AUGUST • Pfeil OK Salzburg • IMMER MITTWOCH UND FREITAG • EMOJIS
           DART COMPETITION2025 • 2 JULI - 31 AUGUST • Pfeil OK Salzburg • IMMER MITTWOCH UND FREITAG
         </span>
@@ -19,11 +20,11 @@ export function Header({}: HeaderProps) {
       {/* Main Navigation */}
       {/* Höhe des Containers bleibt h-20 */}
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
-        {/* pt-1 vom Link entfernt */}
+        {/* pt-1 vom Link entfernt, pt-2 vom div entfernt. items-center sollte ausreichen */}
         <Link href="/" className="flex items-center gap-2 text-lg font-bold">
           <Target className="h-8 w-8 text-brutal-accent-red" />
-          {/* pt-2 zum div hinzugefügt, um den Text nach unten zu verschieben */}
-          <div className="flex flex-col pt-2">
+          {/* Keine zusätzliche Polsterung hier, items-center im Link sollte die vertikale Ausrichtung regeln */}
+          <div className="flex flex-col">
             <span className="text-xl font-extrabold tracking-wide">EMOJIS DARTVEREIN</span>
             <span className="text-xs font-normal text-brutal-text-muted">COMPETITION 2025</span>
           </div>
@@ -38,9 +39,6 @@ export function Header({}: HeaderProps) {
           >
             TOURNAMENT
           </Link>
-          {/* ENTERTAINMENT Link entfernt */}
-          {/* VENUE Link entfernt */}
-          {/* TICKETS Link entfernt */}
           <Link href="/tables" passHref>
             <Button className="bg-brutal-accent-gold hover:bg-brutal-accent-red text-brutal-bg font-extrabold py-2 px-4 rounded-md uppercase transition-colors">
               Turniertabellen
@@ -73,9 +71,6 @@ export function Header({}: HeaderProps) {
               >
                 TOURNAMENT
               </Link>
-              {/* ENTERTAINMENT Link entfernt */}
-              {/* VENUE Link entfernt */}
-              {/* TICKETS Link entfernt */}
               <Link href="/tables" passHref>
                 <Button className="w-full bg-brutal-accent-gold hover:bg-brutal-accent-red text-brutal-bg font-extrabold py-2 px-4 rounded-md uppercase">
                   Turniertabellen
