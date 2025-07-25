@@ -7,10 +7,16 @@ import { cn } from "@/lib/utils"
 interface Player {
   id: string
   name: string
-  wins: number
-  losses: number
+  // 'wins' und 'losses' sind nicht mehr in der Anzeige, aber könnten im Datenmodell bleiben
   points: number
-  // Füge andere relevante Spielerstatistiken hinzu, falls aus useDartData Hook bekannt
+  participations: number // Entspricht 'Antritte' in deiner HTML
+  legs: number // Entspricht 'Legs' in deiner HTML
+  totalPoints: number // Entspricht 'Gesamt Punkte' in deiner HTML
+  // Für kombinierte Tabelle, angenommen vom useDartData Hook oder berechnet
+  edartPoints?: number
+  steelPoints?: number
+  totalParticipations?: number
+  totalLegs?: number
 }
 
 interface DartTablesProps {
@@ -36,71 +42,147 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
         <CardTitle className="text-brutal-text">{title}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {" "}
-        {/* p-0 entfernt internes Padding der CardContent */}
         <div className="overflow-x-auto custom-scrollbar">
-          {" "}
-          {/* Hier wird der scrollbare Container hinzugefügt */}
           <Table className="min-w-full">
-            {" "}
-            {/* min-w-full stellt sicher, dass die Tabelle nicht schrumpft */}
             <TableHeader>
               <TableRow className="bg-brutal-card-bg border-b border-brutal-border">
+                <TableHead className="text-brutal-text whitespace-nowrap">Rang</TableHead>
                 <TableHead className="text-brutal-text whitespace-nowrap">Name</TableHead>
-                <TableHead className="text-brutal-text whitespace-nowrap">Siege</TableHead>
-                <TableHead className="text-brutal-text whitespace-nowrap">Niederlagen</TableHead>
-                <TableHead className="text-brutal-text text-right whitespace-nowrap">Punkte</TableHead>
+                {/* Spalten für E-Dart und Steel-Dart Tabellen */}
+                {title === "E-Dart Spieler" || title === "Steel Dart Spieler" ? (
+                  <>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Antritte</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Punkte</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Legs</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Gesamt Punkte</TableHead>
+                  </>
+                ) : (
+                  // Spalten für Kombinierte Spieler Tabelle
+                  <>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right">E-Dart Pkt.</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Steel-Dart Pkt.</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Gesamt Antritte</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Gesamt Legs</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Gesamt Punkte</TableHead>
+                  </>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {players.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-brutal-text-muted">
+                  <TableCell
+                    colSpan={title === "E-Dart Spieler" || title === "Steel Dart Spieler" ? 6 : 7}
+                    className="text-center text-brutal-text-muted"
+                  >
                     Keine Spieler gefunden.
                   </TableCell>
                 </TableRow>
               ) : (
                 players.map((player, index) => (
                   <TableRow
-                    key={player.id}
+                    key={title === "Kombinierte Spieler" ? player.name : player.id}
                     className={cn(
                       "border-brutal-border",
-                      // NUR Hervorhebung für die ersten 3 Plätze, keine abwechselnden Farben
-                      index < 3 ? "bg-brutal-table-top3-bg" : "bg-transparent", // Standardhintergrund oder transparent
+                      // NUR Hervorhebung für die ersten 3 Plätze
+                      index < 3 ? "bg-brutal-table-top3-bg" : "bg-transparent",
                     )}
                   >
                     <TableCell
                       className={cn(
-                        "font-medium whitespace-nowrap", // whitespace-nowrap für Zellen
+                        "font-medium whitespace-nowrap",
+                        index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
+                      )}
+                    >
+                      {index + 1}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "font-medium whitespace-nowrap",
                         index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
                       )}
                     >
                       {player.name}
                     </TableCell>
-                    <TableCell
-                      className={cn(
-                        "whitespace-nowrap",
-                        index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                      )}
-                    >
-                      {player.wins}
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        "whitespace-nowrap",
-                        index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                      )}
-                    >
-                      {player.losses}
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        "text-right whitespace-nowrap",
-                        index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                      )}
-                    >
-                      {player.points}
-                    </TableCell>
+                    {title === "E-Dart Spieler" || title === "Steel Dart Spieler" ? (
+                      <>
+                        <TableCell
+                          className={cn(
+                            "whitespace-nowrap text-right",
+                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
+                          )}
+                        >
+                          {player.participations}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "whitespace-nowrap text-right",
+                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
+                          )}
+                        >
+                          {player.points}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "whitespace-nowrap text-right",
+                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
+                          )}
+                        >
+                          {player.legs}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "whitespace-nowrap text-right font-bold",
+                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-accent-gold",
+                          )}
+                        >
+                          {player.totalPoints}
+                        </TableCell>
+                      </>
+                    ) : (
+                      <>
+                        <TableCell
+                          className={cn(
+                            "whitespace-nowrap text-right",
+                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
+                          )}
+                        >
+                          {player.edartPoints}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "whitespace-nowrap text-right",
+                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
+                          )}
+                        >
+                          {player.steelPoints}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "whitespace-nowrap text-right",
+                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
+                          )}
+                        >
+                          {player.totalParticipations}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "whitespace-nowrap text-right",
+                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
+                          )}
+                        >
+                          {player.totalLegs}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "whitespace-nowrap text-right font-bold",
+                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-accent-gold",
+                          )}
+                        >
+                          {player.totalPoints}
+                        </TableCell>
+                      </>
+                    )}
                   </TableRow>
                 ))
               )}
