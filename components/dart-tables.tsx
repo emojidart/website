@@ -51,19 +51,23 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
                 {/* Spalten für E-Dart und Steel-Dart Tabellen */}
                 {title === "E-Dart Spieler" || title === "Steel Dart Spieler" ? (
                   <>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Antritte</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Punkte</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Legs</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Gesamt Punkte</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Antritte</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Punkte</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Legs</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Gesamt Punkte</TableHead>
                   </>
                 ) : (
                   // Spalten für Kombinierte Spieler Tabelle
                   <>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right">E-Dart Pkt.</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Steel-Dart Pkt.</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Gesamt Antritte</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Gesamt Legs</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right">Gesamt Punkte</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">E-Dart Pkt.</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">
+                      Steel-Dart Pkt.
+                    </TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">
+                      Gesamt Antritte
+                    </TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Gesamt Legs</TableHead>
+                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Gesamt Punkte</TableHead>
                   </>
                 )}
               </TableRow>
@@ -108,7 +112,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
                       <>
                         <TableCell
                           className={cn(
-                            "whitespace-nowrap text-right",
+                            "whitespace-nowrap text-right w-fit",
                             index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
                           )}
                         >
@@ -116,7 +120,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "whitespace-nowrap text-right",
+                            "whitespace-nowrap text-right w-fit",
                             index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
                           )}
                         >
@@ -124,7 +128,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "whitespace-nowrap text-right",
+                            "whitespace-nowrap text-right w-fit",
                             index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
                           )}
                         >
@@ -132,7 +136,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "whitespace-nowrap text-right font-bold",
+                            "whitespace-nowrap text-right font-bold w-fit",
                             index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-accent-gold",
                           )}
                         >
@@ -143,7 +147,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
                       <>
                         <TableCell
                           className={cn(
-                            "whitespace-nowrap text-right",
+                            "whitespace-nowrap text-right w-fit",
                             index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
                           )}
                         >
@@ -151,7 +155,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "whitespace-nowrap text-right",
+                            "whitespace-nowrap text-right w-fit",
                             index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
                           )}
                         >
@@ -159,7 +163,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "whitespace-nowrap text-right",
+                            "whitespace-nowrap text-right w-fit",
                             index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
                           )}
                         >
@@ -167,7 +171,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "whitespace-nowrap text-right",
+                            "whitespace-nowrap text-right w-fit",
                             index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
                           )}
                         >
@@ -175,7 +179,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "whitespace-nowrap text-right font-bold",
+                            "whitespace-nowrap text-right font-bold w-fit",
                             index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-accent-gold",
                           )}
                         >
