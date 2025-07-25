@@ -1,207 +1,162 @@
-"use client"
-
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
-
-interface Player {
-  id: string
-  name: string
-  // 'wins' und 'losses' sind nicht mehr in der Anzeige, aber könnten im Datenmodell bleiben
-  points: number
-  participations: number // Entspricht 'Antritte' in deiner HTML
-  legs: number // Entspricht 'Legs' in deiner HTML
-  totalPoints: number // Entspricht 'Gesamt Punkte' in deiner HTML
-  // Für kombinierte Tabelle, angenommen vom useDartData Hook oder berechnet
-  edartPoints?: number
-  steelPoints?: number
-  totalParticipations?: number
-  totalLegs?: number
-}
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import type { PlayerData, CombinedPlayerData } from "@/hooks/use-dart-data"
 
 interface DartTablesProps {
-  edartPlayers: Player[]
-  steelDartPlayers: Player[]
-  combinedPlayers: Player[]
+  edartPlayers: PlayerData[]
+  steelDartPlayers: PlayerData[]
+  combinedPlayers: CombinedPlayerData[]
   loading: boolean
   error: string | null
 }
 
 export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, loading, error }: DartTablesProps) {
   if (loading) {
-    return <div className="text-center text-lg text-brutal-text">Lade Daten...</div>
+    return <div className="text-center text-homepage-text-light p-8">Lade Ranglisten...</div>
   }
 
   if (error) {
-    return <div className="text-center text-lg text-red-500">Fehler: {error}</div>
+    return <div className="text-center text-red-500 p-8">Fehler beim Laden der Daten: {error}</div>
   }
 
-  const renderTable = (players: Player[], title: string) => (
-    <Card className="mb-8 bg-brutal-card-bg border-brutal-border">
-      <CardHeader>
-        <CardTitle className="text-brutal-text">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto custom-scrollbar">
-          <Table className="min-w-full">
-            <TableHeader>
-              <TableRow className="bg-brutal-card-bg border-b border-brutal-border">
-                <TableHead className="text-brutal-text whitespace-nowrap">Rang</TableHead>
-                <TableHead className="text-brutal-text whitespace-nowrap">Name</TableHead>
-                {/* Spalten für E-Dart und Steel-Dart Tabellen */}
-                {title === "E-Dart Spieler" || title === "Steel Dart Spieler" ? (
-                  <>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Antritte</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Punkte</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Legs</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Gesamt Punkte</TableHead>
-                  </>
-                ) : (
-                  // Spalten für Kombinierte Spieler Tabelle
-                  <>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">E-Dart Pkt.</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">
-                      Steel-Dart Pkt.
-                    </TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">
-                      Gesamt Antritte
-                    </TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Gesamt Legs</TableHead>
-                    <TableHead className="text-brutal-text whitespace-nowrap text-right w-fit">Gesamt Punkte</TableHead>
-                  </>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {players.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={title === "E-Dart Spieler" || title === "Steel Dart Spieler" ? 6 : 7}
-                    className="text-center text-brutal-text-muted"
-                  >
-                    Keine Spieler gefunden.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                players.map((player, index) => (
-                  <TableRow
-                    key={title === "Kombinierte Spieler" ? player.name : player.id}
-                    className={cn(
-                      "border-brutal-border",
-                      // NUR Hervorhebung für die ersten 3 Plätze
-                      index < 3 ? "bg-brutal-table-top3-bg" : "bg-transparent",
-                    )}
-                  >
-                    <TableCell
-                      className={cn(
-                        "font-medium whitespace-nowrap",
-                        index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                      )}
-                    >
-                      {index + 1}
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        "font-medium whitespace-nowrap",
-                        index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                      )}
-                    >
-                      {player.name}
-                    </TableCell>
-                    {title === "E-Dart Spieler" || title === "Steel Dart Spieler" ? (
-                      <>
-                        <TableCell
-                          className={cn(
-                            "whitespace-nowrap text-right w-fit",
-                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                          )}
-                        >
-                          {player.participations}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            "whitespace-nowrap text-right w-fit",
-                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                          )}
-                        >
-                          {player.points}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            "whitespace-nowrap text-right w-fit",
-                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                          )}
-                        >
-                          {player.legs}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            "whitespace-nowrap text-right font-bold w-fit",
-                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-accent-gold",
-                          )}
-                        >
-                          {player.totalPoints}
-                        </TableCell>
-                      </>
-                    ) : (
-                      <>
-                        <TableCell
-                          className={cn(
-                            "whitespace-nowrap text-right w-fit",
-                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                          )}
-                        >
-                          {player.edartPoints}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            "whitespace-nowrap text-right w-fit",
-                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                          )}
-                        >
-                          {player.steelPoints}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            "whitespace-nowrap text-right w-fit",
-                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                          )}
-                        >
-                          {player.totalParticipations}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            "whitespace-nowrap text-right w-fit",
-                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-text",
-                          )}
-                        >
-                          {player.totalLegs}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            "whitespace-nowrap text-right font-bold w-fit",
-                            index < 3 ? "text-brutal-table-top3-text font-extrabold" : "text-brutal-accent-gold",
-                          )}
-                        >
-                          {player.totalPoints}
-                        </TableCell>
-                      </>
-                    )}
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
-  )
-
   return (
-    <div className="grid gap-8">
-      {renderTable(edartPlayers, "E-Dart Spieler")}
-      {renderTable(steelDartPlayers, "Steel Dart Spieler")}
-      {renderTable(combinedPlayers, "Kombinierte Spieler")}
-    </div>
+    <section className="p-4">
+      {/* Angepasst, um die Farbe der Homepage zu verwenden */}
+      <p className="text-homepage-text-light text-lg mb-6 text-left">Alle Ranglisten</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* E-Dart Tabelle */}
+        <Card className="bg-dark-table-card text-dark-table-text border-dark-table-border rounded-0.75rem shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center text-dark-table-text">E-Dart</CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow className="bg-dark-table-bg hover:bg-dark-table-bg">
+                  <TableHead className="text-dark-table-text-muted font-semibold">Rang</TableHead>
+                  <TableHead className="text-dark-table-text-muted font-semibold">Name</TableHead>
+                  <TableHead className="text-right text-dark-table-text-muted font-semibold">Antritte</TableHead>
+                  <TableHead className="text-right text-dark-table-text-muted font-semibold">Punkte</TableHead>
+                  <TableHead className="text-right text-dark-table-text-muted font-semibold">Legs</TableHead>
+                  <TableHead className="text-right text-gold-primary font-semibold">Gesamt Punkte</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {edartPlayers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-dark-table-text-muted py-4">
+                      Keine E-Dart Daten verfügbar.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  edartPlayers.map((player, index) => (
+                    <TableRow key={player.id} className="hover:bg-dark-table-hover">
+                      <TableCell className="font-bold text-gold-primary">{index + 1}</TableCell>
+                      <TableCell className="text-dark-table-text">{player.name}</TableCell>
+                      <TableCell className="text-right">{player.participations}</TableCell>
+                      <TableCell className="text-right">{player.points}</TableCell>
+                      <TableCell className="text-right">{player.legs}</TableCell>
+                      <TableCell className="text-right font-extrabold text-gold-primary">
+                        {player.totalPoints}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Steel-Dart Tabelle */}
+        <Card className="bg-dark-table-card text-dark-table-text border-dark-table-border rounded-0.75rem shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center text-dark-table-text">Steel-Dart</CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow className="bg-dark-table-bg hover:bg-dark-table-bg">
+                  <TableHead className="text-dark-table-text-muted font-semibold">Rang</TableHead>
+                  <TableHead className="text-dark-table-text-muted font-semibold">Name</TableHead>
+                  <TableHead className="text-right text-dark-table-text-muted font-semibold">Antritte</TableHead>
+                  <TableHead className="text-right text-dark-table-text-muted font-semibold">Punkte</TableHead>
+                  <TableHead className="text-right text-dark-table-text-muted font-semibold">Legs</TableHead>
+                  <TableHead className="text-right text-gold-primary font-semibold">Gesamt Punkte</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {steelDartPlayers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-dark-table-text-muted py-4">
+                      Keine Steel-Dart Daten verfügbar.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  steelDartPlayers.map((player, index) => (
+                    <TableRow key={player.id} className="hover:bg-dark-table-hover">
+                      <TableCell className="font-bold text-gold-primary">{index + 1}</TableCell>
+                      <TableCell className="text-dark-table-text">{player.name}</TableCell>
+                      <TableCell className="text-right">{player.participations}</TableCell>
+                      <TableCell className="text-right">{player.points}</TableCell>
+                      <TableCell className="text-right">{player.legs}</TableCell>
+                      <TableCell className="text-right font-extrabold text-gold-primary">
+                        {player.totalPoints}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Gesamt-Rangliste Tabelle */}
+      <div className="mt-6">
+        <Card className="bg-dark-table-card text-dark-table-text border-dark-table-border rounded-0.75rem shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center text-dark-table-text">Gesamt-Rangliste</CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow className="bg-dark-table-bg hover:bg-dark-table-bg">
+                  <TableHead className="text-dark-table-text-muted font-semibold">Rang</TableHead>
+                  <TableHead className="text-dark-table-text-muted font-semibold">Name</TableHead>
+                  <TableHead className="text-right text-dark-table-text-muted font-semibold">E-Dart Pkt.</TableHead>
+                  <TableHead className="text-right text-dark-table-text-muted font-semibold">Steel-Dart Pkt.</TableHead>
+                  <TableHead className="text-right text-dark-table-text-muted font-semibold">Gesamt Antritte</TableHead>
+                  <TableHead className="text-right text-dark-table-text-muted font-semibold">Gesamt Legs</TableHead>
+                  <TableHead className="text-right text-gold-primary font-semibold">Gesamt Punkte</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {combinedPlayers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-dark-table-text-muted py-4">
+                      Keine Gesamt-Ranglisten Daten verfügbar.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  combinedPlayers.map((player, index) => (
+                    <TableRow key={player.name} className="hover:bg-dark-table-hover">
+                      <TableCell className="font-bold text-gold-primary">{index + 1}</TableCell>
+                      <TableCell className="text-dark-table-text">{player.name}</TableCell>
+                      <TableCell className="text-right">{player.edartPoints}</TableCell>
+                      <TableCell className="text-right">{player.steelPoints}</TableCell>
+                      <TableCell className="text-right">{player.totalParticipations}</TableCell>
+                      <TableCell className="text-right">{player.totalLegs}</TableCell>
+                      <TableCell className="text-right font-extrabold text-gold-primary">
+                        {player.totalPoints}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
   )
 }
