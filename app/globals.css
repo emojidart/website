@@ -82,6 +82,16 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Sicherstellen, dass die Basis-Schriftgröße auf kleinen Bildschirmen nicht zu groß ist */
+  html {
+    font-size: 16px; /* Standard-Basis-Schriftgröße */
+  }
+  @media (max-width: 767px) {
+    /* Für Bildschirme kleiner als md (768px) */
+    html {
+      font-size: 14px; /* Etwas kleinere Basis-Schriftgröße für Mobilgeräte */
+    }
+  }
 }
 
 /* Custom Scrollbar Styles for Webkit-Browser (Chrome, Safari, Edge) */

@@ -20,12 +20,16 @@ export function Header({}: HeaderProps) {
       {/* Main Navigation */}
       {/* Höhe des Containers bleibt h-20 */}
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
-        {/* pt-1 vom Link entfernt, pt-2 vom div entfernt. items-center sollte ausreichen */}
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold">
-          <Target className="h-8 w-8 text-brutal-accent-red" />
-          {/* Keine zusätzliche Polsterung hier, items-center im Link sollte die vertikale Ausrichtung regeln */}
-          <div className="flex flex-col">
-            <span className="text-xl font-extrabold tracking-wide">EMOJIS DARTVEREIN</span>
+        {/* Flexbox-Verhalten für kleine Bildschirme anpassen, um Überlauf zu vermeiden */}
+        <Link href="/" className="flex items-center gap-2 text-lg font-bold flex-shrink-0">
+          <Target className="h-8 w-8 text-brutal-accent-red flex-shrink-0" />
+          <div className="flex flex-col min-w-0">
+            {" "}
+            {/* min-w-0 hinzugefügt, um Textumbruch zu ermöglichen */}
+            <span className="text-xl font-extrabold tracking-wide truncate sm:whitespace-normal">
+              EMOJIS DARTVEREIN
+            </span>{" "}
+            {/* truncate für kleine Bildschirme */}
             <span className="text-xs font-normal text-brutal-text-muted">COMPETITION 2025</span>
           </div>
         </Link>
@@ -55,7 +59,9 @@ export function Header({}: HeaderProps) {
         </nav>
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden text-brutal-text">
+            <Button variant="ghost" size="icon" className="lg:hidden text-brutal-text flex-shrink-0">
+              {" "}
+              {/* flex-shrink-0 für Button */}
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
