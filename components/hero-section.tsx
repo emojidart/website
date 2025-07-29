@@ -36,17 +36,17 @@ const containerVariants = {
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 70 },
+  hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 12 } },
 }
 
 const cardVariants = {
-  hidden: { opacity: 0, scale: 0.8, y: 50 },
+  hidden: { opacity: 0, scale: 0.9, y: 20 },
   visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 90, damping: 10, duration: 0.6 } },
 }
 
 const buttonVariants = {
-  hidden: { opacity: 0, scale: 0.8 },
+  hidden: { opacity: 0, scale: 0.9 },
   visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 120, damping: 10, delay: 0.8 } },
 }
 
@@ -76,24 +76,29 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
 
   if (loading) {
     return (
-      <section className="relative flex h-[calc(100vh-80px)] items-center justify-center bg-brutal-bg text-brutal-text">
-        <p>Lade Event-Daten...</p>
+      <section className="relative flex min-h-[60vh] sm:min-h-[70vh] lg:h-[calc(100vh-80px)] items-center justify-center bg-brutal-bg text-brutal-text px-4">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm sm:text-base">Lade Event-Daten...</p>
+        </div>
       </section>
     )
   }
 
   if (error) {
     return (
-      <section className="relative flex h-[calc(100vh-80px)] items-center justify-center bg-brutal-bg text-brutal-text">
-        <p className="text-destructive">Fehler beim Laden des Events: {error}</p>
+      <section className="relative flex min-h-[60vh] sm:min-h-[70vh] lg:h-[calc(100vh-80px)] items-center justify-center bg-brutal-bg text-brutal-text px-4">
+        <div className="text-center max-w-md">
+          <p className="text-destructive text-sm sm:text-base">Fehler beim Laden des Events: {error}</p>
+        </div>
       </section>
     )
   }
 
   if (!event) {
     return (
-      <section className="relative flex h-[calc(100vh-80px)] items-center justify-center bg-brutal-bg text-brutal-text">
-        <p>Keine Event-Daten gefunden.</p>
+      <section className="relative flex min-h-[60vh] sm:min-h-[70vh] lg:h-[calc(100vh-80px)] items-center justify-center bg-brutal-bg text-brutal-text px-4">
+        <p className="text-sm sm:text-base">Keine Event-Daten gefunden.</p>
       </section>
     )
   }
@@ -104,93 +109,105 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
   const daysOfAction = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
   return (
-    <section className="relative flex h-[calc(100vh-80px)] items-center justify-center overflow-hidden bg-brutal-bg text-brutal-text">
-      {/* Hintergrundbild mit dunklem Overlay */}
+    <section className="relative flex min-h-[60vh] sm:min-h-[70vh] lg:h-[calc(100vh-80px)] items-center justify-center overflow-hidden bg-brutal-bg text-brutal-text">
+      {/* Hintergrundbild mit dunklem Overlay - Mobile optimiert */}
       <Image
         src="/images/brutal-darts-bg.png"
         alt="Hintergrundbild für Dartverein"
-        layout="fill"
-        objectFit="cover"
-        quality={100}
-        className="absolute inset-0 z-0 opacity-30"
+        fill
+        className="absolute inset-0 z-0 opacity-20 sm:opacity-30 object-cover"
         priority
+        sizes="100vw"
       />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-brutal-bg to-transparent"></div>
+
       <motion.div
-        className="relative z-10 flex flex-col items-center justify-center text-center px-4 py-12 md:py-20"
+        className="relative z-10 flex flex-col items-center justify-center text-center px-3 sm:px-4 py-8 sm:py-12 md:py-20 w-full max-w-7xl mx-auto"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* Hero Title */}
-        <motion.div variants={itemVariants} className="mb-8">
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold uppercase leading-none tracking-tighter mb-6 drop-shadow-2xl">
+        {/* Hero Title - Mobile optimiert */}
+        <motion.div variants={itemVariants} className="mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold uppercase leading-none tracking-tighter mb-4 sm:mb-6 drop-shadow-2xl">
             <span className="block text-brutal-accent-red">SUMMER SPECIAL</span>
             <span className="block">DART COMPETITION</span>
             <span className="block text-brutal-accent-gold">2025</span>
           </h1>
-          <p className="text-xl md:text-2xl font-bold uppercase text-brutal-text-muted mb-8">
+          <p className="text-sm sm:text-lg md:text-xl lg:text-2xl font-bold uppercase text-brutal-text-muted mb-6 sm:mb-8">
             WITH SOFTDART & STEELDART COMP.
           </p>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-lg font-bold">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-6 w-6 text-brutal-accent-red" />
-              <span>02. JULI - 29. AUG. K25</span>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-sm sm:text-base lg:text-lg font-bold">
+            <div className="flex items-center gap-2 bg-red-50 px-3 py-2 rounded-lg border border-red-100">
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-brutal-accent-red" />
+              <span className="text-xs sm:text-sm lg:text-base">02. JULI - 29. AUG. 2025</span>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-6 w-6 text-brutal-accent-red" />
-              <span>PFEIL-OK SALZBURG</span>
+            <div className="flex items-center gap-2 bg-yellow-50 px-3 py-2 rounded-lg border border-yellow-100">
+              <MapPin className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-brutal-accent-red" />
+              <span className="text-xs sm:text-sm lg:text-base">PFEIL-OK SALZBURG</span>
             </div>
           </div>
         </motion.div>
 
+        {/* Info Cards - Mobile Stack */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 w-full max-w-5xl"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12 w-full max-w-5xl"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
           <motion.div
             variants={cardVariants}
-            className="flex flex-col items-center justify-center rounded-lg bg-brutal-card-bg p-6 backdrop-blur-sm border border-brutal-border shadow-xl"
+            className="flex flex-col items-center justify-center rounded-lg bg-brutal-card-bg p-4 sm:p-6 backdrop-blur-sm border border-brutal-border shadow-xl"
           >
-            <Calendar className="h-12 w-12 text-brutal-accent-red mb-3" />
-            <span className="text-4xl font-bold">{formattedDate}</span>
-            <span className="text-base uppercase text-brutal-text-muted">{daysOfAction} DAYS OF ACTION</span>
+            <Calendar className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-brutal-accent-red mb-2 sm:mb-3" />
+            <span className="text-2xl sm:text-3xl lg:text-4xl font-bold">{formattedDate}</span>
+            <span className="text-xs sm:text-sm lg:text-base uppercase text-brutal-text-muted text-center">
+              {daysOfAction} DAYS OF ACTION
+            </span>
           </motion.div>
           <motion.div
             variants={cardVariants}
-            className="flex flex-col items-center justify-center rounded-lg bg-brutal-card-bg p-6 backdrop-blur-sm border border-brutal-border shadow-xl"
+            className="flex flex-col items-center justify-center rounded-lg bg-brutal-card-bg p-4 sm:p-6 backdrop-blur-sm border border-brutal-border shadow-xl"
           >
-            <MapPin className="h-12 w-12 text-brutal-accent-red mb-3" />
-            <span className="text-4xl font-bold">{event.location.split(",")[0]}</span>
-            <span className="text-base uppercase text-brutal-text-muted">
+            <MapPin className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-brutal-accent-red mb-2 sm:mb-3" />
+            <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center">
+              {event.location.split(",")[0]}
+            </span>
+            <span className="text-xs sm:text-sm lg:text-base uppercase text-brutal-text-muted text-center">
               {event.location.split(",")[1]?.trim() || "MAGIC CASTLE"}
             </span>
           </motion.div>
           <motion.div
             variants={cardVariants}
-            className="flex flex-col items-center justify-center rounded-lg bg-brutal-card-bg p-6 backdrop-blur-sm border border-brutal-border shadow-xl"
+            className="flex flex-col items-center justify-center rounded-lg bg-brutal-card-bg p-4 sm:p-6 backdrop-blur-sm border border-brutal-border shadow-xl sm:col-span-2 lg:col-span-1"
           >
-            <Trophy className="h-12 w-12 text-brutal-accent-red mb-3" />
-            <span className="text-4xl font-bold">
+            <Trophy className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-brutal-accent-red mb-2 sm:mb-3" />
+            <span className="text-2xl sm:text-3xl lg:text-4xl font-bold">
               €{currentPot.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span className="text-base uppercase text-brutal-text-muted">AKTUELLER POT</span>
+            <span className="text-xs sm:text-sm lg:text-base uppercase text-brutal-text-muted text-center">
+              AKTUELLER POT
+            </span>
           </motion.div>
         </motion.div>
 
-        <motion.p variants={itemVariants} className="text-xl uppercase font-bold mb-6 text-brutal-text-muted">
+        {/* Countdown Section */}
+        <motion.p
+          variants={itemVariants}
+          className="text-base sm:text-lg lg:text-xl uppercase font-bold mb-4 sm:mb-6 text-brutal-text-muted"
+        >
           EVENT STARTS IN
         </motion.p>
         {event.event_starts_at && (
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} className="mb-8 sm:mb-12">
             <Countdown targetDate={event.event_starts_at} />
           </motion.div>
         )}
 
+        {/* CTA Button */}
         <motion.div
-          className="mt-12 flex flex-col sm:flex-row gap-4"
+          className="flex flex-col sm:flex-row gap-3 sm:gap-4"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -199,7 +216,7 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
             <Link href="/tournament">
               <Button
                 variant="outline"
-                className="border-brutal-accent-red text-brutal-accent-red hover:bg-brutal-accent-red hover:text-brutal-bg font-extrabold py-4 px-10 rounded-md text-xl bg-transparent shadow-lg hover:scale-105 transition-transform uppercase"
+                className="border-brutal-accent-red text-brutal-accent-red hover:bg-brutal-accent-red hover:text-brutal-bg font-extrabold py-3 sm:py-4 px-6 sm:px-10 rounded-md text-base sm:text-lg lg:text-xl bg-transparent shadow-lg hover:scale-105 transition-transform uppercase w-full sm:w-auto min-h-[48px]"
               >
                 MEHR ERFAHREN
               </Button>

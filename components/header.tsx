@@ -8,24 +8,28 @@ type HeaderProps = {}
 export function Header({}: HeaderProps) {
   return (
     <header className="relative z-20 w-full bg-gray-100 text-gray-900 border-b border-gray-300 shadow-lg">
-      {/* Top Bar mit Laufschrift */}
-      <div className="bg-red-600 py-3 text-center text-sm font-medium overflow-hidden whitespace-nowrap flex items-center">
-        <span className="inline-block animate-marquee text-white text-sm leading-none">
+      {/* Top Bar mit Laufschrift - Mobile optimiert */}
+      <div className="bg-red-600 py-2 sm:py-3 text-center text-xs sm:text-sm font-medium overflow-hidden whitespace-nowrap flex items-center">
+        <span className="inline-block animate-marquee text-white text-xs sm:text-sm leading-none">
           EMOJIS DART COMPETITION 2025 • 2 JULI - 31 AUGUST • Pfeil OK Salzburg • IMMER MITTWOCH UND FREITAG • EMOJIS
           DART COMPETITION 2025 • 2 JULI - 31 AUGUST • Pfeil OK Salzburg • IMMER MITTWOCH UND FREITAG
         </span>
       </div>
 
-      {/* Main Navigation */}
-      <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold flex-shrink-0">
-          <Target className="h-8 w-8 text-red-600 flex-shrink-0" />
+      {/* Main Navigation - Mobile optimiert */}
+      <div className="container mx-auto flex h-16 sm:h-20 items-center justify-between px-3 sm:px-4 md:px-6">
+        <Link href="/" className="flex items-center gap-2 text-base sm:text-lg font-bold flex-shrink-0 min-w-0">
+          <Target className="h-6 w-6 sm:h-8 sm:w-8 text-red-600 flex-shrink-0" />
           <div className="flex flex-col min-w-0">
-            <span className="text-lg sm:text-xl font-extrabold tracking-wide text-wrap">EMOJIS DARTVEREIN</span>
-            <span className="text-xs font-normal text-gray-600">COMPETITION 2025</span>
+            <span className="text-sm sm:text-lg md:text-xl font-extrabold tracking-wide truncate">
+              EMOJIS DARTVEREIN
+            </span>
+            <span className="text-xs font-normal text-gray-600 hidden sm:block">COMPETITION 2025</span>
           </div>
         </Link>
-        <nav className="hidden items-center gap-6 lg:flex">
+
+        {/* Desktop Navigation */}
+        <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
           <Link href="/" className="text-sm font-bold hover:text-red-600 transition-colors uppercase">
             Startseite
           </Link>
@@ -33,45 +37,64 @@ export function Header({}: HeaderProps) {
             TOURNAMENT
           </Link>
           <Link href="/tables" passHref>
-            <Button className="bg-yellow-600 hover:bg-red-600 text-white font-extrabold py-2 px-4 rounded-md uppercase transition-colors">
-              Turniertabellen
+            <Button className="bg-yellow-600 hover:bg-red-600 text-white font-extrabold py-2 px-3 xl:px-4 rounded-md uppercase transition-colors text-sm">
+              Tabellen
             </Button>
           </Link>
           <Link href="/admin" passHref>
             <Button
               variant="outline"
-              className="border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600 font-bold py-2 px-4 rounded-md bg-transparent uppercase transition-colors"
+              className="border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600 font-bold py-2 px-3 xl:px-4 rounded-md bg-transparent uppercase transition-colors text-sm"
             >
-              Admin Login
+              Admin
             </Button>
           </Link>
         </nav>
+
+        {/* Mobile Menu */}
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden text-gray-900 flex-shrink-0">
-              <Menu className="h-6 w-6" />
+            <Button variant="ghost" size="sm" className="lg:hidden text-gray-900 flex-shrink-0 p-2">
+              <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="bg-gray-100 text-gray-900 border-l border-gray-300">
-            <div className="flex flex-col gap-4 py-6">
-              <Link href="/" className="text-lg font-semibold hover:text-red-600 uppercase">
-                Startseite
+          <SheetContent
+            side="right"
+            className="bg-gray-100 text-gray-900 border-l border-gray-300 w-[280px] sm:w-[320px]"
+          >
+            <div className="flex flex-col gap-6 py-6">
+              <div className="flex items-center gap-2 pb-4 border-b border-gray-300">
+                <Target className="h-6 w-6 text-red-600" />
+                <div>
+                  <div className="font-bold text-gray-900">EMOJIS DARTVEREIN</div>
+                  <div className="text-xs text-gray-600">COMPETITION 2025</div>
+                </div>
+              </div>
+
+              <Link
+                href="/"
+                className="text-lg font-semibold hover:text-red-600 uppercase py-2 px-2 rounded-lg hover:bg-gray-200 transition-all"
+              >
+                🏠 Startseite
               </Link>
-              <Link href="/tournament" className="text-lg font-semibold hover:text-red-600 uppercase">
-                TOURNAMENT
+              <Link
+                href="/tournament"
+                className="text-lg font-semibold hover:text-red-600 uppercase py-2 px-2 rounded-lg hover:bg-gray-200 transition-all"
+              >
+                🏆 Tournament
               </Link>
               <Link href="/tables" passHref>
-                <Button className="w-full bg-yellow-600 hover:bg-red-600 text-white font-extrabold py-2 px-4 rounded-md uppercase">
-                  Turniertabellen
+                <Button className="w-full bg-yellow-600 hover:bg-red-600 text-white font-extrabold py-3 px-4 rounded-lg uppercase text-base justify-start">
+                  📊 Turniertabellen
                 </Button>
               </Link>
               <Link href="/admin" passHref>
                 <Button
                   variant="outline"
-                  className="w-full border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600 font-bold py-2 px-4 rounded-md bg-transparent uppercase"
+                  className="w-full border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600 font-bold py-3 px-4 rounded-lg bg-transparent uppercase text-base justify-start"
                 >
-                  Admin Login
+                  ⚙️ Admin Login
                 </Button>
               </Link>
             </div>
