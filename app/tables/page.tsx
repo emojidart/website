@@ -16,7 +16,7 @@ export default function TablesPage() {
   } = useDartData()
 
   return (
-    <div className="min-h-screen bg-brutal-bg text-brutal-text font-sans">
+    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
       <Header />
       <main className="container mx-auto p-4 md:p-8">
         <div className="flex justify-center mb-8">
@@ -30,7 +30,7 @@ export default function TablesPage() {
           error={dataError}
         />
       </main>
-      <footer className="py-6 bg-brutal-card-bg text-brutal-text-muted text-sm text-center mt-auto border-t border-brutal-border">
+      <footer className="py-6 bg-gray-200 text-gray-600 text-sm text-center mt-auto border-t border-gray-300">
         <p>&copy; 2025 EMOJIS DARTVEREIN. Alle Rechte vorbehalten.</p>
       </footer>
     </div>

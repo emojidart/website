@@ -2,11 +2,12 @@ import type React from "react"
 import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
+import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
+  title: "EMOJIS DARTVEREIN - Competition 2025",
+  description: "Summer Special Dart Competition 2025 - Pfeil-OK Salzburg",
   generator: "v0.dev",
 }
 
@@ -16,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="de" suppressHydrationWarning>
       <head>
         <style>{`
 html {
@@ -26,7 +27,11 @@ html {
 }
         `}</style>
       </head>
-      <body>{children}</body>
+      <body className="antialiased">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   )
 }

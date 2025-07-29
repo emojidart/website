@@ -1,43 +1,50 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-
 import { useState } from "react"
-import { Header } from "@/components/header" // Header beibehalten
+import { Header } from "@/components/header"
 import { AuthSection } from "@/components/auth-section"
 import { AdminPanel } from "@/components/admin-panel"
 import { PlayerListModal } from "@/components/player-list-modal"
+import { TournamentRegistrations } from "@/components/tournament-registrations"
 import { useAuth } from "@/hooks/use-auth"
-import { useDartData } from "@/hooks/use-dart-data" // Benötigt, um Daten nach dem Speichern zu aktualisieren
-import { supabase } from "@/lib/supabase" // Für Logout
+import { useDartData } from "@/hooks/use-dart-data"
+import { supabase } from "@/lib/supabase"
+import { LogOut, Shield, User, Database, Eye } from "lucide-react"
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage } = useAuth()
-  const { fetchAndRenderAllTables, fetchPlayers } = useDartData() // Funktionen zum Aktualisieren und Abrufen von Spielern
+  const { fetchAndRenderAllTables, fetchPlayers } = useDartData()
 
   const [isPlayerListModalOpen, setIsPlayerListModalOpen] = useState(false)
   const [selectedPlayerName, setSelectedPlayerName] = useState<string | null>(null)
+  const [loggingOut, setLoggingOut] = useState(false)
+  const [activeTab, setActiveTab] = useState<"data" | "registrations">("data")
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      console.error("Fehler beim Logout:", error.message)
-      setAuthMessage(`Logout-Fehler: ${error.message}`)
-    } else {
-      setAuthMessage("Erfolgreich ausgeloggt.")
-      // Optional: Seite neu laden oder Zustand zurücksetzen, um Login-Formular anzuzeigen
-      // window.location.reload();
+    setLoggingOut(true)
+
+    try {
+      // Always try to sign out, regardless of local session state
+      await supabase.auth.signOut()
+
+      // Force page reload to clear all state
+      window.location.reload()
+    } catch (err: any) {
+      console.error("Logout error:", err)
+      // Even if there's an error, try to reload the page to clear state
+      window.location.reload()
+    } finally {
+      setLoggingOut(false)
     }
   }
 
   const handleLoginSuccess = () => {
-    // Nach erfolgreichem Login Daten aktualisieren
     fetchAndRenderAllTables()
-    setAuthMessage("Erfolgreich eingeloggt!")
+    setAuthMessage("Erfolgreich angemeldet!")
   }
 
   const handleDataSaved = () => {
-    // Nach dem Speichern von Daten die Tabellen aktualisieren
     fetchAndRenderAllTables()
   }
 
@@ -50,44 +57,139 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-brutal-bg text-brutal-text font-sans">
-      <Header /> {/* Header bleibt oben */}
-      <main className="container mx-auto p-4 md:p-8">
-        <h1 className="text-4xl md:text-5xl font-extrabold uppercase text-brutal-accent-gold text-center mb-10 drop-shadow-lg">
-          Admin Bereich
-        </h1>
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-3 mb-2">
+            <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Verwaltung</h1>
+              <p className="text-gray-600">Turnierdaten und Spielerstatistiken verwalten</p>
+            </div>
+          </div>
+        </div>
 
         {authLoading ? (
-          <div className="text-center text-lg text-brutal-text-muted">Lade Authentifizierungsstatus...</div>
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Authentifizierungsstatus wird geladen...</p>
+            </div>
+          </div>
         ) : (
           <>
             {!session ? (
-              // Zeige Login-Formular, wenn nicht eingeloggt
-              <AuthSection
-                isVisible={true} // Immer sichtbar, wenn keine Session
-                onLoginSuccess={handleLoginSuccess}
-                authMessage={authMessage}
-                setAuthMessage={setAuthMessage}
-              />
-            ) : (
-              // Zeige Admin-Panel, wenn eingeloggt
-              <div className="space-y-8">
-                <div className="flex justify-between items-center bg-brutal-card-bg p-4 rounded-lg shadow-md border border-brutal-border">
-                  <p className="text-lg text-brutal-text">
-                    Eingeloggt als: <span className="font-bold text-brutal-accent-gold">{user?.email}</span>
-                  </p>
-                  <Button onClick={handleLogout} className="bg-destructive hover:bg-red-700 text-white">
-                    Logout
-                  </Button>
-                </div>
-                <AdminPanel
-                  isVisible={true} // Immer sichtbar, wenn Session
-                  user={user}
-                  onDataSaved={handleDataSaved}
-                  onOpenPlayerList={handleOpenPlayerList}
-                  selectedPlayerName={selectedPlayerName}
-                  onPlayerNameChange={setSelectedPlayerName}
+              <div className="max-w-md mx-auto">
+                <AuthSection
+                  isVisible={true}
+                  onLoginSuccess={handleLoginSuccess}
+                  authMessage={authMessage}
+                  setAuthMessage={setAuthMessage}
                 />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* User Status */}
+                <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-4 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-gray-100 rounded-lg">
+                        <User className="h-5 w-5 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Angemeldet als</p>
+                        <p className="font-medium text-gray-900">{user?.email}</p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleLogout}
+                      disabled={loggingOut}
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-200 hover:bg-red-50 hover:border-red-300 bg-transparent transition-all duration-200"
+                    >
+                      {loggingOut ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2" />
+                          Abmeldung...
+                        </>
+                      ) : (
+                        <>
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Abmelden
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Tab Navigation */}
+                {session && (
+                  <div className="flex justify-center mb-6">
+                    <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-2 shadow-lg">
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={() => setActiveTab("data")}
+                          className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                            activeTab === "data"
+                              ? "bg-red-600 text-white shadow-md"
+                              : "bg-transparent text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          <Database className="h-4 w-4 mr-2" />
+                          Spielerdaten
+                        </Button>
+                        <Button
+                          onClick={() => setActiveTab("registrations")}
+                          className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                            activeTab === "registrations"
+                              ? "bg-red-600 text-white shadow-md"
+                              : "bg-transparent text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Anmeldungen
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Status Message */}
+                {authMessage && (
+                  <div
+                    className={`p-4 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      authMessage.includes("fehler") || authMessage.includes("Error")
+                        ? "bg-red-50 text-red-700 border border-red-100"
+                        : "bg-green-50 text-green-700 border border-green-100"
+                    }`}
+                  >
+                    {authMessage}
+                  </div>
+                )}
+
+                {/* Tab Content */}
+                {session && (
+                  <div className="space-y-6">
+                    {activeTab === "data" && (
+                      <AdminPanel
+                        isVisible={true}
+                        user={user}
+                        onDataSaved={handleDataSaved}
+                        onOpenPlayerList={handleOpenPlayerList}
+                        selectedPlayerName={selectedPlayerName}
+                        onPlayerNameChange={setSelectedPlayerName}
+                      />
+                    )}
+
+                    {activeTab === "registrations" && <TournamentRegistrations />}
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -107,9 +209,6 @@ export default function AdminPage() {
           }}
         />
       </main>
-      <footer className="py-6 bg-brutal-card-bg text-brutal-text-muted text-sm text-center mt-auto border-t border-brutal-border">
-        <p>&copy; 2025 EMOJIS DARTVEREIN. Alle Rechte vorbehalten.</p>
-      </footer>
     </div>
   )
 }

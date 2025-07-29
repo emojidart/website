@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Calendar, MapPin, Trophy } from "lucide-react"
 import Countdown from "./countdown"
@@ -102,9 +103,6 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
   const formattedDate = `${startDate.getDate()}-${endDate.getDate()} ${startDate.toLocaleString("default", { month: "short" }).toUpperCase()}`
   const daysOfAction = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
-  const titleParts = ["EMOJIS", "DART", "COMPETITION"]
-  const yearPart = "2025"
-
   return (
     <section className="relative flex h-[calc(100vh-80px)] items-center justify-center overflow-hidden bg-brutal-bg text-brutal-text">
       {/* Hintergrundbild mit dunklem Overlay */}
@@ -124,34 +122,27 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
         initial="hidden"
         animate="visible"
       >
-        <h1 className="text-7xl md:text-9xl lg:text-[10rem] font-extrabold uppercase leading-none tracking-tighter mb-4 drop-shadow-2xl">
-          {titleParts.map((line, lineIndex) => (
-            <motion.span
-              key={lineIndex}
-              className="block"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {line.split(" ").map((word, wordIndex) => (
-                <motion.span
-                  key={wordIndex}
-                  className={`inline-block ${word === "C" ? "text-brutal-accent-red" : ""}`}
-                  variants={itemVariants}
-                  style={{ marginRight: "0.5em" }}
-                >
-                  {word}
-                </motion.span>
-              ))}
-            </motion.span>
-          ))}
-        </h1>
-        <motion.p
-          variants={itemVariants}
-          className="text-2xl md:text-3xl font-bold uppercase mb-12 text-brutal-text-muted"
-        >
-          {yearPart}
-        </motion.p>
+        {/* Hero Title */}
+        <motion.div variants={itemVariants} className="mb-8">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold uppercase leading-none tracking-tighter mb-6 drop-shadow-2xl">
+            <span className="block text-brutal-accent-red">SUMMER SPECIAL</span>
+            <span className="block">DART COMPETITION</span>
+            <span className="block text-brutal-accent-gold">2025</span>
+          </h1>
+          <p className="text-xl md:text-2xl font-bold uppercase text-brutal-text-muted mb-8">
+            WITH SOFTDART & STEELDART COMP.
+          </p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-lg font-bold">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-6 w-6 text-brutal-accent-red" />
+              <span>02. JULI - 29. AUG. K25</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-6 w-6 text-brutal-accent-red" />
+              <span>PFEIL-OK SALZBURG</span>
+            </div>
+          </div>
+        </motion.div>
 
         <motion.div
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 w-full max-w-5xl"
@@ -205,12 +196,14 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
           animate="visible"
         >
           <motion.div variants={buttonVariants}>
-            <Button
-              variant="outline"
-              className="border-brutal-accent-red text-brutal-accent-red hover:bg-brutal-accent-red hover:text-brutal-bg font-extrabold py-4 px-10 rounded-md text-xl bg-transparent shadow-lg hover:scale-105 transition-transform uppercase"
-            >
-              MEHR ERFAHREN
-            </Button>
+            <Link href="/tournament">
+              <Button
+                variant="outline"
+                className="border-brutal-accent-red text-brutal-accent-red hover:bg-brutal-accent-red hover:text-brutal-bg font-extrabold py-4 px-10 rounded-md text-xl bg-transparent shadow-lg hover:scale-105 transition-transform uppercase"
+              >
+                MEHR ERFAHREN
+              </Button>
+            </Link>
           </motion.div>
         </motion.div>
       </motion.div>

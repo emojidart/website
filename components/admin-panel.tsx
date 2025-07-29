@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
+import { Database, Target, Users, Save, UserCheck } from "lucide-react"
 
 interface AdminPanelProps {
   isVisible: boolean
@@ -36,10 +37,10 @@ export function AdminPanel({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setFormMessage("Speichere Daten...")
+    setFormMessage("Verarbeitung läuft...")
 
     if (!user) {
-      setFormMessage("Fehler: Nicht eingeloggt.")
+      setFormMessage("Fehler: Nicht authentifiziert.")
       setLoading(false)
       return
     }
@@ -96,8 +97,8 @@ export function AdminPanel({
           {
             name: selectedPlayerName,
             participations: newParticipations,
-            points: Number(points), // Stelle sicher, dass es eine Zahl ist
-            legs: Number(legs), // Stelle sicher, dass es eine Zahl ist
+            points: Number(points),
+            legs: Number(legs),
             user_id: user.id,
           },
         ])
@@ -127,12 +128,12 @@ export function AdminPanel({
       }
 
       setFormMessage("Daten erfolgreich gespeichert!")
-      onDataSaved() // Trigger re-fetch of all data
-      onPlayerNameChange("") // Clear selected player
+      onDataSaved()
+      onPlayerNameChange("")
       setPoints("")
       setLegs("")
     } catch (error: any) {
-      setFormMessage(`Fehler beim Speichern: ${error.message}`)
+      setFormMessage(`Fehler: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -141,100 +142,132 @@ export function AdminPanel({
   if (!isVisible) return null
 
   return (
-    <section className="admin-panel p-4 flex justify-center">
-      <Card className="w-full max-w-md bg-brutal-card-bg text-brutal-text border-brutal-border rounded-xl shadow-2xl">
-        <CardHeader className="pb-6">
-          <CardTitle className="text-4xl font-extrabold text-center text-brutal-accent-gold drop-shadow-md">
-            Spielerdaten eingeben
-          </CardTitle>
+    <div className="max-w-2xl mx-auto">
+      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+        <CardHeader className="border-b border-gray-100 pb-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
+              <Database className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-semibold text-gray-900">Spielerdaten hinzufügen</CardTitle>
+              <p className="text-sm text-gray-500 mt-1">Spielergebnisse eingeben und Statistiken aktualisieren</p>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+
+        <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="form-group">
-              <label htmlFor="player-name" className="block text-lg font-medium text-brutal-text-muted mb-2">
-                Name:
-              </label>
-              <div className="flex gap-3">
+            {/* Player Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Spieler</label>
+              <div className="flex space-x-3">
                 <Input
-                  id="player-name"
                   type="text"
                   value={selectedPlayerName || ""}
                   onChange={(e) => onPlayerNameChange(e.target.value)}
+                  placeholder="Spielername eingeben"
+                  className="flex-1 h-12 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50 transition-all duration-200"
                   required
-                  className="flex-grow h-12 bg-brutal-bg border-brutal-border text-brutal-text placeholder:text-brutal-text-muted focus:ring-brutal-accent-red focus:border-brutal-accent-red text-lg px-4 rounded-lg"
                 />
                 <Button
                   type="button"
                   onClick={onOpenPlayerList}
-                  className="h-12 bg-brutal-accent-red hover:bg-brutal-accent-gold text-brutal-bg font-bold text-base px-6 rounded-lg transition-colors duration-200 shadow-md"
+                  variant="outline"
+                  className="h-12 px-4 border-gray-200 hover:bg-red-50 hover:border-red-300 bg-transparent transition-all duration-200"
                 >
-                  Spieler wählen
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Auswählen
                 </Button>
               </div>
             </div>
-            <div className="form-group">
-              <label htmlFor="dart-type" className="block text-lg font-medium text-brutal-text-muted mb-2">
-                Dart-Typ:
-              </label>
+
+            {/* Game Type */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Spieltyp</label>
               <Select value={dartType} onValueChange={setDartType}>
-                <SelectTrigger className="h-12 w-full bg-brutal-bg border-brutal-border text-brutal-text focus:ring-brutal-accent-red focus:border-brutal-accent-red text-lg px-4 rounded-lg">
-                  <SelectValue placeholder="Wähle Dart-Typ" />
+                <SelectTrigger className="h-12 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50">
+                  <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-brutal-card-bg text-brutal-text border-brutal-border rounded-lg shadow-lg">
-                  <SelectItem value="edart_players" className="text-lg hover:bg-brutal-hover">
-                    E-Dart
+                <SelectContent>
+                  <SelectItem value="edart_players">
+                    <div className="flex items-center space-x-2">
+                      <Target className="h-4 w-4 text-blue-600" />
+                      <span>E-Dart</span>
+                    </div>
                   </SelectItem>
-                  <SelectItem value="steel_dart_players" className="text-lg hover:bg-brutal-hover">
-                    Steel-Dart
+                  <SelectItem value="steel_dart_players">
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-4 w-4 text-green-600" />
+                      <span>Steel Dart</span>
+                    </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="form-group">
-              <label htmlFor="points" className="block text-lg font-medium text-brutal-text-muted mb-2">
-                Punkte:
-              </label>
-              <Input
-                id="points"
-                type="number"
-                min="0"
-                value={points}
-                onChange={(e) => setPoints(e.target.value)}
-                required
-                className="h-12 bg-brutal-bg border-brutal-border text-brutal-text placeholder:text-brutal-text-muted focus:ring-brutal-accent-red focus:border-brutal-accent-red text-lg px-4 rounded-lg"
-              />
+
+            {/* Points and Legs */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Punkte</label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={points}
+                  onChange={(e) => setPoints(e.target.value)}
+                  placeholder="0"
+                  className="h-12 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50 transition-all duration-200"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Legs</label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={legs}
+                  onChange={(e) => setLegs(e.target.value)}
+                  placeholder="0"
+                  className="h-12 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50 transition-all duration-200"
+                  required
+                />
+              </div>
             </div>
-            <div className="form-group">
-              <label htmlFor="legs" className="block text-lg font-medium text-brutal-text-muted mb-2">
-                Legs:
-              </label>
-              <Input
-                id="legs"
-                type="number"
-                min="0"
-                value={legs}
-                onChange={(e) => setLegs(e.target.value)}
-                required
-                className="h-12 bg-brutal-bg border-brutal-border text-brutal-text placeholder:text-brutal-text-muted focus:ring-brutal-accent-red focus:border-brutal-accent-red text-lg px-4 rounded-lg"
-              />
-            </div>
+
+            {/* Submit Button */}
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 bg-brutal-accent-gold hover:bg-brutal-accent-red text-brutal-bg font-extrabold text-lg rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
+              className="w-full h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              {loading ? "Speichere Daten..." : "Daten speichern"}
+              {loading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Verarbeitung läuft...</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Save className="h-4 w-4" />
+                  <span>Daten speichern</span>
+                </div>
+              )}
             </Button>
+
+            {/* Status Message */}
             {formMessage && (
-              <p
-                className={`form-message mt-8 text-center text-xl font-semibold ${formMessage.includes("Fehler") ? "text-destructive" : "text-green-500"}`}
+              <div
+                className={`p-4 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  formMessage.includes("Fehler") || formMessage.includes("Error")
+                    ? "bg-red-50 text-red-700 border border-red-100"
+                    : "bg-green-50 text-green-700 border border-green-100"
+                }`}
               >
                 {formMessage}
-              </p>
+              </div>
             )}
           </form>
         </CardContent>
       </Card>
-    </section>
+    </div>
   )
 }

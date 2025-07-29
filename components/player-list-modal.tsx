@@ -1,83 +1,145 @@
 "use client"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
-import { Loader2 } from "lucide-react" // Importiere einen Lade-Icon
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Search, User, X, Users } from "lucide-react"
 
 interface PlayerListModalProps {
   isOpen: boolean
   onClose: () => void
-  onSelectPlayer: (playerName: string) => void
+  onSelectPlayer: (name: string) => void
   fetchAllUniquePlayers: () => Promise<string[]>
 }
 
 export function PlayerListModal({ isOpen, onClose, onSelectPlayer, fetchAllUniquePlayers }: PlayerListModalProps) {
-  const [allPlayers, setAllPlayers] = useState<string[]>([])
+  const [players, setPlayers] = useState<string[]>([])
   const [filteredPlayers, setFilteredPlayers] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
-      setLoading(true)
-      fetchAllUniquePlayers().then((players) => {
-        setAllPlayers(players)
-        setFilteredPlayers(players)
-        setLoading(false)
-      })
-      setSearchTerm("") // Reset search term when modal opens
+      loadPlayers()
     }
-  }, [isOpen, fetchAllUniquePlayers])
+  }, [isOpen])
 
   useEffect(() => {
-    const lowerCaseSearchTerm = searchTerm.toLowerCase()
-    const filtered = allPlayers.filter((name) => name.toLowerCase().includes(lowerCaseSearchTerm))
-    setFilteredPlayers(filtered)
-  }, [searchTerm, allPlayers])
+    if (searchTerm === "") {
+      setFilteredPlayers(players)
+    } else {
+      setFilteredPlayers(players.filter((player) => player.toLowerCase().includes(searchTerm.toLowerCase())))
+    }
+  }, [searchTerm, players])
 
-  const handleSelect = (name: string) => {
-    onSelectPlayer(name)
+  const loadPlayers = async () => {
+    setLoading(true)
+    try {
+      const allPlayers = await fetchAllUniquePlayers()
+      setPlayers(allPlayers)
+      setFilteredPlayers(allPlayers)
+    } catch (error) {
+      console.error("Fehler beim Laden der Spieler:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSelectPlayer = (playerName: string) => {
+    onSelectPlayer(playerName)
     onClose()
+    setSearchTerm("")
+  }
+
+  const handleClose = () => {
+    onClose()
+    setSearchTerm("")
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-brutal-card-bg text-brutal-text border-brutal-border rounded-xl shadow-2xl max-w-md p-8">
-        <DialogHeader className="pb-6">
-          <DialogTitle className="text-4xl font-extrabold text-center text-brutal-accent-gold drop-shadow-md">
-            Spieler auswählen
-          </DialogTitle>
-        </DialogHeader>
-        <Input
-          type="text"
-          placeholder="Spieler suchen..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="h-12 mb-6 bg-brutal-bg border-brutal-border text-brutal-text placeholder:text-brutal-text-muted focus:ring-brutal-accent-red focus:border-brutal-accent-red text-lg px-4 rounded-lg"
-        />
-        {loading ? (
-          <div className="flex justify-center items-center h-40">
-            <Loader2 className="h-10 w-10 animate-spin text-brutal-accent-red" />
-            <p className="ml-4 text-xl text-brutal-text-muted">Lade Spieler...</p>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md mx-auto bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
+        <DialogHeader className="border-b border-gray-100 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-semibold text-gray-900">Spieler auswählen</DialogTitle>
+                <p className="text-sm text-gray-500 mt-1">Wählen Sie einen Spieler aus der Liste</p>
+              </div>
+            </div>
+            <Button
+              onClick={handleClose}
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full"
+            >
+              <X className="h-4 w-4 text-gray-500" />
+            </Button>
           </div>
-        ) : (
-          <ul className="player-list max-h-80 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-            {filteredPlayers.length === 0 ? (
-              <li className="text-center text-brutal-text-muted text-lg p-4">Keine Spieler gefunden.</li>
+        </DialogHeader>
+
+        <div className="py-4 space-y-4">
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Spieler suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50 transition-all duration-200"
+            />
+          </div>
+
+          {/* Player List */}
+          <div className="max-h-64 overflow-y-auto space-y-1">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-sm text-gray-600">Spieler werden geladen...</p>
+                </div>
+              </div>
+            ) : filteredPlayers.length === 0 ? (
+              <div className="text-center py-8">
+                <User className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">
+                  {searchTerm ? "Keine Spieler gefunden" : "Keine Spieler verfügbar"}
+                </p>
+              </div>
             ) : (
-              filteredPlayers.map((name) => (
-                <li
-                  key={name}
-                  onClick={() => handleSelect(name)}
-                  className="p-4 bg-brutal-bg rounded-lg cursor-pointer hover:bg-brutal-hover transition-colors text-xl font-medium border border-brutal-border hover:border-brutal-accent-red"
+              filteredPlayers.map((player, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSelectPlayer(player)}
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 hover:border-red-200 border border-transparent transition-all duration-200 text-left group"
                 >
-                  {name}
-                </li>
+                  <div className="flex-shrink-0 h-8 w-8 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center group-hover:from-red-100 group-hover:to-red-200 transition-all duration-200">
+                    <User className="h-4 w-4 text-gray-600 group-hover:text-red-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 group-hover:text-red-700 transition-colors duration-200">
+                      {player}
+                    </p>
+                  </div>
+                </button>
               ))
             )}
-          </ul>
-        )}
+          </div>
+
+          {/* Footer */}
+          {!loading && filteredPlayers.length > 0 && (
+            <div className="border-t border-gray-100 pt-3">
+              <p className="text-xs text-gray-500 text-center">
+                {filteredPlayers.length} von {players.length} Spielern
+              </p>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )
