@@ -69,7 +69,7 @@ export function Header({}: HeaderProps) {
               <div className="flex items-center gap-2 pb-4 border-b border-gray-200 mb-4">
                 <div>
                   <div className="font-bold text-gray-900 text-xl">EMOJIS DARTVEREIN</div>
-                  <div className="text-xs text-gray-600">COMPETITION 2025</div>
+                  <div className="text-xs text-gray-600"></div>
                 </div>
               </div>
 
