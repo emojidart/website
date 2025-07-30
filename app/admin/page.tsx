@@ -7,10 +7,12 @@ import { AuthSection } from "@/components/auth-section"
 import { AdminPanel } from "@/components/admin-panel"
 import { PlayerListModal } from "@/components/player-list-modal"
 import { TournamentRegistrations } from "@/components/tournament-registrations"
+import { GameHistoryTable } from "@/components/game-history-table"
+import { PlayerPhotoManagement } from "@/components/player-photo-management" // Import the new component
 import { useAuth } from "@/hooks/use-auth"
 import { useDartData } from "@/hooks/use-dart-data"
 import { supabase } from "@/lib/supabase"
-import { LogOut, Shield, User, Database, Eye } from "lucide-react"
+import { LogOut, Shield, User, Database, Eye, History, ImageIcon } from "lucide-react" // Add ImageIcon
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage } = useAuth()
@@ -18,21 +20,18 @@ export default function AdminPage() {
 
   const [isPlayerListModalOpen, setIsPlayerListModalOpen] = useState(false)
   const [selectedPlayerName, setSelectedPlayerName] = useState<string | null>(null)
+  const [isPlayerSelectedViaModal, setIsPlayerSelectedViaModal] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
-  const [activeTab, setActiveTab] = useState<"data" | "registrations">("data")
+  const [activeTab, setActiveTab] = useState<"data" | "registrations" | "history" | "photos">("data") // Add 'photos' tab
 
   const handleLogout = async () => {
     setLoggingOut(true)
 
     try {
-      // Always try to sign out, regardless of local session state
       await supabase.auth.signOut()
-
-      // Force page reload to clear all state
       window.location.reload()
     } catch (err: any) {
       console.error("Logout error:", err)
-      // Even if there's an error, try to reload the page to clear state
       window.location.reload()
     } finally {
       setLoggingOut(false)
@@ -54,6 +53,12 @@ export default function AdminPage() {
 
   const handleSelectPlayer = (name: string) => {
     setSelectedPlayerName(name)
+    setIsPlayerSelectedViaModal(true)
+  }
+
+  const handlePlayerNameChange = (name: string) => {
+    setSelectedPlayerName(name)
+    setIsPlayerSelectedViaModal(false)
   }
 
   return (
@@ -155,6 +160,28 @@ export default function AdminPage() {
                           <Eye className="h-4 w-4 mr-2" />
                           Anmeldungen
                         </Button>
+                        <Button
+                          onClick={() => setActiveTab("history")}
+                          className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                            activeTab === "history"
+                              ? "bg-red-600 text-white shadow-md"
+                              : "bg-transparent text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          <History className="h-4 w-4 mr-2" />
+                          Spiele Historie
+                        </Button>
+                        <Button
+                          onClick={() => setActiveTab("photos")} // New tab
+                          className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                            activeTab === "photos"
+                              ? "bg-red-600 text-white shadow-md"
+                              : "bg-transparent text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          <ImageIcon className="h-4 w-4 mr-2" /> {/* Icon for photos */}
+                          Spielerfotos
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -183,11 +210,18 @@ export default function AdminPage() {
                         onDataSaved={handleDataSaved}
                         onOpenPlayerList={handleOpenPlayerList}
                         selectedPlayerName={selectedPlayerName}
-                        onPlayerNameChange={setSelectedPlayerName}
+                        onPlayerNameChange={handlePlayerNameChange}
+                        isPlayerSelectedViaModal={isPlayerSelectedViaModal}
                       />
                     )}
 
                     {activeTab === "registrations" && <TournamentRegistrations />}
+
+                    {activeTab === "history" && <GameHistoryTable />}
+
+                    {activeTab === "photos" && ( // New tab content
+                      <PlayerPhotoManagement user={user} onDataSaved={handleDataSaved} />
+                    )}
                   </div>
                 )}
               </div>

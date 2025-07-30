@@ -1,30 +1,33 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, Target } from "lucide-react"
+import { Menu } from "lucide-react" // Removed Target icon
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 type HeaderProps = {}
 
 export function Header({}: HeaderProps) {
+  const marqueeContent =
+    "EMOJIS DART COMPETITION 2025 • 2 JULI - 31 AUGUST • Pfeil OK Salzburg • IMMER MITTWOCH UND FREITAG"
+
   return (
     <header className="relative z-20 w-full bg-gray-100 text-gray-900 border-b border-gray-300 shadow-lg">
-      {/* Top Bar mit Laufschrift - Mobile optimiert */}
-      <div className="bg-red-600 py-2 sm:py-3 text-center text-xs sm:text-sm font-medium overflow-hidden whitespace-nowrap flex items-center">
-        <span className="inline-block animate-marquee text-white text-xs sm:text-sm leading-none">
-          EMOJIS DART COMPETITION 2025 • 2 JULI - 31 AUGUST • Pfeil OK Salzburg • IMMER MITTWOCH UND FREITAG • EMOJIS
-          DART COMPETITION 2025 • 2 JULI - 31 AUGUST • Pfeil OK Salzburg • IMMER MITTWOCH UND FREITAG
-        </span>
+      {/* Top Bar mit Laufschrift - Mobile optimiert und professioneller */}
+      <div className="bg-red-600 py-2 sm:py-3 text-center text-xs sm:text-sm font-medium overflow-hidden flex">
+        <div className="flex animate-marquee min-w-full">
+          <span className="text-white text-xs sm:text-sm leading-none px-4 py-0.5">{marqueeContent}</span>
+          <span className="text-white text-xs sm:text-sm leading-none px-4 py-0.5">{marqueeContent}</span>
+        </div>
       </div>
 
       {/* Main Navigation - Mobile optimiert */}
       <div className="container mx-auto flex h-16 sm:h-20 items-center justify-between px-3 sm:px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 text-base sm:text-lg font-bold flex-shrink-0 min-w-0">
-          <Target className="h-6 w-6 sm:h-8 sm:w-8 text-red-600 flex-shrink-0" />
+          {/* Dartscheiben-Symbol entfernt */}
           <div className="flex flex-col min-w-0">
             <span className="text-sm sm:text-lg md:text-xl font-extrabold tracking-wide truncate">
               EMOJIS DARTVEREIN
             </span>
-            <span className="text-xs font-normal text-gray-600 hidden sm:block">COMPETITION 2025</span>
+            <span className="text-xs font-normal text-gray-600 hidden sm:block"> </span>
           </div>
         </Link>
 
@@ -65,7 +68,7 @@ export function Header({}: HeaderProps) {
           >
             <div className="flex flex-col gap-6 py-6">
               <div className="flex items-center gap-2 pb-4 border-b border-gray-300">
-                <Target className="h-6 w-6 text-red-600" />
+                {/* Dartscheiben-Symbol entfernt */}
                 <div>
                   <div className="font-bold text-gray-900">EMOJIS DARTVEREIN</div>
                   <div className="text-xs text-gray-600">COMPETITION 2025</div>
