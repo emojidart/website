@@ -4,15 +4,17 @@ import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Header } from "@/components/header"
 import { AuthSection } from "@/components/auth-section"
-import { AdminPanel } from "@/components/admin-panel"
 import { PlayerListModal } from "@/components/player-list-modal"
 import { TournamentRegistrations } from "@/components/tournament-registrations"
 import { GameHistoryTable } from "@/components/game-history-table"
 import { PlayerPhotoManagement } from "@/components/player-photo-management"
+import { PlayerRegistration } from "@/components/player-registration"
+import { PlayerManagement } from "@/components/player-management"
+import { ResultEntry } from "@/components/result-entry"
 import { useAuth } from "@/hooks/use-auth"
 import { useDartData } from "@/hooks/use-dart-data"
 import { supabase } from "@/lib/supabase"
-import { LogOut, Shield, User, Database, Eye, History, ImageIcon } from "lucide-react"
+import { LogOut, Shield, User, Eye, History, ImageIcon, UserPlus, Trophy, Settings } from "lucide-react"
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage } = useAuth()
@@ -22,7 +24,9 @@ export default function AdminPage() {
   const [selectedPlayerName, setSelectedPlayerName] = useState<string | null>(null)
   const [isPlayerSelectedViaModal, setIsPlayerSelectedViaModal] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
-  const [activeTab, setActiveTab] = useState<"data" | "registrations" | "history" | "photos">("data")
+  const [activeTab, setActiveTab] = useState<
+    "players" | "results" | "registrations" | "history" | "photos" | "management"
+  >("players")
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -136,21 +140,43 @@ export default function AdminPage() {
                 {/* Tab Navigation */}
                 {session && (
                   <div className="px-0 sm:px-0">
-                    {" "}
-                    {/* Adjusted padding for mobile */}
                     <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-2 shadow-lg overflow-x-auto">
-                      <div className="flex space-x-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:space-x-0 sm:gap-2">
+                      <div className="flex space-x-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:space-x-0 sm:gap-2">
                         <Button
-                          onClick={() => setActiveTab("data")}
+                          onClick={() => setActiveTab("players")}
                           className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                            activeTab === "data"
-                              ? "bg-red-600 text-white shadow-md"
+                            activeTab === "players"
+                              ? "bg-blue-600 text-white shadow-md"
                               : "bg-transparent text-gray-600 hover:bg-gray-100"
                           }`}
                         >
-                          <Database className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          <span className="hidden sm:inline">Spielerdaten</span>
-                          <span className="sm:hidden">Daten</span>
+                          <UserPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Spieler anlegen</span>
+                          <span className="sm:hidden">Anlegen</span>
+                        </Button>
+                        <Button
+                          onClick={() => setActiveTab("results")}
+                          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                            activeTab === "results"
+                              ? "bg-green-600 text-white shadow-md"
+                              : "bg-transparent text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          <Trophy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Ergebnis Eingabe</span>
+                          <span className="sm:hidden">Ergebnis</span>
+                        </Button>
+                        <Button
+                          onClick={() => setActiveTab("management")}
+                          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                            activeTab === "management"
+                              ? "bg-purple-600 text-white shadow-md"
+                              : "bg-transparent text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Spielerverwaltung</span>
+                          <span className="sm:hidden">Verwalten</span>
                         </Button>
                         <Button
                           onClick={() => setActiveTab("registrations")}
@@ -209,16 +235,16 @@ export default function AdminPage() {
                 {/* Tab Content */}
                 {session && (
                   <div className="space-y-6">
-                    {activeTab === "data" && (
-                      <AdminPanel
-                        isVisible={true}
-                        user={user}
-                        onDataSaved={handleDataSaved}
-                        onOpenPlayerList={handleOpenPlayerList}
-                        selectedPlayerName={selectedPlayerName}
-                        onPlayerNameChange={handlePlayerNameChange}
-                        isPlayerSelectedViaModal={isPlayerSelectedViaModal}
-                      />
+                    {activeTab === "players" && (
+                      <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />
+                    )}
+
+                    {activeTab === "results" && (
+                      <ResultEntry isVisible={true} user={user} onDataSaved={handleDataSaved} />
+                    )}
+
+                    {activeTab === "management" && (
+                      <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />
                     )}
 
                     {activeTab === "registrations" && <TournamentRegistrations />}

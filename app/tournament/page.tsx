@@ -2,7 +2,7 @@
 
 import { Header } from "@/components/header"
 import { TournamentRegistrationModal } from "@/components/tournament-registration-modal"
-import { Calendar, Clock, MapPin, Trophy, Target, Users, Star, Sparkles, UserPlus } from "lucide-react"
+import { Calendar, Clock, MapPin, Trophy, Target, Users, Star, Sparkles, UserPlus } from 'lucide-react'
 import { motion } from "framer-motion"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -296,8 +296,8 @@ export default function TournamentPage() {
                 <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
                   <Sparkles className="h-8 w-8 text-white mx-auto" />
                 </div>
-                <h2 className="text-2xl md:text-3xl font-extrabold uppercase text-gray-900">UNSERE SPONSOREN</h2>
-                <p className="text-gray-600 mt-2">Unterstützer der Competition 2025</p>
+                <h2 className="text-2xl md:text-3xl font-extrabold uppercase text-gray-900">UNSERE PARTNER & SPONSOREN</h2>
+                <p className="text-gray-600 mt-2"></p>
               </div>
 
               {/* Sponsors Grid */}
@@ -316,7 +316,7 @@ export default function TournamentPage() {
                     <img
                       src={sponsor.logo || "/placeholder.svg"}
                       alt={`${sponsor.name} Logo`}
-                      className="max-w-full max-h-16 object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300 group-hover:scale-110"
+                      className="max-w-full max-h-16 object-contain transition-all duration-300 group-hover:scale-110"
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.svg?height=80&width=120&text=" + sponsor.name
                       }}
