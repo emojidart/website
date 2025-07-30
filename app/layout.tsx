@@ -8,7 +8,7 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "EMOJIS DARTVEREIN - Competition 2025",
   description: "Summer Special Dart Competition 2025 - Pfeil-OK Salzburg",
-  generator: "v0.dev",
+  generator: "Jimmy Wilhelmer",
 }
 
 export default function RootLayout({
