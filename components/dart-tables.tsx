@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import Image from "next/image" // Import Image component
 
 import { useState } from "react"
 import { motion } from "framer-motion"
@@ -132,7 +133,7 @@ function MobilePlayerCard({
   showDetails = false,
   type = "combined",
 }: {
-  player: any
+  player: PlayerData | CombinedPlayerData // Use updated types
   position: number
   showDetails?: boolean
   type?: "combined" | "edart" | "steel" | "total"
@@ -153,9 +154,22 @@ function MobilePlayerCard({
           <div className={getPositionBadge(position)}>{position}</div>
           {isTopThree && getPositionIcon(position)}
           <div className="flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12">
-            <div className="h-full w-full rounded-full bg-gradient-to-r from-red-400 to-red-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm sm:text-base">{player.name.charAt(0).toUpperCase()}</span>
-            </div>
+            {player.profile_picture_url ? (
+              <div className="h-full w-full rounded-full overflow-hidden border border-gray-200">
+                <Image
+                  src={player.profile_picture_url || "/placeholder.svg"}
+                  alt={`Profilbild von ${player.name}`}
+                  width={48}
+                  height={48}
+                  style={{ objectFit: "cover" }}
+                  className="rounded-full"
+                />
+              </div>
+            ) : (
+              <div className="h-full w-full rounded-full bg-gradient-to-r from-red-400 to-red-600 flex items-center justify-center">
+                <span className="text-white font-bold text-sm sm:text-base">{player.name.charAt(0).toUpperCase()}</span>
+              </div>
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div
@@ -182,7 +196,7 @@ function MobilePlayerCard({
           ) : (
             <div className="flex items-center gap-1">
               <span className="text-xl sm:text-2xl font-bold text-yellow-600">
-                {type === "combined" ? player.totalPoints : player.totalPoints}
+                {type === "combined" ? (player as CombinedPlayerData).totalPoints : (player as PlayerData).points}
               </span>
               <Zap className="h-4 w-4 text-yellow-500" />
             </div>
@@ -196,15 +210,21 @@ function MobilePlayerCard({
           <>
             <div className="bg-blue-50 rounded-lg p-2 text-center">
               <div className="text-xs text-blue-600 font-medium">E-Dart</div>
-              <div className="text-sm font-bold text-blue-800">{player.edartParticipations || 0}</div>
+              <div className="text-sm font-bold text-blue-800">
+                {(player as CombinedPlayerData).edartParticipations || 0}
+              </div>
             </div>
             <div className="bg-green-50 rounded-lg p-2 text-center">
               <div className="text-xs text-green-600 font-medium">Steel</div>
-              <div className="text-sm font-bold text-green-800">{player.steelParticipations || 0}</div>
+              <div className="text-sm font-bold text-green-800">
+                {(player as CombinedPlayerData).steelParticipations || 0}
+              </div>
             </div>
             <div className="bg-gray-50 rounded-lg p-2 text-center">
               <div className="text-xs text-gray-600 font-medium">Gesamt</div>
-              <div className="text-sm font-bold text-gray-800">{player.totalParticipations}</div>
+              <div className="text-sm font-bold text-gray-800">
+                {(player as CombinedPlayerData).totalParticipations}
+              </div>
             </div>
           </>
         )}
@@ -213,15 +233,19 @@ function MobilePlayerCard({
           <>
             <div className="bg-blue-50 rounded-lg p-2 text-center">
               <div className="text-xs text-blue-600 font-medium">E-Dart</div>
-              <div className="text-sm font-bold text-blue-800">{player.edartParticipations || 0}</div>
+              <div className="text-sm font-bold text-blue-800">
+                {(player as CombinedPlayerData).edartParticipations || 0}
+              </div>
             </div>
             <div className="bg-green-50 rounded-lg p-2 text-center">
               <div className="text-xs text-green-600 font-medium">Steel</div>
-              <div className="text-sm font-bold text-green-800">{player.steelParticipations || 0}</div>
+              <div className="text-sm font-bold text-green-800">
+                {(player as CombinedPlayerData).steelParticipations || 0}
+              </div>
             </div>
             <div className="bg-yellow-50 rounded-lg p-2 text-center">
               <div className="text-xs text-yellow-600 font-medium">Legs</div>
-              <div className="text-sm font-bold text-yellow-800">{player.totalLegs}</div>
+              <div className="text-sm font-bold text-yellow-800">{(player as CombinedPlayerData).totalLegs}</div>
             </div>
           </>
         )}
@@ -230,15 +254,15 @@ function MobilePlayerCard({
           <>
             <div className="bg-gray-50 rounded-lg p-2 text-center">
               <div className="text-xs text-gray-600 font-medium">Punkte</div>
-              <div className="text-sm font-bold text-gray-800">{player.points}</div>
+              <div className="text-sm font-bold text-gray-800">{(player as PlayerData).points}</div>
             </div>
             <div className="bg-gray-50 rounded-lg p-2 text-center">
               <div className="text-xs text-gray-600 font-medium">Legs</div>
-              <div className="text-sm font-bold text-gray-800">{player.legs}</div>
+              <div className="text-sm font-bold text-gray-800">{(player as PlayerData).legs}</div>
             </div>
             <div className="bg-gray-50 rounded-lg p-2 text-center">
               <div className="text-xs text-gray-600 font-medium">Antritte</div>
-              <div className="text-sm font-bold text-gray-800">{player.participations}</div>
+              <div className="text-sm font-bold text-gray-800">{(player as PlayerData).participations}</div>
             </div>
           </>
         )}
@@ -249,16 +273,16 @@ function MobilePlayerCard({
         <div className="space-y-2">
           <div>
             <div className="text-xs text-gray-600 mb-1">E-Dart Fortschritt</div>
-            <QualificationProgress current={player.edartParticipations || 0} required={5} />
+            <QualificationProgress current={(player as CombinedPlayerData).edartParticipations || 0} required={5} />
           </div>
           <div>
             <div className="text-xs text-gray-600 mb-1">Steel Fortschritt</div>
-            <QualificationProgress current={player.steelParticipations || 0} required={5} />
+            <QualificationProgress current={(player as CombinedPlayerData).steelParticipations || 0} required={5} />
           </div>
           <div className="pt-2 border-t border-gray-100">
             <QualificationStatus
-              edartGames={player.edartParticipations || 0}
-              steelGames={player.steelParticipations || 0}
+              edartGames={(player as CombinedPlayerData).edartParticipations || 0}
+              steelGames={(player as CombinedPlayerData).steelParticipations || 0}
             />
           </div>
         </div>
@@ -267,7 +291,7 @@ function MobilePlayerCard({
       {(type === "edart" || type === "steel") && (
         <div className="pt-2 border-t border-gray-100">
           <div className="text-xs text-gray-600 mb-1">Finale-Fortschritt</div>
-          <QualificationProgress current={player.participations} required={5} />
+          <QualificationProgress current={(player as PlayerData).participations} required={5} />
         </div>
       )}
 
@@ -445,8 +469,8 @@ function MobileTable({
               Qualifiziert für Finale:{" "}
               {
                 sortedPlayers.filter((p) => {
-                  const edart = p.edartParticipations || 0
-                  const steel = p.steelParticipations || 0
+                  const edart = (p as CombinedPlayerData).edartParticipations || 0
+                  const steel = (p as CombinedPlayerData).steelParticipations || 0
                   return edart >= 5 && steel >= 5
                 }).length
               }
@@ -454,14 +478,16 @@ function MobileTable({
           )}
           {(type === "edart" || type === "steel") && (
             <span>
-              Qualifiziert: {players.filter((p) => p.participations >= 5).length} von {players.length}
+              Qualifiziert: {players.filter((p) => (p as PlayerData).participations >= 5).length} von {players.length}
             </span>
           )}
           {type === "total" && (
             <span>
               Durchschnitt:{" "}
               {players.length > 0
-                ? Math.round(players.reduce((sum, p) => sum + p.totalParticipations, 0) / players.length)
+                ? Math.round(
+                    players.reduce((sum, p) => sum + (p as CombinedPlayerData).totalParticipations, 0) / players.length,
+                  )
                 : 0}{" "}
               Antritte
             </span>

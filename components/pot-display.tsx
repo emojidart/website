@@ -49,7 +49,7 @@ export function PotDisplay({ amount }: PotDisplayProps) {
       <div className="flex items-center justify-center text-gray-700">
         <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-yellow-500" />
         <span className="text-sm sm:text-base font-bold uppercase tracking-wide text-center">
-          Der Gewinner bekommt alles!
+          STARTGELD 4€!
         </span>
         <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 ml-2 text-yellow-500" />
       </div>
