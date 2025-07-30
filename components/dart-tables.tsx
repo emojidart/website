@@ -244,7 +244,7 @@ function MobilePlayerCard({
               </div>
             </div>
             <div className="bg-yellow-50 rounded-lg p-2 text-center">
-              <div className="text-xs text-yellow-600 font-medium">Legs</div>
+              <div className="text-xs text-yellow-600 font-medium">Checks</div>
               <div className="text-sm font-bold text-yellow-800">{(player as CombinedPlayerData).totalLegs}</div>
             </div>
           </>
@@ -257,7 +257,7 @@ function MobilePlayerCard({
               <div className="text-sm font-bold text-gray-800">{(player as PlayerData).points}</div>
             </div>
             <div className="bg-gray-50 rounded-lg p-2 text-center">
-              <div className="text-xs text-gray-600 font-medium">Legs</div>
+              <div className="text-xs text-gray-600 font-medium">Checks</div>
               <div className="text-sm font-bold text-gray-800">{(player as PlayerData).legs}</div>
             </div>
             <div className="bg-gray-50 rounded-lg p-2 text-center">
@@ -517,7 +517,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8 px-4">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Ranglisten</h1>
-        <p className="text-sm sm:text-base lg:text-lg text-gray-600">Aktuelle Standings der Competition 2025</p>
+        <p className="text-sm sm:text-base lg:text-lg text-gray-600">Aktueller Stand der Competition 2025</p>
       </div>
 
       {/* Mobile-Optimized Tab Navigation */}
@@ -556,7 +556,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
                   : "bg-transparent text-gray-600 hover:bg-gray-100"
               }`}
             >
-              <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <Target className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Steel Dart</span>
               <span className="sm:hidden">Steel</span>
               <span className="ml-1">({steelDartPlayers?.length || 0})</span>
@@ -607,7 +607,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
             players={steelDartPlayers}
             loading={loading}
             title="Steel Dart Tabelle"
-            icon={<Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />}
+            icon={<Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />}
             type="steel"
             description="Klassisches Steel Dart Ranking"
           />
