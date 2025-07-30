@@ -1,32 +1,16 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { supabase } from "@/lib/supabase"
-import {
-  Calendar,
-  Target,
-  Users,
-  Search,
-  Filter,
-  Download,
-  Trash2,
-  Eye,
-  AlertCircle,
-  Edit,
-  Save,
-  X,
-  CheckCircle,
-} from "lucide-react"
+import { Calendar, Target, Users, Search, Download, Trash2, Eye, AlertCircle, Edit, Save, X, CheckCircle, ChevronDown, ChevronRight, Zap } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { useDartData } from "@/hooks/use-dart-data" // Import useDartData
+import { useDartData } from "@/hooks/use-dart-data"
 
 interface GameEntry {
   id: string
@@ -39,30 +23,20 @@ interface GameEntry {
   created_at: string
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 12 } },
+interface GroupedEntries {
+  [gameType: string]: {
+    [date: string]: GameEntry[]
+  }
 }
 
 export function GameHistoryTable() {
-  const { recalculatePlayerStats } = useDartData() // Use the hook
+  const { recalculatePlayerStats } = useDartData()
   const [gameEntries, setGameEntries] = useState<GameEntry[]>([])
   const [filteredEntries, setFilteredEntries] = useState<GameEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterType, setFilterType] = useState<"all" | "edart" | "steeldart">("all")
-  const [sortBy, setSortBy] = useState<"date" | "player_name" | "created_at">("created_at")
+  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({})
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<GameEntry | null>(null)
@@ -79,8 +53,8 @@ export function GameHistoryTable() {
   }, [])
 
   useEffect(() => {
-    filterAndSortEntries()
-  }, [gameEntries, searchTerm, filterType, sortBy])
+    filterEntries()
+  }, [gameEntries, searchTerm])
 
   const fetchGameEntries = async () => {
     try {
@@ -99,39 +73,66 @@ export function GameHistoryTable() {
     }
   }
 
-  const filterAndSortEntries = () => {
+  const filterEntries = () => {
     let filtered = [...gameEntries]
 
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter((entry) => entry.player_name.toLowerCase().includes(searchTerm.toLowerCase()))
     }
 
-    // Filter by type
-    if (filterType !== "all") {
-      filtered = filtered.filter((entry) => entry.game_type === filterType)
-    }
+    setFilteredEntries(filtered)
+  }
 
-    // Sort
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "player_name":
-          return a.player_name.localeCompare(b.player_name)
-        case "created_at":
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        case "date":
-        default:
-          return new Date(b.game_date).getTime() - new Date(a.game_date).getTime()
+  const groupEntriesByTypeAndDate = (entries: GameEntry[]): GroupedEntries => {
+    const grouped: GroupedEntries = {}
+
+    entries.forEach((entry) => {
+      const gameType = entry.game_type
+      const date = entry.game_date
+
+      if (!grouped[gameType]) {
+        grouped[gameType] = {}
       }
+
+      if (!grouped[gameType][date]) {
+        grouped[gameType][date] = []
+      }
+
+      grouped[gameType][date].push(entry)
     })
 
-    setFilteredEntries(filtered)
+    // Sort dates within each game type
+    Object.keys(grouped).forEach((gameType) => {
+      const sortedDates = Object.keys(grouped[gameType]).sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+      const sortedGroup: {[date: string]: GameEntry[]} = {}
+      sortedDates.forEach((date) => {
+        sortedGroup[date] = grouped[gameType][date].sort((a, b) => a.player_name.localeCompare(b.player_name))
+      })
+      grouped[gameType] = sortedGroup
+    })
+
+    return grouped
+  }
+
+  const toggleSection = (sectionKey: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }))
+  }
+
+  const calculateTotalPoints = (entries: GameEntry[]) => {
+    return entries.reduce((sum, entry) => sum + entry.points, 0)
+  }
+
+  const calculateTotalLegs = (entries: GameEntry[]) => {
+    return entries.reduce((sum, entry) => sum + entry.legs, 0)
   }
 
   const handleDeleteEntry = async (entryToDelete: GameEntry) => {
     if (
       !confirm(
-        `Möchtest du den Spieleintrag von ${entryToDelete.player_name} vom ${formatDate(entryToDelete.game_date)} wirklich löschen?`,
+        `Möchtest du den Spieleintrag von ${entryToDelete.player_name} vom ${formatDate(entryToDelete.game_date)} wirklich löschen?`
       )
     ) {
       return
@@ -145,10 +146,8 @@ export function GameHistoryTable() {
         throw error
       }
 
-      // Neuberechnung der Spielerstatistiken nach dem Löschen
       await recalculatePlayerStats(entryToDelete.player_name, entryToDelete.game_type)
-
-      await fetchGameEntries() // Refresh the list
+      await fetchGameEntries()
     } catch (err: any) {
       alert(`Fehler beim Löschen: ${err.message}`)
     } finally {
@@ -197,14 +196,13 @@ export function GameHistoryTable() {
         throw error
       }
 
-      // Neuberechnung der Spielerstatistiken nach dem Bearbeiten
       await recalculatePlayerStats(editingEntry.player_name, editingEntry.game_type)
 
       setEditMessage("Erfolgreich gespeichert!")
       setTimeout(() => {
         setIsEditModalOpen(false)
         setEditingEntry(null)
-        fetchGameEntries() // Refresh the list
+        fetchGameEntries()
       }, 1000)
     } catch (err: any) {
       setEditMessage(`Fehler: ${err.message}`)
@@ -220,15 +218,13 @@ export function GameHistoryTable() {
   }
 
   const exportToCSV = () => {
-    const headers = ["ID", "Spielername", "Spieltyp", "Punkte", "Legs", "Spieldatum", "Eingabezeit"]
+    const headers = ["Spielername", "Spieltyp", "Punkte", "Legs", "Spieldatum"]
     const csvData = filteredEntries.map((entry) => [
-      entry.id,
       entry.player_name,
       entry.game_type === "edart" ? "E-Dart" : "Steeldart",
       entry.points,
       entry.legs,
       formatDate(entry.game_date),
-      formatDateTime(entry.created_at),
     ])
 
     const csvContent = [headers, ...csvData].map((row) => row.map((field) => `"${field}"`).join(",")).join("\n")
@@ -250,24 +246,6 @@ export function GameHistoryTable() {
       month: "2-digit",
       day: "2-digit",
     })
-  }
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString("de-DE", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
-
-  const getTypeColor = (type: string) => {
-    return type === "edart" ? "bg-blue-100 text-blue-800" : "bg-red-100 text-red-800"
-  }
-
-  const getTypeIcon = (type: string) => {
-    return type === "edart" ? <Users className="h-4 w-4" /> : <Target className="h-4 w-4" />
   }
 
   if (loading) {
@@ -296,170 +274,282 @@ export function GameHistoryTable() {
     )
   }
 
-  return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-      {/* Header & Filters */}
-      <motion.div variants={itemVariants}>
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader className="border-b border-gray-100 pb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
-                  <Eye className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-semibold text-gray-900">Spieleinträge Historie</CardTitle>
-                  <p className="text-sm text-gray-500 mt-1">Übersicht und Verwaltung aller Spielergebnisse</p>
-                </div>
-              </div>
-              <Button
-                onClick={exportToCSV}
-                variant="outline"
-                className="border-gray-200 hover:bg-gray-50 bg-transparent"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                CSV Export
-              </Button>
-            </div>
-          </CardHeader>
+  const groupedEntries = groupEntriesByTypeAndDate(filteredEntries)
 
-          <CardContent className="pt-6">
-            {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="Nach Spielername suchen..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50"
-                  />
-                </div>
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      {/* Header & Search */}
+      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+        <CardHeader className="border-b border-gray-100 pb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
+                <Eye className="h-5 w-5 text-white" />
               </div>
-              <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
-                <SelectTrigger className="w-full md:w-48 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Spieltypen</SelectItem>
-                  <SelectItem value="edart">Nur E-Dart</SelectItem>
-                  <SelectItem value="steeldart">Nur Steeldart</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                <SelectTrigger className="w-full md:w-48 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="created_at">Nach Eingabezeit</SelectItem>
-                  <SelectItem value="date">Nach Spieldatum</SelectItem>
-                  <SelectItem value="player_name">Nach Spielername</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <CardTitle className="text-xl font-semibold text-gray-900">Spieleinträge Historie</CardTitle>
+                <p className="text-sm text-gray-500 mt-1">Übersicht nach Turnierart und Datum organisiert</p>
+              </div>
             </div>
+            <Button onClick={exportToCSV} variant="outline" className="border-gray-200 hover:bg-gray-50 bg-transparent">
+              <Download className="h-4 w-4 mr-2" />
+              CSV Export
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Nach Spielername suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Game Type Sections */}
+      {Object.keys(groupedEntries).length === 0 ? (
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+          <CardContent className="py-12 text-center">
+            <Eye className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Keine Spieleinträge gefunden</h3>
+            <p className="text-gray-600">
+              {searchTerm ? "Versuche andere Suchkriterien." : "Es sind noch keine Spieleinträge vorhanden."}
+            </p>
           </CardContent>
         </Card>
-      </motion.div>
-
-      {/* Game Entries List */}
-      <motion.div variants={itemVariants}>
-        {filteredEntries.length === 0 ? (
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardContent className="py-12 text-center">
-              <Eye className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Keine Spieleinträge gefunden</h3>
-              <p className="text-gray-600">
-                {searchTerm || filterType !== "all"
-                  ? "Versuche andere Suchkriterien oder Filter."
-                  : "Es sind noch keine Spieleinträge vorhanden."}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {filteredEntries.map((entry, index) => (
-              <motion.div
-                key={entry.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow duration-300">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-3">
-                        {/* Header */}
-                        <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-red-400 to-red-600 flex items-center justify-center">
-                              <span className="text-white font-bold text-sm">
-                                {entry.player_name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <h3 className="text-lg font-bold text-gray-900">{entry.player_name}</h3>
-                              <Badge className={`${getTypeColor(entry.game_type)} border-0`}>
-                                <div className="flex items-center space-x-1">
-                                  {getTypeIcon(entry.game_type)}
-                                  <span>{entry.game_type === "edart" ? "E-Dart" : "Steeldart"}</span>
-                                </div>
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-gray-500">Eingabe am {formatDateTime(entry.created_at)}</p>
-                          </div>
-                        </div>
-
-                        {/* Game Info */}
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div className="flex items-center space-x-2">
-                              <Calendar className="h-4 w-4 text-gray-500" />
-                              <span className="font-semibold">Datum: {formatDate(entry.game_date)}</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Target className="h-4 w-4 text-gray-500" />
-                              <span className="font-semibold">Punkte: {entry.points}</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Users className="h-4 w-4 text-gray-500" />
-                              <span className="font-semibold">Legs: {entry.legs}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex-shrink-0 ml-4 flex flex-col gap-2">
-                        <Button
-                          onClick={() => handleEditClick(entry)}
-                          variant="outline"
-                          size="sm"
-                          className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 bg-transparent"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          onClick={() => handleDeleteEntry(entry)}
-                          variant="outline"
-                          size="sm"
-                          className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 bg-transparent"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+      ) : (
+        <div className="space-y-6">
+          {/* E-Dart Section */}
+          {groupedEntries.edart && (
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+              <CardHeader className="border-b border-blue-100 pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg">
+                      <Target className="h-5 w-5 text-white" />
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </motion.div>
+                    <CardTitle className="text-lg font-semibold text-blue-900">E-Dart Turniere</CardTitle>
+                  </div>
+                  <div className="flex items-center space-x-4 text-sm">
+                    <div className="flex items-center space-x-1 text-blue-600">
+                      <Zap className="h-4 w-4" />
+                      <span className="font-semibold">
+                        {calculateTotalPoints(Object.values(groupedEntries.edart).flat())} Punkte
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-1 text-blue-600">
+                      <Target className="h-4 w-4" />
+                      <span className="font-semibold">
+                        {calculateTotalLegs(Object.values(groupedEntries.edart).flat())} Legs
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {Object.entries(groupedEntries.edart).map(([date, entries]) => {
+                  const sectionKey = `edart-${date}`
+                  const isExpanded = expandedSections[sectionKey] !== false
+                  const dateTotalPoints = calculateTotalPoints(entries)
+                  const dateTotalLegs = calculateTotalLegs(entries)
+                  
+                  return (
+                    <div key={date} className="border-b border-gray-100 last:border-b-0">
+                      <button
+                        onClick={() => toggleSection(sectionKey)}
+                        className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Calendar className="h-4 w-4 text-blue-600" />
+                          <span className="font-semibold text-gray-900">{formatDate(date)}</span>
+                          <Badge className="bg-blue-100 text-blue-800 border-0">
+                            {entries.length} {entries.length === 1 ? 'Eintrag' : 'Einträge'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-1 text-blue-600">
+                            <Zap className="h-3 w-3" />
+                            <span className="text-sm font-semibold">{dateTotalPoints}</span>
+                          </div>
+                          <div className="flex items-center space-x-1 text-blue-600">
+                            <Target className="h-3 w-3" />
+                            <span className="text-sm font-semibold">{dateTotalLegs}</span>
+                          </div>
+                          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </div>
+                      </button>
+                      
+                      {isExpanded && (
+                        <div className="px-6 pb-4">
+                          <div className="bg-blue-50 rounded-lg overflow-hidden">
+                            <table className="w-full">
+                              <thead className="bg-blue-100">
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-sm font-semibold text-blue-900">Spieler</th>
+                                  <th className="px-4 py-3 text-center text-sm font-semibold text-blue-900">Punkte</th>
+                                  <th className="px-4 py-3 text-center text-sm font-semibold text-blue-900">Legs</th>
+                                  <th className="px-4 py-3 text-center text-sm font-semibold text-blue-900">Aktionen</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {entries.map((entry, index) => (
+                                  <tr key={entry.id} className={index % 2 === 0 ? "bg-white" : "bg-blue-25"}>
+                                    <td className="px-4 py-3 font-medium text-gray-900">{entry.player_name}</td>
+                                    <td className="px-4 py-3 text-center font-semibold text-blue-700">{entry.points}</td>
+                                    <td className="px-4 py-3 text-center font-semibold text-blue-700">{entry.legs}</td>
+                                    <td className="px-4 py-3 text-center">
+                                      <div className="flex justify-center space-x-2">
+                                        <Button
+                                          onClick={() => handleEditClick(entry)}
+                                          variant="outline"
+                                          size="sm"
+                                          className="border-blue-200 text-blue-600 hover:bg-blue-50 bg-transparent h-8 w-8 p-0"
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          onClick={() => handleDeleteEntry(entry)}
+                                          variant="outline"
+                                          size="sm"
+                                          className="border-red-200 text-red-600 hover:bg-red-50 bg-transparent h-8 w-8 p-0"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Steel Dart Section */}
+          {groupedEntries.steeldart && (
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+              <CardHeader className="border-b border-green-100 pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <CardTitle className="text-lg font-semibold text-green-900">Steel Dart Turniere</CardTitle>
+                  </div>
+                  <div className="flex items-center space-x-4 text-sm">
+                    <div className="flex items-center space-x-1 text-green-600">
+                      <Zap className="h-4 w-4" />
+                      <span className="font-semibold">
+                        {calculateTotalPoints(Object.values(groupedEntries.steeldart).flat())} Punkte
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-1 text-green-600">
+                      <Users className="h-4 w-4" />
+                      <span className="font-semibold">
+                        {calculateTotalLegs(Object.values(groupedEntries.steeldart).flat())} Legs
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {Object.entries(groupedEntries.steeldart).map(([date, entries]) => {
+                  const sectionKey = `steeldart-${date}`
+                  const isExpanded = expandedSections[sectionKey] !== false
+                  const dateTotalPoints = calculateTotalPoints(entries)
+                  const dateTotalLegs = calculateTotalLegs(entries)
+                  
+                  return (
+                    <div key={date} className="border-b border-gray-100 last:border-b-0">
+                      <button
+                        onClick={() => toggleSection(sectionKey)}
+                        className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Calendar className="h-4 w-4 text-green-600" />
+                          <span className="font-semibold text-gray-900">{formatDate(date)}</span>
+                          <Badge className="bg-green-100 text-green-800 border-0">
+                            {entries.length} {entries.length === 1 ? 'Eintrag' : 'Einträge'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-1 text-green-600">
+                            <Zap className="h-3 w-3" />
+                            <span className="text-sm font-semibold">{dateTotalPoints}</span>
+                          </div>
+                          <div className="flex items-center space-x-1 text-green-600">
+                            <Users className="h-3 w-3" />
+                            <span className="text-sm font-semibold">{dateTotalLegs}</span>
+                          </div>
+                          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </div>
+                      </button>
+                      
+                      {isExpanded && (
+                        <div className="px-6 pb-4">
+                          <div className="bg-green-50 rounded-lg overflow-hidden">
+                            <table className="w-full">
+                              <thead className="bg-green-100">
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-sm font-semibold text-green-900">Spieler</th>
+                                  <th className="px-4 py-3 text-center text-sm font-semibold text-green-900">Punkte</th>
+                                  <th className="px-4 py-3 text-center text-sm font-semibold text-green-900">Legs</th>
+                                  <th className="px-4 py-3 text-center text-sm font-semibold text-green-900">Aktionen</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {entries.map((entry, index) => (
+                                  <tr key={entry.id} className={index % 2 === 0 ? "bg-white" : "bg-green-25"}>
+                                    <td className="px-4 py-3 font-medium text-gray-900">{entry.player_name}</td>
+                                    <td className="px-4 py-3 text-center font-semibold text-green-700">{entry.points}</td>
+                                    <td className="px-4 py-3 text-center font-semibold text-green-700">{entry.legs}</td>
+                                    <td className="px-4 py-3 text-center">
+                                      <div className="flex justify-center space-x-2">
+                                        <Button
+                                          onClick={() => handleEditClick(entry)}
+                                          variant="outline"
+                                          size="sm"
+                                          className="border-green-200 text-green-600 hover:bg-green-50 bg-transparent h-8 w-8 p-0"
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          onClick={() => handleDeleteEntry(entry)}
+                                          variant="outline"
+                                          size="sm"
+                                          className="border-red-200 text-red-600 hover:bg-red-50 bg-transparent h-8 w-8 p-0"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={handleCloseEditModal}>
