@@ -63,30 +63,30 @@ export function Header({}: HeaderProps) {
           </SheetTrigger>
           <SheetContent
             side="right"
-            className="bg-gray-100 text-gray-900 border-l border-gray-300 w-[280px] sm:w-[320px]"
+            className="bg-white/95 backdrop-blur-sm border-l border-gray-200 w-[280px] sm:w-[320px] shadow-2xl"
           >
-            <div className="flex flex-col gap-6 py-6">
-              <div className="flex items-center gap-2 pb-4 border-b border-gray-300">
+            <div className="flex flex-col gap-4 py-6 px-4">
+              <div className="flex items-center gap-2 pb-4 border-b border-gray-200 mb-4">
                 <div>
-                  <div className="font-bold text-gray-900">EMOJIS DARTVEREIN</div>
+                  <div className="font-bold text-gray-900 text-xl">EMOJIS DARTVEREIN</div>
                   <div className="text-xs text-gray-600">COMPETITION 2025</div>
                 </div>
               </div>
 
               <Link
                 href="/"
-                className="text-lg font-semibold hover:text-red-600 uppercase py-2 px-2 rounded-lg hover:bg-gray-200 transition-all"
+                className="flex items-center text-base sm:text-lg font-medium text-gray-800 hover:text-red-600 hover:bg-red-50 rounded-lg px-4 py-3 transition-all duration-200"
               >
                 Startseite
               </Link>
               <Link
                 href="/tournament"
-                className="text-lg font-semibold hover:text-red-600 uppercase py-2 px-2 rounded-lg hover:bg-gray-200 transition-all"
+                className="flex items-center text-base sm:text-lg font-medium text-gray-800 hover:text-red-600 hover:bg-red-50 rounded-lg px-4 py-3 transition-all duration-200"
               >
                 Tournament
               </Link>
               <Link href="/tables" passHref>
-                <Button className="w-full bg-yellow-600 hover:bg-red-600 text-white font-extrabold py-3 px-4 rounded-lg uppercase text-base justify-start">
+                <Button className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-extrabold py-3 px-4 rounded-lg uppercase text-base justify-start shadow-md">
                   Tabellen
                 </Button>
               </Link>
