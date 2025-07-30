@@ -154,7 +154,7 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
             className="flex flex-col items-center justify-center rounded-lg bg-white/95 backdrop-blur-sm p-4 sm:p-6 border border-gray-200 shadow-xl"
           >
             <Calendar className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-red-600 mb-2 sm:mb-3" />
-            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-center text-black">2 JULI - 31 AUGUST</span>
+            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-center text-black">2 JULI - 29 AUGUST</span>
             <span className="text-xs sm:text-sm lg:text-base uppercase text-gray-600 text-center font-semibold">
               COMPETITION 2025
             </span>
