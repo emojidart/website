@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu } from "lucide-react" // Removed Target icon
+import { Menu } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 type HeaderProps = {}
@@ -22,12 +22,11 @@ export function Header({}: HeaderProps) {
       {/* Main Navigation - Mobile optimiert */}
       <div className="container mx-auto flex h-16 sm:h-20 items-center justify-between px-3 sm:px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 text-base sm:text-lg font-bold flex-shrink-0 min-w-0">
-          {/* Dartscheiben-Symbol entfernt */}
           <div className="flex flex-col min-w-0">
             <span className="text-sm sm:text-lg md:text-xl font-extrabold tracking-wide truncate">
               EMOJIS DARTVEREIN
             </span>
-            <span className="text-xs font-normal text-gray-600 hidden sm:block"> </span>
+            <span className="text-xs font-normal text-gray-600 hidden sm:block">COMPETITION 2025</span>
           </div>
         </Link>
 
@@ -68,7 +67,6 @@ export function Header({}: HeaderProps) {
           >
             <div className="flex flex-col gap-6 py-6">
               <div className="flex items-center gap-2 pb-4 border-b border-gray-300">
-                {/* Dartscheiben-Symbol entfernt */}
                 <div>
                   <div className="font-bold text-gray-900">EMOJIS DARTVEREIN</div>
                   <div className="text-xs text-gray-600">COMPETITION 2025</div>
@@ -79,17 +77,17 @@ export function Header({}: HeaderProps) {
                 href="/"
                 className="text-lg font-semibold hover:text-red-600 uppercase py-2 px-2 rounded-lg hover:bg-gray-200 transition-all"
               >
-                🏠 Startseite
+                Startseite
               </Link>
               <Link
                 href="/tournament"
                 className="text-lg font-semibold hover:text-red-600 uppercase py-2 px-2 rounded-lg hover:bg-gray-200 transition-all"
               >
-                🏆 Tournament
+                Tournament
               </Link>
               <Link href="/tables" passHref>
                 <Button className="w-full bg-yellow-600 hover:bg-red-600 text-white font-extrabold py-3 px-4 rounded-lg uppercase text-base justify-start">
-                  📊 Turniertabellen
+                  Tabellen
                 </Button>
               </Link>
               <Link href="/admin" passHref>
@@ -97,7 +95,7 @@ export function Header({}: HeaderProps) {
                   variant="outline"
                   className="w-full border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600 font-bold py-3 px-4 rounded-lg bg-transparent uppercase text-base justify-start"
                 >
-                  ⚙️ Admin Login
+                  Admin
                 </Button>
               </Link>
             </div>
