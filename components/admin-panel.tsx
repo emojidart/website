@@ -73,6 +73,9 @@ export function AdminPanel({
     setFormMessageType("info")
     setUploadingImage(false) // Reset image upload status
 
+    // Fügen Sie diese Zeile am Anfang der `handleSubmit`-Funktion hinzu, um den anfänglichen Beitrag festzulegen.
+    let potContribution = 4.0
+
     if (!user) {
       setFormMessage("Fehler: Nicht authentifiziert.")
       setFormMessageType("error")
@@ -167,6 +170,7 @@ export function AdminPanel({
           },
         ])
         if (insertNewPlayerError) throw insertNewPlayerError
+        potContribution += 10.0 // Fügen Sie diese Zeile hier hinzu, um 10€ für die Neuregistrierung hinzuzufügen
       }
 
       // Add game entry
@@ -193,7 +197,8 @@ export function AdminPanel({
         throw potFetchError
       }
 
-      const newPotAmount = Number.parseFloat(potData.amount) + 4.0
+      const newPotAmount = Number.parseFloat(potData.amount) + potContribution
+
       const { error: potUpdateError } = await supabase
         .from("pot_total")
         .update({ amount: newPotAmount })

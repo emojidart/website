@@ -14,7 +14,7 @@ import { ResultEntry } from "@/components/result-entry"
 import { useAuth } from "@/hooks/use-auth"
 import { useDartData } from "@/hooks/use-dart-data"
 import { supabase } from "@/lib/supabase"
-import { LogOut, Shield, User, Eye, History, ImageIcon, UserPlus, Trophy, Settings } from "lucide-react"
+import { LogOut, Shield, User, Eye, History, ImageIcon, UserPlus, Trophy, Settings } from 'lucide-react'
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage } = useAuth()

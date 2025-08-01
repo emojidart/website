@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { CheckCircle, AlertCircle, Save, Trophy, Target, Users } from 'lucide-react'
+import { CheckCircle, AlertCircle, Save, Trophy, Target, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
+import { useDartData } from "@/hooks/use-dart-data" // Importiere den Hook
 
 interface Player {
   id: string
@@ -24,6 +25,7 @@ interface ResultEntryProps {
 }
 
 export function ResultEntry({ isVisible, user, onDataSaved }: ResultEntryProps) {
+  const { recalculatePlayerStats } = useDartData() // Nutze den Hook, um die Funktion zu erhalten
   const [gameType, setGameType] = useState<"edart" | "steeldart">("edart")
   const [selectedPlayer, setSelectedPlayer] = useState<string>("")
   const [players, setPlayers] = useState<Player[]>([])
@@ -56,64 +58,6 @@ export function ResultEntry({ isVisible, user, onDataSaved }: ResultEntryProps) 
   useEffect(() => {
     loadPlayers()
   }, [])
-
-  const recalculatePlayerStats = async (playerName: string, gameType: string) => {
-    try {
-      // Bestimme die richtige Statistik-Tabelle
-      const statsTable = gameType === "edart" ? "edart_players" : "steel_dart_players"
-
-      // Hole alle Spiele für diesen Spieler und Spieltyp
-      const { data: games, error: gamesError } = await supabase
-        .from("game_entries")
-        .select("points, legs")
-        .eq("player_name", playerName)
-        .eq("game_type", gameType)
-
-      if (gamesError) throw gamesError
-
-      // Berechne Statistiken
-      const totalPoints = games?.reduce((sum, game) => sum + (game.points || 0), 0) || 0
-      const totalLegs = games?.reduce((sum, game) => sum + (game.legs || 0), 0) || 0
-      const participations = games?.length || 0
-
-      // Prüfe ob Spieler in Statistik-Tabelle existiert
-      const { data: existingPlayer, error: fetchError } = await supabase
-        .from(statsTable)
-        .select("id")
-        .eq("name", playerName)
-        .single()
-
-      if (existingPlayer) {
-        // Update bestehenden Spieler
-        const { error: updateError } = await supabase
-          .from(statsTable)
-          .update({
-            points: totalPoints,
-            legs: totalLegs,
-            participations: participations,
-          })
-          .eq("name", playerName)
-
-        if (updateError) throw updateError
-      } else {
-        // Erstelle neuen Eintrag in Statistik-Tabelle
-        const { error: insertError } = await supabase.from(statsTable).insert([
-          {
-            name: playerName,
-            points: totalPoints,
-            legs: totalLegs,
-            participations: participations,
-            user_id: user?.id,
-          },
-        ])
-
-        if (insertError) throw insertError
-      }
-    } catch (error: any) {
-      console.error("Error recalculating stats:", error)
-      throw error
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -168,7 +112,7 @@ export function ResultEntry({ isVisible, user, onDataSaved }: ResultEntryProps) 
         throw gameEntryError
       }
 
-      // Recalculate player stats
+      // Recalculate player stats using the function from the hook
       await recalculatePlayerStats(selectedPlayerData.name, gameType)
 
       // Update pot total

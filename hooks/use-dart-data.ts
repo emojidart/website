@@ -24,8 +24,11 @@ export interface CombinedPlayerData {
   edartPoints: number
   steelPoints: number
   totalPoints: number
+  edartLegs: number // Neu: Legs für E-Dart
+  steelLegs: number // Neu: Legs für Steel Dart
+  totalLegs: number // Vorhanden, aber sicherstellen, dass es korrekt summiert wird
   totalParticipations: number
-  totalLegs: number
+  combinedScore: number // Neu: Punkte + Legs
   edartParticipations: number
   steelParticipations: number
   profile_picture_url?: string // Hinzugefügt
@@ -40,6 +43,29 @@ export interface GameEntry {
   game_date: string
   user_id: string
   created_at: string
+}
+
+// Neue Interfaces für die Turnierhistorie
+export interface HistoricalPlayerResult {
+  player_name: string;
+  points: number;
+  legs: number;
+  combinedScore: number; // points + legs for this specific game entry
+  profile_picture_url?: string;
+}
+
+export interface TournamentSummary {
+  date: string;
+  gameType: "edart" | "steeldart";
+  totalParticipants: number;
+  totalPoints: number;
+  totalLegs: number;
+  rankedPlayers: HistoricalPlayerResult[]; // Players ranked for this specific tournament
+}
+
+export interface GroupedTournamentHistory {
+  edart?: TournamentSummary[];
+  steeldart?: TournamentSummary[];
 }
 
 // Funktion zur Neuberechnung der Spielerstatistiken
@@ -145,12 +171,15 @@ const fetchCombinedPlayers = async (): Promise<CombinedPlayerData[]> => {
         name: player.name,
         edartPoints: player.points || 0,
         steelPoints: 0,
-        totalPoints: player.points || 0, // Use player.points for totalPoints initially
-        totalParticipations: player.participations || 0, // Use player.participations for totalParticipations initially
-        totalLegs: player.legs || 0, // Use player.legs for totalLegs initially
+        edartLegs: player.legs || 0, // E-Dart Legs
+        steelLegs: 0,
+        totalPoints: player.points || 0,
+        totalParticipations: player.participations || 0,
+        totalLegs: player.legs || 0, // Initial total legs from E-Dart
+        combinedScore: (player.points || 0) + (player.legs || 0), // Initial combined score
         edartParticipations: player.participations || 0,
         steelParticipations: 0,
-        profile_picture_url: player.profile_picture_url || undefined, // Pass the URL
+        profile_picture_url: player.profile_picture_url || undefined,
       })
     })
 
@@ -159,9 +188,11 @@ const fetchCombinedPlayers = async (): Promise<CombinedPlayerData[]> => {
       const existing = playerMap.get(player.name)
       if (existing) {
         existing.steelPoints = player.points || 0
-        existing.totalPoints = (existing.edartPoints || 0) + (player.points || 0) // Sum points from both types
-        existing.totalParticipations = (existing.edartParticipations || 0) + (player.participations || 0) // Sum participations
-        existing.totalLegs = (existing.totalLegs || 0) + (player.legs || 0) // Sum legs
+        existing.steelLegs = player.legs || 0 // Steel Dart Legs
+        existing.totalPoints = (existing.edartPoints || 0) + (player.points || 0)
+        existing.totalParticipations = (existing.edartParticipations || 0) + (player.participations || 0)
+        existing.totalLegs = (existing.edartLegs || 0) + (player.legs || 0) // Sum legs from both types
+        existing.combinedScore = existing.totalPoints + existing.totalLegs // Update combined score
         existing.steelParticipations = player.participations || 0
         // Prioritize steel dart profile picture if edart didn't have one, or if it's newer/preferred
         if (player.profile_picture_url) {
@@ -172,9 +203,12 @@ const fetchCombinedPlayers = async (): Promise<CombinedPlayerData[]> => {
           name: player.name,
           edartPoints: 0,
           steelPoints: player.points || 0,
+          edartLegs: 0,
+          steelLegs: player.legs || 0,
           totalPoints: player.points || 0,
           totalParticipations: player.participations || 0,
           totalLegs: player.legs || 0,
+          combinedScore: (player.points || 0) + (player.legs || 0),
           edartParticipations: 0,
           steelParticipations: player.participations || 0,
           profile_picture_url: player.profile_picture_url || undefined,
@@ -182,18 +216,108 @@ const fetchCombinedPlayers = async (): Promise<CombinedPlayerData[]> => {
       }
     })
 
-    return Array.from(playerMap.values())
+    // Sort players by combinedScore in descending order
+    const sortedPlayers = Array.from(playerMap.values()).sort((a, b) => b.combinedScore - a.combinedScore)
+
+    return sortedPlayers
   } catch (error) {
     console.error("Error fetching combined players:", error)
     throw error
   }
 }
 
+const fetchGroupedGameHistory = async (): Promise<GroupedTournamentHistory> => {
+  try {
+    const { data: gameEntries, error: entriesError } = await supabase
+      .from("game_entries")
+      .select("id, player_name, game_type, points, legs, game_date, created_at")
+      .order("game_date", { ascending: false }) // Sort by date descending
+
+    if (entriesError) throw entriesError
+
+    const grouped: GroupedTournamentHistory = {
+      edart: [],
+      steeldart: [],
+    };
+
+    // Fetch all player profile pictures once
+    const { data: allPlayers, error: playersError } = await supabase
+      .from("players")
+      .select("name, profile_picture_url");
+
+    if (playersError) throw playersError;
+    const playerProfileMap = new Map(allPlayers?.map(p => [p.name, p.profile_picture_url]));
+
+
+    // Group entries by game type and date
+    const tempGrouped: { [gameType: string]: { [date: string]: GameEntry[] } } = {};
+    gameEntries?.forEach(entry => {
+      if (!tempGrouped[entry.game_type]) {
+        tempGrouped[entry.game_type] = {};
+      }
+      if (!tempGrouped[entry.game_type][entry.game_date]) {
+        tempGrouped[entry.game_type][entry.game_date] = [];
+      }
+      tempGrouped[entry.game_type][entry.game_date].push(entry);
+    });
+
+    // Process each game type and date to create TournamentSummary
+    for (const gameType of ["edart", "steeldart"]) {
+      if (tempGrouped[gameType]) {
+        const dates = Object.keys(tempGrouped[gameType]).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // Sort dates descending
+
+        for (const date of dates) {
+          const entriesForDate = tempGrouped[gameType][date];
+          const playerResultsMap = new Map<string, { points: number, legs: number, participations: number }>();
+
+          entriesForDate.forEach(entry => {
+            const current = playerResultsMap.get(entry.player_name) || { points: 0, legs: 0, participations: 0 };
+            playerResultsMap.set(entry.player_name, {
+              points: current.points + entry.points,
+              legs: current.legs + entry.legs,
+              participations: current.participations + 1,
+            });
+          });
+
+          const rankedPlayers: HistoricalPlayerResult[] = Array.from(playerResultsMap.entries())
+            .map(([playerName, stats]) => ({
+              player_name: playerName,
+              points: stats.points,
+              legs: stats.legs,
+              combinedScore: stats.points + stats.legs,
+              profile_picture_url: playerProfileMap.get(playerName) || undefined,
+            }))
+            .sort((a, b) => b.combinedScore - a.combinedScore); // Sort by combined score for ranking
+
+          const totalPoints = rankedPlayers.reduce((sum, p) => sum + p.points, 0);
+          const totalLegs = rankedPlayers.reduce((sum, p) => sum + p.legs, 0);
+
+          (grouped[gameType as "edart" | "steeldart"] as TournamentSummary[]).push({
+            date: date,
+            gameType: gameType as "edart" | "steeldart",
+            totalParticipants: rankedPlayers.length,
+            totalPoints: totalPoints,
+            totalLegs: totalLegs,
+            rankedPlayers: rankedPlayers,
+          });
+        }
+      }
+    }
+
+    return grouped;
+  } catch (error) {
+    console.error("Error fetching grouped game history:", error);
+    throw error;
+  }
+};
+
+
 export const useDartData = () => {
   const [edartPlayers, setEdartPlayers] = useState<PlayerData[]>([])
   const [steelDartPlayers, setSteelDartPlayers] = useState<PlayerData[]>([])
   const [combinedPlayers, setCombinedPlayers] = useState<CombinedPlayerData[]>([])
   const [currentPot, setCurrentPot] = useState(0)
+  const [groupedGameHistory, setGroupedGameHistory] = useState<GroupedTournamentHistory>({}); // Neuer State
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -217,16 +341,18 @@ export const useDartData = () => {
     setLoading(true)
     setError(null)
     try {
-      const [edart, steel, pot, combined] = await Promise.all([
+      const [edart, steel, pot, combined, history] = await Promise.all([ // history hinzugefügt
         fetchPlayers("edart_players"),
         fetchPlayers("steel_dart_players"),
         fetchPot(),
         fetchCombinedPlayers(),
+        fetchGroupedGameHistory(), // Neue Funktion aufrufen
       ])
       setEdartPlayers(edart)
       setSteelDartPlayers(steel)
       setCurrentPot(pot)
       setCombinedPlayers(combined)
+      setGroupedGameHistory(history); // State aktualisieren
     } catch (err: any) {
       console.error("Failed to fetch dart data:", err)
       setError(err.message)
@@ -244,6 +370,7 @@ export const useDartData = () => {
     steelDartPlayers,
     combinedPlayers,
     currentPot,
+    groupedGameHistory, // Exportieren
     loading,
     error,
     fetchAndRenderAllTables,
