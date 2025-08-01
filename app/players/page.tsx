@@ -236,7 +236,7 @@ export default function PlayersPage() {
 
           {/* Player Profile Dialog */}
           <Dialog open={!!selectedPlayer} onOpenChange={() => setSelectedPlayer(null)}>
-            <DialogContent className="max-w-3xl max-h-[90vh] p-4 overflow-y-auto rounded-xl">
+            <DialogContent className="max-w-md max-h-[90vh] p-4 overflow-y-auto rounded-xl">
               {" "}
               {/* Changed p-0 to p-4 */}
               <VisuallyHidden.Root>
