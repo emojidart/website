@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { CheckCircle, AlertCircle, Save, UserPlus } from 'lucide-react'
+import { CheckCircle, AlertCircle, Save, UserPlus } from "lucide-react"
 import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
@@ -111,6 +111,23 @@ export function PlayerRegistration({ isVisible, user, onDataSaved }: PlayerRegis
 
       if (insertError) {
         throw insertError
+      }
+
+      // Update pot_total with 10€ for new player registration
+      const { data: potData, error: potFetchError } = await supabase.from("pot_total").select("id, amount").single()
+
+      if (potFetchError) {
+        throw potFetchError
+      }
+
+      const newPotAmount = Number.parseFloat(potData.amount) + 10.0 // Add 10€ for new player registration
+      const { error: potUpdateError } = await supabase
+        .from("pot_total")
+        .update({ amount: newPotAmount })
+        .eq("id", potData.id)
+
+      if (potUpdateError) {
+        throw potUpdateError
       }
 
       setFormMessage("Spieler erfolgreich registriert!")

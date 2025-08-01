@@ -2,6 +2,7 @@
 
 import type React from "react"
 import Image from "next/image" // Import Image component
+import { useDartData } from "@/hooks/use-dart-data" // Import useDartData hook
 
 import { useState } from "react"
 import { motion } from "framer-motion"
@@ -18,9 +19,11 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  History,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { PlayerData, CombinedPlayerData } from "@/hooks/use-dart-data"
+import { TournamentHistorySection } from "./tournament-history-section" // Import the new component
 
 interface DartTablesProps {
   edartPlayers: PlayerData[]
@@ -196,7 +199,10 @@ function MobilePlayerCard({
           ) : (
             <div className="flex items-center gap-1">
               <span className="text-xl sm:text-2xl font-bold text-yellow-600">
-                {type === "combined" ? (player as CombinedPlayerData).totalPoints : (player as PlayerData).points}
+                {/* Für den "combined" Typ wird die combinedScore (Punkte + Legs) als Hauptwert angezeigt */}
+                {type === "combined"
+                  ? (player as CombinedPlayerData).combinedScore
+                  : (player as PlayerData).points + (player as PlayerData).legs}
               </span>
               <Zap className="h-4 w-4 text-yellow-500" />
             </div>
@@ -208,20 +214,19 @@ function MobilePlayerCard({
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
         {type === "combined" && (
           <>
+            {/* Anzeige der Gesamtpunkte (E-Dart + Steel Dart Punkte) */}
             <div className="bg-blue-50 rounded-lg p-2 text-center">
-              <div className="text-xs text-blue-600 font-medium">E-Dart</div>
-              <div className="text-sm font-bold text-blue-800">
-                {(player as CombinedPlayerData).edartParticipations || 0}
-              </div>
+              <div className="text-xs text-blue-600 font-medium">Punkte</div>
+              <div className="text-sm font-bold text-blue-800">{(player as CombinedPlayerData).totalPoints}</div>
             </div>
+            {/* Anzeige der Gesamt-Legs (E-Dart + Steel Dart Legs) */}
             <div className="bg-green-50 rounded-lg p-2 text-center">
-              <div className="text-xs text-green-600 font-medium">Steel</div>
-              <div className="text-sm font-bold text-green-800">
-                {(player as CombinedPlayerData).steelParticipations || 0}
-              </div>
+              <div className="text-xs text-green-600 font-medium">Legs</div>
+              <div className="text-sm font-bold text-green-800">{(player as CombinedPlayerData).totalLegs}</div>
             </div>
+            {/* Anzeige der Gesamt-Antritte */}
             <div className="bg-gray-50 rounded-lg p-2 text-center">
-              <div className="text-xs text-gray-600 font-medium">Gesamt</div>
+              <div className="text-xs text-gray-600 font-medium">Antritte</div>
               <div className="text-sm font-bold text-gray-800">
                 {(player as CombinedPlayerData).totalParticipations}
               </div>
@@ -393,7 +398,12 @@ function MobileTable({
       if (type === "total") {
         return b.totalParticipations - a.totalParticipations
       }
-      return b.totalPoints - a.totalPoints
+      // Sortiere nach combinedScore für den Typ "combined"
+      if (type === "combined") {
+        return b.combinedScore - a.combinedScore
+      }
+      // Für edart und steel: Sortiere nach der Summe von Punkten und Legs
+      return b.points + b.legs - (a.points + a.legs)
     })
     .map((player, index) => ({ ...player, position: index + 1 }))
 
@@ -499,7 +509,8 @@ function MobileTable({
 }
 
 export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, loading, error }: DartTablesProps) {
-  const [activeTab, setActiveTab] = useState<"combined" | "edart" | "steel" | "total">("combined")
+  const [activeTab, setActiveTab] = useState<"combined" | "edart" | "steel" | "total" | "history">("combined") // 'history' hinzugefügt
+  const { groupedGameHistory } = useDartData() // groupedGameHistory aus dem Hook holen
 
   if (error) {
     return (
@@ -523,7 +534,9 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
       {/* Mobile-Optimized Tab Navigation */}
       <div className="px-4">
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-2 overflow-x-auto">
-          <div className="flex space-x-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:space-x-0 sm:gap-2">
+          <div className="flex space-x-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-2 lg:grid-cols-5 sm:space-x-0 sm:gap-2">
+            {" "}
+            {/* grid-cols-5 für neuen Tab */}
             <Button
               onClick={() => setActiveTab("combined")}
               className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
@@ -574,6 +587,18 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
               <span className="sm:hidden">Antritte</span>
               <span className="ml-1">({combinedPlayers?.length || 0})</span>
             </Button>
+            <Button
+              onClick={() => setActiveTab("history")}
+              className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                activeTab === "history"
+                  ? "bg-red-600 text-white shadow-md"
+                  : "bg-transparent text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <History className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Turnier Historie</span>
+              <span className="sm:hidden">Historie</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -622,6 +647,10 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
             type="total"
             description="Übersicht aller Teilnahmen"
           />
+        )}
+
+        {activeTab === "history" && (
+          <TournamentHistorySection groupedHistory={groupedGameHistory} loading={loading} error={error} />
         )}
       </div>
     </motion.div>

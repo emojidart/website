@@ -4,7 +4,24 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { supabase } from "@/lib/supabase"
-import { Calendar, Target, Users, Search, Download, Trash2, Eye, AlertCircle, Edit, Save, X, CheckCircle, ChevronDown, ChevronRight, Zap } from 'lucide-react'
+import {
+  Calendar,
+  Target,
+  Users,
+  Search,
+  Download,
+  Trash2,
+  Eye,
+  AlertCircle,
+  Edit,
+  Save,
+  X,
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  Zap,
+  Star,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -36,7 +53,7 @@ export function GameHistoryTable() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({})
+  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({})
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<GameEntry | null>(null)
@@ -104,9 +121,10 @@ export function GameHistoryTable() {
     // Sort dates within each game type
     Object.keys(grouped).forEach((gameType) => {
       const sortedDates = Object.keys(grouped[gameType]).sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
-      const sortedGroup: {[date: string]: GameEntry[]} = {}
+      const sortedGroup: { [date: string]: GameEntry[] } = {}
       sortedDates.forEach((date) => {
-        sortedGroup[date] = grouped[gameType][date].sort((a, b) => a.player_name.localeCompare(b.player_name))
+        // Sort entries within each date by combined score (points + legs) in descending order
+        sortedGroup[date] = grouped[gameType][date].sort((a, b) => b.points + b.legs - (a.points + a.legs))
       })
       grouped[gameType] = sortedGroup
     })
@@ -115,9 +133,9 @@ export function GameHistoryTable() {
   }
 
   const toggleSection = (sectionKey: string) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [sectionKey]: !prev[sectionKey]
+      [sectionKey]: !prev[sectionKey],
     }))
   }
 
@@ -129,10 +147,15 @@ export function GameHistoryTable() {
     return entries.reduce((sum, entry) => sum + entry.legs, 0)
   }
 
+  // Neue Funktion zur Berechnung der kombinierten Punktzahl
+  const calculateCombinedScore = (entries: GameEntry[]) => {
+    return entries.reduce((sum, entry) => sum + entry.points + entry.legs, 0)
+  }
+
   const handleDeleteEntry = async (entryToDelete: GameEntry) => {
     if (
       !confirm(
-        `Möchtest du den Spieleintrag von ${entryToDelete.player_name} vom ${formatDate(entryToDelete.game_date)} wirklich löschen?`
+        `Möchtest du den Spieleintrag von ${entryToDelete.player_name} vom ${formatDate(entryToDelete.game_date)} wirklich löschen?`,
       )
     ) {
       return
@@ -218,12 +241,13 @@ export function GameHistoryTable() {
   }
 
   const exportToCSV = () => {
-    const headers = ["Spielername", "Spieltyp", "Punkte", "Legs", "Spieldatum"]
+    const headers = ["Spielername", "Spieltyp", "Punkte", "Legs", "Kombinierte Punktzahl", "Spieldatum"] // Header aktualisiert
     const csvData = filteredEntries.map((entry) => [
       entry.player_name,
       entry.game_type === "edart" ? "E-Dart" : "Steeldart",
       entry.points,
       entry.legs,
+      entry.points + entry.legs, // Kombinierte Punktzahl für CSV
       formatDate(entry.game_date),
     ])
 
@@ -349,6 +373,13 @@ export function GameHistoryTable() {
                         {calculateTotalLegs(Object.values(groupedEntries.edart).flat())} Legs
                       </span>
                     </div>
+                    {/* Kombinierte Punktzahl für E-Dart Gesamt */}
+                    <div className="flex items-center space-x-1 text-blue-600">
+                      <Star className="h-4 w-4" />
+                      <span className="font-semibold">
+                        {calculateCombinedScore(Object.values(groupedEntries.edart).flat())} Gesamt
+                      </span>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -358,7 +389,8 @@ export function GameHistoryTable() {
                   const isExpanded = expandedSections[sectionKey] !== false
                   const dateTotalPoints = calculateTotalPoints(entries)
                   const dateTotalLegs = calculateTotalLegs(entries)
-                  
+                  const dateCombinedScore = calculateCombinedScore(entries) // Kombinierte Punktzahl pro Datum
+
                   return (
                     <div key={date} className="border-b border-gray-100 last:border-b-0">
                       <button
@@ -369,7 +401,7 @@ export function GameHistoryTable() {
                           <Calendar className="h-4 w-4 text-blue-600" />
                           <span className="font-semibold text-gray-900">{formatDate(date)}</span>
                           <Badge className="bg-blue-100 text-blue-800 border-0">
-                            {entries.length} {entries.length === 1 ? 'Eintrag' : 'Einträge'}
+                            {entries.length} {entries.length === 1 ? "Eintrag" : "Einträge"}
                           </Badge>
                         </div>
                         <div className="flex items-center space-x-4">
@@ -381,28 +413,42 @@ export function GameHistoryTable() {
                             <Target className="h-3 w-3" />
                             <span className="text-sm font-semibold">{dateTotalLegs}</span>
                           </div>
+                          {/* Kombinierte Punktzahl pro Datum */}
+                          <div className="flex items-center space-x-1 text-blue-600">
+                            <Star className="h-3 w-3" />
+                            <span className="text-sm font-semibold">{dateCombinedScore}</span>
+                          </div>
                           {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                         </div>
                       </button>
-                      
+
                       {isExpanded && (
                         <div className="px-6 pb-4">
                           <div className="bg-blue-50 rounded-lg overflow-hidden">
                             <table className="w-full">
                               <thead className="bg-blue-100">
+                                {/* Entfernen von Leerzeichen zwischen <tr> und <th> */}
                                 <tr>
                                   <th className="px-4 py-3 text-left text-sm font-semibold text-blue-900">Spieler</th>
                                   <th className="px-4 py-3 text-center text-sm font-semibold text-blue-900">Punkte</th>
                                   <th className="px-4 py-3 text-center text-sm font-semibold text-blue-900">Legs</th>
-                                  <th className="px-4 py-3 text-center text-sm font-semibold text-blue-900">Aktionen</th>
+                                  <th className="px-4 py-3 text-center text-sm font-semibold text-blue-900">Gesamt</th>
+                                  <th className="px-4 py-3 text-center text-sm font-semibold text-blue-900">
+                                    Aktionen
+                                  </th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {entries.map((entry, index) => (
                                   <tr key={entry.id} className={index % 2 === 0 ? "bg-white" : "bg-blue-25"}>
                                     <td className="px-4 py-3 font-medium text-gray-900">{entry.player_name}</td>
-                                    <td className="px-4 py-3 text-center font-semibold text-blue-700">{entry.points}</td>
+                                    <td className="px-4 py-3 text-center font-semibold text-blue-700">
+                                      {entry.points}
+                                    </td>
                                     <td className="px-4 py-3 text-center font-semibold text-blue-700">{entry.legs}</td>
+                                    <td className="px-4 py-3 text-center font-semibold text-blue-700">
+                                      {entry.points + entry.legs}
+                                    </td>
                                     <td className="px-4 py-3 text-center">
                                       <div className="flex justify-center space-x-2">
                                         <Button
@@ -461,6 +507,13 @@ export function GameHistoryTable() {
                         {calculateTotalLegs(Object.values(groupedEntries.steeldart).flat())} Legs
                       </span>
                     </div>
+                    {/* Kombinierte Punktzahl für Steel Dart Gesamt */}
+                    <div className="flex items-center space-x-1 text-green-600">
+                      <Star className="h-4 w-4" />
+                      <span className="font-semibold">
+                        {calculateCombinedScore(Object.values(groupedEntries.steeldart).flat())} Gesamt
+                      </span>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -470,7 +523,8 @@ export function GameHistoryTable() {
                   const isExpanded = expandedSections[sectionKey] !== false
                   const dateTotalPoints = calculateTotalPoints(entries)
                   const dateTotalLegs = calculateTotalLegs(entries)
-                  
+                  const dateCombinedScore = calculateCombinedScore(entries) // Kombinierte Punktzahl pro Datum
+
                   return (
                     <div key={date} className="border-b border-gray-100 last:border-b-0">
                       <button
@@ -481,7 +535,7 @@ export function GameHistoryTable() {
                           <Calendar className="h-4 w-4 text-green-600" />
                           <span className="font-semibold text-gray-900">{formatDate(date)}</span>
                           <Badge className="bg-green-100 text-green-800 border-0">
-                            {entries.length} {entries.length === 1 ? 'Eintrag' : 'Einträge'}
+                            {entries.length} {entries.length === 1 ? "Eintrag" : "Einträge"}
                           </Badge>
                         </div>
                         <div className="flex items-center space-x-4">
@@ -493,28 +547,42 @@ export function GameHistoryTable() {
                             <Users className="h-3 w-3" />
                             <span className="text-sm font-semibold">{dateTotalLegs}</span>
                           </div>
+                          {/* Kombinierte Punktzahl pro Datum */}
+                          <div className="flex items-center space-x-1 text-green-600">
+                            <Star className="h-3 w-3" />
+                            <span className="text-sm font-semibold">{dateCombinedScore}</span>
+                          </div>
                           {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                         </div>
                       </button>
-                      
+
                       {isExpanded && (
                         <div className="px-6 pb-4">
                           <div className="bg-green-50 rounded-lg overflow-hidden">
                             <table className="w-full">
                               <thead className="bg-green-100">
+                                {/* Entfernen von Leerzeichen zwischen <tr> und <th> */}
                                 <tr>
                                   <th className="px-4 py-3 text-left text-sm font-semibold text-green-900">Spieler</th>
                                   <th className="px-4 py-3 text-center text-sm font-semibold text-green-900">Punkte</th>
                                   <th className="px-4 py-3 text-center text-sm font-semibold text-green-900">Legs</th>
-                                  <th className="px-4 py-3 text-center text-sm font-semibold text-green-900">Aktionen</th>
+                                  <th className="px-4 py-3 text-center text-sm font-semibold text-green-900">Gesamt</th>
+                                  <th className="px-4 py-3 text-center text-sm font-semibold text-green-900">
+                                    Aktionen
+                                  </th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {entries.map((entry, index) => (
                                   <tr key={entry.id} className={index % 2 === 0 ? "bg-white" : "bg-green-25"}>
                                     <td className="px-4 py-3 font-medium text-gray-900">{entry.player_name}</td>
-                                    <td className="px-4 py-3 text-center font-semibold text-green-700">{entry.points}</td>
+                                    <td className="px-4 py-3 text-center font-semibold text-green-700">
+                                      {entry.points}
+                                    </td>
                                     <td className="px-4 py-3 text-center font-semibold text-green-700">{entry.legs}</td>
+                                    <td className="px-4 py-3 text-center font-semibold text-green-700">
+                                      {entry.points + entry.legs}
+                                    </td>
                                     <td className="px-4 py-3 text-center">
                                       <div className="flex justify-center space-x-2">
                                         <Button
