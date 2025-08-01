@@ -43,8 +43,7 @@ export function Header({}: HeaderProps) {
               Tabellen
             </Button>
           </Link>
-		  
-		     <Link href="/players" passHref>
+          <Link href="/players" passHref>
             <Button
               variant="outline"
               className="border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600 font-bold py-2 px-3 xl:px-4 rounded-md bg-transparent uppercase transition-colors text-sm"
@@ -52,7 +51,6 @@ export function Header({}: HeaderProps) {
               Players
             </Button>
           </Link>
-		  
           <Link href="/admin" passHref>
             <Button
               variant="outline"
@@ -98,6 +96,14 @@ export function Header({}: HeaderProps) {
               <Link href="/tables" passHref>
                 <Button className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-extrabold py-3 px-4 rounded-lg uppercase text-base justify-start shadow-md">
                   Tabellen
+                </Button>
+              </Link>
+              <Link href="/players" passHref>
+                <Button
+                  variant="outline"
+                  className="w-full border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600 font-bold py-3 px-4 rounded-lg bg-transparent uppercase text-base justify-start"
+                >
+                  Players
                 </Button>
               </Link>
               <Link href="/admin" passHref>
