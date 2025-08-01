@@ -43,6 +43,16 @@ export function Header({}: HeaderProps) {
               Tabellen
             </Button>
           </Link>
+		  
+		     <Link href="/players" passHref>
+            <Button
+              variant="outline"
+              className="border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600 font-bold py-2 px-3 xl:px-4 rounded-md bg-transparent uppercase transition-colors text-sm"
+            >
+              Players
+            </Button>
+          </Link>
+		  
           <Link href="/admin" passHref>
             <Button
               variant="outline"
