@@ -155,60 +155,62 @@ export function TournamentHistorySection({ groupedHistory, loading, error }: Tou
                             className="px-4 pb-4"
                           >
                             <div className="bg-white rounded-md overflow-hidden border border-blue-100">
-                              <table className="w-full text-sm">
-                                <thead className="bg-blue-100">
-                                  <tr>
-                                    <th className="px-3 py-2 text-left font-semibold text-blue-900">Platz</th>
-                                    <th className="px-3 py-2 text-left font-semibold text-blue-900">Spieler</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-blue-900">Punkte</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-blue-900">Legs</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-blue-900">Gesamt</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {tournament.rankedPlayers.map((player, playerIndex) => (
-                                    <tr
-                                      key={player.player_name}
-                                      className={playerIndex % 2 === 0 ? "bg-white" : "bg-blue-25"}
-                                    >
-                                      <td className="px-3 py-2">
-                                        <div className="flex items-center gap-2">
-                                          <div className={getPositionBadge(playerIndex + 1)}>{playerIndex + 1}</div>
-                                          {getPositionIcon(playerIndex + 1)}
-                                        </div>
-                                      </td>
-                                      <td className="px-3 py-2">
-                                        <div className="flex items-center space-x-2">
-                                          {player.profile_picture_url ? (
-                                            <Image
-                                              src={player.profile_picture_url || "/placeholder.svg"}
-                                              alt={`Profilbild von ${player.player_name}`}
-                                              width={24}
-                                              height={24}
-                                              className="rounded-full object-cover"
-                                              unoptimized={true} // Added unoptimized prop
-                                            />
-                                          ) : (
-                                            <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
-                                              {player.player_name.charAt(0).toUpperCase()}
-                                            </div>
-                                          )}
-                                          <span className="font-medium text-gray-900">{player.player_name}</span>
-                                        </div>
-                                      </td>
-                                      <td className="px-3 py-2 text-center text-blue-700 font-semibold">
-                                        {player.points}
-                                      </td>
-                                      <td className="px-3 py-2 text-center text-blue-700 font-semibold">
-                                        {player.legs}
-                                      </td>
-                                      <td className="px-3 py-2 text-center text-blue-900 font-bold">
-                                        {player.combinedScore}
-                                      </td>
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                  <thead className="bg-blue-100">
+                                    <tr>
+                                      <th className="px-3 py-2 text-left font-semibold text-blue-900">Platz</th>
+                                      <th className="px-3 py-2 text-left font-semibold text-blue-900">Spieler</th>
+                                      <th className="px-3 py-2 text-center font-semibold text-blue-900">Punkte</th>
+                                      <th className="px-3 py-2 text-center font-semibold text-blue-900">Legs</th>
+                                      <th className="px-3 py-2 text-center font-semibold text-blue-900">Gesamt</th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                  </thead>
+                                  <tbody>
+                                    {tournament.rankedPlayers.map((player, playerIndex) => (
+                                      <tr
+                                        key={player.player_name}
+                                        className={playerIndex % 2 === 0 ? "bg-white" : "bg-blue-25"}
+                                      >
+                                        <td className="px-3 py-2">
+                                          <div className="flex items-center gap-2">
+                                            <div className={getPositionBadge(playerIndex + 1)}>{playerIndex + 1}</div>
+                                            {getPositionIcon(playerIndex + 1)}
+                                          </div>
+                                        </td>
+                                        <td className="px-3 py-2">
+                                          <div className="flex items-center space-x-2">
+                                            {player.profile_picture_url ? (
+                                              <Image
+                                                src={player.profile_picture_url || "/placeholder.svg"}
+                                                alt={`Profilbild von ${player.player_name}`}
+                                                width={24}
+                                                height={24}
+                                                className="rounded-full object-cover"
+                                                unoptimized={true} // Added unoptimized prop
+                                              />
+                                            ) : (
+                                              <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+                                                {player.player_name.charAt(0).toUpperCase()}
+                                              </div>
+                                            )}
+                                            <span className="font-medium text-gray-900">{player.player_name}</span>
+                                          </div>
+                                        </td>
+                                        <td className="px-3 py-2 text-center text-blue-700 font-semibold">
+                                          {player.points}
+                                        </td>
+                                        <td className="px-3 py-2 text-center text-blue-700 font-semibold">
+                                          {player.legs}
+                                        </td>
+                                        <td className="px-3 py-2 text-center text-blue-900 font-bold">
+                                          {player.combinedScore}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
                             </div>
                           </motion.div>
                         )}
@@ -263,60 +265,62 @@ export function TournamentHistorySection({ groupedHistory, loading, error }: Tou
                             className="px-4 pb-4"
                           >
                             <div className="bg-white rounded-md overflow-hidden border border-green-100">
-                              <table className="w-full text-sm">
-                                <thead className="bg-green-100">
-                                  <tr>
-                                    <th className="px-3 py-2 text-left font-semibold text-green-900">Platz</th>
-                                    <th className="px-3 py-2 text-left font-semibold text-green-900">Spieler</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-green-900">Punkte</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-green-900">Legs</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-green-900">Gesamt</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {tournament.rankedPlayers.map((player, playerIndex) => (
-                                    <tr
-                                      key={player.player_name}
-                                      className={playerIndex % 2 === 0 ? "bg-white" : "bg-green-25"}
-                                    >
-                                      <td className="px-3 py-2">
-                                        <div className="flex items-center gap-2">
-                                          <div className={getPositionBadge(playerIndex + 1)}>{playerIndex + 1}</div>
-                                          {getPositionIcon(playerIndex + 1)}
-                                        </div>
-                                      </td>
-                                      <td className="px-3 py-2">
-                                        <div className="flex items-center space-x-2">
-                                          {player.profile_picture_url ? (
-                                            <Image
-                                              src={player.profile_picture_url || "/placeholder.svg"}
-                                              alt={`Profilbild von ${player.player_name}`}
-                                              width={24}
-                                              height={24}
-                                              className="rounded-full object-cover"
-                                              unoptimized={true} // Added unoptimized prop
-                                            />
-                                          ) : (
-                                            <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
-                                              {player.player_name.charAt(0).toUpperCase()}
-                                            </div>
-                                          )}
-                                          <span className="font-medium text-gray-900">{player.player_name}</span>
-                                        </div>
-                                      </td>
-                                      <td className="px-3 py-2 text-center text-green-700 font-semibold">
-                                        {player.points}
-                                      </td>
-                                      <td className="px-3 py-2 text-center text-green-700 font-semibold">
-                                        {player.legs}
-                                      </td>
-                                      <td className="px-3 py-2 text-center text-green-900 font-bold">
-                                        {player.combinedScore}
-                                      </td>
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                  <thead className="bg-green-100">
+                                    <tr>
+                                      <th className="px-3 py-2 text-left font-semibold text-green-900">Platz</th>
+                                      <th className="px-3 py-2 text-left font-semibold text-green-900">Spieler</th>
+                                      <th className="px-3 py-2 text-center font-semibold text-green-900">Punkte</th>
+                                      <th className="px-3 py-2 text-center font-semibold text-green-900">Legs</th>
+                                      <th className="px-3 py-2 text-center font-semibold text-green-900">Gesamt</th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                  </thead>
+                                  <tbody>
+                                    {tournament.rankedPlayers.map((player, playerIndex) => (
+                                      <tr
+                                        key={player.player_name}
+                                        className={playerIndex % 2 === 0 ? "bg-white" : "bg-green-25"}
+                                      >
+                                        <td className="px-3 py-2">
+                                          <div className="flex items-center gap-2">
+                                            <div className={getPositionBadge(playerIndex + 1)}>{playerIndex + 1}</div>
+                                            {getPositionIcon(playerIndex + 1)}
+                                          </div>
+                                        </td>
+                                        <td className="px-3 py-2">
+                                          <div className="flex items-center space-x-2">
+                                            {player.profile_picture_url ? (
+                                              <Image
+                                                src={player.profile_picture_url || "/placeholder.svg"}
+                                                alt={`Profilbild von ${player.player_name}`}
+                                                width={24}
+                                                height={24}
+                                                className="rounded-full object-cover"
+                                                unoptimized={true} // Added unoptimized prop
+                                              />
+                                            ) : (
+                                              <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+                                                {player.player_name.charAt(0).toUpperCase()}
+                                              </div>
+                                            )}
+                                            <span className="font-medium text-gray-900">{player.player_name}</span>
+                                          </div>
+                                        </td>
+                                        <td className="px-3 py-2 text-center text-green-700 font-semibold">
+                                          {player.points}
+                                        </td>
+                                        <td className="px-3 py-2 text-center text-green-700 font-semibold">
+                                          {player.legs}
+                                        </td>
+                                        <td className="px-3 py-2 text-center text-green-900 font-bold">
+                                          {player.combinedScore}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
                             </div>
                           </motion.div>
                         )}
