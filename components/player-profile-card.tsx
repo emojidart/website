@@ -272,7 +272,7 @@ export function PlayerProfileCard({ player, rank, className }: PlayerProfileCard
                 <div className={`text-base font-bold ${statItemTextColor}`}>{player.totalPoints}</div>
               </div>
               <div className={`${statItemBgClass} rounded-md p-2 border ${statItemBorderClass}`}>
-                <div className={`text-xs ${statItemLabelColor}`}>Legs</div>
+                <div className={`text-xs ${statItemLabelColor}`}>Checks</div>
                 <div className={`text-base font-bold ${statItemTextColor}`}>{player.totalLegs}</div>
               </div>
               <div className={`${statItemBgClass} rounded-md p-2 border ${statItemBorderClass}`}>
@@ -382,7 +382,7 @@ export function PlayerProfileCard({ player, rank, className }: PlayerProfileCard
                 <div className={`text-base font-bold ${statItemTextColor}`}>{player.edartPoints}</div>
               </div>
               <div className={`${statItemBgClass} rounded-md p-2 border ${statItemBorderClass}`}>
-                <div className={`text-xs ${statItemLabelColor}`}>Legs</div>
+                <div className={`text-xs ${statItemLabelColor}`}>Checks</div>
                 <div className={`text-base font-bold ${statItemTextColor}`}>{player.edartLegs}</div>
               </div>
               <div className={`${statItemBgClass} rounded-md p-2 border ${statItemBorderClass}`}>
@@ -406,7 +406,7 @@ export function PlayerProfileCard({ player, rank, className }: PlayerProfileCard
                 <div className={`text-base font-bold ${statItemTextColor}`}>{player.steelPoints}</div>
               </div>
               <div className={`${statItemBgClass} rounded-md p-2 border ${statItemBorderClass}`}>
-                <div className={`text-xs ${statItemLabelColor}`}>Legs</div>
+                <div className={`text-xs ${statItemLabelColor}`}>Checks</div>
                 <div className={`text-base font-bold ${statItemTextColor}`}>{player.steelLegs}</div>
               </div>
               <div className={`${statItemBgClass} rounded-md p-2 border ${statItemBorderClass}`}>
