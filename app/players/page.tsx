@@ -84,7 +84,7 @@ export default function PlayersPage() {
               transition={{ duration: 0.5 }}
               className="text-4xl sm:text-5xl font-extrabold mb-4 drop-shadow-lg"
             >
-              Spielerdatenbank
+              Spielerliste
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: -20 }}
@@ -92,7 +92,7 @@ export default function PlayersPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-lg sm:text-xl font-medium mb-10 opacity-90"
             >
-              Verwalte alle Spieler deines Vereins an einem Ort
+              Finde alle Spieler der Competition 2025 
             </motion.p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
