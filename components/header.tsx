@@ -38,6 +38,11 @@ export function Header({}: HeaderProps) {
           <Link href="/tournament" className="text-sm font-bold hover:text-red-600 transition-colors uppercase">
             TOURNAMENT
           </Link>
+          <Link href="/club" className="text-sm font-bold hover:text-red-600 transition-colors uppercase">
+            {" "}
+            {/* NEU: Link zur Vereinsseite */}
+            Verein
+          </Link>
           <Link href="/tables" passHref>
             <Button className="bg-yellow-600 hover:bg-red-600 text-white font-extrabold py-2 px-3 xl:px-4 rounded-md uppercase transition-colors text-sm">
               Tabellen
@@ -92,6 +97,12 @@ export function Header({}: HeaderProps) {
                 className="flex items-center text-base sm:text-lg font-medium text-gray-800 hover:text-red-600 hover:bg-red-50 rounded-lg px-4 py-3 transition-all duration-200"
               >
                 Tournament
+              </Link>
+              <Link
+                href="/club"
+                className="flex items-center text-base sm:text-lg font-medium text-gray-800 hover:text-red-600 hover:bg-red-50 rounded-lg px-4 py-3 transition-all duration-200"
+              >
+                Verein
               </Link>
               <Link href="/tables" passHref>
                 <Button className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-extrabold py-3 px-4 rounded-lg uppercase text-base justify-start shadow-md">

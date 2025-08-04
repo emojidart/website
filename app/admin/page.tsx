@@ -11,10 +11,11 @@ import { PlayerPhotoManagement } from "@/components/player-photo-management"
 import { PlayerRegistration } from "@/components/player-registration"
 import { PlayerManagement } from "@/components/player-management"
 import { ResultEntry } from "@/components/result-entry"
+import { ClubPlayerTeamManagement } from "@/components/club-player-team-management" // Importiere die umbenannte Komponente
 import { useAuth } from "@/hooks/use-auth"
 import { useDartData } from "@/hooks/use-dart-data"
 import { supabase } from "@/lib/supabase"
-import { LogOut, Shield, User, Eye, History, ImageIcon, UserPlus, Trophy, Settings } from 'lucide-react'
+import { LogOut, Shield, User, Eye, History, ImageIcon, UserPlus, Trophy, Settings, Users } from 'lucide-react'
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage } = useAuth()
@@ -25,7 +26,7 @@ export default function AdminPage() {
   const [isPlayerSelectedViaModal, setIsPlayerSelectedViaModal] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
   const [activeTab, setActiveTab] = useState<
-    "players" | "results" | "registrations" | "history" | "photos" | "management"
+    "players" | "results" | "registrations" | "history" | "photos" | "management" | "club-management"
   >("players")
 
   const handleLogout = async () => {
@@ -91,7 +92,7 @@ export default function AdminPage() {
             </div>
           </div>
         ) : (
-          <>
+          <div>
             {!session ? (
               <div className="max-w-md mx-auto">
                 <AuthSection
@@ -141,7 +142,9 @@ export default function AdminPage() {
                 {session && (
                   <div className="px-0 sm:px-0">
                     <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-2 shadow-lg overflow-x-auto">
-                      <div className="flex space-x-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:space-x-0 sm:gap-2">
+                      <div className="flex space-x-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-3 lg:grid-cols-7 sm:space-x-0 sm:gap-2">
+                        {" "}
+                        {/* NEU: grid-cols-7 für neue Tab */}
                         <Button
                           onClick={() => setActiveTab("players")}
                           className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
@@ -177,6 +180,18 @@ export default function AdminPage() {
                           <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                           <span className="hidden sm:inline">Spielerverwaltung</span>
                           <span className="sm:hidden">Verwalten</span>
+                        </Button>
+                        <Button
+                          onClick={() => setActiveTab("club-management")}
+                          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                            activeTab === "club-management"
+                              ? "bg-orange-600 text-white shadow-md"
+                              : "bg-transparent text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Vereinsverwaltung</span>
+                          <span className="sm:hidden">Verein</span>
                         </Button>
                         <Button
                           onClick={() => setActiveTab("registrations")}
@@ -247,6 +262,10 @@ export default function AdminPage() {
                       <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />
                     )}
 
+                    {activeTab === "club-management" && (
+                      <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />
+                    )}
+
                     {activeTab === "registrations" && <TournamentRegistrations />}
 
                     {activeTab === "history" && <GameHistoryTable />}
@@ -256,7 +275,7 @@ export default function AdminPage() {
                 )}
               </div>
             )}
-          </>
+          </div>
         )}
 
         <PlayerListModal
