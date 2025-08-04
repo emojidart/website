@@ -59,6 +59,7 @@ export function PlayerApplicationForm({ onApplicationSuccess }: PlayerApplicatio
           email: email,
           phone: phone || null,
           notes: notes || null,
+          is_read: false, // Hinzugefügt: Explizit auf false setzen
         },
       ])
 
@@ -89,7 +90,7 @@ export function PlayerApplicationForm({ onApplicationSuccess }: PlayerApplicatio
   }
 
   return (
-    <DialogContent className="sm:max-w-[500px] p-6 bg-white rounded-lg shadow-xl">
+    <DialogContent className="sm:max-w-[500px] p-6 bg-white rounded-lg shadow-xl max-h-[90vh] overflow-y-auto flex flex-col [&>div:first-child]:pb-4 [&>div:last-child]:pt-4">
       <DialogHeader className="pb-4 border-b border-gray-200">
         <DialogTitle className="text-2xl font-bold text-gray-900 text-center">Spielerbewerbung</DialogTitle>
         <DialogDescription className="text-center text-gray-600">
