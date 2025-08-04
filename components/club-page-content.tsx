@@ -16,19 +16,25 @@ import {
   Crown,
   ShieldCheck,
   X,
+  Search,
+  ClipboardList,
+  Clock,
+  FileText,
+  Mail,
+  CheckCircle,
 } from "lucide-react"
-import { CardTitle } from "@/components/ui/card"
+import { CardTitle, CardDescription } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button" // Button für "Zurück"
-import Image from "next/image" // Importiere Next.js Image Komponente
-import { supabase } from "@/lib/supabase" // Importiere Supabase
+import { useState, useEffect, useCallback } from "react"
+import { Button } from "@/components/ui/button"
+import Image from "next/image"
+import { supabase } from "@/lib/supabase"
 import { format } from "date-fns"
-import { de } from "date-fns/locale" // Für deutsche Datumsformatierung
-import { Loader2, AlertCircle } from "lucide-react" // Neue Icons
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table" // Table Komponenten
-import { cn } from "@/lib/utils" // Für bedingte Klassen
-import { Badge } from "@/components/ui/badge" // Importiere Badge Komponente
+import { de } from "date-fns/locale"
+import { Loader2, AlertCircle } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -36,7 +42,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog" // Import Dialog components
+} from "@/components/ui/dialog"
+import { PlayerApplicationForm } from "@/components/player-application-form"
 
 // Typdefinitionen für die Daten
 interface ClubPlayer {
@@ -46,14 +53,14 @@ interface ClubPlayer {
   throwing_hand: string | null
   age: number | null
   origin: string | null
-  role?: string | null // NEW: Optional role for players in a team context
+  role?: string | null
 }
 
 interface Team {
   id: string
   name: string
-  logo_url: string | null // NEU: Logo URL für Teams
-  players: ClubPlayer[] // TeamsWithPlayers hat bereits die Spieler zugeordnet
+  logo_url: string | null
+  players: ClubPlayer[]
 }
 
 interface ClubPageContentProps {
@@ -64,14 +71,23 @@ interface ClubPageContentProps {
 interface PlayerMovement {
   id: string
   player_id: string
-  team_id: string // This is the to_team_id
-  from_team_id: string | null // New: The team the player came from
+  team_id: string
+  from_team_id: string | null
   movement_type: "new_addition" | "transfer"
-  movement_date: string // ISO string from Supabase
+  movement_date: string
   user_id: string
   club_players: { name: string } | null
   teams: { id: string; name: string } | null
   from_teams: { id: string; name: string } | null
+}
+
+interface RecruitmentNeed {
+  id: string
+  team_name: string
+  league: string
+  start_date: string
+  description: string | null
+  created_at: string
 }
 
 // Framer Motion Varianten
@@ -116,14 +132,21 @@ const getTranslatedRole = (role: string | null | undefined) => {
 
 export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageContentProps) {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
-  const [selectedPlayer, setSelectedPlayer] = useState<ClubPlayer | null>(null) // New state for selected player
+  const [selectedPlayer, setSelectedPlayer] = useState<ClubPlayer | null>(null)
   const [movements, setMovements] = useState<PlayerMovement[]>([])
   const [movementsLoading, setMovementsLoading] = useState(true)
   const [movementsError, setMovementsError] = useState<string | null>(null)
   const [activeMovementTab, setActiveMovementTab] = useState<"all" | "new_addition" | "transfer">("all")
 
+  const [recruitmentNeeds, setRecruitmentNeeds] = useState<RecruitmentNeed[]>([])
+  const [recruitmentLoading, setRecruitmentLoading] = useState(true)
+  const [recruitmentError, setRecruitmentError] = useState<string | null>(null)
+  const [isApplicationFormOpen, setIsApplicationFormOpen] = useState(false)
+  const [showApplicationSuccessModal, setShowApplicationSuccessModal] = useState(false) // NEU: State für Erfolgs-Modal
+
   useEffect(() => {
     fetchPlayerMovements()
+    fetchRecruitmentNeeds()
   }, [])
 
   const fetchPlayerMovements = async () => {
@@ -152,6 +175,23 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
     setMovementsLoading(false)
   }
 
+  const fetchRecruitmentNeeds = useCallback(async () => {
+    setRecruitmentLoading(true)
+    setRecruitmentError(null)
+    const { data, error: fetchError } = await supabase
+      .from("player_recruitment_needs")
+      .select("*")
+      .order("created_at", { ascending: false })
+
+    if (fetchError) {
+      console.error("Error fetching recruitment needs:", fetchError)
+      setRecruitmentError("Fehler beim Laden der Rekrutierungsbedürfnisse.")
+    } else {
+      setRecruitmentNeeds(data as RecruitmentNeed[])
+    }
+    setRecruitmentLoading(false)
+  }, [])
+
   const handleTeamClick = (team: Team) => {
     setSelectedTeam(team)
   }
@@ -166,6 +206,11 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
     }
     return movement.movement_type === activeMovementTab
   })
+
+  const handleApplicationSuccess = () => {
+    setIsApplicationFormOpen(false) // Close the application form dialog
+    setShowApplicationSuccessModal(true) // Open the success confirmation dialog
+  }
 
   return (
     <motion.div
@@ -226,7 +271,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
               <Target className="h-8 w-8 text-yellow-600" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Leidenschaft für Darts</h3>
-            <p className className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600">
               Egal ob Anfänger oder Profi, teile deine Begeisterung für den Dartsport und verbessere dein Spiel.
             </p>
           </motion.div>
@@ -258,6 +303,116 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
           </motion.div>
         </div>
       </motion.section>
+
+      {/* NEU: Aktuelle Rekrutierungsbedürfnisse Section - Modern & Prominent */}
+      <motion.section variants={itemVariants} className="mb-16">
+        <div className="bg-gradient-to-br from-blue-700 to-blue-900 text-white rounded-2xl shadow-xl p-8 md:p-12 text-center relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 bg-[url('/placeholder.svg?height=500&width=1000')] bg-cover bg-center" />
+          <div className="relative z-10">
+            <h2 className="text-3xl md:text-5xl font-extrabold uppercase mb-4 leading-tight">
+              <span className="block text-yellow-400">WIR SUCHEN</span>
+              <span className="block">VERSTÄRKUNG!</span>
+            </h2>
+            <p className="text-lg md:text-xl font-medium mb-8 max-w-3xl mx-auto">
+              Egal ob erfahrener Spieler oder motivierter Neuling – wenn du unsere Leidenschaft für Darts teilst, bist
+              du bei uns genau richtig!
+            </p>
+
+            {recruitmentLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-yellow-400" />
+                <p className="ml-3 text-white">Lade offene Positionen...</p>
+              </div>
+            ) : recruitmentError ? (
+              <div className="flex items-center justify-center py-8 text-red-300">
+                <AlertCircle className="h-8 w-8 mr-2" />
+                <p>{recruitmentError}</p>
+              </div>
+            ) : recruitmentNeeds.length === 0 ? (
+              <div className="text-center py-8 text-gray-200">
+                <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-medium">Aktuell suchen wir keine neuen Spieler.</p>
+                <p className="text-sm mt-2">Schauen Sie später wieder vorbei oder bewerben Sie sich initiativ!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+                {recruitmentNeeds.map((need) => (
+                  <motion.div
+                    key={need.id}
+                    variants={cardVariants}
+                    className="bg-white/10 backdrop-blur-sm rounded-xl border border-blue-600 p-6 shadow-lg flex flex-col justify-between text-left hover:bg-white/20 transition-colors duration-200"
+                  >
+                    <div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-yellow-400 rounded-full">
+                          <Search className="h-5 w-5 text-blue-900" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-xl font-bold text-white">{need.team_name}</CardTitle>
+                          <CardDescription className="text-sm text-gray-200">
+                            Gesucht seit: {format(new Date(need.created_at), "dd.MM.yyyy", { locale: de })}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-gray-100 text-sm">
+                        <p className="flex items-center gap-2">
+                          <ClipboardList className="h-4 w-4 text-yellow-400" />
+                          <span className="font-semibold">Liga:</span> {need.league}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-yellow-400" />
+                          <span className="font-semibold">Ab wann:</span>{" "}
+                          {format(new Date(need.start_date), "dd.MM.yyyy", { locale: de })}
+                        </p>
+                        {need.description && (
+                          <p className="flex items-start gap-2">
+                            <FileText className="h-4 w-4 text-yellow-400 flex-shrink-0 mt-1" />
+                            <span className="font-semibold">Beschreibung:</span> {need.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            <Dialog open={isApplicationFormOpen} onOpenChange={setIsApplicationFormOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-extrabold py-3 px-8 rounded-full text-lg uppercase shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                  <Mail className="h-5 w-5 mr-3" />
+                  Jetzt bewerben!
+                </Button>
+              </DialogTrigger>
+              <PlayerApplicationForm onApplicationSuccess={handleApplicationSuccess} />
+            </Dialog>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* NEU: Success Confirmation Dialog */}
+      <Dialog open={showApplicationSuccessModal} onOpenChange={setShowApplicationSuccessModal}>
+        <DialogContent className="sm:max-w-[425px] p-6 text-center bg-white rounded-lg shadow-xl">
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            className="flex flex-col items-center justify-center"
+          >
+            <CheckCircle className="h-20 w-20 text-green-500 mb-6" />
+            <DialogTitle className="text-3xl font-bold text-gray-900 mb-3">Bewerbung erfolgreich!</DialogTitle>
+            <DialogDescription className="text-lg text-gray-600 mb-8">
+              Vielen Dank für Ihre Bewerbung. Wir werden uns in Kürze bei Ihnen melden!
+            </DialogDescription>
+            <Button
+              onClick={() => setShowApplicationSuccessModal(false)}
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg"
+            >
+              Schließen
+            </Button>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
 
       {/* Teams Section - Revamped with Team Spotlight */}
       <motion.section variants={itemVariants} className="mb-16">
@@ -367,6 +522,9 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                                 src={
                                   selectedPlayer.photo_url ||
                                   "/placeholder.svg?height=128&width=128&query=darts-player-silhouette-large" ||
+                                  "/placeholder.svg" ||
+                                  "/placeholder.svg" ||
+                                  "/placeholder.svg" ||
                                   "/placeholder.svg"
                                 }
                               />
@@ -460,119 +618,6 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.section>
-
-      {/* Alle Spieler Section */}
-      <motion.section variants={itemVariants} className="mb-16">
-        <h2 className="text-3xl md:text-4xl font-extrabold uppercase text-center mb-10 text-gray-900">Alle Spieler</h2>
-        {clubPlayers.length === 0 ? (
-          <p className="text-center text-lg text-gray-600">Aktuell sind keine Spieler registriert.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {clubPlayers.map((player, index) => (
-              <Dialog key={player.id} onOpenChange={(open) => !open && setSelectedPlayer(null)}>
-                <DialogTrigger asChild>
-                  <motion.div
-                    variants={cardVariants}
-                    className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 text-center flex flex-col items-center cursor-pointer hover:shadow-2xl transition-shadow duration-300"
-                    onClick={() => setSelectedPlayer(player)}
-                  >
-                    <Avatar className="h-24 w-24 mb-4 border-4 border-orange-500 shadow-md">
-                      <AvatarImage
-                        src={player.photo_url || "/placeholder.svg?height=96&width=96&query=darts-player-silhouette"}
-                      />
-                      <AvatarFallback className="text-4xl font-bold bg-orange-100 text-orange-700">
-                        {player.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{player.name}</h3>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      {player.throwing_hand && (
-                        <p className="flex items-center justify-center gap-1">
-                          <Hand className="h-4 w-4 text-orange-500" />
-                          <span>Wurfhand: {player.throwing_hand}</span>
-                        </p>
-                      )}
-                      {player.age && (
-                        <p className="flex items-center justify-center gap-1">
-                          <Calendar className="h-4 w-4 text-orange-500" />
-                          <span>Alter: {player.age}</span>
-                        </p>
-                      )}
-                      {player.origin && (
-                        <p className="flex items-center justify-center gap-1">
-                          <MapPin className="h-4 w-4 text-orange-500" />
-                          <span>Herkunft: {player.origin}</span>
-                        </p>
-                      )}
-                    </div>
-                  </motion.div>
-                </DialogTrigger>
-                {selectedPlayer && (
-                  <DialogContent className="sm:max-w-[425px] p-6 bg-white rounded-lg shadow-xl [&>button]:hidden">
-                    <DialogHeader className="relative pb-4 border-b border-gray-200">
-                      <DialogTitle className="text-2xl font-bold text-gray-900 text-center">
-                        {selectedPlayer.name}
-                      </DialogTitle>
-                      <DialogDescription className="text-center text-gray-600">Details zum Spieler</DialogDescription>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 text-gray-500 hover:bg-gray-100"
-                        onClick={() => setSelectedPlayer(null)}
-                      >
-                        <X className="h-5 w-5" />
-                        <span className="sr-only">Schließen</span>
-                      </Button>
-                    </DialogHeader>
-                    <div className="flex flex-col items-center py-6">
-                      <Avatar className="h-32 w-32 mb-6 border-4 border-orange-500 shadow-lg">
-                        <AvatarImage
-                          src={
-                            selectedPlayer.photo_url ||
-                            "/placeholder.svg?height=128&width=128&query=darts-player-silhouette-large" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg"
-                          }
-                        />
-                        <AvatarFallback className="text-5xl font-bold bg-orange-100 text-orange-700">
-                          {selectedPlayer.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="grid gap-3 text-center text-gray-700">
-                        {selectedPlayer.role && (
-                          <p className="text-lg font-semibold flex items-center justify-center gap-2">
-                            {selectedPlayer.role === "Captain" && <Crown className="h-5 w-5 text-yellow-600" />}
-                            {selectedPlayer.role === "Co-Captain" && <ShieldCheck className="h-5 w-5 text-blue-600" />}
-                            {getTranslatedRole(selectedPlayer.role)}
-                          </p>
-                        )}
-                        {selectedPlayer.throwing_hand && (
-                          <p className="flex items-center justify-center gap-2">
-                            <Hand className="h-5 w-5 text-orange-500" />
-                            <span>Wurfhand: {selectedPlayer.throwing_hand}</span>
-                          </p>
-                        )}
-                        {selectedPlayer.age && (
-                          <p className="flex items-center justify-center gap-2">
-                            <Calendar className="h-5 w-5 text-orange-500" />
-                            <span>Alter: {selectedPlayer.age}</span>
-                          </p>
-                        )}
-                        {selectedPlayer.origin && (
-                          <p className="flex items-center justify-center gap-2">
-                            <MapPin className="h-5 w-5 text-orange-500" />
-                            <span>Herkunft: {selectedPlayer.origin}</span>
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </DialogContent>
-                )}
-              </Dialog>
-            ))}
-          </div>
-        )}
       </motion.section>
 
       {/* NEU: Player Movements Section mit Tabs */}
