@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Header } from "@/components/header"
 import { AuthSection } from "@/components/auth-section"
 import { PlayerListModal } from "@/components/player-list-modal"
@@ -11,11 +11,30 @@ import { PlayerPhotoManagement } from "@/components/player-photo-management"
 import { PlayerRegistration } from "@/components/player-registration"
 import { PlayerManagement } from "@/components/player-management"
 import { ResultEntry } from "@/components/result-entry"
-import { ClubPlayerTeamManagement } from "@/components/club-player-team-management" // Importiere die umbenannte Komponente
+import { ClubPlayerTeamManagement } from "@/components/club-player-team-management"
+import { PlayerRecruitmentForm } from "@/components/player-recruitment-form"
+import { PlayerRecruitmentList } from "@/components/player-recruitment-list"
+import { PlayerApplicationsList } from "@/components/player-applications-list"
 import { useAuth } from "@/hooks/use-auth"
 import { useDartData } from "@/hooks/use-dart-data"
 import { supabase } from "@/lib/supabase"
-import { LogOut, Shield, User, Eye, History, ImageIcon, UserPlus, Trophy, Settings, Users } from 'lucide-react'
+import {
+  LogOut,
+  Shield,
+  User,
+  Eye,
+  History,
+  ImageIcon,
+  UserPlus,
+  Trophy,
+  Settings,
+  Users,
+  List,
+  PlusCircle,
+  Mail,
+} from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import type { RealtimeChannel } from "@supabase/supabase-js" // NEU: Import für RealtimeChannel
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage } = useAuth()
@@ -26,8 +45,68 @@ export default function AdminPage() {
   const [isPlayerSelectedViaModal, setIsPlayerSelectedViaModal] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
   const [activeTab, setActiveTab] = useState<
-    "players" | "results" | "registrations" | "history" | "photos" | "management" | "club-management"
-  >("players")
+    | "players"
+    | "results"
+    | "management"
+    | "club-management"
+    | "recruitment-form"
+    | "recruitment-list"
+    | "applications"
+    | "registrations"
+    | "history"
+    | "photos"
+  >("recruitment-list")
+  const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
+
+  // Funktion zum Abrufen der ungelesenen Bewerbungen
+  const fetchUnreadApplicationsCount = useCallback(async () => {
+    console.log("DEBUG: fetchUnreadApplicationsCount called. Current session:", session ? "Active" : "Null")
+    if (!session) {
+      setUnreadApplicationsCount(0)
+      console.log("DEBUG: No session, unread count set to 0.")
+      return
+    }
+    const { count, error } = await supabase
+      .from("player_applications")
+      .select("*", { count: "exact", head: true })
+      .eq("is_read", false)
+
+    if (error) {
+      console.error("DEBUG: Error fetching unread applications count:", error)
+      setUnreadApplicationsCount(0)
+    } else {
+      console.log("DEBUG: Fetched unread applications count:", count)
+      setUnreadApplicationsCount(count || 0)
+    }
+  }, [session])
+
+  // Effekt für das initiale Laden und das Realtime-Abonnement
+  useEffect(() => {
+    console.log("DEBUG: AdminPage useEffect triggered.")
+    fetchUnreadApplicationsCount() // Initial fetch
+
+    let channel: RealtimeChannel | null = null
+
+    if (session) {
+      console.log("DEBUG: Subscribing to Realtime channel for player_applications.")
+      channel = supabase
+        .channel("player_applications_changes") // Ein eindeutiger Kanalname
+        .on("postgres_changes", { event: "*", schema: "public", table: "player_applications" }, (payload) => {
+          console.log("DEBUG: Realtime change detected:", payload)
+          // Bei jeder Änderung (INSERT, UPDATE, DELETE) die Anzahl neu abrufen
+          fetchUnreadApplicationsCount()
+        })
+        .subscribe()
+    }
+
+    // Cleanup-Funktion für das Abonnement
+    return () => {
+      if (channel) {
+        console.log("DEBUG: Unsubscribing from Realtime channel.")
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [fetchUnreadApplicationsCount, session]) // Abhängigkeiten: fetchUnreadApplicationsCount und session
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -44,12 +123,20 @@ export default function AdminPage() {
   }
 
   const handleLoginSuccess = () => {
+    console.log("DEBUG: handleLoginSuccess called.")
     fetchAndRenderAllTables()
     setAuthMessage("Erfolgreich angemeldet!")
+    fetchUnreadApplicationsCount() // Ungelesene Zählung nach erfolgreichem Login aktualisieren
   }
 
   const handleDataSaved = () => {
+    console.log("DEBUG: handleDataSaved called.")
     fetchAndRenderAllTables()
+    // If data is saved in recruitment form, switch to list view
+    if (activeTab === "recruitment-form") {
+      setActiveTab("recruitment-list")
+    }
+    // fetchUnreadApplicationsCount() // Realtime übernimmt dies jetzt, kann aber als Fallback bleiben, wenn nötig
   }
 
   const handleOpenPlayerList = () => {
@@ -138,13 +225,11 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Tab Navigation */}
+                {/* Tab Navigation - Verbessertes Layout */}
                 {session && (
                   <div className="px-0 sm:px-0">
                     <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-2 shadow-lg overflow-x-auto">
-                      <div className="flex space-x-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-3 lg:grid-cols-7 sm:space-x-0 sm:gap-2">
-                        {" "}
-                        {/* NEU: grid-cols-7 für neue Tab */}
+                      <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                         <Button
                           onClick={() => setActiveTab("players")}
                           className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
@@ -192,6 +277,48 @@ export default function AdminPage() {
                           <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                           <span className="hidden sm:inline">Vereinsverwaltung</span>
                           <span className="sm:hidden">Verein</span>
+                        </Button>
+                        <Button
+                          onClick={() => setActiveTab("recruitment-form")}
+                          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                            activeTab === "recruitment-form"
+                              ? "bg-blue-600 text-white shadow-md"
+                              : "bg-transparent text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Spielergesuche eingeben</span>
+                          <span className="sm:hidden">Eingeben</span>
+                        </Button>
+                        <Button
+                          onClick={() => setActiveTab("recruitment-list")}
+                          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                            activeTab === "recruitment-list"
+                              ? "bg-indigo-600 text-white shadow-md"
+                              : "bg-transparent text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          <List className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Spielergesuche anzeigen</span>
+                          <span className="sm:hidden">Anzeigen</span>
+                        </Button>
+                        {/* Spielerbewerbungen Tab */}
+                        <Button
+                          onClick={() => setActiveTab("applications")}
+                          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 relative ${
+                            activeTab === "applications"
+                              ? "bg-pink-600 text-white shadow-md"
+                              : "bg-transparent text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Spielerbewerbungen</span>
+                          <span className="sm:hidden">Bewerb.</span>
+                          {unreadApplicationsCount > 0 && (
+                            <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs bg-red-500 text-white rounded-full">
+                              {unreadApplicationsCount}
+                            </Badge>
+                          )}
                         </Button>
                         <Button
                           onClick={() => setActiveTab("registrations")}
@@ -264,6 +391,16 @@ export default function AdminPage() {
 
                     {activeTab === "club-management" && (
                       <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />
+                    )}
+
+                    {activeTab === "recruitment-form" && (
+                      <PlayerRecruitmentForm user={user} onDataSaved={handleDataSaved} />
+                    )}
+
+                    {activeTab === "recruitment-list" && <PlayerRecruitmentList onDataSaved={handleDataSaved} />}
+
+                    {activeTab === "applications" && (
+                      <PlayerApplicationsList onDataChanged={fetchUnreadApplicationsCount} />
                     )}
 
                     {activeTab === "registrations" && <TournamentRegistrations />}
