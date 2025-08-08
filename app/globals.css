@@ -10,68 +10,76 @@
 
 @layer base {
   :root {
-    /* Helles Brutalist Theme als Standard */
-    --background: 240 10% 96%; /* Sehr heller Hintergrund */
-    --foreground: 240 10% 4%; /* Sehr dunkler Text */
-    --card: 240 10% 92%; /* Helle Karten */
-    --card-foreground: 240 10% 4%;
-    --popover: 240 10% 92%;
-    --popover-foreground: 240 10% 4%;
-    --primary: 240 10% 4%;
-    --primary-foreground: 240 10% 96%;
-    --secondary: 240 10% 88%;
-    --secondary-foreground: 240 10% 4%;
-    --muted: 240 10% 85%;
-    --muted-foreground: 240 5% 35%;
-    --accent: 240 10% 88%;
-    --accent-foreground: 240 10% 4%;
-    --destructive: 0 80% 50%;
+    --background: 0 0% 100%; /* Pure white */
+    --foreground: 240 10% 3.9%; /* Near black */
+    --card: 0 0% 100%; /* White cards */
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 25 95% 53%; /* Vibrant orange for primary elements */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --secondary: 240 4.8% 95.9%; /* Light gray for secondary elements */
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 5% 25%; /* Updated value */
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 10% 80%;
-    --input: 240 10% 88%;
-    --ring: 240 10% 20%;
-
-    /* Brutalist Light Theme Variablen */
-    --brutal-bg: 240 10% 96%; /* Sehr heller Haupthintergrund */
-    --brutal-text: 240 10% 4%; /* Sehr dunkler Text */
-    --brutal-accent-red: 0 80% 50%; /* Kräftiges Rot */
-    --brutal-accent-gold: 40 85% 45%; /* Kräftiges Gold */
-    --brutal-card-bg: 240 10% 92%; /* Helle Karten */
-    --brutal-border: 240 10% 80%; /* Helle Rahmen */
-    --brutal-text-muted: 240 5% 35%; /* Gedämpfter Text */
-    --brutal-hover: 240 10% 88%; /* Hover-Zustand */
+    --border: 240 5.9% 90%; /* Light gray border */
+    --input: 240 5.9% 90%;
+    --ring: 25 95% 53%; /* Orange ring */
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
   }
 
-  .dark {
-    --background: 240 10% 4%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 4%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 4%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+  /* Die gesamte .dark Definition wurde entfernt, um sicherzustellen, dass immer der helle Modus verwendet wird. */
+}
 
-    --brutal-bg: 240 10% 4%;
-    --brutal-text: 0 0% 98%;
-    --brutal-accent-red: 0 80% 50%;
-    --brutal-accent-gold: 40 90% 60%;
-    --brutal-card-bg: 240 3.7% 15.9%;
-    --brutal-border: 240 3.7% 15.9%;
-    --brutal-text-muted: 240 5% 64.9%;
-    --brutal-hover: 240 3.7% 15.9%;
-  }
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 @layer base {
@@ -80,8 +88,27 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-color: hsl(var(--brutal-bg));
-    color: hsl(var(--brutal-text));
+    /* Removed brutalist overrides */
+  }
+
+  /* Global placeholder styling */
+  input::placeholder,
+  textarea::placeholder {
+    color: hsl(var(--muted-foreground)); /* Nutze die definierte muted-foreground */
+  }
+
+  /* Override browser autofill background */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  textarea:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px hsl(var(--background)) inset !important;
+    -webkit-text-fill-color: hsl(var(--foreground)) !important; /* Ensure text color is readable */
+    background-color: hsl(var(--background)) !important; /* Fallback for non-webkit browsers */
   }
 
   /* Mobile-First Typography */
@@ -115,23 +142,23 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: hsl(var(--brutal-card-bg));
+  background: hsl(var(--card)); /* Use standard card background */
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--brutal-accent-red));
+  background-color: hsl(var(--primary)); /* Use standard primary color */
   border-radius: 10px;
-  border: 1px solid hsl(var(--brutal-card-bg)); /* Dünnerer Border */
+  border: 1px solid hsl(var(--card)); /* Dünnerer Border */
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--brutal-accent-gold));
+  background-color: hsl(var(--primary)); /* Use standard primary color */
 }
 
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--brutal-accent-red)) hsl(var(--brutal-card-bg));
+  scrollbar-color: hsl(var(--primary)) hsl(var(--card)); /* Use standard primary and card colors */
 }
 
 /* Mobile-optimierte Laufschrift */

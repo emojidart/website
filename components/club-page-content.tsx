@@ -1,28 +1,7 @@
 "use client"
 
-import { motion, AnimatePresence } from "framer-motion" // AnimatePresence für Exit-Animationen
-import {
-  Users,
-  Hand,
-  Calendar,
-  MapPin,
-  Heart,
-  Target,
-  TrendingUp,
-  Trophy,
-  DotIcon as Darts,
-  ArrowLeft,
-  ArrowRight,
-  Crown,
-  ShieldCheck,
-  X,
-  Search,
-  ClipboardList,
-  Clock,
-  FileText,
-  Mail,
-  CheckCircle,
-} from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Users, Hand, Calendar, MapPin, Heart, Target, TrendingUp, Trophy, DotIcon as Darts, ArrowLeft, ArrowRight, Crown, ShieldCheck, X, Search, ClipboardList, Clock, FileText, Mail, CheckCircle } from 'lucide-react'
 import { CardTitle, CardDescription } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState, useEffect, useCallback } from "react"
@@ -31,7 +10,7 @@ import Image from "next/image"
 import { supabase } from "@/lib/supabase"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -142,7 +121,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
   const [recruitmentLoading, setRecruitmentLoading] = useState(true)
   const [recruitmentError, setRecruitmentError] = useState<string | null>(null)
   const [isApplicationFormOpen, setIsApplicationFormOpen] = useState(false)
-  const [showApplicationSuccessModal, setShowApplicationSuccessModal] = useState(false) // NEU: State für Erfolgs-Modal
+  const [showApplicationSuccessModal, setShowApplicationSuccessModal] = useState(false)
 
   useEffect(() => {
     fetchPlayerMovements()
@@ -208,8 +187,8 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
   })
 
   const handleApplicationSuccess = () => {
-    setIsApplicationFormOpen(false) // Close the application form dialog
-    setShowApplicationSuccessModal(true) // Open the success confirmation dialog
+    setIsApplicationFormOpen(false)
+    setShowApplicationSuccessModal(true)
   }
 
   return (
@@ -307,7 +286,6 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
       {/* NEU: Aktuelle Rekrutierungsbedürfnisse Section - Modern & Prominent */}
       <motion.section variants={itemVariants} className="mb-16">
         <div className="bg-gradient-to-br from-blue-700 to-blue-900 text-white rounded-2xl shadow-xl p-8 md:p-12 text-center relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 bg-[url('/placeholder.svg?height=500&width=1000')] bg-cover bg-center" />
           <div className="relative z-10">
             <h2 className="text-3xl md:text-5xl font-extrabold uppercase mb-4 leading-tight">
               <span className="block text-yellow-400">WIR SUCHEN</span>
@@ -328,53 +306,67 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                 <AlertCircle className="h-8 w-8 mr-2" />
                 <p>{recruitmentError}</p>
               </div>
-            ) : recruitmentNeeds.length === 0 ? (
-              <div className="text-center py-8 text-gray-200">
-                <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium">Aktuell suchen wir keine neuen Spieler.</p>
-                <p className="text-sm mt-2">Schauen Sie später wieder vorbei oder bewerben Sie sich initiativ!</p>
-              </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-                {recruitmentNeeds.map((need) => (
-                  <motion.div
-                    key={need.id}
-                    variants={cardVariants}
-                    className="bg-white/10 backdrop-blur-sm rounded-xl border border-blue-600 p-6 shadow-lg flex flex-col justify-between text-left hover:bg-white/20 transition-colors duration-200"
-                  >
-                    <div>
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-yellow-400 rounded-full">
-                          <Search className="h-5 w-5 text-blue-900" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-xl font-bold text-white">{need.team_name}</CardTitle>
-                          <CardDescription className="text-sm text-gray-200">
-                            Gesucht seit: {format(new Date(need.created_at), "dd.MM.yyyy", { locale: de })}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <div className="space-y-2 text-gray-100 text-sm">
-                        <p className="flex items-center gap-2">
-                          <ClipboardList className="h-4 w-4 text-yellow-400" />
-                          <span className="font-semibold">Liga:</span> {need.league}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-yellow-400" />
-                          <span className="font-semibold">Ab wann:</span>{" "}
-                          {format(new Date(need.start_date), "dd.MM.yyyy", { locale: de })}
-                        </p>
-                        {need.description && (
-                          <p className="flex items-start gap-2">
-                            <FileText className="h-4 w-4 text-yellow-400 flex-shrink-0 mt-1" />
-                            <span className="font-semibold">Beschreibung:</span> {need.description}
-                          </p>
-                        )}
-                      </div>
+              <>
+                {recruitmentNeeds.length > 0 ? (
+                  // Wenn es spezifische Rekrutierungsbedürfnisse gibt
+                  <>
+                    <h3 className="text-2xl md:text-3xl font-bold text-yellow-400 mb-6">Aktuelle Team-Bedürfnisse:</h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+                      {recruitmentNeeds.map((need) => (
+                        <motion.div
+                          key={need.id}
+                          variants={cardVariants}
+                          className="bg-white/10 backdrop-blur-sm rounded-xl border border-blue-600 p-6 shadow-lg flex flex-col justify-between text-left hover:bg-white/20 transition-colors duration-200"
+                        >
+                          <div>
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="p-2 bg-yellow-400 rounded-full">
+                                <Search className="h-5 w-5 text-blue-900" />
+                              </div>
+                              <div>
+                                <CardTitle className="text-xl font-bold text-white">{need.team_name}</CardTitle>
+                                <CardDescription className="text-sm text-gray-200">
+                                  Gesucht seit: {format(new Date(need.created_at), "dd.MM.yyyy", { locale: de })}
+                                </CardDescription>
+                              </div>
+                            </div>
+                            <div className="space-y-2 text-gray-100 text-sm">
+                              <p className="flex items-center gap-2">
+                                <ClipboardList className="h-4 w-4 text-yellow-400" />
+                                <span className="font-semibold">Liga:</span> {need.league}
+                              </p>
+                              <p className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-yellow-400" />
+                                <span className="font-semibold">Ab wann:</span>{" "}
+                                {format(new Date(need.start_date), "dd.MM.yyyy", { locale: de })}
+                              </p>
+                              {need.description && (
+                                <p className="flex items-start gap-2">
+                                  <FileText className="h-4 w-4 text-yellow-400 flex-shrink-0 mt-1" />
+                                  <span className="font-semibold">Beschreibung:</span> {need.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
-                  </motion.div>
-                ))}
-              </div>
+                    {/* Allgemeine Nachricht auch hier anzeigen, aber etwas weniger prominent */}
+                    <div className="text-center py-4 text-gray-200 mt-8 border-t border-blue-600 pt-8">
+                      <p className="text-lg font-medium">Wir sind immer auf der Suche nach begeisterten Dartspielern!</p>
+                      <p className="text-sm mt-2">Egal ob Anfänger oder Profi, melde dich bei uns – wir freuen uns auf dich!</p>
+                    </div>
+                  </>
+                ) : (
+                  // Wenn keine spezifischen Rekrutierungsbedürfnisse vorliegen
+                  <div className="text-center py-8 text-gray-200">
+                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <h3 className="text-2xl md:text-3xl font-bold text-yellow-400 mb-3">Wir sind immer auf der Suche nach begeisterten Dartspielern!</h3>
+                    <p className="text-lg font-medium">Egal ob Anfänger oder Profi, melde dich bei uns – wir freuen uns auf dich!</p>
+                  </div>
+                )}
+              </>
             )}
 
             <Dialog open={isApplicationFormOpen} onOpenChange={setIsApplicationFormOpen}>
@@ -521,12 +513,8 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                               <AvatarImage
                                 src={
                                   selectedPlayer.photo_url ||
-                                  "/placeholder.svg?height=128&width=128&query=darts-player-silhouette-large" ||
-                                  "/placeholder.svg" ||
-                                  "/placeholder.svg" ||
-                                  "/placeholder.svg" ||
-                                  "/placeholder.svg"
-                                }
+                                  "/placeholder.svg?height=128&width=128&query=darts-player-silhouette-large"
+                                 || "/placeholder.svg"}
                               />
                               <AvatarFallback className="text-5xl font-bold bg-orange-100 text-orange-700">
                                 {selectedPlayer.name.charAt(0)}
