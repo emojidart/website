@@ -1,8 +1,25 @@
 "use client"
+import { Header } from "@/components/header" // Declare the Header component
 
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useCallback } from "react"
-import { Header } from "@/components/header"
+import { supabase } from "@/lib/supabase"
+import {
+  Database,
+  Users,
+  Shield,
+  Eye,
+  History,
+  ImageIcon,
+  UserPlus,
+  Trophy,
+  Settings,
+  List,
+  PlusCircle,
+  Mail,
+  CalendarCheck,
+} from "lucide-react" // CalendarCheck NEU
+import { useDartData } from "@/hooks/use-dart-data"
 import { AuthSection } from "@/components/auth-section"
 import { PlayerListModal } from "@/components/player-list-modal"
 import { TournamentRegistrations } from "@/components/tournament-registrations"
@@ -18,9 +35,6 @@ import { PlayerApplicationsList } from "@/components/player-applications-list"
 import { UpcomingTournamentsManagement } from "@/components/admin/upcoming-tournaments-management" // NEU
 import { TournamentRegistrationsList } from "@/components/admin/tournament-registrations-list" // NEU
 import { useAuth } from "@/hooks/use-auth"
-import { useDartData } from "@/hooks/use-dart-data"
-import { supabase } from "@/lib/supabase"
-import { LogOut, Shield, User, Eye, History, ImageIcon, UserPlus, Trophy, Settings, Users, List, PlusCircle, Mail, Database, CalendarCheck } from 'lucide-react' // CalendarCheck NEU
 import { Badge } from "@/components/ui/badge"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import Link from "next/link"
@@ -36,10 +50,7 @@ export default function AdminPage() {
 
   // NEU: Zustand für die aktive Hauptkategorie
   const [activeCategory, setActiveCategory] = useState<
-    | "tournament-series"
-    | "recruitment"
-    | "club-admin"
-    | "tournament-admin"
+    "tournament-series" | "recruitment" | "club-admin" | "tournament-admin"
   >("tournament-series") // Standardmäßig "Turnierserie"
 
   // Zustand für den aktiven Unter-Tab
@@ -431,15 +442,43 @@ export default function AdminPage() {
                             <span className="hidden sm:inline">Turnier Anmeldungen</span>
                             <span className="sm:hidden">Anmeldungen</span>
                           </Button>
+                          <Button
+                            asChild
+                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                              activeTab === "kratzer-tournament" // Assuming you might set this as activeTab if clicked
+                                ? "bg-orange-600 text-white shadow-md"
+                                : "bg-transparent text-gray-600 hover:bg-gray-100"
+                            }`}
+                          >
+                            <Link href="/kratzer-tournament">
+                              <Trophy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              <span className="hidden sm:inline">Kratzer-Turnier</span>
+                              <span className="sm:hidden">Kratzer</span>
+                            </Link>
+                          </Button>
                           {/* Bestehende Links, falls sie bleiben sollen */}
-                          <Button asChild>
+                          <Button
+                            asChild
+                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                              activeTab === "tournament-players"
+                                ? "bg-red-600 text-white shadow-md"
+                                : "bg-transparent text-gray-600 hover:bg-gray-100"
+                            }`}
+                          >
                             <Link href="/admin/tournament-players">
                               <Trophy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                               <span className="hidden sm:inline">Turnierspielerdatenbank</span>
                               <span className="sm:hidden">Turnierdaten</span>
                             </Link>
                           </Button>
-                          <Button asChild>
+                          <Button
+                            asChild
+                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                              activeTab === "spieldatenbank"
+                                ? "bg-red-600 text-white shadow-md"
+                                : "bg-transparent text-gray-600 hover:bg-gray-100"
+                            }`}
+                          >
                             <Link href="/spielerdatenbank">
                               <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                               <span className="hidden sm:inline">Spielerdatenbank</span>
