@@ -1,110 +1,107 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select" // Correct Shadcn Select imports
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, AlertCircle, Save, Users, XCircle } from 'lucide-react'
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Loader2, Save, XCircle } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
-// Definieren Sie den Typ für die Spielerdatenbank-Einträge
+// Define the type for a player entry
 export interface SpielerdatenbankEntry {
-  id?: string; // Optional, da es beim Erstellen noch nicht vorhanden ist
-  name: string;
-  verein: string | null;
-  ligastatus: string | null;
-  geschlecht: string | null;
-  created_at?: string;
+  id?: string
+  name: string
+  verein: string | null
+  ligastatus: string | null
+  geschlecht: string | null
+  created_at?: string
 }
 
 interface SpieldatenbankFormProps {
-  initialData?: SpielerdatenbankEntry | null;
-  onSaveSuccess: () => void;
-  onCancelEdit?: () => void;
+  initialData?: SpielerdatenbankEntry | null
+  onSaveSuccess: () => void
+  onCancelEdit?: () => void
 }
 
 export function SpieldatenbankForm({ initialData, onSaveSuccess, onCancelEdit }: SpieldatenbankFormProps) {
-  const [name, setName] = useState(initialData?.name || "")
-  const [verein, setVerein] = useState(initialData?.verein || "")
-  const [ligastatus, setLigastatus] = useState(initialData?.ligastatus || "")
-  const [geschlecht, setGeschlecht] = useState(initialData?.geschlecht || "")
-  const [formMessage, setFormMessage] = useState("")
-  const [formMessageType, setFormMessageType] = useState<"success" | "error" | "info">("info")
+  const [formData, setFormData] = useState<SpielerdatenbankEntry>(
+    initialData || {
+      name: "",
+      verein: null,
+      ligastatus: null,
+      geschlecht: null,
+    },
+  )
   const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
-    if (initialData) {
-      setName(initialData.name)
-      setVerein(initialData.verein || "")
-      setLigastatus(initialData.ligastatus || "")
-      setGeschlecht(initialData.geschlecht || "")
-      setFormMessage("")
-      setFormMessageType("info")
-    } else {
-      setName("")
-      setVerein("")
-      setLigastatus("")
-      setGeschlecht("")
-      setFormMessage("")
-      setFormMessageType("info")
-    }
+    setFormData(
+      initialData || {
+        name: "",
+        verein: null,
+        ligastatus: null,
+        geschlecht: null,
+      },
+    )
+    setMessage(null) // Clear messages when initialData changes
   }, [initialData])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSelectChange = (name: keyof SpielerdatenbankEntry, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value === "ohne_status" ? null : value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setFormMessage("Daten werden gespeichert...")
-    setFormMessageType("info")
-
-    if (!name) {
-      setFormMessage("Bitte geben Sie einen Namen ein.")
-      setFormMessageType("error")
-      setLoading(false)
-      return
-    }
+    setMessage(null)
 
     try {
-      const dataToSave = {
-        name,
-        verein: verein || null,
-        ligastatus: ligastatus || null,
-        geschlecht: geschlecht || null,
-      }
-
-      if (initialData?.id) {
-        // Update existing entry
-        const { error } = await supabase
+      let error = null
+      if (formData.id) {
+        // Update existing player
+        const { error: updateError } = await supabase
           .from("spieldatenbank")
-          .update(dataToSave)
-          .eq("id", initialData.id)
-
-        if (error) {
-          throw error
-        }
-        setFormMessage("Spielerdaten erfolgreich aktualisiert!")
+          .update({
+            name: formData.name,
+            verein: formData.verein,
+            ligastatus: formData.ligastatus,
+            geschlecht: formData.geschlecht,
+          })
+          .eq("id", formData.id)
+        error = updateError
       } else {
-        // Insert new entry
-        const { error } = await supabase.from("spieldatenbank").insert([dataToSave])
-
-        if (error) {
-          throw error
-        }
-        setFormMessage("Spielerdaten erfolgreich hinzugefügt!")
+        // Add new player
+        const { error: insertError } = await supabase.from("spieldatenbank").insert([
+          {
+            name: formData.name,
+            verein: formData.verein,
+            ligastatus: formData.ligastatus,
+            geschlecht: formData.geschlecht,
+          },
+        ])
+        error = insertError
       }
 
-      setFormMessageType("success")
-      onSaveSuccess() // Callback, um die Tabelle zu aktualisieren
-      if (!initialData) { // Nur Formular leeren, wenn es ein neuer Eintrag war
-        setName("")
-        setVerein("")
-        setLigastatus("")
-        setGeschlecht("")
+      if (error) {
+        throw error
       }
-    } catch (error: any) {
-      setFormMessage(`Fehler beim Speichern der Daten: ${error.message}`)
-      setFormMessageType("error")
+
+      setMessage({ type: "success", text: `Spieler erfolgreich ${formData.id ? "aktualisiert" : "hinzugefügt"}!` })
+      setFormData({ name: "", verein: null, ligastatus: null, geschlecht: null }) // Reset form
+      onSaveSuccess() // Notify parent component to refresh data
+    } catch (err: any) {
+      setMessage({ type: "error", text: `Fehler: ${err.message}` })
+      console.error("Error saving player:", err)
     } finally {
       setLoading(false)
     }
@@ -114,144 +111,104 @@ export function SpieldatenbankForm({ initialData, onSaveSuccess, onCancelEdit }:
     <div className="max-w-2xl mx-auto">
       <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
         <CardHeader className="border-b border-gray-100 pb-6">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
-              <Users className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-semibold text-gray-900">
-                {initialData ? "Spielerdaten bearbeiten" : "Neue Spielerdaten eingeben"}
-              </CardTitle>
-              <p className="text-sm text-gray-500 mt-1">
-                {initialData ? "Bestehenden Spieler aktualisieren" : "Fügen Sie neue Spieler zur Datenbank hinzu"}
-              </p>
-            </div>
-          </div>
+          <CardTitle className="text-xl font-semibold text-gray-900">
+            {initialData ? "Spieler bearbeiten" : "Neuen Spieler hinzufügen"}
+          </CardTitle>
+          <CardDescription className="text-sm text-gray-500 mt-1">
+            {initialData
+              ? "Bearbeiten Sie die Details des ausgewählten Spielers."
+              : "Fügen Sie einen neuen Spieler zur Datenbank hinzu."}
+          </CardDescription>
         </CardHeader>
-
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name */}
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-gray-700">
+            <div>
+              <Label htmlFor="name" className="text-gray-700">
                 Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Spielername"
-                className="h-12 border-gray-300 focus:border-red-500 focus:ring-red-500 bg-white text-gray-900 transition-all duration-200"
-                required
-              />
+              </Label>
+              <Input id="name" name="name" value={formData.name} onChange={handleChange} required className="mt-1" />
             </div>
-
-            {/* Verein */}
-            <div className="space-y-2">
-              <label htmlFor="verein" className="text-sm font-medium text-gray-700">
+            <div>
+              <Label htmlFor="verein" className="text-gray-700">
                 Verein
-              </label>
-              <Input
-                id="verein"
-                type="text"
-                value={verein}
-                onChange={(e) => setVerein(e.target.value)}
-                placeholder="Vereinsname"
-                className="h-12 border-gray-300 focus:border-red-500 focus:ring-red-500 bg-white text-gray-900 transition-all duration-200"
-              />
+              </Label>
+              <Input id="verein" name="verein" value={formData.verein || ""} onChange={handleChange} className="mt-1" />
             </div>
-
-            {/* Ligastatus */}
-            <div className="space-y-2">
-              <label htmlFor="ligastatus" className="text-sm font-medium text-gray-700">
+            <div>
+              <Label htmlFor="ligastatus" className="text-gray-700">
                 Ligastatus
-              </label>
-              <Select value={ligastatus} onValueChange={setLigastatus}>
-                <SelectTrigger id="ligastatus" className="h-12 border-gray-300 focus:border-red-500 focus:ring-red-500 bg-white text-gray-900">
-                  <SelectValue placeholder="Ligastatus auswählen" />
+              </Label>
+              <Select
+                name="ligastatus"
+                value={formData.ligastatus || "ohne_status"}
+                onValueChange={(value) => handleSelectChange("ligastatus", value)}
+              >
+                <SelectTrigger className="w-full mt-1">
+                  <SelectValue placeholder="Wählen Sie einen Ligastatus" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NC">NC</SelectItem>
-                  <SelectItem value="C">C</SelectItem>
-                  <SelectItem value="R">R</SelectItem>
-                  <SelectItem value="B">B</SelectItem>
+                  <SelectItem value="ohne_status">Ohne Status</SelectItem>
                   <SelectItem value="A">A</SelectItem>
+                  <SelectItem value="B">B</SelectItem>
+                  <SelectItem value="R">R</SelectItem>
+                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value="NC">NC</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Geschlecht */}
-            <div className="space-y-2">
-              <label htmlFor="geschlecht" className="text-sm font-medium text-gray-700">
+            <div>
+              <Label htmlFor="geschlecht" className="text-gray-700">
                 Geschlecht
-              </label>
-              <Select value={geschlecht} onValueChange={setGeschlecht}>
-                <SelectTrigger id="geschlecht" className="h-12 border-gray-300 focus:border-red-500 focus:ring-red-500 bg-white text-gray-900">
-                  <SelectValue placeholder="Geschlecht auswählen" />
+              </Label>
+              <Select
+                name="geschlecht"
+                value={formData.geschlecht || "ohne_status"}
+                onValueChange={(value) => handleSelectChange("geschlecht", value)}
+              >
+                <SelectTrigger className="w-full mt-1">
+                  <SelectValue placeholder="Wählen Sie ein Geschlecht" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="ohne_status">Ohne Status</SelectItem>
                   <SelectItem value="m">Männlich</SelectItem>
                   <SelectItem value="w">Weiblich</SelectItem>
+                  <SelectItem value="d">Divers</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Submit Button */}
-            <div className="flex gap-4">
-              <Button
-                type="submit"
-                disabled={loading}
-                className="flex-1 h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            {message && (
+              <div
+                className={`p-3 rounded-md text-sm ${
+                  message.type === "success" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                }`}
+                role="alert"
               >
-                {loading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Speichern läuft...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <Save className="h-4 w-4" />
-                    <span>{initialData ? "Änderungen speichern" : "Daten speichern"}</span>
-                  </div>
-                )}
-              </Button>
+                {message.text}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3">
               {initialData && onCancelEdit && (
-                <Button
-                  type="button"
-                  onClick={onCancelEdit}
-                  variant="outline"
-                  className="h-12 px-4 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300 bg-transparent transition-all duration-200"
-                >
+                <Button type="button" variant="outline" onClick={onCancelEdit} disabled={loading}>
                   <XCircle className="h-4 w-4 mr-2" />
                   Abbrechen
                 </Button>
               )}
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Speichern...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Speichern
+                  </>
+                )}
+              </Button>
             </div>
-
-            {/* Status Message */}
-            {formMessage && (
-              <div
-                className={`p-4 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  formMessageType === "error"
-                    ? "bg-red-50 text-red-700 border border-red-100"
-                    : formMessageType === "success"
-                      ? "bg-green-50 text-green-700 border border-green-100"
-                      : "bg-gray-50 text-gray-700 border border-gray-100"
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  {formMessageType === "error" ? (
-                    <AlertCircle className="h-4 w-4" />
-                  ) : formMessageType === "success" ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-                  )}
-                  <span>{formMessage}</span>
-                </div>
-              </div>
-            )}
           </form>
         </CardContent>
       </Card>

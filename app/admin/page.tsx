@@ -410,7 +410,7 @@ export default function AdminPage() {
                             }`}
                           >
                             <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Vereinsverwaltung</span>
+                            <span className="hidden sm:inline">Verwaltung</span>
                             <span className="sm:hidden">Verein</span>
                           </Button>
                         </>

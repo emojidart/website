@@ -3,6 +3,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase" // Import the server-side client creator
 import type { TournamentSettings, KratzerPlayer, Board, SpieldatenbankEntry } from "@/types/tournament"
 import { cookies } from "next/headers" // Import cookies directly in the Server Action
+import { revalidatePath } from "next/cache" // Import revalidatePath
 
 interface ServerActionResponse {
   success: boolean
@@ -76,6 +77,8 @@ export async function registerPlayers(playerIds: string[]): Promise<ServerAction
     }
     console.log("registerPlayers: Spieler erfolgreich in kratzer_tournament_registrations geschrieben.")
 
+    // No revalidatePath here, as this is for registration, not live tournament state
+
     return {
       success: true,
       message: `${playersData.length} Spieler erfolgreich registriert.`,
@@ -139,6 +142,8 @@ export async function clearRegisteredPlayers(): Promise<ServerActionResponse> {
 
     if (error) throw error
 
+    // No revalidatePath here, as this is for registration, not live tournament state
+
     return { success: true, message: "Alle registrierten Spieler gelöscht." }
   } catch (error: any) {
     console.error("Fehler beim Löschen registrierter Spieler:", error)
@@ -161,6 +166,8 @@ export async function updatePlayerPaidStatus(playerId: string, paid: boolean): P
     const { error } = await supabase.from("kratzer_tournament_registrations").update({ paid }).eq("player_id", playerId)
 
     if (error) throw error
+
+    // No revalidatePath here, as this is for registration, not live tournament state
 
     return { success: true, message: "Bezahlstatus aktualisiert." }
   } catch (error: any) {
@@ -218,6 +225,8 @@ export async function createKratzerTournament(
 
     if (playersInsertError) throw playersInsertError
 
+    revalidatePath("/live") // Revalidate the live page after creating a new tournament
+
     return {
       success: true,
       message: "Turnier erfolgreich gestartet!",
@@ -262,6 +271,8 @@ export async function updateKratzerTournamentPlayersData(
       if (result.error) throw result.error
     }
 
+    revalidatePath("/live") // Revalidate the live page after player data changes
+
     return { success: true, message: "Spielerdaten erfolgreich aktualisiert." }
   } catch (error: any) {
     console.error("Fehler beim Aktualisieren der Spielerdaten:", error)
@@ -289,6 +300,8 @@ export async function saveKratzerTournamentRound(
     })
 
     if (error) throw error
+
+    revalidatePath("/live") // Revalidate the live page after a new round is saved
 
     return { success: true, message: "Runde erfolgreich gespeichert." }
   } catch (error: any) {
@@ -330,6 +343,8 @@ export async function updateKratzerTournamentStatus(
     const { error } = await supabase.from("kratzer_tournaments").update(updateData).eq("id", tournamentId)
 
     if (error) throw error
+
+    revalidatePath("/live") // Revalidate the live page after tournament status changes
 
     return {
       success: true,
@@ -477,6 +492,8 @@ export async function addTournamentResult(
     })
 
     if (error) throw error
+
+    revalidatePath("/live") // Revalidate the live page after results are added
 
     return { success: true, message: "Turnierergebnisse erfolgreich gespeichert." }
   } catch (error: any) {

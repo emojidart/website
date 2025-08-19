@@ -28,6 +28,8 @@ import {
   XCircle,
   Crown,
   ShieldCheck,
+  BarChart3,
+  TrendingUp,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -57,6 +59,19 @@ interface TeamMember {
   player_id: string
   player_name: string // For display purposes
   role: string | null // NEW: Player role
+}
+
+interface LigaStatistic {
+  id: string
+  player_id: string
+  player_name: string
+  game_date: string
+  throws_180: number
+  throws_171: number
+  throws_154: number
+  throws_under_26: number
+  semperit_outs: number
+  notes: string | null
 }
 
 export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManagementProps) {
@@ -94,9 +109,129 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   const [currentSelectedPlayerTeam, setCurrentSelectedPlayerTeam] = useState<Team | null>(null)
   const [currentSelectedPlayerRole, setCurrentSelectedPlayerRole] = useState<string | null>(null) // NEW
 
+  const [ligaStats, setLigaStats] = useState<LigaStatistic[]>([])
+  const [statsPlayerId, setStatsPlayerId] = useState<string>("")
+  const [gameDate, setGameDate] = useState<string>(new Date().toISOString().split("T")[0])
+  const [throws180, setThrows180] = useState<number>(0)
+  const [throws171, setThrows171] = useState<number>(0)
+  const [throws154, setThrows154] = useState<number>(0)
+  const [throwsUnder26, setThrowsUnder26] = useState<number>(0)
+  const [semperitOuts, setSemperitOuts] = useState<number>(0)
+  const [statsNotes, setStatsNotes] = useState<string>("")
+  const [statsLoading, setStatsLoading] = useState(false)
+  const [statsMessage, setStatsMessage] = useState("")
+  const [statsMessageType, setStatsMessageType] = useState<"success" | "error" | "info">("info")
+
   const [activeSection, setActiveSection] = useState<
-    "add-player" | "manage-players" | "manage-teams" | "assign-player"
+    "add-player" | "manage-players" | "manage-teams" | "assign-player" | "liga-statistics" | "view-statistics"
   >("add-player")
+
+  useEffect(() => {
+    fetchClubPlayers()
+    fetchTeams()
+    fetchTeamMembers()
+    fetchLigaStatistics()
+  }, [])
+
+  const fetchLigaStatistics = async () => {
+    const { data, error } = await supabase
+      .from("liga_statistics")
+      .select(`
+        id,
+        player_id,
+        game_date,
+        throws_180,
+        throws_171,
+        throws_154,
+        throws_under_26,
+        semperit_outs,
+        notes,
+        club_players(name)
+      `)
+      .order("game_date", { ascending: false })
+
+    if (error) {
+      console.error("Error fetching liga statistics:", error)
+      setStatsMessage("Fehler beim Laden der Ligastatistiken.")
+      setStatsMessageType("error")
+    } else {
+      const statsWithPlayerNames = data?.map((stat: any) => ({
+        id: stat.id,
+        player_id: stat.player_id,
+        player_name: stat.club_players.name,
+        game_date: stat.game_date,
+        throws_180: stat.throws_180,
+        throws_171: stat.throws_171,
+        throws_154: stat.throws_154,
+        throws_under_26: stat.throws_under_26,
+        semperit_outs: stat.semperit_outs,
+        notes: stat.notes,
+      }))
+      setLigaStats(statsWithPlayerNames || [])
+    }
+  }
+
+  const handleSaveLigaStatistics = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setStatsLoading(true)
+    setStatsMessage("Statistiken werden gespeichert...")
+    setStatsMessageType("info")
+
+    if (!user) {
+      setStatsMessage("Fehler: Nicht authentifiziert.")
+      setStatsMessageType("error")
+      setStatsLoading(false)
+      return
+    }
+
+    if (!statsPlayerId) {
+      setStatsMessage("Bitte einen Spieler auswählen.")
+      setStatsMessageType("error")
+      setStatsLoading(false)
+      return
+    }
+
+    try {
+      const { error } = await supabase.from("liga_statistics").insert([
+        {
+          player_id: statsPlayerId,
+          game_date: gameDate,
+          throws_180: throws180,
+          throws_171: throws171,
+          throws_154: throws154,
+          throws_under_26: throwsUnder26,
+          semperit_outs: semperitOuts,
+          notes: statsNotes || null,
+          created_by: user.id,
+        },
+      ])
+
+      if (error) {
+        throw error
+      }
+
+      setStatsMessage("Ligastatistiken erfolgreich gespeichert!")
+      setStatsMessageType("success")
+
+      // Reset form
+      setStatsPlayerId("")
+      setGameDate(new Date().toISOString().split("T")[0])
+      setThrows180(0)
+      setThrows171(0)
+      setThrows154(0)
+      setThrowsUnder26(0)
+      setSemperitOuts(0)
+      setStatsNotes("")
+
+      fetchLigaStatistics()
+      onDataSaved()
+    } catch (error: any) {
+      setStatsMessage(`Fehler beim Speichern: ${error.message}`)
+      setStatsMessageType("error")
+    } finally {
+      setStatsLoading(false)
+    }
+  }
 
   useEffect(() => {
     fetchClubPlayers()
@@ -663,7 +798,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
             <div>
               <CardTitle className="text-xl font-semibold text-gray-900">Verein - Spielerverwaltung</CardTitle>
               <CardDescription className="text-sm text-gray-500 mt-1">
-                Verwalte deine Vereinsspieler und Mannschaften.
+                Verwalte deine Vereinsspieler, Mannschaften und Ligastatistiken.
               </CardDescription>
             </div>
           </div>
@@ -726,6 +861,34 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
               >
                 <UserRoundCog className="h-4 w-4 mr-2" />
                 Spieler zuweisen
+              </Button>
+              <Button
+                onClick={() => setActiveSection("liga-statistics")}
+                variant={activeSection === "liga-statistics" ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "whitespace-nowrap",
+                  activeSection === "liga-statistics"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-50",
+                )}
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Ligastatistiken
+              </Button>
+              <Button
+                onClick={() => setActiveSection("view-statistics")}
+                variant={activeSection === "view-statistics" ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "whitespace-nowrap",
+                  activeSection === "view-statistics"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-50",
+                )}
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Statistiken anzeigen
               </Button>
             </div>
           </div>
@@ -1295,8 +1458,232 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
               </div>
             </div>
           )}
+
+          {activeSection === "liga-statistics" && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-800">Ligastatistiken eingeben</h3>
+              <form onSubmit={handleSaveLigaStatistics} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="statsPlayer">Spieler auswählen</Label>
+                    <Select value={statsPlayerId} onValueChange={setStatsPlayerId}>
+                      <SelectTrigger
+                        id="statsPlayer"
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      >
+                        <SelectValue placeholder="Spieler auswählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clubPlayers.map((player) => (
+                          <SelectItem key={player.id} value={player.id}>
+                            <div className="flex items-center space-x-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage
+                                  src={player.photo_url || "/placeholder.svg?height=24&width=24&query=player-avatar"}
+                                />
+                                <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <span>{player.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gameDate">Spieltag</Label>
+                    <Input
+                      id="gameDate"
+                      type="date"
+                      value={gameDate}
+                      onChange={(e) => setGameDate(e.target.value)}
+                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-md font-semibold text-green-700">Gute Würfe</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="throws180">180er</Label>
+                      <Input
+                        id="throws180"
+                        type="number"
+                        min="0"
+                        value={throws180}
+                        onChange={(e) => setThrows180(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="throws171">171er</Label>
+                      <Input
+                        id="throws171"
+                        type="number"
+                        min="0"
+                        value={throws171}
+                        onChange={(e) => setThrows171(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="throws154">154er</Label>
+                      <Input
+                        id="throws154"
+                        type="number"
+                        min="0"
+                        value={throws154}
+                        onChange={(e) => setThrows154(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-md font-semibold text-red-700">Schlechte Würfe</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="throwsUnder26">Unter 26 Punkte</Label>
+                      <Input
+                        id="throwsUnder26"
+                        type="number"
+                        min="0"
+                        value={throwsUnder26}
+                        onChange={(e) => setThrowsUnder26(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="semperitOuts">Semperit (Ins Out)</Label>
+                      <Input
+                        id="semperitOuts"
+                        type="number"
+                        min="0"
+                        value={semperitOuts}
+                        onChange={(e) => setSemperitOuts(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="statsNotes">Notizen (optional)</Label>
+                  <Input
+                    id="statsNotes"
+                    value={statsNotes}
+                    onChange={(e) => setStatsNotes(e.target.value)}
+                    placeholder="Zusätzliche Notizen zum Spieltag..."
+                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={statsLoading}
+                  className="w-full h-10 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-md"
+                >
+                  {statsLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Wird gespeichert...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <BarChart3 className="h-4 w-4" />
+                      <span>Statistiken speichern</span>
+                    </div>
+                  )}
+                </Button>
+              </form>
+
+              {statsMessage && (
+                <div
+                  className={cn(
+                    "p-3 rounded-lg text-sm font-medium flex items-center space-x-2",
+                    statsMessageType === "error"
+                      ? "bg-red-50 text-red-700 border border-red-100"
+                      : statsMessageType === "success"
+                        ? "bg-green-50 text-green-700 border border-green-100"
+                        : "bg-gray-50 text-gray-700 border border-gray-100",
+                  )}
+                >
+                  {statsMessageType === "error" ? (
+                    <AlertCircle className="h-4 w-4" />
+                  ) : statsMessageType === "success" ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  <span>{statsMessage}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeSection === "view-statistics" && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-800">Ligastatistiken anzeigen</h3>
+              {ligaStats.length === 0 ? (
+                <p className="text-sm text-gray-500">Noch keine Ligastatistiken vorhanden.</p>
+              ) : (
+                <div className="space-y-4">
+                  {ligaStats.map((stat) => (
+                    <div key={stat.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>{stat.player_name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{stat.player_name}</h4>
+                            <p className="text-sm text-gray-500">
+                              {new Date(stat.game_date).toLocaleDateString("de-DE")}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                        <div className="text-center p-2 bg-green-100 rounded">
+                          <div className="font-semibold text-green-800">{stat.throws_180}</div>
+                          <div className="text-green-600">180er</div>
+                        </div>
+                        <div className="text-center p-2 bg-green-100 rounded">
+                          <div className="font-semibold text-green-800">{stat.throws_171}</div>
+                          <div className="text-green-600">171er</div>
+                        </div>
+                        <div className="text-center p-2 bg-green-100 rounded">
+                          <div className="font-semibold text-green-800">{stat.throws_154}</div>
+                          <div className="text-green-600">154er</div>
+                        </div>
+                        <div className="text-center p-2 bg-red-100 rounded">
+                          <div className="font-semibold text-red-800">{stat.throws_under_26}</div>
+                          <div className="text-red-600">&lt; 26</div>
+                        </div>
+                        <div className="text-center p-2 bg-red-100 rounded">
+                          <div className="font-semibold text-red-800">{stat.semperit_outs}</div>
+                          <div className="text-red-600">Semperit</div>
+                        </div>
+                      </div>
+
+                      {stat.notes && (
+                        <div className="mt-3 p-2 bg-blue-50 rounded text-sm text-blue-800">
+                          <strong>Notizen:</strong> {stat.notes}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   )
 }
+

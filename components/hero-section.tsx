@@ -51,19 +51,20 @@ const buttonVariants = {
 }
 
 export function HeroSection({ currentPot }: HeroSectionProps) {
-  const [event, setEvent] = useState<DartEvent | null>(null)
+  const [events, setEvents] = useState<DartEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentEventIndex, setCurrentEventIndex] = useState(0)
 
   useEffect(() => {
-    const fetchEvent = async () => {
+    const fetchEvents = async () => {
       try {
-        const { data, error } = await supabase.from("dart_events").select("*").limit(1).single()
+        const { data, error } = await supabase.from("dart_events").select("*").order("date_start", { ascending: true })
 
         if (error) {
           throw error
         }
-        setEvent(data)
+        setEvents(data || [])
       } catch (err: any) {
         setError(err.message)
       } finally {
@@ -71,8 +72,17 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
       }
     }
 
-    fetchEvent()
+    fetchEvents()
   }, [])
+
+  useEffect(() => {
+    if (events.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentEventIndex((prev) => (prev + 1) % events.length)
+      }, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [events.length])
 
   if (loading) {
     return (
@@ -89,13 +99,13 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
     return (
       <section className="relative flex min-h-[60vh] sm:min-h-[70vh] lg:h-[calc(100vh-80px)] items-center justify-center bg-brutal-bg text-brutal-text px-4">
         <div className="text-center max-w-md">
-          <p className="text-destructive text-sm sm:text-base">Fehler beim Laden des Events: {error}</p>
+          <p className="text-destructive text-sm sm:text-base">Fehler beim Laden der Events: {error}</p>
         </div>
       </section>
     )
   }
 
-  if (!event) {
+  if (!events || events.length === 0) {
     return (
       <section className="relative flex min-h-[60vh] sm:min-h-[70vh] lg:h-[calc(100vh-80px)] items-center justify-center bg-brutal-bg text-brutal-text px-4">
         <p className="text-sm sm:text-base">Keine Event-Daten gefunden.</p>
@@ -103,9 +113,60 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
     )
   }
 
+  const currentEvent = events[currentEventIndex]
+  const isLioncup = currentEvent?.name.toLowerCase().includes("lioncup")
+
+  const eventColors = isLioncup
+    ? {
+        primary: "text-orange-400",
+        secondary: "text-orange-200",
+        accent: "text-white",
+        buttonBg: "bg-orange-600",
+        buttonHover: "hover:bg-orange-700",
+      }
+    : {
+        primary: "text-brutal-accent-red",
+        secondary: "text-brutal-accent-gold",
+        accent: "text-white",
+        buttonBg: "bg-red-600",
+        buttonHover: "hover:bg-red-700",
+      }
+
+  const getEventTitle = () => {
+    if (isLioncup) {
+      return (
+        <>
+          <span className={`block ${eventColors.primary}`}>LIONCUP</span>
+          <span className={`block ${eventColors.accent}`}>DART TOURNAMENT</span>
+          <span className={`block ${eventColors.secondary}`}>2025/2026</span>
+        </>
+      )
+    }
+    return (
+      <>
+        <span className={`block ${eventColors.primary}`}>SUMMER SPECIAL</span>
+        <span className={`block ${eventColors.accent}`}>DART COMPETITION</span>
+        <span className={`block ${eventColors.secondary}`}>2025</span>
+      </>
+    )
+  }
+
+  const getEventDates = () => {
+    if (isLioncup) {
+      return "01. SEP. 2025 - 01. JUN. 2026"
+    }
+    return "02. JULI - 29. AUG. 2025"
+  }
+
+  const getEventLocation = () => {
+    if (isLioncup) {
+      return "JEDEN MONTAG 19:30"
+    }
+    return "PFEIL-OK SALZBURG"
+  }
+
   return (
     <section className="relative flex min-h-[60vh] sm:min-h-[70vh] lg:h-[calc(100vh-80px)] items-center justify-center overflow-hidden bg-brutal-bg text-brutal-text">
-      {/* Hintergrundbild mit dunklem Overlay - Mobile optimiert */}
       <Image
         src="/images/brutal-darts-bg.png"
         alt="Hintergrundbild für Dartverein"
@@ -121,28 +182,43 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
+        key={currentEventIndex}
       >
-        {/* Hero Title - Mobile optimiert */}
+        {events.length > 1 && (
+          <motion.div variants={itemVariants} className="mb-4 flex gap-2">
+            {events.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentEventIndex(index)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  index === currentEventIndex ? (isLioncup ? "bg-orange-400" : "bg-red-600") : "bg-white/30"
+                }`}
+              />
+            ))}
+          </motion.div>
+        )}
+
         <motion.div variants={itemVariants} className="mb-6 sm:mb-8">
           <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold uppercase leading-none tracking-tighter mb-4 sm:mb-6 drop-shadow-2xl">
-            <span className="block text-brutal-accent-red">SUMMER SPECIAL</span>
-            <span className="block text-white">DART COMPETITION</span>
-            <span className="block text-brutal-accent-gold">2025</span>
+            {getEventTitle()}
           </h1>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-sm sm:text-base lg:text-lg font-bold">
-            <div className="flex items-center gap-2 bg-red-600 px-3 py-2 rounded-lg border border-red-700 shadow-lg">
+            <div
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border shadow-lg ${isLioncup ? "bg-orange-600 border-orange-700" : "bg-red-600 border-red-700"}`}
+            >
               <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
-              <span className="text-xs sm:text-sm lg:text-base text-white font-bold">02. JULI - 29. AUG. 2025</span>
+              <span className="text-xs sm:text-sm lg:text-base text-white font-bold">{getEventDates()}</span>
             </div>
-            <div className="flex items-center gap-2 bg-yellow-600 px-3 py-2 rounded-lg border border-yellow-700 shadow-lg">
+            <div
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border shadow-lg ${isLioncup ? "bg-orange-500 border-orange-600" : "bg-yellow-600 border-yellow-700"}`}
+            >
               <MapPin className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
-              <span className="text-xs sm:text-sm lg:text-base text-white font-bold">PFEIL-OK SALZBURG</span>
+              <span className="text-xs sm:text-sm lg:text-base text-white font-bold">{getEventLocation()}</span>
             </div>
           </div>
         </motion.div>
 
-        {/* Info Cards - Mobile Stack */}
         <motion.div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12 w-full max-w-5xl"
           variants={containerVariants}
@@ -153,50 +229,60 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
             variants={cardVariants}
             className="flex flex-col items-center justify-center rounded-lg bg-white/95 backdrop-blur-sm p-4 sm:p-6 border border-gray-200 shadow-xl"
           >
-            <Calendar className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-red-600 mb-2 sm:mb-3" />
-            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-center text-black">2 JULI - 29 AUGUST</span>
+            <Calendar
+              className={`h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 mb-2 sm:mb-3 ${isLioncup ? "text-orange-600" : "text-red-600"}`}
+            />
+            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-center text-black">
+              {isLioncup ? "34 TURNIERTAGE" : "2 JULI - 29 AUGUST"}
+            </span>
             <span className="text-xs sm:text-sm lg:text-base uppercase text-gray-600 text-center font-semibold">
-              COMPETITION 2025
+              {isLioncup ? "+ 1 FINALTAG" : "COMPETITION 2025"}
             </span>
           </motion.div>
           <motion.div
             variants={cardVariants}
             className="flex flex-col items-center justify-center rounded-lg bg-white/95 backdrop-blur-sm p-4 sm:p-6 border border-gray-200 shadow-xl"
           >
-            <MapPin className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-red-600 mb-2 sm:mb-3" />
-            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-center text-black">PFEIL-OK</span>
+            <MapPin
+              className={`h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 mb-2 sm:mb-3 ${isLioncup ? "text-orange-600" : "text-red-600"}`}
+            />
+            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-center text-black">
+              {isLioncup ? "PFEIL-OK" : "PFEIL-OK"}
+            </span>
             <span className="text-xs sm:text-sm lg:text-base uppercase text-gray-600 text-center font-semibold">
-              SALZBURG
+              {isLioncup ? "SALZBURG" : "SALZBURG"}
             </span>
           </motion.div>
           <motion.div
             variants={cardVariants}
             className="flex flex-col items-center justify-center rounded-lg bg-white/95 backdrop-blur-sm p-4 sm:p-6 border border-gray-200 shadow-xl sm:col-span-2 lg:col-span-1"
           >
-            <Trophy className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-red-600 mb-2 sm:mb-3" />
+            <Trophy
+              className={`h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 mb-2 sm:mb-3 ${isLioncup ? "text-orange-600" : "text-red-600"}`}
+            />
             <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-black">
-              €{currentPot.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {isLioncup
+                ? "20 ANTRITTE"
+                : `€${currentPot.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             </span>
             <span className="text-xs sm:text-sm lg:text-base uppercase text-gray-600 text-center font-semibold">
-              AKTUELLER POT
+              {isLioncup ? "FÜR FINALE" : "AKTUELLER POT"}
             </span>
           </motion.div>
         </motion.div>
 
-        {/* Countdown Section */}
         <motion.p
           variants={itemVariants}
           className="text-base sm:text-lg lg:text-xl uppercase font-bold mb-4 sm:mb-6 text-white"
         >
           EVENT STARTS IN
         </motion.p>
-        {event.event_starts_at && (
+        {currentEvent.event_starts_at && (
           <motion.div variants={itemVariants} className="mb-8 sm:mb-12">
-            <Countdown targetDate={event.event_starts_at} />
+            <Countdown targetDate={currentEvent.event_starts_at} />
           </motion.div>
         )}
 
-        {/* CTA Button */}
         <motion.div
           className="flex flex-col sm:flex-row gap-3 sm:gap-4"
           variants={containerVariants}
@@ -207,9 +293,13 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
             <Link href="/tournament">
               <Button
                 variant="outline"
-                className="border-brutal-accent-red text-brutal-accent-red hover:bg-brutal-accent-red hover:text-white font-extrabold py-3 sm:py-4 px-6 sm:px-10 rounded-md text-base sm:text-lg lg:text-xl bg-white/90 shadow-lg hover:scale-105 transition-transform uppercase w-full sm:w-auto min-h-[48px]"
+                className={`border-white text-white hover:bg-white font-extrabold py-3 sm:py-4 px-6 sm:px-10 rounded-md text-base sm:text-lg lg:text-xl bg-white/90 shadow-lg hover:scale-105 transition-transform uppercase w-full sm:w-auto min-h-[48px] ${
+                  isLioncup
+                    ? "hover:text-orange-600 border-orange-400 text-orange-400"
+                    : "hover:text-red-600 border-red-600 text-red-600"
+                }`}
               >
-                MEHR ERFAHREN
+                {isLioncup ? "LIONCUP ANMELDUNG" : "MEHR ERFAHREN"}
               </Button>
             </Link>
           </motion.div>

@@ -2,35 +2,40 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, LogOut, UserIcon } from 'lucide-react' // Import UserIcon for user display
+import { Menu, LogOut, UserIcon, ChevronDown } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { useAuth } from "@/hooks/use-auth" // Import useAuth hook
-import { useState } from "react" // Import useState for loggingOut state
-import { supabase } from "@/lib/supabase" // Import supabase for signOut
-import { usePathname } from "next/navigation" // Import usePathname
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/hooks/use-auth"
+import { useState } from "react"
+import { supabase } from "@/lib/supabase"
+import { usePathname } from "next/navigation"
 
 export function Header() {
   const marqueeContent =
     "EMOJIS DART COMPETITION 2025 • 2 JULI - 31 AUGUST • Pfeil OK Salzburg • IMMER MITTWOCH UND FREITAG"
 
-  const { session, user } = useAuth() // Get session and user from useAuth
-  const [loggingOut, setLoggingOut] = useState(false) // State for logout loading
-  const pathname = usePathname() // Get current pathname
+  const { session, user } = useAuth()
+  const [loggingOut, setLoggingOut] = useState(false)
+  const pathname = usePathname()
 
   const handleLogout = async () => {
     setLoggingOut(true)
     try {
       await supabase.auth.signOut()
-      // Optional: Redirect or refresh the page after logout
       window.location.reload()
     } catch (err: any) {
       console.error("Logout error:", err)
-      // Handle error, maybe show a toast
-      window.location.reload() // Force reload even on error for consistency
+      window.location.reload()
     } finally {
       setLoggingOut(false)
     }
   }
+
+  const isTurnierserieActive = ["/tables", "/players"].includes(pathname)
+
+  const isLionCupActive = ["/regelwerk"].includes(pathname)
+
+  const isTurniereActive = ["/upcoming-tournaments", "/live", "/kratzer-tournament-results"].includes(pathname)
 
   return (
     <header className="relative z-20 w-full bg-gray-100 text-gray-900 border-b border-gray-300 shadow-lg">
@@ -49,22 +54,21 @@ export function Header() {
             <span className="text-sm sm:text-lg md:text-xl font-extrabold tracking-wide truncate">
               EMOJIS DARTVEREIN
             </span>
-            <span className="text-xs font-normal text-gray-600 hidden sm:block">COMPETITION 2025</span>
+            <span className="text-xs font-normal text-gray-600 hidden sm:block"></span>
           </div>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8 ml-8">
           <Link
             href="/"
             className={`text-sm font-bold transition-colors uppercase ${
-              pathname === "/"
-                ? "text-red-600 border-b-2 border-red-600 pb-1"
-                : "text-gray-900 hover:text-red-600"
+              pathname === "/" ? "text-red-600 border-b-2 border-red-600 pb-1" : "text-gray-900 hover:text-red-600"
             }`}
           >
             Startseite
           </Link>
+
           <Link
             href="/tournament"
             className={`text-sm font-bold transition-colors uppercase ${
@@ -73,55 +77,99 @@ export function Header() {
                 : "text-gray-900 hover:text-red-600"
             }`}
           >
-            TOURNAMENT
+            Kalender
           </Link>
-          <Link
-            href="/upcoming-tournaments"
-            className={`text-sm font-bold transition-colors uppercase ${
-              pathname === "/upcoming-tournaments"
-                ? "text-red-600 border-b-2 border-red-600 pb-1"
-                : "text-gray-900 hover:text-red-600"
-            }`}
-          >
-            Events 
-          </Link>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className={`text-sm font-bold transition-colors uppercase px-3 py-1 h-auto ${
+                  isTurnierserieActive ? "text-red-600 border-b-2 border-red-600" : "text-gray-900 hover:text-red-600"
+                }`}
+              >
+                Dart Competition
+                <ChevronDown className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link href="/tables" className="w-full cursor-pointer">
+                  Tabellen
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/players" className="w-full cursor-pointer">
+                  Spieler
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className={`text-sm font-bold transition-colors uppercase px-3 py-1 h-auto ${
+                  isLionCupActive ? "text-red-600 border-b-2 border-red-600" : "text-gray-900 hover:text-red-600"
+                }`}
+              >
+                Lion Cup
+                <ChevronDown className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link href="/regelwerk" className="w-full cursor-pointer">
+                  Regelwerk
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className={`text-sm font-bold transition-colors uppercase px-3 py-1 h-auto ${
+                  isTurniereActive ? "text-red-600 border-b-2 border-red-600" : "text-gray-900 hover:text-red-600"
+                }`}
+              >
+                Turniere
+                <ChevronDown className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link href="/upcoming-tournaments" className="w-full cursor-pointer">
+                  Events
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/live" className="w-full cursor-pointer">
+                  Live
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/kratzer-tournament-results" className="w-full cursor-pointer">
+                  Beendete Turniere
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Link
             href="/club"
             className={`text-sm font-bold transition-colors uppercase ${
-              pathname === "/club"
-                ? "text-red-600 border-b-2 border-red-600 pb-1"
-                : "text-gray-900 hover:text-red-600"
+              pathname === "/club" ? "text-red-600 border-b-2 border-red-600 pb-1" : "text-gray-900 hover:text-red-600"
             }`}
           >
             Verein
           </Link>
-          <Link href="/tables" passHref>
-            <Button
-              className={`font-extrabold py-2 px-3 xl:px-4 rounded-md uppercase transition-colors text-sm ${
-                pathname === "/tables"
-                  ? "bg-red-600 text-white"
-                  : "bg-yellow-600 hover:bg-red-600 text-white"
-              }`}
-            >
-              Tabellen
-            </Button>
-          </Link>
-          <Link href="/players" passHref>
-            <Button
-              variant="outline"
-              className={`font-bold py-2 px-3 xl:px-4 rounded-md bg-transparent uppercase transition-colors text-sm ${
-                pathname === "/players"
-                  ? "border-red-600 text-red-600 bg-gray-200"
-                  : "border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600"
-              }`}
-            >
-              Players
-            </Button>
-          </Link>
           <Link href="/admin" passHref>
             <Button
               variant="outline"
-              className={`font-bold py-2 px-3 xl:px-4 rounded-md bg-transparent uppercase transition-colors text-sm ${
+              className={`font-bold py-2 px-4 xl:px-5 rounded-md bg-transparent uppercase transition-colors text-sm ${
                 pathname === "/admin"
                   ? "border-red-600 text-red-600 bg-gray-200"
                   : "border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600"
@@ -191,6 +239,7 @@ export function Header() {
               >
                 Startseite
               </Link>
+
               <Link
                 href="/tournament"
                 className={`flex items-center text-base sm:text-lg font-medium rounded-lg px-4 py-3 transition-all duration-200 ${
@@ -199,18 +248,83 @@ export function Header() {
                     : "text-gray-800 hover:text-red-600 hover:bg-red-50"
                 }`}
               >
-                Tournament
+                Kalender
               </Link>
-              <Link
-                href="/upcoming-tournaments"
-                className={`flex items-center text-base sm:text-lg font-medium rounded-lg px-4 py-3 transition-all duration-200 ${
-                  pathname === "/upcoming-tournaments"
-                    ? "bg-red-50 text-red-600 font-bold"
-                    : "text-gray-800 hover:text-red-600 hover:bg-red-50"
-                }`}
-              >
-                UPCOMING TOURNAMENTS
-              </Link>
+
+              <div className="space-y-2">
+                <div className="text-sm font-bold text-gray-600 px-4 py-2 uppercase tracking-wide">
+                  Dart Competition
+                </div>
+                <Link
+                  href="/tables"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/tables"
+                      ? "bg-red-50 text-red-600 font-bold"
+                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  Tabellen
+                </Link>
+                <Link
+                  href="/players"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/players"
+                      ? "bg-red-50 text-red-600 font-bold"
+                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  Spieler
+                </Link>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm font-bold text-gray-600 px-4 py-2 uppercase tracking-wide">Lion Cup</div>
+                <Link
+                  href="/regelwerk"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/regelwerk"
+                      ? "bg-red-50 text-red-600 font-bold"
+                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  Regelwerk
+                </Link>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm font-bold text-gray-600 px-4 py-2 uppercase tracking-wide">Turniere</div>
+                <Link
+                  href="/upcoming-tournaments"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/upcoming-tournaments"
+                      ? "bg-red-50 text-red-600 font-bold"
+                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  Events
+                </Link>
+                <Link
+                  href="/live"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/live"
+                      ? "bg-red-50 text-red-600 font-bold"
+                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  Live
+                </Link>
+                <Link
+                  href="/kratzer-tournament-results"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/kratzer-tournament-results"
+                      ? "bg-red-50 text-red-600 font-bold"
+                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  Beendete Turniere
+                </Link>
+              </div>
+
               <Link
                 href="/club"
                 className={`flex items-center text-base sm:text-lg font-medium rounded-lg px-4 py-3 transition-all duration-200 ${
@@ -220,29 +334,6 @@ export function Header() {
                 }`}
               >
                 Verein
-              </Link>
-              <Link href="/tables" passHref>
-                <Button
-                  className={`w-full font-extrabold py-3 px-4 rounded-lg uppercase text-base justify-start shadow-md ${
-                    pathname === "/tables"
-                      ? "bg-red-600 text-white"
-                      : "bg-yellow-600 hover:bg-yellow-700 text-white"
-                  }`}
-                >
-                  Tabellen
-                </Button>
-              </Link>
-              <Link href="/players" passHref>
-                <Button
-                  variant="outline"
-                  className={`w-full font-bold py-3 px-4 rounded-lg bg-transparent uppercase text-base justify-start ${
-                    pathname === "/players"
-                      ? "border-red-600 text-red-600 bg-gray-200"
-                      : "border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600"
-                  }`}
-                >
-                  Players
-                </Button>
               </Link>
               <Link href="/admin" passHref>
                 <Button
