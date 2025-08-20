@@ -33,7 +33,7 @@ export function Header() {
 
   const isTurnierserieActive = ["/tables", "/players"].includes(pathname)
 
-  const isLionCupActive = ["/regelwerk"].includes(pathname)
+  const isLionCupActive = ["/regelwerk", "/tabelle-lion-cup"].includes(pathname)
 
   const isTurniereActive = ["/upcoming-tournaments", "/live", "/kratzer-tournament-results"].includes(pathname)
 
@@ -98,6 +98,11 @@ export function Header() {
               <DropdownMenuItem asChild>
                 <Link href="/regelwerk" className="w-full cursor-pointer">
                   Regelwerk
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/tabelle-lion-cup" className="w-full cursor-pointer">
+                  Tabelle
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -277,6 +282,16 @@ export function Header() {
                   }`}
                 >
                   Regelwerk
+                </Link>
+                <Link
+                  href="/tabelle-lion-cup"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/tabelle-lion-cup"
+                      ? "bg-orange-50 text-orange-600 font-bold"
+                      : "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
+                  }`}
+                >
+                  Tabelle
                 </Link>
               </div>
 

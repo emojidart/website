@@ -130,6 +130,13 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
   const currentEvent = events[currentEventIndex]
   const isLioncup = currentEvent?.name.toLowerCase().includes("lioncup")
 
+  const getBackgroundImage = () => {
+    if (isLioncup) {
+      return "/images/lioncup-bg.png" // Separate image for LIONCUP events
+    }
+    return "/images/summer-bg.png" // Separate image for SUMMER events
+  }
+
   const eventColors = isLioncup
     ? {
         primary: "text-orange-400",
@@ -186,12 +193,13 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
   return (
     <section className="relative flex min-h-[60vh] sm:min-h-[70vh] lg:h-[calc(100vh-80px)] items-center justify-center overflow-hidden bg-brutal-bg text-brutal-text">
       <Image
-        src="/images/brutal-darts-bg.png"
-        alt="Hintergrundbild für Dartverein"
+        src={getBackgroundImage() || "/placeholder.svg"}
+        alt={isLioncup ? "LIONCUP Hintergrundbild" : "Summer Special Hintergrundbild"}
         fill
-        className="absolute inset-0 z-0 opacity-20 sm:opacity-30 object-cover"
+        className="absolute inset-0 z-0 opacity-20 sm:opacity-30 object-cover transition-opacity duration-500"
         priority
         sizes="100vw"
+        key={currentEventIndex} // Force re-render when event changes
       />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-brutal-bg to-transparent"></div>
 
