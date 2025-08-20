@@ -216,7 +216,7 @@ export default function TournamentPage() {
                 <Crown className="h-12 w-12 text-white mx-auto" />
               </div>
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-none tracking-tighter mb-6">
-                <span className="block text-white">LIONCUP</span>
+                <span className="block text-white">EMD LIONCUP</span>
                 <span className="block text-orange-200">2025/2026</span>
               </h1>
               <p className="text-lg md:text-xl font-bold uppercase text-orange-100 mb-8">
@@ -401,7 +401,7 @@ export default function TournamentPage() {
                     <Crown className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-white uppercase">Lioncup</h2>
+                    <h2 className="text-2xl font-bold text-white uppercase">EMD Lioncup</h2>
                     <p className="text-orange-100 text-sm">Montags 19:30</p>
                   </div>
                 </div>
@@ -522,8 +522,8 @@ export default function TournamentPage() {
               <div className="bg-white/10 rounded-full p-4 w-16 h-16 mx-auto mb-6 shadow-lg">
                 <Crown className="h-8 w-8 text-white mx-auto" />
               </div>
-              <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-4 text-white">LIONCUP FINALE</h2>
-              <div className="text-xl md:text-2xl font-bold text-white mb-4">JUNI 2026 - DATUM FOLGT</div>
+              <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-4 text-white">EMD LIONCUP FINALE</h2>
+              <div className="text-xl md:text-2xl font-bold text-white mb-4">01. JUNI 2026</div>
               <div className="flex items-center justify-center text-white/90">
                 <Crown className="h-5 w-5 mr-2" />
                 <span className="text-sm font-medium uppercase tracking-wide">Die Krönung des Champions</span>

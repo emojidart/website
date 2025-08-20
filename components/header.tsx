@@ -12,7 +12,7 @@ import { usePathname } from "next/navigation"
 
 export function Header() {
   const marqueeContent =
-    "EMOJIS DART COMPETITION 2025 • 2 JULI - 31 AUGUST • Pfeil OK Salzburg • IMMER MITTWOCH UND FREITAG"
+    "🦁 +++ EMD LION CUP PART II STARTET IN KÜRZE • ZEITRAUM: 01. SEPTEMBER 2025 – 01. JUNI 2026 • 34 SPIELTAGE • 1 FINALE • JEDEN MONTAG 19:30 UHR +++"
 
   const { session, user } = useAuth()
   const [loggingOut, setLoggingOut] = useState(false)
@@ -39,26 +39,23 @@ export function Header() {
 
   return (
     <header className="relative z-20 w-full bg-gray-100 text-gray-900 border-b border-gray-300 shadow-lg">
-      {/* Top Bar mit Laufschrift - Mobile optimiert und professioneller */}
-      <div className="bg-red-600 py-2 sm:py-3 text-center text-xs sm:text-sm font-medium overflow-hidden flex">
+      <div className="bg-gradient-to-r from-orange-600 to-orange-500 py-2 sm:py-3 text-center text-xs sm:text-sm font-bold overflow-hidden flex shadow-md">
         <div className="flex animate-marquee min-w-full">
-          <span className="text-white text-xs sm:text-sm leading-none px-4 py-0.5">{marqueeContent}</span>
-          <span className="text-white text-xs sm:text-sm leading-none px-4 py-0.5">{marqueeContent}</span>
+          <span className="text-white text-xs sm:text-sm leading-none px-4 py-0.5 font-bold">{marqueeContent}</span>
+          <span className="text-white text-xs sm:text-sm leading-none px-4 py-0.5 font-bold">{marqueeContent}</span>
         </div>
       </div>
 
-      {/* Main Navigation - Mobile optimiert */}
       <div className="container mx-auto flex h-16 sm:h-20 items-center justify-between px-3 sm:px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 text-base sm:text-lg font-bold flex-shrink-0 min-w-0">
           <div className="flex flex-col min-w-0">
             <span className="text-sm sm:text-lg md:text-xl font-extrabold tracking-wide truncate">
-              EMOJIS DARTVEREIN
+              Emoj!'s Dartverein
             </span>
             <span className="text-xs font-normal text-gray-600 hidden sm:block"></span>
           </div>
         </Link>
 
-        {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8 ml-8">
           <Link
             href="/"
@@ -84,6 +81,32 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
+                className={`text-sm font-bold transition-colors uppercase px-3 py-1 h-auto relative ${
+                  isLionCupActive
+                    ? "text-orange-600 border-b-2 border-orange-600"
+                    : "text-gray-900 hover:text-orange-600"
+                }`}
+              >
+                🦁 Lion Cup
+                <ChevronDown className="ml-1 h-3 w-3" />
+                <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1 py-0.5 rounded-full font-bold">
+                  NEU
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link href="/regelwerk" className="w-full cursor-pointer">
+                  Regelwerk
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
                 className={`text-sm font-bold transition-colors uppercase px-3 py-1 h-auto ${
                   isTurnierserieActive ? "text-red-600 border-b-2 border-red-600" : "text-gray-900 hover:text-red-600"
                 }`}
@@ -101,27 +124,6 @@ export function Header() {
               <DropdownMenuItem asChild>
                 <Link href="/players" className="w-full cursor-pointer">
                   Spieler
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className={`text-sm font-bold transition-colors uppercase px-3 py-1 h-auto ${
-                  isLionCupActive ? "text-red-600 border-b-2 border-red-600" : "text-gray-900 hover:text-red-600"
-                }`}
-              >
-                Lion Cup
-                <ChevronDown className="ml-1 h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuItem asChild>
-                <Link href="/regelwerk" className="w-full cursor-pointer">
-                  Regelwerk
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -166,6 +168,18 @@ export function Header() {
           >
             Verein
           </Link>
+
+          <Link
+            href="/kontakt"
+            className={`text-sm font-bold transition-colors uppercase ${
+              pathname === "/kontakt"
+                ? "text-red-600 border-b-2 border-red-600 pb-1"
+                : "text-gray-900 hover:text-red-600"
+            }`}
+          >
+            Kontakt
+          </Link>
+
           <Link href="/admin" passHref>
             <Button
               variant="outline"
@@ -179,7 +193,6 @@ export function Header() {
             </Button>
           </Link>
 
-          {/* User Info and Logout for Desktop */}
           {session && user ? (
             <div className="flex items-center gap-3 ml-4">
               <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -209,7 +222,6 @@ export function Header() {
           ) : null}
         </nav>
 
-        {/* Mobile Menu */}
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="sm" className="lg:hidden text-gray-900 flex-shrink-0 p-2">
@@ -224,7 +236,7 @@ export function Header() {
             <div className="flex flex-col gap-4 py-6 px-4">
               <div className="flex items-center gap-2 pb-4 border-b border-gray-200 mb-4">
                 <div>
-                  <div className="font-bold text-gray-900 text-xl">EMOJIS DARTVEREIN</div>
+                  <div className="font-bold text-gray-900 text-xl">Emoj!'s Dartverein</div>
                   <div className="text-xs text-gray-600"></div>
                 </div>
               </div>
@@ -252,6 +264,23 @@ export function Header() {
               </Link>
 
               <div className="space-y-2">
+                <div className="text-sm font-bold text-orange-600 px-4 py-2 uppercase tracking-wide flex items-center">
+                  🦁 Lion Cup
+                  <span className="ml-2 bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">NEU</span>
+                </div>
+                <Link
+                  href="/regelwerk"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/regelwerk"
+                      ? "bg-orange-50 text-orange-600 font-bold"
+                      : "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
+                  }`}
+                >
+                  Regelwerk
+                </Link>
+              </div>
+
+              <div className="space-y-2">
                 <div className="text-sm font-bold text-gray-600 px-4 py-2 uppercase tracking-wide">
                   Dart Competition
                 </div>
@@ -274,20 +303,6 @@ export function Header() {
                   }`}
                 >
                   Spieler
-                </Link>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-sm font-bold text-gray-600 px-4 py-2 uppercase tracking-wide">Lion Cup</div>
-                <Link
-                  href="/regelwerk"
-                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
-                    pathname === "/regelwerk"
-                      ? "bg-red-50 text-red-600 font-bold"
-                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
-                  }`}
-                >
-                  Regelwerk
                 </Link>
               </div>
 
@@ -335,6 +350,18 @@ export function Header() {
               >
                 Verein
               </Link>
+
+              <Link
+                href="/kontakt"
+                className={`flex items-center text-base sm:text-lg font-medium rounded-lg px-4 py-3 transition-all duration-200 ${
+                  pathname === "/kontakt"
+                    ? "bg-red-50 text-red-600 font-bold"
+                    : "text-gray-800 hover:text-red-600 hover:bg-red-50"
+                }`}
+              >
+                Kontakt
+              </Link>
+
               <Link href="/admin" passHref>
                 <Button
                   variant="outline"
@@ -348,7 +375,6 @@ export function Header() {
                 </Button>
               </Link>
 
-              {/* User Info and Logout for Mobile */}
               {session && user ? (
                 <div className="mt-6 pt-4 border-t border-gray-200 flex flex-col gap-4">
                   <div className="flex items-center gap-2 text-base text-gray-700 px-4 py-2">

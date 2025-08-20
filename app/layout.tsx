@@ -4,8 +4,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Emojis Dartverein",
-  description: "Offizielle Website des Emojis Dartvereins",
+  title: "Emoj!'s Dartverein",
+  description: "Offizielle Website des Emoj!'s Dartvereins",
 }
 
 export default function RootLayout({

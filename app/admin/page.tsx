@@ -51,7 +51,7 @@ export default function AdminPage() {
   // NEU: Zustand für die aktive Hauptkategorie
   const [activeCategory, setActiveCategory] = useState<
     "tournament-series" | "recruitment" | "club-admin" | "tournament-admin"
-  >("tournament-series") // Standardmäßig "Turnierserie"
+  >("tournament-series") // Standardmäßig "Dart Competition"
 
   // Zustand für den aktiven Unter-Tab
   const [activeTab, setActiveTab] = useState<
@@ -230,7 +230,7 @@ export default function AdminPage() {
                         }`}
                       >
                         <Trophy className="h-4 w-4 mr-2" />
-                        Turnierserie
+                        Dart Competition
                       </Button>
                       <Button
                         onClick={() => handleCategoryClick("recruitment")}

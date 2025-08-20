@@ -37,7 +37,7 @@ export function FeaturesSection() {
           className="text-5xl md:text-6xl font-extrabold uppercase mb-16 text-brutal-accent-gold drop-shadow-lg"
           variants={cardItemVariants}
         >
-          Warum EMOJIS DARTVEREIN?
+          Warum EMOJ!'S DARTVEREIN?
         </motion.h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

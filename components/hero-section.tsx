@@ -64,7 +64,17 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
         if (error) {
           throw error
         }
-        setEvents(data || [])
+
+        const sortedEvents = (data || []).sort((a, b) => {
+          const aIsLioncup = a.name.toLowerCase().includes("lioncup")
+          const bIsLioncup = b.name.toLowerCase().includes("lioncup")
+
+          if (aIsLioncup && !bIsLioncup) return -1
+          if (!aIsLioncup && bIsLioncup) return 1
+          return 0
+        })
+
+        setEvents(sortedEvents)
       } catch (err: any) {
         setError(err.message)
       } finally {
@@ -77,12 +87,16 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
 
   useEffect(() => {
     if (events.length > 1) {
+      const currentEvent = events[currentEventIndex]
+      const isCurrentLioncup = currentEvent?.name.toLowerCase().includes("lioncup")
+      const intervalTime = isCurrentLioncup ? 12000 : 4000 // 12s for LIONCUP, 4s for others
+
       const interval = setInterval(() => {
         setCurrentEventIndex((prev) => (prev + 1) % events.length)
-      }, 5000)
+      }, intervalTime)
       return () => clearInterval(interval)
     }
-  }, [events.length])
+  }, [events]) // Updated dependency to events
 
   if (loading) {
     return (
@@ -123,6 +137,8 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
         accent: "text-white",
         buttonBg: "bg-orange-600",
         buttonHover: "hover:bg-orange-700",
+        cardBg: "bg-gradient-to-br from-orange-500/20 to-orange-600/30",
+        cardBorder: "border-orange-400/50",
       }
     : {
         primary: "text-brutal-accent-red",
@@ -130,13 +146,15 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
         accent: "text-white",
         buttonBg: "bg-red-600",
         buttonHover: "hover:bg-red-700",
+        cardBg: "bg-white/95",
+        cardBorder: "border-gray-200",
       }
 
   const getEventTitle = () => {
     if (isLioncup) {
       return (
         <>
-          <span className={`block ${eventColors.primary}`}>LIONCUP</span>
+          <span className={`block ${eventColors.primary}`}>EMD LIONCUP</span>
           <span className={`block ${eventColors.accent}`}>DART TOURNAMENT</span>
           <span className={`block ${eventColors.secondary}`}>2025/2026</span>
         </>
@@ -199,19 +217,27 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
         )}
 
         <motion.div variants={itemVariants} className="mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold uppercase leading-none tracking-tighter mb-4 sm:mb-6 drop-shadow-2xl">
+          <h1
+            className={`text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold uppercase leading-none tracking-tighter mb-4 sm:mb-6 drop-shadow-2xl ${
+              isLioncup ? "drop-shadow-[0_0_30px_rgba(251,146,60,0.5)]" : ""
+            }`}
+          >
             {getEventTitle()}
           </h1>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-sm sm:text-base lg:text-lg font-bold">
             <div
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg border shadow-lg ${isLioncup ? "bg-orange-600 border-orange-700" : "bg-red-600 border-red-700"}`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border shadow-lg ${
+                isLioncup ? "bg-orange-600 border-orange-700 shadow-orange-500/25" : "bg-red-600 border-red-700"
+              }`}
             >
               <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
               <span className="text-xs sm:text-sm lg:text-base text-white font-bold">{getEventDates()}</span>
             </div>
             <div
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg border shadow-lg ${isLioncup ? "bg-orange-500 border-orange-600" : "bg-yellow-600 border-yellow-700"}`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border shadow-lg ${
+                isLioncup ? "bg-orange-500 border-orange-600 shadow-orange-400/25" : "bg-yellow-600 border-yellow-700"
+              }`}
             >
               <MapPin className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
               <span className="text-xs sm:text-sm lg:text-base text-white font-bold">{getEventLocation()}</span>
@@ -227,45 +253,73 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
         >
           <motion.div
             variants={cardVariants}
-            className="flex flex-col items-center justify-center rounded-lg bg-white/95 backdrop-blur-sm p-4 sm:p-6 border border-gray-200 shadow-xl"
+            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-4 sm:p-6 border shadow-xl ${
+              isLioncup
+                ? `${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`
+                : `${eventColors.cardBg} ${eventColors.cardBorder}`
+            }`}
           >
             <Calendar
               className={`h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 mb-2 sm:mb-3 ${isLioncup ? "text-orange-600" : "text-red-600"}`}
             />
-            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-center text-black">
+            <span
+              className={`text-xl sm:text-2xl lg:text-3xl font-bold text-center ${isLioncup ? "text-white" : "text-black"}`}
+            >
               {isLioncup ? "34 TURNIERTAGE" : "2 JULI - 29 AUGUST"}
             </span>
-            <span className="text-xs sm:text-sm lg:text-base uppercase text-gray-600 text-center font-semibold">
+            <span
+              className={`text-xs sm:text-sm lg:text-base uppercase text-center font-semibold ${
+                isLioncup ? "text-orange-200" : "text-gray-600"
+              }`}
+            >
               {isLioncup ? "+ 1 FINALTAG" : "COMPETITION 2025"}
             </span>
           </motion.div>
           <motion.div
             variants={cardVariants}
-            className="flex flex-col items-center justify-center rounded-lg bg-white/95 backdrop-blur-sm p-4 sm:p-6 border border-gray-200 shadow-xl"
+            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-4 sm:p-6 border shadow-xl ${
+              isLioncup
+                ? `${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`
+                : `${eventColors.cardBg} ${eventColors.cardBorder}`
+            }`}
           >
             <MapPin
               className={`h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 mb-2 sm:mb-3 ${isLioncup ? "text-orange-600" : "text-red-600"}`}
             />
-            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-center text-black">
+            <span
+              className={`text-xl sm:text-2xl lg:text-3xl font-bold text-center ${isLioncup ? "text-white" : "text-black"}`}
+            >
               {isLioncup ? "PFEIL-OK" : "PFEIL-OK"}
             </span>
-            <span className="text-xs sm:text-sm lg:text-base uppercase text-gray-600 text-center font-semibold">
+            <span
+              className={`text-xs sm:text-sm lg:text-base uppercase text-center font-semibold ${
+                isLioncup ? "text-orange-200" : "text-gray-600"
+              }`}
+            >
               {isLioncup ? "SALZBURG" : "SALZBURG"}
             </span>
           </motion.div>
           <motion.div
             variants={cardVariants}
-            className="flex flex-col items-center justify-center rounded-lg bg-white/95 backdrop-blur-sm p-4 sm:p-6 border border-gray-200 shadow-xl sm:col-span-2 lg:col-span-1"
+            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-4 sm:p-6 border shadow-xl sm:col-span-2 lg:col-span-1 ${
+              isLioncup
+                ? `${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`
+                : `${eventColors.cardBg} ${eventColors.cardBorder}`
+            }`}
           >
             <Trophy
               className={`h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 mb-2 sm:mb-3 ${isLioncup ? "text-orange-600" : "text-red-600"}`}
             />
-            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-black">
+            <span className={`text-xl sm:text-2xl lg:text-3xl font-bold ${isLioncup ? "text-white" : "text-black"}`}>
               {isLioncup
                 ? "20 ANTRITTE"
                 : `€${currentPot.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             </span>
-            <span className="text-xs sm:text-sm lg:text-base uppercase text-gray-600 text-center font-semibold">
+            <span
+              className={`text-xs sm:text-sm lg:text-base uppercase text-center font-semibold ${
+                isLioncup ? "text-orange-200" : "text-gray-600"
+              }`}
+            >
               {isLioncup ? "FÜR FINALE" : "AKTUELLER POT"}
             </span>
           </motion.div>
@@ -299,7 +353,7 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
                     : "hover:text-red-600 border-red-600 text-red-600"
                 }`}
               >
-                {isLioncup ? "LIONCUP ANMELDUNG" : "MEHR ERFAHREN"}
+                {isLioncup ? "EMD LIONCUP ANMELDUNG" : "MEHR ERFAHREN"}
               </Button>
             </Link>
           </motion.div>

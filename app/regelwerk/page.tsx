@@ -38,7 +38,7 @@ export default function RegelwerkPage() {
                 <Crown className="h-12 w-12 text-white mx-auto" />
               </div>
               <h1 className="text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-4">
-                <span className="block text-white">LIONCUP</span>
+                <span className="block text-white">EMD LIONCUP</span>
                 <span className="block text-orange-200">REGELWERK</span>
               </h1>
               <p className="text-lg md:text-xl font-bold uppercase text-orange-100">
