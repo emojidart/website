@@ -654,106 +654,120 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
     }
 
     try {
-      // Check if the player is already in the target team
-      const { data: existingAssignmentInTargetTeam, error: checkTargetError } = await supabase
+      const { data: existingAssignment, error: checkError } = await supabase
         .from("team_members")
-        .select("id, role") // Fetch role as well
+        .select("id, role")
         .eq("player_id", selectedPlayerId)
         .eq("team_id", selectedTeamId)
         .single()
 
-      if (checkTargetError && checkTargetError.code !== "PGRST116") {
-        throw checkTargetError
+      if (checkError && checkError.code !== "PGRST116") {
+        throw checkError
       }
 
-      let operationMessage = "Spieler erfolgreich zugewiesen!"
-      let movementType: "new_addition" | "transfer" = "new_addition"
-      let fromTeamId: string | null = null
-
-      if (existingAssignmentInTargetTeam) {
-        // If player is already in this team, it's a role update
-        if (existingAssignmentInTargetTeam.role === selectedRole) {
+      if (existingAssignment) {
+        if (existingAssignment.role === selectedRole) {
           setAssignmentMessage("Dieser Spieler ist bereits in dieser Mannschaft mit dieser Rolle.")
           setAssignmentMessageType("error")
           setAssignmentLoading(false)
           return
         } else {
-          // Update existing assignment's role
           const { error: updateRoleError } = await supabase
             .from("team_members")
             .update({ role: selectedRole })
-            .eq("id", existingAssignmentInTargetTeam.id)
+            .eq("id", existingAssignment.id)
 
           if (updateRoleError) {
             throw updateRoleError
           }
-          operationMessage = "Spielerrolle erfolgreich aktualisiert!"
-        }
-      } else {
-        // Check if the player is in ANY other team (for transfer)
-        const { data: currentAssignments, error: checkCurrentError } = await supabase
-          .from("team_members")
-          .select("id, team_id")
-          .eq("player_id", selectedPlayerId)
 
-        if (checkCurrentError) {
-          throw checkCurrentError
-        }
-
-        if (currentAssignments && currentAssignments.length > 0) {
-          // If player is already assigned, it's a transfer
-          movementType = "transfer"
-          fromTeamId = currentAssignments[0].team_id // The ID of the current team
-          // Delete all existing assignments for the player
-          const { error: deleteOldAssignmentsError } = await supabase
-            .from("team_members")
-            .delete()
-            .eq("player_id", selectedPlayerId)
-
-          if (deleteOldAssignmentsError) {
-            throw deleteOldAssignmentsError
-          }
-          operationMessage = "Spieler erfolgreich transferiert!"
-        }
-
-        // Insert new assignment
-        const { error: insertError } = await supabase
-          .from("team_members")
-          .insert([{ player_id: selectedPlayerId, team_id: selectedTeamId, role: selectedRole }]) // NEW: Include role
-
-        if (insertError) {
-          throw insertError
-        }
-
-        // Log player movement in player_movements
-        const { error: movementError } = await supabase.from("player_movements").insert([
-          {
-            player_id: selectedPlayerId,
-            team_id: selectedTeamId, // This is the to_team_id
-            from_team_id: fromTeamId, // This is the from_team_id
-            movement_type: movementType,
-            user_id: user.id,
-          },
-        ])
-
-        if (movementError) {
-          console.error("Fehler beim Protokollieren der Spielerbewegung:", movementError)
-          // This is a non-critical error, the assignment has already occurred
+          setAssignmentMessage("Spielerrolle erfolgreich aktualisiert!")
+          setAssignmentMessageType("success")
+          setSelectedPlayerId("")
+          setSelectedTeamId("")
+          setSelectedRole("Player")
+          fetchTeamMembers()
+          setAssignmentLoading(false)
+          return
         }
       }
 
-      setAssignmentMessage(operationMessage)
+      const { error: insertError } = await supabase.from("team_members").insert([
+        {
+          player_id: selectedPlayerId,
+          team_id: selectedTeamId,
+          role: selectedRole,
+        },
+      ])
+
+      if (insertError) {
+        throw insertError
+      }
+
+      const { error: movementError } = await supabase.from("player_movements").insert([
+        {
+          player_id: selectedPlayerId,
+          team_id: selectedTeamId,
+          from_team_id: null, // No transfer, just addition
+          movement_type: "new_addition",
+          user_id: user.id,
+        },
+      ])
+
+      if (movementError) {
+        console.error("Fehler beim Protokollieren der Spielerbewegung:", movementError)
+      }
+
+      setAssignmentMessage("Spieler erfolgreich zu weiterem Team hinzugefügt!")
       setAssignmentMessageType("success")
       setSelectedPlayerId("")
       setSelectedTeamId("")
-      setSelectedRole("Player") // Reset role
+      setSelectedRole("Player")
       fetchTeamMembers()
+
       onDataSaved()
     } catch (error: any) {
       setAssignmentMessage(`Fehler bei der Zuweisung/dem Transfer: ${error.message}`)
       setAssignmentMessageType("error")
     } finally {
       setAssignmentLoading(false)
+    }
+  }
+
+  const handleRemovePlayerFromTeam = async (playerId: string, teamId: string, playerName: string, teamName: string) => {
+    if (!confirm(`Möchten Sie ${playerName} wirklich aus dem Team "${teamName}" entfernen?`)) {
+      return
+    }
+
+    try {
+      const { error } = await supabase.from("team_members").delete().eq("player_id", playerId).eq("team_id", teamId)
+
+      if (error) {
+        throw error
+      }
+
+      // Log the removal
+      const { error: movementError } = await supabase.from("player_movements").insert([
+        {
+          player_id: playerId,
+          team_id: null,
+          from_team_id: teamId,
+          movement_type: "removal",
+          user_id: user?.id,
+        },
+      ])
+
+      if (movementError) {
+        console.error("Fehler beim Protokollieren der Spielerentfernung:", movementError)
+      }
+
+      fetchTeamMembers()
+      setAssignmentMessage(`${playerName} wurde aus "${teamName}" entfernt.`)
+      setAssignmentMessageType("success")
+    } catch (error) {
+      console.error("Fehler beim Entfernen des Spielers:", error)
+      setAssignmentMessage("Fehler beim Entfernen des Spielers.")
+      setAssignmentMessageType("error")
     }
   }
 
@@ -1686,4 +1700,3 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
     </div>
   )
 }
-
