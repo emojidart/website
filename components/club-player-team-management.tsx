@@ -73,6 +73,13 @@ interface LigaStatistic {
   throws_154: number
   throws_under_26: number
   semperit_outs: number
+  throws_15: number
+  throws_16: number
+  throws_17: number
+  throws_18: number
+  throws_19: number
+  throws_20: number
+  throws_bull: number
   notes: string | null
 }
 
@@ -119,10 +126,20 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   const [throws154, setThrows154] = useState<number>(0)
   const [throwsUnder26, setThrowsUnder26] = useState<number>(0)
   const [semperitOuts, setSemperitOuts] = useState<number>(0)
+  const [throws15, setThrows15] = useState<number>(0)
+  const [throws16, setThrows16] = useState<number>(0)
+  const [throws17, setThrows17] = useState<number>(0)
+  const [throws18, setThrows18] = useState<number>(0)
+  const [throws19, setThrows19] = useState<number>(0)
+  const [throws20, setThrows20] = useState<number>(0)
+  const [throwsBull, setThrowsBull] = useState<number>(0)
   const [statsNotes, setStatsNotes] = useState<string>("")
   const [statsLoading, setStatsLoading] = useState(false)
   const [statsMessage, setStatsMessage] = useState("")
   const [statsMessageType, setStatsMessageType] = useState<"success" | "error" | "info">("info")
+
+  const [selectedPlayerStats, setSelectedPlayerStats] = useState<LigaStatistic | null>(null)
+  const [showDetailedStats, setShowDetailedStats] = useState(false)
 
   const [activeSection, setActiveSection] = useState<
     "add-player" | "manage-players" | "manage-teams" | "assign-player" | "liga-statistics" | "view-statistics"
@@ -147,6 +164,13 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
         throws_154,
         throws_under_26,
         semperit_outs,
+        throws_15,
+        throws_16,
+        throws_17,
+        throws_18,
+        throws_19,
+        throws_20,
+        throws_bull,
         notes,
         club_players(name)
       `)
@@ -168,6 +192,13 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
         throws_under_26: stat.throws_under_26,
         semperit_outs: stat.semperit_outs,
         notes: stat.notes,
+        throws_15: stat.throws_15,
+        throws_16: stat.throws_16,
+        throws_17: stat.throws_17,
+        throws_18: stat.throws_18,
+        throws_19: stat.throws_19,
+        throws_20: stat.throws_20,
+        throws_bull: stat.throws_bull,
       }))
       setLigaStats(statsWithPlayerNames || [])
     }
@@ -203,6 +234,13 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           throws_154: throws154,
           throws_under_26: throwsUnder26,
           semperit_outs: semperitOuts,
+          throws_15: throws15,
+          throws_16: throws16,
+          throws_17: throws17,
+          throws_18: throws18,
+          throws_19: throws19,
+          throws_20: throws20,
+          throws_bull: throwsBull,
           notes: statsNotes || null,
           created_by: user.id,
         },
@@ -224,6 +262,13 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
       setThrowsUnder26(0)
       setSemperitOuts(0)
       setStatsNotes("")
+      setThrows15(0)
+      setThrows16(0)
+      setThrows17(0)
+      setThrows18(0)
+      setThrows19(0)
+      setThrows20(0)
+      setThrowsBull(0)
 
       fetchLigaStatistics()
       onDataSaved()
@@ -1559,6 +1604,89 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                 </div>
 
                 <div className="space-y-4">
+                  <h4 className="text-md font-semibold text-blue-700">Einzelne Dart-Werte</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="throws15">15er</Label>
+                      <Input
+                        id="throws15"
+                        type="number"
+                        min="0"
+                        value={throws15}
+                        onChange={(e) => setThrows15(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="throws16">16er</Label>
+                      <Input
+                        id="throws16"
+                        type="number"
+                        min="0"
+                        value={throws16}
+                        onChange={(e) => setThrows16(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="throws17">17er</Label>
+                      <Input
+                        id="throws17"
+                        type="number"
+                        min="0"
+                        value={throws17}
+                        onChange={(e) => setThrows17(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="throws18">18er</Label>
+                      <Input
+                        id="throws18"
+                        type="number"
+                        min="0"
+                        value={throws18}
+                        onChange={(e) => setThrows18(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="throws19">19er</Label>
+                      <Input
+                        id="throws19"
+                        type="number"
+                        min="0"
+                        value={throws19}
+                        onChange={(e) => setThrows19(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="throws20">20er</Label>
+                      <Input
+                        id="throws20"
+                        type="number"
+                        min="0"
+                        value={throws20}
+                        onChange={(e) => setThrows20(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="throwsBull">Bull</Label>
+                      <Input
+                        id="throwsBull"
+                        type="number"
+                        min="0"
+                        value={throwsBull}
+                        onChange={(e) => setThrowsBull(Number.parseInt(e.target.value) || 0)}
+                        className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
                   <h4 className="text-md font-semibold text-red-700">Schlechte Würfe</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -1587,12 +1715,13 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="statsNotes">Notizen (optional)</Label>
+                  <Label htmlFor="statsNotes">Notizen</Label>
                   <Input
                     id="statsNotes"
+                    type="text"
                     value={statsNotes}
                     onChange={(e) => setStatsNotes(e.target.value)}
-                    placeholder="Zusätzliche Notizen zum Spieltag..."
+                    placeholder="Sonstige Anmerkungen zum Spieltag"
                     className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
                   />
                 </div>
@@ -1605,11 +1734,11 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   {statsLoading ? (
                     <div className="flex items-center space-x-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Wird gespeichert...</span>
+                      <span>Speichern...</span>
                     </div>
                   ) : (
                     <div className="flex items-center space-x-2">
-                      <BarChart3 className="h-4 w-4" />
+                      <CheckCircle className="h-4 w-4" />
                       <span>Statistiken speichern</span>
                     </div>
                   )}
@@ -1642,59 +1771,240 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
 
           {activeSection === "view-statistics" && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-800">Ligastatistiken anzeigen</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-6">Ligastatistiken</h3>
               {ligaStats.length === 0 ? (
-                <p className="text-sm text-gray-500">Noch keine Ligastatistiken vorhanden.</p>
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-lg">Noch keine Ligastatistiken vorhanden.</p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    Fügen Sie Statistiken über "Statistiken hinzufügen" hinzu.
+                  </p>
+                </div>
               ) : (
-                <div className="space-y-4">
-                  {ligaStats.map((stat) => (
-                    <div key={stat.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>{stat.player_name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{stat.player_name}</h4>
-                            <p className="text-sm text-gray-500">
-                              {new Date(stat.game_date).toLocaleDateString("de-DE")}
-                            </p>
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <tr>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Spieler
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Datum
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            180er
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            171er
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            154er
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Unter 26
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Semperit
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Notizen
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Details
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-100">
+                        {ligaStats.map((stat, index) => (
+                          <tr
+                            key={stat.id}
+                            className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? "bg-white" : "bg-gray-25"}`}
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-semibold text-gray-900">{stat.player_name}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">
+                                {new Date(stat.game_date).toLocaleDateString("de-DE")}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {stat.throws_180}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {stat.throws_171}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                {stat.throws_154}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                {stat.throws_under_26}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                {stat.semperit_outs}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600 max-w-32 truncate" title={stat.notes}>
+                                {stat.notes || "-"}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Button
+                                onClick={() => {
+                                  setSelectedPlayerStats(stat)
+                                  setShowDetailedStats(true)
+                                }}
+                                size="sm"
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+                              >
+                                Details
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {showDetailedStats && selectedPlayerStats && (
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+                <div className="p-8">
+                  <div className="flex justify-between items-center mb-8">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-800">
+                        Detailstatistik für {selectedPlayerStats.player_name}
+                      </h3>
+                      <p className="text-gray-500 mt-1">
+                        Spiel vom {new Date(selectedPlayerStats.game_date).toLocaleDateString("de-DE")}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => setShowDetailedStats(false)}
+                      variant="outline"
+                      size="sm"
+                      className="hover:bg-gray-100"
+                    >
+                      ✕ Schließen
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-green-700 flex items-center gap-2">🎯 Hohe Würfe</h4>
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">180er:</span>
+                            <span className="text-green-700 font-bold text-xl">{selectedPlayerStats.throws_180}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">171er:</span>
+                            <span className="text-green-700 font-bold text-xl">{selectedPlayerStats.throws_171}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">154er:</span>
+                            <span className="text-green-700 font-bold text-xl">{selectedPlayerStats.throws_154}</span>
                           </div>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                        <div className="text-center p-2 bg-green-100 rounded">
-                          <div className="font-semibold text-green-800">{stat.throws_180}</div>
-                          <div className="text-green-600">180er</div>
-                        </div>
-                        <div className="text-center p-2 bg-green-100 rounded">
-                          <div className="font-semibold text-green-800">{stat.throws_171}</div>
-                          <div className="text-green-600">171er</div>
-                        </div>
-                        <div className="text-center p-2 bg-green-100 rounded">
-                          <div className="font-semibold text-green-800">{stat.throws_154}</div>
-                          <div className="text-green-600">154er</div>
-                        </div>
-                        <div className="text-center p-2 bg-red-100 rounded">
-                          <div className="font-semibold text-red-800">{stat.throws_under_26}</div>
-                          <div className="text-red-600">&lt; 26</div>
-                        </div>
-                        <div className="text-center p-2 bg-red-100 rounded">
-                          <div className="font-semibold text-red-800">{stat.semperit_outs}</div>
-                          <div className="text-red-600">Semperit</div>
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-blue-700 flex items-center gap-2">
+                        🎯 Einzelne Dart-Werte
+                      </h4>
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">15er:</span>
+                            <span className="text-blue-700 font-bold text-lg">
+                              {selectedPlayerStats.throws_15 || 0}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">16er:</span>
+                            <span className="text-blue-700 font-bold text-lg">
+                              {selectedPlayerStats.throws_16 || 0}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">17er:</span>
+                            <span className="text-blue-700 font-bold text-lg">
+                              {selectedPlayerStats.throws_17 || 0}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">18er:</span>
+                            <span className="text-blue-700 font-bold text-lg">
+                              {selectedPlayerStats.throws_18 || 0}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">19er:</span>
+                            <span className="text-blue-700 font-bold text-lg">
+                              {selectedPlayerStats.throws_19 || 0}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">20er:</span>
+                            <span className="text-blue-700 font-bold text-lg">
+                              {selectedPlayerStats.throws_20 || 0}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">Bull:</span>
+                            <span className="text-blue-700 font-bold text-lg">
+                              {selectedPlayerStats.throws_bull || 0}
+                            </span>
+                          </div>
                         </div>
                       </div>
-
-                      {stat.notes && (
-                        <div className="mt-3 p-2 bg-blue-50 rounded text-sm text-blue-800">
-                          <strong>Notizen:</strong> {stat.notes}
-                        </div>
-                      )}
                     </div>
-                  ))}
+
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-red-700 flex items-center gap-2">⚠️ Schlechte Würfe</h4>
+                      <div className="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-xl border border-red-200">
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">Unter 26 Punkte:</span>
+                            <span className="text-red-700 font-bold text-xl">
+                              {selectedPlayerStats.throws_under_26}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-700">Semperit (Ins Out):</span>
+                            <span className="text-red-700 font-bold text-xl">{selectedPlayerStats.semperit_outs}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedPlayerStats.notes && (
+                      <div className="space-y-4 md:col-span-2 lg:col-span-3">
+                        <h4 className="text-lg font-semibold text-gray-700 flex items-center gap-2">📝 Notizen</h4>
+                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200">
+                          <p className="text-gray-700 leading-relaxed">{selectedPlayerStats.notes}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </CardContent>

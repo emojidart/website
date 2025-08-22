@@ -1,6 +1,5 @@
 "use client"
-import { Header } from "@/components/header" // Declare the Header component
-
+import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
@@ -18,7 +17,9 @@ import {
   PlusCircle,
   Mail,
   CalendarCheck,
-} from "lucide-react" // CalendarCheck NEU
+  ChevronRight,
+  Home,
+} from "lucide-react"
 import { useDartData } from "@/hooks/use-dart-data"
 import { AuthSection } from "@/components/auth-section"
 import { PlayerListModal } from "@/components/player-list-modal"
@@ -27,15 +28,16 @@ import { GameHistoryTable } from "@/components/game-history-table"
 import { PlayerPhotoManagement } from "@/components/player-photo-management"
 import { PlayerRegistration } from "@/components/player-registration"
 import { PlayerManagement } from "@/components/player-management"
-import { AdminPanel as ResultEntry } from "@/components/admin-panel" // Umbenannt, da dies die ResultEntry-Komponente ist
+import { AdminPanel as ResultEntry } from "@/components/admin-panel"
 import { ClubPlayerTeamManagement } from "@/components/club-player-team-management"
 import { PlayerRecruitmentForm } from "@/components/player-recruitment-form"
 import { PlayerRecruitmentList } from "@/components/player-recruitment-list"
 import { PlayerApplicationsList } from "@/components/player-applications-list"
-import { UpcomingTournamentsManagement } from "@/components/admin/upcoming-tournaments-management" // NEU
-import { TournamentRegistrationsList } from "@/components/admin/tournament-registrations-list" // NEU
+import { UpcomingTournamentsManagement } from "@/components/admin/upcoming-tournaments-management"
+import { TournamentRegistrationsList } from "@/components/admin/tournament-registrations-list"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import Link from "next/link"
 
@@ -48,32 +50,21 @@ export default function AdminPage() {
   const [isPlayerSelectedViaModal, setIsPlayerSelectedViaModal] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
-  // NEU: Zustand für die aktive Hauptkategorie
-  const [activeCategory, setActiveCategory] = useState<
-    "tournament-series" | "recruitment" | "club-admin" | "tournament-admin"
-  >("tournament-series") // Standardmäßig "Dart Competition"
-
-  // Zustand für den aktiven Unter-Tab
-  const [activeTab, setActiveTab] = useState<
-    | "players" // Spieler anlegen
-    | "results" // Ergebnis Eingabe
-    | "registrations" // Anmeldungen
-    | "history" // Spiele Historie
-    | "management" // Spielerverwaltung
-    | "photos" // Spielerfotos
-    | "club-management"
-    | "recruitment-form"
-    | "recruitment-list"
-    | "applications"
-    | "upcoming-tournaments" // NEU: Bevorstehende Turniere
-    | "tournament-registrations-list" // NEU: Turnier Anmeldungen
-    | "tournament-players"
-    | "spieldatenbank"
-  >("players") // Standardmäßig "Spieler anlegen"
+  const [currentView, setCurrentView] = useState<
+    | "dashboard"
+    | "players"
+    | "results"
+    | "registrations"
+    | "history"
+    | "management"
+    | "photos"
+    | "recruitment"
+    | "club"
+    | "tournaments"
+  >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
 
-  // Funktion zum Abrufen der ungelesenen Bewerbungen
   const fetchUnreadApplicationsCount = useCallback(async () => {
     if (!session) {
       setUnreadApplicationsCount(0)
@@ -92,9 +83,8 @@ export default function AdminPage() {
     }
   }, [session])
 
-  // Effekt für das initiale Laden und das Realtime-Abonnement
   useEffect(() => {
-    fetchUnreadApplicationsCount() // Initial fetch
+    fetchUnreadApplicationsCount()
 
     let channel: RealtimeChannel | null = null
 
@@ -107,7 +97,6 @@ export default function AdminPage() {
         .subscribe()
     }
 
-    // Cleanup-Funktion für das Abonnement
     return () => {
       if (channel) {
         supabase.removeChannel(channel)
@@ -136,9 +125,8 @@ export default function AdminPage() {
 
   const handleDataSaved = () => {
     fetchAndRenderAllTables()
-    // If data is saved in recruitment form, switch to list view
-    if (activeTab === "recruitment-form") {
-      setActiveTab("recruitment-list")
+    if (currentView === "recruitment") {
+      // Stay on recruitment view after saving
     }
   }
 
@@ -156,41 +144,134 @@ export default function AdminPage() {
     setIsPlayerSelectedViaModal(false)
   }
 
-  // NEU: Funktion zum Wechseln der Hauptkategorie und des Standard-Unter-Tabs
-  const handleCategoryClick = (category: typeof activeCategory) => {
-    setActiveCategory(category)
-    switch (category) {
-      case "tournament-series":
-        setActiveTab("players") // Standard: Spieler anlegen
-        break
-      case "recruitment":
-        setActiveTab("recruitment-form")
-        break
-      case "club-admin":
-        setActiveTab("club-management")
-        break
-      case "tournament-admin":
-        setActiveTab("upcoming-tournaments") // NEU: Standard für Turnierverwaltung
-        break
-      default:
-        setActiveTab("players")
-    }
-  }
+  const dashboardCards = [
+   
+    {
+      title: "Ergebnisse eingeben - Dart Competition",
+      description: "Spielergebnisse und Statistiken erfassen",
+      icon: Trophy,
+      color: "bg-green-500",
+      view: "results" as const,
+    },
+    {
+      title: "Spiele Historie - Dart Competition",
+      description: "Vergangene Spiele und Ergebnisse anzeigen",
+      icon: History,
+      color: "bg-orange-500",
+      view: "history" as const,
+    },
+    {
+      title: "Spielerverwaltung Dart Competition",
+      description: "Erweiterte Spielereinstellungen",
+      icon: Settings,
+      color: "bg-red-500",
+      view: "management" as const,
+    },
+    {
+      title: "Spielerfotos - Dart Competition ",
+      description: "Profilbilder verwalten",
+      icon: ImageIcon,
+      color: "bg-pink-500",
+      view: "photos" as const,
+    },
+	 {
+      title: "Anmeldungen",
+      description: "Turnieranmeldungen einsehen und verwalten",
+      icon: Eye,
+      color: "bg-purple-500",
+      view: "registrations" as const,
+    },
+    {
+      title: "Rekrutierung",
+      description: "Spielerbewerbungen und Rekrutierung",
+      icon: Mail,
+      color: "bg-indigo-500",
+      view: "recruitment" as const,
+      badge: unreadApplicationsCount > 0 ? unreadApplicationsCount : undefined,
+    },
+    {
+      title: "Vereinsverwaltung",
+      description: "Vereinsangelegenheiten verwalten",
+      icon: Users,
+      color: "bg-teal-500",
+      view: "club" as const,
+    },
+    {
+      title: "Turniere",
+      description: "Turnierverwaltung und -planung",
+      icon: CalendarCheck,
+      color: "bg-cyan-500",
+      view: "tournaments" as const,
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <main className="max-w-7xl mx-auto p-3 sm:p-4 md:p-8">
-        {/* Page Header */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex items-center space-x-3 mb-2">
+      <main className="max-w-7xl mx-auto p-4 md:p-8">
+        <div className="mb-8">
+          <div className="flex items-center space-x-2 mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentView("dashboard")}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <Home className="h-4 w-4 mr-1" />
+              Dashboard
+            </Button>
+            {currentView !== "dashboard" && (
+              <>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 capitalize">
+                  {currentView === "players" && "Spieler verwalten"}
+                  {currentView === "results" && "Ergebnisse eingeben"}
+                  {currentView === "registrations" && "Anmeldungen"}
+                  {currentView === "history" && "Spiele Historie"}
+                  {currentView === "management" && "Spielerverwaltung"}
+                  {currentView === "photos" && "Spielerfotos"}
+                  {currentView === "recruitment" && "Rekrutierung"}
+                  {currentView === "club" && "Vereinsverwaltung"}
+                  {currentView === "tournaments" && "Turniere"}
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-3">
             <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Verwaltung</h1>
-              <p className="text-sm sm:text-base text-gray-600">Turnierdaten und Spielerstatistiken verwalten</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {currentView === "dashboard"
+                  ? "Verwaltung"
+                  : currentView === "players"
+                    ? "Spieler verwalten"
+                    : currentView === "results"
+                      ? "Ergebnisse eingeben"
+                      : currentView === "registrations"
+                        ? "Anmeldungen"
+                        : currentView === "history"
+                          ? "Spiele Historie"
+                          : currentView === "management"
+                            ? "Spielerverwaltung"
+                            : currentView === "photos"
+                              ? "Spielerfotos"
+                              : currentView === "recruitment"
+                                ? "Rekrutierung"
+                                : currentView === "club"
+                                  ? "Vereinsverwaltung"
+                                  : currentView === "tournaments"
+                                    ? "Turniere"
+                                    : "Verwaltung"}
+              </h1>
+              <p className="text-gray-600">
+                {currentView === "dashboard"
+                  ? "Vereinsverwaltung, Turnierdaten und Spielerstatistiken verwalten"
+                  : "Wählen Sie eine Aktion aus dem Dashboard"}
+              </p>
             </div>
           </div>
         </div>
@@ -215,282 +296,6 @@ export default function AdminPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* User Status */}
-
-                {/* Haupt-Tab-Navigation */}
-                <div className="px-0 sm:px-0">
-                  <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-2 shadow-lg overflow-x-auto mb-4">
-                    <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-                      <Button
-                        onClick={() => handleCategoryClick("tournament-series")}
-                        className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 text-sm whitespace-nowrap flex-shrink-0 ${
-                          activeCategory === "tournament-series"
-                            ? "bg-red-600 text-white shadow-md"
-                            : "bg-transparent text-gray-600 hover:bg-gray-100"
-                        }`}
-                      >
-                        <Trophy className="h-4 w-4 mr-2" />
-                        Dart Competition
-                      </Button>
-                      <Button
-                        onClick={() => handleCategoryClick("recruitment")}
-                        className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 text-sm whitespace-nowrap flex-shrink-0 ${
-                          activeCategory === "recruitment"
-                            ? "bg-red-600 text-white shadow-md"
-                            : "bg-transparent text-gray-600 hover:bg-gray-100"
-                        }`}
-                      >
-                        <Mail className="h-4 w-4 mr-2" />
-                        Rekrutierung
-                        {unreadApplicationsCount > 0 && (
-                          <Badge className="ml-2 h-4 w-4 flex items-center justify-center p-0 text-xs bg-red-500 text-white rounded-full">
-                            {unreadApplicationsCount}
-                          </Badge>
-                        )}
-                      </Button>
-                      <Button
-                        onClick={() => handleCategoryClick("club-admin")}
-                        className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 text-sm whitespace-nowrap flex-shrink-0 ${
-                          activeCategory === "club-admin"
-                            ? "bg-red-600 text-white shadow-md"
-                            : "bg-transparent text-gray-600 hover:bg-gray-100"
-                        }`}
-                      >
-                        <Users className="h-4 w-4 mr-2" />
-                        Vereinsverwaltung
-                      </Button>
-                      <Button
-                        onClick={() => handleCategoryClick("tournament-admin")}
-                        className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 text-sm whitespace-nowrap flex-shrink-0 ${
-                          activeCategory === "tournament-admin"
-                            ? "bg-red-600 text-white shadow-md"
-                            : "bg-transparent text-gray-600 hover:bg-gray-100"
-                        }`}
-                      >
-                        <Database className="h-4 w-4 mr-2" />
-                        Turnierverwaltung
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Unter-Tab-Navigation basierend auf activeCategory */}
-                  <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-2 shadow-lg overflow-x-auto">
-                    <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-                      {activeCategory === "tournament-series" && (
-                        <>
-                          <Button
-                            onClick={() => setActiveTab("players")}
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "players"
-                                ? "bg-blue-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <UserPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Spieler anlegen</span>
-                            <span className="sm:hidden">Anlegen</span>
-                          </Button>
-                          <Button
-                            onClick={() => setActiveTab("results")}
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "results"
-                                ? "bg-green-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Trophy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Ergebnis Eingabe</span>
-                            <span className="sm:hidden">Ergebnis</span>
-                          </Button>
-                          <Button
-                            onClick={() => setActiveTab("registrations")}
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "registrations"
-                                ? "bg-red-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Anmeldungen</span>
-                            <span className="sm:hidden">Anmeld.</span>
-                          </Button>
-                          <Button
-                            onClick={() => setActiveTab("history")}
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "history"
-                                ? "bg-red-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <History className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Spiele Historie</span>
-                            <span className="sm:hidden">Historie</span>
-                          </Button>
-                          <Button
-                            onClick={() => setActiveTab("management")}
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "management"
-                                ? "bg-purple-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Spielerverwaltung</span>
-                            <span className="sm:hidden">Verwalten</span>
-                          </Button>
-                          <Button
-                            onClick={() => setActiveTab("photos")}
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "photos"
-                                ? "bg-red-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Spielerfotos</span>
-                            <span className="sm:hidden">Fotos</span>
-                          </Button>
-                        </>
-                      )}
-
-                      {activeCategory === "recruitment" && (
-                        <>
-                          <Button
-                            onClick={() => setActiveTab("recruitment-form")}
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "recruitment-form"
-                                ? "bg-blue-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Rekrutierungsbedarf eingeben</span>
-                            <span className="sm:hidden">Eingeben</span>
-                          </Button>
-                          <Button
-                            onClick={() => setActiveTab("recruitment-list")}
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "recruitment-list"
-                                ? "bg-indigo-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <List className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Rekrutierungsbedürfnisse anzeigen</span>
-                            <span className="sm:hidden">Anzeigen</span>
-                          </Button>
-                          <Button
-                            onClick={() => setActiveTab("applications")}
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 relative ${
-                              activeTab === "applications"
-                                ? "bg-pink-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Spielerbewerbungen</span>
-                            <span className="sm:hidden">Bewerb.</span>
-                            {unreadApplicationsCount > 0 && (
-                              <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs bg-red-500 text-white rounded-full">
-                                {unreadApplicationsCount}
-                              </Badge>
-                            )}
-                          </Button>
-                        </>
-                      )}
-
-                      {activeCategory === "club-admin" && (
-                        <>
-                          <Button
-                            onClick={() => setActiveTab("club-management")}
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "club-management"
-                                ? "bg-orange-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Verwaltung</span>
-                            <span className="sm:hidden">Verein</span>
-                          </Button>
-                        </>
-                      )}
-
-                      {activeCategory === "tournament-admin" && (
-                        <>
-                          <Button
-                            onClick={() => setActiveTab("upcoming-tournaments")} // NEU
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "upcoming-tournaments"
-                                ? "bg-blue-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <CalendarCheck className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Bevorstehende Turniere</span>
-                            <span className="sm:hidden">Turniere</span>
-                          </Button>
-                          <Button
-                            onClick={() => setActiveTab("tournament-registrations-list")} // NEU
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "tournament-registrations-list"
-                                ? "bg-purple-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <List className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Turnier Anmeldungen</span>
-                            <span className="sm:hidden">Anmeldungen</span>
-                          </Button>
-                          <Button
-                            asChild
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "kratzer-tournament" // Assuming you might set this as activeTab if clicked
-                                ? "bg-orange-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Link href="/kratzer-tournament">
-                              <Trophy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                              <span className="hidden sm:inline">Kratzer-Turnier</span>
-                              <span className="sm:hidden">Kratzer</span>
-                            </Link>
-                          </Button>
-                          {/* Bestehende Links, falls sie bleiben sollen */}
-                          <Button
-                            asChild
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "tournament-players"
-                                ? "bg-red-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Link href="/admin/tournament-players">
-                              <Trophy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                              <span className="hidden sm:inline">Turnierspielerdatenbank</span>
-                              <span className="sm:hidden">Turnierdaten</span>
-                            </Link>
-                          </Button>
-                          <Button
-                            asChild
-                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                              activeTab === "spieldatenbank"
-                                ? "bg-red-600 text-white shadow-md"
-                                : "bg-transparent text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Link href="/spielerdatenbank">
-                              <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                              <span className="hidden sm:inline">Spielerdatenbank</span>
-                              <span className="sm:hidden">Spieldaten</span>
-                            </Link>
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
                 {/* Status Message */}
                 {authMessage && (
                   <div
@@ -504,61 +309,166 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* Tab Content */}
-                {session && (
+                {currentView === "dashboard" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {dashboardCards.map((card) => (
+                      <Card
+                        key={card.view}
+                        className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 shadow-md hover:scale-105"
+                        onClick={() => setCurrentView(card.view)}
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div className={`p-3 ${card.color} rounded-lg shadow-lg`}>
+                              <card.icon className="h-6 w-6 text-white" />
+                            </div>
+                            {card.badge && <Badge className="bg-red-500 text-white">{card.badge}</Badge>}
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <CardTitle className="text-lg mb-2">{card.title}</CardTitle>
+                          <p className="text-sm text-gray-600">{card.description}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
+                {currentView === "players" && (
+                  <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />
+                )}
+
+                {currentView === "results" && (
+                  <ResultEntry
+                    isVisible={true}
+                    user={user}
+                    onDataSaved={handleDataSaved}
+                    onOpenPlayerList={handleOpenPlayerList}
+                    selectedPlayerName={selectedPlayerName}
+                    onPlayerNameChange={handlePlayerNameChange}
+                    isPlayerSelectedViaModal={isPlayerSelectedViaModal}
+                  />
+                )}
+
+                {currentView === "registrations" && <TournamentRegistrations />}
+                {currentView === "history" && <GameHistoryTable />}
+                {currentView === "management" && (
+                  <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />
+                )}
+                {currentView === "photos" && <PlayerPhotoManagement user={user} onDataSaved={handleDataSaved} />}
+
+                {currentView === "recruitment" && (
                   <div className="space-y-6">
-                    {activeCategory === "tournament-series" && (
-                      <>
-                        {activeTab === "players" && (
-                          <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />
-                        )}
-                        {activeTab === "results" && (
-                          <ResultEntry
-                            isVisible={true}
-                            user={user}
-                            onDataSaved={handleDataSaved}
-                            onOpenPlayerList={handleOpenPlayerList}
-                            selectedPlayerName={selectedPlayerName}
-                            onPlayerNameChange={handlePlayerNameChange}
-                            isPlayerSelectedViaModal={isPlayerSelectedViaModal}
-                          />
-                        )}
-                        {activeTab === "registrations" && <TournamentRegistrations />}
-                        {activeTab === "history" && <GameHistoryTable />}
-                        {activeTab === "management" && (
-                          <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />
-                        )}
-                        {activeTab === "photos" && <PlayerPhotoManagement user={user} onDataSaved={handleDataSaved} />}
-                      </>
-                    )}
+                    <div className="flex space-x-4 border-b border-gray-200">
+                      <Button
+                        variant="ghost"
+                        className="pb-2 border-b-2 border-transparent data-[active=true]:border-red-500 data-[active=true]:text-red-600"
+                        data-active={true}
+                      >
+                        Rekrutierung verwalten
+                      </Button>
+                    </div>
 
-                    {activeCategory === "recruitment" && (
-                      <>
-                        {activeTab === "recruitment-form" && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <PlusCircle className="h-5 w-5" />
+                            <span>Rekrutierungsbedarf eingeben</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
                           <PlayerRecruitmentForm user={user} onDataSaved={handleDataSaved} />
-                        )}
-                        {activeTab === "recruitment-list" && <PlayerRecruitmentList onDataSaved={handleDataSaved} />}
-                        {activeTab === "applications" && (
-                          <PlayerApplicationsList onDataChanged={fetchUnreadApplicationsCount} />
-                        )}
-                      </>
-                    )}
+                        </CardContent>
+                      </Card>
 
-                    {activeCategory === "club-admin" && (
-                      <>
-                        {activeTab === "club-management" && (
-                          <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />
-                        )}
-                      </>
-                    )}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <List className="h-5 w-5" />
+                            <span>Aktuelle Rekrutierungen</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <PlayerRecruitmentList onDataSaved={handleDataSaved} />
+                        </CardContent>
+                      </Card>
+                    </div>
 
-                    {activeCategory === "tournament-admin" && (
-                      <>
-                        {activeTab === "upcoming-tournaments" && <UpcomingTournamentsManagement user={user} />}
-                        {activeTab === "tournament-registrations-list" && <TournamentRegistrationsList />}
-                        {/* Für "Turnierverwaltung" gibt es keine direkten Komponenten hier, da es Links zu anderen Seiten sind. */}
-                      </>
-                    )}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Mail className="h-5 w-5" />
+                          <span>Spielerbewerbungen</span>
+                          {unreadApplicationsCount > 0 && (
+                            <Badge className="bg-red-500 text-white">{unreadApplicationsCount}</Badge>
+                          )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <PlayerApplicationsList onDataChanged={fetchUnreadApplicationsCount} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {currentView === "club" && <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />}
+
+                {currentView === "tournaments" && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <CalendarCheck className="h-5 w-5" />
+                            <span>Bevorstehende Turniere</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <UpcomingTournamentsManagement user={user} />
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <List className="h-5 w-5" />
+                            <span>Turnier Anmeldungen</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <TournamentRegistrationsList />
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Weitere Turnier-Tools</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <Link href="/kratzer-tournament">
+                            <Button variant="outline" className="w-full justify-start bg-transparent">
+                              <Trophy className="h-4 w-4 mr-2" />
+                              Kratzer-Turnier
+                            </Button>
+                          </Link>
+                          <Link href="/admin/tournament-players">
+                            <Button variant="outline" className="w-full justify-start bg-transparent">
+                              <Database className="h-4 w-4 mr-2" />
+                              Turnierspielerdatenbank
+                            </Button>
+                          </Link>
+                          <Link href="/spielerdatenbank">
+                            <Button variant="outline" className="w-full justify-start bg-transparent">
+                              <Users className="h-4 w-4 mr-2" />
+                              Spielerdatenbank
+                            </Button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 )}
               </div>

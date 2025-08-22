@@ -1,16 +1,14 @@
 "use client"
 
-import type React from "react"
-import { CheckCircle, AlertCircle, Save, Trophy, Target, Users } from "lucide-react"
-
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useState, useEffect } from "react"
+import { Badge } from "@/components/ui/badge"
+import { X, Plus, Trophy, Target, Users } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import type { User } from "@supabase/supabase-js"
-import { useDartData } from "@/hooks/use-dart-data" // Importiere den Hook
+import { useDartData } from "@/hooks/use-dart-data"
 
 interface Player {
   id: string
@@ -18,287 +16,255 @@ interface Player {
   profile_picture_url?: string
 }
 
-interface ResultEntryProps {
-  isVisible: boolean
-  user: User | null
-  onDataSaved: () => void
+interface PlayerResult {
+  playerId: string
+  playerName: string
+  score: number
+  position: number
 }
 
-export function ResultEntry({ isVisible, user, onDataSaved }: ResultEntryProps) {
-  const { recalculatePlayerStats } = useDartData() // Nutze den Hook, um die Funktion zu erhalten
-  const [gameType, setGameType] = useState<"edart" | "steeldart">("edart")
-  const [selectedPlayer, setSelectedPlayer] = useState<string>("")
+export default function ResultEntry() {
+  const [tournamentName, setTournamentName] = useState("")
+  const [tournamentDate, setTournamentDate] = useState("")
   const [players, setPlayers] = useState<Player[]>([])
-  const [points, setPoints] = useState<number | string>("")
-  const [legs, setLegs] = useState<number | string>("")
-  const [gameDate, setGameDate] = useState<string>(new Date().toISOString().split("T")[0])
-  const [formMessage, setFormMessage] = useState("")
-  const [formMessageType, setFormMessageType] = useState<"success" | "error" | "info">("info")
-  const [loading, setLoading] = useState(false)
-  const [loadingPlayers, setLoadingPlayers] = useState(false)
+  const [selectedPlayers, setSelectedPlayers] = useState<PlayerResult[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
 
-  const loadPlayers = async () => {
-    setLoadingPlayers(true)
-    try {
-      // Lade ALLE Spieler aus der players Tabelle (nur Namen und Fotos)
-      const { data, error } = await supabase.from("players").select("id, name, profile_picture_url").order("name")
-
-      if (error) throw error
-      setPlayers(data || [])
-      setSelectedPlayer("")
-    } catch (error: any) {
-      console.error("Error loading players:", error)
-      setFormMessage(`Fehler beim Laden der Spieler: ${error.message}`)
-      setFormMessageType("error")
-    } finally {
-      setLoadingPlayers(false)
-    }
-  }
+  const { calculatePlayerStats } = useDartData()
 
   useEffect(() => {
     loadPlayers()
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setFormMessage("Ergebnis wird gespeichert...")
-    setFormMessageType("info")
-
-    if (!user) {
-      setFormMessage("Fehler: Nicht authentifiziert.")
-      setFormMessageType("error")
-      setLoading(false)
-      return
-    }
-
-    if (!selectedPlayer || points === "" || legs === "" || gameDate === "") {
-      setFormMessage("Bitte alle Felder ausfüllen.")
-      setFormMessageType("error")
-      setLoading(false)
-      return
-    }
-
-    const numericPoints = Number(points)
-    const numericLegs = Number(legs)
-
-    if (isNaN(numericPoints) || isNaN(numericLegs) || numericPoints < 0 || numericLegs < 0) {
-      setFormMessage("Punkte und Legs müssen gültige Zahlen sein.")
-      setFormMessageType("error")
-      setLoading(false)
-      return
-    }
-
+  const loadPlayers = async () => {
     try {
-      // Find selected player name
-      const selectedPlayerData = players.find((p) => p.id === selectedPlayer)
-      if (!selectedPlayerData) {
-        throw new Error("Spieler nicht gefunden")
-      }
+      const { data, error } = await supabase
+        .from("spieldatenbank")
+        .select("id, name, profile_picture_url")
+        .order("name")
 
-      // Add game entry
-      const { error: gameEntryError } = await supabase.from("game_entries").insert([
-        {
-          player_name: selectedPlayerData.name,
-          game_type: gameType,
-          points: numericPoints,
-          legs: numericLegs,
-          game_date: gameDate,
-          user_id: user.id,
-        },
-      ])
-
-      if (gameEntryError) {
-        throw gameEntryError
-      }
-
-      // Recalculate player stats using the function from the hook
-      await recalculatePlayerStats(selectedPlayerData.name, gameType)
-
-      // Update pot total
-      const { data: potData, error: potFetchError } = await supabase.from("pot_total").select("id, amount").single()
-
-      if (potFetchError) {
-        throw potFetchError
-      }
-
-      const newPotAmount = Number.parseFloat(potData.amount) + 4.0
-      const { error: potUpdateError } = await supabase
-        .from("pot_total")
-        .update({ amount: newPotAmount })
-        .eq("id", potData.id)
-
-      if (potUpdateError) {
-        throw potUpdateError
-      }
-
-      setFormMessage("Ergebnis erfolgreich gespeichert!")
-      setFormMessageType("success")
-      onDataSaved()
-
-      // Reset form
-      setSelectedPlayer("")
-      setPoints("")
-      setLegs("")
-    } catch (error: any) {
-      setFormMessage(`Fehler: ${error.message}`)
-      setFormMessageType("error")
-    } finally {
-      setLoading(false)
+      if (error) throw error
+      setPlayers(data || [])
+    } catch (error) {
+      console.error("Fehler beim Laden der Spieler:", error)
     }
   }
 
-  if (!isVisible) return null
+  const filteredPlayers = players.filter(
+    (player) =>
+      player.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      !selectedPlayers.some((sp) => sp.playerId === player.id),
+  )
+
+  const addPlayer = (player: Player) => {
+    const newPlayer: PlayerResult = {
+      playerId: player.id,
+      playerName: player.name,
+      score: 0,
+      position: selectedPlayers.length + 1,
+    }
+    setSelectedPlayers([...selectedPlayers, newPlayer])
+    setSearchTerm("")
+  }
+
+  const removePlayer = (playerId: string) => {
+    const updatedPlayers = selectedPlayers
+      .filter((p) => p.playerId !== playerId)
+      .map((p, index) => ({ ...p, position: index + 1 }))
+    setSelectedPlayers(updatedPlayers)
+  }
+
+  const updatePlayerScore = (playerId: string, score: number) => {
+    setSelectedPlayers((prev) => prev.map((p) => (p.playerId === playerId ? { ...p, score } : p)))
+  }
+
+  const sortPlayersByScore = () => {
+    const sorted = [...selectedPlayers]
+      .sort((a, b) => b.score - a.score)
+      .map((p, index) => ({ ...p, position: index + 1 }))
+    setSelectedPlayers(sorted)
+  }
+
+  const submitResults = async () => {
+    if (!tournamentName || !tournamentDate || selectedPlayers.length === 0) {
+      alert("Bitte alle Felder ausfüllen und mindestens einen Spieler hinzufügen.")
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      // Turnier erstellen
+      const { data: tournament, error: tournamentError } = await supabase
+        .from("tournaments")
+        .insert({
+          name: tournamentName,
+          date: tournamentDate,
+          player_count: selectedPlayers.length,
+        })
+        .select()
+        .single()
+
+      if (tournamentError) throw tournamentError
+
+      // Ergebnisse einfügen
+      const results = selectedPlayers.map((player) => ({
+        tournament_id: tournament.id,
+        player_id: player.playerId,
+        score: player.score,
+        position: player.position,
+      }))
+
+      const { error: resultsError } = await supabase.from("results").insert(results)
+
+      if (resultsError) throw resultsError
+
+      // Spielerstatistiken aktualisieren
+      for (const player of selectedPlayers) {
+        await calculatePlayerStats(player.playerId)
+      }
+
+      alert("Turnierergebnisse erfolgreich gespeichert!")
+
+      // Formular zurücksetzen
+      setTournamentName("")
+      setTournamentDate("")
+      setSelectedPlayers([])
+    } catch (error) {
+      console.error("Fehler beim Speichern:", error)
+      alert("Fehler beim Speichern der Ergebnisse.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-        <CardHeader className="border-b border-gray-100 pb-6">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg">
-              <Trophy className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-semibold text-gray-900">Spielergebnis eingeben</CardTitle>
-              <p className="text-sm text-gray-500 mt-1">Turnierergebnis für registrierte Spieler erfassen</p>
-            </div>
-          </div>
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="h-6 w-6 text-yellow-600" />
+            Turnierergebnisse eingeben
+          </CardTitle>
         </CardHeader>
-
-        <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Tournament Type Selection */}
+        <CardContent className="space-y-6">
+          {/* Turnier-Informationen */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Turnierart</label>
-              <Select value={gameType} onValueChange={(value: "edart" | "steeldart") => setGameType(value)}>
-                <SelectTrigger className="h-12 border-gray-200 focus:border-green-500 focus:ring-green-500 bg-gray-50/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="edart">
-                    <div className="flex items-center space-x-2">
-                      <Target className="h-4 w-4 text-blue-600" />
-                      <span>E-Dart Turnier</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="steeldart">
-                    <div className="flex items-center space-x-2">
-                      <Users className="h-4 w-4 text-green-600" />
-                      <span>Steel Dart Turnier</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Player Selection */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Spieler auswählen</label>
-              <Select value={selectedPlayer} onValueChange={setSelectedPlayer} disabled={loadingPlayers}>
-                <SelectTrigger className="h-12 border-gray-200 focus:border-green-500 focus:ring-green-500 bg-gray-50/50">
-                  <SelectValue placeholder={loadingPlayers ? "Lade Spieler..." : "Spieler auswählen"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {players.map((player) => (
-                    <SelectItem key={player.id} value={player.id}>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium">
-                          {player.name.charAt(0).toUpperCase()}
-                        </div>
-                        <span>{player.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {players.length === 0 && !loadingPlayers && (
-                <p className="text-xs text-gray-500 mt-1">Keine Spieler gefunden. Bitte zuerst Spieler registrieren.</p>
-              )}
-            </div>
-
-            {/* Game Date */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Turnierdatum</label>
+              <Label htmlFor="tournament-name">Turniername</Label>
               <Input
-                type="date"
-                value={gameDate}
-                onChange={(e) => setGameDate(e.target.value)}
-                className="h-12 border-gray-200 focus:border-green-500 focus:ring-green-500 bg-gray-50/50 transition-all duration-200"
-                required
+                id="tournament-name"
+                value={tournamentName}
+                onChange={(e) => setTournamentName(e.target.value)}
+                placeholder="z.B. Weihnachtsturnier 2024"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="tournament-date">Datum</Label>
+              <Input
+                id="tournament-date"
+                type="date"
+                value={tournamentDate}
+                onChange={(e) => setTournamentDate(e.target.value)}
+              />
+            </div>
+          </div>
 
-            {/* Points and Legs */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Punkte</label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={points}
-                  onChange={(e) => setPoints(e.target.value)}
-                  placeholder="0"
-                  className="h-12 border-gray-200 focus:border-green-500 focus:ring-green-500 bg-gray-50/50 transition-all duration-200"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Legs</label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={legs}
-                  onChange={(e) => setLegs(e.target.value)}
-                  placeholder="0"
-                  className="h-12 border-gray-200 focus:border-green-500 focus:ring-green-500 bg-gray-50/50 transition-all duration-200"
-                  required
-                />
-              </div>
+          {/* Spieler hinzufügen */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-600" />
+              <Label>Spieler hinzufügen</Label>
             </div>
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={loading || loadingPlayers || players.length === 0}
-              className="w-full h-12 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              {loading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Speichern...</span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <Save className="h-4 w-4" />
-                  <span>Ergebnis speichern</span>
+            <div className="space-y-2">
+              <Input
+                placeholder="Spieler suchen..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+
+              {searchTerm && filteredPlayers.length > 0 && (
+                <div className="border rounded-md max-h-40 overflow-y-auto">
+                  {filteredPlayers.slice(0, 5).map((player) => (
+                    <div
+                      key={player.id}
+                      className="p-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
+                      onClick={() => addPlayer(player)}
+                    >
+                      <span>{player.name}</span>
+                      <Plus className="h-4 w-4 text-green-600" />
+                    </div>
+                  ))}
                 </div>
               )}
-            </Button>
+            </div>
+          </div>
 
-            {/* Status Message */}
-            {formMessage && (
-              <div
-                className={`p-4 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  formMessageType === "error"
-                    ? "bg-red-50 text-red-700 border border-red-100"
-                    : formMessageType === "success"
-                      ? "bg-green-50 text-green-700 border border-green-100"
-                      : "bg-gray-50 text-gray-700 border border-gray-100"
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  {formMessageType === "error" ? (
-                    <AlertCircle className="h-4 w-4" />
-                  ) : formMessageType === "success" ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-                  )}
-                  <span>{formMessage}</span>
+          {/* Ausgewählte Spieler */}
+          {selectedPlayers.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-green-600" />
+                  <Label>Teilnehmer ({selectedPlayers.length})</Label>
                 </div>
+                <Button variant="outline" size="sm" onClick={sortPlayersByScore}>
+                  Nach Punkten sortieren
+                </Button>
               </div>
-            )}
-          </form>
+
+              <div className="space-y-3">
+                {selectedPlayers.map((player, index) => (
+                  <Card key={player.playerId} className="p-4">
+                    <div className="flex items-center gap-4">
+                      <Badge variant="outline" className="min-w-[60px] justify-center">
+                        Platz {player.position}
+                      </Badge>
+
+                      <div className="flex-1">
+                        <span className="font-medium">{player.playerName}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor={`score-${player.playerId}`} className="text-sm">
+                          Punkte:
+                        </Label>
+                        <Input
+                          id={`score-${player.playerId}`}
+                          type="number"
+                          value={player.score}
+                          onChange={(e) => updatePlayerScore(player.playerId, Number.parseInt(e.target.value) || 0)}
+                          className="w-20"
+                          min="0"
+                        />
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removePlayer(player.playerId)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="pt-4">
+            <Button
+              onClick={submitResults}
+              disabled={isLoading || !tournamentName || !tournamentDate || selectedPlayers.length === 0}
+              className="w-full"
+            >
+              {isLoading ? "Speichere..." : "Turnierergebnisse speichern"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

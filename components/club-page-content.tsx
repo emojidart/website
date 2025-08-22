@@ -204,7 +204,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-none tracking-tighter mb-6">
             <span className="block text-orange-600">UNSER</span>
             <span className="block text-gray-900">DARTVEREIN</span>
-            <span className="block text-yellow-600">EMOJIS</span>
+            <span className="block text-yellow-600">EMOJ!'S</span>
           </h1>
           <p className="text-lg md:text-xl font-bold uppercase text-gray-600 mb-8">
             Leidenschaft, Gemeinschaft, Erfolg

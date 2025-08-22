@@ -47,25 +47,25 @@ export interface GameEntry {
 
 // Neue Interfaces für die Turnierhistorie
 export interface HistoricalPlayerResult {
-  player_name: string;
-  points: number;
-  legs: number;
-  combinedScore: number; // points + legs for this specific game entry
-  profile_picture_url?: string;
+  player_name: string
+  points: number
+  legs: number
+  combinedScore: number // points + legs for this specific game entry
+  profile_picture_url?: string
 }
 
 export interface TournamentSummary {
-  date: string;
-  gameType: "edart" | "steeldart";
-  totalParticipants: number;
-  totalPoints: number;
-  totalLegs: number;
-  rankedPlayers: HistoricalPlayerResult[]; // Players ranked for this specific tournament
+  date: string
+  gameType: "edart" | "steeldart"
+  totalParticipants: number
+  totalPoints: number
+  totalLegs: number
+  rankedPlayers: HistoricalPlayerResult[] // Players ranked for this specific tournament
 }
 
 export interface GroupedTournamentHistory {
-  edart?: TournamentSummary[];
-  steeldart?: TournamentSummary[];
+  edart?: TournamentSummary[]
+  steeldart?: TournamentSummary[]
 }
 
 // Funktion zur Neuberechnung der Spielerstatistiken
@@ -238,46 +238,43 @@ const fetchGroupedGameHistory = async (): Promise<GroupedTournamentHistory> => {
     const grouped: GroupedTournamentHistory = {
       edart: [],
       steeldart: [],
-    };
+    }
 
     // Fetch all player profile pictures once
-    const { data: allPlayers, error: playersError } = await supabase
-      .from("players")
-      .select("name, profile_picture_url");
+    const { data: allPlayers, error: playersError } = await supabase.from("players").select("name, profile_picture_url")
 
-    if (playersError) throw playersError;
-    const playerProfileMap = new Map(allPlayers?.map(p => [p.name, p.profile_picture_url]));
-
+    if (playersError) throw playersError
+    const playerProfileMap = new Map(allPlayers?.map((p) => [p.name, p.profile_picture_url]))
 
     // Group entries by game type and date
-    const tempGrouped: { [gameType: string]: { [date: string]: GameEntry[] } } = {};
-    gameEntries?.forEach(entry => {
+    const tempGrouped: { [gameType: string]: { [date: string]: GameEntry[] } } = {}
+    gameEntries?.forEach((entry) => {
       if (!tempGrouped[entry.game_type]) {
-        tempGrouped[entry.game_type] = {};
+        tempGrouped[entry.game_type] = {}
       }
       if (!tempGrouped[entry.game_type][entry.game_date]) {
-        tempGrouped[entry.game_type][entry.game_date] = [];
+        tempGrouped[entry.game_type][entry.game_date] = []
       }
-      tempGrouped[entry.game_type][entry.game_date].push(entry);
-    });
+      tempGrouped[entry.game_type][entry.game_date].push(entry)
+    })
 
     // Process each game type and date to create TournamentSummary
     for (const gameType of ["edart", "steeldart"]) {
       if (tempGrouped[gameType]) {
-        const dates = Object.keys(tempGrouped[gameType]).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // Sort dates descending
+        const dates = Object.keys(tempGrouped[gameType]).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) // Sort dates descending
 
         for (const date of dates) {
-          const entriesForDate = tempGrouped[gameType][date];
-          const playerResultsMap = new Map<string, { points: number, legs: number, participations: number }>();
+          const entriesForDate = tempGrouped[gameType][date]
+          const playerResultsMap = new Map<string, { points: number; legs: number; participations: number }>()
 
-          entriesForDate.forEach(entry => {
-            const current = playerResultsMap.get(entry.player_name) || { points: 0, legs: 0, participations: 0 };
+          entriesForDate.forEach((entry) => {
+            const current = playerResultsMap.get(entry.player_name) || { points: 0, legs: 0, participations: 0 }
             playerResultsMap.set(entry.player_name, {
               points: current.points + entry.points,
               legs: current.legs + entry.legs,
               participations: current.participations + 1,
-            });
-          });
+            })
+          })
 
           const rankedPlayers: HistoricalPlayerResult[] = Array.from(playerResultsMap.entries())
             .map(([playerName, stats]) => ({
@@ -287,37 +284,35 @@ const fetchGroupedGameHistory = async (): Promise<GroupedTournamentHistory> => {
               combinedScore: stats.points + stats.legs,
               profile_picture_url: playerProfileMap.get(playerName) || undefined,
             }))
-            .sort((a, b) => b.combinedScore - a.combinedScore); // Sort by combined score for ranking
+            .sort((a, b) => b.combinedScore - a.combinedScore) // Sort by combined score for ranking
 
-          const totalPoints = rankedPlayers.reduce((sum, p) => sum + p.points, 0);
-          const totalLegs = rankedPlayers.reduce((sum, p) => sum + p.legs, 0);
-
-          (grouped[gameType as "edart" | "steeldart"] as TournamentSummary[]).push({
+          const totalPoints = rankedPlayers.reduce((sum, p) => sum + p.points, 0)
+          const totalLegs = rankedPlayers.reduce((sum, p) => sum + p.legs, 0)
+          ;(grouped[gameType as "edart" | "steeldart"] as TournamentSummary[]).push({
             date: date,
             gameType: gameType as "edart" | "steeldart",
             totalParticipants: rankedPlayers.length,
             totalPoints: totalPoints,
             totalLegs: totalLegs,
             rankedPlayers: rankedPlayers,
-          });
+          })
         }
       }
     }
 
-    return grouped;
+    return grouped
   } catch (error) {
-    console.error("Error fetching grouped game history:", error);
-    throw error;
+    console.error("Error fetching grouped game history:", error)
+    throw error
   }
-};
-
+}
 
 export const useDartData = () => {
   const [edartPlayers, setEdartPlayers] = useState<PlayerData[]>([])
   const [steelDartPlayers, setSteelDartPlayers] = useState<PlayerData[]>([])
   const [combinedPlayers, setCombinedPlayers] = useState<CombinedPlayerData[]>([])
   const [currentPot, setCurrentPot] = useState(0)
-  const [groupedGameHistory, setGroupedGameHistory] = useState<GroupedTournamentHistory>({}); // Neuer State
+  const [groupedGameHistory, setGroupedGameHistory] = useState<GroupedTournamentHistory>({}) // Neuer State
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -331,28 +326,44 @@ export const useDartData = () => {
     return data || []
   }
 
-  const fetchPot = async () => {
-    const { data, error } = await supabase.from("pot_total").select("amount").single()
-    if (error) throw error
-    return data.amount || 0
+  const calculatePotFromParticipations = (combinedPlayersData: CombinedPlayerData[]): number => {
+    const totalParticipations = combinedPlayersData.reduce((sum, player) => {
+      return sum + player.totalParticipations
+    }, 0)
+    return totalParticipations * 4 // 4€ pro Antritt
+  }
+
+  // Neue Funktion für Spieler-Pot berechnung
+  const calculatePlayerPot = (combinedPlayersData: CombinedPlayerData[]): number => {
+    return combinedPlayersData.length * 5 // 5€ pro Spieler
+  }
+
+  // Neue Funktion für Gesamtpot berechnung
+  const calculateTotalPot = (participationPot: number, playerPot: number): number => {
+    return participationPot + playerPot
   }
 
   const fetchAndRenderAllTables = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [edart, steel, pot, combined, history] = await Promise.all([ // history hinzugefügt
+      const [edart, steel, combined, history] = await Promise.all([
+        // pot entfernt
         fetchPlayers("edart_players"),
         fetchPlayers("steel_dart_players"),
-        fetchPot(),
         fetchCombinedPlayers(),
-        fetchGroupedGameHistory(), // Neue Funktion aufrufen
+        fetchGroupedGameHistory(),
       ])
+
+      const calculatedPot = calculatePotFromParticipations(combined)
+      const playerPot = calculatePlayerPot(combined)
+      const totalPot = calculateTotalPot(calculatedPot, playerPot)
+
       setEdartPlayers(edart)
       setSteelDartPlayers(steel)
-      setCurrentPot(pot)
+      setCurrentPot(totalPot) // Berechneter Pot statt Datenbank-Pot
       setCombinedPlayers(combined)
-      setGroupedGameHistory(history); // State aktualisieren
+      setGroupedGameHistory(history)
     } catch (err: any) {
       console.error("Failed to fetch dart data:", err)
       setError(err.message)
@@ -376,5 +387,9 @@ export const useDartData = () => {
     fetchAndRenderAllTables,
     fetchPlayers, // Expose fetchPlayers for PlayerListModal
     recalculatePlayerStats, // Expose recalculatePlayerStats
+    // Neue Pot-Berechnungsfunktionen exportieren
+    calculatePotFromParticipations,
+    calculatePlayerPot,
+    calculateTotalPot,
   }
 }

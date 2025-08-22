@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Trophy, TrendingUp, Euro, Sparkles } from "lucide-react"
+import { Trophy, TrendingUp, Euro, Sparkles, Calculator } from "lucide-react"
 
 interface PotDisplayProps {
   amount: number
@@ -37,6 +37,8 @@ export function PotDisplay({ amount }: PotDisplayProps) {
           </span>
         </div>
 
+        
+
         <div className="flex flex-col sm:flex-row items-center justify-center text-gray-600">
           <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0 sm:mr-2 text-green-600" />
           <span className="text-sm sm:text-base lg:text-lg font-semibold text-center">
@@ -48,9 +50,7 @@ export function PotDisplay({ amount }: PotDisplayProps) {
       {/* Footer - Mobile optimiert */}
       <div className="flex items-center justify-center text-gray-700">
         <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-yellow-500" />
-        <span className="text-sm sm:text-base font-bold uppercase tracking-wide text-center">
-          STARTGELD 4€!
-        </span>
+        <span className="text-sm sm:text-base font-bold uppercase tracking-wide text-center">STARTGELD 4€!</span>
         <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 ml-2 text-yellow-500" />
       </div>
     </motion.div>

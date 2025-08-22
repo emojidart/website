@@ -161,7 +161,7 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
     if (isLioncup) {
       return (
         <>
-          <span className={`block ${eventColors.primary}`}>EMD LIONCUP</span>
+          <span className={`block ${eventColors.primary}`}>EMD - LION CUP</span>
           <span className={`block ${eventColors.accent}`}>DART TOURNAMENT</span>
           <span className={`block ${eventColors.secondary}`}>2025/2026</span>
         </>
@@ -361,7 +361,7 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
                     : "hover:text-red-600 border-red-600 text-red-600"
                 }`}
               >
-                {isLioncup ? "EMD LIONCUP ANMELDUNG" : "MEHR ERFAHREN"}
+                {isLioncup ? "EMD - LION CUP ANMELDUNG" : "MEHR ERFAHREN"}
               </Button>
             </Link>
           </motion.div>

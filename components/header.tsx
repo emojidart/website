@@ -12,7 +12,7 @@ import { usePathname } from "next/navigation"
 
 export function Header() {
   const marqueeContent =
-    "🦁 +++ EMD LION CUP PART II STARTET IN KÜRZE • ZEITRAUM: 01. SEPTEMBER 2025 – 01. JUNI 2026 • 34 SPIELTAGE • 1 FINALE • JEDEN MONTAG 19:30 UHR +++"
+    "🦁 +++ EMD - LION CUP PART II STARTET IN KÜRZE • ZEITRAUM: 01. SEPTEMBER 2025 – 01. JUNI 2026 • 34 SPIELTAGE • 1 FINALE • JEDEN MONTAG 19:30 UHR +++"
 
   const { session, user } = useAuth()
   const [loggingOut, setLoggingOut] = useState(false)
@@ -87,7 +87,7 @@ export function Header() {
                     : "text-gray-900 hover:text-orange-600"
                 }`}
               >
-                🦁 Lion Cup
+                🦁 EMD - Lion Cup
                 <ChevronDown className="ml-1 h-3 w-3" />
                 <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1 py-0.5 rounded-full font-bold">
                   NEU

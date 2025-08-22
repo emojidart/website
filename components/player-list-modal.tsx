@@ -5,15 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Search, User, X, Users } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 interface PlayerListModalProps {
   isOpen: boolean
   onClose: () => void
   onSelectPlayer: (name: string) => void
-  fetchAllUniquePlayers: () => Promise<string[]>
 }
 
-export function PlayerListModal({ isOpen, onClose, onSelectPlayer, fetchAllUniquePlayers }: PlayerListModalProps) {
+export function PlayerListModal({ isOpen, onClose, onSelectPlayer }: PlayerListModalProps) {
   const [players, setPlayers] = useState<string[]>([])
   const [filteredPlayers, setFilteredPlayers] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -36,9 +36,16 @@ export function PlayerListModal({ isOpen, onClose, onSelectPlayer, fetchAllUniqu
   const loadPlayers = async () => {
     setLoading(true)
     try {
-      const allPlayers = await fetchAllUniquePlayers()
-      setPlayers(allPlayers)
-      setFilteredPlayers(allPlayers)
+      const { data, error } = await supabase.from("spieldatenbank").select("name").order("name")
+
+      if (error) {
+        console.error("Fehler beim Laden der Spieler:", error)
+        return
+      }
+
+      const playerNames = data?.map((player) => player.name) || []
+      setPlayers(playerNames)
+      setFilteredPlayers(playerNames)
     } catch (error) {
       console.error("Fehler beim Laden der Spieler:", error)
     } finally {
