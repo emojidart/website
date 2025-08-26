@@ -266,9 +266,9 @@ export function Header() {
           </SheetTrigger>
           <SheetContent
             side="right"
-            className="bg-white/95 backdrop-blur-sm border-l border-gray-200 w-[280px] sm:w-[320px] shadow-2xl"
+            className="bg-white/95 backdrop-blur-sm border-l border-gray-200 w-[280px] sm:w-[320px] shadow-2xl overflow-y-auto max-h-screen"
           >
-            <div className="flex flex-col gap-4 py-6 px-4">
+            <div className="flex flex-col gap-4 py-6 px-4 min-h-full">
               <div className="flex items-center gap-2 pb-4 border-b border-gray-200 mb-4">
                 <div>
                   <div className="font-bold text-gray-900 text-xl">Emoj!'s Dartverein</div>
@@ -480,4 +480,3 @@ export function Header() {
     </header>
   )
 }
-
