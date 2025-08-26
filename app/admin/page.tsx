@@ -10,7 +10,6 @@ import {
   Eye,
   History,
   ImageIcon,
-  UserPlus,
   Trophy,
   Settings,
   List,
@@ -40,6 +39,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import Link from "next/link"
+import { UserManagement } from "@/components/user-management"
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage } = useAuth()
@@ -61,6 +61,7 @@ export default function AdminPage() {
     | "recruitment"
     | "club"
     | "tournaments"
+    | "users"
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -145,7 +146,13 @@ export default function AdminPage() {
   }
 
   const dashboardCards = [
-   
+    {
+      title: "Benutzerverwaltung",
+      description: "Alle Kapitäne, Co-Kapitäne und Spieler verwalten",
+      icon: Users,
+      color: "bg-blue-500",
+      view: "users" as const,
+    },
     {
       title: "Ergebnisse eingeben - Dart Competition",
       description: "Spielergebnisse und Statistiken erfassen",
@@ -174,7 +181,7 @@ export default function AdminPage() {
       color: "bg-pink-500",
       view: "photos" as const,
     },
-	 {
+    {
       title: "Anmeldungen",
       description: "Turnieranmeldungen einsehen und verwalten",
       icon: Eye,
@@ -234,6 +241,7 @@ export default function AdminPage() {
                   {currentView === "recruitment" && "Rekrutierung"}
                   {currentView === "club" && "Vereinsverwaltung"}
                   {currentView === "tournaments" && "Turniere"}
+                  {currentView === "users" && "Benutzerverwaltung"}
                 </span>
               </>
             )}
@@ -265,12 +273,16 @@ export default function AdminPage() {
                                   ? "Vereinsverwaltung"
                                   : currentView === "tournaments"
                                     ? "Turniere"
-                                    : "Verwaltung"}
+                                    : currentView === "users"
+                                      ? "Benutzerverwaltung"
+                                      : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
-                {currentView === "dashboard"
+                {session && currentView === "dashboard"
                   ? "Vereinsverwaltung, Turnierdaten und Spielerstatistiken verwalten"
-                  : "Wählen Sie eine Aktion aus dem Dashboard"}
+                  : session && currentView !== "dashboard"
+                    ? "Wählen Sie eine Aktion aus dem Dashboard"
+                    : "Bitte melden Sie sich an, um auf den Admin-Bereich zuzugreifen"}
               </p>
             </div>
           </div>
@@ -411,6 +423,8 @@ export default function AdminPage() {
                     </Card>
                   </div>
                 )}
+
+                {currentView === "users" && <UserManagement user={user} onDataSaved={handleDataSaved} />}
 
                 {currentView === "club" && <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />}
 

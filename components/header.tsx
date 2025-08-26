@@ -185,46 +185,76 @@ export function Header() {
             Kontakt
           </Link>
 
-          <Link href="/admin" passHref>
-            <Button
-              variant="outline"
-              className={`font-bold py-2 px-4 xl:px-5 rounded-md bg-transparent uppercase transition-colors text-sm ${
-                pathname === "/admin"
-                  ? "border-red-600 text-red-600 bg-gray-200"
-                  : "border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600"
-              }`}
-            >
-              Admin
-            </Button>
-          </Link>
-
           {session && user ? (
-            <div className="flex items-center gap-3 ml-4">
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <UserIcon className="h-4 w-4" />
-                <span>{user.email}</span>
-              </div>
-              <Button
-                onClick={handleLogout}
-                disabled={loggingOut}
-                variant="outline"
-                size="sm"
-                className="border-gray-300 text-gray-900 hover:bg-red-50 hover:border-red-300 bg-transparent transition-all duration-200"
-              >
-                {loggingOut ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2" />
-                    Abmeldung...
-                  </>
-                ) : (
-                  <>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Abmelden
-                  </>
-                )}
-              </Button>
-            </div>
-          ) : null}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-green-500 text-green-600 hover:bg-green-50 hover:border-green-600 bg-transparent transition-all duration-200 font-bold"
+                >
+                  <UserIcon className="h-4 w-4 mr-2" />
+                  {user.email?.split("@")[0] || "User"}
+                  <ChevronDown className="ml-1 h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href="/member-dashboard" className="w-full cursor-pointer">
+                    <UserIcon className="h-4 w-4 mr-2" />
+                    Member Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin" className="w-full cursor-pointer">
+                    <UserIcon className="h-4 w-4 mr-2" />
+                    Admin Panel
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} disabled={loggingOut}>
+                  {loggingOut ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2" />
+                      Abmeldung...
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Abmelden
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-orange-500 text-orange-600 hover:bg-orange-50 hover:border-orange-600 bg-transparent transition-all duration-200 font-bold"
+                >
+                  <UserIcon className="h-4 w-4 mr-2" />
+                  Login
+                  <ChevronDown className="ml-1 h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href="/member-login" className="w-full cursor-pointer">
+                    <UserIcon className="h-4 w-4 mr-2" />
+                    Member Login
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin" className="w-full cursor-pointer">
+                    <UserIcon className="h-4 w-4 mr-2" />
+                    Admin Login
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </nav>
 
         <Sheet>
@@ -377,25 +407,30 @@ export function Header() {
                 Kontakt
               </Link>
 
-              <Link href="/admin" passHref>
-                <Button
-                  variant="outline"
-                  className={`w-full font-bold py-3 px-4 rounded-lg bg-transparent uppercase text-base justify-start ${
-                    pathname === "/admin"
-                      ? "border-red-600 text-red-600 bg-gray-200"
-                      : "border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600"
-                  }`}
-                >
-                  Admin
-                </Button>
-              </Link>
-
               {session && user ? (
                 <div className="mt-6 pt-4 border-t border-gray-200 flex flex-col gap-4">
                   <div className="flex items-center gap-2 text-base text-gray-700 px-4 py-2">
                     <UserIcon className="h-5 w-5" />
                     <span>{user.email}</span>
                   </div>
+                  <Link href="/member-dashboard" passHref>
+                    <Button
+                      variant="outline"
+                      className="w-full border-green-500 text-green-600 hover:bg-green-50 hover:border-green-600 bg-transparent transition-all duration-200 py-3 px-4 rounded-lg text-base justify-start font-bold"
+                    >
+                      <UserIcon className="h-4 w-4 mr-2" />
+                      Member Dashboard
+                    </Button>
+                  </Link>
+                  <Link href="/admin" passHref>
+                    <Button
+                      variant="outline"
+                      className="w-full border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-600 bg-transparent transition-all duration-200 py-3 px-4 rounded-lg text-base justify-start font-bold"
+                    >
+                      <UserIcon className="h-4 w-4 mr-2" />
+                      Admin Panel
+                    </Button>
+                  </Link>
                   <Button
                     onClick={handleLogout}
                     disabled={loggingOut}
@@ -415,7 +450,29 @@ export function Header() {
                     )}
                   </Button>
                 </div>
-              ) : null}
+              ) : (
+                <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
+                  <div className="text-sm font-bold text-orange-600 px-4 py-2 uppercase tracking-wide">Login</div>
+                  <Link href="/member-login" passHref>
+                    <Button
+                      variant="outline"
+                      className="w-full border-orange-500 text-orange-600 hover:bg-orange-50 hover:border-orange-600 bg-transparent transition-all duration-200 py-3 px-4 rounded-lg text-base justify-start font-bold"
+                    >
+                      <UserIcon className="h-4 w-4 mr-2" />
+                      Member Login
+                    </Button>
+                  </Link>
+                  <Link href="/admin" passHref>
+                    <Button
+                      variant="outline"
+                      className="w-full border-gray-300 text-gray-900 hover:bg-gray-200 hover:text-red-600 bg-transparent transition-all duration-200 py-3 px-4 rounded-lg text-base justify-start font-bold"
+                    >
+                      <UserIcon className="h-4 w-4 mr-2" />
+                      Admin Login
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </SheetContent>
         </Sheet>
@@ -423,3 +480,4 @@ export function Header() {
     </header>
   )
 }
+

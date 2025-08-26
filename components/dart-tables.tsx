@@ -153,7 +153,7 @@ function MobilePlayerCard({
     >
       {/* Header Row */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 min-w-0 flex-1 mr-3">
           <div className={getPositionBadge(position)}>{position}</div>
           {isTopThree && getPositionIcon(position)}
           <div className="flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12">
@@ -174,23 +174,25 @@ function MobilePlayerCard({
               </div>
             )}
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 overflow-hidden">
             <div
-              className={`text-sm sm:text-base font-bold truncate ${isTopThree ? "text-gray-900" : "text-gray-700"}`}
+              className={`text-sm sm:text-base font-bold ${isTopThree ? "text-gray-900" : "text-gray-700"} 
+                         truncate max-w-full block`}
+              title={player.name} // Tooltip shows full name on hover
             >
               {player.name}
             </div>
             {isTopThree && (
-              <div className="text-xs text-yellow-600 font-semibold flex items-center gap-1">
-                <Star className="h-3 w-3" />
-                Top {position}
+              <div className="text-xs text-yellow-600 font-semibold flex items-center gap-1 truncate">
+                <Star className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">Top {position}</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Main Score */}
-        <div className="text-right">
+        <div className="text-right flex-shrink-0">
           {type === "total" ? (
             <div className="flex items-center gap-1">
               <span className="text-xl sm:text-2xl font-bold text-red-600">{player.totalParticipations}</span>
