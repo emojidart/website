@@ -76,9 +76,10 @@ interface LegStatistic {
 interface MatchStatisticsProps {
   match: Match
   onClose: () => void
+  myTeamId: string
 }
 
-export function MatchStatistics({ match, onClose }: MatchStatisticsProps) {
+export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsProps) {
   const [activeTab, setActiveTab] = useState<"lineup" | "legs">("lineup")
   const [players, setPlayers] = useState<Player[]>([])
   const [lineups, setLineups] = useState<MatchLineup[]>([])
@@ -92,13 +93,20 @@ export function MatchStatistics({ match, onClose }: MatchStatisticsProps) {
   // Leg statistics form state
   const [legFormData, setLegFormData] = useState<Record<string, any>>({})
 
+  const isHomeTeam = myTeamId === match.home_team_id
+  const myTeam = isHomeTeam ? match.home_team : match.away_team
+
   useEffect(() => {
     fetchPlayers()
     fetchLineups()
     fetchLegStatistics()
-  }, [match.id])
+  }, [match.id, myTeamId])
 
   const fetchPlayers = async () => {
+    if (!myTeamId) {
+      return
+    }
+
     const { data, error } = await supabase
       .from("team_members")
       .select(`
@@ -108,7 +116,7 @@ export function MatchStatistics({ match, onClose }: MatchStatisticsProps) {
           photo_url
         )
       `)
-      .eq("team_id", match.home_team_id)
+      .eq("team_id", myTeamId)
       .order("club_players(name)")
 
     if (!error && data) {
@@ -249,7 +257,7 @@ export function MatchStatistics({ match, onClose }: MatchStatisticsProps) {
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <Target className="h-6 w-6 text-primary" />
-            Spielstatistiken - {match.home_team?.name || "Mein Team"}
+            Spielstatistiken - {myTeam?.name || "Mein Team"}
           </DialogTitle>
           <p className="text-muted-foreground">
             {new Date(match.match_date).toLocaleDateString("de-DE")} • {match.match_time}
@@ -270,20 +278,19 @@ export function MatchStatistics({ match, onClose }: MatchStatisticsProps) {
 
           <TabsContent value="lineup" className="space-y-6">
             <div className="grid grid-cols-1 gap-6">
-              {/* Home Team Lineup - Only Team Displayed */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Users className="h-5 w-5" />
-                    {match.home_team?.name || "Mein Team"}
+                    {myTeam?.name || "Mein Team"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <TeamLineupSelector
-                    teamId={match.home_team_id}
+                    teamId={myTeamId}
                     players={players}
-                    lineup={getTeamLineup(match.home_team_id)}
-                    onSave={(playerIds) => saveLineup(match.home_team_id, playerIds)}
+                    lineup={getTeamLineup(myTeamId)}
+                    onSave={(playerIds) => saveLineup(myTeamId, playerIds)}
                     loading={loading}
                   />
                 </CardContent>
@@ -328,13 +335,12 @@ export function MatchStatistics({ match, onClose }: MatchStatisticsProps) {
                 </CardHeader>
                 <CardContent className="space-y-6 pt-6">
                   <div className="grid grid-cols-1 gap-6">
-                    {/* Home Team Players - Only Team Displayed */}
                     <div className="space-y-3">
                       <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                        {match.home_team?.name || "Mein Team"}
+                        {myTeam?.name || "Mein Team"}
                       </h4>
                       <div className="grid gap-3">
-                        {getAvailablePlayers(match.home_team_id).map((player) => (
+                        {getAvailablePlayers(myTeamId).map((player) => (
                           <div
                             key={player.id}
                             className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"

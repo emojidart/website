@@ -1321,6 +1321,13 @@ export function LeagueManagement() {
       {selectedMatchForStats && isStatsDialogOpen && (
         <MatchStatistics
           match={selectedMatchForStats}
+          myTeamId={
+            selectedMatchForStats.home_team_type === "own"
+              ? selectedMatchForStats.home_team_id
+              : selectedMatchForStats.away_team_type === "own"
+                ? selectedMatchForStats.away_team_id
+                : undefined
+          }
           onClose={() => {
             setIsStatsDialogOpen(false)
             setSelectedMatchForStats(null)

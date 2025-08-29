@@ -954,6 +954,7 @@ export default function MemberDashboard() {
                                         "/placeholder.svg" ||
                                         "/placeholder.svg" ||
                                         "/placeholder.svg" ||
+                                        "/placeholder.svg" ||
                                         "/placeholder.svg"
                                       }
                                     />
@@ -1101,6 +1102,15 @@ export default function MemberDashboard() {
         {selectedMatchForStats && (
           <MatchStatistics
             match={selectedMatchForStats}
+            myTeamId={(() => {
+              const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+              const isUserTeamHome = userTeamIds.includes(selectedMatchForStats.home_team_id)
+              const isUserTeamAway = userTeamIds.includes(selectedMatchForStats.away_team_id)
+
+              if (isUserTeamHome) return selectedMatchForStats.home_team_id
+              if (isUserTeamAway) return selectedMatchForStats.away_team_id
+              return userTeamIds[0] || selectedMatchForStats.home_team_id // fallback
+            })()}
             onClose={() => {
               setSelectedMatchForStats(null)
               setIsStatsDialogOpen(false)
