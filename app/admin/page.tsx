@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { useState, useEffect, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import {
-  Database,
   Users,
   Shield,
   Eye,
@@ -18,6 +17,7 @@ import {
   CalendarCheck,
   ChevronRight,
   Home,
+  Target,
 } from "lucide-react"
 import { useDartData } from "@/hooks/use-dart-data"
 import { AuthSection } from "@/components/auth-section"
@@ -40,6 +40,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import Link from "next/link"
 import { UserManagement } from "@/components/user-management"
+import { AttendanceManagement } from "@/components/attendance-management"
+import { LeagueManagement } from "@/components/league-management" // Added league management import
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage } = useAuth()
@@ -62,6 +64,12 @@ export default function AdminPage() {
     | "club"
     | "tournaments"
     | "users"
+    | "upcoming-tournaments"
+    | "tournament-registration"
+    | "player-database"
+    | "dart-competition"
+    | "attendance"
+    | "leagues" // Added leagues view to currentView type
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -154,32 +162,25 @@ export default function AdminPage() {
       view: "users" as const,
     },
     {
-      title: "Ergebnisse eingeben - Dart Competition",
-      description: "Spielergebnisse und Statistiken erfassen",
+      title: "Dart Competition",
+      description: "Alle Dart Competition Funktionen verwalten",
       icon: Trophy,
+      color: "bg-yellow-500",
+      view: "dart-competition" as const,
+    },
+    {
+      title: "Anwesenheitsliste",
+      description: "Anwesenheit bei Veranstaltungen und Versammlungen verwalten",
+      icon: CalendarCheck,
+      color: "bg-indigo-500",
+      view: "attendance" as const,
+    },
+    {
+      title: "Ligaspiele",
+      description: "Liga-Spiele und Saisons verwalten (Frühjahrs-/Herbstmeisterschaft, Cups)",
+      icon: Target,
       color: "bg-green-500",
-      view: "results" as const,
-    },
-    {
-      title: "Spiele Historie - Dart Competition",
-      description: "Vergangene Spiele und Ergebnisse anzeigen",
-      icon: History,
-      color: "bg-orange-500",
-      view: "history" as const,
-    },
-    {
-      title: "Spielerverwaltung Dart Competition",
-      description: "Erweiterte Spielereinstellungen",
-      icon: Settings,
-      color: "bg-red-500",
-      view: "management" as const,
-    },
-    {
-      title: "Spielerfotos - Dart Competition ",
-      description: "Profilbilder verwalten",
-      icon: ImageIcon,
-      color: "bg-pink-500",
-      view: "photos" as const,
+      view: "leagues" as const,
     },
     {
       title: "Anmeldungen",
@@ -204,11 +205,32 @@ export default function AdminPage() {
       view: "club" as const,
     },
     {
-      title: "Turniere",
-      description: "Turnierverwaltung und -planung",
+      title: "Bevorstehende Turniere",
+      description: "Kommende Turniere verwalten und planen",
       icon: CalendarCheck,
       color: "bg-cyan-500",
+      view: "upcoming-tournaments" as const,
+    },
+    {
+      title: "Turnieranmeldung",
+      description: "Turnieranmeldungen verwalten",
+      icon: PlusCircle,
+      color: "bg-emerald-500",
+      view: "tournament-registration" as const,
+    },
+    {
+      title: "Turniere",
+      description: "Kratzer-Turnier und weitere Tools",
+      icon: Trophy,
+      color: "bg-amber-500",
       view: "tournaments" as const,
+    },
+    {
+      title: "Spielerdatenbank",
+      description: "Alle Spielerdaten verwalten und einsehen",
+      icon: List,
+      color: "bg-slate-500",
+      view: "player-database" as const,
     },
   ]
 
@@ -242,6 +264,12 @@ export default function AdminPage() {
                   {currentView === "club" && "Vereinsverwaltung"}
                   {currentView === "tournaments" && "Turniere"}
                   {currentView === "users" && "Benutzerverwaltung"}
+                  {currentView === "upcoming-tournaments" && "Bevorstehende Turniere"}
+                  {currentView === "tournament-registration" && "Turnieranmeldung"}
+                  {currentView === "player-database" && "Spielerdatenbank"}
+                  {currentView === "dart-competition" && "Dart Competition"}
+                  {currentView === "attendance" && "Anwesenheitsliste"}
+                  {currentView === "leagues" && "Ligaspiele"} {/* Added leagues breadcrumb */}
                 </span>
               </>
             )}
@@ -275,7 +303,19 @@ export default function AdminPage() {
                                     ? "Turniere"
                                     : currentView === "users"
                                       ? "Benutzerverwaltung"
-                                      : "Admin-Zugang"}
+                                      : currentView === "upcoming-tournaments"
+                                        ? "Bevorstehende Turniere"
+                                        : currentView === "tournament-registration"
+                                          ? "Turnieranmeldung"
+                                          : currentView === "player-database"
+                                            ? "Spielerdatenbank"
+                                            : currentView === "dart-competition"
+                                              ? "Dart Competition"
+                                              : currentView === "attendance"
+                                                ? "Anwesenheitsliste"
+                                                : currentView === "leagues" // Added leagues title
+                                                  ? "Ligaspiele"
+                                                  : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
                 {session && currentView === "dashboard"
@@ -320,7 +360,6 @@ export default function AdminPage() {
                     {authMessage}
                   </div>
                 )}
-
                 {currentView === "dashboard" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {dashboardCards.map((card) => (
@@ -345,11 +384,9 @@ export default function AdminPage() {
                     ))}
                   </div>
                 )}
-
                 {currentView === "players" && (
                   <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />
                 )}
-
                 {currentView === "results" && (
                   <ResultEntry
                     isVisible={true}
@@ -361,14 +398,14 @@ export default function AdminPage() {
                     isPlayerSelectedViaModal={isPlayerSelectedViaModal}
                   />
                 )}
-
                 {currentView === "registrations" && <TournamentRegistrations />}
                 {currentView === "history" && <GameHistoryTable />}
                 {currentView === "management" && (
                   <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />
                 )}
                 {currentView === "photos" && <PlayerPhotoManagement user={user} onDataSaved={handleDataSaved} />}
-
+                {currentView === "attendance" && <AttendanceManagement />}
+                {currentView === "leagues" && <LeagueManagement />} {/* Added leagues view */}
                 {currentView === "recruitment" && (
                   <div className="space-y-6">
                     <div className="flex space-x-4 border-b border-gray-200">
@@ -423,42 +460,13 @@ export default function AdminPage() {
                     </Card>
                   </div>
                 )}
-
                 {currentView === "users" && <UserManagement user={user} onDataSaved={handleDataSaved} />}
-
                 {currentView === "club" && <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />}
-
                 {currentView === "tournaments" && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <CalendarCheck className="h-5 w-5" />
-                            <span>Bevorstehende Turniere</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <UpcomingTournamentsManagement user={user} />
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <List className="h-5 w-5" />
-                            <span>Turnier Anmeldungen</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <TournamentRegistrationsList />
-                        </CardContent>
-                      </Card>
-                    </div>
-
                     <Card>
                       <CardHeader>
-                        <CardTitle>Weitere Turnier-Tools</CardTitle>
+                        <CardTitle>Turnier-Tools</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -468,18 +476,154 @@ export default function AdminPage() {
                               Kratzer-Turnier
                             </Button>
                           </Link>
-                          <Link href="/admin/tournament-players">
-                            <Button variant="outline" className="w-full justify-start bg-transparent">
-                              <Database className="h-4 w-4 mr-2" />
-                              Turnierspielerdatenbank
-                            </Button>
-                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                {currentView === "upcoming-tournaments" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <CalendarCheck className="h-5 w-5" />
+                          <span>Bevorstehende Turniere verwalten</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <UpcomingTournamentsManagement user={user} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                {currentView === "tournament-registration" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <PlusCircle className="h-5 w-5" />
+                          <span>Turnieranmeldungen verwalten</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <TournamentRegistrationsList />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                {currentView === "player-database" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <List className="h-5 w-5" />
+                          <span>Spielerdatenbank</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 mb-4">Hier können Sie alle Spielerdaten einsehen und verwalten.</p>
+                        <div className="space-y-3">
                           <Link href="/spielerdatenbank">
-                            <Button variant="outline" className="w-full justify-start bg-transparent">
-                              <Users className="h-4 w-4 mr-2" />
-                              Spielerdatenbank
+                            <Button className="w-full">
+                              <List className="h-4 w-4 mr-2" />
+                              Zur Spielerdatenbank
                             </Button>
                           </Link>
+                          <Button onClick={handleOpenPlayerList} variant="outline" className="w-full bg-transparent">
+                            <Users className="h-4 w-4 mr-2" />
+                            Spielerliste Modal anzeigen
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                {currentView === "dart-competition" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Trophy className="h-5 w-5" />
+                          <span>Dart Competition Verwaltung</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
+                          <Button
+                            onClick={() => setCurrentView("results")}
+                            variant="outline"
+                            className="w-full justify-start bg-transparent h-auto p-4"
+                          >
+                            <div className="flex flex-col items-start space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <Trophy className="h-4 w-4" />
+                                <span className="font-medium">Ergebnisse eingeben</span>
+                              </div>
+                              <span className="text-xs text-gray-500">Dart Competition</span>
+                            </div>
+                          </Button>
+
+                          <Button
+                            onClick={() => setCurrentView("history")}
+                            variant="outline"
+                            className="w-full justify-start bg-transparent h-auto p-4"
+                          >
+                            <div className="flex flex-col items-start space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <History className="h-4 w-4" />
+                                <span className="font-medium">Spiele Historie</span>
+                              </div>
+                              <span className="text-xs text-gray-500">Dart Competition</span>
+                            </div>
+                          </Button>
+
+                          <Button
+                            onClick={() => setCurrentView("management")}
+                            variant="outline"
+                            className="w-full justify-start bg-transparent h-auto p-4"
+                          >
+                            <div className="flex flex-col items-start space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <Settings className="h-4 w-4" />
+                                <span className="font-medium">Spielerverwaltung</span>
+                              </div>
+                              <span className="text-xs text-gray-500">Dart Competition</span>
+                            </div>
+                          </Button>
+
+                          <Button
+                            onClick={() => setCurrentView("photos")}
+                            variant="outline"
+                            className="w-full justify-start bg-transparent h-auto p-4"
+                          >
+                            <div className="flex flex-col items-start space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <ImageIcon className="h-4 w-4" />
+                                <span className="font-medium">Spielerfotos</span>
+                              </div>
+                              <span className="text-xs text-gray-500">Dart Competition</span>
+                            </div>
+                          </Button>
+
+                          <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
+                            <div className="flex flex-col items-start space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <Trophy className="h-4 w-4" />
+                                <span className="font-medium">Spielergebnisse und Statistiken</span>
+                              </div>
+                              <span className="text-xs text-gray-500">erfassen</span>
+                            </div>
+                          </Button>
+
+                          <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
+                            <div className="flex flex-col items-start space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <Settings className="h-4 w-4" />
+                                <span className="font-medium">Erweiterte Spielereinstellungen</span>
+                              </div>
+                              <span className="text-xs text-gray-500">Dart Competition</span>
+                            </div>
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>

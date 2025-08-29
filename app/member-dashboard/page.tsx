@@ -9,8 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -20,7 +18,6 @@ import {
   ShieldCheck,
   Users,
   Calendar,
-  Trophy,
   Target,
   Mail,
   MapPin,
@@ -29,17 +26,13 @@ import {
   LogOut,
   Loader2,
   AlertCircle,
-  BarChart3,
-  Save,
   Edit,
-  Trash2,
-  Zap,
-  FileText,
+  Clock,
 } from "lucide-react"
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
+
+import { MatchStatistics } from "@/components/match-statistics"
 
 interface UserProfile {
   id: string
@@ -106,6 +99,37 @@ interface LigaStatistic {
   created_at?: string
 }
 
+interface Match {
+  id: string
+  season_id: string
+  home_team_id: string
+  away_team_id: string
+  match_date: string
+  match_time: string
+  venue: string
+  home_score: number | null
+  away_score: number | null
+  status: string
+  week_number: number
+  home_team: {
+    id: string
+    name: string
+  } | null
+  away_team: {
+    id: string
+    name: string
+  } | null
+  home_opponent_team: any | null
+  away_opponent_team: any | null
+  home_team_type: string
+  away_team_type: string
+}
+
+interface OpponentTeam {
+  id: string
+  name: string
+}
+
 export default function MemberDashboard() {
   const { session, user, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -115,24 +139,12 @@ export default function MemberDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [statsPlayerId, setStatsPlayerId] = useState("")
-  const [gameDate, setGameDate] = useState(new Date().toISOString().split("T")[0])
-  const [throws180, setThrows180] = useState(0)
-  const [throws171, setThrows171] = useState(0)
-  const [throws154, setThrows154] = useState(0)
-  const [throwsUnder26, setThrowsUnder26] = useState(0)
-  const [semperitOuts, setSemperitOuts] = useState(0)
-  const [throws15, setThrows15] = useState(0)
-  const [throws16, setThrows16] = useState(0)
-  const [throws17, setThrows17] = useState(0)
-  const [throws18, setThrows18] = useState(0)
-  const [throws19, setThrows19] = useState(0)
-  const [throws20, setThrows20] = useState(0)
-  const [throwsBull, setThrowsBull] = useState(0)
-  const [statsNotes, setStatsNotes] = useState("")
-  const [statsLoading, setStatsLoading] = useState(false)
-  const [statsMessage, setStatsMessage] = useState("")
-  const [statsMessageType, setStatsMessageType] = useState<"success" | "error" | "info">("info")
+  const [matches, setMatches] = useState<Match[]>([])
+  const [selectedMatchForStats, setSelectedMatchForStats] = useState<Match | null>(null)
+  const [isStatsDialogOpen, setIsStatsDialogOpen] = useState(false)
+  const [editMatchScores, setEditMatchScores] = useState({ home: 0, away: 0 })
+  const [isResultsDialogOpen, setIsResultsDialogOpen] = useState(false)
+  const [selectedMatchForResults, setSelectedMatchForResults] = useState<string | null>(null)
 
   const [displayedStats, setDisplayedStats] = useState<LigaStatistic[]>([])
   const [statsDisplayLoading, setStatsDisplayLoading] = useState(false)
@@ -143,6 +155,28 @@ export default function MemberDashboard() {
   const [editingStatData, setEditingStatData] = useState<any>(null)
 
   const { toast } = useToast()
+
+  const [statsLoading, setStatsLoading] = useState(false)
+  const [statsMessage, setStatsMessage] = useState<string>("")
+  const [statsMessageType, setStatsMessageType] = useState<"success" | "error" | "info">("info")
+
+  const [statsPlayerId, setStatsPlayerId] = useState<string>("")
+  const [gameDate, setGameDate] = useState<string>(new Date().toISOString().split("T")[0])
+  const [throws180, setThrows180] = useState<number>(0)
+  const [throws171, setThrows171] = useState<number>(0)
+  const [throws154, setThrows154] = useState<number>(0)
+  const [throwsUnder26, setThrowsUnder26] = useState<number>(0)
+  const [semperitOuts, setSemperitOuts] = useState<number>(0)
+  const [throws15, setThrows15] = useState<number>(0)
+  const [throws16, setThrows16] = useState<number>(0)
+  const [throws17, setThrows17] = useState<number>(0)
+  const [throws18, setThrows18] = useState<number>(0)
+  const [throws19, setThrows19] = useState<number>(0)
+  const [throws20, setThrows20] = useState<number>(0)
+  const [throwsBull, setThrowsBull] = useState<number>(0)
+  const [statsNotes, setStatsNotes] = useState<string>("")
+
+  const [opponentTeams, setOpponentTeams] = useState<OpponentTeam[]>([])
 
   const handleEditStat = (stat: any) => {
     setEditingStatId(stat.id)
@@ -281,6 +315,12 @@ export default function MemberDashboard() {
       fetchUserProfile()
     }
   }, [session])
+
+  useEffect(() => {
+    if (profile?.player_id && teamMemberships.length > 0) {
+      fetchMatches()
+    }
+  }, [profile, teamMemberships])
 
   const fetchUserProfile = async () => {
     if (!session?.user) return
@@ -557,6 +597,125 @@ export default function MemberDashboard() {
     }
   }
 
+  const fetchMatches = async () => {
+    if (teamMemberships.length === 0) return
+
+    try {
+      const teamIds = teamMemberships.map((tm) => tm.team_id)
+
+      const [matchesResponse, opponentTeamsResponse] = await Promise.all([
+        supabase
+          .from("matches")
+          .select(`
+            *,
+            home_team:teams!matches_home_team_id_fkey(id, name),
+            away_team:teams!matches_away_team_id_fkey(id, name),
+            season:seasons(id, name, type)
+          `)
+          .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
+          .order("match_date", { ascending: true }),
+        supabase.from("opponent_teams").select("*"),
+      ])
+
+      const { data: matchesData, error: matchesError } = matchesResponse
+      const { data: opponentTeamsData, error: opponentTeamsError } = opponentTeamsResponse
+
+      if (matchesError) throw matchesError
+      if (opponentTeamsError) throw opponentTeamsError
+
+      const enrichedMatches =
+        matchesData?.map((match) => {
+          const homeOpponentTeam = match.home_opponent_team_id
+            ? opponentTeamsData?.find((team) => team.id === match.home_opponent_team_id)
+            : null
+          const awayOpponentTeam = match.away_opponent_team_id
+            ? opponentTeamsData?.find((team) => team.id === match.away_opponent_team_id)
+            : null
+
+          return {
+            ...match,
+            home_opponent_team: homeOpponentTeam,
+            away_opponent_team: awayOpponentTeam,
+          }
+        }) || []
+
+      setOpponentTeams(opponentTeamsData || [])
+      setMatches(enrichedMatches)
+
+      console.log("[v0] Fetched enriched matches data:", enrichedMatches)
+      if (enrichedMatches && enrichedMatches.length > 0) {
+        console.log("[v0] First match home_team:", enrichedMatches[0].home_team)
+        console.log("[v0] First match away_team:", enrichedMatches[0].away_team)
+        console.log("[v0] First match home_opponent_team:", enrichedMatches[0].home_opponent_team)
+        console.log("[v0] First match away_opponent_team:", enrichedMatches[0].away_opponent_team)
+      }
+    } catch (err) {
+      console.error("Error fetching matches:", err)
+    }
+  }
+
+  const getTeamName = (match: Match, isHome: boolean) => {
+    if (isHome) {
+      return match.home_team_type === "own" ? match.home_team?.name : match.home_opponent_team?.name
+    } else {
+      return match.away_team_type === "own" ? match.away_team?.name : match.away_opponent_team?.name
+    }
+  }
+
+  const updateMatchResult = async (matchId: string, homeScore: number, awayScore: number) => {
+    if (!isLeadershipRole()) return
+
+    try {
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          home_score: homeScore,
+          away_score: awayScore,
+          status: "completed",
+        })
+        .eq("id", matchId)
+
+      if (!error) {
+        fetchMatches()
+        setIsResultsDialogOpen(false)
+        setSelectedMatchForResults(null)
+      }
+    } catch (err) {
+      console.error("Error updating match result:", err)
+    }
+  }
+
+  const getMatchResult = (match: Match) => {
+    if (match.home_score === null || match.away_score === null) return "pending"
+
+    const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+    const isUserTeamHome = userTeamIds.includes(match.home_team_id)
+    const isUserTeamAway = userTeamIds.includes(match.away_team_id)
+
+    if (!isUserTeamHome && !isUserTeamAway) return "neutral"
+
+    if (match.home_score === match.away_score) return "draw"
+
+    const userTeamWon =
+      (isUserTeamHome && match.home_score > match.away_score) || (isUserTeamAway && match.away_score > match.home_score)
+
+    return userTeamWon ? "won" : "lost"
+  }
+
+  const getMatchBackgroundColor = (match: Match) => {
+    const result = getMatchResult(match)
+    switch (result) {
+      case "won":
+        return "bg-green-50 border-green-200"
+      case "lost":
+        return "bg-red-50 border-red-200"
+      case "draw":
+        return "bg-yellow-50 border-yellow-200"
+      default:
+        return "bg-card"
+    }
+  }
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
@@ -732,7 +891,7 @@ export default function MemberDashboard() {
               </CardContent>
             </Card>
 
-            {/* Teammitglieder */}
+            {/* Team Members */}
             <Card className="shadow-xl border-0 bg-white">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl font-bold">
@@ -832,787 +991,199 @@ export default function MemberDashboard() {
               </CardContent>
             </Card>
 
-            {isLeadershipRole() && (
-              <Card className="shadow-xl border-0 bg-white">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                    <BarChart3 className="h-6 w-6 text-orange-600" />
-                    Ligastatistiken
-                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 ml-2">
-                      {teamMemberships.find((m) => m.role === "Captain") ? "Kapitän" : "Co-Kapitän"}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Tabs defaultValue="eingabe" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 mb-6">
-                      <TabsTrigger value="eingabe" className="flex items-center gap-2">
-                        <Save className="h-4 w-4" />
-                        Eingabe
-                      </TabsTrigger>
-                      <TabsTrigger value="anzeige" className="flex items-center gap-2">
-                        <BarChart3 className="h-4 w-4" />
-                        Anzeige
-                      </TabsTrigger>
-                      <TabsTrigger value="bestenliste" className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4" />
-                        Bestenliste
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="eingabe" className="space-y-6">
-                      <form onSubmit={handleSaveLigaStatistics} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="statsPlayer">Spieler auswählen</Label>
-                            <Select value={statsPlayerId} onValueChange={setStatsPlayerId}>
-                              <SelectTrigger
-                                id="statsPlayer"
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              >
-                                <SelectValue placeholder="Spieler aus deinen Teams auswählen" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {getTeamPlayersForStats().map((member) => (
-                                  <SelectItem key={member.id} value={member.player_id}>
-                                    <div className="flex items-center space-x-2">
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarImage
-                                          src={
-                                            member.club_players?.photo_url ||
-                                            "/placeholder.svg?height=24&width=24&query=player-avatar" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg"
-                                          }
-                                        />
-                                        <AvatarFallback>{member.club_players?.name?.charAt(0)}</AvatarFallback>
-                                      </Avatar>
-                                      <span>{member.club_players?.name}</span>
-                                      <Badge variant="outline" className="text-xs">
-                                        {teamMemberships.find((tm) => tm.team_id === member.team_id)?.teams?.name}
-                                      </Badge>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="gameDate">Spieldatum</Label>
-                            <Input
-                              id="gameDate"
-                              type="date"
-                              value={gameDate}
-                              onChange={(e) => setGameDate(e.target.value)}
-                              className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                            />
-                          </div>
-                        </div>
-
-                        {/* High Scores */}
-                        <div className="space-y-4">
-                          <h4 className="font-semibold text-gray-800">High Scores</h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="throws180">180er</Label>
-                              <Input
-                                id="throws180"
-                                type="number"
-                                min="0"
-                                value={throws180}
-                                onChange={(e) => setThrows180(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="throws171">171er</Label>
-                              <Input
-                                id="throws171"
-                                type="number"
-                                min="0"
-                                value={throws171}
-                                onChange={(e) => setThrows171(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="throws154">154er</Label>
-                              <Input
-                                id="throws154"
-                                type="number"
-                                min="0"
-                                value={throws154}
-                                onChange={(e) => setThrows154(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="throwsUnder26">Unter 26</Label>
-                              <Input
-                                id="throwsUnder26"
-                                type="number"
-                                min="0"
-                                value={throwsUnder26}
-                                onChange={(e) => setThrowsUnder26(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Finish Statistics */}
-                        <div className="space-y-4">
-                          <h4 className="font-semibold text-gray-800">Finish-Statistiken</h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="semperitOuts">Semperit Outs</Label>
-                              <Input
-                                id="semperitOuts"
-                                type="number"
-                                min="0"
-                                value={semperitOuts}
-                                onChange={(e) => setSemperitOuts(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="throws15">15er</Label>
-                              <Input
-                                id="throws15"
-                                type="number"
-                                min="0"
-                                value={throws15}
-                                onChange={(e) => setThrows15(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="throws16">16er</Label>
-                              <Input
-                                id="throws16"
-                                type="number"
-                                min="0"
-                                value={throws16}
-                                onChange={(e) => setThrows16(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="throws17">17er</Label>
-                              <Input
-                                id="throws17"
-                                type="number"
-                                min="0"
-                                value={throws17}
-                                onChange={(e) => setThrows17(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="throws18">18er</Label>
-                              <Input
-                                id="throws18"
-                                type="number"
-                                min="0"
-                                value={throws18}
-                                onChange={(e) => setThrows18(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="throws19">19er</Label>
-                              <Input
-                                id="throws19"
-                                type="number"
-                                min="0"
-                                value={throws19}
-                                onChange={(e) => setThrows19(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="throws20">20er</Label>
-                              <Input
-                                id="throws20"
-                                type="number"
-                                min="0"
-                                value={throws20}
-                                onChange={(e) => setThrows20(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="throwsBull">Bull</Label>
-                              <Input
-                                id="throwsBull"
-                                type="number"
-                                min="0"
-                                value={throwsBull}
-                                onChange={(e) => setThrowsBull(Number.parseInt(e.target.value) || 0)}
-                                className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Notes */}
-                        <div className="space-y-2">
-                          <Label htmlFor="statsNotes">Notizen (optional)</Label>
-                          <Textarea
-                            id="statsNotes"
-                            value={statsNotes}
-                            onChange={(e) => setStatsNotes(e.target.value)}
-                            placeholder="Zusätzliche Notizen zum Spiel..."
-                            className="min-h-[80px] border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                          />
-                        </div>
-
-                        {/* Status Message */}
-                        {statsMessage && (
-                          <div
-                            className={`p-3 rounded-md text-sm ${
-                              statsMessageType === "success"
-                                ? "bg-green-50 text-green-700 border border-green-200"
-                                : statsMessageType === "error"
-                                  ? "bg-red-50 text-red-700 border border-red-200"
-                                  : "bg-blue-50 text-blue-700 border border-blue-200"
-                            }`}
-                          >
-                            {statsMessage}
-                          </div>
-                        )}
-
-                        {/* Submit Button */}
-                        <Button
-                          type="submit"
-                          disabled={statsLoading || !statsPlayerId}
-                          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3"
-                        >
-                          {statsLoading ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Speichere...
-                            </>
-                          ) : (
-                            <>
-                              <Save className="h-4 w-4 mr-2" />
-                              Statistiken speichern
-                            </>
-                          )}
-                        </Button>
-                      </form>
-                    </TabsContent>
-
-                    <TabsContent value="anzeige" className="space-y-6">
-                      {statsDisplayLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-                          <span className="ml-2">Lade Statistiken...</span>
-                        </div>
-                      ) : displayedStats.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                          <p>Noch keine Statistiken vorhanden.</p>
-                          <p className="text-sm mt-2">Wechsle zum "Eingabe" Tab, um Statistiken hinzuzufügen.</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-gray-800">
-                              Gespeicherte Statistiken ({displayedStats.length})
-                            </h4>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={fetchLigaStatistics}
-                              className="border-orange-300 text-orange-600 hover:bg-orange-50 bg-transparent"
-                            >
-                              Aktualisieren
-                            </Button>
-                          </div>
-
-                          <div className="grid gap-6">
-                            {displayedStats.map((stat) => (
-                              <div
-                                key={stat.id}
-                                className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200"
-                              >
-                                <div className="flex items-center justify-between mb-6">
-                                  <div className="flex items-center gap-4">
-                                    <Avatar className="h-12 w-12 ring-2 ring-orange-100">
-                                      <AvatarImage
-                                        src={
-                                          stat.club_players?.photo_url ||
-                                          "/placeholder.svg?height=48&width=48&query=player-avatar" ||
-                                          "/placeholder.svg"
-                                        }
-                                      />
-                                      <AvatarFallback className="bg-orange-100 text-orange-700 font-semibold">
-                                        {stat.club_players?.name?.charAt(0) || "?"}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <h5 className="font-bold text-gray-900 text-lg">
-                                        {stat.club_players?.name || "Unbekannt"}
-                                      </h5>
-                                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                                        <Calendar className="h-4 w-4" />
-                                        <span>{new Date(stat.game_date).toLocaleDateString("de-DE")}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleEditStat(stat)}
-                                      className="border-blue-300 text-blue-600 hover:bg-blue-50"
-                                    >
-                                      <Edit className="h-4 w-4 mr-1" />
-                                      Bearbeiten
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleDeleteStat(stat.id)}
-                                      className="border-red-300 text-red-600 hover:bg-red-50"
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-1" />
-                                      Löschen
-                                    </Button>
-                                  </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4">
-                                    <div className="flex items-center gap-2 mb-3">
-                                      <Target className="h-5 w-5 text-green-600" />
-                                      <h6 className="font-semibold text-green-800">High Scores</h6>
-                                    </div>
-                                    <div className="space-y-2">
-                                      {stat.throws_180 > 0 && (
-                                        <div className="flex justify-between items-center bg-white rounded-lg px-3 py-2">
-                                          <span className="font-medium text-gray-700">180er</span>
-                                          <span className="bg-green-600 text-white px-2 py-1 rounded-full text-sm font-bold">
-                                            {stat.throws_180}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {stat.throws_171 > 0 && (
-                                        <div className="flex justify-between items-center bg-white rounded-lg px-3 py-2">
-                                          <span className="font-medium text-gray-700">171er</span>
-                                          <span className="bg-green-500 text-white px-2 py-1 rounded-full text-sm font-bold">
-                                            {stat.throws_171}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {stat.throws_154 > 0 && (
-                                        <div className="flex justify-between items-center bg-white rounded-lg px-3 py-2">
-                                          <span className="font-medium text-gray-700">154er</span>
-                                          <span className="bg-green-400 text-white px-2 py-1 rounded-full text-sm font-bold">
-                                            {stat.throws_154}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {stat.throws_under_26 > 0 && (
-                                        <div className="flex justify-between items-center bg-white rounded-lg px-3 py-2">
-                                          <span className="font-medium text-gray-700">Unter 26</span>
-                                          <span className="bg-red-500 text-white px-2 py-1 rounded-full text-sm font-bold">
-                                            {stat.throws_under_26}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
-                                    <div className="flex items-center gap-2 mb-3">
-                                      <Zap className="h-5 w-5 text-blue-600" />
-                                      <h6 className="font-semibold text-blue-800">Finish-Stats</h6>
-                                    </div>
-                                    <div className="space-y-2">
-                                      {stat.semperit_outs > 0 && (
-                                        <div className="flex justify-between items-center bg-white rounded-lg px-3 py-2">
-                                          <span className="font-medium text-gray-700">Semperit</span>
-                                          <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-sm font-bold">
-                                            {stat.semperit_outs}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {[15, 16, 17, 18, 19, 20].map(
-                                        (num) =>
-                                          stat[`throws_${num}`] > 0 && (
-                                            <div
-                                              key={num}
-                                              className="flex justify-between items-center bg-white rounded-lg px-3 py-2"
-                                            >
-                                              <span className="font-medium text-gray-700">{num}er</span>
-                                              <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-sm font-bold">
-                                                {stat[`throws_${num}`]}
-                                              </span>
-                                            </div>
-                                          ),
-                                      )}
-                                      {stat.throws_bull > 0 && (
-                                        <div className="flex justify-between items-center bg-white rounded-lg px-3 py-2">
-                                          <span className="font-medium text-gray-700">Bull</span>
-                                          <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-sm font-bold">
-                                            {stat.throws_bull}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {stat.notes && (
-                                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
-                                      <div className="flex items-center gap-2 mb-3">
-                                        <FileText className="h-5 w-5 text-gray-600" />
-                                        <h6 className="font-semibold text-gray-800">Notizen</h6>
-                                      </div>
-                                      <div className="bg-white rounded-lg p-3">
-                                        <p className="text-gray-700 text-sm leading-relaxed">{stat.notes}</p>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-
-                            {editingStatId && editingStatData && (
-                              <Dialog open={!!editingStatId} onOpenChange={() => setEditingStatId(null)}>
-                                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle>Statistik bearbeiten</DialogTitle>
-                                  </DialogHeader>
-
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    <div>
-                                      <Label htmlFor="edit-game-date">Spieldatum</Label>
-                                      <Input
-                                        id="edit-game-date"
-                                        type="date"
-                                        value={editingStatData.game_date}
-                                        onChange={(e) =>
-                                          setEditingStatData({ ...editingStatData, game_date: e.target.value })
-                                        }
-                                      />
-                                    </div>
-
-                                    <div>
-                                      <Label htmlFor="edit-throws-180">180er Würfe</Label>
-                                      <Input
-                                        id="edit-throws-180"
-                                        type="number"
-                                        min="0"
-                                        value={editingStatData.throws_180}
-                                        onChange={(e) =>
-                                          setEditingStatData({
-                                            ...editingStatData,
-                                            throws_180: Number.parseInt(e.target.value) || 0,
-                                          })
-                                        }
-                                      />
-                                    </div>
-
-                                    <div>
-                                      <Label htmlFor="edit-throws-171">171er Würfe</Label>
-                                      <Input
-                                        id="edit-throws-171"
-                                        type="number"
-                                        min="0"
-                                        value={editingStatData.throws_171}
-                                        onChange={(e) =>
-                                          setEditingStatData({
-                                            ...editingStatData,
-                                            throws_171: Number.parseInt(e.target.value) || 0,
-                                          })
-                                        }
-                                      />
-                                    </div>
-
-                                    <div>
-                                      <Label htmlFor="edit-throws-154">154er Würfe</Label>
-                                      <Input
-                                        id="edit-throws-154"
-                                        type="number"
-                                        min="0"
-                                        value={editingStatData.throws_154}
-                                        onChange={(e) =>
-                                          setEditingStatData({
-                                            ...editingStatData,
-                                            throws_154: Number.parseInt(e.target.value) || 0,
-                                          })
-                                        }
-                                      />
-                                    </div>
-
-                                    <div>
-                                      <Label htmlFor="edit-throws-under-26">Unter 26 Würfe</Label>
-                                      <Input
-                                        id="edit-throws-under-26"
-                                        type="number"
-                                        min="0"
-                                        value={editingStatData.throws_under_26}
-                                        onChange={(e) =>
-                                          setEditingStatData({
-                                            ...editingStatData,
-                                            throws_under_26: Number.parseInt(e.target.value) || 0,
-                                          })
-                                        }
-                                      />
-                                    </div>
-
-                                    <div>
-                                      <Label htmlFor="edit-semperit-outs">Semperit Outs</Label>
-                                      <Input
-                                        id="edit-semperit-outs"
-                                        type="number"
-                                        min="0"
-                                        value={editingStatData.semperit_outs}
-                                        onChange={(e) =>
-                                          setEditingStatData({
-                                            ...editingStatData,
-                                            semperit_outs: Number.parseInt(e.target.value) || 0,
-                                          })
-                                        }
-                                      />
-                                    </div>
-
-                                    {[15, 16, 17, 18, 19, 20].map((num) => (
-                                      <div key={num}>
-                                        <Label htmlFor={`edit-throws-${num}`}>{num}er Würfe</Label>
-                                        <Input
-                                          id={`edit-throws-${num}`}
-                                          type="number"
-                                          min="0"
-                                          value={editingStatData[`throws_${num}`]}
-                                          onChange={(e) =>
-                                            setEditingStatData({
-                                              ...editingStatData,
-                                              [`throws_${num}`]: Number.parseInt(e.target.value) || 0,
-                                            })
-                                          }
-                                        />
-                                      </div>
-                                    ))}
-
-                                    <div>
-                                      <Label htmlFor="edit-throws-bull">Bull Würfe</Label>
-                                      <Input
-                                        id="edit-throws-bull"
-                                        type="number"
-                                        min="0"
-                                        value={editingStatData.throws_bull}
-                                        onChange={(e) =>
-                                          setEditingStatData({
-                                            ...editingStatData,
-                                            throws_bull: Number.parseInt(e.target.value) || 0,
-                                          })
-                                        }
-                                      />
-                                    </div>
-
-                                    <div className="md:col-span-2 lg:col-span-3">
-                                      <Label htmlFor="edit-notes">Notizen</Label>
-                                      <Textarea
-                                        id="edit-notes"
-                                        value={editingStatData.notes}
-                                        onChange={(e) =>
-                                          setEditingStatData({ ...editingStatData, notes: e.target.value })
-                                        }
-                                        placeholder="Zusätzliche Notizen..."
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="flex justify-end gap-2 mt-6">
-                                    <Button variant="outline" onClick={() => setEditingStatId(null)}>
-                                      Abbrechen
-                                    </Button>
-                                    <Button onClick={handleSaveEdit} className="bg-orange-600 hover:bg-orange-700">
-                                      Speichern
-                                    </Button>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="bestenliste" className="space-y-6">
-                      {statsDisplayLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-                          <span className="ml-2">Lade Bestenliste...</span>
-                        </div>
-                      ) : leaderboardData.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Trophy className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                          <p>Noch keine Daten für die Bestenliste vorhanden.</p>
-                          <p className="text-sm mt-2">Statistiken müssen erst eingegeben werden.</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-gray-800">
-                              Team Bestenliste ({leaderboardData.length} Spieler)
-                            </h4>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => calculateLeaderboard()}
-                              className="border-orange-300 text-orange-600 hover:bg-orange-50 bg-transparent"
-                            >
-                              Aktualisieren
-                            </Button>
-                          </div>
-
-                          <div className="overflow-x-auto">
-                            <table className="w-full border-collapse">
-                              <thead>
-                                <tr className="border-b-2 border-gray-200">
-                                  <th className="text-left p-3 font-semibold text-gray-700">Rang</th>
-                                  <th className="text-left p-3 font-semibold text-gray-700">Spieler</th>
-                                  <th className="text-center p-3 font-semibold text-gray-700">Bester Score</th>
-                                  <th className="text-center p-3 font-semibold text-gray-700">180er</th>
-                                  <th className="text-center p-3 font-semibold text-gray-700">171er</th>
-                                  <th className="text-center p-3 font-semibold text-gray-700">154er</th>
-                                  <th className="text-center p-3 font-semibold text-gray-700">Bull</th>
-                                  <th className="text-center p-3 font-semibold text-gray-700">Spiele</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {leaderboardData.map((player, index) => (
-                                  <tr
-                                    key={player.player_id}
-                                    className={`border-b border-gray-100 hover:bg-orange-50 transition-colors ${
-                                      index < 3 ? "bg-gradient-to-r from-orange-50 to-transparent" : ""
-                                    }`}
-                                  >
-                                    <td className="p-3">
-                                      <div className="flex items-center gap-2">
-                                        {index === 0 && <Trophy className="h-5 w-5 text-yellow-500" />}
-                                        {index === 1 && <Trophy className="h-5 w-5 text-gray-400" />}
-                                        {index === 2 && <Trophy className="h-5 w-5 text-orange-600" />}
-                                        <span className="font-semibold text-gray-800">#{index + 1}</span>
-                                      </div>
-                                    </td>
-                                    <td className="p-3">
-                                      <div className="flex items-center gap-3">
-                                        <Avatar className="h-8 w-8">
-                                          <AvatarImage
-                                            src={
-                                              player.photo_url ||
-                                              "/placeholder.svg?height=32&width=32&query=player-avatar" ||
-                                              "/placeholder.svg"
-                                            }
-                                          />
-                                          <AvatarFallback className="bg-orange-100 text-orange-700 text-sm">
-                                            {player.player_name?.charAt(0) || "?"}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <span className="font-medium text-gray-900">{player.player_name}</span>
-                                      </div>
-                                    </td>
-                                    <td className="p-3 text-center">
-                                      <span
-                                        className={`font-bold px-2 py-1 rounded text-sm ${
-                                          player.best_score === 180
-                                            ? "bg-green-100 text-green-800"
-                                            : player.best_score === 171
-                                              ? "bg-blue-100 text-blue-800"
-                                              : player.best_score === 154
-                                                ? "bg-purple-100 text-purple-800"
-                                                : "bg-gray-100 text-gray-800"
-                                        }`}
-                                      >
-                                        {player.best_score || "-"}
-                                      </span>
-                                    </td>
-                                    <td className="p-3 text-center font-semibold text-green-700">
-                                      {player.total_180 || "-"}
-                                    </td>
-                                    <td className="p-3 text-center font-semibold text-blue-700">
-                                      {player.total_171 || "-"}
-                                    </td>
-                                    <td className="p-3 text-center font-semibold text-purple-700">
-                                      {player.total_154 || "-"}
-                                    </td>
-                                    <td className="p-3 text-center font-semibold text-orange-700">
-                                      {player.total_bull || "-"}
-                                    </td>
-                                    <td className="p-3 text-center text-gray-600">{player.games_played}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Quick Actions */}
             <Card className="shadow-xl border-0 bg-white">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                  <Trophy className="h-6 w-6 text-orange-600" />
-                  Schnellzugriff
+                  <Calendar className="h-6 w-6 text-orange-600" />
+                  Spielplan meiner Teams
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button
-                    variant="outline"
-                    className="h-16 justify-start border-2 border-gray-200 hover:border-orange-300 hover:bg-orange-50 bg-transparent"
-                    disabled
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-orange-100 rounded-lg">
-                        <Calendar className="h-5 w-5 text-orange-600" />
-                      </div>
-                      <div className="text-left">
-                        <div className="font-semibold">Turniere</div>
-                        <div className="text-xs text-gray-500">Kommende Events</div>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="ml-auto text-xs">
-                      Bald
-                    </Badge>
-                  </Button>
+                {matches.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Keine Spiele gefunden.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {matches.map((match) => (
+                      <div key={match.id} className={`border rounded-lg p-4 ${getMatchBackgroundColor(match)}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="font-mono">
+                              Woche {match.week_number}
+                            </Badge>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="h-4 w-4" />
+                              <span>{new Date(match.match_date).toLocaleDateString("de-DE")}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>{match.match_time}</span>
+                            </div>
+                          </div>
+                          <Badge variant={match.status === "completed" ? "default" : "secondary"}>
+                            {match.status === "completed" ? "Beendet" : "Geplant"}
+                          </Badge>
+                        </div>
 
-                  <Button
-                    variant="outline"
-                    className="h-16 justify-start border-2 border-gray-200 hover:border-orange-300 hover:bg-orange-50 bg-transparent"
-                    disabled
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-orange-100 rounded-lg">
-                        <Trophy className="h-5 w-5 text-orange-600" />
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-6">
+                            <div className="text-center">
+                              <div className="font-semibold text-lg mb-1">
+                                {getTeamName(match, true) || "Heim Team"}
+                              </div>
+                              <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {match.home_team_type === "own" ? "Heim" : "Heim (Gegner)"}
+                              </div>
+                            </div>
+                            <div className="text-2xl font-bold text-muted-foreground">:</div>
+                            <div className="text-center">
+                              <div className="font-semibold text-lg mb-1">
+                                {getTeamName(match, false) || "Auswärts Team"}
+                              </div>
+                              <div className="text-3xl font-bold text-blue-600">{match.away_score ?? "-"}</div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {match.away_team_type === "own" ? "Auswärts" : "Auswärts (Gegner)"}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                              <MapPin className="h-4 w-4" />
+                              <span className="font-medium">{match.venue}</span>
+                            </div>
+
+                            {isLeadershipRole() && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedMatchForStats(match)
+                                    setIsStatsDialogOpen(true)
+                                  }}
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  <Target className="h-4 w-4 mr-2" />
+                                  Statistiken
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                  onClick={() => {
+                                    setSelectedMatchForResults(match.id)
+                                    setIsResultsDialogOpen(true)
+                                    setEditMatchScores({
+                                      home: match.home_score || 0,
+                                      away: match.away_score || 0,
+                                    })
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <div className="font-semibold">Statistiken</div>
-                        <div className="text-xs text-gray-500">Meine Leistung</div>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="ml-auto text-xs">
-                      Bald
-                    </Badge>
-                  </Button>
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </div>
+
+        {selectedMatchForStats && (
+          <MatchStatistics
+            match={selectedMatchForStats}
+            onClose={() => {
+              setSelectedMatchForStats(null)
+              setIsStatsDialogOpen(false)
+            }}
+          />
+        )}
+
+        <Dialog
+          open={isResultsDialogOpen && selectedMatchForResults !== null}
+          onOpenChange={(open) => {
+            setIsResultsDialogOpen(open)
+            if (!open) setSelectedMatchForResults(null)
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader className="text-center pb-4">
+              <DialogTitle className="text-xl font-semibold">Spielergebnis eintragen</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="bg-muted/30 rounded-lg p-4">
+                <div className="grid grid-cols-3 gap-4 items-center">
+                  <div className="text-center">
+                    <Label className="text-sm font-medium text-muted-foreground">Heim</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="99"
+                      value={editMatchScores.home}
+                      onChange={(e) =>
+                        setEditMatchScores((prev) => ({
+                          ...prev,
+                          home: Number.parseInt(e.target.value) || 0,
+                        }))
+                      }
+                      className="text-center text-2xl font-bold h-16 mt-2"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-muted-foreground">:</div>
+                  </div>
+                  <div className="text-center">
+                    <Label className="text-sm font-medium text-muted-foreground">Auswärts</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="99"
+                      value={editMatchScores.away}
+                      onChange={(e) =>
+                        setEditMatchScores((prev) => ({
+                          ...prev,
+                          away: Number.parseInt(e.target.value) || 0,
+                        }))
+                      }
+                      className="text-center text-2xl font-bold h-16 mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 bg-transparent"
+                  onClick={() => {
+                    setIsResultsDialogOpen(false)
+                    setSelectedMatchForResults(null)
+                  }}
+                >
+                  Abbrechen
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    if (selectedMatchForResults) {
+                      updateMatchResult(selectedMatchForResults, editMatchScores.home, editMatchScores.away)
+                    }
+                  }}
+                >
+                  Speichern
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   )
