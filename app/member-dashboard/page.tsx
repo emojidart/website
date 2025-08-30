@@ -28,11 +28,16 @@ import {
   AlertCircle,
   Edit,
   Clock,
+  BarChart3,
+  TrendingUp,
+  Euro,
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
 
 import { MatchStatistics } from "@/components/match-statistics"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 interface UserProfile {
   id: string
@@ -177,6 +182,10 @@ export default function MemberDashboard() {
   const [statsNotes, setStatsNotes] = useState<string>("")
 
   const [opponentTeams, setOpponentTeams] = useState<OpponentTeam[]>([])
+
+  const [legStatistics, setLegStatistics] = useState<any[]>([])
+  const [legStatsLoading, setLegStatsLoading] = useState(false)
+  const [activeMainTab, setActiveMainTab] = useState<"dashboard" | "statistics" | "penalties">("dashboard")
 
   const handleEditStat = (stat: any) => {
     setEditingStatId(stat.id)
@@ -514,6 +523,7 @@ export default function MemberDashboard() {
   useEffect(() => {
     if (isLeadershipRole() && teamMembers.length > 0) {
       fetchLigaStatistics()
+      fetchLegStatistics()
     }
   }, [teamMemberships, teamMembers])
 
@@ -716,6 +726,103 @@ export default function MemberDashboard() {
     }
   }
 
+  const fetchLegStatistics = async () => {
+    if (!isLeadershipRole()) return
+
+    setLegStatsLoading(true)
+    try {
+      const leadershipTeams = teamMemberships.filter(
+        (membership) => membership.role === "Captain" || membership.role === "Co-Captain",
+      )
+      const leadershipTeamIds = leadershipTeams.map((team) => team.team_id)
+      const teamPlayerIds = teamMembers
+        .filter((member) => leadershipTeamIds.includes(member.team_id))
+        .map((member) => member.player_id)
+
+      if (teamPlayerIds.length === 0) {
+        setLegStatistics([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from("leg_statistics")
+        .select(`
+          *,
+          club_players (
+            name,
+            photo_url
+          ),
+          matches (
+            id,
+            match_date,
+            match_time,
+            venue,
+            home_team:teams!matches_home_team_id_fkey(name),
+            away_team:teams!matches_away_team_id_fkey(name)
+          )
+        `)
+        .in("player_id", teamPlayerIds)
+        .order("matches(match_date)", { ascending: false })
+        .order("leg_number", { ascending: false })
+
+      if (error) {
+        throw error
+      }
+
+      setLegStatistics(data || [])
+    } catch (err: any) {
+      console.error("Error fetching leg statistics:", err)
+    } finally {
+      setLegStatsLoading(false)
+    }
+  }
+
+  const getStatisticsByMatch = () => {
+    const matchGroups: { [key: string]: any[] } = {}
+
+    legStatistics.forEach((stat) => {
+      const matchKey = stat.match_id
+      if (!matchGroups[matchKey]) {
+        matchGroups[matchKey] = []
+      }
+      matchGroups[matchKey].push(stat)
+    })
+
+    return Object.entries(matchGroups).map(([matchId, stats]) => ({
+      matchId,
+      matchInfo: stats[0]?.matches,
+      statistics: stats.sort((a, b) => b.leg_number - a.leg_number),
+    }))
+  }
+
+  const getPenaltyStatistics = () => {
+    const penaltyStats: { [key: string]: { under26: number; semperit: number; playerName: string; matchInfo: any } } =
+      {}
+
+    legStatistics.forEach((stat) => {
+      const playerId = stat.player_id
+      if (!penaltyStats[playerId]) {
+        penaltyStats[playerId] = {
+          under26: 0,
+          semperit: 0,
+          playerName: stat.club_players?.name || "Unbekannt",
+          matchInfo: stat.matches,
+        }
+      }
+      penaltyStats[playerId].under26 += stat.throws_under_26 || 0
+      penaltyStats[playerId].semperit += stat.semperit_outs || 0
+    })
+
+    return Object.entries(penaltyStats).map(([playerId, stats]) => ({
+      playerId,
+      playerName: stats.playerName,
+      under26: stats.under26,
+      semperit: stats.semperit,
+      totalPenalties: stats.under26 + stats.semperit,
+      totalCost: (stats.under26 + stats.semperit) * 0.5,
+    }))
+  }
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
@@ -760,344 +867,632 @@ export default function MemberDashboard() {
           <p className="text-gray-600 text-lg">Hier ist dein persönliches Dashboard bei Emoj!'s Dartverein</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Card */}
-          <div className="lg:col-span-1">
-            <Card className="shadow-xl border-0 bg-white">
-              <CardHeader className="text-center pb-4">
-                <div className="flex flex-col items-center">
-                  <Avatar className="h-24 w-24 mb-4 border-4 border-orange-500 shadow-lg">
-                    <AvatarImage
-                      src={profile?.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=darts-player"}
-                    />
-                    <AvatarFallback className="text-2xl font-bold bg-orange-100 text-orange-700">
-                      {profile?.club_players?.name?.charAt(0) || user?.email?.charAt(0) || "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <CardTitle className="text-xl font-bold text-gray-900">
-                    {profile?.club_players?.name || "Unbekannter Spieler"}
-                  </CardTitle>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Mail className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">{user?.email}</span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Player Details */}
-                {profile?.club_players && (
-                  <div className="space-y-3">
-                    {profile.club_players.throwing_hand && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Hand className="h-4 w-4 text-orange-500" />
-                        <span className="font-medium">Wurfhand:</span>
-                        <span>{profile.club_players.throwing_hand}</span>
-                      </div>
-                    )}
-                    {profile.club_players.age && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-orange-500" />
-                        <span className="font-medium">Alter:</span>
-                        <span>{profile.club_players.age} Jahre</span>
-                      </div>
-                    )}
-                    {profile.club_players.origin && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-orange-500" />
-                        <span className="font-medium">Herkunft:</span>
-                        <span>{profile.club_players.origin}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+        <Tabs
+          value={activeMainTab}
+          onValueChange={(value) => setActiveMainTab(value as "dashboard" | "statistics" | "penalties")}
+        >
+          <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="statistics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Spielerstatistiken
+            </TabsTrigger>
+            <TabsTrigger value="penalties" className="flex items-center gap-2">
+              <Euro className="h-4 w-4" />
+              Strafgelder
+            </TabsTrigger>
+          </TabsList>
 
-                {/* Action Buttons */}
-                <div className="pt-4 space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-gray-300 hover:bg-gray-50 bg-transparent"
-                    disabled
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Profil bearbeiten
-                    <Badge variant="secondary" className="ml-auto text-xs">
-                      Bald
-                    </Badge>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleLogout}
-                    className="w-full justify-start border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 bg-transparent"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Abmelden
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <TabsContent value="dashboard">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Profile Card */}
+              <div className="lg:col-span-1">
+                <Card className="shadow-xl border-0 bg-white">
+                  <CardHeader className="text-center pb-4">
+                    <div className="flex flex-col items-center">
+                      <Avatar className="h-24 w-24 mb-4 border-4 border-orange-500 shadow-lg">
+                        <AvatarImage
+                          src={
+                            profile?.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=darts-player"
+                          }
+                        />
+                        <AvatarFallback className="text-2xl font-bold bg-orange-100 text-orange-700">
+                          {profile?.club_players?.name?.charAt(0) || user?.email?.charAt(0) || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <CardTitle className="text-xl font-bold text-gray-900">
+                        {profile?.club_players?.name || "Unbekannter Spieler"}
+                      </CardTitle>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Mail className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">{user?.email}</span>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Player Details */}
+                    {profile?.club_players && (
+                      <div className="space-y-3">
+                        {profile.club_players.throwing_hand && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Hand className="h-4 w-4 text-orange-500" />
+                            <span className="font-medium">Wurfhand:</span>
+                            <span>{profile.club_players.throwing_hand}</span>
+                          </div>
+                        )}
+                        {profile.club_players.age && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="h-4 w-4 text-orange-500" />
+                            <span className="font-medium">Alter:</span>
+                            <span>{profile.club_players.age} Jahre</span>
+                          </div>
+                        )}
+                        {profile.club_players.origin && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <MapPin className="h-4 w-4 text-orange-500" />
+                            <span className="font-medium">Herkunft:</span>
+                            <span>{profile.club_players.origin}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Team Memberships */}
-            <Card className="shadow-xl border-0 bg-white">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                  <Users className="h-6 w-6 text-orange-600" />
-                  Meine Teams
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {teamMemberships.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Du bist noch keinem Team zugeordnet.</p>
-                    <p className="text-sm mt-2">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {teamMemberships.map((membership) => (
-                      <div
-                        key={membership.id}
-                        className="border-2 border-gray-200 rounded-xl p-4 hover:border-orange-300 transition-colors"
+                    {/* Action Buttons */}
+                    <div className="pt-4 space-y-2">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start border-gray-300 hover:bg-gray-50 bg-transparent"
+                        disabled
                       >
-                        <div className="flex items-center gap-3 mb-3">
-                          {membership.teams?.logo_url ? (
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
-                              <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">
-                                {membership.teams.name?.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                          ) : (
-                            <div className="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center">
-                              <Target className="h-6 w-6 text-orange-600" />
-                            </div>
-                          )}
-                          <div>
-                            <h3 className="font-bold text-gray-900">{membership.teams?.name || "Unbekanntes Team"}</h3>
-                            <div className="flex items-center gap-2">
-                              {getRoleIcon(membership.role)}
-                              <Badge className={`text-xs border ${getRoleBadgeColor(membership.role)}`}>
-                                {getRoleText(membership.role)}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
+                        <Settings className="h-4 w-4 mr-2" />
+                        Profil bearbeiten
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Bald
+                        </Badge>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleLogout}
+                        className="w-full justify-start border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 bg-transparent"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Abmelden
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Main Content */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Team Memberships */}
+                <Card className="shadow-xl border-0 bg-white">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                      <Users className="h-6 w-6 text-orange-600" />
+                      Meine Teams
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {teamMemberships.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>Du bist noch keinem Team zugeordnet.</p>
+                        <p className="text-sm mt-2">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Team Members */}
-            <Card className="shadow-xl border-0 bg-white">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                  <Users className="h-6 w-6 text-orange-600" />
-                  Meine Teammitglieder
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {teamMembers.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Keine Teammitglieder gefunden.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {teamMemberships.map((membership) => {
-                      const teamMembersForThisTeam = teamMembers.filter(
-                        (member) => member.team_id === membership.team_id,
-                      )
-
-                      return (
-                        <div key={membership.id} className="border-2 border-gray-200 rounded-xl p-4">
-                          <div className="flex items-center gap-3 mb-4">
-                            {membership.teams?.logo_url ? (
-                              <Avatar className="h-10 w-10">
-                                <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
-                                <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">
-                                  {membership.teams.name?.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                            ) : (
-                              <div className="h-10 w-10 bg-orange-100 rounded-full flex items-center justify-center">
-                                <Target className="h-5 w-5 text-orange-600" />
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {teamMemberships.map((membership) => (
+                          <div
+                            key={membership.id}
+                            className="border-2 border-gray-200 rounded-xl p-4 hover:border-orange-300 transition-colors"
+                          >
+                            <div className="flex items-center gap-3 mb-3">
+                              {membership.teams?.logo_url ? (
+                                <Avatar className="h-12 w-12">
+                                  <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
+                                  <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">
+                                    {membership.teams.name?.charAt(0)}
+                                  </AvatarFallback>
+                                </Avatar>
+                              ) : (
+                                <div className="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center">
+                                  <Target className="h-6 w-6 text-orange-600" />
+                                </div>
+                              )}
+                              <div>
+                                <h3 className="font-bold text-gray-900">
+                                  {membership.teams?.name || "Unbekanntes Team"}
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                  {getRoleIcon(membership.role)}
+                                  <Badge className={`text-xs border ${getRoleBadgeColor(membership.role)}`}>
+                                    {getRoleText(membership.role)}
+                                  </Badge>
+                                </div>
                               </div>
-                            )}
-                            <h3 className="font-bold text-lg text-gray-900">
-                              {membership.teams?.name || "Unbekanntes Team"}
-                            </h3>
-                            <Badge variant="outline" className="ml-auto">
-                              {teamMembersForThisTeam.length} Mitglieder
-                            </Badge>
+                            </div>
                           </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {teamMembersForThisTeam.map((member) => (
-                              <div
-                                key={member.id}
-                                className={`p-3 rounded-lg border-2 transition-colors ${
-                                  member.player_id === profile?.player_id
-                                    ? "border-orange-300 bg-orange-50"
-                                    : "border-gray-200 bg-gray-50"
-                                }`}
-                              >
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage
-                                      src={
-                                        member.club_players?.photo_url ||
-                                        "/placeholder.svg?height=32&width=32&query=darts-player" ||
-                                        "/placeholder.svg" ||
-                                        "/placeholder.svg" ||
-                                        "/placeholder.svg" ||
-                                        "/placeholder.svg" ||
-                                        "/placeholder.svg"
-                                      }
-                                    />
-                                    <AvatarFallback className="text-xs bg-orange-100 text-orange-700">
-                                      {member.club_players?.name?.charAt(0) || "?"}
+                {/* Team Members */}
+                <Card className="shadow-xl border-0 bg-white">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                      <Users className="h-6 w-6 text-orange-600" />
+                      Meine Teammitglieder
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {teamMembers.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>Keine Teammitglieder gefunden.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {teamMemberships.map((membership) => {
+                          const teamMembersForThisTeam = teamMembers.filter(
+                            (member) => member.team_id === membership.team_id,
+                          )
+
+                          return (
+                            <div key={membership.id} className="border-2 border-gray-200 rounded-xl p-4">
+                              <div className="flex items-center gap-3 mb-4">
+                                {membership.teams?.logo_url ? (
+                                  <Avatar className="h-10 w-10">
+                                    <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
+                                    <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">
+                                      {membership.teams.name?.charAt(0)}
                                     </AvatarFallback>
                                   </Avatar>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-sm text-gray-900 truncate">
-                                      {member.club_players?.name || "Unbekannt"}
-                                      {member.player_id === profile?.player_id && (
-                                        <span className="text-orange-600 ml-1">(Du)</span>
-                                      )}
+                                ) : (
+                                  <div className="h-10 w-10 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <Target className="h-5 w-5 text-orange-600" />
+                                  </div>
+                                )}
+                                <h3 className="font-bold text-lg text-gray-900">
+                                  {membership.teams?.name || "Unbekanntes Team"}
+                                </h3>
+                                <Badge variant="outline" className="ml-auto">
+                                  {teamMembersForThisTeam.length} Mitglieder
+                                </Badge>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {teamMembersForThisTeam.map((member) => (
+                                  <div
+                                    key={member.id}
+                                    className={`p-3 rounded-lg border-2 transition-colors ${
+                                      member.player_id === profile?.player_id
+                                        ? "border-orange-300 bg-orange-50"
+                                        : "border-gray-200 bg-gray-50"
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Avatar className="h-8 w-8">
+                                        <AvatarImage
+                                          src={
+                                            member.club_players?.photo_url ||
+                                            "/placeholder.svg?height=32&width=32&query=darts-player" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg"
+                                          }
+                                        />
+                                        <AvatarFallback className="text-xs bg-orange-100 text-orange-700">
+                                          {member.club_players?.name?.charAt(0) || "?"}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-sm text-gray-900 truncate">
+                                          {member.club_players?.name || "Unbekannt"}
+                                          {member.player_id === profile?.player_id && (
+                                            <span className="text-orange-600 ml-1">(Du)</span>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          {getRoleIcon(member.role)}
+                                          <span className="text-xs text-gray-600">{getRoleText(member.role)}</span>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                      {getRoleIcon(member.role)}
-                                      <span className="text-xs text-gray-600">{getRoleText(member.role)}</span>
-                                    </div>
+                                    {member.club_players?.throwing_hand && (
+                                      <div className="text-xs text-gray-500 flex items-center gap-1">
+                                        <Hand className="h-3 w-3" />
+                                        {member.club_players.throwing_hand}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-xl border-0 bg-white">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                      <Calendar className="h-6 w-6 text-orange-600" />
+                      Spielplan meiner Teams
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {matches.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>Keine Spiele gefunden.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {matches.map((match) => (
+                          <div key={match.id} className={`border rounded-lg p-4 ${getMatchBackgroundColor(match)}`}>
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <Badge variant="outline" className="font-mono">
+                                  Woche {match.week_number}
+                                </Badge>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{new Date(match.match_date).toLocaleDateString("de-DE")}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <Clock className="h-4 w-4" />
+                                  <span>{match.match_time}</span>
+                                </div>
+                              </div>
+                              <Badge variant={match.status === "completed" ? "default" : "secondary"}>
+                                {match.status === "completed" ? "Beendet" : "Geplant"}
+                              </Badge>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-6">
+                                <div className="text-center">
+                                  <div className="font-semibold text-lg mb-1">
+                                    {getTeamName(match, true) || "Heim Team"}
+                                  </div>
+                                  <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    {match.home_team_type === "own" ? "Heim" : "Heim (Gegner)"}
                                   </div>
                                 </div>
-                                {member.club_players?.throwing_hand && (
-                                  <div className="text-xs text-gray-500 flex items-center gap-1">
-                                    <Hand className="h-3 w-3" />
-                                    {member.club_players.throwing_hand}
+                                <div className="text-2xl font-bold text-muted-foreground">:</div>
+                                <div className="text-center">
+                                  <div className="font-semibold text-lg mb-1">
+                                    {getTeamName(match, false) || "Auswärts Team"}
+                                  </div>
+                                  <div className="text-3xl font-bold text-blue-600">{match.away_score ?? "-"}</div>
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    {match.away_team_type === "own" ? "Auswärts" : "Auswärts (Gegner)"}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                                  <MapPin className="h-4 w-4" />
+                                  <span className="font-medium">{match.venue}</span>
+                                </div>
+
+                                {isLeadershipRole() && (
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setSelectedMatchForStats(match)
+                                        setIsStatsDialogOpen(true)
+                                      }}
+                                      className="bg-green-600 hover:bg-green-700 text-white"
+                                    >
+                                      <Target className="h-4 w-4 mr-2" />
+                                      Statistiken
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      className="bg-blue-600 hover:bg-blue-700"
+                                      onClick={() => {
+                                        setSelectedMatchForResults(match.id)
+                                        setIsResultsDialogOpen(true)
+                                        setEditMatchScores({
+                                          home: match.home_score || 0,
+                                          away: match.away_score || 0,
+                                        })
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
+                                    </Button>
                                   </div>
                                 )}
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-xl border-0 bg-white">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                  <Calendar className="h-6 w-6 text-orange-600" />
-                  Spielplan meiner Teams
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {matches.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Keine Spiele gefunden.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {matches.map((match) => (
-                      <div key={match.id} className={`border rounded-lg p-4 ${getMatchBackgroundColor(match)}`}>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <Badge variant="outline" className="font-mono">
-                              Woche {match.week_number}
-                            </Badge>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Calendar className="h-4 w-4" />
-                              <span>{new Date(match.match_date).toLocaleDateString("de-DE")}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              <span>{match.match_time}</span>
                             </div>
                           </div>
-                          <Badge variant={match.status === "completed" ? "default" : "secondary"}>
-                            {match.status === "completed" ? "Beendet" : "Geplant"}
-                          </Badge>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-6">
-                            <div className="text-center">
-                              <div className="font-semibold text-lg mb-1">
-                                {getTeamName(match, true) || "Heim Team"}
-                              </div>
-                              <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {match.home_team_type === "own" ? "Heim" : "Heim (Gegner)"}
-                              </div>
-                            </div>
-                            <div className="text-2xl font-bold text-muted-foreground">:</div>
-                            <div className="text-center">
-                              <div className="font-semibold text-lg mb-1">
-                                {getTeamName(match, false) || "Auswärts Team"}
-                              </div>
-                              <div className="text-3xl font-bold text-blue-600">{match.away_score ?? "-"}</div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {match.away_team_type === "own" ? "Auswärts" : "Auswärts (Gegner)"}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="text-right">
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                              <MapPin className="h-4 w-4" />
-                              <span className="font-medium">{match.venue}</span>
-                            </div>
-
-                            {isLeadershipRole() && (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setSelectedMatchForStats(match)
-                                    setIsStatsDialogOpen(true)
-                                  }}
-                                  className="bg-green-600 hover:bg-green-700 text-white"
-                                >
-                                  <Target className="h-4 w-4 mr-2" />
-                                  Statistiken
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  className="bg-blue-600 hover:bg-blue-700"
-                                  onClick={() => {
-                                    setSelectedMatchForResults(match.id)
-                                    setIsResultsDialogOpen(true)
-                                    setEditMatchScores({
-                                      home: match.home_score || 0,
-                                      away: match.away_score || 0,
-                                    })
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="statistics">
+            <div className="space-y-8">
+              <Card className="shadow-xl border-0 bg-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl font-bold">
+                    <TrendingUp className="h-6 w-6 text-orange-600" />
+                    Spielerstatistiken nach Spiel
+                  </CardTitle>
+                  <p className="text-muted-foreground">Detaillierte Leg-Statistiken sortiert nach Spielen</p>
+                </CardHeader>
+                <CardContent>
+                  {legStatsLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+                      <p className="mt-2 text-muted-foreground">Lade Statistiken...</p>
+                    </div>
+                  ) : legStatistics.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>Keine Spielerstatistiken gefunden.</p>
+                      <p className="text-sm mt-2">Statistiken werden nach dem ersten Spiel angezeigt.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-8">
+                      {getStatisticsByMatch().map(({ matchId, matchInfo, statistics }) => (
+                        <div key={matchId} className="border-2 border-gray-200 rounded-xl p-6">
+                          <div className="flex items-center justify-between mb-6">
+                            <div>
+                              <h3 className="text-xl font-bold text-gray-900">
+                                {matchInfo?.home_team?.name} vs {matchInfo?.away_team?.name}
+                              </h3>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  {matchInfo?.match_date
+                                    ? new Date(matchInfo.match_date).toLocaleDateString("de-DE")
+                                    : "Unbekannt"}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  {matchInfo?.match_time || "Unbekannt"}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-4 w-4" />
+                                  {matchInfo?.venue || "Unbekannt"}
+                                </span>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="text-lg px-3 py-1">
+                              {statistics.length} Legs gespielt
+                            </Badge>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="font-bold">Leg</TableHead>
+                                  <TableHead className="font-bold">Spieler</TableHead>
+                                  <TableHead className="font-bold text-center">180er</TableHead>
+                                  <TableHead className="font-bold text-center">171er</TableHead>
+                                  <TableHead className="font-bold text-center">154er</TableHead>
+                                  <TableHead className="font-bold text-center">151er</TableHead>
+                                  <TableHead className="font-bold text-center">15er</TableHead>
+                                  <TableHead className="font-bold text-center">16er</TableHead>
+                                  <TableHead className="font-bold text-center">17er</TableHead>
+                                  <TableHead className="font-bold text-center">18er</TableHead>
+                                  <TableHead className="font-bold text-center">19er</TableHead>
+                                  <TableHead className="font-bold text-center">20er</TableHead>
+                                  <TableHead className="font-bold text-center">Bull</TableHead>
+                                  <TableHead className="font-bold text-center text-red-600">Unter 26</TableHead>
+                                  <TableHead className="font-bold text-center text-red-600">Semperit</TableHead>
+                                  <TableHead className="font-bold">Notizen</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {statistics.map((stat) => (
+                                  <TableRow key={stat.id} className="hover:bg-muted/50">
+                                    <TableCell className="font-medium">
+                                      <Badge variant="outline">Leg {stat.leg_number}</Badge>
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                      <div className="flex items-center gap-2">
+                                        <Avatar className="h-8 w-8">
+                                          <AvatarImage
+                                            src={
+                                              stat.club_players?.photo_url ||
+                                              "/placeholder.svg?height=32&width=32&query=darts-player" ||
+                                              "/placeholder.svg"
+                                            }
+                                          />
+                                          <AvatarFallback className="text-xs bg-orange-100 text-orange-700">
+                                            {stat.club_players?.name?.charAt(0) || "?"}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        {stat.club_players?.name || "Unbekannt"}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      {stat.throws_180 > 0 && (
+                                        <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                                          {stat.throws_180}
+                                        </Badge>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      {stat.throws_171 > 0 && <Badge variant="outline">{stat.throws_171}</Badge>}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      {stat.throws_154 > 0 && <Badge variant="outline">{stat.throws_154}</Badge>}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      {stat.throws_151 > 0 && <Badge variant="outline">{stat.throws_151}</Badge>}
+                                    </TableCell>
+                                    <TableCell className="text-center">{stat.throws_15 || "-"}</TableCell>
+                                    <TableCell className="text-center">{stat.throws_16 || "-"}</TableCell>
+                                    <TableCell className="text-center">{stat.throws_17 || "-"}</TableCell>
+                                    <TableCell className="text-center">{stat.throws_18 || "-"}</TableCell>
+                                    <TableCell className="text-center">{stat.throws_19 || "-"}</TableCell>
+                                    <TableCell className="text-center">{stat.throws_20 || "-"}</TableCell>
+                                    <TableCell className="text-center">{stat.throws_bull || "-"}</TableCell>
+                                    <TableCell className="text-center">
+                                      {stat.throws_under_26 > 0 && (
+                                        <Badge variant="destructive">{stat.throws_under_26}</Badge>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      {stat.semperit_outs > 0 && (
+                                        <Badge variant="destructive">{stat.semperit_outs}</Badge>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="max-w-xs">
+                                      <div className="truncate text-sm text-muted-foreground">{stat.notes || "-"}</div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="penalties">
+            <div className="space-y-8">
+              <Card className="shadow-xl border-0 bg-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl font-bold">
+                    <Euro className="h-6 w-6 text-red-600" />
+                    Strafgelder Übersicht
+                  </CardTitle>
+                  <p className="text-muted-foreground">Strafgelder für Würfe unter 26 und Semperit (je 0,50€)</p>
+                </CardHeader>
+                <CardContent>
+                  {legStatsLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+                      <p className="mt-2 text-muted-foreground">Lade Strafgelder...</p>
+                    </div>
+                  ) : legStatistics.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Euro className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>Keine Strafgelder gefunden.</p>
+                      <p className="text-sm mt-2">Strafgelder werden nach dem ersten Spiel angezeigt.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="font-bold">Spieler</TableHead>
+                            <TableHead className="font-bold text-center text-red-600">Unter 26</TableHead>
+                            <TableHead className="font-bold text-center text-red-600">Semperit</TableHead>
+                            <TableHead className="font-bold text-center">Gesamt Strafen</TableHead>
+                            <TableHead className="font-bold text-center">Kosten (€)</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {getPenaltyStatistics()
+                            .sort((a, b) => b.totalCost - a.totalCost)
+                            .map((penalty) => (
+                              <TableRow key={penalty.playerId} className="hover:bg-muted/50">
+                                <TableCell className="font-medium">
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarImage src="/darts-player.png" />
+                                      <AvatarFallback className="text-xs bg-red-100 text-red-700">
+                                        {penalty.playerName.charAt(0)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    {penalty.playerName}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {penalty.under26 > 0 ? (
+                                    <Badge variant="destructive">{penalty.under26}</Badge>
+                                  ) : (
+                                    <span className="text-green-600 font-medium">0</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {penalty.semperit > 0 ? (
+                                    <Badge variant="destructive">{penalty.semperit}</Badge>
+                                  ) : (
+                                    <span className="text-green-600 font-medium">0</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant="outline" className="font-bold">
+                                    {penalty.totalPenalties}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <span className="font-bold text-red-600">{penalty.totalCost.toFixed(2)}€</span>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+
+                      {/* Summary Card */}
+                      <Card className="bg-red-50 border-red-200">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Euro className="h-5 w-5 text-red-600" />
+                              <span className="font-bold text-lg">Gesamte Strafgelder:</span>
+                            </div>
+                            <span className="text-2xl font-bold text-red-600">
+                              {getPenaltyStatistics()
+                                .reduce((total, penalty) => total + penalty.totalCost, 0)
+                                .toFixed(2)}
+                              €
+                            </span>
+                          </div>
+                          <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                            <div>
+                              <span className="font-medium">Gesamt Unter 26:</span>{" "}
+                              {getPenaltyStatistics().reduce((total, penalty) => total + penalty.under26, 0)}
+                            </div>
+                            <div>
+                              <span className="font-medium">Gesamt Semperit:</span>{" "}
+                              {getPenaltyStatistics().reduce((total, penalty) => total + penalty.semperit, 0)}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {selectedMatchForStats && (
           <MatchStatistics

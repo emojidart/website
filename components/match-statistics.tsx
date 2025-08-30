@@ -61,6 +61,7 @@ interface LegStatistic {
   throws_180: number
   throws_171: number
   throws_154: number
+  throws_151: number
   throws_under_26: number
   semperit_outs: number
   throws_15: number
@@ -146,7 +147,7 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
     const { data, error } = await supabase
       .from("leg_statistics")
       .select(
-        `id, match_id, leg_number, player_id, throws_180, throws_171, throws_154, throws_under_26, semperit_outs, throws_15, throws_16, throws_17, throws_18, throws_19, throws_20, throws_bull, notes, club_players(name)`,
+        `id, match_id, leg_number, player_id, throws_180, throws_171, throws_154, throws_151, throws_under_26, semperit_outs, throws_15, throws_16, throws_17, throws_18, throws_19, throws_20, throws_bull, notes, club_players(name)`,
       )
       .eq("match_id", match.id)
       .order("leg_number")
@@ -210,6 +211,7 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
         throws_180: legFormData[`${playerId}_180`] || 0,
         throws_171: legFormData[`${playerId}_171`] || 0,
         throws_154: legFormData[`${playerId}_154`] || 0,
+        throws_151: legFormData[`${playerId}_151`] || 0,
         throws_under_26: legFormData[`${playerId}_under26`] || 0,
         semperit_outs: legFormData[`${playerId}_semperit`] || 0,
         throws_15: legFormData[`${playerId}_15`] || 0,
@@ -479,37 +481,16 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_under26`} className="text-sm font-medium">
-                                    Unter 26
+                                  <Label htmlFor={`${targetPlayerId}_151`} className="text-sm font-medium">
+                                    151er
                                   </Label>
                                   <Input
-                                    id={`${targetPlayerId}_under26`}
+                                    id={`${targetPlayerId}_151`}
                                     type="number"
                                     min="0"
-                                    value={legFormData[`${targetPlayerId}_under26`] || 0}
+                                    value={legFormData[`${targetPlayerId}_151`] || 0}
                                     onChange={(e) =>
-                                      updateLegFormData(
-                                        `${targetPlayerId}_under26`,
-                                        Number.parseInt(e.target.value) || 0,
-                                      )
-                                    }
-                                    className="mt-1"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`${targetPlayerId}_semperit`} className="text-sm font-medium">
-                                    Semperit
-                                  </Label>
-                                  <Input
-                                    id={`${targetPlayerId}_semperit`}
-                                    type="number"
-                                    min="0"
-                                    value={legFormData[`${targetPlayerId}_semperit`] || 0}
-                                    onChange={(e) =>
-                                      updateLegFormData(
-                                        `${targetPlayerId}_semperit`,
-                                        Number.parseInt(e.target.value) || 0,
-                                      )
+                                      updateLegFormData(`${targetPlayerId}_151`, Number.parseInt(e.target.value) || 0)
                                     }
                                     className="mt-1"
                                   />
@@ -620,6 +601,57 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                   />
                                 </div>
                               </div>
+
+                              <div className="mt-6 pt-4 border-t-2 border-red-200">
+                                <h4 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
+                                  ⚠️ Negative Statistiken
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                                  <div>
+                                    <Label
+                                      htmlFor={`${targetPlayerId}_under26`}
+                                      className="text-sm font-medium text-red-700"
+                                    >
+                                      Unter 26
+                                    </Label>
+                                    <Input
+                                      id={`${targetPlayerId}_under26`}
+                                      type="number"
+                                      min="0"
+                                      value={legFormData[`${targetPlayerId}_under26`] || 0}
+                                      onChange={(e) =>
+                                        updateLegFormData(
+                                          `${targetPlayerId}_under26`,
+                                          Number.parseInt(e.target.value) || 0,
+                                        )
+                                      }
+                                      className="mt-1 border-red-300 focus:border-red-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label
+                                      htmlFor={`${targetPlayerId}_semperit`}
+                                      className="text-sm font-medium text-red-700"
+                                    >
+                                      Semperit
+                                    </Label>
+                                    <Input
+                                      id={`${targetPlayerId}_semperit`}
+                                      type="number"
+                                      min="0"
+                                      value={legFormData[`${targetPlayerId}_semperit`] || 0}
+                                      onChange={(e) =>
+                                        updateLegFormData(
+                                          `${targetPlayerId}_semperit`,
+                                          Number.parseInt(e.target.value) || 0,
+                                        )
+                                      }
+                                      className="mt-1 border-red-300 focus:border-red-500"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
                               <div className="mt-4">
                                 <Label htmlFor={`${targetPlayerId}_notes`} className="text-sm font-medium">
                                   Notizen
@@ -701,67 +733,71 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                         )}
                                       </div>
 
-                                      <div className="space-y-2">
-                                        {/* High Scores */}
-                                        <div className="flex justify-between items-center text-sm">
-                                          <span className="text-muted-foreground">High Scores:</span>
-                                          <div className="flex gap-2">
-                                            {stat.throws_180 > 0 && (
-                                              <Badge variant="outline" className="text-xs">
-                                                180×{stat.throws_180}
-                                              </Badge>
-                                            )}
-                                            {stat.throws_171 > 0 && (
-                                              <Badge variant="outline" className="text-xs">
-                                                171×{stat.throws_171}
-                                              </Badge>
-                                            )}
-                                            {stat.throws_154 > 0 && (
-                                              <Badge variant="outline" className="text-xs">
-                                                154×{stat.throws_154}
-                                              </Badge>
-                                            )}
-                                          </div>
-                                        </div>
-
-                                        {/* Other Stats */}
-                                        <div className="grid grid-cols-2 gap-2 text-xs">
-                                          {stat.throws_under_26 > 0 && (
-                                            <div className="flex justify-between">
-                                              <span>Unter 26:</span>
-                                              <span className="font-medium">{stat.throws_under_26}</span>
-                                            </div>
+                                      {/* High Scores */}
+                                      <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">High Scores:</span>
+                                        <div className="flex gap-2">
+                                          {stat.throws_180 > 0 && (
+                                            <Badge variant="outline" className="text-xs">
+                                              180×{stat.throws_180}
+                                            </Badge>
                                           )}
-                                          {stat.semperit_outs > 0 && (
-                                            <div className="flex justify-between">
-                                              <span>Semperit:</span>
-                                              <span className="font-medium">{stat.semperit_outs}</span>
-                                            </div>
+                                          {stat.throws_171 > 0 && (
+                                            <Badge variant="outline" className="text-xs">
+                                              171×{stat.throws_171}
+                                            </Badge>
                                           )}
-                                          {[15, 16, 17, 18, 19, 20].map((num) => {
-                                            const count = stat[`throws_${num}` as keyof typeof stat] as number
-                                            return count > 0 ? (
-                                              <div key={num} className="flex justify-between">
-                                                <span>{num}er:</span>
-                                                <span className="font-medium">{count}</span>
-                                              </div>
-                                            ) : null
-                                          })}
-                                          {stat.throws_bull > 0 && (
-                                            <div className="flex justify-between">
-                                              <span>Bull:</span>
-                                              <span className="font-medium">{stat.throws_bull}</span>
-                                            </div>
+                                          {stat.throws_154 > 0 && (
+                                            <Badge variant="outline" className="text-xs">
+                                              154×{stat.throws_154}
+                                            </Badge>
+                                          )}
+                                          {stat.throws_151 > 0 && (
+                                            <Badge variant="outline" className="text-xs">
+                                              151×{stat.throws_151}
+                                            </Badge>
                                           )}
                                         </div>
+                                      </div>
 
-                                        {stat.notes && (
-                                          <div className="mt-3 p-2 bg-blue-50 rounded text-xs">
-                                            <span className="text-blue-700 font-medium">Notiz:</span>
-                                            <p className="text-blue-600 mt-1">{stat.notes}</p>
+                                      {/* Other Stats */}
+                                      <div className="grid grid-cols-2 gap-2 text-xs">
+                                        {[15, 16, 17, 18, 19, 20].map((num) => {
+                                          const count = stat[`throws_${num}` as keyof typeof stat] as number
+                                          return count > 0 ? (
+                                            <div key={num} className="flex justify-between">
+                                              <span>{num}er:</span>
+                                              <span className="font-medium">{count}</span>
+                                            </div>
+                                          ) : null
+                                        })}
+                                        {stat.throws_bull > 0 && (
+                                          <div className="flex justify-between">
+                                            <span>Bull:</span>
+                                            <span className="font-medium">{stat.throws_bull}</span>
                                           </div>
                                         )}
                                       </div>
+
+                                      {(stat.throws_under_26 > 0 || stat.semperit_outs > 0) && (
+                                        <div className="mt-3 p-2 bg-red-50 rounded border border-red-200">
+                                          <div className="text-xs font-medium text-red-700 mb-1">⚠️ Negative Stats:</div>
+                                          <div className="grid grid-cols-2 gap-2 text-xs">
+                                            {stat.throws_under_26 > 0 && (
+                                              <div className="flex justify-between text-red-600">
+                                                <span>Unter 26:</span>
+                                                <span className="font-medium">{stat.throws_under_26}</span>
+                                              </div>
+                                            )}
+                                            {stat.semperit_outs > 0 && (
+                                              <div className="flex justify-between text-red-600">
+                                                <span>Semperit:</span>
+                                                <span className="font-medium">{stat.semperit_outs}</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
                                     </CardContent>
                                   </Card>
                                 ))}
