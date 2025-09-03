@@ -218,8 +218,8 @@ export default function RegelwerkPage() {
             </div>
             <div className="bg-green-50 border border-green-100 rounded-xl p-6">
               <p className="text-gray-700 text-lg">
-                <strong>Jeder kann teilnehmen</strong> ohne Levelbewertung und Einstufung, um unterschiedliche
-                Spielstärken zu fördern und zu motivieren.
+                <strong>Jeder kann teilnehmen</strong>, ausgenommen <strong>„A-Level Spieler"</strong>, um
+                unterschiedliche Spielstärken zu fördern und zu motivieren.
               </p>
               <p className="text-sm text-green-600 mt-3">
                 <strong>Ausnahmen:</strong> Entscheidung der Veranstalter und/oder Turnierleitung
@@ -386,7 +386,8 @@ export default function RegelwerkPage() {
                   <div className="bg-white border border-orange-200 rounded-lg p-4">
                     <h4 className="font-bold text-orange-600 mb-2">Nach 24 Turniertagen</h4>
                     <p className="text-sm text-gray-700">
-                      Tabelle wird <strong>halbiert</strong> - untere Tabelle kann nicht mehr in obere Tabelle gelangen
+                      Tabelle wird <strong>halbiert</strong> - untere Tabelle kann nicht mehr in obere Tabelle gelangen.
+                      Ab diesem Zeitpunkt sind <strong>keine neuen Teilnehmer/Teilnahmen</strong> mehr möglich.
                     </p>
                   </div>
                 </div>
@@ -397,7 +398,7 @@ export default function RegelwerkPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="bg-white border border-orange-200 rounded-lg p-4">
                     <h4 className="font-bold text-orange-600 mb-2">Tabelle 1 (Obere Tabelle)</h4>
-                    <p className="text-sm text-gray-700">Erspielte Platzierungen der 17 Turniertage</p>
+                    <p className="text-sm text-gray-700">Erspielte Platzierungen der 24 Turniertage</p>
                   </div>
                   <div className="bg-white border border-orange-200 rounded-lg p-4">
                     <h4 className="font-bold text-orange-600 mb-2">Tabelle 2 (Untere Tabelle)</h4>
@@ -411,8 +412,8 @@ export default function RegelwerkPage() {
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                 <p className="text-sm text-yellow-700">
-                  <strong>Hinweis:</strong> Sollten in der 2. Gruppe die ersten 5 Plätze mit den Antrittstagen nicht
-                  erreicht werden, wird bis zum Finaltag entschieden.
+                  <strong>Hinweis:</strong> Sollten in Gruppe 1 und Gruppe 2 die ersten 5 Plätze mit den Antrittstagen
+                  nicht erreicht werden, wird bis zum Finaltag entschieden.
                 </p>
               </div>
             </div>
@@ -591,7 +592,7 @@ export default function RegelwerkPage() {
                 <h3 className="font-bold text-green-700 mb-3">Ergebnisse & Veröffentlichung</h3>
                 <p className="text-gray-700">
                   Die Ergebnisse und Ranglisten werden <strong>fortlaufend geführt</strong> und{" "}
-                  <strong>zeitgerecht </strong> auf unserer <strong>Homepage</strong>{" "}
+                  <strong>einmal wöchentlich</strong> auf der <strong>emojisdartverein.at Homepage</strong>{" "}
                   veröffentlicht.
                 </p>
               </div>
@@ -925,6 +926,9 @@ export default function RegelwerkPage() {
                     • Wirt-Sponsoring einmalig ab 501 Teilnahmen = <strong>€ 250,00</strong>
                   </li>
                 </ul>
+                <p className="text-sm text-green-600 mt-3">
+                  Diese werden wie unten aufgelistet in Prozente aufgeteilt.
+                </p>
               </div>
 
               <div className="bg-green-50 border border-green-100 rounded-xl p-6">
@@ -996,7 +1000,7 @@ export default function RegelwerkPage() {
                 <p className="text-gray-700">
                   <strong>Reihenfolge der Entscheidungskriterien:</strong>
                   <br />
-                  1. Tabellenpunkte → 2. Check-Punkte → 3. Antritte
+                  1. Tabellenpunkte → 2. Check-Punkte → 3. Antritte (zuletzt)
                 </p>
               </div>
             </div>

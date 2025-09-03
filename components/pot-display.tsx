@@ -24,7 +24,7 @@ export function PotDisplay({ amount }: PotDisplayProps) {
           <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 uppercase tracking-wide">
             Aktueller Pot
           </h2>
-          <p className="text-xs sm:text-sm text-gray-500 font-medium">Competition 2025</p>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium">EMD - LION CUP II 2025</p>
         </div>
       </div>
 

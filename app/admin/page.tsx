@@ -162,8 +162,8 @@ export default function AdminPage() {
       view: "users" as const,
     },
     {
-      title: "Dart Competition",
-      description: "Alle Dart Competition Funktionen verwalten",
+      title: "Lion Cup",
+      description: "Alle EMD - LION CUP Funktionen verwalten",
       icon: Trophy,
       color: "bg-yellow-500",
       view: "dart-competition" as const,
@@ -544,7 +544,7 @@ export default function AdminPage() {
                       <CardHeader>
                         <CardTitle className="flex items-center space-x-2">
                           <Trophy className="h-5 w-5" />
-                          <span>Dart Competition Verwaltung</span>
+                          <span>EMD - LION CUP Verwaltung</span>
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
@@ -559,7 +559,7 @@ export default function AdminPage() {
                                 <Trophy className="h-4 w-4" />
                                 <span className="font-medium">Ergebnisse eingeben</span>
                               </div>
-                              <span className="text-xs text-gray-500">Dart Competition</span>
+                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
                             </div>
                           </Button>
 
@@ -573,7 +573,7 @@ export default function AdminPage() {
                                 <History className="h-4 w-4" />
                                 <span className="font-medium">Spiele Historie</span>
                               </div>
-                              <span className="text-xs text-gray-500">Dart Competition</span>
+                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
                             </div>
                           </Button>
 
@@ -587,7 +587,7 @@ export default function AdminPage() {
                                 <Settings className="h-4 w-4" />
                                 <span className="font-medium">Spielerverwaltung</span>
                               </div>
-                              <span className="text-xs text-gray-500">Dart Competition</span>
+                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
                             </div>
                           </Button>
 
@@ -601,7 +601,7 @@ export default function AdminPage() {
                                 <ImageIcon className="h-4 w-4" />
                                 <span className="font-medium">Spielerfotos</span>
                               </div>
-                              <span className="text-xs text-gray-500">Dart Competition</span>
+                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
                             </div>
                           </Button>
 
@@ -621,7 +621,7 @@ export default function AdminPage() {
                                 <Settings className="h-4 w-4" />
                                 <span className="font-medium">Erweiterte Spielereinstellungen</span>
                               </div>
-                              <span className="text-xs text-gray-500">Dart Competition</span>
+                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
                             </div>
                           </Button>
                         </div>

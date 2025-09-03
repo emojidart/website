@@ -96,13 +96,18 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
               <DropdownMenuItem asChild>
-                <Link href="/regelwerk" className="w-full cursor-pointer">
-                  Regelwerk
+                <Link href="/tabelle-lion-cup" className="w-full cursor-pointer">
+                  Tabelle
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/tabelle-lion-cup" className="w-full cursor-pointer">
-                  Tabelle
+                <Link href="/players" className="w-full cursor-pointer">
+                  Spieler
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/regelwerk" className="w-full cursor-pointer">
+                  Regelwerk
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -116,7 +121,7 @@ export function Header() {
                   isTurnierserieActive ? "text-red-600 border-b-2 border-red-600" : "text-gray-900 hover:text-red-600"
                 }`}
               >
-                Dart Competition
+                Hall of Fame
                 <ChevronDown className="ml-1 h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
@@ -124,11 +129,6 @@ export function Header() {
               <DropdownMenuItem asChild>
                 <Link href="/tables" className="w-full cursor-pointer">
                   Tabellen
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/players" className="w-full cursor-pointer">
-                  Spieler
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -304,16 +304,6 @@ export function Header() {
                   <span className="ml-2 bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">NEU</span>
                 </div>
                 <Link
-                  href="/regelwerk"
-                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
-                    pathname === "/regelwerk"
-                      ? "bg-orange-50 text-orange-600 font-bold"
-                      : "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
-                  }`}
-                >
-                  Regelwerk
-                </Link>
-                <Link
                   href="/tabelle-lion-cup"
                   className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
                     pathname === "/tabelle-lion-cup"
@@ -322,6 +312,26 @@ export function Header() {
                   }`}
                 >
                   Tabelle
+                </Link>
+                <Link
+                  href="/players"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/players"
+                      ? "bg-orange-50 text-orange-600 font-bold"
+                      : "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
+                  }`}
+                >
+                  Spieler
+                </Link>
+                <Link
+                  href="/regelwerk"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/regelwerk"
+                      ? "bg-orange-50 text-orange-600 font-bold"
+                      : "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
+                  }`}
+                >
+                  Regelwerk
                 </Link>
               </div>
 
@@ -338,16 +348,6 @@ export function Header() {
                   }`}
                 >
                   Tabellen
-                </Link>
-                <Link
-                  href="/players"
-                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
-                    pathname === "/players"
-                      ? "bg-red-50 text-red-600 font-bold"
-                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
-                  }`}
-                >
-                  Spieler
                 </Link>
               </div>
 

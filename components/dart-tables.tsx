@@ -8,7 +8,6 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import {
   Trophy,
-  Target,
   Users,
   Medal,
   Crown,
@@ -27,7 +26,6 @@ import { TournamentHistorySection } from "./tournament-history-section" // Impor
 
 interface DartTablesProps {
   edartPlayers: PlayerData[]
-  steelDartPlayers: PlayerData[]
   combinedPlayers: CombinedPlayerData[]
   loading: boolean
   error: string | null
@@ -107,12 +105,10 @@ function QualificationProgress({ current, required }: { current: number; require
   )
 }
 
-function QualificationStatus({ edartGames, steelGames }: { edartGames: number; steelGames: number }) {
-  const edartQualified = edartGames >= 5
-  const steelQualified = steelGames >= 5
-  const fullyQualified = edartQualified && steelQualified
+function QualificationStatus({ edartGames }: { edartGames: number }) {
+  const edartQualified = edartGames >= 20
 
-  if (fullyQualified) {
+  if (edartQualified) {
     return (
       <div className="flex items-center space-x-1 text-green-600">
         <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -139,7 +135,7 @@ function MobilePlayerCard({
   player: PlayerData | CombinedPlayerData // Use updated types
   position: number
   showDetails?: boolean
-  type?: "combined" | "edart" | "steel" | "total"
+  type?: "combined" | "edart" | "total"
 }) {
   const [expanded, setExpanded] = useState(false)
   const isTopThree = position <= 3
@@ -216,12 +212,12 @@ function MobilePlayerCard({
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
         {type === "combined" && (
           <>
-            {/* Anzeige der Gesamtpunkte (E-Dart + Steel Dart Punkte) */}
+            {/* Anzeige der Gesamtpunkte (nur E-Dart Punkte) */}
             <div className="bg-blue-50 rounded-lg p-2 text-center">
               <div className="text-xs text-blue-600 font-medium">Punkte</div>
               <div className="text-sm font-bold text-blue-800">{(player as CombinedPlayerData).totalPoints}</div>
             </div>
-            {/* Anzeige der Gesamt-Legs (E-Dart + Steel Dart Legs) */}
+            {/* Anzeige der Gesamt-Legs (nur E-Dart Legs) */}
             <div className="bg-green-50 rounded-lg p-2 text-center">
               <div className="text-xs text-green-600 font-medium">Legs</div>
               <div className="text-sm font-bold text-green-800">{(player as CombinedPlayerData).totalLegs}</div>
@@ -244,20 +240,20 @@ function MobilePlayerCard({
                 {(player as CombinedPlayerData).edartParticipations || 0}
               </div>
             </div>
-            <div className="bg-green-50 rounded-lg p-2 text-center">
-              <div className="text-xs text-green-600 font-medium">Steel</div>
-              <div className="text-sm font-bold text-green-800">
-                {(player as CombinedPlayerData).steelParticipations || 0}
-              </div>
-            </div>
             <div className="bg-yellow-50 rounded-lg p-2 text-center">
               <div className="text-xs text-yellow-600 font-medium">Checks</div>
               <div className="text-sm font-bold text-yellow-800">{(player as CombinedPlayerData).totalLegs}</div>
             </div>
+            <div className="bg-gray-50 rounded-lg p-2 text-center">
+              <div className="text-xs text-gray-600 font-medium">Gesamt</div>
+              <div className="text-sm font-bold text-gray-800">
+                {(player as CombinedPlayerData).totalParticipations}
+              </div>
+            </div>
           </>
         )}
 
-        {(type === "edart" || type === "steel") && (
+        {type === "edart" && (
           <>
             <div className="bg-gray-50 rounded-lg p-2 text-center">
               <div className="text-xs text-gray-600 font-medium">Punkte</div>
@@ -280,25 +276,18 @@ function MobilePlayerCard({
         <div className="space-y-2">
           <div>
             <div className="text-xs text-gray-600 mb-1">E-Dart Fortschritt</div>
-            <QualificationProgress current={(player as CombinedPlayerData).edartParticipations || 0} required={5} />
-          </div>
-          <div>
-            <div className="text-xs text-gray-600 mb-1">Steel Fortschritt</div>
-            <QualificationProgress current={(player as CombinedPlayerData).steelParticipations || 0} required={5} />
+            <QualificationProgress current={(player as CombinedPlayerData).edartParticipations || 0} required={20} />
           </div>
           <div className="pt-2 border-t border-gray-100">
-            <QualificationStatus
-              edartGames={(player as CombinedPlayerData).edartParticipations || 0}
-              steelGames={(player as CombinedPlayerData).steelParticipations || 0}
-            />
+            <QualificationStatus edartGames={(player as CombinedPlayerData).edartParticipations || 0} />
           </div>
         </div>
       )}
 
-      {(type === "edart" || type === "steel") && (
+      {type === "edart" && (
         <div className="pt-2 border-t border-gray-100">
           <div className="text-xs text-gray-600 mb-1">Finale-Fortschritt</div>
-          <QualificationProgress current={(player as PlayerData).participations} required={5} />
+          <QualificationProgress current={(player as PlayerData).participations} required={20} />
         </div>
       )}
 
@@ -359,7 +348,7 @@ function MobileTable({
   loading: boolean
   title: string
   icon: React.ReactNode
-  type?: "combined" | "edart" | "steel" | "total"
+  type?: "combined" | "edart" | "total"
   description?: string
 }) {
   if (loading) {
@@ -404,7 +393,7 @@ function MobileTable({
       if (type === "combined") {
         return b.combinedScore - a.combinedScore
       }
-      // Für edart und steel: Sortiere nach der Summe von Punkten und Legs
+      // Für edart: Sortiere nach der Summe von Punkten und Legs
       return b.points + b.legs - (a.points + a.legs)
     })
     .map((player, index) => ({ ...player, position: index + 1 }))
@@ -433,19 +422,19 @@ function MobileTable({
           <div className="flex items-center space-x-2 text-blue-800">
             <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="text-xs sm:text-sm font-medium">
-              Für das Finale: 5x E-Dart + 5x Steel Dart erforderlich
+              Jeder EMD – LION CUP-Teilnehmer, der am Finaltag teilnehmen möchte, benötigt 20 Antritte.
             </span>
           </div>
         </div>
       )}
 
-      {(type === "edart" || type === "steel") && (
-        <div
-          className={`${type === "edart" ? "bg-blue-50 border-blue-100" : "bg-green-50 border-green-100"} border-b p-3 sm:p-4`}
-        >
-          <div className={`flex items-center space-x-2 ${type === "edart" ? "text-blue-800" : "text-green-800"}`}>
+      {type === "edart" && (
+        <div className="bg-blue-50 border-blue-100 border-b p-3 sm:p-4">
+          <div className="flex items-center space-x-2 text-blue-800">
             <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs sm:text-sm font-medium">5 Spiele erforderlich für Finale-Qualifikation</span>
+            <span className="text-xs sm:text-sm font-medium">
+              Jeder EMD – LION CUP-Teilnehmer, der am Finaltag teilnehmen möchte, benötigt 20 Antritte.
+            </span>
           </div>
         </div>
       )}
@@ -482,15 +471,14 @@ function MobileTable({
               {
                 sortedPlayers.filter((p) => {
                   const edart = (p as CombinedPlayerData).edartParticipations || 0
-                  const steel = (p as CombinedPlayerData).steelParticipations || 0
-                  return edart >= 5 && steel >= 5
+                  return edart >= 20
                 }).length
               }
             </span>
           )}
-          {(type === "edart" || type === "steel") && (
+          {type === "edart" && (
             <span>
-              Qualifiziert: {players.filter((p) => (p as PlayerData).participations >= 5).length} von {players.length}
+              Qualifiziert: {players.filter((p) => (p as PlayerData).participations >= 20).length} von {players.length}
             </span>
           )}
           {type === "total" && (
@@ -510,8 +498,8 @@ function MobileTable({
   )
 }
 
-export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, loading, error }: DartTablesProps) {
-  const [activeTab, setActiveTab] = useState<"combined" | "edart" | "steel" | "total" | "history">("combined") // 'history' hinzugefügt
+export function DartTables({ edartPlayers, combinedPlayers, loading, error }: DartTablesProps) {
+  const [activeTab, setActiveTab] = useState<"combined" | "total" | "history">("combined")
   const { groupedGameHistory } = useDartData() // groupedGameHistory aus dem Hook holen
 
   if (error) {
@@ -529,16 +517,14 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8 px-4">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Ranglisten</h1>
-        <p className="text-sm sm:text-base lg:text-lg text-gray-600">Aktueller Stand der Competition 2025</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">EMD - LION CUP | 2025</h1>
+        <p className="text-sm sm:text-base lg:text-lg text-gray-600">Aktuelle Rangliste</p>
       </div>
 
       {/* Mobile-Optimized Tab Navigation */}
       <div className="px-4">
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-2 overflow-x-auto">
-          <div className="flex space-x-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-2 lg:grid-cols-5 sm:space-x-0 sm:gap-2">
-            {" "}
-            {/* grid-cols-5 für neuen Tab */}
+          <div className="flex space-x-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:space-x-0 sm:gap-2">
             <Button
               onClick={() => setActiveTab("combined")}
               className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
@@ -551,30 +537,6 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
               <span className="hidden sm:inline">Gesamtwertung</span>
               <span className="sm:hidden">Gesamt</span>
               <span className="ml-1">({combinedPlayers?.length || 0})</span>
-            </Button>
-            <Button
-              onClick={() => setActiveTab("edart")}
-              className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                activeTab === "edart"
-                  ? "bg-red-600 text-white shadow-md"
-                  : "bg-transparent text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              <Target className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              E-Dart ({edartPlayers?.length || 0})
-            </Button>
-            <Button
-              onClick={() => setActiveTab("steel")}
-              className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                activeTab === "steel"
-                  ? "bg-red-600 text-white shadow-md"
-                  : "bg-transparent text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              <Target className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Steel Dart</span>
-              <span className="sm:hidden">Steel</span>
-              <span className="ml-1">({steelDartPlayers?.length || 0})</span>
             </Button>
             <Button
               onClick={() => setActiveTab("total")}
@@ -614,29 +576,7 @@ export function DartTables({ edartPlayers, steelDartPlayers, combinedPlayers, lo
             title="Gesamtwertung"
             icon={<Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-white" />}
             type="combined"
-            description="Kombinierte Wertung aus E-Dart und Steel Dart"
-          />
-        )}
-
-        {activeTab === "edart" && (
-          <MobileTable
-            players={edartPlayers}
-            loading={loading}
-            title="E-Dart Tabelle"
-            icon={<Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />}
-            type="edart"
-            description="Elektronisches Dart Ranking"
-          />
-        )}
-
-        {activeTab === "steel" && (
-          <MobileTable
-            players={steelDartPlayers}
-            loading={loading}
-            title="Steel Dart Tabelle"
-            icon={<Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />}
-            type="steel"
-            description="Klassisches Steel Dart Ranking"
+            description="E-Dart Wertung"
           />
         )}
 
