@@ -38,7 +38,7 @@ export default function TabellelionCupPage() {
                 <Trophy className="h-12 w-12 text-white mx-auto" />
               </div>
               <h1 className="text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-4">
-                <span className="block text-white">EMD LIONCUP PART II</span>
+                <span className="block text-white">EMD - LION CUP PART II</span>
                 <span className="block text-orange-200">TABELLE</span>
               </h1>
               <p className="text-lg md:text-xl font-bold uppercase text-orange-100">2025/2026 - Aktuelle Rangliste</p>
@@ -58,7 +58,7 @@ export default function TabellelionCupPage() {
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 uppercase">Coming Soon</h2>
 
               <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-                Die offizielle Tabelle des EMD Lion Cup II wird hier verfügbar sein, sobald das Turnier startet.
+                Die offizielle Tabelle des EMD - Lion Cup II wird in Kürze verfügbar sein.
               </p>
 
               <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">

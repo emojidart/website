@@ -31,13 +31,27 @@ import {
   BarChart3,
   TrendingUp,
   Euro,
+  Camera,
+  XCircle,
+  Upload,
+  Trophy,
 } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
 
 import { MatchStatistics } from "@/components/match-statistics"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import Image from "next/image"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface UserProfile {
   id: string
@@ -88,6 +102,7 @@ interface LigaStatistic {
   throws_171: number
   throws_154: number
   throws_under_26: number
+  throws_under_30: number
   semperit_outs: number
   throws_15: number
   throws_16: number
@@ -135,6 +150,12 @@ interface OpponentTeam {
   name: string
 }
 
+interface BonusConfig {
+  under26: number
+  under30: number
+  semperit: number
+}
+
 export default function MemberDashboard() {
   const { session, user, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -143,6 +164,18 @@ export default function MemberDashboard() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const [bonusConfig, setBonusConfig] = useState<BonusConfig>({
+    under26: 0.5,
+    under30: 0.5,
+    semperit: 0.5,
+  })
+  const [isBonusConfigOpen, setIsBonusConfigOpen] = useState(false)
+  const [tempBonusConfig, setTempBonusConfig] = useState<BonusConfig>({
+    under26: 0.5,
+    under30: 0.5,
+    semperit: 0.5,
+  })
 
   const [matches, setMatches] = useState<Match[]>([])
   const [selectedMatchForStats, setSelectedMatchForStats] = useState<Match | null>(null)
@@ -171,6 +204,7 @@ export default function MemberDashboard() {
   const [throws171, setThrows171] = useState<number>(0)
   const [throws154, setThrows154] = useState<number>(0)
   const [throwsUnder26, setThrowsUnder26] = useState<number>(0)
+  const [throwsUnder30, setThrowsUnder30] = useState<number>(0)
   const [semperitOuts, setSemperitOuts] = useState<number>(0)
   const [throws15, setThrows15] = useState<number>(0)
   const [throws16, setThrows16] = useState<number>(0)
@@ -187,6 +221,155 @@ export default function MemberDashboard() {
   const [legStatsLoading, setLegStatsLoading] = useState(false)
   const [activeMainTab, setActiveMainTab] = useState<"dashboard" | "statistics" | "penalties">("dashboard")
 
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoMessage, setPhotoMessage] = useState("")
+
+  useEffect(() => {
+    const savedConfig = localStorage.getItem("bonusConfig")
+    if (savedConfig) {
+      const config = JSON.parse(savedConfig)
+      setBonusConfig(config)
+      setTempBonusConfig(config)
+    }
+  }, [])
+
+  const saveBonusConfig = () => {
+    setBonusConfig(tempBonusConfig)
+    localStorage.setItem("bonusConfig", JSON.stringify(tempBonusConfig))
+    setIsBonusConfigOpen(false)
+    toast({
+      title: "Bonusgeld Konfiguration gespeichert",
+      description: "Die neuen Bonusgeld-Beträge wurden erfolgreich gespeichert.",
+    })
+  }
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPhotoFile(file)
+      setPhotoPreview(URL.createObjectURL(file))
+    } else {
+      setPhotoFile(null)
+      setPhotoPreview(null)
+    }
+  }
+
+  const handlePhotoUpload = async () => {
+    if (!photoFile || !profile?.club_players?.id) return
+
+    setPhotoUploading(true)
+    setPhotoMessage("")
+
+    try {
+      const fileExtension = photoFile.name.split(".").pop()
+      const sanitizedPlayerName = profile.club_players.name.replace(/[^a-zA-Z0-9_.-]/g, "").replace(/\s/g, "_")
+      const filePath = `player-avatars/${sanitizedPlayerName}-${Date.now()}.${fileExtension}`
+
+      // Upload to Supabase storage
+      const { error: uploadError } = await supabase.storage.from("player-avatars").upload(filePath, photoFile, {
+        cacheControl: "3600",
+        upsert: false,
+      })
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage.from("player-avatars").getPublicUrl(filePath)
+
+      // Update player record
+      const { error: updateError } = await supabase
+        .from("club_players")
+        .update({ photo_url: publicUrlData.publicUrl })
+        .eq("id", profile.club_players.id)
+
+      if (updateError) {
+        throw updateError
+      }
+
+      // Update local state
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              club_players: prev.club_players
+                ? {
+                    ...prev.club_players,
+                    photo_url: publicUrlData.publicUrl,
+                  }
+                : null,
+            }
+          : null,
+      )
+
+      await fetchTeamMembers()
+
+      setPhotoMessage("Foto erfolgreich hochgeladen!")
+      setIsPhotoDialogOpen(false)
+      setPhotoFile(null)
+      setPhotoPreview(null)
+    } catch (error: any) {
+      setPhotoMessage(`Fehler beim Hochladen: ${error.message}`)
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
+  const handlePhotoRemove = async () => {
+    if (!profile?.club_players?.id || !profile?.club_players?.photo_url) return
+
+    setPhotoUploading(true)
+    setPhotoMessage("")
+
+    try {
+      // Remove from storage if it's a Supabase URL
+      if (profile.club_players.photo_url.includes("player-avatars/")) {
+        const filePath = profile.club_players.photo_url.split("player-avatars/")[1]
+        if (filePath) {
+          await supabase.storage.from("player-avatars").remove([filePath])
+        }
+      }
+
+      // Update player record
+      const { error: updateError } = await supabase
+        .from("club_players")
+        .update({ photo_url: null })
+        .eq("id", profile.club_players.id)
+
+      if (updateError) {
+        throw updateError
+      }
+
+      // Update local state
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              club_players: prev.club_players
+                ? {
+                    ...prev.club_players,
+                    photo_url: null,
+                  }
+                : null,
+            }
+          : null,
+      )
+
+      await fetchTeamMembers()
+
+      setPhotoMessage("Foto erfolgreich entfernt!")
+      setIsPhotoDialogOpen(false)
+    } catch (error: any) {
+      setPhotoMessage(`Fehler beim Entfernen: ${error.message}`)
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
   const handleEditStat = (stat: any) => {
     setEditingStatId(stat.id)
     setEditingStatData({
@@ -196,6 +379,7 @@ export default function MemberDashboard() {
       throws_171: stat.throws_171 || 0,
       throws_154: stat.throws_154 || 0,
       throws_under_26: stat.throws_under_26 || 0,
+      throws_under_30: stat.throws_under_30 || 0,
       semperit_outs: stat.semperit_outs || 0,
       throws_15: stat.throws_15 || 0,
       throws_16: stat.throws_16 || 0,
@@ -556,6 +740,7 @@ export default function MemberDashboard() {
           throws_171: throws171,
           throws_154: throws154,
           throws_under_26: throwsUnder26,
+          throws_under_30: throwsUnder30,
           semperit_outs: semperitOuts,
           throws_15: throws15,
           throws_16: throws16,
@@ -583,6 +768,7 @@ export default function MemberDashboard() {
       setThrows171(0)
       setThrows154(0)
       setThrowsUnder26(0)
+      setThrowsUnder30(0)
       setSemperitOuts(0)
       setThrows15(0)
       setThrows16(0)
@@ -664,11 +850,11 @@ export default function MemberDashboard() {
     }
   }
 
-  const getTeamName = (match: Match, isHome: boolean) => {
+  const getTeamName = (match: any, isHome: boolean) => {
     if (isHome) {
-      return match.home_team_type === "own" ? match.home_team?.name : match.home_opponent_team?.name
+      return match?.home_team_type === "own" ? match?.home_team?.name : match?.home_opponent_team?.name
     } else {
-      return match.away_team_type === "own" ? match.away_team?.name : match.away_opponent_team?.name
+      return match?.away_team_type === "own" ? match?.away_team?.name : match?.away_opponent_team?.name
     }
   }
 
@@ -748,7 +934,11 @@ export default function MemberDashboard() {
         .from("leg_statistics")
         .select(`
           *,
-          club_players (
+          player:club_players!leg_statistics_player_id_fkey(
+            name,
+            photo_url
+          ),
+          leg_winner:club_players!leg_statistics_leg_winner_id_fkey(
             name,
             photo_url
           ),
@@ -757,8 +947,14 @@ export default function MemberDashboard() {
             match_date,
             match_time,
             venue,
-            home_team:teams!matches_home_team_id_fkey(name),
-            away_team:teams!matches_away_team_id_fkey(name)
+            home_team_id,
+            away_team_id,
+            home_team:teams!matches_home_team_id_fkey(id, name),
+            away_team:teams!matches_away_team_id_fkey(id, name),
+            home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
+            away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name),
+            home_team_type,
+            away_team_type
           )
         `)
         .in("player_id", teamPlayerIds)
@@ -769,7 +965,24 @@ export default function MemberDashboard() {
         throw error
       }
 
-      setLegStatistics(data || [])
+      const processedData = (data || []).map((stat: any) => {
+        // Handle multiple winners from leg_winner_ids field
+        let isWinner = false
+        if (stat.leg_winner_ids) {
+          const winnerIds = stat.leg_winner_ids.split(",").map((id: string) => id.trim())
+          isWinner = winnerIds.includes(stat.player_id)
+        } else if (stat.leg_winner_id) {
+          // Fallback to single winner field
+          isWinner = stat.leg_winner_id === stat.player_id
+        }
+
+        return {
+          ...stat,
+          leg_wins: isWinner ? 1 : 0,
+        }
+      })
+
+      setLegStatistics(processedData)
     } catch (err: any) {
       console.error("Error fetching leg statistics:", err)
     } finally {
@@ -777,39 +990,44 @@ export default function MemberDashboard() {
     }
   }
 
-  const getStatisticsByMatch = () => {
-    const matchGroups: { [key: string]: any[] } = {}
+  const getTeamDisplayName = (match: any, isHome: boolean) => {
+    if (!match) return "Unbekannt"
 
-    legStatistics.forEach((stat) => {
-      const matchKey = stat.match_id
-      if (!matchGroups[matchKey]) {
-        matchGroups[matchKey] = []
+    if (isHome) {
+      if (match.home_team_type === "club_team" && match.home_team) {
+        return match.home_team.name
+      } else if (match.home_team_type === "opponent_team" && match.home_opponent_team) {
+        return match.home_opponent_team.name
       }
-      matchGroups[matchKey].push(stat)
-    })
+    } else {
+      if (match.away_team_type === "club_team" && match.away_team) {
+        return match.away_team.name
+      } else if (match.away_team_type === "opponent_team" && match.away_opponent_team) {
+        return match.away_opponent_team.name
+      }
+    }
 
-    return Object.entries(matchGroups).map(([matchId, stats]) => ({
-      matchId,
-      matchInfo: stats[0]?.matches,
-      statistics: stats.sort((a, b) => b.leg_number - a.leg_number),
-    }))
+    return "Unbekannt"
   }
 
   const getPenaltyStatistics = () => {
-    const penaltyStats: { [key: string]: { under26: number; semperit: number; playerName: string; matchInfo: any } } =
-      {}
+    const penaltyStats: {
+      [key: string]: { under26: number; under30: number; semperit: number; playerName: string; matchInfo: any }
+    } = {}
 
     legStatistics.forEach((stat) => {
       const playerId = stat.player_id
       if (!penaltyStats[playerId]) {
         penaltyStats[playerId] = {
           under26: 0,
+          under30: 0,
           semperit: 0,
-          playerName: stat.club_players?.name || "Unbekannt",
+          playerName: stat.player?.name || "Unbekannt",
           matchInfo: stat.matches,
         }
       }
       penaltyStats[playerId].under26 += stat.throws_under_26 || 0
+      penaltyStats[playerId].under30 += stat.throws_under_30 || 0
       penaltyStats[playerId].semperit += stat.semperit_outs || 0
     })
 
@@ -817,9 +1035,13 @@ export default function MemberDashboard() {
       playerId,
       playerName: stats.playerName,
       under26: stats.under26,
+      under30: stats.under30,
       semperit: stats.semperit,
-      totalPenalties: stats.under26 + stats.semperit,
-      totalCost: (stats.under26 + stats.semperit) * 0.5,
+      totalPenalties: stats.under26 + stats.under30 + stats.semperit,
+      totalCost:
+        stats.under26 * bonusConfig.under26 +
+        stats.under30 * bonusConfig.under30 +
+        stats.semperit * bonusConfig.semperit,
     }))
   }
 
@@ -855,54 +1077,164 @@ export default function MemberDashboard() {
     )
   }
 
+  const getStatisticsByMatch = () => {
+    const groupedStatistics: { [matchId: string]: any } = {}
+
+    legStatistics.forEach((stat) => {
+      const matchId = stat.matches?.id || "unknown"
+      if (!groupedStatistics[matchId]) {
+        groupedStatistics[matchId] = {
+          matchId: matchId,
+          matchInfo: stat.matches,
+          statistics: [],
+        }
+      }
+      groupedStatistics[matchId].statistics.push(stat)
+    })
+
+    return Object.values(groupedStatistics)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {/* Welcome Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 uppercase tracking-wide">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 uppercase tracking-wide">
             Willkommen zurück, {profile?.club_players?.name || "Spieler"}!
           </h1>
-          <p className="text-gray-600 text-lg">Hier ist dein persönliches Dashboard bei Emoj!'s Dartverein</p>
+          <p className="text-gray-600 text-base sm:text-lg">
+            Hier ist dein persönliches Dashboard bei Emoj!'s Dartverein
+          </p>
         </div>
 
         <Tabs
           value={activeMainTab}
           onValueChange={(value) => setActiveMainTab(value as "dashboard" | "statistics" | "penalties")}
         >
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Dashboard
+          <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-auto">
+            <TabsTrigger
+              value="dashboard"
+              className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-3 text-xs sm:text-sm"
+            >
+              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+              <span className="sm:hidden">Home</span>
             </TabsTrigger>
-            <TabsTrigger value="statistics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Spielerstatistiken
+            <TabsTrigger
+              value="statistics"
+              className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-3 text-xs sm:text-sm"
+            >
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Spielerstatistiken</span>
+              <span className="sm:hidden">Stats</span>
             </TabsTrigger>
-            <TabsTrigger value="penalties" className="flex items-center gap-2">
-              <Euro className="h-4 w-4" />
-              Strafgelder
+            <TabsTrigger
+              value="penalties"
+              className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-3 text-xs sm:text-sm"
+            >
+              <Euro className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Bonusgeld</span>
+              <span className="sm:hidden">Bonus</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-8">
               {/* Profile Card */}
-              <div className="lg:col-span-1">
+              <div className="xl:col-span-1">
                 <Card className="shadow-xl border-0 bg-white">
                   <CardHeader className="text-center pb-4">
                     <div className="flex flex-col items-center">
-                      <Avatar className="h-24 w-24 mb-4 border-4 border-orange-500 shadow-lg">
-                        <AvatarImage
-                          src={
-                            profile?.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=darts-player"
-                          }
-                        />
-                        <AvatarFallback className="text-2xl font-bold bg-orange-100 text-orange-700">
-                          {profile?.club_players?.name?.charAt(0) || user?.email?.charAt(0) || "?"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative">
+                        <Avatar className="h-16 w-16 sm:h-24 sm:w-24 mb-4 border-4 border-orange-500 shadow-lg">
+                          <AvatarImage
+                            src={
+                              profile?.club_players?.photo_url ||
+                              "/placeholder.svg?height=96&width=96&query=darts-player" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg"
+                            }
+                          />
+                          <AvatarFallback className="text-2xl font-bold bg-orange-100 text-orange-700">
+                            {profile?.club_players?.name?.charAt(0) || user?.email?.charAt(0) || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <Dialog open={isPhotoDialogOpen} onOpenChange={setIsPhotoDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="icon"
+                              className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-lg"
+                            >
+                              <Camera className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Profilbild ändern</DialogTitle>
+                              <DialogDescription>
+                                Lade ein neues Profilbild hoch oder entferne das aktuelle Bild.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="photo">Neues Foto auswählen</Label>
+                                <Input
+                                  id="photo"
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handlePhotoChange}
+                                  className="file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                                />
+                              </div>
+                              {photoPreview && (
+                                <div className="flex items-center justify-center">
+                                  <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-orange-200">
+                                    <Image
+                                      src={photoPreview || "/placeholder.svg"}
+                                      alt="Vorschau"
+                                      fill
+                                      style={{ objectFit: "cover" }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                              {photoMessage && (
+                                <Alert>
+                                  <AlertDescription>{photoMessage}</AlertDescription>
+                                </Alert>
+                              )}
+                            </div>
+                            <DialogFooter className="flex-col sm:flex-row gap-2">
+                              {profile?.club_players?.photo_url && (
+                                <Button
+                                  variant="destructive"
+                                  onClick={handlePhotoRemove}
+                                  disabled={photoUploading}
+                                  className="w-full sm:w-auto"
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Foto entfernen
+                                </Button>
+                              )}
+                              <Button
+                                onClick={handlePhotoUpload}
+                                disabled={!photoFile || photoUploading}
+                                className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600"
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                {photoUploading ? "Wird hochgeladen..." : "Hochladen"}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                       <CardTitle className="text-xl font-bold text-gray-900">
                         {profile?.club_players?.name || "Unbekannter Spieler"}
                       </CardTitle>
@@ -967,7 +1299,7 @@ export default function MemberDashboard() {
               </div>
 
               {/* Main Content */}
-              <div className="lg:col-span-2 space-y-8">
+              <div className="xl:col-span-2 space-y-6 sm:space-y-8">
                 {/* Team Memberships */}
                 <Card className="shadow-xl border-0 bg-white">
                   <CardHeader>
@@ -1082,6 +1414,8 @@ export default function MemberDashboard() {
                                           src={
                                             member.club_players?.photo_url ||
                                             "/placeholder.svg?height=32&width=32&query=darts-player" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
@@ -1236,248 +1570,515 @@ export default function MemberDashboard() {
 
           <TabsContent value="statistics">
             <div className="space-y-8">
-              <Card className="shadow-xl border-0 bg-white">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-2xl font-bold">
-                    <TrendingUp className="h-6 w-6 text-orange-600" />
-                    Spielerstatistiken nach Spiel
-                  </CardTitle>
-                  <p className="text-muted-foreground">Detaillierte Leg-Statistiken sortiert nach Spielen</p>
-                </CardHeader>
-                <CardContent>
-                  {legStatsLoading ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
-                      <p className="mt-2 text-muted-foreground">Lade Statistiken...</p>
-                    </div>
-                  ) : legStatistics.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>Keine Spielerstatistiken gefunden.</p>
-                      <p className="text-sm mt-2">Statistiken werden nach dem ersten Spiel angezeigt.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-8">
-                      {getStatisticsByMatch().map(({ matchId, matchInfo, statistics }) => (
-                        <div key={matchId} className="border-2 border-gray-200 rounded-xl p-6">
-                          <div className="flex items-center justify-between mb-6">
-                            <div>
-                              <h3 className="text-xl font-bold text-gray-900">
-                                {matchInfo?.home_team?.name} vs {matchInfo?.away_team?.name}
-                              </h3>
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="h-4 w-4" />
-                                  {matchInfo?.match_date
-                                    ? new Date(matchInfo.match_date).toLocaleDateString("de-DE")
-                                    : "Unbekannt"}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-4 w-4" />
-                                  {matchInfo?.match_time || "Unbekannt"}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="h-4 w-4" />
-                                  {matchInfo?.venue || "Unbekannt"}
-                                </span>
-                              </div>
-                            </div>
-                            <Badge variant="outline" className="text-lg px-3 py-1">
-                              {statistics.length} Legs gespielt
-                            </Badge>
-                          </div>
+              <Tabs defaultValue="by-match" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="by-match">Nach Spielen</TabsTrigger>
+                  <TabsTrigger value="overall">Gesamtstatistik</TabsTrigger>
+                </TabsList>
 
-                          <div className="overflow-x-auto">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="font-bold">Leg</TableHead>
-                                  <TableHead className="font-bold">Spieler</TableHead>
-                                  <TableHead className="font-bold text-center">180er</TableHead>
-                                  <TableHead className="font-bold text-center">171er</TableHead>
-                                  <TableHead className="font-bold text-center">154er</TableHead>
-                                  <TableHead className="font-bold text-center">151er</TableHead>
-                                  <TableHead className="font-bold text-center">15er</TableHead>
-                                  <TableHead className="font-bold text-center">16er</TableHead>
-                                  <TableHead className="font-bold text-center">17er</TableHead>
-                                  <TableHead className="font-bold text-center">18er</TableHead>
-                                  <TableHead className="font-bold text-center">19er</TableHead>
-                                  <TableHead className="font-bold text-center">20er</TableHead>
-                                  <TableHead className="font-bold text-center">Bull</TableHead>
-                                  <TableHead className="font-bold text-center text-red-600">Unter 26</TableHead>
-                                  <TableHead className="font-bold text-center text-red-600">Semperit</TableHead>
-                                  <TableHead className="font-bold">Notizen</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {statistics.map((stat) => (
-                                  <TableRow key={stat.id} className="hover:bg-muted/50">
-                                    <TableCell className="font-medium">
-                                      <Badge variant="outline">Leg {stat.leg_number}</Badge>
-                                    </TableCell>
-                                    <TableCell className="font-medium">
-                                      <div className="flex items-center gap-2">
-                                        <Avatar className="h-8 w-8">
-                                          <AvatarImage
-                                            src={
-                                              stat.club_players?.photo_url ||
-                                              "/placeholder.svg?height=32&width=32&query=darts-player" ||
-                                              "/placeholder.svg"
-                                            }
-                                          />
-                                          <AvatarFallback className="text-xs bg-orange-100 text-orange-700">
-                                            {stat.club_players?.name?.charAt(0) || "?"}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        {stat.club_players?.name || "Unbekannt"}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                      {stat.throws_180 > 0 && (
-                                        <Badge variant="secondary" className="bg-amber-100 text-amber-800">
-                                          {stat.throws_180}
-                                        </Badge>
-                                      )}
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                      {stat.throws_171 > 0 && <Badge variant="outline">{stat.throws_171}</Badge>}
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                      {stat.throws_154 > 0 && <Badge variant="outline">{stat.throws_154}</Badge>}
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                      {stat.throws_151 > 0 && <Badge variant="outline">{stat.throws_151}</Badge>}
-                                    </TableCell>
-                                    <TableCell className="text-center">{stat.throws_15 || "-"}</TableCell>
-                                    <TableCell className="text-center">{stat.throws_16 || "-"}</TableCell>
-                                    <TableCell className="text-center">{stat.throws_17 || "-"}</TableCell>
-                                    <TableCell className="text-center">{stat.throws_18 || "-"}</TableCell>
-                                    <TableCell className="text-center">{stat.throws_19 || "-"}</TableCell>
-                                    <TableCell className="text-center">{stat.throws_20 || "-"}</TableCell>
-                                    <TableCell className="text-center">{stat.throws_bull || "-"}</TableCell>
-                                    <TableCell className="text-center">
-                                      {stat.throws_under_26 > 0 && (
-                                        <Badge variant="destructive">{stat.throws_under_26}</Badge>
-                                      )}
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                      {stat.semperit_outs > 0 && (
-                                        <Badge variant="destructive">{stat.semperit_outs}</Badge>
-                                      )}
-                                    </TableCell>
-                                    <TableCell className="max-w-xs">
-                                      <div className="truncate text-sm text-muted-foreground">{stat.notes || "-"}</div>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
+                <TabsContent value="overall" className="space-y-6">
+                  <Card className="shadow-xl border-0 bg-white">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-2xl font-bold">
+                        <Trophy className="h-6 w-6 text-amber-600" />
+                        Gesamtstatistik aller Legs
+                      </CardTitle>
+                      <p className="text-muted-foreground">Alle Leg-Statistiken sortiert nach Wins, dann nach 180ern</p>
+                    </CardHeader>
+                    <CardContent>
+                      {legStatsLoading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mx-auto"></div>
+                          <p className="mt-2 text-muted-foreground">Lade Gesamtstatistiken...</p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      ) : legStatistics.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <Trophy className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                          <p>Keine Gesamtstatistiken gefunden.</p>
+                          <p className="text-sm mt-2">Bonusgelder werden nach dem ersten Spiel angezeigt.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {(() => {
+                            const playerOverallStats: { [key: string]: any } = {}
+
+                            legStatistics.forEach((stat) => {
+                              const playerId = stat.player_id
+                              if (!playerOverallStats[playerId]) {
+                                playerOverallStats[playerId] = {
+                                  player_id: playerId,
+                                  player_name: stat.player?.name || "Unbekannt",
+                                  photo_url: stat.player?.photo_url,
+                                  total_legs: 0,
+                                  total_wins: 0,
+                                  total_180: 0,
+                                  total_171: 0,
+                                  total_154: 0,
+                                  total_high_tonne: 0,
+                                  total_tonne: 0,
+                                  total_shanghai: 0,
+                                  total_95_plus: 0,
+                                  total_under_26: 0,
+                                  total_under_30: 0,
+                                  total_semperit: 0,
+                                  total_bull: 0,
+                                  win_percentage: 0,
+                                }
+                              }
+
+                              playerOverallStats[playerId].total_legs += 1
+                              playerOverallStats[playerId].total_wins += stat.leg_wins || 0
+                              playerOverallStats[playerId].total_180 += stat.throws_180 || 0
+                              playerOverallStats[playerId].total_171 += stat.throws_171 || 0
+                              playerOverallStats[playerId].total_154 += stat.throws_154 || 0
+                              playerOverallStats[playerId].total_high_tonne += stat.throws_high_tonne || 0
+                              playerOverallStats[playerId].total_tonne += stat.throws_tonne || 0
+                              playerOverallStats[playerId].total_shanghai += stat.throws_shanghai || 0
+                              playerOverallStats[playerId].total_95_plus += stat.throws_95_plus || 0
+                              playerOverallStats[playerId].total_under_26 += stat.throws_under_26 || 0
+                              playerOverallStats[playerId].total_under_30 += stat.throws_under_30 || 0
+                              playerOverallStats[playerId].total_semperit += stat.semperit_outs || 0
+                              playerOverallStats[playerId].total_bull += stat.throws_bull || 0
+                            })
+
+                            // Calculate win percentage and sort
+                            const sortedStats = Object.values(playerOverallStats)
+                              .map((stats: any) => ({
+                                ...stats,
+                                win_percentage: stats.total_legs > 0 ? (stats.total_wins / stats.total_legs) * 100 : 0,
+                              }))
+                              .sort((a: any, b: any) => {
+                                // Sort by wins first, then by 180s, then by other high scores
+                                if (b.total_wins !== a.total_wins) return b.total_wins - a.total_wins
+                                if (b.total_180 !== a.total_180) return b.total_180 - a.total_180
+                                if (b.total_171 !== a.total_171) return b.total_171 - a.total_171
+                                return b.total_154 - a.total_154
+                              })
+
+                            return sortedStats.map((stats: any, index: number) => (
+                              <Card
+                                key={stats.player_id}
+                                className={`${index < 3 ? "border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50" : ""}`}
+                              >
+                                <CardContent className="p-6">
+                                  <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                      {index < 3 && (
+                                        <div className="flex items-center gap-1">
+                                          <Crown className="h-5 w-5 text-amber-600" />
+                                          <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                                            #{index + 1}
+                                          </Badge>
+                                        </div>
+                                      )}
+                                      <h3 className="text-xl font-bold">{stats.player_name}</h3>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Badge variant="default" className="bg-green-100 text-green-800">
+                                        {stats.total_wins} Wins
+                                      </Badge>
+                                      <Badge variant="outline">{stats.win_percentage.toFixed(1)}% Win Rate</Badge>
+                                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                        {stats.total_legs} Legs
+                                      </Badge>
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                                      <div className="text-2xl font-bold text-blue-600">{stats.total_legs}</div>
+                                      <div className="text-sm text-muted-foreground">Legs gespielt</div>
+                                    </div>
+                                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                                      <div className="text-2xl font-bold text-green-600">{stats.total_wins}</div>
+                                      <div className="text-sm text-muted-foreground">Leg Wins</div>
+                                    </div>
+                                    <div className="text-center p-3 bg-purple-50 rounded-lg">
+                                      <div className="text-2xl font-bold text-purple-600">{stats.total_180}</div>
+                                      <div className="text-sm text-muted-foreground">180er</div>
+                                    </div>
+                                    <div className="text-center p-3 bg-orange-50 rounded-lg">
+                                      <div className="text-2xl font-bold text-orange-600">{stats.total_171}</div>
+                                      <div className="text-sm text-muted-foreground">171er</div>
+                                    </div>
+                                    <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                                      <div className="text-2xl font-bold text-yellow-600">{stats.total_154}</div>
+                                      <div className="text-sm text-muted-foreground">154er</div>
+                                    </div>
+                                    <div className="text-center p-3 bg-red-50 rounded-lg">
+                                      <div className="text-2xl font-bold text-red-600">
+                                        {stats.total_under_26 + stats.total_under_30 + stats.total_semperit}
+                                      </div>
+                                      <div className="text-sm text-muted-foreground">Penalties</div>
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 text-sm">
+                                    <div className="text-center p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700">{stats.total_high_tonne}</div>
+                                      <div className="text-xs text-muted-foreground">High Tonne</div>
+                                    </div>
+                                    <div className="text-center p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700">{stats.total_tonne}</div>
+                                      <div className="text-xs text-muted-foreground">Tonne</div>
+                                    </div>
+                                    <div className="text-center p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700">{stats.total_shanghai}</div>
+                                      <div className="text-xs text-muted-foreground">Shanghai</div>
+                                    </div>
+                                    <div className="text-center p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700">{stats.total_95_plus}</div>
+                                      <div className="text-xs text-muted-foreground">95+</div>
+                                    </div>
+                                    <div className="text-center p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700">{stats.total_bull}</div>
+                                      <div className="text-xs text-muted-foreground">Bull</div>
+                                    </div>
+                                    <div className="text-center p-2 bg-red-50 rounded">
+                                      <div className="font-semibold text-red-600">{stats.total_under_26}</div>
+                                      <div className="text-xs text-muted-foreground">Unter 26</div>
+                                    </div>
+                                    <div className="text-center p-2 bg-red-50 rounded">
+                                      <div className="font-semibold text-red-600">{stats.total_under_30}</div>
+                                      <div className="text-xs text-muted-foreground">Unter 30</div>
+                                    </div>
+                                    <div className="text-center p-2 bg-red-50 rounded">
+                                      <div className="font-semibold text-red-600">{stats.total_semperit}</div>
+                                      <div className="text-xs text-muted-foreground">Semperit</div>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))
+                          })()}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="by-match">
+                  <Card className="shadow-xl border-0 bg-white">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-2xl font-bold">
+                        <TrendingUp className="h-6 w-6 text-orange-600" />
+                        Spielerstatistiken nach Spiel
+                      </CardTitle>
+                      <p className="text-muted-foreground">Detaillierte Leg-Statistiken sortiert nach Spielen</p>
+                    </CardHeader>
+                    <CardContent>
+                      {legStatsLoading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+                          <p className="mt-2 text-muted-foreground">Lade Spielstatistiken...</p>
+                        </div>
+                      ) : legStatistics.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                          <p className="text-lg font-medium">Keine Leg-Statistiken verfügbar</p>
+                          <p className="text-sm">Füge Leg-Statistiken hinzu, um sie hier zu sehen.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {(() => {
+                            // Group leg statistics by match
+                            const statsByMatch = legStatistics.reduce(
+                              (acc, stat) => {
+                                const matchKey = stat.match_id || "Unbekanntes Spiel"
+                                if (!acc[matchKey]) {
+                                  acc[matchKey] = []
+                                }
+                                acc[matchKey].push(stat)
+                                return acc
+                              },
+                              {} as Record<string, typeof legStatistics>,
+                            )
+
+                            // Get match details for each match
+                            const matchDetails = matches.reduce(
+                              (acc, match) => {
+                                acc[match.id] = match
+                                return acc
+                              },
+                              {} as Record<string, (typeof matches)[0]>,
+                            )
+
+                            return Object.entries(statsByMatch)
+                              .sort(([a], [b]) => {
+                                // Sort by match date if available
+                                const matchA = matchDetails[a]
+                                const matchB = matchDetails[b]
+                                if (matchA?.match_date && matchB?.match_date) {
+                                  return new Date(matchB.match_date).getTime() - new Date(matchA.match_date).getTime()
+                                }
+                                return b.localeCompare(a)
+                              })
+                              .map(([matchId, stats]) => {
+                                const match = matchDetails[matchId]
+                                const matchTitle = match
+                                  ? `${match.home_team || "Team 1"} vs ${match.away_opponent_team || "Team 2"}`
+                                  : `Spiel ${matchId}`
+                                const matchDate = match?.match_date
+                                  ? new Date(match.match_date).toLocaleDateString("de-DE")
+                                  : ""
+
+                                // Group stats by player for this match
+                                const playerStats = stats.reduce(
+                                  (acc, stat) => {
+                                    const playerId = stat.player_id
+                                    const playerName = stat.player?.name || "Unbekannter Spieler"
+
+                                    if (!acc[playerId]) {
+                                      acc[playerId] = {
+                                        name: playerName,
+                                        legs: [],
+                                        totalLegs: 0,
+                                        wins: 0,
+                                        total180s: 0,
+                                        total140s: 0,
+                                        total100s: 0,
+                                        totalUnder26: 0,
+                                        totalUnder30: 0,
+                                        totalSemperit: 0,
+                                      }
+                                    }
+
+                                    acc[playerId].legs.push(stat)
+                                    acc[playerId].totalLegs++
+
+                                    // Check if player won this leg
+                                    if (stat.leg_winner_ids && Array.isArray(stat.leg_winner_ids)) {
+                                      if (stat.leg_winner_ids.includes(playerId)) {
+                                        acc[playerId].wins++
+                                      }
+                                    }
+
+                                    acc[playerId].total180s += stat.throws_180 || 0
+                                    acc[playerId].total140s += stat.throws_140_179 || 0
+                                    acc[playerId].total100s += stat.throws_100_139 || 0
+                                    acc[playerId].totalUnder26 += stat.throws_under_26 || 0
+                                    acc[playerId].totalUnder30 += stat.throws_under_30 || 0
+                                    acc[playerId].totalSemperit += stat.semperit_penalties || 0
+
+                                    return acc
+                                  },
+                                  {} as Record<string, any>,
+                                )
+
+                                return (
+                                  <Card key={matchId} className="border border-gray-200">
+                                    <CardHeader className="pb-3">
+                                      <div className="flex items-center justify-between">
+                                        <CardTitle className="text-lg font-semibold text-gray-900">
+                                          {matchTitle}
+                                        </CardTitle>
+                                        {matchDate && (
+                                          <Badge variant="outline" className="text-xs">
+                                            {matchDate}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                      <div className="space-y-4">
+                                        {Object.values(playerStats)
+                                          .sort((a: any, b: any) => b.wins - a.wins || b.total180s - a.total180s)
+                                          .map((player: any, index) => (
+                                            <div
+                                              key={`${matchId}-${player.name}`}
+                                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                                            >
+                                              <div className="flex items-center gap-3">
+                                                <div className="flex items-center justify-center w-8 h-8 bg-orange-100 text-orange-600 rounded-full text-sm font-semibold">
+                                                  {index + 1}
+                                                </div>
+                                                <div>
+                                                  <p className="font-medium text-gray-900">{player.name}</p>
+                                                  <p className="text-sm text-gray-500">
+                                                    {player.totalLegs} Leg{player.totalLegs !== 1 ? "s" : ""}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              <div className="flex items-center gap-4">
+                                                <div className="text-center">
+                                                  <p className="text-lg font-bold text-green-600">{player.wins}</p>
+                                                  <p className="text-xs text-gray-500">Wins</p>
+                                                </div>
+                                                <div className="text-center">
+                                                  <p className="text-lg font-bold text-blue-600">{player.total180s}</p>
+                                                  <p className="text-xs text-gray-500">180s</p>
+                                                </div>
+                                                <div className="text-center">
+                                                  <p className="text-sm font-medium text-purple-600">
+                                                    {player.total140s}
+                                                  </p>
+                                                  <p className="text-xs text-gray-500">140+</p>
+                                                </div>
+                                                <div className="text-center">
+                                                  <p className="text-sm font-medium text-indigo-600">
+                                                    {player.total100s}
+                                                  </p>
+                                                  <p className="text-xs text-gray-500">100+</p>
+                                                </div>
+                                                {(player.totalUnder26 > 0 ||
+                                                  player.totalUnder30 > 0 ||
+                                                  player.totalSemperit > 0) && (
+                                                  <div className="text-center">
+                                                    <p className="text-sm font-medium text-red-600">
+                                                      {player.totalUnder26 + player.totalUnder30 + player.totalSemperit}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">Penalties</p>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          ))}
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                )
+                              })
+                          })()}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
             </div>
           </TabsContent>
 
           <TabsContent value="penalties">
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
               <Card className="shadow-xl border-0 bg-white">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-2xl font-bold">
-                    <Euro className="h-6 w-6 text-red-600" />
-                    Strafgelder Übersicht
+                  <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold">
+                    <Euro className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
+                    Bonusgeld Übersicht
+                    <Button variant="outline" size="sm" onClick={() => setIsBonusConfigOpen(true)} className="ml-auto">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Konfiguration
+                    </Button>
                   </CardTitle>
-                  <p className="text-muted-foreground">Strafgelder für Würfe unter 26 und Semperit (je 0,50€)</p>
+                  <p className="text-muted-foreground text-sm sm:text-base">
+                    Bonusgeld für Würfe unter 26 ({bonusConfig.under26.toFixed(2)}€), unter 30 (
+                    {bonusConfig.under30.toFixed(2)}€) und Semperit ({bonusConfig.semperit.toFixed(2)}€)
+                  </p>
                 </CardHeader>
                 <CardContent>
                   {legStatsLoading ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
-                      <p className="mt-2 text-muted-foreground">Lade Strafgelder...</p>
+                      <p className="mt-2 text-muted-foreground">Lade Bonusgeld...</p>
                     </div>
                   ) : legStatistics.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       <Euro className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>Keine Strafgelder gefunden.</p>
-                      <p className="text-sm mt-2">Strafgelder werden nach dem ersten Spiel angezeigt.</p>
+                      <p>Keine Bonusgeld gefunden.</p>
+                      <p className="text-sm mt-2">Bonusgelder werden nach dem ersten Spiel angezeigt.</p>
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="font-bold">Spieler</TableHead>
-                            <TableHead className="font-bold text-center text-red-600">Unter 26</TableHead>
-                            <TableHead className="font-bold text-center text-red-600">Semperit</TableHead>
-                            <TableHead className="font-bold text-center">Gesamt Strafen</TableHead>
-                            <TableHead className="font-bold text-center">Kosten (€)</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {getPenaltyStatistics()
-                            .sort((a, b) => b.totalCost - a.totalCost)
-                            .map((penalty) => (
-                              <TableRow key={penalty.playerId} className="hover:bg-muted/50">
-                                <TableCell className="font-medium">
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarImage src="/darts-player.png" />
-                                      <AvatarFallback className="text-xs bg-red-100 text-red-700">
-                                        {penalty.playerName.charAt(0)}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    {penalty.playerName}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {penalty.under26 > 0 ? (
-                                    <Badge variant="destructive">{penalty.under26}</Badge>
-                                  ) : (
-                                    <span className="text-green-600 font-medium">0</span>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {penalty.semperit > 0 ? (
-                                    <Badge variant="destructive">{penalty.semperit}</Badge>
-                                  ) : (
-                                    <span className="text-green-600 font-medium">0</span>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  <Badge variant="outline" className="font-bold">
-                                    {penalty.totalPenalties}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  <span className="font-bold text-red-600">{penalty.totalCost.toFixed(2)}€</span>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
+                      <div className="overflow-x-auto">
+                        <Table className="min-w-full">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="font-bold min-w-[120px]">Spieler</TableHead>
+                              <TableHead className="font-bold text-center text-red-600 min-w-[80px]">
+                                Unter 26
+                              </TableHead>
+                              <TableHead className="font-bold text-center text-red-600 min-w-[80px]">
+                                Unter 30
+                              </TableHead>
+                              <TableHead className="font-bold text-center text-red-600 min-w-[80px]">
+                                Semperit
+                              </TableHead>
+                              <TableHead className="font-bold text-center min-w-[100px]">Gesamt</TableHead>
+                              <TableHead className="font-bold text-center min-w-[80px]">Kosten (€)</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {getPenaltyStatistics()
+                              .sort((a, b) => b.totalCost - a.totalCost)
+                              .map((penalty) => (
+                                <TableRow key={penalty.playerId} className="hover:bg-muted/50">
+                                  <TableCell className="font-medium">
+                                    <div className="flex items-center gap-2">
+                                      <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                                        <AvatarImage src="/darts-player.png" />
+                                        <AvatarFallback className="text-xs bg-red-100 text-red-700">
+                                          {penalty.playerName.charAt(0)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-sm sm:text-base">{penalty.playerName}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {penalty.under26 > 0 ? (
+                                      <Badge variant="destructive" className="text-xs">
+                                        {penalty.under26}
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-green-600 font-medium text-sm">0</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {penalty.under30 > 0 ? (
+                                      <Badge variant="destructive" className="text-xs">
+                                        {penalty.under30}
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-green-600 font-medium text-sm">0</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {penalty.semperit > 0 ? (
+                                      <Badge variant="destructive" className="text-xs">
+                                        {penalty.semperit}
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-green-600 font-medium text-sm">0</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="outline" className="font-bold text-xs">
+                                      {penalty.totalPenalties}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <span className="font-bold text-red-600 text-sm">
+                                      {penalty.totalCost.toFixed(2)}€
+                                    </span>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
 
                       {/* Summary Card */}
                       <Card className="bg-red-50 border-red-200">
-                        <CardContent className="pt-6">
-                          <div className="flex items-center justify-between">
+                        <CardContent className="pt-4 sm:pt-6">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                             <div className="flex items-center gap-2">
-                              <Euro className="h-5 w-5 text-red-600" />
-                              <span className="font-bold text-lg">Gesamte Strafgelder:</span>
+                              <Euro className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                              <span className="font-bold text-base sm:text-lg">Gesamte Bonusgelder:</span>
                             </div>
-                            <span className="text-2xl font-bold text-red-600">
+                            <span className="text-xl sm:text-2xl font-bold text-red-600">
                               {getPenaltyStatistics()
                                 .reduce((total, penalty) => total + penalty.totalCost, 0)
                                 .toFixed(2)}
                               €
                             </span>
                           </div>
-                          <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                             <div>
                               <span className="font-medium">Gesamt Unter 26:</span>{" "}
                               {getPenaltyStatistics().reduce((total, penalty) => total + penalty.under26, 0)}
+                            </div>
+                            <div>
+                              <span className="font-medium">Gesamt Unter 30:</span>{" "}
+                              {getPenaltyStatistics().reduce((total, penalty) => total + penalty.under30, 0)}
                             </div>
                             <div>
                               <span className="font-medium">Gesamt Semperit:</span>{" "}
@@ -1493,6 +2094,74 @@ export default function MemberDashboard() {
             </div>
           </TabsContent>
         </Tabs>
+
+        <Dialog open={isBonusConfigOpen} onOpenChange={setIsBonusConfigOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Bonusgeld Konfiguration
+              </DialogTitle>
+              <DialogDescription>Passen Sie die Bonusgeld-Beträge für Ihren Verein an.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="under26">Bonusgeld für Würfe unter 26 (€)</Label>
+                <Input
+                  id="under26"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={tempBonusConfig.under26}
+                  onChange={(e) =>
+                    setTempBonusConfig((prev) => ({
+                      ...prev,
+                      under26: Number.parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="under30">Bonusgeld für Würfe unter 30 (€)</Label>
+                <Input
+                  id="under30"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={tempBonusConfig.under30}
+                  onChange={(e) =>
+                    setTempBonusConfig((prev) => ({
+                      ...prev,
+                      under30: Number.parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="semperit">Bonusgeld für Semperit (€)</Label>
+                <Input
+                  id="semperit"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={tempBonusConfig.semperit}
+                  onChange={(e) =>
+                    setTempBonusConfig((prev) => ({
+                      ...prev,
+                      semperit: Number.parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsBonusConfigOpen(false)}>
+                Abbrechen
+              </Button>
+              <Button onClick={saveBonusConfig}>Speichern</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {selectedMatchForStats && (
           <MatchStatistics
@@ -1520,47 +2189,107 @@ export default function MemberDashboard() {
             if (!open) setSelectedMatchForResults(null)
           }}
         >
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md w-[95vw] max-w-[400px]">
             <DialogHeader className="text-center pb-4">
-              <DialogTitle className="text-xl font-semibold">Spielergebnis eintragen</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl font-semibold">Spielergebnis eintragen</DialogTitle>
             </DialogHeader>
-            <div className="space-y-6">
-              <div className="bg-muted/30 rounded-lg p-4">
-                <div className="grid grid-cols-3 gap-4 items-center">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-muted/30 rounded-lg p-3 sm:p-4">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 items-center">
                   <div className="text-center">
-                    <Label className="text-sm font-medium text-muted-foreground">Heim</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="99"
-                      value={editMatchScores.home}
-                      onChange={(e) =>
-                        setEditMatchScores((prev) => ({
-                          ...prev,
-                          home: Number.parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="text-center text-2xl font-bold h-16 mt-2"
-                    />
+                    <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Heim</Label>
+                    <div className="flex flex-col items-center gap-2 mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 bg-transparent"
+                        onClick={() =>
+                          setEditMatchScores((prev) => ({
+                            ...prev,
+                            home: Math.min(99, prev.home + 1),
+                          }))
+                        }
+                      >
+                        +
+                      </Button>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="99"
+                        value={editMatchScores.home}
+                        onChange={(e) =>
+                          setEditMatchScores((prev) => ({
+                            ...prev,
+                            home: Number.parseInt(e.target.value) || 0,
+                          }))
+                        }
+                        className="text-center text-lg sm:text-2xl font-bold h-12 sm:h-16"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 bg-transparent"
+                        onClick={() =>
+                          setEditMatchScores((prev) => ({
+                            ...prev,
+                            home: Math.max(0, prev.home - 1),
+                          }))
+                        }
+                      >
+                        -
+                      </Button>
+                    </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-4xl font-bold text-muted-foreground">:</div>
+                    <div className="text-2xl sm:text-4xl font-bold text-muted-foreground mt-8">:</div>
                   </div>
                   <div className="text-center">
-                    <Label className="text-sm font-medium text-muted-foreground">Auswärts</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="99"
-                      value={editMatchScores.away}
-                      onChange={(e) =>
-                        setEditMatchScores((prev) => ({
-                          ...prev,
-                          away: Number.parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="text-center text-2xl font-bold h-16 mt-2"
-                    />
+                    <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Auswärts</Label>
+                    <div className="flex flex-col items-center gap-2 mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 bg-transparent"
+                        onClick={() =>
+                          setEditMatchScores((prev) => ({
+                            ...prev,
+                            away: Math.min(99, prev.away + 1),
+                          }))
+                        }
+                      >
+                        +
+                      </Button>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="99"
+                        value={editMatchScores.away}
+                        onChange={(e) =>
+                          setEditMatchScores((prev) => ({
+                            ...prev,
+                            away: Number.parseInt(e.target.value) || 0,
+                          }))
+                        }
+                        className="text-center text-lg sm:text-2xl font-bold h-12 sm:h-16"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 bg-transparent"
+                        onClick={() =>
+                          setEditMatchScores((prev) => ({
+                            ...prev,
+                            away: Math.max(0, prev.away - 1),
+                          }))
+                        }
+                      >
+                        -
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1592,4 +2321,39 @@ export default function MemberDashboard() {
       </main>
     </div>
   )
+
+  async function fetchTeamMembers() {
+    if (profile?.player_id && teamMemberships.length > 0) {
+      try {
+        const teamIds = teamMemberships.map((team) => team.team_id)
+
+        const { data: membersData, error: membersError } = await supabase
+          .from("team_members")
+          .select(`
+            id,
+            team_id,
+            player_id,
+            role,
+            club_players (
+              id,
+              name,
+              photo_url,
+              throwing_hand,
+              age,
+              origin
+            )
+          `)
+          .in("team_id", teamIds)
+          .order("role", { ascending: false }) // Captain first, then Co-Captain, then Player
+
+        if (membersError) {
+          throw membersError
+        }
+
+        setTeamMembers(membersData || [])
+      } catch (error) {
+        console.error("Error refetching team members:", error)
+      }
+    }
+  }
 }

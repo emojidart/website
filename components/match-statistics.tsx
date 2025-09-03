@@ -5,14 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Users, Save, Play, Target, Trophy, TrendingUp } from "lucide-react"
+import { Users, Save, Play, Target, Trophy, TrendingUp, Crown } from "lucide-react"
 import { createBrowserClient } from "@supabase/ssr"
+import TeamLineupSelector from "@/components/team-lineup-selector"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -58,11 +58,18 @@ interface LegStatistic {
   leg_number: number
   player_id: string
   player_name: string
+  leg_winner_id?: string
+  leg_winner_ids?: string
+  leg_wins: number // Add leg_wins field
   throws_180: number
   throws_171: number
   throws_154: number
-  throws_151: number
+  throws_high_tonne: number
+  throws_tonne: number
+  throws_shanghai: number
+  throws_95_plus: number
   throws_under_26: number
+  throws_under_30: number
   semperit_outs: number
   throws_15: number
   throws_16: number
@@ -78,9 +85,10 @@ interface MatchStatisticsProps {
   match: Match
   onClose: () => void
   myTeamId: string
+  myTeam: Team | null // Declare myTeam variable
 }
 
-export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsProps) {
+export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStatisticsProps) {
   const [activeTab, setActiveTab] = useState<"lineup" | "legs">("lineup")
   const [players, setPlayers] = useState<Player[]>([])
   const [lineups, setLineups] = useState<MatchLineup[]>([])
@@ -90,12 +98,8 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
   const [isLegActive, setIsLegActive] = useState(false)
   const [loading, setLoading] = useState(false)
   const [activePlayerId, setActivePlayerId] = useState<string | null>(null)
-
-  // Leg statistics form state
-  const [legFormData, setLegFormData] = useState<Record<string, any>>({})
-
-  const isHomeTeam = myTeamId === match.home_team_id
-  const myTeam = isHomeTeam ? match.home_team : match.away_team
+  const [legWinnerIds, setLegWinnerIds] = useState<string[]>([]) // Support multiple winners
+  const [legFormData, setLegFormData] = useState<{ [key: string]: any }>({}) // Declare legFormData variable
 
   useEffect(() => {
     fetchPlayers()
@@ -147,7 +151,9 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
     const { data, error } = await supabase
       .from("leg_statistics")
       .select(
-        `id, match_id, leg_number, player_id, throws_180, throws_171, throws_154, throws_151, throws_under_26, semperit_outs, throws_15, throws_16, throws_17, throws_18, throws_19, throws_20, throws_bull, notes, club_players(name)`,
+        `id, match_id, leg_number, player_id, leg_winner_id, leg_winner_ids, leg_wins, throws_180, throws_171, throws_154, throws_high_tonne, throws_tonne, throws_shanghai, throws_95_plus, throws_under_26, throws_under_30, semperit_outs, throws_15, throws_16, throws_17, throws_18, throws_19, throws_20, throws_bull, notes, 
+         player:club_players!leg_statistics_player_id_fkey(name),
+         leg_winner:club_players!leg_statistics_leg_winner_id_fkey(name)`,
       )
       .eq("match_id", match.id)
       .order("leg_number")
@@ -155,13 +161,16 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
     if (!error && data) {
       const statsWithNames = data.map((stat: any) => ({
         ...stat,
-        player_name: stat.club_players.name,
+        player_name: stat.player.name,
+        leg_winner_name: stat.leg_winner?.name || null,
       }))
       setLegStats(statsWithNames)
 
       // Set current leg to next available leg
       const maxLeg = Math.max(0, ...data.map((s) => s.leg_number))
       setCurrentLeg(maxLeg + 1)
+    } else if (error) {
+      console.error("Error fetching leg statistics:", error)
     }
   }
 
@@ -197,6 +206,7 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
     setSelectedPlayers([])
     setLegFormData({})
     setActivePlayerId(null)
+    setLegWinnerIds([]) // Reset multiple winners
   }
 
   const saveLegStatistics = async () => {
@@ -204,22 +214,26 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
 
     setLoading(true)
     try {
+      const legWinnerIdsString = legWinnerIds.length > 0 ? legWinnerIds.join(",") : null
+      const primaryWinnerId = legWinnerIds.length > 0 ? legWinnerIds[0] : null
+
       const legData = selectedPlayers.map((playerId) => ({
         match_id: match.id,
         leg_number: currentLeg,
         player_id: playerId,
+        leg_winner_id: legWinnerIds.includes(playerId) ? playerId : null,
+        leg_winner_ids: legWinnerIdsString, // Store all winner IDs
+        leg_wins: legWinnerIds.includes(playerId) ? 1 : 0,
         throws_180: legFormData[`${playerId}_180`] || 0,
         throws_171: legFormData[`${playerId}_171`] || 0,
         throws_154: legFormData[`${playerId}_154`] || 0,
-        throws_151: legFormData[`${playerId}_151`] || 0,
+        throws_high_tonne: legFormData[`${playerId}_high_tonne`] || 0,
+        throws_tonne: legFormData[`${playerId}_tonne`] || 0,
+        throws_shanghai: legFormData[`${playerId}_shanghai`] || 0,
+        throws_95_plus: legFormData[`${playerId}_95_plus`] || 0,
         throws_under_26: legFormData[`${playerId}_under26`] || 0,
+        throws_under_30: legFormData[`${playerId}_under30`] || 0,
         semperit_outs: legFormData[`${playerId}_semperit`] || 0,
-        throws_15: legFormData[`${playerId}_15`] || 0,
-        throws_16: legFormData[`${playerId}_16`] || 0,
-        throws_17: legFormData[`${playerId}_17`] || 0,
-        throws_18: legFormData[`${playerId}_18`] || 0,
-        throws_19: legFormData[`${playerId}_19`] || 0,
-        throws_20: legFormData[`${playerId}_20`] || 0,
         throws_bull: legFormData[`${playerId}_bull`] || 0,
         notes: legFormData[`${playerId}_notes`] || "",
       }))
@@ -231,6 +245,7 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
         setCurrentLeg(currentLeg + 1)
         setSelectedPlayers([])
         setLegFormData({})
+        setLegWinnerIds([])
         fetchLegStatistics()
       }
     } catch (error) {
@@ -336,6 +351,59 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-6">
+                  {selectedPlayers.length > 0 && (
+                    <Card className="bg-amber-50 border-amber-200">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Crown className="h-5 w-5 text-amber-600" />
+                          Leg-Gewinner auswählen
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <Label className="text-sm font-medium">
+                            Wer hat dieses Leg gewonnen? (Mehrfachauswahl möglich)
+                          </Label>
+                          <div className="grid gap-3">
+                            {selectedPlayers.map((playerId) => {
+                              const player = players.find((p) => p.id === playerId)
+                              if (!player) return null
+                              return (
+                                <div
+                                  key={playerId}
+                                  className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                                >
+                                  <Checkbox
+                                    id={`winner-${playerId}`}
+                                    checked={legWinnerIds.includes(playerId)}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setLegWinnerIds([...legWinnerIds, playerId])
+                                      } else {
+                                        setLegWinnerIds(legWinnerIds.filter((id) => id !== playerId))
+                                      }
+                                    }}
+                                  />
+                                  <Label
+                                    htmlFor={`winner-${playerId}`}
+                                    className="text-sm font-medium flex-1 cursor-pointer flex items-center gap-2"
+                                  >
+                                    <Crown className="h-4 w-4 text-amber-600" />
+                                    {player.name}
+                                  </Label>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Wähle einen oder mehrere Spieler aus, die dieses Leg gewonnen haben. Bei Unentschieden
+                            können beide Spieler als Gewinner markiert werden.
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   <div className="grid grid-cols-1 gap-6">
                     <div className="space-y-3">
                       <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
@@ -358,6 +426,9 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                   if (activePlayerId === player.id) {
                                     setActivePlayerId(null)
                                   }
+                                  if (legWinnerIds.includes(player.id)) {
+                                    setLegWinnerIds(legWinnerIds.filter((id) => id !== player.id))
+                                  }
                                 }
                               }}
                             />
@@ -369,6 +440,8 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                       </div>
                     </div>
                   </div>
+
+                  {/* ... existing code for player selection and statistics form ... */}
 
                   {selectedPlayers.length > 1 && (
                     <Card className="bg-blue-50 border-blue-200">
@@ -481,106 +554,70 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_151`} className="text-sm font-medium">
-                                    151er
+                                  <Label htmlFor={`${targetPlayerId}_high_tonne`} className="text-sm font-medium">
+                                    High Tonne
                                   </Label>
                                   <Input
-                                    id={`${targetPlayerId}_151`}
+                                    id={`${targetPlayerId}_high_tonne`}
                                     type="number"
                                     min="0"
-                                    value={legFormData[`${targetPlayerId}_151`] || 0}
+                                    value={legFormData[`${targetPlayerId}_high_tonne`] || 0}
                                     onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_151`, Number.parseInt(e.target.value) || 0)
+                                      updateLegFormData(
+                                        `${targetPlayerId}_high_tonne`,
+                                        Number.parseInt(e.target.value) || 0,
+                                      )
                                     }
                                     className="mt-1"
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_15`} className="text-sm font-medium">
-                                    15er
+                                  <Label htmlFor={`${targetPlayerId}_tonne`} className="text-sm font-medium">
+                                    Tonne
                                   </Label>
                                   <Input
-                                    id={`${targetPlayerId}_15`}
+                                    id={`${targetPlayerId}_tonne`}
                                     type="number"
                                     min="0"
-                                    value={legFormData[`${targetPlayerId}_15`] || 0}
+                                    value={legFormData[`${targetPlayerId}_tonne`] || 0}
                                     onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_15`, Number.parseInt(e.target.value) || 0)
+                                      updateLegFormData(`${targetPlayerId}_tonne`, Number.parseInt(e.target.value) || 0)
                                     }
                                     className="mt-1"
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_16`} className="text-sm font-medium">
-                                    16er
+                                  <Label htmlFor={`${targetPlayerId}_shanghai`} className="text-sm font-medium">
+                                    Shanghai
                                   </Label>
                                   <Input
-                                    id={`${targetPlayerId}_16`}
+                                    id={`${targetPlayerId}_shanghai`}
                                     type="number"
                                     min="0"
-                                    value={legFormData[`${targetPlayerId}_16`] || 0}
+                                    value={legFormData[`${targetPlayerId}_shanghai`] || 0}
                                     onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_16`, Number.parseInt(e.target.value) || 0)
+                                      updateLegFormData(
+                                        `${targetPlayerId}_shanghai`,
+                                        Number.parseInt(e.target.value) || 0,
+                                      )
                                     }
                                     className="mt-1"
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_17`} className="text-sm font-medium">
-                                    17er
+                                  <Label htmlFor={`${targetPlayerId}_95_plus`} className="text-sm font-medium">
+                                    95+
                                   </Label>
                                   <Input
-                                    id={`${targetPlayerId}_17`}
+                                    id={`${targetPlayerId}_95_plus`}
                                     type="number"
                                     min="0"
-                                    value={legFormData[`${targetPlayerId}_17`] || 0}
+                                    value={legFormData[`${targetPlayerId}_95_plus`] || 0}
                                     onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_17`, Number.parseInt(e.target.value) || 0)
-                                    }
-                                    className="mt-1"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`${targetPlayerId}_18`} className="text-sm font-medium">
-                                    18er
-                                  </Label>
-                                  <Input
-                                    id={`${targetPlayerId}_18`}
-                                    type="number"
-                                    min="0"
-                                    value={legFormData[`${targetPlayerId}_18`] || 0}
-                                    onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_18`, Number.parseInt(e.target.value) || 0)
-                                    }
-                                    className="mt-1"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`${targetPlayerId}_19`} className="text-sm font-medium">
-                                    19er
-                                  </Label>
-                                  <Input
-                                    id={`${targetPlayerId}_19`}
-                                    type="number"
-                                    min="0"
-                                    value={legFormData[`${targetPlayerId}_19`] || 0}
-                                    onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_19`, Number.parseInt(e.target.value) || 0)
-                                    }
-                                    className="mt-1"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`${targetPlayerId}_20`} className="text-sm font-medium">
-                                    20er
-                                  </Label>
-                                  <Input
-                                    id={`${targetPlayerId}_20`}
-                                    type="number"
-                                    min="0"
-                                    value={legFormData[`${targetPlayerId}_20`] || 0}
-                                    onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_20`, Number.parseInt(e.target.value) || 0)
+                                      updateLegFormData(
+                                        `${targetPlayerId}_95_plus`,
+                                        Number.parseInt(e.target.value) || 0,
+                                      )
                                     }
                                     className="mt-1"
                                   />
@@ -606,7 +643,7 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                 <h4 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
                                   ⚠️ Negative Statistiken
                                 </h4>
-                                <div className="grid grid-cols-2 gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                                <div className="grid grid-cols-3 gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
                                   <div>
                                     <Label
                                       htmlFor={`${targetPlayerId}_under26`}
@@ -622,6 +659,27 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                       onChange={(e) =>
                                         updateLegFormData(
                                           `${targetPlayerId}_under26`,
+                                          Number.parseInt(e.target.value) || 0,
+                                        )
+                                      }
+                                      className="mt-1 border-red-300 focus:border-red-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label
+                                      htmlFor={`${targetPlayerId}_under30`}
+                                      className="text-sm font-medium text-red-700"
+                                    >
+                                      Unter 30
+                                    </Label>
+                                    <Input
+                                      id={`${targetPlayerId}_under30`}
+                                      type="number"
+                                      min="0"
+                                      value={legFormData[`${targetPlayerId}_under30`] || 0}
+                                      onChange={(e) =>
+                                        updateLegFormData(
+                                          `${targetPlayerId}_under30`,
                                           Number.parseInt(e.target.value) || 0,
                                         )
                                       }
@@ -693,9 +751,17 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                         const legPlayers = legStats.filter((s) => s.leg_number === legNumber)
                         const total180s = legPlayers.reduce((sum, p) => sum + p.throws_180, 0)
                         const totalHighScores = legPlayers.reduce(
-                          (sum, p) => sum + p.throws_180 + p.throws_171 + p.throws_154,
+                          (sum, p) =>
+                            sum +
+                            p.throws_180 +
+                            p.throws_171 +
+                            p.throws_154 +
+                            p.throws_high_tonne +
+                            p.throws_tonne +
+                            p.throws_shanghai,
                           0,
                         )
+                        const legWinners = legPlayers.filter((p) => p.leg_wins > 0)
 
                         return (
                           <Card
@@ -708,6 +774,12 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                   <Badge variant="default" className="text-lg px-3 py-1">
                                     Leg {legNumber}
                                   </Badge>
+                                  {legWinners.length > 0 && (
+                                    <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-300">
+                                      <Crown className="h-3 w-3 mr-1" />
+                                      Gewinner: {legWinners.map((winner) => winner.player_name).join(", ")}
+                                    </Badge>
+                                  )}
                                   <div className="flex gap-4 text-sm text-muted-foreground">
                                     <span className="flex items-center gap-1">🎯 {total180s} × 180er</span>
                                     <span className="flex items-center gap-1">🔥 {totalHighScores} High Scores</span>
@@ -721,11 +793,18 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                 {legPlayers.map((stat) => (
                                   <Card
                                     key={stat.id}
-                                    className="bg-gradient-to-br from-white to-slate-50 border shadow-sm"
+                                    className={`bg-gradient-to-br from-white to-slate-50 border shadow-sm ${
+                                      stat.leg_wins > 0
+                                        ? "border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100"
+                                        : ""
+                                    }`}
                                   >
                                     <CardContent className="p-4">
                                       <div className="flex items-center justify-between mb-3">
-                                        <h5 className="font-semibold text-lg">{stat.player_name}</h5>
+                                        <h5 className="font-semibold text-lg flex items-center gap-2">
+                                          {stat.leg_wins > 0 && <Crown className="h-4 w-4 text-amber-600" />}
+                                          {stat.player_name}
+                                        </h5>
                                         {stat.throws_180 > 0 && (
                                           <Badge variant="secondary" className="bg-amber-100 text-amber-800">
                                             🎯 {stat.throws_180}×180
@@ -733,10 +812,9 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                         )}
                                       </div>
 
-                                      {/* High Scores */}
                                       <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground">High Scores:</span>
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-2 flex-wrap">
                                           {stat.throws_180 > 0 && (
                                             <Badge variant="outline" className="text-xs">
                                               180×{stat.throws_180}
@@ -752,34 +830,32 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                               154×{stat.throws_154}
                                             </Badge>
                                           )}
-                                          {stat.throws_151 > 0 && (
+                                          {stat.throws_high_tonne > 0 && (
                                             <Badge variant="outline" className="text-xs">
-                                              151×{stat.throws_151}
+                                              HT×{stat.throws_high_tonne}
+                                            </Badge>
+                                          )}
+                                          {stat.throws_tonne > 0 && (
+                                            <Badge variant="outline" className="text-xs">
+                                              T×{stat.throws_tonne}
+                                            </Badge>
+                                          )}
+                                          {stat.throws_shanghai > 0 && (
+                                            <Badge variant="outline" className="text-xs">
+                                              SH×{stat.throws_shanghai}
+                                            </Badge>
+                                          )}
+                                          {stat.throws_95_plus > 0 && (
+                                            <Badge variant="outline" className="text-xs">
+                                              95+×{stat.throws_95_plus}
                                             </Badge>
                                           )}
                                         </div>
                                       </div>
 
-                                      {/* Other Stats */}
-                                      <div className="grid grid-cols-2 gap-2 text-xs">
-                                        {[15, 16, 17, 18, 19, 20].map((num) => {
-                                          const count = stat[`throws_${num}` as keyof typeof stat] as number
-                                          return count > 0 ? (
-                                            <div key={num} className="flex justify-between">
-                                              <span>{num}er:</span>
-                                              <span className="font-medium">{count}</span>
-                                            </div>
-                                          ) : null
-                                        })}
-                                        {stat.throws_bull > 0 && (
-                                          <div className="flex justify-between">
-                                            <span>Bull:</span>
-                                            <span className="font-medium">{stat.throws_bull}</span>
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {(stat.throws_under_26 > 0 || stat.semperit_outs > 0) && (
+                                      {(stat.throws_under_26 > 0 ||
+                                        stat.throws_under_30 > 0 ||
+                                        stat.semperit_outs > 0) && (
                                         <div className="mt-3 p-2 bg-red-50 rounded border border-red-200">
                                           <div className="text-xs font-medium text-red-700 mb-1">⚠️ Negative Stats:</div>
                                           <div className="grid grid-cols-2 gap-2 text-xs">
@@ -787,6 +863,12 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
                                               <div className="flex justify-between text-red-600">
                                                 <span>Unter 26:</span>
                                                 <span className="font-medium">{stat.throws_under_26}</span>
+                                              </div>
+                                            )}
+                                            {stat.throws_under_30 > 0 && (
+                                              <div className="flex justify-between text-red-600">
+                                                <span>Unter 30:</span>
+                                                <span className="font-medium">{stat.throws_under_30}</span>
                                               </div>
                                             )}
                                             {stat.semperit_outs > 0 && (
@@ -814,66 +896,5 @@ export function MatchStatistics({ match, onClose, myTeamId }: MatchStatisticsPro
         </Tabs>
       </DialogContent>
     </Dialog>
-  )
-}
-
-interface TeamLineupSelectorProps {
-  teamId: string
-  players: Player[]
-  lineup: MatchLineup[]
-  onSave: (playerIds: string[]) => void
-  loading: boolean
-}
-
-function TeamLineupSelector({ teamId, players, lineup, onSave, loading }: TeamLineupSelectorProps) {
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([])
-
-  useEffect(() => {
-    const lineupPlayerIds = lineup.sort((a, b) => a.position - b.position).map((l) => l.player_id)
-    setSelectedPlayers(lineupPlayerIds)
-  }, [lineup])
-
-  const handlePlayerSelect = (position: number, playerId: string) => {
-    const newSelection = [...selectedPlayers]
-    newSelection[position] = playerId
-    setSelectedPlayers(newSelection)
-  }
-
-  const handleSave = () => {
-    const validPlayers = selectedPlayers.filter(Boolean)
-    if (validPlayers.length >= 4) {
-      onSave(validPlayers)
-    }
-  }
-
-  return (
-    <div className="space-y-4">
-      {[0, 1, 2, 3, 4].map((position) => (
-        <div key={position} className="flex items-center gap-3">
-          <Badge variant={position === 4 ? "secondary" : "default"}>
-            {position === 4 ? "Ersatz" : `Pos ${position + 1}`}
-          </Badge>
-          <Select
-            value={selectedPlayers[position] || ""}
-            onValueChange={(value) => handlePlayerSelect(position, value)}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Spieler auswählen..." />
-            </SelectTrigger>
-            <SelectContent>
-              {players.map((player) => (
-                <SelectItem key={player.id} value={player.id}>
-                  {player.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ))}
-
-      <Button onClick={handleSave} disabled={loading || selectedPlayers.filter(Boolean).length < 4} className="w-full">
-        {loading ? "Speichern..." : "Aufstellung speichern"}
-      </Button>
-    </div>
   )
 }

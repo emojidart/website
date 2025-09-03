@@ -118,12 +118,9 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
       if (clubError) throw clubError
 
-      const { data: teamMembers, error: teamError } = await supabase.from("team_members").select(`
-          player_id,
-          team_id,
-          role,
-          teams(id, name)
-        `)
+      const { data: teamMembers, error: teamError } = await supabase
+        .from("team_members")
+        .select(`player_id, team_id, role, teams(id, name)`)
 
       if (teamError) {
         console.warn("Could not fetch team members:", teamError)
@@ -148,33 +145,48 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
       if (clubPlayers) {
         clubPlayers.forEach((player) => {
-          const teamMembership = teamMembers?.find((tm) => tm.player_id === player.id)
+          const playerTeamMemberships = teamMembers?.filter((tm) => tm.player_id === player.id) || []
 
-          let role: "Captain" | "Co-Captain" | "Player" = "Player"
-          if (teamMembership?.role === "Captain") {
-            role = "Captain"
-          } else if (teamMembership?.role === "Co-Captain") {
-            role = "Co-Captain"
-          }
-
-          const playerData: PlayerData = {
-            id: player.id,
-            name: player.name,
-            role: role,
-            created_at: player.created_at || new Date().toISOString(),
-            photo_url: player.photo_url,
-            throwing_hand: player.throwing_hand,
-            age: player.age,
-            origin: player.origin,
-            team_id: teamMembership?.team_id,
-            team_name: teamMembership?.teams?.name,
-            has_account: playersWithAccounts.has(player.id), // Added account status
-          }
-
-          if (teamMembership?.teams) {
-            allPlayers.push(playerData)
-          } else {
+          if (playerTeamMemberships.length === 0) {
+            const playerData: PlayerData = {
+              id: player.id,
+              name: player.name,
+              role: "Player",
+              created_at: player.created_at || new Date().toISOString(),
+              photo_url: player.photo_url,
+              throwing_hand: player.throwing_hand,
+              age: player.age,
+              origin: player.origin,
+              team_id: undefined,
+              team_name: undefined,
+              has_account: playersWithAccounts.has(player.id),
+            }
             unassigned.push(playerData)
+          } else {
+            playerTeamMemberships.forEach((teamMembership) => {
+              let role: "Captain" | "Co-Captain" | "Player" = "Player"
+              if (teamMembership?.role === "Captain") {
+                role = "Captain"
+              } else if (teamMembership?.role === "Co-Captain") {
+                role = "Co-Captain"
+              }
+
+              const playerData: PlayerData = {
+                id: player.id,
+                name: player.name,
+                role: role,
+                created_at: player.created_at || new Date().toISOString(),
+                photo_url: player.photo_url,
+                throwing_hand: player.throwing_hand,
+                age: player.age,
+                origin: player.origin,
+                team_id: teamMembership?.team_id,
+                team_name: teamMembership?.teams?.name,
+                has_account: playersWithAccounts.has(player.id),
+              }
+
+              allPlayers.push(playerData)
+            })
           }
         })
       }
@@ -188,11 +200,10 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
               id: team.id,
               name: team.name,
               players: teamPlayers.sort((a, b) => {
-                // Sort by role priority: Captain > Co-Captain > Player
                 const roleOrder = { Captain: 0, "Co-Captain": 1, Player: 2 }
                 return roleOrder[a.role] - roleOrder[b.role]
               }),
-              isExpanded: true, // Start expanded
+              isExpanded: true,
             })
           }
         })
@@ -264,7 +275,6 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
       if (authData.user) {
         console.log("[v0] Creating user profile for user:", authData.user.id)
 
-        // Create user profile linking auth user to player
         const { error: profileError } = await supabase.from("user_profiles").insert({
           user_id: authData.user.id,
           player_id: accountForm.playerId,
@@ -279,7 +289,6 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
           message: "Account erfolgreich erstellt! Der Benutzer erhält eine Bestätigungs-E-Mail.",
         })
 
-        // Reset form
         setAccountForm({
           playerId: "",
           email: "",
@@ -287,7 +296,6 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
           confirmPassword: "",
         })
 
-        // Refresh data to show updated account status
         await fetchAllUsers()
       }
     } catch (err: any) {
@@ -426,7 +434,6 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
     setManagementStatus({ type: null, message: "" })
 
     try {
-      // First, delete the user profile
       const { error: profileError } = await supabase
         .from("user_profiles")
         .delete()
@@ -434,17 +441,13 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
       if (profileError) throw profileError
 
-      // Note: Deleting from auth.users requires admin privileges
-      // In a real app, you'd need a server-side function for this
       setManagementStatus({
         type: "success",
         message: "Account-Verknüpfung erfolgreich entfernt! Der Benutzer kann sich nicht mehr anmelden.",
       })
 
-      // Refresh data
       await fetchAllUsers()
 
-      // Reset form
       setManagementForm({
         playerId: "",
         playerName: "",
@@ -555,11 +558,10 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
   const filteredTeams = getFilteredTeams()
   const filteredUnassigned = getFilteredUnassigned()
   const allPlayers = getAllPlayers()
-  const playersWithoutAccounts = getPlayersWithoutAccounts() // Added this line
+  const playersWithoutAccounts = getPlayersWithoutAccounts()
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg">
@@ -705,7 +707,6 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
         </div>
       </div>
 
-      {/* Search */}
       <Card>
         <CardContent className="pt-6">
           <div className="relative">
@@ -721,10 +722,8 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
         </CardContent>
       </Card>
 
-      {/* Error Message */}
       {error && <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">{error}</div>}
 
-      {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -982,7 +981,6 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
         )}
       </div>
 
-      {/* Account Management Dialog */}
       <Dialog open={managementAction !== null} onOpenChange={() => setManagementAction(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

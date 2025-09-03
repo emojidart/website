@@ -12,7 +12,7 @@ import { usePathname } from "next/navigation"
 
 export function Header() {
   const marqueeContent =
-    "🦁 +++ EMD - LION CUP PART II STARTET IN KÜRZE • ZEITRAUM: 01. SEPTEMBER 2025 – 01. JUNI 2026 • 34 SPIELTAGE • 1 FINALE • JEDEN MONTAG 19:30 UHR +++"
+    "🦁 +++ EMD - LION CUP PART II GESTARTET  • ZEITRAUM: 01. SEPTEMBER 2025 – 01. JUNI 2026 • 34 SPIELTAGE • 1 FINALE • JEDEN MONTAG 19:30 UHR +++"
 
   const { session, user } = useAuth()
   const [loggingOut, setLoggingOut] = useState(false)
