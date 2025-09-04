@@ -44,7 +44,7 @@ import { AttendanceManagement } from "@/components/attendance-management"
 import { LeagueManagement } from "@/components/league-management" // Added league management import
 
 export default function AdminPage() {
-  const { session, user, loading: authLoading, authMessage, setAuthMessage } = useAuth()
+  const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
   const { fetchAndRenderAllTables, fetchPlayers } = useDartData()
 
   const [isPlayerListModalOpen, setIsPlayerListModalOpen] = useState(false)
@@ -234,6 +234,53 @@ export default function AdminPage() {
     },
   ]
 
+  if (authLoading || adminLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="max-w-7xl mx-auto p-4 md:p-8">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Berechtigungen werden geprüft...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (session && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="max-w-7xl mx-auto p-4 md:p-8">
+          <div className="flex items-center justify-center py-12">
+            <Card className="max-w-md w-full">
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <Shield className="h-8 w-8 text-red-600" />
+                </div>
+                <CardTitle className="text-xl text-gray-900">Zugriff verweigert</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <p className="text-gray-600 mb-6">Sie haben keine Admin-Berechtigung für diesen Bereich.</p>
+                <div className="space-y-3">
+                  <Link href="/member-dashboard">
+                    <Button className="w-full">Zum Member-Dashboard</Button>
+                  </Link>
+                  <Button variant="outline" onClick={handleLogout} className="w-full bg-transparent">
+                    Abmelden
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -269,7 +316,7 @@ export default function AdminPage() {
                   {currentView === "player-database" && "Spielerdatenbank"}
                   {currentView === "dart-competition" && "Dart Competition"}
                   {currentView === "attendance" && "Anwesenheitsliste"}
-                  {currentView === "leagues" && "Ligaspiele"} {/* Added leagues breadcrumb */}
+                  {currentView === "leagues" && "Ligaspiele"}
                 </span>
               </>
             )}
@@ -282,7 +329,7 @@ export default function AdminPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
                 {currentView === "dashboard"
-                  ? "Verwaltung"
+                  ? "Admin-Verwaltung"
                   : currentView === "players"
                     ? "Spieler verwalten"
                     : currentView === "results"
@@ -313,7 +360,7 @@ export default function AdminPage() {
                                               ? "Dart Competition"
                                               : currentView === "attendance"
                                                 ? "Anwesenheitsliste"
-                                                : currentView === "leagues" // Added leagues title
+                                                : currentView === "leagues"
                                                   ? "Ligaspiele"
                                                   : "Admin-Zugang"}
               </h1>
@@ -328,307 +375,296 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {authLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">Authentifizierungsstatus wird geladen...</p>
-            </div>
+        {!session ? (
+          <div className="max-w-md mx-auto">
+            <AuthSection
+              isVisible={true}
+              onLoginSuccess={handleLoginSuccess}
+              authMessage={authMessage}
+              setAuthMessage={setAuthMessage}
+            />
           </div>
         ) : (
-          <div>
-            {!session ? (
-              <div className="max-w-md mx-auto">
-                <AuthSection
-                  isVisible={true}
-                  onLoginSuccess={handleLoginSuccess}
-                  authMessage={authMessage}
-                  setAuthMessage={setAuthMessage}
-                />
+          <div className="space-y-6">
+            {/* Status Message */}
+            {authMessage && (
+              <div
+                className={`p-4 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  authMessage.includes("fehler") || authMessage.includes("Error")
+                    ? "bg-red-50 text-red-700 border border-red-100"
+                    : "bg-green-50 text-green-700 border border-green-100"
+                }`}
+              >
+                {authMessage}
               </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Status Message */}
-                {authMessage && (
-                  <div
-                    className={`p-4 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      authMessage.includes("fehler") || authMessage.includes("Error")
-                        ? "bg-red-50 text-red-700 border border-red-100"
-                        : "bg-green-50 text-green-700 border border-green-100"
-                    }`}
+            )}
+            {currentView === "dashboard" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {dashboardCards.map((card) => (
+                  <Card
+                    key={card.view}
+                    className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 shadow-md hover:scale-105"
+                    onClick={() => setCurrentView(card.view)}
                   >
-                    {authMessage}
-                  </div>
-                )}
-                {currentView === "dashboard" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {dashboardCards.map((card) => (
-                      <Card
-                        key={card.view}
-                        className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 shadow-md hover:scale-105"
-                        onClick={() => setCurrentView(card.view)}
-                      >
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <div className={`p-3 ${card.color} rounded-lg shadow-lg`}>
-                              <card.icon className="h-6 w-6 text-white" />
-                            </div>
-                            {card.badge && <Badge className="bg-red-500 text-white">{card.badge}</Badge>}
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <CardTitle className="text-lg mb-2">{card.title}</CardTitle>
-                          <p className="text-sm text-gray-600">{card.description}</p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-                {currentView === "players" && (
-                  <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />
-                )}
-                {currentView === "results" && (
-                  <ResultEntry
-                    isVisible={true}
-                    user={user}
-                    onDataSaved={handleDataSaved}
-                    onOpenPlayerList={handleOpenPlayerList}
-                    selectedPlayerName={selectedPlayerName}
-                    onPlayerNameChange={handlePlayerNameChange}
-                    isPlayerSelectedViaModal={isPlayerSelectedViaModal}
-                  />
-                )}
-                {currentView === "registrations" && <TournamentRegistrations />}
-                {currentView === "history" && <GameHistoryTable />}
-                {currentView === "management" && (
-                  <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />
-                )}
-                {currentView === "photos" && <PlayerPhotoManagement user={user} onDataSaved={handleDataSaved} />}
-                {currentView === "attendance" && <AttendanceManagement />}
-                {currentView === "leagues" && <LeagueManagement />} {/* Added leagues view */}
-                {currentView === "recruitment" && (
-                  <div className="space-y-6">
-                    <div className="flex space-x-4 border-b border-gray-200">
-                      <Button
-                        variant="ghost"
-                        className="pb-2 border-b-2 border-transparent data-[active=true]:border-red-500 data-[active=true]:text-red-600"
-                        data-active={true}
-                      >
-                        Rekrutierung verwalten
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className={`p-3 ${card.color} rounded-lg shadow-lg`}>
+                          <card.icon className="h-6 w-6 text-white" />
+                        </div>
+                        {card.badge && <Badge className="bg-red-500 text-white">{card.badge}</Badge>}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <CardTitle className="text-lg mb-2">{card.title}</CardTitle>
+                      <p className="text-sm text-gray-600">{card.description}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+            {currentView === "players" && (
+              <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />
+            )}
+            {currentView === "results" && (
+              <ResultEntry
+                isVisible={true}
+                user={user}
+                onDataSaved={handleDataSaved}
+                onOpenPlayerList={handleOpenPlayerList}
+                selectedPlayerName={selectedPlayerName}
+                onPlayerNameChange={handlePlayerNameChange}
+                isPlayerSelectedViaModal={isPlayerSelectedViaModal}
+              />
+            )}
+            {currentView === "registrations" && <TournamentRegistrations />}
+            {currentView === "history" && <GameHistoryTable />}
+            {currentView === "management" && (
+              <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />
+            )}
+            {currentView === "photos" && <PlayerPhotoManagement user={user} onDataSaved={handleDataSaved} />}
+            {currentView === "attendance" && <AttendanceManagement />}
+            {currentView === "leagues" && <LeagueManagement />} {/* Added leagues view */}
+            {currentView === "recruitment" && (
+              <div className="space-y-6">
+                <div className="flex space-x-4 border-b border-gray-200">
+                  <Button
+                    variant="ghost"
+                    className="pb-2 border-b-2 border-transparent data-[active=true]:border-red-500 data-[active=true]:text-red-600"
+                    data-active={true}
+                  >
+                    Rekrutierung verwalten
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <PlusCircle className="h-5 w-5" />
+                        <span>Rekrutierungsbedarf eingeben</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <PlayerRecruitmentForm user={user} onDataSaved={handleDataSaved} />
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <List className="h-5 w-5" />
+                        <span>Aktuelle Rekrutierungen</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <PlayerRecruitmentList onDataSaved={handleDataSaved} />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Mail className="h-5 w-5" />
+                      <span>Spielerbewerbungen</span>
+                      {unreadApplicationsCount > 0 && (
+                        <Badge className="bg-red-500 text-white">{unreadApplicationsCount}</Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <PlayerApplicationsList onDataChanged={fetchUnreadApplicationsCount} />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {currentView === "users" && <UserManagement user={user} onDataSaved={handleDataSaved} />}
+            {currentView === "club" && <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />}
+            {currentView === "tournaments" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Turnier-Tools</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Link href="/kratzer-tournament">
+                        <Button variant="outline" className="w-full justify-start bg-transparent">
+                          <Trophy className="h-4 w-4 mr-2" />
+                          Kratzer-Turnier
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {currentView === "upcoming-tournaments" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <CalendarCheck className="h-5 w-5" />
+                      <span>Bevorstehende Turniere verwalten</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <UpcomingTournamentsManagement user={user} />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {currentView === "tournament-registration" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <PlusCircle className="h-5 w-5" />
+                      <span>Turnieranmeldungen verwalten</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <TournamentRegistrationsList />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {currentView === "player-database" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <List className="h-5 w-5" />
+                      <span>Spielerdatenbank</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4">Hier können Sie alle Spielerdaten einsehen und verwalten.</p>
+                    <div className="space-y-3">
+                      <Link href="/spielerdatenbank">
+                        <Button className="w-full">
+                          <List className="h-4 w-4 mr-2" />
+                          Zur Spielerdatenbank
+                        </Button>
+                      </Link>
+                      <Button onClick={handleOpenPlayerList} variant="outline" className="w-full bg-transparent">
+                        <Users className="h-4 w-4 mr-2" />
+                        Spielerliste Modal anzeigen
                       </Button>
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {currentView === "dart-competition" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Trophy className="h-5 w-5" />
+                      <span>EMD - LION CUP Verwaltung</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
+                      <Button
+                        onClick={() => setCurrentView("results")}
+                        variant="outline"
+                        className="w-full justify-start bg-transparent h-auto p-4"
+                      >
+                        <div className="flex flex-col items-start space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <Trophy className="h-4 w-4" />
+                            <span className="font-medium">Ergebnisse eingeben</span>
+                          </div>
+                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
+                        </div>
+                      </Button>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <PlusCircle className="h-5 w-5" />
-                            <span>Rekrutierungsbedarf eingeben</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <PlayerRecruitmentForm user={user} onDataSaved={handleDataSaved} />
-                        </CardContent>
-                      </Card>
+                      <Button
+                        onClick={() => setCurrentView("history")}
+                        variant="outline"
+                        className="w-full justify-start bg-transparent h-auto p-4"
+                      >
+                        <div className="flex flex-col items-start space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <History className="h-4 w-4" />
+                            <span className="font-medium">Spiele Historie</span>
+                          </div>
+                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
+                        </div>
+                      </Button>
 
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <List className="h-5 w-5" />
-                            <span>Aktuelle Rekrutierungen</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <PlayerRecruitmentList onDataSaved={handleDataSaved} />
-                        </CardContent>
-                      </Card>
+                      <Button
+                        onClick={() => setCurrentView("management")}
+                        variant="outline"
+                        className="w-full justify-start bg-transparent h-auto p-4"
+                      >
+                        <div className="flex flex-col items-start space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <Settings className="h-4 w-4" />
+                            <span className="font-medium">Spielerverwaltung</span>
+                          </div>
+                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
+                        </div>
+                      </Button>
+
+                      <Button
+                        onClick={() => setCurrentView("photos")}
+                        variant="outline"
+                        className="w-full justify-start bg-transparent h-auto p-4"
+                      >
+                        <div className="flex flex-col items-start space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <ImageIcon className="h-4 w-4" />
+                            <span className="font-medium">Spielerfotos</span>
+                          </div>
+                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
+                        </div>
+                      </Button>
+
+                      <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
+                        <div className="flex flex-col items-start space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <Trophy className="h-4 w-4" />
+                            <span className="font-medium">Spielergebnisse und Statistiken</span>
+                          </div>
+                          <span className="text-xs text-gray-500">erfassen</span>
+                        </div>
+                      </Button>
+
+                      <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
+                        <div className="flex flex-col items-start space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <Settings className="h-4 w-4" />
+                            <span className="font-medium">Erweiterte Spielereinstellungen</span>
+                          </div>
+                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
+                        </div>
+                      </Button>
                     </div>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <Mail className="h-5 w-5" />
-                          <span>Spielerbewerbungen</span>
-                          {unreadApplicationsCount > 0 && (
-                            <Badge className="bg-red-500 text-white">{unreadApplicationsCount}</Badge>
-                          )}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <PlayerApplicationsList onDataChanged={fetchUnreadApplicationsCount} />
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-                {currentView === "users" && <UserManagement user={user} onDataSaved={handleDataSaved} />}
-                {currentView === "club" && <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />}
-                {currentView === "tournaments" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Turnier-Tools</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <Link href="/kratzer-tournament">
-                            <Button variant="outline" className="w-full justify-start bg-transparent">
-                              <Trophy className="h-4 w-4 mr-2" />
-                              Kratzer-Turnier
-                            </Button>
-                          </Link>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-                {currentView === "upcoming-tournaments" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <CalendarCheck className="h-5 w-5" />
-                          <span>Bevorstehende Turniere verwalten</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <UpcomingTournamentsManagement user={user} />
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-                {currentView === "tournament-registration" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <PlusCircle className="h-5 w-5" />
-                          <span>Turnieranmeldungen verwalten</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <TournamentRegistrationsList />
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-                {currentView === "player-database" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <List className="h-5 w-5" />
-                          <span>Spielerdatenbank</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-600 mb-4">Hier können Sie alle Spielerdaten einsehen und verwalten.</p>
-                        <div className="space-y-3">
-                          <Link href="/spielerdatenbank">
-                            <Button className="w-full">
-                              <List className="h-4 w-4 mr-2" />
-                              Zur Spielerdatenbank
-                            </Button>
-                          </Link>
-                          <Button onClick={handleOpenPlayerList} variant="outline" className="w-full bg-transparent">
-                            <Users className="h-4 w-4 mr-2" />
-                            Spielerliste Modal anzeigen
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-                {currentView === "dart-competition" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <Trophy className="h-5 w-5" />
-                          <span>EMD - LION CUP Verwaltung</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
-                          <Button
-                            onClick={() => setCurrentView("results")}
-                            variant="outline"
-                            className="w-full justify-start bg-transparent h-auto p-4"
-                          >
-                            <div className="flex flex-col items-start space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <Trophy className="h-4 w-4" />
-                                <span className="font-medium">Ergebnisse eingeben</span>
-                              </div>
-                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
-                            </div>
-                          </Button>
-
-                          <Button
-                            onClick={() => setCurrentView("history")}
-                            variant="outline"
-                            className="w-full justify-start bg-transparent h-auto p-4"
-                          >
-                            <div className="flex flex-col items-start space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <History className="h-4 w-4" />
-                                <span className="font-medium">Spiele Historie</span>
-                              </div>
-                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
-                            </div>
-                          </Button>
-
-                          <Button
-                            onClick={() => setCurrentView("management")}
-                            variant="outline"
-                            className="w-full justify-start bg-transparent h-auto p-4"
-                          >
-                            <div className="flex flex-col items-start space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <Settings className="h-4 w-4" />
-                                <span className="font-medium">Spielerverwaltung</span>
-                              </div>
-                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
-                            </div>
-                          </Button>
-
-                          <Button
-                            onClick={() => setCurrentView("photos")}
-                            variant="outline"
-                            className="w-full justify-start bg-transparent h-auto p-4"
-                          >
-                            <div className="flex flex-col items-start space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <ImageIcon className="h-4 w-4" />
-                                <span className="font-medium">Spielerfotos</span>
-                              </div>
-                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
-                            </div>
-                          </Button>
-
-                          <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
-                            <div className="flex flex-col items-start space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <Trophy className="h-4 w-4" />
-                                <span className="font-medium">Spielergebnisse und Statistiken</span>
-                              </div>
-                              <span className="text-xs text-gray-500">erfassen</span>
-                            </div>
-                          </Button>
-
-                          <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
-                            <div className="flex flex-col items-start space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <Settings className="h-4 w-4" />
-                                <span className="font-medium">Erweiterte Spielereinstellungen</span>
-                              </div>
-                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
-                            </div>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
+                  </CardContent>
+                </Card>
               </div>
             )}
           </div>

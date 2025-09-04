@@ -641,7 +641,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
 
                               <div className="mt-6 pt-4 border-t-2 border-red-200">
                                 <h4 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
-                                  ⚠️ Negative Statistiken
+                                  ⚠️ Check Bilanz
                                 </h4>
                                 <div className="grid grid-cols-3 gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
                                   <div>
@@ -857,7 +857,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                         stat.throws_under_30 > 0 ||
                                         stat.semperit_outs > 0) && (
                                         <div className="mt-3 p-2 bg-red-50 rounded border border-red-200">
-                                          <div className="text-xs font-medium text-red-700 mb-1">⚠️ Negative Stats:</div>
+                                          <div className="text-xs font-medium text-red-700 mb-1">⚠️ Check Bilanz:</div>
                                           <div className="grid grid-cols-2 gap-2 text-xs">
                                             {stat.throws_under_26 > 0 && (
                                               <div className="flex justify-between text-red-600">

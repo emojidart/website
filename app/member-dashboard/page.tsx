@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { Header } from "@/components/header"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -35,6 +35,9 @@ import {
   XCircle,
   Upload,
   Trophy,
+  Table,
+  RefreshCw,
+  ExternalLink,
 } from "lucide-react"
 import {
   Dialog,
@@ -49,7 +52,7 @@ import { useToast } from "@/components/ui/use-toast"
 
 import { MatchStatistics } from "@/components/match-statistics"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table as UITable, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Image from "next/image"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -952,9 +955,7 @@ export default function MemberDashboard() {
             home_team:teams!matches_home_team_id_fkey(id, name),
             away_team:teams!matches_away_team_id_fkey(id, name),
             home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
-            away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name),
-            home_team_type,
-            away_team_type
+            away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name)
           )
         `)
         .in("player_id", teamPlayerIds)
@@ -1111,9 +1112,11 @@ export default function MemberDashboard() {
 
         <Tabs
           value={activeMainTab}
-          onValueChange={(value) => setActiveMainTab(value as "dashboard" | "statistics" | "penalties")}
+          onValueChange={(value) =>
+            setActiveMainTab(value as "dashboard" | "statistics" | "penalties" | "ligatabellen")
+          }
         >
-          <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-auto">
+          <TabsList className="grid w-full grid-cols-4 mb-6 sm:mb-8 h-auto">
             <TabsTrigger
               value="dashboard"
               className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-3 text-xs sm:text-sm"
@@ -1138,6 +1141,14 @@ export default function MemberDashboard() {
               <span className="hidden sm:inline">Bonusgeld</span>
               <span className="sm:hidden">Bonus</span>
             </TabsTrigger>
+            <TabsTrigger
+              value="ligatabellen"
+              className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-3 text-xs sm:text-sm"
+            >
+              <Table className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Ligatabellen</span>
+              <span className="sm:hidden">Liga</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -1153,6 +1164,8 @@ export default function MemberDashboard() {
                             src={
                               profile?.club_players?.photo_url ||
                               "/placeholder.svg?height=96&width=96&query=darts-player" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
@@ -1423,6 +1436,8 @@ export default function MemberDashboard() {
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
                                             "/placeholder.svg"
                                           }
                                         />
@@ -1684,66 +1699,92 @@ export default function MemberDashboard() {
                                     </div>
                                   </div>
 
-                                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                                      <div className="text-2xl font-bold text-blue-600">{stats.total_legs}</div>
-                                      <div className="text-sm text-muted-foreground">Legs gespielt</div>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
+                                    <div className="text-center p-2 sm:p-3 bg-blue-50 rounded-lg">
+                                      <div className="text-lg sm:text-2xl font-bold text-blue-600">
+                                        {stats.total_legs}
+                                      </div>
+                                      <div className="text-xs sm:text-sm text-muted-foreground">Legs gespielt</div>
                                     </div>
-                                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                                      <div className="text-2xl font-bold text-green-600">{stats.total_wins}</div>
-                                      <div className="text-sm text-muted-foreground">Leg Wins</div>
+                                    <div className="text-center p-2 sm:p-3 bg-green-50 rounded-lg">
+                                      <div className="text-lg sm:text-2xl font-bold text-green-600">
+                                        {stats.total_wins}
+                                      </div>
+                                      <div className="text-xs sm:text-sm text-muted-foreground">Leg Wins</div>
                                     </div>
-                                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                                      <div className="text-2xl font-bold text-purple-600">{stats.total_180}</div>
-                                      <div className="text-sm text-muted-foreground">180er</div>
+                                    <div className="text-center p-2 sm:p-3 bg-purple-50 rounded-lg">
+                                      <div className="text-lg sm:text-2xl font-bold text-purple-600">
+                                        {stats.total_180}
+                                      </div>
+                                      <div className="text-xs sm:text-sm text-muted-foreground">180er</div>
                                     </div>
-                                    <div className="text-center p-3 bg-orange-50 rounded-lg">
-                                      <div className="text-2xl font-bold text-orange-600">{stats.total_171}</div>
-                                      <div className="text-sm text-muted-foreground">171er</div>
+                                    <div className="text-center p-2 sm:p-3 bg-orange-50 rounded-lg">
+                                      <div className="text-lg sm:text-2xl font-bold text-orange-600">
+                                        {stats.total_171}
+                                      </div>
+                                      <div className="text-xs sm:text-sm text-muted-foreground">171er</div>
                                     </div>
-                                    <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                                      <div className="text-2xl font-bold text-yellow-600">{stats.total_154}</div>
-                                      <div className="text-sm text-muted-foreground">154er</div>
+                                    <div className="text-center p-2 sm:p-3 bg-yellow-50 rounded-lg">
+                                      <div className="text-lg sm:text-2xl font-bold text-yellow-600">
+                                        {stats.total_154}
+                                      </div>
+                                      <div className="text-xs sm:text-sm text-muted-foreground">154er</div>
                                     </div>
-                                    <div className="text-center p-3 bg-red-50 rounded-lg">
-                                      <div className="text-2xl font-bold text-red-600">
+                                    <div className="text-center p-2 sm:p-3 bg-red-50 rounded-lg">
+                                      <div className="text-lg sm:text-2xl font-bold text-red-600">
                                         {stats.total_under_26 + stats.total_under_30 + stats.total_semperit}
                                       </div>
-                                      <div className="text-sm text-muted-foreground">Penalties</div>
+                                      <div className="text-xs sm:text-sm text-muted-foreground">Penalties</div>
                                     </div>
                                   </div>
 
-                                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 text-sm">
-                                    <div className="text-center p-2 bg-slate-50 rounded">
-                                      <div className="font-semibold text-slate-700">{stats.total_high_tonne}</div>
+                                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1 sm:gap-2 text-xs sm:text-sm">
+                                    <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700 text-xs sm:text-sm">
+                                        {stats.total_high_tonne}
+                                      </div>
                                       <div className="text-xs text-muted-foreground">High Tonne</div>
                                     </div>
-                                    <div className="text-center p-2 bg-slate-50 rounded">
-                                      <div className="font-semibold text-slate-700">{stats.total_tonne}</div>
+                                    <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700 text-xs sm:text-sm">
+                                        {stats.total_tonne}
+                                      </div>
                                       <div className="text-xs text-muted-foreground">Tonne</div>
                                     </div>
-                                    <div className="text-center p-2 bg-slate-50 rounded">
-                                      <div className="font-semibold text-slate-700">{stats.total_shanghai}</div>
+                                    <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700 text-xs sm:text-sm">
+                                        {stats.total_shanghai}
+                                      </div>
                                       <div className="text-xs text-muted-foreground">Shanghai</div>
                                     </div>
-                                    <div className="text-center p-2 bg-slate-50 rounded">
-                                      <div className="font-semibold text-slate-700">{stats.total_95_plus}</div>
+                                    <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700 text-xs sm:text-sm">
+                                        {stats.total_95_plus}
+                                      </div>
                                       <div className="text-xs text-muted-foreground">95+</div>
                                     </div>
-                                    <div className="text-center p-2 bg-slate-50 rounded">
-                                      <div className="font-semibold text-slate-700">{stats.total_bull}</div>
+                                    <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700 text-xs sm:text-sm">
+                                        {stats.total_bull}
+                                      </div>
                                       <div className="text-xs text-muted-foreground">Bull</div>
                                     </div>
-                                    <div className="text-center p-2 bg-red-50 rounded">
-                                      <div className="font-semibold text-red-600">{stats.total_under_26}</div>
+                                    <div className="text-center p-1 sm:p-2 bg-red-50 rounded">
+                                      <div className="font-semibold text-red-600 text-xs sm:text-sm">
+                                        {stats.total_under_26}
+                                      </div>
                                       <div className="text-xs text-muted-foreground">Unter 26</div>
                                     </div>
-                                    <div className="text-center p-2 bg-red-50 rounded">
-                                      <div className="font-semibold text-red-600">{stats.total_under_30}</div>
+                                    <div className="text-center p-1 sm:p-2 bg-red-50 rounded">
+                                      <div className="font-semibold text-red-600 text-xs sm:text-sm">
+                                        {stats.total_under_30}
+                                      </div>
                                       <div className="text-xs text-muted-foreground">Unter 30</div>
                                     </div>
-                                    <div className="text-center p-2 bg-red-50 rounded">
-                                      <div className="font-semibold text-red-600">{stats.total_semperit}</div>
+                                    <div className="text-center p-1 sm:p-2 bg-red-50 rounded">
+                                      <div className="font-semibold text-red-600 text-xs sm:text-sm">
+                                        {stats.total_semperit}
+                                      </div>
                                       <div className="text-xs text-muted-foreground">Semperit</div>
                                     </div>
                                   </div>
@@ -1980,21 +2021,30 @@ export default function MemberDashboard() {
                   ) : (
                     <div className="space-y-6">
                       <div className="overflow-x-auto">
-                        <Table className="min-w-full">
+                        <UITable className="min-w-full">
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="font-bold min-w-[120px]">Spieler</TableHead>
-                              <TableHead className="font-bold text-center text-red-600 min-w-[80px]">
-                                Unter 26
+                              <TableHead className="font-bold w-[100px] sm:w-auto">Spieler</TableHead>
+                              <TableHead className="font-bold text-center text-red-600 w-[60px] sm:w-[80px]">
+                                <span className="hidden sm:inline">Unter 26</span>
+                                <span className="sm:hidden">U26</span>
                               </TableHead>
-                              <TableHead className="font-bold text-center text-red-600 min-w-[80px]">
-                                Unter 30
+                              <TableHead className="font-bold text-center text-red-600 w-[60px] sm:w-[80px]">
+                                <span className="hidden sm:inline">Unter 30</span>
+                                <span className="sm:hidden">U30</span>
                               </TableHead>
-                              <TableHead className="font-bold text-center text-red-600 min-w-[80px]">
-                                Semperit
+                              <TableHead className="font-bold text-center text-red-600 w-[60px] sm:w-[80px]">
+                                <span className="hidden sm:inline">Semperit</span>
+                                <span className="sm:hidden">Semp</span>
                               </TableHead>
-                              <TableHead className="font-bold text-center min-w-[100px]">Gesamt</TableHead>
-                              <TableHead className="font-bold text-center min-w-[80px]">Kosten (€)</TableHead>
+                              <TableHead className="font-bold text-center w-[70px] sm:w-[100px]">
+                                <span className="hidden sm:inline">Gesamt</span>
+                                <span className="sm:hidden">Total</span>
+                              </TableHead>
+                              <TableHead className="font-bold text-center w-[70px] sm:w-[80px]">
+                                <span className="hidden sm:inline">Kosten (€)</span>
+                                <span className="sm:hidden">€</span>
+                              </TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -2010,7 +2060,9 @@ export default function MemberDashboard() {
                                           {penalty.playerName.charAt(0)}
                                         </AvatarFallback>
                                       </Avatar>
-                                      <span className="text-sm sm:text-base">{penalty.playerName}</span>
+                                      <span className="text-xs sm:text-base truncate max-w-[80px] sm:max-w-none">
+                                        {penalty.playerName}
+                                      </span>
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-center">
@@ -2053,7 +2105,7 @@ export default function MemberDashboard() {
                                 </TableRow>
                               ))}
                           </TableBody>
-                        </Table>
+                        </UITable>
                       </div>
 
                       {/* Summary Card */}
@@ -2089,6 +2141,139 @@ export default function MemberDashboard() {
                       </Card>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="ligatabellen">
+            <div className="space-y-6 sm:space-y-8">
+              {/* Quick Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="border-orange-200 hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <Trophy className="h-8 w-8 text-orange-600" />
+                      <Badge variant="secondary">Aktiv</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-gray-900">Herbstsaison 2025</div>
+                    <p className="text-sm text-gray-600">Aktuelle Saison</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-orange-200 hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <Users className="h-8 w-8 text-orange-600" />
+                      <Badge variant="secondary">Live</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-gray-900">18+ Divisionen</div>
+                    <p className="text-sm text-gray-600">Salzburg, Pongau, Lungau</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-orange-200 hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <Calendar className="h-8 w-8 text-orange-600" />
+                      <Badge variant="secondary">Neu</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-gray-900">Steeldart</div>
+                    <p className="text-sm text-gray-600">5 neue Divisionen</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Liga Tabellen Iframe */}
+              <Card className="border-orange-200 shadow-xl">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                        <Table className="h-6 w-6 text-orange-600" />
+                        Liga Tabellen
+                      </CardTitle>
+                      <CardDescription className="text-gray-600 mt-2">
+                        Aktuelle Tabellen und Spielerstatistiken der Sportdarts Liga Austria
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.location.reload()}
+                        className="border-orange-200 hover:bg-orange-50 bg-transparent"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Aktualisieren
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="border-orange-200 hover:bg-orange-50 bg-transparent"
+                      >
+                        <a
+                          href="https://www.sportdartsliga.at/ligasystem/division-tables"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Vollbild
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="relative">
+                    <iframe
+                      src="https://www.sportdartsliga.at/ligasystem/division-tables"
+                      className="w-full h-[800px] border-0 rounded-b-lg"
+                      title="Sportdarts Liga Tabellen"
+                      loading="lazy"
+                      sandbox="allow-scripts allow-same-origin allow-forms"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Info Section */}
+              <Card className="border-orange-200 bg-orange-50">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="bg-orange-100 rounded-lg p-2 mt-1">
+                      <ExternalLink className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 mb-2">Über die Liga Tabellen</h3>
+                      <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                        Diese Seite zeigt die aktuellen Tabellen der Sportdarts Liga Austria direkt von der offiziellen
+                        Website. Hier findest du alle Divisionen von Salzburg, Pongau und Lungau sowie die neuen
+                        Steeldart-Ligen.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="text-orange-700 border-orange-300">
+                          Live-Daten
+                        </Badge>
+                        <Badge variant="outline" className="text-orange-700 border-orange-300">
+                          Alle Divisionen
+                        </Badge>
+                        <Badge variant="outline" className="text-orange-700 border-orange-300">
+                          Spielerstatistiken
+                        </Badge>
+                        <Badge variant="outline" className="text-orange-700 border-orange-300">
+                          PDF Export
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -2189,7 +2374,7 @@ export default function MemberDashboard() {
             if (!open) setSelectedMatchForResults(null)
           }}
         >
-          <DialogContent className="sm:max-w-md w-[95vw] max-w-[400px]">
+          <DialogContent className="w-[95vw] max-w-[350px] sm:max-w-md mx-auto">
             <DialogHeader className="text-center pb-4">
               <DialogTitle className="text-lg sm:text-xl font-semibold">Spielergebnis eintragen</DialogTitle>
             </DialogHeader>
@@ -2198,12 +2383,12 @@ export default function MemberDashboard() {
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 items-center">
                   <div className="text-center">
                     <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Heim</Label>
-                    <div className="flex flex-col items-center gap-2 mt-2">
+                    <div className="flex flex-col items-center gap-1 sm:gap-2 mt-2">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-8 w-8 p-0 bg-transparent"
+                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 bg-transparent text-xs sm:text-sm"
                         onClick={() =>
                           setEditMatchScores((prev) => ({
                             ...prev,
@@ -2224,13 +2409,13 @@ export default function MemberDashboard() {
                             home: Number.parseInt(e.target.value) || 0,
                           }))
                         }
-                        className="text-center text-lg sm:text-2xl font-bold h-12 sm:h-16"
+                        className="text-center text-lg sm:text-2xl font-bold h-10 sm:h-16 w-full"
                       />
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-8 w-8 p-0 bg-transparent"
+                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 bg-transparent text-xs sm:text-sm"
                         onClick={() =>
                           setEditMatchScores((prev) => ({
                             ...prev,
@@ -2243,16 +2428,16 @@ export default function MemberDashboard() {
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl sm:text-4xl font-bold text-muted-foreground mt-8">:</div>
+                    <div className="text-xl sm:text-4xl font-bold text-muted-foreground mt-6 sm:mt-8">:</div>
                   </div>
                   <div className="text-center">
                     <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Auswärts</Label>
-                    <div className="flex flex-col items-center gap-2 mt-2">
+                    <div className="flex flex-col items-center gap-1 sm:gap-2 mt-2">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-8 w-8 p-0 bg-transparent"
+                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 bg-transparent text-xs sm:text-sm"
                         onClick={() =>
                           setEditMatchScores((prev) => ({
                             ...prev,
@@ -2273,13 +2458,13 @@ export default function MemberDashboard() {
                             away: Number.parseInt(e.target.value) || 0,
                           }))
                         }
-                        className="text-center text-lg sm:text-2xl font-bold h-12 sm:h-16"
+                        className="text-center text-lg sm:text-2xl font-bold h-10 sm:h-16 w-full"
                       />
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-8 w-8 p-0 bg-transparent"
+                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 bg-transparent text-xs sm:text-sm"
                         onClick={() =>
                           setEditMatchScores((prev) => ({
                             ...prev,

@@ -2,35 +2,37 @@
 
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 import {
   Users,
-  Search,
+  User,
   Crown,
   Shield,
-  User,
-  Calendar,
-  RefreshCw,
-  ChevronDown,
-  ChevronRight,
   Building2,
   UserPlus,
+  Search,
+  ChevronDown,
+  ChevronRight,
+  Calendar,
+  CheckCircle,
   Mail,
   Lock,
-  CheckCircle,
-  AlertCircle,
-  MoreVertical,
-  Trash2,
   Key,
+  Trash2,
+  MoreVertical,
+  Settings,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react"
-import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Switch } from "@/components/ui/switch"
 
 interface UserManagementProps {
   user: SupabaseUser | null
@@ -50,6 +52,8 @@ interface PlayerData {
   team_id?: string
   team_name?: string
   has_account?: boolean
+  is_admin?: boolean
+  user_profile_id?: string
 }
 
 interface TeamGroup {
@@ -118,27 +122,32 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
       if (clubError) throw clubError
 
-      const { data: teamMembers, error: teamError } = await supabase
-        .from("team_members")
-        .select(`player_id, team_id, role, teams(id, name)`)
-
-      if (teamError) {
-        console.warn("Could not fetch team members:", teamError)
-      }
-
       const { data: teams, error: teamsError } = await supabase.from("teams").select("id, name").order("name")
 
-      if (teamsError) {
-        console.warn("Could not fetch teams:", teamsError)
-      }
+      if (teamsError) throw teamsError
 
-      const { data: userProfiles, error: profilesError } = await supabase.from("user_profiles").select("player_id")
+      const { data: teamMembers, error: teamMembersError } = await supabase.from("team_members").select(`
+          player_id,
+          team_id,
+          role,
+          teams (
+            id,
+            name
+          )
+        `)
 
-      if (profilesError) {
-        console.warn("Could not fetch user profiles:", profilesError)
-      }
+      if (teamMembersError) throw teamMembersError
+
+      const { data: userProfiles, error: userProfilesError } = await supabase
+        .from("user_profiles")
+        .select("id, player_id, is_admin")
+
+      if (userProfilesError) throw userProfilesError
 
       const playersWithAccounts = new Set(userProfiles?.map((p) => p.player_id) || [])
+      const adminStatusMap = new Map(
+        userProfiles?.map((p) => [p.player_id, { is_admin: p.is_admin, profile_id: p.id }]) || [],
+      )
 
       const allPlayers: PlayerData[] = []
       const unassigned: PlayerData[] = []
@@ -146,6 +155,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
       if (clubPlayers) {
         clubPlayers.forEach((player) => {
           const playerTeamMemberships = teamMembers?.filter((tm) => tm.player_id === player.id) || []
+          const adminInfo = adminStatusMap.get(player.id)
 
           if (playerTeamMemberships.length === 0) {
             const playerData: PlayerData = {
@@ -160,6 +170,8 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
               team_id: undefined,
               team_name: undefined,
               has_account: playersWithAccounts.has(player.id),
+              is_admin: adminInfo?.is_admin || false,
+              user_profile_id: adminInfo?.profile_id,
             }
             unassigned.push(playerData)
           } else {
@@ -183,6 +195,8 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                 team_id: teamMembership?.team_id,
                 team_name: teamMembership?.teams?.name,
                 has_account: playersWithAccounts.has(player.id),
+                is_admin: adminInfo?.is_admin || false,
+                user_profile_id: adminInfo?.profile_id,
               }
 
               allPlayers.push(playerData)
@@ -215,6 +229,28 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
       setError(`Fehler beim Laden der Benutzerdaten: ${err.message}`)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const toggleAdminStatus = async (player: PlayerData) => {
+    if (!player.user_profile_id) {
+      setError("Spieler hat kein Benutzerprofil")
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from("user_profiles")
+        .update({ is_admin: !player.is_admin })
+        .eq("id", player.user_profile_id)
+
+      if (error) throw error
+
+      // Refresh the data to show updated admin status
+      await fetchAllUsers()
+      onDataSaved()
+    } catch (err: any) {
+      setError(`Fehler beim Ändern des Admin-Status: ${err.message}`)
     }
   }
 
@@ -842,6 +878,12 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                                   Kein Account
                                 </Badge>
                               )}
+                              {player.is_admin && (
+                                <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">
+                                  <Settings className="h-3 w-3 mr-1" />
+                                  Admin
+                                </Badge>
+                              )}
                               <div className="flex items-center space-x-1 text-sm text-gray-500">
                                 <Calendar className="h-3 w-3" />
                                 <span>Seit {formatDate(player.created_at)}</span>
@@ -850,38 +892,52 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-600">
-                          {player.age && <div>Alter: {player.age}</div>}
-                          {player.throwing_hand && <div>Wurfhand: {player.throwing_hand}</div>}
-                          {player.origin && <div>Herkunft: {player.origin}</div>}
-                        </div>
+                      <div className="flex items-center space-x-4">
                         {player.has_account && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openAccountManagement(player, "email")}>
-                                <Mail className="mr-2 h-4 w-4" />
-                                E-Mail ändern
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openAccountManagement(player, "password")}>
-                                <Key className="mr-2 h-4 w-4" />
-                                Passwort ändern
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => openAccountManagement(player, "delete")}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Account löschen
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <div className="flex items-center space-x-2">
+                            <Label htmlFor={`admin-${player.id}`} className="text-sm text-gray-600">
+                              Admin
+                            </Label>
+                            <Switch
+                              id={`admin-${player.id}`}
+                              checked={player.is_admin || false}
+                              onCheckedChange={() => toggleAdminStatus(player)}
+                            />
+                          </div>
                         )}
+                        <div className="text-right">
+                          <div className="text-sm text-gray-600">
+                            {player.age && <div>Alter: {player.age}</div>}
+                            {player.throwing_hand && <div>Wurfhand: {player.throwing_hand}</div>}
+                            {player.origin && <div>Herkunft: {player.origin}</div>}
+                          </div>
+                          {player.has_account && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openAccountManagement(player, "email")}>
+                                  <Mail className="mr-2 h-4 w-4" />
+                                  E-Mail ändern
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openAccountManagement(player, "password")}>
+                                  <Key className="mr-2 h-4 w-4" />
+                                  Passwort ändern
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => openAccountManagement(player, "delete")}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Account löschen
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -936,42 +992,62 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                                 Kein Account
                               </Badge>
                             )}
+                            {player.is_admin && (
+                              <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">
+                                <Settings className="h-3 w-3 mr-1" />
+                                Admin
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-600">
-                        {player.age && <div>Alter: {player.age}</div>}
-                        {player.throwing_hand && <div>Wurfhand: {player.throwing_hand}</div>}
-                        {player.origin && <div>Herkunft: {player.origin}</div>}
-                      </div>
+                    <div className="flex items-center space-x-4">
                       {player.has_account && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openAccountManagement(player, "email")}>
-                              <Mail className="mr-2 h-4 w-4" />
-                              E-Mail ändern
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openAccountManagement(player, "password")}>
-                              <Key className="mr-2 h-4 w-4" />
-                              Passwort ändern
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => openAccountManagement(player, "delete")}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Account löschen
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center space-x-2">
+                          <Label htmlFor={`admin-unassigned-${player.id}`} className="text-sm text-gray-600">
+                            Admin
+                          </Label>
+                          <Switch
+                            id={`admin-unassigned-${player.id}`}
+                            checked={player.is_admin || false}
+                            onCheckedChange={() => toggleAdminStatus(player)}
+                          />
+                        </div>
                       )}
+                      <div className="text-right">
+                        <div className="text-sm text-gray-600">
+                          {player.age && <div>Alter: {player.age}</div>}
+                          {player.throwing_hand && <div>Wurfhand: {player.throwing_hand}</div>}
+                          {player.origin && <div>Herkunft: {player.origin}</div>}
+                        </div>
+                        {player.has_account && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openAccountManagement(player, "email")}>
+                                <Mail className="mr-2 h-4 w-4" />
+                                E-Mail ändern
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openAccountManagement(player, "password")}>
+                                <Key className="mr-2 h-4 w-4" />
+                                Passwort ändern
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => openAccountManagement(player, "delete")}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Account löschen
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -980,155 +1056,6 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
           </Card>
         )}
       </div>
-
-      <Dialog open={managementAction !== null} onOpenChange={() => setManagementAction(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              {managementAction === "email" && (
-                <>
-                  <Mail className="h-5 w-5 text-blue-600" />
-                  <span>E-Mail-Adresse ändern</span>
-                </>
-              )}
-              {managementAction === "password" && (
-                <>
-                  <Key className="h-5 w-5 text-green-600" />
-                  <span>Passwort ändern</span>
-                </>
-              )}
-              {managementAction === "delete" && (
-                <>
-                  <Trash2 className="h-5 w-5 text-red-600" />
-                  <span>Account löschen</span>
-                </>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">
-                <strong>Spieler:</strong> {managementForm.playerName}
-              </p>
-            </div>
-
-            {managementAction === "email" && (
-              <div className="space-y-2">
-                <Label htmlFor="new-email">Neue E-Mail-Adresse</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    id="new-email"
-                    type="email"
-                    placeholder="neue@example.com"
-                    value={managementForm.newEmail}
-                    onChange={(e) => setManagementForm((prev) => ({ ...prev, newEmail: e.target.value }))}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-            )}
-
-            {managementAction === "password" && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">Neues Passwort</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      id="new-password"
-                      type="password"
-                      placeholder="Mindestens 6 Zeichen"
-                      value={managementForm.newPassword}
-                      onChange={(e) => setManagementForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-new-password">Neues Passwort bestätigen</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      id="confirm-new-password"
-                      type="password"
-                      placeholder="Passwort wiederholen"
-                      value={managementForm.confirmNewPassword}
-                      onChange={(e) => setManagementForm((prev) => ({ ...prev, confirmNewPassword: e.target.value }))}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {managementAction === "delete" && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center space-x-2 text-red-700">
-                  <AlertCircle className="h-4 w-4" />
-                  <span className="font-medium">Warnung</span>
-                </div>
-                <p className="text-sm text-red-600 mt-2">
-                  Diese Aktion löscht den Account für <strong>{managementForm.playerName}</strong> dauerhaft. Der
-                  Spieler kann sich danach nicht mehr anmelden.
-                </p>
-              </div>
-            )}
-
-            {managementStatus.type && (
-              <div
-                className={`p-3 rounded-lg flex items-center space-x-2 ${
-                  managementStatus.type === "success"
-                    ? "bg-green-50 border border-green-200 text-green-700"
-                    : "bg-red-50 border border-red-200 text-red-700"
-                }`}
-              >
-                {managementStatus.type === "success" ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : (
-                  <AlertCircle className="h-4 w-4" />
-                )}
-                <span className="text-sm">{managementStatus.message}</span>
-              </div>
-            )}
-
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => setManagementAction(null)} className="flex-1">
-                Abbrechen
-              </Button>
-              <Button
-                onClick={() => {
-                  if (managementAction === "email") updateEmail()
-                  else if (managementAction === "password") updatePassword()
-                  else if (managementAction === "delete") deleteAccount()
-                }}
-                disabled={isManagingAccount}
-                className={`flex-1 ${
-                  managementAction === "delete" ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"
-                }`}
-              >
-                {isManagingAccount ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Wird verarbeitet...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    {managementAction === "email" && <Mail className="h-4 w-4" />}
-                    {managementAction === "password" && <Key className="h-4 w-4" />}
-                    {managementAction === "delete" && <Trash2 className="h-4 w-4" />}
-                    <span>
-                      {managementAction === "email" && "E-Mail ändern"}
-                      {managementAction === "password" && "Passwort ändern"}
-                      {managementAction === "delete" && "Account löschen"}
-                    </span>
-                  </div>
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
