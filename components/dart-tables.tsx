@@ -515,51 +515,82 @@ export function DartTables({ edartPlayers, combinedPlayers, loading, error }: Da
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6 sm:space-y-8">
-      {/* Header */}
-      <div className="text-center mb-6 sm:mb-8 px-4">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">EMD - LION CUP | 2025</h1>
-        <p className="text-sm sm:text-base lg:text-lg text-gray-600">Aktuelle Rangliste</p>
+      <div className="relative text-center mb-6 sm:mb-8 px-4">
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-gradient-to-r from-red-600/10 via-yellow-500/10 to-red-600/10 rounded-3xl blur-3xl"></div>
+
+        <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8 mx-auto max-w-2xl">
+          {/* Trophy decoration */}
+          <div className="flex justify-center mb-4">
+            <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full p-3 shadow-lg">
+              <Trophy className="h-8 w-8 text-white" />
+            </div>
+          </div>
+
+          {/* Main title with gradient text */}
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-3">
+            <span className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 bg-clip-text text-transparent">
+              EMD - LION CUP
+            </span>
+          </h1>
+
+          {/* Year badge */}
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg mb-4">
+            <Crown className="h-5 w-5" />
+            2025
+          </div>
+
+          {/* Subtitle */}
+          <p className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Aktuelle Rangliste</p>
+          <p className="text-sm sm:text-base text-gray-500">Live-Wertung aller Turnierteilnehmer</p>
+
+          {/* Decorative elements */}
+          <div className="flex justify-center items-center gap-4 mt-4">
+            <div className="h-1 w-12 bg-gradient-to-r from-red-500 to-yellow-500 rounded-full"></div>
+            <Star className="h-4 w-4 text-yellow-500" />
+            <div className="h-1 w-12 bg-gradient-to-r from-yellow-500 to-red-500 rounded-full"></div>
+          </div>
+        </div>
       </div>
 
-      {/* Mobile-Optimized Tab Navigation */}
       <div className="px-4">
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-2 overflow-x-auto">
-          <div className="flex space-x-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:space-x-0 sm:gap-2">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-3 overflow-x-auto">
+          <div className="flex space-x-2 min-w-max sm:min-w-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:space-x-0 sm:gap-3">
             <Button
               onClick={() => setActiveTab("combined")}
-              className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+              className={`px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-bold transition-all duration-300 text-sm sm:text-base whitespace-nowrap flex-shrink-0 shadow-lg ${
                 activeTab === "combined"
-                  ? "bg-red-600 text-white shadow-md"
-                  : "bg-transparent text-gray-600 hover:bg-gray-100"
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-red-200 scale-105"
+                  : "bg-white text-gray-600 hover:bg-gray-50 hover:shadow-md border border-gray-200"
               }`}
             >
-              <Trophy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <Trophy className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
               <span className="hidden sm:inline">Gesamtwertung</span>
               <span className="sm:hidden">Gesamt</span>
-              <span className="ml-1">({combinedPlayers?.length || 0})</span>
+              <span className="ml-2 bg-white/20 rounded-full px-2 py-1 text-xs">{combinedPlayers?.length || 0}</span>
             </Button>
             <Button
               onClick={() => setActiveTab("total")}
-              className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+              className={`px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-bold transition-all duration-300 text-sm sm:text-base whitespace-nowrap flex-shrink-0 shadow-lg ${
                 activeTab === "total"
-                  ? "bg-red-600 text-white shadow-md"
-                  : "bg-transparent text-gray-600 hover:bg-gray-100"
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-red-200 scale-105"
+                  : "bg-white text-gray-600 hover:bg-gray-50 hover:shadow-md border border-gray-200"
               }`}
             >
-              <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
               <span className="hidden sm:inline">Gesamt Antritte</span>
               <span className="sm:hidden">Antritte</span>
-              <span className="ml-1">({combinedPlayers?.length || 0})</span>
+              <span className="ml-2 bg-white/20 rounded-full px-2 py-1 text-xs">{combinedPlayers?.length || 0}</span>
             </Button>
             <Button
               onClick={() => setActiveTab("history")}
-              className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+              className={`px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-bold transition-all duration-300 text-sm sm:text-base whitespace-nowrap flex-shrink-0 shadow-lg ${
                 activeTab === "history"
-                  ? "bg-red-600 text-white shadow-md"
-                  : "bg-transparent text-gray-600 hover:bg-gray-100"
+                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-red-200 scale-105"
+                  : "bg-white text-gray-600 hover:bg-gray-50 hover:shadow-md border border-gray-200"
               }`}
             >
-              <History className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <History className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
               <span className="hidden sm:inline">Turnier Historie</span>
               <span className="sm:hidden">Historie</span>
             </Button>
