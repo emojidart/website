@@ -6,20 +6,7 @@ import { useDartData } from "@/hooks/use-dart-data" // Import useDartData hook
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import {
-  Trophy,
-  Users,
-  Medal,
-  Crown,
-  Award,
-  Star,
-  Zap,
-  CheckCircle,
-  AlertCircle,
-  ChevronDown,
-  ChevronUp,
-  History,
-} from "lucide-react"
+import { Trophy, Users, Medal, Crown, Award, Star, Zap, CheckCircle, AlertCircle, History } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { PlayerData, CombinedPlayerData } from "@/hooks/use-dart-data"
 import { TournamentHistorySection } from "./tournament-history-section" // Import the new component
@@ -129,15 +116,12 @@ function QualificationStatus({ edartGames }: { edartGames: number }) {
 function MobilePlayerCard({
   player,
   position,
-  showDetails = false,
   type = "combined",
 }: {
   player: PlayerData | CombinedPlayerData // Use updated types
   position: number
-  showDetails?: boolean
   type?: "combined" | "edart" | "total"
 }) {
-  const [expanded, setExpanded] = useState(false)
   const isTopThree = position <= 3
 
   return (
@@ -290,47 +274,6 @@ function MobilePlayerCard({
           <QualificationProgress current={(player as PlayerData).participations} required={20} />
         </div>
       )}
-
-      {/* Expand Button for more details */}
-      {showDetails && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="w-full mt-3 pt-3 border-t border-gray-100 flex items-center justify-center text-xs text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          {expanded ? (
-            <>
-              Weniger anzeigen <ChevronUp className="h-3 w-3 ml-1" />
-            </>
-          ) : (
-            <>
-              Mehr Details <ChevronDown className="h-3 w-3 ml-1" />
-            </>
-          )}
-        </button>
-      )}
-
-      {/* Expanded Details */}
-      {expanded && showDetails && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          className="mt-3 pt-3 border-t border-gray-100 space-y-2"
-        >
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div>
-              <span className="text-gray-600">Erstellt:</span>
-              <span className="ml-1 font-medium">
-                {new Date(player.created_at || Date.now()).toLocaleDateString("de-DE")}
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-600">ID:</span>
-              <span className="ml-1 font-mono text-xs">{player.id?.slice(0, 8)}...</span>
-            </div>
-          </div>
-        </motion.div>
-      )}
     </motion.div>
   )
 }
@@ -389,12 +332,42 @@ function MobileTable({
       if (type === "total") {
         return b.totalParticipations - a.totalParticipations
       }
-      // Sortiere nach combinedScore für den Typ "combined"
+
       if (type === "combined") {
-        return b.combinedScore - a.combinedScore
+        const aCombinedScore = (a as CombinedPlayerData).combinedScore
+        const bCombinedScore = (b as CombinedPlayerData).combinedScore
+
+        if (bCombinedScore !== aCombinedScore) {
+          return bCombinedScore - aCombinedScore
+        }
+
+        const aPoints = (a as CombinedPlayerData).totalPoints
+        const bPoints = (b as CombinedPlayerData).totalPoints
+
+        if (bPoints !== aPoints) {
+          return bPoints - aPoints
+        }
+
+        const aLegs = (a as CombinedPlayerData).totalLegs
+        const bLegs = (b as CombinedPlayerData).totalLegs
+        return bLegs - aLegs
       }
-      // Für edart: Sortiere nach der Summe von Punkten und Legs
-      return b.points + b.legs - (a.points + a.legs)
+
+      const aTotal = (a as PlayerData).points + (a as PlayerData).legs
+      const bTotal = (b as PlayerData).points + (b as PlayerData).legs
+
+      if (bTotal !== aTotal) {
+        return bTotal - aTotal
+      }
+
+      const aPoints = (a as PlayerData).points
+      const bPoints = (b as PlayerData).points
+
+      if (bPoints !== aPoints) {
+        return bPoints - aPoints
+      }
+
+      return (b as PlayerData).legs - (a as PlayerData).legs
     })
     .map((player, index) => ({ ...player, position: index + 1 }))
 
@@ -451,13 +424,7 @@ function MobileTable({
       {/* Mobile Cards */}
       <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
         {sortedPlayers.map((player, index) => (
-          <MobilePlayerCard
-            key={player.name || player.id}
-            player={player}
-            position={player.position}
-            type={type}
-            showDetails={index < 10} // Show details for top 10
-          />
+          <MobilePlayerCard key={player.name || player.id} player={player} position={player.position} type={type} />
         ))}
       </div>
 
