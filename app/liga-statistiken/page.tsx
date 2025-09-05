@@ -335,21 +335,21 @@ export default function LigaPage() {
       <Header />
       <main className="pt-8 pb-20">
         <motion.div
-          className="container mx-auto px-4 md:px-6 py-8"
+          className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          <motion.div variants={itemVariants} className="text-center mb-12">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
-                <Trophy className="h-12 w-12 text-white mx-auto" />
+          <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-12">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
+              <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
+                <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
               </div>
-              <h1 className="text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-4">
+              <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
                 <span className="block text-white">EMOJ!'S DARTVEREIN</span>
                 <span className="block text-orange-200">Herbstsaison 2025</span>
               </h1>
-              <p className="text-lg md:text-xl font-bold uppercase text-orange-100 mb-4">
+              <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-2 sm:mb-4">
                 Aktuelle Tabellen, Spielergebnisse und Statistiken
               </p>
             </div>
@@ -357,93 +357,111 @@ export default function LigaPage() {
 
           <motion.div variants={itemVariants}>
             <Tabs defaultValue="standings" className="w-full">
-              <TabsList className="grid w-full grid-cols-5 mb-8">
-                <TabsTrigger value="standings" className="flex items-center gap-2">
-                  <Trophy className="h-4 w-4" />
-                  Tabelle
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-4 sm:mb-8 gap-1">
+                <TabsTrigger value="standings" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <Trophy className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Tabelle</span>
+                  <span className="sm:hidden">Tab.</span>
                 </TabsTrigger>
-                <TabsTrigger value="results" className="flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Ergebnisse
+                <TabsTrigger value="results" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <Target className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Ergebnisse</span>
+                  <span className="sm:hidden">Erg.</span>
                 </TabsTrigger>
-                <TabsTrigger value="fixtures" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Termine
+                <TabsTrigger value="fixtures" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Termine</span>
+                  <span className="sm:hidden">Term.</span>
                 </TabsTrigger>
-                <TabsTrigger value="teams" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Teams
+                <TabsTrigger value="teams" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Teams</span>
+                  <span className="sm:hidden">Teams</span>
                 </TabsTrigger>
-                <TabsTrigger value="legstats" className="flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Spieler-Statistiken
+                <TabsTrigger
+                  value="legstats"
+                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm col-span-2 sm:col-span-1"
+                >
+                  <Target className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Spieler-Statistiken</span>
+                  <span className="sm:hidden">Stats</span>
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="standings">
                 <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <Trophy className="h-6 w-6" />
+                  <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 sm:p-6">
+                    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                      <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
                       Liga-Tabelle
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
+                    <div className="overflow-x-auto custom-scrollbar">
+                      <table className="w-full min-w-[640px]">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="text-left p-4 font-semibold text-gray-700">Pos</th>
-                            <th className="text-left p-4 font-semibold text-gray-700">Team</th>
-                            <th className="text-center p-4 font-semibold text-gray-700">Sp</th>
-                            <th className="text-center p-4 font-semibold text-gray-700">S</th>
-                            <th className="text-center p-4 font-semibold text-gray-700">U</th>
-                            <th className="text-center p-4 font-semibold text-gray-700">N</th>
-                            <th className="text-center p-4 font-semibold text-gray-700">Legs</th>
-                            <th className="text-center p-4 font-semibold text-gray-700">Diff</th>
-                            <th className="text-center p-4 font-semibold text-gray-700">Pkt</th>
+                            <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">Pos</th>
+                            <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                              Team
+                            </th>
+                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                              Sp
+                            </th>
+                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">S</th>
+                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">U</th>
+                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">N</th>
+                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                              Legs
+                            </th>
+                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                              Diff
+                            </th>
+                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                              Pkt
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
                           {standings.map((team, index) => (
                             <tr key={team.team} className="border-b hover:bg-gray-50 transition-colors">
-                              <td className="p-4">
-                                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                                  <span className="font-bold text-orange-600">{index + 1}</span>
+                              <td className="p-2 sm:p-4">
+                                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                  <span className="font-bold text-orange-600 text-xs sm:text-sm">{index + 1}</span>
                                 </div>
                               </td>
-                              <td className="p-4">
-                                <div className="font-semibold text-gray-900 text-lg">{team.team}</div>
+                              <td className="p-2 sm:p-4">
+                                <div className="font-semibold text-gray-900 text-sm sm:text-lg">{team.team}</div>
                               </td>
-                              <td className="text-center p-4 font-medium">{team.played}</td>
-                              <td className="text-center p-4">
-                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                              <td className="text-center p-2 sm:p-4 font-medium text-sm">{team.played}</td>
+                              <td className="text-center p-2 sm:p-4">
+                                <span className="bg-green-100 text-green-800 px-1 sm:px-2 py-1 rounded font-medium text-xs sm:text-sm">
                                   {team.won}
                                 </span>
                               </td>
-                              <td className="text-center p-4">
-                                <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded font-medium">
+                              <td className="text-center p-2 sm:p-4">
+                                <span className="bg-yellow-100 text-yellow-800 px-1 sm:px-2 py-1 rounded font-medium text-xs sm:text-sm">
                                   {team.drawn}
                                 </span>
                               </td>
-                              <td className="text-center p-4">
-                                <span className="bg-red-100 text-red-800 px-2 py-1 rounded font-medium">
+                              <td className="text-center p-2 sm:p-4">
+                                <span className="bg-red-100 text-red-800 px-1 sm:px-2 py-1 rounded font-medium text-xs sm:text-sm">
                                   {team.lost}
                                 </span>
                               </td>
-                              <td className="text-center p-4 font-medium">
+                              <td className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm">
                                 {team.legsFor}:{team.legsAgainst}
                               </td>
-                              <td className="text-center p-4">
+                              <td className="text-center p-2 sm:p-4">
                                 <span
-                                  className={`font-bold ${team.legsDifference >= 0 ? "text-green-600" : "text-red-600"}`}
+                                  className={`font-bold text-xs sm:text-sm ${team.legsDifference >= 0 ? "text-green-600" : "text-red-600"}`}
                                 >
                                   {team.legsDifference > 0 ? "+" : ""}
                                   {team.legsDifference}
                                 </span>
                               </td>
-                              <td className="text-center p-4">
-                                <div className="bg-orange-100 text-orange-800 px-3 py-2 rounded-lg font-bold text-lg">
+                              <td className="text-center p-2 sm:p-4">
+                                <div className="bg-orange-100 text-orange-800 px-2 sm:px-3 py-1 sm:py-2 rounded-lg font-bold text-sm sm:text-lg">
                                   {team.points}
                                 </div>
                               </td>
@@ -458,17 +476,17 @@ export default function LigaPage() {
 
               <TabsContent value="results">
                 <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <Target className="h-6 w-6" />
+                  <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white p-3 sm:p-6">
+                    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                      <Target className="h-5 w-5 sm:h-6 sm:w-6" />
                       Alle Ergebnisse ({completedMatches.length})
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6">
+                  <CardContent className="p-3 sm:p-6">
                     {completedMatches.length === 0 ? (
                       <p className="text-center text-gray-500 py-8">Noch keine Ergebnisse verfügbar</p>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3 sm:space-y-4">
                         {completedMatches
                           .sort((a, b) => new Date(b.match_date) - new Date(a.match_date))
                           .map((match) => {
@@ -487,12 +505,12 @@ export default function LigaPage() {
                             return (
                               <div
                                 key={match.id}
-                                className={`${matchColor} border-2 rounded-xl p-6 shadow-sm hover:shadow-md transition-all`}
+                                className={`${matchColor} border-2 rounded-xl p-3 sm:p-6 shadow-sm hover:shadow-md transition-all`}
                               >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-8">
-                                    <div className="text-center min-w-[140px]">
-                                      <div className="font-bold text-xl mb-1 text-gray-800">
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                  <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
+                                    <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                      <div className="font-bold text-lg sm:text-xl mb-1 text-gray-800">
                                         {match.home_team?.name ||
                                           match.home_opponent_team?.name ||
                                           "Team nicht gefunden"}
@@ -501,13 +519,13 @@ export default function LigaPage() {
                                         Heim
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-4 bg-white rounded-lg px-6 py-3 shadow-sm">
-                                      <div className="text-4xl font-bold text-gray-800">{homeScore}</div>
-                                      <div className="text-2xl font-medium text-gray-400">:</div>
-                                      <div className="text-4xl font-bold text-gray-800">{awayScore}</div>
+                                    <div className="flex items-center gap-2 sm:gap-4 bg-white rounded-lg px-4 sm:px-6 py-2 sm:py-3 shadow-sm">
+                                      <div className="text-2xl sm:text-4xl font-bold text-gray-800">{homeScore}</div>
+                                      <div className="text-xl sm:text-2xl font-medium text-gray-400">:</div>
+                                      <div className="text-2xl sm:text-4xl font-bold text-gray-800">{awayScore}</div>
                                     </div>
-                                    <div className="text-center min-w-[140px]">
-                                      <div className="font-bold text-xl mb-1 text-gray-800">
+                                    <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                      <div className="font-bold text-lg sm:text-xl mb-1 text-gray-800">
                                         {match.away_team?.name ||
                                           match.away_opponent_team?.name ||
                                           "Team nicht gefunden"}
@@ -515,8 +533,8 @@ export default function LigaPage() {
                                       <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
                                     </div>
                                   </div>
-                                  <div className="text-right">
-                                    <div className="text-lg font-semibold text-gray-700 mb-2">
+                                  <div className="text-center sm:text-right">
+                                    <div className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
                                       {new Date(match.match_date).toLocaleDateString("de-DE", {
                                         weekday: "short",
                                         day: "2-digit",
@@ -533,7 +551,7 @@ export default function LigaPage() {
                                               ? "bg-red-100 text-red-700"
                                               : "bg-yellow-100 text-yellow-700"
                                         }
-                                        font-medium
+                                        font-medium text-xs sm:text-sm
                                       `}
                                     >
                                       {homeScore > awayScore
@@ -555,42 +573,42 @@ export default function LigaPage() {
 
               <TabsContent value="fixtures">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                  <CardHeader className="p-3 sm:p-6">
+                    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                       <Calendar className="h-5 w-5 text-blue-600" />
                       Kommende Spiele ({upcomingMatches.length})
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-3 sm:p-6">
                     {upcomingMatches.length === 0 ? (
                       <p className="text-center text-gray-500 py-8">Keine kommenden Spiele geplant</p>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3 sm:space-y-4">
                         {upcomingMatches
                           .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
                           .map((match) => (
                             <div
                               key={match.id}
-                              className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow bg-white"
+                              className="border border-gray-200 rounded-lg p-3 sm:p-6 hover:shadow-md transition-shadow bg-white"
                             >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-8">
-                                  <div className="text-center min-w-[140px]">
-                                    <div className="font-semibold text-lg text-gray-900">
+                              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
+                                  <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                    <div className="font-semibold text-base sm:text-lg text-gray-900">
                                       {match.home_team?.name || match.home_opponent_team?.name || "Team nicht gefunden"}
                                     </div>
                                     <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Heim</div>
                                   </div>
-                                  <div className="text-2xl font-bold text-gray-400">vs</div>
-                                  <div className="text-center min-w-[140px]">
-                                    <div className="font-semibold text-lg text-gray-900">
+                                  <div className="text-xl sm:text-2xl font-bold text-gray-400">vs</div>
+                                  <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                    <div className="font-semibold text-base sm:text-lg text-gray-900">
                                       {match.away_team?.name || match.away_opponent_team?.name || "Team nicht gefunden"}
                                     </div>
                                     <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-lg font-semibold text-gray-900 mb-1">
+                                <div className="text-center sm:text-right">
+                                  <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
                                     {new Date(match.match_date).toLocaleDateString("de-DE", {
                                       day: "2-digit",
                                       month: "2-digit",
@@ -613,62 +631,71 @@ export default function LigaPage() {
               </TabsContent>
 
               <TabsContent value="teams">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 mb-6">
-                    <Users className="h-6 w-6 text-orange-600" />
-                    <h2 className="text-2xl font-bold text-gray-900">Teams & Kader</h2>
+                <div className="space-y-4 sm:space-y-6">
+                  <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                    <Users className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Teams & Kader</h2>
                   </div>
 
-                  <div className="grid gap-8">
+                  <div className="grid gap-4 sm:gap-8">
                     {teams.map((team) => {
                       const teamPlayers = players.filter((player) => player.team_id === team.id)
                       const teamStats = standings.find((s) => s.team === team.name)
 
                       return (
                         <Card key={team.id} className="overflow-hidden">
-                          <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b">
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-xl font-bold text-gray-900">{team.name}</CardTitle>
-                              <div className="flex items-center gap-4">
-                                <Badge variant="secondary" className="bg-orange-100 text-orange-800 font-semibold">
+                          <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b p-3 sm:p-6">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                              <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">{team.name}</CardTitle>
+                              <div className="flex items-center gap-2 sm:gap-4">
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-orange-100 text-orange-800 font-semibold text-xs sm:text-sm"
+                                >
                                   {teamPlayers.length} Spieler
                                 </Badge>
                                 {teamStats && (
-                                  <Badge className="bg-orange-600 text-white font-semibold">
+                                  <Badge className="bg-orange-600 text-white font-semibold text-xs sm:text-sm">
                                     {teamStats.points} Punkte
                                   </Badge>
                                 )}
                               </div>
                             </div>
                           </CardHeader>
-                          <CardContent className="p-6">
-                            <div className="grid md:grid-cols-2 gap-6">
+                          <CardContent className="p-3 sm:p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                               {teamStats && (
                                 <div>
                                   <h4 className="font-semibold text-gray-900 mb-3">Saisonstatistik</h4>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-gray-50 rounded-lg p-3 text-center">
-                                      <div className="text-2xl font-bold text-gray-900">{teamStats.played}</div>
-                                      <div className="text-sm text-gray-600">Spiele</div>
+                                  <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                    <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center">
+                                      <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                                        {teamStats.played}
+                                      </div>
+                                      <div className="text-xs sm:text-sm text-gray-600">Spiele</div>
                                     </div>
-                                    <div className="bg-green-50 rounded-lg p-3 text-center">
-                                      <div className="text-2xl font-bold text-green-600">{teamStats.won}</div>
-                                      <div className="text-sm text-gray-600">Siege</div>
+                                    <div className="bg-green-50 rounded-lg p-2 sm:p-3 text-center">
+                                      <div className="text-xl sm:text-2xl font-bold text-green-600">
+                                        {teamStats.won}
+                                      </div>
+                                      <div className="text-xs sm:text-sm text-gray-600">Siege</div>
                                     </div>
-                                    <div className="bg-yellow-50 rounded-lg p-3 text-center">
-                                      <div className="text-2xl font-bold text-yellow-600">{teamStats.drawn}</div>
-                                      <div className="text-sm text-gray-600">Unentschieden</div>
+                                    <div className="bg-yellow-50 rounded-lg p-2 sm:p-3 text-center">
+                                      <div className="text-xl sm:text-2xl font-bold text-yellow-600">
+                                        {teamStats.drawn}
+                                      </div>
+                                      <div className="text-xs sm:text-sm text-gray-600">Unentschieden</div>
                                     </div>
-                                    <div className="bg-red-50 rounded-lg p-3 text-center">
-                                      <div className="text-2xl font-bold text-red-600">{teamStats.lost}</div>
-                                      <div className="text-sm text-gray-600">Niederlagen</div>
+                                    <div className="bg-red-50 rounded-lg p-2 sm:p-3 text-center">
+                                      <div className="text-xl sm:text-2xl font-bold text-red-600">{teamStats.lost}</div>
+                                      <div className="text-xs sm:text-sm text-gray-600">Niederlagen</div>
                                     </div>
-                                    <div className="bg-blue-50 rounded-lg p-3 text-center col-span-2">
-                                      <div className="text-2xl font-bold text-blue-600">
+                                    <div className="bg-blue-50 rounded-lg p-2 sm:p-3 text-center col-span-2">
+                                      <div className="text-xl sm:text-2xl font-bold text-blue-600">
                                         {teamStats.legsDifference > 0 ? "+" : ""}
                                         {teamStats.legsDifference}
                                       </div>
-                                      <div className="text-sm text-gray-600">Legs-Differenz</div>
+                                      <div className="text-xs sm:text-sm text-gray-600">Legs-Differenz</div>
                                     </div>
                                   </div>
                                 </div>
@@ -686,13 +713,17 @@ export default function LigaPage() {
                                     {teamPlayers.map((player, index) => (
                                       <div
                                         key={player.id}
-                                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                                        className="flex items-center gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg"
                                       >
-                                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                                          <span className="text-sm font-semibold text-orange-600">{index + 1}</span>
+                                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                          <span className="text-xs sm:text-sm font-semibold text-orange-600">
+                                            {index + 1}
+                                          </span>
                                         </div>
                                         <div className="flex-1">
-                                          <div className="font-medium text-gray-900">{player.name}</div>
+                                          <div className="font-medium text-gray-900 text-sm sm:text-base">
+                                            {player.name}
+                                          </div>
                                         </div>
                                       </div>
                                     ))}
@@ -710,9 +741,9 @@ export default function LigaPage() {
 
               <TabsContent value="legstats">
                 <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <Target className="h-6 w-6" />
+                  <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 sm:p-6">
+                    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                      <Target className="h-5 w-5 sm:h-6 sm:w-6" />
                       Spieler-Statistiken ({playerLegStats.length} Spieler)
                     </CardTitle>
                   </CardHeader>
@@ -723,82 +754,138 @@ export default function LigaPage() {
                         <p className="text-lg">Keine Leg-Statistiken verfügbar</p>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
+                      <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full min-w-[1200px]">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th className="text-left p-4 font-semibold text-gray-700">Rang</th>
-                              <th className="text-left p-4 font-semibold text-gray-700">Spieler</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">Legs</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">180er</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">171er</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">20er</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">19er</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">18er</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">17er</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">16er</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">15er</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">High Ton</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">Ton</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">Shanghai</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">95+</th>
-                              <th className="text-center p-4 font-semibold text-gray-700">Bull</th>
+                              <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Rang
+                              </th>
+                              <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Spieler
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Legs
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                180er
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                171er
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                20er
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                19er
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                18er
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                17er
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                16er
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                15er
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                High Tonne
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Tonne
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Shanghai
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                95+
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Bull
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
                             {playerLegStats.map((player, index) => (
                               <tr key={player.name} className="border-b hover:bg-gray-50 transition-colors">
-                                <td className="p-4">
-                                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <span className="font-bold text-blue-600">{index + 1}</span>
+                                <td className="p-2 sm:p-4">
+                                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span className="font-bold text-blue-600 text-xs sm:text-sm">{index + 1}</span>
                                   </div>
                                 </td>
-                                <td className="p-4">
-                                  <div className="font-semibold text-gray-900 text-lg">{player.name}</div>
+                                <td className="p-2 sm:p-4">
+                                  <div className="font-semibold text-gray-900 text-sm sm:text-lg">{player.name}</div>
                                 </td>
-                                <td className="text-center p-4 font-medium">{player.legs_played}</td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-red-100 text-red-800 font-bold">{player.throws_180}</Badge>
+                                <td className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm">
+                                  {player.legs_played}
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-orange-100 text-orange-800 font-bold">{player.throws_171}</Badge>
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-red-100 text-red-800 font-bold text-xs">
+                                    {player.throws_180}
+                                  </Badge>
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold">{player.throws_20}</Badge>
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-orange-100 text-orange-800 font-bold text-xs">
+                                    {player.throws_171}
+                                  </Badge>
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold">{player.throws_19}</Badge>
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
+                                    {player.throws_20}
+                                  </Badge>
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold">{player.throws_18}</Badge>
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
+                                    {player.throws_19}
+                                  </Badge>
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold">{player.throws_17}</Badge>
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
+                                    {player.throws_18}
+                                  </Badge>
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold">{player.throws_16}</Badge>
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
+                                    {player.throws_17}
+                                  </Badge>
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold">{player.throws_15}</Badge>
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
+                                    {player.throws_16}
+                                  </Badge>
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-purple-100 text-purple-800 font-bold">
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
+                                    {player.throws_15}
+                                  </Badge>
+                                </td>
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-purple-100 text-purple-800 font-bold text-xs">
                                     {player.throws_high_tonne}
                                   </Badge>
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-green-100 text-green-800 font-bold">{player.throws_tonne}</Badge>
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-green-100 text-green-800 font-bold text-xs">
+                                    {player.throws_tonne}
+                                  </Badge>
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-indigo-100 text-indigo-800 font-bold">
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-indigo-100 text-indigo-800 font-bold text-xs">
                                     {player.throws_shanghai}
                                   </Badge>
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-teal-100 text-teal-800 font-bold">{player.throws_95_plus}</Badge>
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-teal-100 text-teal-800 font-bold text-xs">
+                                    {player.throws_95_plus}
+                                  </Badge>
                                 </td>
-                                <td className="text-center p-4">
-                                  <Badge className="bg-pink-100 text-pink-800 font-bold">{player.throws_bull}</Badge>
+                                <td className="text-center p-2 sm:p-4">
+                                  <Badge className="bg-pink-100 text-pink-800 font-bold text-xs">
+                                    {player.throws_bull}
+                                  </Badge>
                                 </td>
                               </tr>
                             ))}
