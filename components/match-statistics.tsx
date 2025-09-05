@@ -274,25 +274,27 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-4xl max-h-[95vh] overflow-y-auto p-3 sm:p-6">
+      <DialogContent className="w-[90vw] max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl max-h-[90vh] overflow-y-auto p-2 sm:p-4 lg:p-6">
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-2xl font-bold flex items-center gap-2">
-            <Target className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            <span className="truncate">Spielstatistiken - {myTeam?.name || "Mein Team"}</span>
+          <DialogTitle className="text-sm sm:text-lg lg:text-xl font-bold flex items-center gap-2">
+            <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <span className="truncate text-xs sm:text-sm lg:text-base">
+              Spielstatistiken - {myTeam?.name || "Mein Team"}
+            </span>
           </DialogTitle>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs sm:text-sm">
             {new Date(match.match_date).toLocaleDateString("de-DE")} • {match.match_time}
           </p>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "lineup" | "legs")}>
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 h-auto">
-            <TabsTrigger value="lineup" className="flex items-center gap-2 py-3 text-sm">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 h-auto gap-1">
+            <TabsTrigger value="lineup" className="flex items-center gap-2 py-2 sm:py-3 text-xs sm:text-sm">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Aufstellung</span>
               <span className="sm:hidden">Team</span>
             </TabsTrigger>
-            <TabsTrigger value="legs" className="flex items-center gap-2 py-3 text-sm">
+            <TabsTrigger value="legs" className="flex items-center gap-2 py-2 sm:py-3 text-xs sm:text-sm">
               <TrendingUp className="h-4 w-4" />
               <span className="hidden sm:inline">Spielerstatistiken nach Spiel</span>
               <span className="sm:hidden">Statistiken</span>
@@ -517,10 +519,10 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                 )}
                               </CardTitle>
                             </CardHeader>
-                            <CardContent className="pt-4 sm:pt-6">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                            <CardContent className="pt-3 sm:pt-4 lg:pt-6">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_180`} className="text-sm font-medium">
+                                  <Label htmlFor={`${targetPlayerId}_180`} className="text-xs sm:text-sm font-medium">
                                     180er
                                   </Label>
                                   <Input
@@ -535,7 +537,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_171`} className="text-sm font-medium">
+                                  <Label htmlFor={`${targetPlayerId}_171`} className="text-xs sm:text-sm font-medium">
                                     171er
                                   </Label>
                                   <Input
@@ -550,7 +552,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_15`} className="text-sm font-medium">
+                                  <Label htmlFor={`${targetPlayerId}_15`} className="text-xs sm:text-sm font-medium">
                                     15er
                                   </Label>
                                   <Input
@@ -565,7 +567,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_16`} className="text-sm font-medium">
+                                  <Label htmlFor={`${targetPlayerId}_16`} className="text-xs sm:text-sm font-medium">
                                     16er
                                   </Label>
                                   <Input
@@ -580,7 +582,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_17`} className="text-sm font-medium">
+                                  <Label htmlFor={`${targetPlayerId}_17`} className="text-xs sm:text-sm font-medium">
                                     17er
                                   </Label>
                                   <Input
@@ -595,7 +597,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_18`} className="text-sm font-medium">
+                                  <Label htmlFor={`${targetPlayerId}_18`} className="text-xs sm:text-sm font-medium">
                                     18er
                                   </Label>
                                   <Input
@@ -610,7 +612,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_19`} className="text-sm font-medium">
+                                  <Label htmlFor={`${targetPlayerId}_19`} className="text-xs sm:text-sm font-medium">
                                     19er
                                   </Label>
                                   <Input
@@ -625,7 +627,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_20`} className="text-sm font-medium">
+                                  <Label htmlFor={`${targetPlayerId}_20`} className="text-xs sm:text-sm font-medium">
                                     20er
                                   </Label>
                                   <Input
@@ -640,7 +642,10 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_high_tonne`} className="text-sm font-medium">
+                                  <Label
+                                    htmlFor={`${targetPlayerId}_high_tonne`}
+                                    className="text-xs sm:text-sm font-medium"
+                                  >
                                     High Tonne
                                   </Label>
                                   <Input
@@ -658,7 +663,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_tonne`} className="text-sm font-medium">
+                                  <Label htmlFor={`${targetPlayerId}_tonne`} className="text-xs sm:text-sm font-medium">
                                     Tonne
                                   </Label>
                                   <Input
@@ -673,7 +678,10 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_shanghai`} className="text-sm font-medium">
+                                  <Label
+                                    htmlFor={`${targetPlayerId}_shanghai`}
+                                    className="text-xs sm:text-sm font-medium"
+                                  >
                                     Shanghai
                                   </Label>
                                   <Input
@@ -691,7 +699,10 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_95_plus`} className="text-sm font-medium">
+                                  <Label
+                                    htmlFor={`${targetPlayerId}_95_plus`}
+                                    className="text-xs sm:text-sm font-medium"
+                                  >
                                     95+
                                   </Label>
                                   <Input
@@ -709,7 +720,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_bull`} className="text-sm font-medium">
+                                  <Label htmlFor={`${targetPlayerId}_bull`} className="text-xs sm:text-sm font-medium">
                                     Bull
                                   </Label>
                                   <Input
@@ -729,11 +740,11 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                 <h4 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
                                   ⚠️Under-Score
                                 </h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4 bg-red-50 rounded-lg border border-red-200">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 p-2 sm:p-3 lg:p-4 bg-red-50 rounded-lg border border-red-200">
                                   <div>
                                     <Label
                                       htmlFor={`${targetPlayerId}_under26`}
-                                      className="text-sm font-medium text-red-700"
+                                      className="text-xs sm:text-sm font-medium text-red-700"
                                     >
                                       Unter 26
                                     </Label>
@@ -754,7 +765,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   <div>
                                     <Label
                                       htmlFor={`${targetPlayerId}_under30`}
-                                      className="text-sm font-medium text-red-700"
+                                      className="text-xs sm:text-sm font-medium text-red-700"
                                     >
                                       Unter 30
                                     </Label>
@@ -775,7 +786,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   <div>
                                     <Label
                                       htmlFor={`${targetPlayerId}_semperit`}
-                                      className="text-sm font-medium text-red-700"
+                                      className="text-xs sm:text-sm font-medium text-red-700"
                                     >
                                       Semperit
                                     </Label>
@@ -797,7 +808,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                               </div>
 
                               <div className="mt-4">
-                                <Label htmlFor={`${targetPlayerId}_notes`} className="text-sm font-medium">
+                                <Label htmlFor={`${targetPlayerId}_notes`} className="text-xs sm:text-sm font-medium">
                                   Notizen
                                 </Label>
                                 <Textarea
@@ -832,10 +843,10 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                 <CardContent className="p-6">
                   <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
                     <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-blue-600" />
+                      <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                       Spieler-Gesamtstatistik für dieses Match
                     </h4>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
                       {(() => {
                         const playerTotals: { [key: string]: any } = {}
 
@@ -1075,7 +1086,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                               </div>
                             </CardHeader>
                             <CardContent>
-                              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
                                 {legPlayers.map((stat) => (
                                   <Card
                                     key={stat.id}
@@ -1085,10 +1096,12 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                         : ""
                                     }`}
                                   >
-                                    <CardContent className="p-3 sm:p-4">
-                                      <div className="flex items-center justify-between mb-3">
-                                        <h5 className="font-semibold text-sm sm:text-lg flex items-center gap-2 truncate">
-                                          {stat.leg_wins > 0 && <Crown className="h-4 w-4 text-amber-600" />}
+                                    <CardContent className="p-2 sm:p-3 lg:p-4">
+                                      <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                        <h5 className="font-semibold text-xs sm:text-sm lg:text-base flex items-center gap-1 sm:gap-2 truncate">
+                                          {stat.leg_wins > 0 && (
+                                            <Crown className="h-3 w-3 sm:h-4 sm:w-4 text-amber-600" />
+                                          )}
                                           <span className="truncate">{stat.player_name}</span>
                                         </h5>
                                         <div className="flex flex-col items-end gap-1">

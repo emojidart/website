@@ -1302,6 +1302,7 @@ export default function MemberDashboard() {
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg"
                             }
                           />
@@ -1576,6 +1577,7 @@ export default function MemberDashboard() {
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
                                             "/placeholder.svg"
                                           }
                                         />
@@ -1679,7 +1681,7 @@ export default function MemberDashboard() {
                                 </div>
 
                                 {isLeadershipRole() && (
-                                  <div className="flex gap-2">
+                                  <div className="flex gap-1 sm:gap-2">
                                     <Button
                                       size="sm"
                                       variant="outline"
@@ -1687,14 +1689,15 @@ export default function MemberDashboard() {
                                         setSelectedMatchForStats(match)
                                         setIsStatsDialogOpen(true)
                                       }}
-                                      className="bg-green-600 hover:bg-green-700 text-white"
+                                      className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm px-2 py-1 h-8 sm:h-9"
                                     >
-                                      <Target className="h-4 w-4 mr-2" />
-                                      Statistiken
+                                      <Target className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                      <span className="hidden xs:inline">Statistiken</span>
+                                      <span className="xs:hidden">Stats</span>
                                     </Button>
                                     <Button
                                       size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700"
+                                      className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm px-2 py-1 h-8 sm:h-9"
                                       onClick={() => {
                                         setSelectedMatchForResults(match.id)
                                         setIsResultsDialogOpen(true)
@@ -1704,8 +1707,11 @@ export default function MemberDashboard() {
                                         })
                                       }}
                                     >
-                                      <Edit className="h-4 w-4 mr-2" />
-                                      {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
+                                      <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                      <span className="hidden xs:inline">
+                                        {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
+                                      </span>
+                                      <span className="xs:hidden">Edit</span>
                                     </Button>
                                   </div>
                                 )}
@@ -2638,22 +2644,26 @@ export default function MemberDashboard() {
         </Dialog>
 
         {selectedMatchForStats && (
-          <MatchStatistics
-            match={selectedMatchForStats}
-            myTeamId={(() => {
-              const userTeamIds = teamMemberships.map((tm) => tm.team_id)
-              const isUserTeamHome = userTeamIds.includes(selectedMatchForStats.home_team_id)
-              const isUserTeamAway = userTeamIds.includes(selectedMatchForStats.away_team_id)
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2">
+            <div className="w-full max-w-[95vw] sm:max-w-lg md:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-hidden">
+              <MatchStatistics
+                match={selectedMatchForStats}
+                myTeamId={(() => {
+                  const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+                  const isUserTeamHome = userTeamIds.includes(selectedMatchForStats.home_team_id)
+                  const isUserTeamAway = userTeamIds.includes(selectedMatchForStats.away_team_id)
 
-              if (isUserTeamHome) return selectedMatchForStats.home_team_id
-              if (isUserTeamAway) return selectedMatchForStats.away_team_id
-              return userTeamIds[0] || selectedMatchForStats.home_team_id // fallback
-            })()}
-            onClose={() => {
-              setSelectedMatchForStats(null)
-              setIsStatsDialogOpen(false)
-            }}
-          />
+                  if (isUserTeamHome) return selectedMatchForStats.home_team_id
+                  if (isUserTeamAway) return selectedMatchForStats.away_team_id
+                  return userTeamIds[0] || selectedMatchForStats.home_team_id // fallback
+                })()}
+                onClose={() => {
+                  setSelectedMatchForStats(null)
+                  setIsStatsDialogOpen(false)
+                }}
+              />
+            </div>
+          </div>
         )}
 
         <Dialog
@@ -2663,23 +2673,21 @@ export default function MemberDashboard() {
             if (!open) setSelectedMatchForResults(null)
           }}
         >
-          <DialogContent className="w-[95vw] max-w-sm sm:max-w-md mx-auto">
-            <DialogHeader className="text-center pb-3 sm:pb-4">
-              <DialogTitle className="text-base sm:text-lg lg:text-xl font-semibold">
-                Spielergebnis eintragen
-              </DialogTitle>
+          <DialogContent className="w-[90vw] max-w-xs sm:max-w-sm mx-auto">
+            <DialogHeader className="text-center pb-2 sm:pb-3">
+              <DialogTitle className="text-sm sm:text-base font-semibold">Spielergebnis eintragen</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 sm:space-y-6">
-              <div className="bg-muted/30 rounded-lg p-3 sm:p-4">
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 items-center">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="bg-muted/30 rounded-lg p-2 sm:p-3">
+                <div className="grid grid-cols-3 gap-1 sm:gap-2 items-center">
                   <div className="text-center">
-                    <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Heim</Label>
-                    <div className="flex flex-col items-center gap-1 sm:gap-2 mt-2">
+                    <Label className="text-xs font-medium text-muted-foreground">Heim</Label>
+                    <div className="flex flex-col items-center gap-1 mt-1">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 bg-transparent text-xs sm:text-sm"
+                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
                         onClick={() =>
                           setEditMatchScores((prev) => ({
                             ...prev,
@@ -2700,13 +2708,13 @@ export default function MemberDashboard() {
                             home: Number.parseInt(e.target.value) || 0,
                           }))
                         }
-                        className="text-center text-lg sm:text-2xl font-bold h-10 sm:h-16 w-full"
+                        className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
                       />
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 bg-transparent text-xs sm:text-sm"
+                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
                         onClick={() =>
                           setEditMatchScores((prev) => ({
                             ...prev,
@@ -2719,16 +2727,16 @@ export default function MemberDashboard() {
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl sm:text-4xl font-bold text-muted-foreground mt-6 sm:mt-8">:</div>
+                    <div className="text-lg sm:text-2xl font-bold text-muted-foreground mt-4 sm:mt-6">:</div>
                   </div>
                   <div className="text-center">
-                    <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Auswärts</Label>
-                    <div className="flex flex-col items-center gap-1 sm:gap-2 mt-2">
+                    <Label className="text-xs font-medium text-muted-foreground">Auswärts</Label>
+                    <div className="flex flex-col items-center gap-1 mt-1">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 bg-transparent text-xs sm:text-sm"
+                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
                         onClick={() =>
                           setEditMatchScores((prev) => ({
                             ...prev,
@@ -2749,13 +2757,13 @@ export default function MemberDashboard() {
                             away: Number.parseInt(e.target.value) || 0,
                           }))
                         }
-                        className="text-center text-lg sm:text-2xl font-bold h-10 sm:h-16 w-full"
+                        className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
                       />
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-6 w-6 sm:h-8 sm:w-8 p-0 bg-transparent text-xs sm:text-sm"
+                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
                         onClick={() =>
                           setEditMatchScores((prev) => ({
                             ...prev,
@@ -2769,10 +2777,10 @@ export default function MemberDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1 bg-transparent"
+                  className="flex-1 bg-transparent text-xs sm:text-sm h-8 sm:h-9"
                   onClick={() => {
                     setIsResultsDialogOpen(false)
                     setSelectedMatchForResults(null)
@@ -2781,7 +2789,7 @@ export default function MemberDashboard() {
                   Abbrechen
                 </Button>
                 <Button
-                  className="flex-1"
+                  className="flex-1 text-xs sm:text-sm h-8 sm:h-9"
                   onClick={() => {
                     if (selectedMatchForResults) {
                       updateMatchResult(selectedMatchForResults, editMatchScores.home, editMatchScores.away)
