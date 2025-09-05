@@ -361,7 +361,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 sm:max-w-md sm:max-h-[90vh] sm:m-4 sm:rounded-lg overflow-hidden">
+      <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 sm:max-w-md sm:max-h-[90vh] sm:m-4 sm:rounded-lg overflow-y-auto">
         <div className="flex flex-col h-full">
           <DialogHeader className="px-3 py-2 sm:px-6 sm:py-4 border-b shrink-0">
             <DialogTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
@@ -375,9 +375,9 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
           <Tabs
             value={activeTab}
             onValueChange={(value) => setActiveTab(value as "lineup" | "legs")}
-            className="flex-1 flex flex-col"
+            className="flex-1 flex flex-col min-h-0"
           >
-            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 h-auto gap-1 px-3 py-2 sm:px-6">
+            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 h-auto gap-1 px-3 py-2 sm:px-6 shrink-0">
               <TabsTrigger value="lineup" className="flex items-center gap-2 py-2 sm:py-3 text-xs sm:text-sm">
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Aufstellung</span>
@@ -390,7 +390,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="lineup" className="space-y-6 p-3 sm:px-6 pb-6">
+            <TabsContent value="lineup" className="space-y-6 p-3 sm:px-6 pb-6 overflow-y-auto flex-1">
               <div className="grid grid-cols-1 gap-6">
                 <Card>
                   <CardHeader>
@@ -412,7 +412,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
               </div>
             </TabsContent>
 
-            <TabsContent value="legs" className="space-y-4 sm:space-y-6 p-3 sm:px-6 pb-6 flex-1 flex flex-col">
+            <TabsContent value="legs" className="space-y-4 sm:space-y-6 p-3 sm:px-6 pb-6 flex-1 overflow-y-auto">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-4">
                   <h3 className="text-lg sm:text-xl font-semibold">Leg {currentLeg}</h3>
