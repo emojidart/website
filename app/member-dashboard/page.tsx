@@ -1338,50 +1338,52 @@ export default function MemberDashboard() {
             setActiveMainTab(value as "dashboard" | "statistics" | "penalties" | "ligatabellen")
           }
         >
-          <TabsList className="grid w-full grid-cols-4 mb-4 sm:mb-6 lg:mb-8 h-auto gap-1 sm:gap-2">
+          <TabsList className="grid w-full grid-cols-4 mb-4 sm:mb-6 lg:mb-8 h-auto gap-1 sm:gap-2 lg:gap-4 max-w-4xl mx-auto">
             <TabsTrigger
               value="dashboard"
-              className="flex flex-col items-center gap-1 py-2 sm:py-3 text-xs sm:text-sm px-1 sm:px-2"
+              className="flex flex-col items-center gap-1 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm lg:text-base px-1 sm:px-2 lg:px-4"
             >
-              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
               <span className="truncate">Dashboard</span>
             </TabsTrigger>
             <TabsTrigger
               value="statistics"
-              className="flex flex-col items-center gap-1 py-2 sm:py-3 text-xs sm:text-sm px-1 sm:px-2"
+              className="flex flex-col items-center gap-1 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm lg:text-base px-1 sm:px-2 lg:px-4"
             >
-              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="truncate">Stats</span>
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+              <span className="truncate">Statistiken</span>
             </TabsTrigger>
             <TabsTrigger
               value="penalties"
-              className="flex flex-col items-center gap-1 py-2 sm:py-3 text-xs sm:text-sm px-1 sm:px-2"
+              className="flex flex-col items-center gap-1 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm lg:text-base px-1 sm:px-2 lg:px-4"
             >
-              <Euro className="h-3 w-3 sm:h-4 sm:w-4" />
+              <Euro className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
               <span className="truncate">Bonus</span>
             </TabsTrigger>
             <TabsTrigger
               value="ligatabellen"
-              className="flex flex-col items-center gap-1 py-2 sm:py-3 text-xs sm:text-sm px-1 sm:px-2"
+              className="flex flex-col items-center gap-1 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm lg:text-base px-1 sm:px-2 lg:px-4"
             >
-              <Table className="h-3 w-3 sm:h-4 sm:w-4" />
+              <Table className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
               <span className="truncate">Liga</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {/* Profile Card */}
-              <div className="lg:col-span-1">
+              <div className="xl:col-span-1">
                 <Card className="shadow-xl border-0 bg-white">
                   <CardHeader className="text-center pb-4">
                     <div className="flex flex-col items-center">
                       <div className="relative">
-                        <Avatar className="h-16 w-16 sm:h-24 sm:w-24 mb-4 border-4 border-orange-500 shadow-lg">
+                        <Avatar className="h-16 w-16 sm:h-24 sm:w-24 lg:h-32 lg:w-32 mb-4 border-4 border-orange-500 shadow-lg">
                           <AvatarImage
                             src={
                               profile?.club_players?.photo_url ||
                               "/placeholder.svg?height=96&width=96&query=darts-player" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
@@ -1549,35 +1551,35 @@ export default function MemberDashboard() {
                 {/* Team Memberships */}
                 <Card className="shadow-xl border-0 bg-white">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                      <Users className="h-6 w-6 text-orange-600" />
+                    <CardTitle className="flex items-center gap-2 text-xl lg:text-2xl font-bold">
+                      <Users className="h-6 w-6 lg:h-7 lg:w-7 text-orange-600" />
                       Meine Teams
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {teamMemberships.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
-                        <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p>Du bist noch keinem Team zugeordnet.</p>
-                        <p className="text-sm mt-2">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
+                        <Users className="h-12 w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-300" />
+                        <p className="text-base lg:text-lg">Du bist noch keinem Team zugeordnet.</p>
+                        <p className="text-sm lg:text-base mt-2">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 gap-4 lg:gap-6">
                         {teamMemberships.map((membership) => (
                           <div
                             key={membership.id}
-                            className="border-2 border-gray-200 rounded-xl p-4 hover:border-orange-300 transition-colors"
+                            className="border-2 border-gray-200 rounded-xl p-4 lg:p-6 hover:border-orange-300 transition-colors"
                           >
                             <div className="flex items-center gap-3 mb-3">
                               {membership.teams?.logo_url ? (
-                                <Avatar className="h-12 w-12">
+                                <Avatar className="h-12 w-12 lg:h-16 lg:w-16">
                                   <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
-                                  <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">
+                                  <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-lg lg:text-xl">
                                     {membership.teams.name?.charAt(0)}
                                   </AvatarFallback>
                                 </Avatar>
                               ) : (
-                                <div className="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center">
+                                <div className="h-12 w-12 lg:h-16 lg:w-16 bg-orange-100 rounded-full flex items-center justify-center">
                                   <Target className="h-6 w-6 text-orange-600" />
                                 </div>
                               )}
@@ -1660,6 +1662,8 @@ export default function MemberDashboard() {
                                           src={
                                             member.club_players?.photo_url ||
                                             "/placeholder.svg?height=32&width=32&query=darts-player" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
@@ -2766,8 +2770,8 @@ export default function MemberDashboard() {
         </Dialog>
 
         {selectedMatchForStats && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2">
-            <div className="w-full max-w-[95vw] sm:max-w-lg md:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-hidden">
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4 md:p-6">
+            <div className="w-full h-full max-w-[98vw] max-h-[95vh] sm:max-w-3xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl sm:h-auto overflow-hidden">
               <MatchStatistics
                 match={selectedMatchForStats}
                 myTeamId={(() => {

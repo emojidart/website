@@ -361,13 +361,13 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 sm:max-w-md sm:max-h-[90vh] sm:m-4 sm:rounded-lg overflow-y-auto">
+      <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 sm:max-w-2xl md:max-w-4xl lg:max-w-6xl xl:max-w-7xl sm:max-h-[95vh] sm:m-4 sm:rounded-lg overflow-y-auto">
         <div className="flex flex-col h-full">
-          <DialogHeader className="px-3 py-2 sm:px-6 sm:py-4 border-b shrink-0">
-            <DialogTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+          <DialogHeader className="px-3 py-2 sm:px-6 md:px-8 sm:py-4 border-b shrink-0">
+            <DialogTitle className="text-base sm:text-lg md:text-xl font-semibold flex items-center gap-2">
               🎯 Spielstatistiken - {teamName}
             </DialogTitle>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
               {formatDate(matchDate)} • {matchTime}
             </p>
           </DialogHeader>
@@ -377,20 +377,26 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
             onValueChange={(value) => setActiveTab(value as "lineup" | "legs")}
             className="flex-1 flex flex-col min-h-0"
           >
-            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 h-auto gap-1 px-3 py-2 sm:px-6 shrink-0">
-              <TabsTrigger value="lineup" className="flex items-center gap-2 py-2 sm:py-3 text-xs sm:text-sm">
-                <Users className="h-4 w-4" />
+            <TabsList className="grid w-full grid-cols-2 h-auto gap-1 px-3 py-2 sm:px-6 md:px-8 shrink-0">
+              <TabsTrigger
+                value="lineup"
+                className="flex items-center gap-2 py-2 sm:py-3 text-xs sm:text-sm md:text-base"
+              >
+                <Users className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Aufstellung</span>
                 <span className="sm:hidden">Team</span>
               </TabsTrigger>
-              <TabsTrigger value="legs" className="flex items-center gap-2 py-2 sm:py-3 text-xs sm:text-sm">
-                <TrendingUp className="h-4 w-4" />
+              <TabsTrigger
+                value="legs"
+                className="flex items-center gap-2 py-2 sm:py-3 text-xs sm:text-sm md:text-base"
+              >
+                <TrendingUp className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Spielerstatistiken nach Spiel</span>
                 <span className="sm:hidden">Statistiken</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="lineup" className="space-y-6 p-3 sm:px-6 pb-6 overflow-y-auto flex-1">
+            <TabsContent value="lineup" className="space-y-6 p-3 sm:px-6 md:px-8 pb-6 overflow-y-auto flex-1">
               <div className="grid grid-cols-1 gap-6">
                 <Card>
                   <CardHeader>
@@ -412,11 +418,14 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
               </div>
             </TabsContent>
 
-            <TabsContent value="legs" className="space-y-4 sm:space-y-6 p-3 sm:px-6 pb-6 flex-1 overflow-y-auto">
+            <TabsContent
+              value="legs"
+              className="space-y-4 sm:space-y-6 p-3 sm:px-6 md:px-8 pb-6 flex-1 overflow-y-auto"
+            >
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-4">
-                  <h3 className="text-lg sm:text-xl font-semibold">Leg {currentLeg}</h3>
-                  <Badge variant={isLegActive ? "default" : "secondary"} className="px-2 py-1 text-xs">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-semibold">Leg {currentLeg}</h3>
+                  <Badge variant={isLegActive ? "default" : "secondary"} className="px-2 py-1 text-xs sm:text-sm">
                     {isLegActive ? "🎯 Aktiv" : "⏸️ Bereit"}
                   </Badge>
                 </div>
@@ -609,7 +618,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                 </CardTitle>
                               </CardHeader>
                               <CardContent className="pt-3 sm:pt-4 lg:pt-6">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
                                   <NumberInput
                                     id={`${targetPlayerId}_180`}
                                     label="180er"
@@ -761,7 +770,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                         <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                         Spieler-Gesamtstatistik für dieses Match
                       </h4>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                         {(() => {
                           const playerTotals: { [key: string]: any } = {}
 
