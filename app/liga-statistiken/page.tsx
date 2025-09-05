@@ -357,36 +357,45 @@ export default function LigaPage() {
 
           <motion.div variants={itemVariants}>
             <Tabs defaultValue="standings" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-4 sm:mb-8 gap-1">
-                <TabsTrigger value="standings" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                  <Trophy className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Tabelle</span>
-                  <span className="sm:hidden">Tab.</span>
-                </TabsTrigger>
-                <TabsTrigger value="results" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                  <Target className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Ergebnisse</span>
-                  <span className="sm:hidden">Erg.</span>
-                </TabsTrigger>
-                <TabsTrigger value="fixtures" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Termine</span>
-                  <span className="sm:hidden">Term.</span>
-                </TabsTrigger>
-                <TabsTrigger value="teams" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                  <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Teams</span>
-                  <span className="sm:hidden">Teams</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="legstats"
-                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm col-span-2 sm:col-span-1"
-                >
-                  <Target className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Spieler-Statistiken</span>
-                  <span className="sm:hidden">Stats</span>
-                </TabsTrigger>
-              </TabsList>
+              <div className="mb-4 sm:mb-8">
+                <TabsList className="grid w-full grid-cols-5 h-auto p-1 sm:p-1 lg:grid-cols-5 overflow-x-auto">
+                  <TabsTrigger
+                    value="standings"
+                    className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0"
+                  >
+                    <Trophy className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Tabelle</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="results"
+                    className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0"
+                  >
+                    <Target className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Ergebnisse</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="fixtures"
+                    className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0"
+                  >
+                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Termine</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="teams"
+                    className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0"
+                  >
+                    <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Teams</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="legstats"
+                    className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0"
+                  >
+                    <Target className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Statistiken</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="standings">
                 <Card className="overflow-hidden shadow-lg">
