@@ -38,6 +38,7 @@ import {
   Table,
   RefreshCw,
   ExternalLink,
+  Eye,
 } from "lucide-react"
 import {
   Dialog,
@@ -145,6 +146,7 @@ interface Match {
   away_opponent_team: any | null
   home_team_type: string
   away_team_type: string
+  team_photo_url?: string | null
 }
 
 interface OpponentTeam {
@@ -226,7 +228,15 @@ export default function MemberDashboard() {
   const [photoUploading, setPhotoUploading] = useState(false)
   const [photoMessage, setPhotoMessage] = useState("")
 
+  const [teamPhotoFile, setTeamPhotoFile] = useState<File | null>(null)
+  const [teamPhotoPreview, setTeamPhotoPreview] = useState<string | null>(null)
+  const [isTeamPhotoDialogOpen, setIsTeamPhotoDialogOpen] = useState(false)
+  const [teamPhotoUploading, setTeamPhotoUploading] = useState(false)
+  const [teamPhotoMessage, setTeamPhotoMessage] = useState("")
+  const [selectedMatchForTeamPhoto, setSelectedMatchForTeamPhoto] = useState<string | null>(null)
+
   const [statsPlayerId, setStatsPlayerId] = useState<string>("")
+
   const [gameDate, setGameDate] = useState<string>(new Date().toISOString().split("T")[0])
 
   useEffect(() => {
@@ -1013,6 +1023,95 @@ export default function MemberDashboard() {
     }
   }
 
+  const handleTeamPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setTeamPhotoFile(file)
+      setTeamPhotoPreview(URL.createObjectURL(file))
+    } else {
+      setTeamPhotoFile(null)
+      setTeamPhotoPreview(null)
+    }
+  }
+
+  const handleTeamPhotoUpload = async () => {
+    if (!teamPhotoFile || !selectedMatchForTeamPhoto) return
+
+    setTeamPhotoUploading(true)
+    setTeamPhotoMessage("")
+
+    try {
+      const fileExtension = teamPhotoFile.name.split(".").pop()
+      const filePath = `team-photos/match-${selectedMatchForTeamPhoto}-${Date.now()}.${fileExtension}`
+
+      // Upload to Supabase storage
+      const { error: uploadError } = await supabase.storage.from("team-photos").upload(filePath, teamPhotoFile, {
+        cacheControl: "3600",
+        upsert: false,
+      })
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage.from("team-photos").getPublicUrl(filePath)
+
+      // Update match record
+      const { error: updateError } = await supabase
+        .from("matches")
+        .update({ team_photo_url: publicUrlData.publicUrl })
+        .eq("id", selectedMatchForTeamPhoto)
+
+      if (updateError) {
+        throw updateError
+      }
+
+      // Refresh matches data
+      await fetchTeamMembers()
+
+      setTeamPhotoMessage("Teamfoto erfolgreich hochgeladen!")
+      setIsTeamPhotoDialogOpen(false)
+      setTeamPhotoFile(null)
+      setTeamPhotoPreview(null)
+      setSelectedMatchForTeamPhoto(null)
+    } catch (error: any) {
+      setTeamPhotoMessage(`Fehler beim Hochladen: ${error.message}`)
+    } finally {
+      setTeamPhotoUploading(false)
+    }
+  }
+
+  const handleTeamPhotoRemove = async () => {
+    if (!selectedMatchForTeamPhoto) return
+
+    setTeamPhotoUploading(true)
+    setTeamPhotoMessage("")
+
+    try {
+      // Update match record to remove photo URL
+      const { error: updateError } = await supabase
+        .from("matches")
+        .update({ team_photo_url: null })
+        .eq("id", selectedMatchForTeamPhoto)
+
+      if (updateError) {
+        throw updateError
+      }
+
+      // Refresh matches data
+      await fetchTeamMembers()
+
+      setTeamPhotoMessage("Teamfoto erfolgreich entfernt!")
+      setIsTeamPhotoDialogOpen(false)
+      setSelectedMatchForTeamPhoto(null)
+    } catch (error: any) {
+      setTeamPhotoMessage(`Fehler beim Entfernen: ${error.message}`)
+    } finally {
+      setTeamPhotoUploading(false)
+    }
+  }
+
   const fetchLegStatistics = async () => {
     if (!isLeadershipRole()) return
 
@@ -1283,6 +1382,8 @@ export default function MemberDashboard() {
                             src={
                               profile?.club_players?.photo_url ||
                               "/placeholder.svg?height=96&width=96&query=darts-player" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
@@ -1580,6 +1681,8 @@ export default function MemberDashboard() {
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
                                             "/placeholder.svg"
                                           }
                                         />
@@ -1713,6 +1816,25 @@ export default function MemberDashboard() {
                                   >
                                     <Edit className="h-4 w-4 mr-2" />
                                     {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className={`flex-1 max-w-[140px] flex items-center justify-center ${
+                                      match.team_photo_url
+                                        ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                                        : "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                                    }`}
+                                    onClick={() => {
+                                      setSelectedMatchForTeamPhoto(match.id)
+                                      setIsTeamPhotoDialogOpen(true)
+                                      setTeamPhotoFile(null)
+                                      setTeamPhotoPreview(null)
+                                      setTeamPhotoMessage("")
+                                    }}
+                                  >
+                                    <Camera className="h-4 w-4 mr-2" />
+                                    {match.team_photo_url ? "Foto ansehen" : "Teamfoto"}
                                   </Button>
                                 </div>
                               )}
@@ -2107,7 +2229,7 @@ export default function MemberDashboard() {
                                     acc[playerId].total95Plus += stat.throws_95_plus || 0
                                     acc[playerId].totalUnder26 += stat.throws_under_26 || 0
                                     acc[playerId].totalUnder30 += stat.throws_under_30 || 0
-                                    acc[playerId].totalSemperit += stat.semperit_outs || 0
+                                    acc[playerId].totalSemperit += stat.throws_semperit_outs || 0
                                     acc[playerId].totalBull += stat.throws_bull || 0
 
                                     return acc
@@ -2800,6 +2922,131 @@ export default function MemberDashboard() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={isTeamPhotoDialogOpen && selectedMatchForTeamPhoto !== null}
+          onOpenChange={(open) => {
+            setIsTeamPhotoDialogOpen(open)
+            if (!open) {
+              setSelectedMatchForTeamPhoto(null)
+              setTeamPhotoFile(null)
+              setTeamPhotoPreview(null)
+              setTeamPhotoMessage("")
+            }
+          }}
+        >
+          <DialogContent className="w-[90vw] max-w-md mx-auto">
+            <DialogHeader className="text-center pb-2 sm:pb-3">
+              <DialogTitle className="text-sm sm:text-base font-semibold">Teamfoto hochladen</DialogTitle>
+              <DialogDescription>
+                Lade ein Teamfoto für dieses Spiel hoch oder entferne das aktuelle Foto.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {(() => {
+                const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
+                const hasExistingPhoto = currentMatch?.team_photo_url
+
+                return (
+                  <>
+                    {hasExistingPhoto && !teamPhotoPreview && (
+                      <div className="space-y-2">
+                        <Label>Aktuelles Teamfoto</Label>
+                        <div className="flex items-center justify-center">
+                          <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
+                            <Image
+                              src={currentMatch.team_photo_url || "/placeholder.svg"}
+                              alt="Aktuelles Teamfoto"
+                              fill
+                              style={{ objectFit: "cover" }}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-center">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(currentMatch.team_photo_url, "_blank")}
+                            className="text-green-600 border-green-600 hover:bg-green-50"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Foto in voller Größe ansehen
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="teamPhoto">
+                        {hasExistingPhoto ? "Neues Teamfoto auswählen" : "Teamfoto auswählen"}
+                      </Label>
+                      <Input
+                        id="teamPhoto"
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleTeamPhotoChange}
+                        className="file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                      />
+                    </div>
+
+                    {teamPhotoPreview && (
+                      <div className="space-y-2">
+                        <Label>Neue Foto Vorschau</Label>
+                        <div className="flex items-center justify-center">
+                          <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
+                            <Image
+                              src={teamPhotoPreview || "/placeholder.svg"}
+                              alt="Teamfoto Vorschau"
+                              fill
+                              style={{ objectFit: "cover" }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
+
+              {teamPhotoMessage && (
+                <Alert>
+                  <AlertDescription>{teamPhotoMessage}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              {(() => {
+                const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
+                const hasExistingPhoto = currentMatch?.team_photo_url
+
+                return (
+                  <>
+                    {hasExistingPhoto && (
+                      <Button
+                        variant="destructive"
+                        onClick={handleTeamPhotoRemove}
+                        disabled={teamPhotoUploading}
+                        className="w-full sm:w-auto"
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Foto entfernen
+                      </Button>
+                    )}
+                    <Button
+                      onClick={handleTeamPhotoUpload}
+                      disabled={teamPhotoUploading || !teamPhotoFile}
+                      className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {teamPhotoUploading ? "Wird hochgeladen..." : hasExistingPhoto ? "Foto ersetzen" : "Hochladen"}
+                    </Button>
+                  </>
+                )
+              })()}
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </main>
