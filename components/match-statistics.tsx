@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Users, Save, Play, Target, Trophy, TrendingUp, Crown } from "lucide-react"
+import { Users, Save, Play, Target, Trophy, TrendingUp, Crown, Minus, Plus } from "lucide-react"
 import { createBrowserClient } from "@supabase/ssr"
 import TeamLineupSelector from "@/components/team-lineup-selector"
 
@@ -85,6 +87,79 @@ interface MatchStatisticsProps {
   onClose: () => void
   myTeamId: string
   myTeam: Team | null // Declare myTeam variable
+}
+
+const NumberInput = ({
+  id,
+  label,
+  value,
+  onChange,
+  min = 0,
+}: {
+  id: string
+  label: string
+  value: number
+  onChange: (value: number) => void
+  min?: number
+}) => {
+  const handleDecrement = () => {
+    const newValue = Math.max(min, (value || 0) - 1)
+    onChange(newValue)
+  }
+
+  const handleIncrement = () => {
+    onChange((value || 0) + 1)
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value
+    if (inputValue === "") {
+      onChange(0)
+    } else {
+      const numValue = Number.parseInt(inputValue)
+      if (!isNaN(numValue) && numValue >= min) {
+        onChange(numValue)
+      }
+    }
+  }
+
+  return (
+    <div>
+      <Label htmlFor={id} className="text-xs sm:text-sm font-medium">
+        {label}
+      </Label>
+      <div className="flex items-center mt-1 border rounded-md">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleDecrement}
+          disabled={value <= min}
+          className="h-11 w-11 p-0 rounded-none border-r hover:bg-gray-100"
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+        <Input
+          id={id}
+          type="number"
+          min={min}
+          value={value || ""}
+          onChange={handleInputChange}
+          className="border-0 text-center h-11 focus-visible:ring-0 focus-visible:ring-offset-0"
+          placeholder="0"
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleIncrement}
+          className="h-11 w-11 p-0 rounded-none border-l hover:bg-gray-100"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStatisticsProps) {
@@ -551,96 +626,42 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                     className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
-                                <div>
-                                  <Label htmlFor={`${targetPlayerId}_15`} className="text-xs sm:text-sm font-medium">
-                                    15er
-                                  </Label>
-                                  <Input
-                                    id={`${targetPlayerId}_15`}
-                                    type="number"
-                                    min="0"
-                                    value={legFormData[`${targetPlayerId}_15`] || 0}
-                                    onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_15`, Number.parseInt(e.target.value) || 0)
-                                    }
-                                    className="mt-1 min-h-[44px] touch-manipulation"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`${targetPlayerId}_16`} className="text-xs sm:text-sm font-medium">
-                                    16er
-                                  </Label>
-                                  <Input
-                                    id={`${targetPlayerId}_16`}
-                                    type="number"
-                                    min="0"
-                                    value={legFormData[`${targetPlayerId}_16`] || 0}
-                                    onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_16`, Number.parseInt(e.target.value) || 0)
-                                    }
-                                    className="mt-1 min-h-[44px] touch-manipulation"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`${targetPlayerId}_17`} className="text-xs sm:text-sm font-medium">
-                                    17er
-                                  </Label>
-                                  <Input
-                                    id={`${targetPlayerId}_17`}
-                                    type="number"
-                                    min="0"
-                                    value={legFormData[`${targetPlayerId}_17`] || 0}
-                                    onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_17`, Number.parseInt(e.target.value) || 0)
-                                    }
-                                    className="mt-1 min-h-[44px] touch-manipulation"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`${targetPlayerId}_18`} className="text-xs sm:text-sm font-medium">
-                                    18er
-                                  </Label>
-                                  <Input
-                                    id={`${targetPlayerId}_18`}
-                                    type="number"
-                                    min="0"
-                                    value={legFormData[`${targetPlayerId}_18`] || 0}
-                                    onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_18`, Number.parseInt(e.target.value) || 0)
-                                    }
-                                    className="mt-1 min-h-[44px] touch-manipulation"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`${targetPlayerId}_19`} className="text-xs sm:text-sm font-medium">
-                                    19er
-                                  </Label>
-                                  <Input
-                                    id={`${targetPlayerId}_19`}
-                                    type="number"
-                                    min="0"
-                                    value={legFormData[`${targetPlayerId}_19`] || 0}
-                                    onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_19`, Number.parseInt(e.target.value) || 0)
-                                    }
-                                    className="mt-1 min-h-[44px] touch-manipulation"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`${targetPlayerId}_20`} className="text-xs sm:text-sm font-medium">
-                                    20er
-                                  </Label>
-                                  <Input
-                                    id={`${targetPlayerId}_20`}
-                                    type="number"
-                                    min="0"
-                                    value={legFormData[`${targetPlayerId}_20`] || 0}
-                                    onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_20`, Number.parseInt(e.target.value) || 0)
-                                    }
-                                    className="mt-1 min-h-[44px] touch-manipulation"
-                                  />
-                                </div>
+                                <NumberInput
+                                  id={`${targetPlayerId}_15`}
+                                  label="15er"
+                                  value={legFormData[`${targetPlayerId}_15`] || 0}
+                                  onChange={(value) => updateLegFormData(`${targetPlayerId}_15`, value)}
+                                />
+                                <NumberInput
+                                  id={`${targetPlayerId}_16`}
+                                  label="16er"
+                                  value={legFormData[`${targetPlayerId}_16`] || 0}
+                                  onChange={(value) => updateLegFormData(`${targetPlayerId}_16`, value)}
+                                />
+                                <NumberInput
+                                  id={`${targetPlayerId}_17`}
+                                  label="17er"
+                                  value={legFormData[`${targetPlayerId}_17`] || 0}
+                                  onChange={(value) => updateLegFormData(`${targetPlayerId}_17`, value)}
+                                />
+                                <NumberInput
+                                  id={`${targetPlayerId}_18`}
+                                  label="18er"
+                                  value={legFormData[`${targetPlayerId}_18`] || 0}
+                                  onChange={(value) => updateLegFormData(`${targetPlayerId}_18`, value)}
+                                />
+                                <NumberInput
+                                  id={`${targetPlayerId}_19`}
+                                  label="19er"
+                                  value={legFormData[`${targetPlayerId}_19`] || 0}
+                                  onChange={(value) => updateLegFormData(`${targetPlayerId}_19`, value)}
+                                />
+                                <NumberInput
+                                  id={`${targetPlayerId}_20`}
+                                  label="20er"
+                                  value={legFormData[`${targetPlayerId}_20`] || 0}
+                                  onChange={(value) => updateLegFormData(`${targetPlayerId}_20`, value)}
+                                />
                                 <div>
                                   <Label
                                     htmlFor={`${targetPlayerId}_high_tonne`}
