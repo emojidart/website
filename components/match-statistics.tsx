@@ -226,7 +226,12 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
         leg_wins: legWinnerIds.includes(playerId) ? 1 : 0,
         throws_180: legFormData[`${playerId}_180`] || 0,
         throws_171: legFormData[`${playerId}_171`] || 0,
-        throws_154: legFormData[`${playerId}_154`] || 0,
+        throws_15: legFormData[`${playerId}_15`] || 0,
+        throws_16: legFormData[`${playerId}_16`] || 0,
+        throws_17: legFormData[`${playerId}_17`] || 0,
+        throws_18: legFormData[`${playerId}_18`] || 0,
+        throws_19: legFormData[`${playerId}_19`] || 0,
+        throws_20: legFormData[`${playerId}_20`] || 0,
         throws_high_tonne: legFormData[`${playerId}_high_tonne`] || 0,
         throws_tonne: legFormData[`${playerId}_tonne`] || 0,
         throws_shanghai: legFormData[`${playerId}_shanghai`] || 0,
@@ -289,7 +294,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
             </TabsTrigger>
             <TabsTrigger value="legs" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
-              Leg Statistiken
+              Spielerstatistiken nach Spiel
             </TabsTrigger>
           </TabsList>
 
@@ -355,7 +360,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                     <Card className="bg-amber-50 border-amber-200">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-lg flex items-center gap-2">
-                          <Crown className="h-5 w-5 text-amber-600" />
+                          <Crown className="h-4 w-4 text-amber-600" />
                           Leg-Gewinner auswählen
                         </CardTitle>
                       </CardHeader>
@@ -539,23 +544,98 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor={`${targetPlayerId}_154`} className="text-sm font-medium">
-                                    154er
+                                  <Label htmlFor={`${targetPlayerId}_15`} className="text-sm font-medium">
+                                    15er
                                   </Label>
                                   <Input
-                                    id={`${targetPlayerId}_154`}
+                                    id={`${targetPlayerId}_15`}
                                     type="number"
                                     min="0"
-                                    value={legFormData[`${targetPlayerId}_154`] || 0}
+                                    value={legFormData[`${targetPlayerId}_15`] || 0}
                                     onChange={(e) =>
-                                      updateLegFormData(`${targetPlayerId}_154`, Number.parseInt(e.target.value) || 0)
+                                      updateLegFormData(`${targetPlayerId}_15`, Number.parseInt(e.target.value) || 0)
+                                    }
+                                    className="mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor={`${targetPlayerId}_16`} className="text-sm font-medium">
+                                    16er
+                                  </Label>
+                                  <Input
+                                    id={`${targetPlayerId}_16`}
+                                    type="number"
+                                    min="0"
+                                    value={legFormData[`${targetPlayerId}_16`] || 0}
+                                    onChange={(e) =>
+                                      updateLegFormData(`${targetPlayerId}_16`, Number.parseInt(e.target.value) || 0)
+                                    }
+                                    className="mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor={`${targetPlayerId}_17`} className="text-sm font-medium">
+                                    17er
+                                  </Label>
+                                  <Input
+                                    id={`${targetPlayerId}_17`}
+                                    type="number"
+                                    min="0"
+                                    value={legFormData[`${targetPlayerId}_17`] || 0}
+                                    onChange={(e) =>
+                                      updateLegFormData(`${targetPlayerId}_17`, Number.parseInt(e.target.value) || 0)
+                                    }
+                                    className="mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor={`${targetPlayerId}_18`} className="text-sm font-medium">
+                                    18er
+                                  </Label>
+                                  <Input
+                                    id={`${targetPlayerId}_18`}
+                                    type="number"
+                                    min="0"
+                                    value={legFormData[`${targetPlayerId}_18`] || 0}
+                                    onChange={(e) =>
+                                      updateLegFormData(`${targetPlayerId}_18`, Number.parseInt(e.target.value) || 0)
+                                    }
+                                    className="mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor={`${targetPlayerId}_19`} className="text-sm font-medium">
+                                    19er
+                                  </Label>
+                                  <Input
+                                    id={`${targetPlayerId}_19`}
+                                    type="number"
+                                    min="0"
+                                    value={legFormData[`${targetPlayerId}_19`] || 0}
+                                    onChange={(e) =>
+                                      updateLegFormData(`${targetPlayerId}_19`, Number.parseInt(e.target.value) || 0)
+                                    }
+                                    className="mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor={`${targetPlayerId}_20`} className="text-sm font-medium">
+                                    20er
+                                  </Label>
+                                  <Input
+                                    id={`${targetPlayerId}_20`}
+                                    type="number"
+                                    min="0"
+                                    value={legFormData[`${targetPlayerId}_20`] || 0}
+                                    onChange={(e) =>
+                                      updateLegFormData(`${targetPlayerId}_20`, Number.parseInt(e.target.value) || 0)
                                     }
                                     className="mt-1"
                                   />
                                 </div>
                                 <div>
                                   <Label htmlFor={`${targetPlayerId}_high_tonne`} className="text-sm font-medium">
-                                    High Tonne
+                                    High Ton
                                   </Label>
                                   <Input
                                     id={`${targetPlayerId}_high_tonne`}
@@ -573,7 +653,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                 </div>
                                 <div>
                                   <Label htmlFor={`${targetPlayerId}_tonne`} className="text-sm font-medium">
-                                    Tonne
+                                    Ton
                                   </Label>
                                   <Input
                                     id={`${targetPlayerId}_tonne`}
@@ -641,7 +721,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
 
                               <div className="mt-6 pt-4 border-t-2 border-red-200">
                                 <h4 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
-                                  ⚠️ Check Bilanz
+                                  ⚠️Under-Score
                                 </h4>
                                 <div className="grid grid-cols-3 gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
                                   <div>
@@ -744,6 +824,201 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
+                  <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                    <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-blue-600" />
+                      Spieler-Gesamtstatistik für dieses Match
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {(() => {
+                        const playerTotals: { [key: string]: any } = {}
+
+                        legStats.forEach((stat) => {
+                          const playerId = stat.player_id
+                          if (!playerTotals[playerId]) {
+                            playerTotals[playerId] = {
+                              player_id: playerId,
+                              player_name: stat.player_name,
+                              total_legs: 0,
+                              total_wins: 0,
+                              total_180: 0,
+                              total_171: 0,
+                              total_15: 0,
+                              total_16: 0,
+                              total_17: 0,
+                              total_18: 0,
+                              total_19: 0,
+                              total_20: 0,
+                              total_high_tonne: 0,
+                              total_tonne: 0,
+                              total_shanghai: 0,
+                              total_95_plus: 0,
+                              total_under_26: 0,
+                              total_under_30: 0,
+                              total_semperit: 0,
+                              total_bull: 0,
+                              win_percentage: 0,
+                            }
+                          }
+
+                          playerTotals[playerId].total_legs += 1
+                          playerTotals[playerId].total_wins += stat.leg_wins || 0
+                          playerTotals[playerId].total_180 += stat.throws_180 || 0
+                          playerTotals[playerId].total_171 += stat.throws_171 || 0
+                          playerTotals[playerId].total_15 += stat.throws_15 || 0
+                          playerTotals[playerId].total_16 += stat.throws_16 || 0
+                          playerTotals[playerId].total_17 += stat.throws_17 || 0
+                          playerTotals[playerId].total_18 += stat.throws_18 || 0
+                          playerTotals[playerId].total_19 += stat.throws_19 || 0
+                          playerTotals[playerId].total_20 += stat.throws_20 || 0
+                          playerTotals[playerId].total_high_tonne += stat.throws_high_tonne || 0
+                          playerTotals[playerId].total_tonne += stat.throws_tonne || 0
+                          playerTotals[playerId].total_shanghai += stat.throws_shanghai || 0
+                          playerTotals[playerId].total_95_plus += stat.throws_95_plus || 0
+                          playerTotals[playerId].total_under_26 += stat.throws_under_26 || 0
+                          playerTotals[playerId].total_under_30 += stat.throws_under_30 || 0
+                          playerTotals[playerId].total_semperit += stat.semperit_outs || 0
+                          playerTotals[playerId].total_bull += stat.throws_bull || 0
+                        })
+
+                        // Calculate win percentage and sort by wins
+                        const sortedPlayerTotals = Object.values(playerTotals)
+                          .map((stats: any) => ({
+                            ...stats,
+                            win_percentage: stats.total_legs > 0 ? (stats.total_wins / stats.total_legs) * 100 : 0,
+                          }))
+                          .sort((a: any, b: any) => {
+                            if (b.total_wins !== a.total_wins) return b.total_wins - a.total_wins
+                            if (b.total_180 !== a.total_180) return b.total_180 - a.total_180
+                            return b.total_171 - a.total_171
+                          })
+
+                        return sortedPlayerTotals.map((playerTotal: any, index: number) => (
+                          <Card
+                            key={playerTotal.player_id}
+                            className={`${
+                              playerTotal.total_wins > 0
+                                ? "border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100"
+                                : "bg-gradient-to-br from-white to-slate-50"
+                            }`}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h5 className="font-bold text-lg flex items-center gap-2">
+                                  {index === 0 && playerTotal.total_wins > 0 && (
+                                    <Crown className="h-5 w-5 text-amber-600" />
+                                  )}
+                                  {playerTotal.player_name}
+                                </h5>
+                                <div className="flex flex-col items-end gap-1">
+                                  <Badge
+                                    variant={playerTotal.total_wins > 0 ? "default" : "secondary"}
+                                    className={playerTotal.total_wins > 0 ? "bg-green-600 hover:bg-green-700" : ""}
+                                  >
+                                    🏆 {playerTotal.total_wins}/{playerTotal.total_legs} Wins
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {playerTotal.win_percentage.toFixed(1)}% Gewinnrate
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-muted-foreground">High Scores:</span>
+                                  <div className="flex gap-1 flex-wrap">
+                                    {playerTotal.total_180 > 0 && (
+                                      <Badge variant="outline" className="text-xs bg-red-50 border-red-200">
+                                        🎯 {playerTotal.total_180}×180
+                                      </Badge>
+                                    )}
+                                    {playerTotal.total_171 > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        171×{playerTotal.total_171}
+                                      </Badge>
+                                    )}
+                                    {playerTotal.total_15 > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        15×{playerTotal.total_15}
+                                      </Badge>
+                                    )}
+                                    {playerTotal.total_16 > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        16×{playerTotal.total_16}
+                                      </Badge>
+                                    )}
+                                    {playerTotal.total_17 > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        17×{playerTotal.total_17}
+                                      </Badge>
+                                    )}
+                                    {playerTotal.total_18 > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        18×{playerTotal.total_18}
+                                      </Badge>
+                                    )}
+                                    {playerTotal.total_19 > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        19×{playerTotal.total_19}
+                                      </Badge>
+                                    )}
+                                    {playerTotal.total_20 > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        20×{playerTotal.total_20}
+                                      </Badge>
+                                    )}
+                                    {playerTotal.total_high_tonne > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        HT×{playerTotal.total_high_tonne}
+                                      </Badge>
+                                    )}
+                                    {playerTotal.total_tonne > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        T×{playerTotal.total_tonne}
+                                      </Badge>
+                                    )}
+                                    {playerTotal.total_shanghai > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        SH×{playerTotal.total_shanghai}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {(playerTotal.total_under_26 > 0 ||
+                                  playerTotal.total_under_30 > 0 ||
+                                  playerTotal.total_semperit > 0) && (
+                                  <div className="p-2 bg-red-50 rounded border border-red-200">
+                                    <div className="text-xs font-medium text-red-700 mb-1">⚠️ Under-ScoreGesamt:</div>
+                                    <div className="grid grid-cols-3 gap-2 text-xs">
+                                      {playerTotal.total_under_26 > 0 && (
+                                        <div className="text-center">
+                                          <div className="font-medium text-red-600">{playerTotal.total_under_26}</div>
+                                          <div className="text-red-500">U26</div>
+                                        </div>
+                                      )}
+                                      {playerTotal.total_under_30 > 0 && (
+                                        <div className="text-center">
+                                          <div className="font-medium text-red-600">{playerTotal.total_under_30}</div>
+                                          <div className="text-red-500">U30</div>
+                                        </div>
+                                      )}
+                                      {playerTotal.total_semperit > 0 && (
+                                        <div className="text-center">
+                                          <div className="font-medium text-red-600">{playerTotal.total_semperit}</div>
+                                          <div className="text-red-500">Semp</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      })()}
+                    </div>
+                  </div>
                   <div className="space-y-6">
                     {Array.from(new Set(legStats.map((s) => s.leg_number)))
                       .sort((a, b) => b - a)
@@ -755,7 +1030,12 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                             sum +
                             p.throws_180 +
                             p.throws_171 +
-                            p.throws_154 +
+                            p.throws_15 +
+                            p.throws_16 +
+                            p.throws_17 +
+                            p.throws_18 +
+                            p.throws_19 +
+                            p.throws_20 +
                             p.throws_high_tonne +
                             p.throws_tonne +
                             p.throws_shanghai,
@@ -805,81 +1085,22 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                           {stat.leg_wins > 0 && <Crown className="h-4 w-4 text-amber-600" />}
                                           {stat.player_name}
                                         </h5>
-                                        {stat.throws_180 > 0 && (
-                                          <Badge variant="secondary" className="bg-amber-100 text-amber-800">
-                                            🎯 {stat.throws_180}×180
-                                          </Badge>
-                                        )}
-                                      </div>
-
-                                      <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">High Scores:</span>
-                                        <div className="flex gap-2 flex-wrap">
+                                        <div className="flex flex-col items-end gap-1">
+                                          {stat.leg_wins > 0 && (
+                                            <Badge
+                                              variant="default"
+                                              className="bg-green-600 hover:bg-green-700 text-xs"
+                                            >
+                                              🏆 GEWINNER
+                                            </Badge>
+                                          )}
                                           {stat.throws_180 > 0 && (
-                                            <Badge variant="outline" className="text-xs">
-                                              180×{stat.throws_180}
-                                            </Badge>
-                                          )}
-                                          {stat.throws_171 > 0 && (
-                                            <Badge variant="outline" className="text-xs">
-                                              171×{stat.throws_171}
-                                            </Badge>
-                                          )}
-                                          {stat.throws_154 > 0 && (
-                                            <Badge variant="outline" className="text-xs">
-                                              154×{stat.throws_154}
-                                            </Badge>
-                                          )}
-                                          {stat.throws_high_tonne > 0 && (
-                                            <Badge variant="outline" className="text-xs">
-                                              HT×{stat.throws_high_tonne}
-                                            </Badge>
-                                          )}
-                                          {stat.throws_tonne > 0 && (
-                                            <Badge variant="outline" className="text-xs">
-                                              T×{stat.throws_tonne}
-                                            </Badge>
-                                          )}
-                                          {stat.throws_shanghai > 0 && (
-                                            <Badge variant="outline" className="text-xs">
-                                              SH×{stat.throws_shanghai}
-                                            </Badge>
-                                          )}
-                                          {stat.throws_95_plus > 0 && (
-                                            <Badge variant="outline" className="text-xs">
-                                              95+×{stat.throws_95_plus}
+                                            <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-xs">
+                                              🎯 {stat.throws_180}×180
                                             </Badge>
                                           )}
                                         </div>
                                       </div>
-
-                                      {(stat.throws_under_26 > 0 ||
-                                        stat.throws_under_30 > 0 ||
-                                        stat.semperit_outs > 0) && (
-                                        <div className="mt-3 p-2 bg-red-50 rounded border border-red-200">
-                                          <div className="text-xs font-medium text-red-700 mb-1">⚠️ Check Bilanz:</div>
-                                          <div className="grid grid-cols-2 gap-2 text-xs">
-                                            {stat.throws_under_26 > 0 && (
-                                              <div className="flex justify-between text-red-600">
-                                                <span>Unter 26:</span>
-                                                <span className="font-medium">{stat.throws_under_26}</span>
-                                              </div>
-                                            )}
-                                            {stat.throws_under_30 > 0 && (
-                                              <div className="flex justify-between text-red-600">
-                                                <span>Unter 30:</span>
-                                                <span className="font-medium">{stat.throws_under_30}</span>
-                                              </div>
-                                            )}
-                                            {stat.semperit_outs > 0 && (
-                                              <div className="flex justify-between text-red-600">
-                                                <span>Semperit:</span>
-                                                <span className="font-medium">{stat.semperit_outs}</span>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      )}
                                     </CardContent>
                                   </Card>
                                 ))}

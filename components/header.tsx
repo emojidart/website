@@ -175,6 +175,17 @@ export function Header() {
           </Link>
 
           <Link
+            href="/liga-statistiken"
+            className={`text-sm font-bold transition-colors uppercase ${
+              pathname === "/liga-statistiken"
+                ? "text-red-600 border-b-2 border-red-600 pb-1"
+                : "text-gray-900 hover:text-red-600"
+            }`}
+          >
+            Liga
+          </Link>
+
+          <Link
             href="/kontakt"
             className={`text-sm font-bold transition-colors uppercase ${
               pathname === "/kontakt"
@@ -394,6 +405,17 @@ export function Header() {
                 }`}
               >
                 Verein
+              </Link>
+
+              <Link
+                href="/liga-statistiken"
+                className={`flex items-center text-base sm:text-lg font-medium rounded-lg px-4 py-3 transition-all duration-200 ${
+                  pathname === "/liga-statistiken"
+                    ? "bg-red-50 text-red-600 font-bold"
+                    : "text-gray-800 hover:text-red-600 hover:bg-red-50"
+                }`}
+              >
+                Liga
               </Link>
 
               <Link

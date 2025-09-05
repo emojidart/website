@@ -103,7 +103,6 @@ interface LigaStatistic {
   game_date: string
   throws_180: number
   throws_171: number
-  throws_154: number
   throws_under_26: number
   throws_under_30: number
   semperit_outs: number
@@ -201,11 +200,8 @@ export default function MemberDashboard() {
   const [statsMessage, setStatsMessage] = useState<string>("")
   const [statsMessageType, setStatsMessageType] = useState<"success" | "error" | "info">("info")
 
-  const [statsPlayerId, setStatsPlayerId] = useState<string>("")
-  const [gameDate, setGameDate] = useState<string>(new Date().toISOString().split("T")[0])
   const [throws180, setThrows180] = useState<number>(0)
   const [throws171, setThrows171] = useState<number>(0)
-  const [throws154, setThrows154] = useState<number>(0)
   const [throwsUnder26, setThrowsUnder26] = useState<number>(0)
   const [throwsUnder30, setThrowsUnder30] = useState<number>(0)
   const [semperitOuts, setSemperitOuts] = useState<number>(0)
@@ -229,6 +225,9 @@ export default function MemberDashboard() {
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false)
   const [photoUploading, setPhotoUploading] = useState(false)
   const [photoMessage, setPhotoMessage] = useState("")
+
+  const [statsPlayerId, setStatsPlayerId] = useState<string>("")
+  const [gameDate, setGameDate] = useState<string>(new Date().toISOString().split("T")[0])
 
   useEffect(() => {
     const savedConfig = localStorage.getItem("bonusConfig")
@@ -257,6 +256,97 @@ export default function MemberDashboard() {
     } else {
       setPhotoFile(null)
       setPhotoPreview(null)
+    }
+  }
+
+  const fetchTeamMembers = async () => {
+    if (!session?.user) return
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Fetch user profile
+      const { data: profileData, error: profileError } = await supabase
+        .from("user_profiles")
+        .select(`
+          id,
+          user_id,
+          player_id,
+          club_players (
+            id,
+            name,
+            photo_url,
+            throwing_hand,
+            age,
+            origin
+          )
+        `)
+        .eq("user_id", session.user.id)
+        .single()
+
+      if (profileError) {
+        throw profileError
+      }
+
+      setProfile(profileData)
+
+      // Fetch team memberships
+      if (profileData?.player_id) {
+        const { data: teamData, error: teamError } = await supabase
+          .from("team_members")
+          .select(`
+            id,
+            team_id,
+            role,
+            teams (
+              id,
+              name,
+              logo_url
+            )
+          `)
+          .eq("player_id", profileData.player_id)
+
+        if (teamError) {
+          throw teamError
+        }
+
+        setTeamMemberships(teamData || [])
+
+        if (teamData && teamData.length > 0) {
+          const teamIds = teamData.map((team) => team.team_id)
+
+          const { data: membersData, error: membersError } = await supabase
+            .from("team_members")
+            .select(`
+              id,
+              team_id,
+              player_id,
+              role,
+              club_players (
+                id,
+                name,
+                photo_url,
+                throwing_hand,
+                age,
+                origin
+              )
+            `)
+            .in("team_id", teamIds)
+            .order("role", { ascending: false }) // Captain first, then Co-Captain, then Player
+
+          if (membersError) {
+            throw membersError
+          }
+
+          setTeamMembers(membersData || [])
+        }
+      }
+    } catch (err: any) {
+      console.error("Error fetching profile:", err)
+      setError("Fehler beim Laden des Profils")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -380,7 +470,6 @@ export default function MemberDashboard() {
       game_date: stat.game_date,
       throws_180: stat.throws_180 || 0,
       throws_171: stat.throws_171 || 0,
-      throws_154: stat.throws_154 || 0,
       throws_under_26: stat.throws_under_26 || 0,
       throws_under_30: stat.throws_under_30 || 0,
       semperit_outs: stat.semperit_outs || 0,
@@ -455,7 +544,12 @@ export default function MemberDashboard() {
           photo_url: stat.club_players?.photo_url,
           total_180: 0,
           total_171: 0,
-          total_154: 0,
+          total_15: 0,
+          total_16: 0,
+          total_17: 0,
+          total_18: 0,
+          total_19: 0,
+          total_20: 0,
           total_under_26: 0,
           total_semperit: 0,
           total_bull: 0,
@@ -466,7 +560,12 @@ export default function MemberDashboard() {
 
       playerStats[playerId].total_180 += stat.throws_180
       playerStats[playerId].total_171 += stat.throws_171
-      playerStats[playerId].total_154 += stat.throws_154
+      playerStats[playerId].total_15 += stat.throws_15
+      playerStats[playerId].total_16 += stat.throws_16
+      playerStats[playerId].total_17 += stat.throws_17
+      playerStats[playerId].total_18 += stat.throws_18
+      playerStats[playerId].total_19 += stat.throws_19
+      playerStats[playerId].total_20 += stat.throws_20
       playerStats[playerId].total_under_26 += stat.throws_under_26
       playerStats[playerId].total_semperit += stat.semperit_outs
       playerStats[playerId].total_bull += stat.throws_bull
@@ -476,7 +575,6 @@ export default function MemberDashboard() {
       let gameScore = 0
       if (stat.throws_180 > 0) gameScore = 180
       else if (stat.throws_171 > 0) gameScore = 171
-      else if (stat.throws_154 > 0) gameScore = 154
 
       if (gameScore > playerStats[playerId].best_score) {
         playerStats[playerId].best_score = gameScore
@@ -488,7 +586,9 @@ export default function MemberDashboard() {
       if (b.best_score !== a.best_score) return b.best_score - a.best_score
       if (b.total_180 !== a.total_180) return b.total_180 - a.total_180
       if (b.total_171 !== a.total_171) return b.total_171 - a.total_171
-      return b.total_154 - a.total_154
+      if (b.total_20 !== a.total_20) return b.total_20 - a.total_20
+      if (b.total_19 !== a.total_19) return b.total_19 - a.total_19
+      return b.total_18 - a.total_18
     })
 
     setLeaderboardData(leaderboard)
@@ -741,7 +841,6 @@ export default function MemberDashboard() {
           game_date: gameDate,
           throws_180: throws180,
           throws_171: throws171,
-          throws_154: throws154,
           throws_under_26: throwsUnder26,
           throws_under_30: throwsUnder30,
           semperit_outs: semperitOuts,
@@ -769,7 +868,6 @@ export default function MemberDashboard() {
       setGameDate(new Date().toISOString().split("T")[0])
       setThrows180(0)
       setThrows171(0)
-      setThrows154(0)
       setThrowsUnder26(0)
       setThrowsUnder30(0)
       setSemperitOuts(0)
@@ -966,24 +1064,49 @@ export default function MemberDashboard() {
         throw error
       }
 
-      const processedData = (data || []).map((stat: any) => {
-        // Handle multiple winners from leg_winner_ids field
-        let isWinner = false
-        if (stat.leg_winner_ids) {
-          const winnerIds = stat.leg_winner_ids.split(",").map((id: string) => id.trim())
-          isWinner = winnerIds.includes(stat.player_id)
-        } else if (stat.leg_winner_id) {
-          // Fallback to single winner field
-          isWinner = stat.leg_winner_id === stat.player_id
-        }
+      const legStats = data || []
 
+      const processedStats = legStats.map((stat: any) => {
+        // Use the already calculated leg_wins from the database instead of recalculating
         return {
           ...stat,
-          leg_wins: isWinner ? 1 : 0,
+          leg_wins: stat.leg_wins || 0, // Use stored value or default to 0
         }
       })
 
-      setLegStatistics(processedData)
+      const aggregatedStats = processedStats.reduce((acc: any, stat: any) => {
+        const playerId = stat.player_id
+        if (!acc[playerId]) {
+          acc[playerId] = {
+            player_id: playerId,
+            player_name: stat.player?.name || "Unbekannt",
+            total_legs: 0,
+            total_wins: 0,
+            total_180s: 0,
+            total_140s: 0,
+            total_100s: 0,
+            total_60s: 0,
+            total_20s: 0,
+            total_0s: 0,
+            total_points: 0,
+            average_score: 0,
+          }
+        }
+
+        acc[playerId].total_legs += 1
+        acc[playerId].total_wins += stat.leg_wins // This should now work correctly
+        acc[playerId].total_180s += stat.throws_180 || 0
+        acc[playerId].total_140s += stat.throws_140_179 || 0
+        acc[playerId].total_100s += stat.throws_100_139 || 0
+        acc[playerId].total_60s += stat.throws_60_99 || 0
+        acc[playerId].total_20s += stat.throws_1_19 || 0
+        acc[playerId].total_0s += stat.throws_0 || 0
+        acc[playerId].total_points += stat.leg_points || 0
+
+        return acc
+      }, {})
+
+      setLegStatistics(processedStats)
     } catch (err: any) {
       console.error("Error fetching leg statistics:", err)
     } finally {
@@ -1164,6 +1287,16 @@ export default function MemberDashboard() {
                             src={
                               profile?.club_players?.photo_url ||
                               "/placeholder.svg?height=96&width=96&query=darts-player" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
@@ -1438,6 +1571,13 @@ export default function MemberDashboard() {
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
                                             "/placeholder.svg"
                                           }
                                         />
@@ -1628,7 +1768,12 @@ export default function MemberDashboard() {
                                   total_wins: 0,
                                   total_180: 0,
                                   total_171: 0,
-                                  total_154: 0,
+                                  total_15: 0,
+                                  total_16: 0,
+                                  total_17: 0,
+                                  total_18: 0,
+                                  total_19: 0,
+                                  total_20: 0,
                                   total_high_tonne: 0,
                                   total_tonne: 0,
                                   total_shanghai: 0,
@@ -1645,7 +1790,12 @@ export default function MemberDashboard() {
                               playerOverallStats[playerId].total_wins += stat.leg_wins || 0
                               playerOverallStats[playerId].total_180 += stat.throws_180 || 0
                               playerOverallStats[playerId].total_171 += stat.throws_171 || 0
-                              playerOverallStats[playerId].total_154 += stat.throws_154 || 0
+                              playerOverallStats[playerId].total_15 += stat.throws_15 || 0
+                              playerOverallStats[playerId].total_16 += stat.throws_16 || 0
+                              playerOverallStats[playerId].total_17 += stat.throws_17 || 0
+                              playerOverallStats[playerId].total_18 += stat.throws_18 || 0
+                              playerOverallStats[playerId].total_19 += stat.throws_19 || 0
+                              playerOverallStats[playerId].total_20 += stat.throws_20 || 0
                               playerOverallStats[playerId].total_high_tonne += stat.throws_high_tonne || 0
                               playerOverallStats[playerId].total_tonne += stat.throws_tonne || 0
                               playerOverallStats[playerId].total_shanghai += stat.throws_shanghai || 0
@@ -1667,7 +1817,9 @@ export default function MemberDashboard() {
                                 if (b.total_wins !== a.total_wins) return b.total_wins - a.total_wins
                                 if (b.total_180 !== a.total_180) return b.total_180 - a.total_180
                                 if (b.total_171 !== a.total_171) return b.total_171 - a.total_171
-                                return b.total_154 - a.total_154
+                                if (b.total_20 !== a.total_20) return b.total_20 - a.total_20
+                                if (b.total_19 !== a.total_19) return b.total_19 - a.total_19
+                                return b.total_18 - a.total_18
                               })
 
                             return sortedStats.map((stats: any, index: number) => (
@@ -1726,9 +1878,9 @@ export default function MemberDashboard() {
                                     </div>
                                     <div className="text-center p-2 sm:p-3 bg-yellow-50 rounded-lg">
                                       <div className="text-lg sm:text-2xl font-bold text-yellow-600">
-                                        {stats.total_154}
+                                        {stats.total_20}
                                       </div>
-                                      <div className="text-xs sm:text-sm text-muted-foreground">154er</div>
+                                      <div className="text-xs sm:text-sm text-muted-foreground">20er</div>
                                     </div>
                                     <div className="text-center p-2 sm:p-3 bg-red-50 rounded-lg">
                                       <div className="text-lg sm:text-2xl font-bold text-red-600">
@@ -1738,18 +1890,48 @@ export default function MemberDashboard() {
                                     </div>
                                   </div>
 
-                                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1 sm:gap-2 text-xs sm:text-sm">
+                                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-1 sm:gap-2 text-xs sm:text-sm">
+                                    <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700 text-xs sm:text-sm">
+                                        {stats.total_19}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">19er</div>
+                                    </div>
+                                    <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700 text-xs sm:text-sm">
+                                        {stats.total_18}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">18er</div>
+                                    </div>
+                                    <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700 text-xs sm:text-sm">
+                                        {stats.total_17}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">17er</div>
+                                    </div>
+                                    <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700 text-xs sm:text-sm">
+                                        {stats.total_16}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">16er</div>
+                                    </div>
+                                    <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
+                                      <div className="font-semibold text-slate-700 text-xs sm:text-sm">
+                                        {stats.total_15}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">15er</div>
+                                    </div>
                                     <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
                                       <div className="font-semibold text-slate-700 text-xs sm:text-sm">
                                         {stats.total_high_tonne}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">High Tonne</div>
+                                      <div className="text-xs text-muted-foreground">High Ton</div>
                                     </div>
                                     <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
                                       <div className="font-semibold text-slate-700 text-xs sm:text-sm">
                                         {stats.total_tonne}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">Tonne</div>
+                                      <div className="text-xs text-muted-foreground">Ton</div>
                                     </div>
                                     <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
                                       <div className="font-semibold text-slate-700 text-xs sm:text-sm">
@@ -1857,7 +2039,7 @@ export default function MemberDashboard() {
                               .map(([matchId, stats]) => {
                                 const match = matchDetails[matchId]
                                 const matchTitle = match
-                                  ? `${match.home_team || "Team 1"} vs ${match.away_opponent_team || "Team 2"}`
+                                  ? `${getTeamDisplayName(match, true)} vs ${getTeamDisplayName(match, false)}`
                                   : `Spiel ${matchId}`
                                 const matchDate = match?.match_date
                                   ? new Date(match.match_date).toLocaleDateString("de-DE")
@@ -1876,30 +2058,45 @@ export default function MemberDashboard() {
                                         totalLegs: 0,
                                         wins: 0,
                                         total180s: 0,
-                                        total140s: 0,
-                                        total100s: 0,
+                                        total171s: 0,
+                                        total15s: 0,
+                                        total16s: 0,
+                                        total17s: 0,
+                                        total18s: 0,
+                                        total19s: 0,
+                                        total20s: 0,
+                                        totalHighTonne: 0,
+                                        totalTonne: 0,
+                                        totalShanghai: 0,
+                                        total95Plus: 0,
                                         totalUnder26: 0,
                                         totalUnder30: 0,
                                         totalSemperit: 0,
+                                        totalBull: 0,
                                       }
                                     }
 
                                     acc[playerId].legs.push(stat)
                                     acc[playerId].totalLegs++
 
-                                    // Check if player won this leg
-                                    if (stat.leg_winner_ids && Array.isArray(stat.leg_winner_ids)) {
-                                      if (stat.leg_winner_ids.includes(playerId)) {
-                                        acc[playerId].wins++
-                                      }
-                                    }
+                                    acc[playerId].wins += stat.leg_wins || 0
 
                                     acc[playerId].total180s += stat.throws_180 || 0
-                                    acc[playerId].total140s += stat.throws_140_179 || 0
-                                    acc[playerId].total100s += stat.throws_100_139 || 0
+                                    acc[playerId].total171s += stat.throws_171 || 0
+                                    acc[playerId].total15s += stat.throws_15 || 0
+                                    acc[playerId].total16s += stat.throws_16 || 0
+                                    acc[playerId].total17s += stat.throws_17 || 0
+                                    acc[playerId].total18s += stat.throws_18 || 0
+                                    acc[playerId].total19s += stat.throws_19 || 0
+                                    acc[playerId].total20s += stat.throws_20 || 0
+                                    acc[playerId].totalHighTonne += stat.throws_high_tonne || 0
+                                    acc[playerId].totalTonne += stat.throws_tonne || 0
+                                    acc[playerId].totalShanghai += stat.throws_shanghai || 0
+                                    acc[playerId].total95Plus += stat.throws_95_plus || 0
                                     acc[playerId].totalUnder26 += stat.throws_under_26 || 0
                                     acc[playerId].totalUnder30 += stat.throws_under_30 || 0
-                                    acc[playerId].totalSemperit += stat.semperit_penalties || 0
+                                    acc[playerId].totalSemperit += stat.semperit_outs || 0
+                                    acc[playerId].totalBull += stat.throws_bull || 0
 
                                     return acc
                                   },
@@ -1925,54 +2122,136 @@ export default function MemberDashboard() {
                                         {Object.values(playerStats)
                                           .sort((a: any, b: any) => b.wins - a.wins || b.total180s - a.total180s)
                                           .map((player: any, index) => (
-                                            <div
+                                            <Card
                                               key={`${matchId}-${player.name}`}
-                                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                                              className={`${
+                                                index < 3 && player.wins > 0
+                                                  ? "border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50"
+                                                  : ""
+                                              }`}
                                             >
-                                              <div className="flex items-center gap-3">
-                                                <div className="flex items-center justify-center w-8 h-8 bg-orange-100 text-orange-600 rounded-full text-sm font-semibold">
-                                                  {index + 1}
+                                              <CardContent className="p-4">
+                                                <div className="flex items-center justify-between mb-3">
+                                                  <div className="flex items-center gap-2">
+                                                    {index < 3 && player.wins > 0 && (
+                                                      <Crown className="h-4 w-4 text-amber-600" />
+                                                    )}
+                                                    <h4 className="font-semibold text-lg">{player.name}</h4>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    <Badge
+                                                      variant={player.wins > 0 ? "default" : "secondary"}
+                                                      className={
+                                                        player.wins > 0
+                                                          ? "bg-green-600 text-white"
+                                                          : "bg-gray-200 text-gray-600"
+                                                      }
+                                                    >
+                                                      {player.wins} Wins
+                                                    </Badge>
+                                                    <Badge variant="outline" className="text-xs">
+                                                      {player.totalLegs} Legs
+                                                    </Badge>
+                                                  </div>
                                                 </div>
-                                                <div>
-                                                  <p className="font-medium text-gray-900">{player.name}</p>
-                                                  <p className="text-sm text-gray-500">
-                                                    {player.totalLegs} Leg{player.totalLegs !== 1 ? "s" : ""}
-                                                  </p>
+
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">180er:</span>
+                                                    <span className="font-medium">{player.total180s}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">171er:</span>
+                                                    <span className="font-medium">{player.total171s}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">20er:</span>
+                                                    <span className="font-medium">{player.total20s}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">19er:</span>
+                                                    <span className="font-medium">{player.total19s}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">18er:</span>
+                                                    <span className="font-medium">{player.total18s}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">17er:</span>
+                                                    <span className="font-medium">{player.total17s}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">16er:</span>
+                                                    <span className="font-medium">{player.total16s}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">15er:</span>
+                                                    <span className="font-medium">{player.total15s}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">High Tonne:</span>
+                                                    <span className="font-medium">{player.totalHighTonne}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Tonne:</span>
+                                                    <span className="font-medium">{player.totalTonne}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Shanghai:</span>
+                                                    <span className="font-medium">{player.totalShanghai}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">95+:</span>
+                                                    <span className="font-medium">{player.total95Plus}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Bull:</span>
+                                                    <span className="font-medium">{player.totalBull}</span>
+                                                  </div>
                                                 </div>
-                                              </div>
-                                              <div className="flex items-center gap-4">
-                                                <div className="text-center">
-                                                  <p className="text-lg font-bold text-green-600">{player.wins}</p>
-                                                  <p className="text-xs text-gray-500">Wins</p>
-                                                </div>
-                                                <div className="text-center">
-                                                  <p className="text-lg font-bold text-blue-600">{player.total180s}</p>
-                                                  <p className="text-xs text-gray-500">180s</p>
-                                                </div>
-                                                <div className="text-center">
-                                                  <p className="text-sm font-medium text-purple-600">
-                                                    {player.total140s}
-                                                  </p>
-                                                  <p className="text-xs text-gray-500">140+</p>
-                                                </div>
-                                                <div className="text-center">
-                                                  <p className="text-sm font-medium text-indigo-600">
-                                                    {player.total100s}
-                                                  </p>
-                                                  <p className="text-xs text-gray-500">100+</p>
-                                                </div>
+
                                                 {(player.totalUnder26 > 0 ||
                                                   player.totalUnder30 > 0 ||
                                                   player.totalSemperit > 0) && (
-                                                  <div className="text-center">
-                                                    <p className="text-sm font-medium text-red-600">
-                                                      {player.totalUnder26 + player.totalUnder30 + player.totalSemperit}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500">Penalties</p>
+                                                  <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+                                                    <div className="text-sm font-medium text-red-700 mb-2 flex items-center gap-1">
+                                                      ⚠️ Check Bilanz
+                                                    </div>
+                                                    <div className="grid grid-cols-3 gap-4 text-sm">
+                                                      {player.totalUnder26 > 0 && (
+                                                        <div className="flex justify-between text-red-600">
+                                                          <span>Unter 26:</span>
+                                                          <span className="font-medium">{player.totalUnder26}</span>
+                                                        </div>
+                                                      )}
+                                                      {player.totalUnder30 > 0 && (
+                                                        <div className="flex justify-between text-red-600">
+                                                          <span>Unter 30:</span>
+                                                          <span className="font-medium">{player.totalUnder30}</span>
+                                                        </div>
+                                                      )}
+                                                      {player.totalSemperit > 0 && (
+                                                        <div className="flex justify-between text-red-600">
+                                                          <span>Semperit:</span>
+                                                          <span className="font-medium">{player.totalSemperit}</span>
+                                                        </div>
+                                                      )}
+                                                    </div>
                                                   </div>
                                                 )}
-                                              </div>
-                                            </div>
+
+                                                <div className="mt-3 pt-3 border-t border-gray-200">
+                                                  <div className="flex justify-between items-center text-sm">
+                                                    <span className="text-muted-foreground">Gewinnquote:</span>
+                                                    <span className="font-medium">
+                                                      {player.totalLegs > 0
+                                                        ? `${((player.wins / player.totalLegs) * 100).toFixed(1)}%`
+                                                        : "0%"}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              </CardContent>
+                                            </Card>
                                           ))}
                                       </div>
                                     </CardContent>
@@ -2506,39 +2785,4 @@ export default function MemberDashboard() {
       </main>
     </div>
   )
-
-  async function fetchTeamMembers() {
-    if (profile?.player_id && teamMemberships.length > 0) {
-      try {
-        const teamIds = teamMemberships.map((team) => team.team_id)
-
-        const { data: membersData, error: membersError } = await supabase
-          .from("team_members")
-          .select(`
-            id,
-            team_id,
-            player_id,
-            role,
-            club_players (
-              id,
-              name,
-              photo_url,
-              throwing_hand,
-              age,
-              origin
-            )
-          `)
-          .in("team_id", teamIds)
-          .order("role", { ascending: false }) // Captain first, then Co-Captain, then Player
-
-        if (membersError) {
-          throw membersError
-        }
-
-        setTeamMembers(membersData || [])
-      } catch (error) {
-        console.error("Error refetching team members:", error)
-      }
-    }
-  }
 }
