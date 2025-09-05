@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Users, Save } from "lucide-react"
 
 interface Player {
   id: string
@@ -30,54 +31,80 @@ interface TeamLineupSelectorProps {
 }
 
 export default function TeamLineupSelector({ teamId, players, lineup, onSave, loading }: TeamLineupSelectorProps) {
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([])
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>(lineup.map((l) => l.player_id))
 
-  useEffect(() => {
-    const lineupPlayerIds = lineup.sort((a, b) => a.position - b.position).map((l) => l.player_id)
-    setSelectedPlayers(lineupPlayerIds)
-  }, [lineup])
-
-  const handlePlayerSelect = (position: number, playerId: string) => {
-    const newSelection = [...selectedPlayers]
-    newSelection[position] = playerId
-    setSelectedPlayers(newSelection)
+  const handlePlayerToggle = (playerId: string) => {
+    setSelectedPlayers((prev) => {
+      if (prev.includes(playerId)) {
+        return prev.filter((id) => id !== playerId)
+      } else if (prev.length < 5) {
+        return [...prev, playerId]
+      }
+      return prev
+    })
   }
 
   const handleSave = () => {
-    const validPlayers = selectedPlayers.filter(Boolean)
-    if (validPlayers.length >= 4) {
-      onSave(validPlayers)
-    }
+    onSave(selectedPlayers)
   }
 
   return (
     <div className="space-y-4">
-      {[0, 1, 2, 3, 4].map((position) => (
-        <div key={position} className="flex items-center gap-3">
-          <Badge variant={position === 4 ? "secondary" : "default"}>
-            {position === 4 ? "Ersatz" : `Pos ${position + 1}`}
-          </Badge>
-          <Select
-            value={selectedPlayers[position] || ""}
-            onValueChange={(value) => handlePlayerSelect(position, value)}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Spieler auswählen..." />
-            </SelectTrigger>
-            <SelectContent>
-              {players.map((player) => (
-                <SelectItem key={player.id} value={player.id}>
-                  {player.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          <span className="text-sm font-medium">Spieler auswählen ({selectedPlayers.length}/5)</span>
         </div>
-      ))}
+        <Button
+          onClick={handleSave}
+          disabled={loading || selectedPlayers.length === 0}
+          size="sm"
+          className="w-full sm:w-auto min-h-[44px] touch-manipulation"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          {loading ? "Speichern..." : "Aufstellung speichern"}
+        </Button>
+      </div>
 
-      <Button onClick={handleSave} disabled={loading || selectedPlayers.filter(Boolean).length < 4} className="w-full">
-        {loading ? "Speichern..." : "Aufstellung speichern"}
-      </Button>
+      <div className="grid grid-cols-1 gap-3">
+        {players.map((player, index) => {
+          const isSelected = selectedPlayers.includes(player.id)
+          const position = selectedPlayers.indexOf(player.id) + 1
+          const isSubstitute = position === 5
+
+          return (
+            <Card
+              key={player.id}
+              className={`cursor-pointer transition-all min-h-[60px] touch-manipulation ${
+                isSelected ? "border-primary bg-primary/5 shadow-md" : "hover:bg-muted/50"
+              }`}
+              onClick={() => handlePlayerToggle(player.id)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
+                      {player.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="font-medium text-sm sm:text-base">{player.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isSelected && (
+                      <Badge variant={isSubstitute ? "secondary" : "default"} className="text-xs">
+                        {isSubstitute ? "Ersatz" : `Pos. ${position}`}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {selectedPlayers.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-6">Wähle bis zu 5 Spieler für die Aufstellung aus</p>
+      )}
     </div>
   )
 }

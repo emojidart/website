@@ -63,7 +63,6 @@ interface LegStatistic {
   leg_wins: number // Add leg_wins field
   throws_180: number
   throws_171: number
-  throws_154: number
   throws_high_tonne: number
   throws_tonne: number
   throws_shanghai: number
@@ -151,7 +150,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
     const { data, error } = await supabase
       .from("leg_statistics")
       .select(
-        `id, match_id, leg_number, player_id, leg_winner_id, leg_winner_ids, leg_wins, throws_180, throws_171, throws_154, throws_high_tonne, throws_tonne, throws_shanghai, throws_95_plus, throws_under_26, throws_under_30, semperit_outs, throws_15, throws_16, throws_17, throws_18, throws_19, throws_20, throws_bull, notes, 
+        `id, match_id, leg_number, player_id, leg_winner_id, leg_winner_ids, leg_wins, throws_180, throws_171, throws_high_tonne, throws_tonne, throws_shanghai, throws_95_plus, throws_under_26, throws_under_30, semperit_outs, throws_15, throws_16, throws_17, throws_18, throws_19, throws_20, throws_bull, notes, 
          player:club_players!leg_statistics_player_id_fkey(name),
          leg_winner:club_players!leg_statistics_leg_winner_id_fkey(name)`,
       )
@@ -275,26 +274,28 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[95vh] overflow-y-auto p-3 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <Target className="h-6 w-6 text-primary" />
-            Spielstatistiken - {myTeam?.name || "Mein Team"}
+          <DialogTitle className="text-lg sm:text-2xl font-bold flex items-center gap-2">
+            <Target className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            <span className="truncate">Spielstatistiken - {myTeam?.name || "Mein Team"}</span>
           </DialogTitle>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {new Date(match.match_date).toLocaleDateString("de-DE")} • {match.match_time}
           </p>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "lineup" | "legs")}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="lineup" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 h-auto">
+            <TabsTrigger value="lineup" className="flex items-center gap-2 py-3 text-sm">
               <Users className="h-4 w-4" />
-              Aufstellung
+              <span className="hidden sm:inline">Aufstellung</span>
+              <span className="sm:hidden">Team</span>
             </TabsTrigger>
-            <TabsTrigger value="legs" className="flex items-center gap-2">
+            <TabsTrigger value="legs" className="flex items-center gap-2 py-3 text-sm">
               <TrendingUp className="h-4 w-4" />
-              Spielerstatistiken nach Spiel
+              <span className="hidden sm:inline">Spielerstatistiken nach Spiel</span>
+              <span className="sm:hidden">Statistiken</span>
             </TabsTrigger>
           </TabsList>
 
@@ -320,28 +321,33 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
             </div>
           </TabsContent>
 
-          <TabsContent value="legs" className="space-y-6">
-            <div className="flex items-center justify-between">
+          <TabsContent value="legs" className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-4">
-                <h3 className="text-xl font-semibold">Leg {currentLeg}</h3>
-                <Badge variant={isLegActive ? "default" : "secondary"} className="px-3 py-1">
+                <h3 className="text-lg sm:text-xl font-semibold">Leg {currentLeg}</h3>
+                <Badge variant={isLegActive ? "default" : "secondary"} className="px-2 py-1 text-xs">
                   {isLegActive ? "🎯 Aktiv" : "⏸️ Bereit"}
                 </Badge>
               </div>
               <div className="flex gap-2">
                 {!isLegActive ? (
-                  <Button onClick={startLeg} className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
+                  <Button
+                    onClick={startLeg}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 min-h-[44px] touch-manipulation"
+                  >
                     <Play className="h-4 w-4" />
-                    Leg starten
+                    <span className="hidden sm:inline">Leg starten</span>
+                    <span className="sm:hidden">Start</span>
                   </Button>
                 ) : (
                   <Button
                     onClick={saveLegStatistics}
                     disabled={selectedPlayers.length === 0 || loading}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-blue-600 hover:bg-blue-700 min-h-[44px] touch-manipulation"
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    Leg speichern
+                    <span className="hidden sm:inline">Leg speichern</span>
+                    <span className="sm:hidden">Speichern</span>
                   </Button>
                 )}
               </div>
@@ -511,8 +517,8 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                 )}
                               </CardTitle>
                             </CardHeader>
-                            <CardContent className="pt-6">
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <CardContent className="pt-4 sm:pt-6">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                                 <div>
                                   <Label htmlFor={`${targetPlayerId}_180`} className="text-sm font-medium">
                                     180er
@@ -525,7 +531,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                     onChange={(e) =>
                                       updateLegFormData(`${targetPlayerId}_180`, Number.parseInt(e.target.value) || 0)
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
@@ -540,7 +546,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                     onChange={(e) =>
                                       updateLegFormData(`${targetPlayerId}_171`, Number.parseInt(e.target.value) || 0)
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
@@ -555,7 +561,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                     onChange={(e) =>
                                       updateLegFormData(`${targetPlayerId}_15`, Number.parseInt(e.target.value) || 0)
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
@@ -570,7 +576,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                     onChange={(e) =>
                                       updateLegFormData(`${targetPlayerId}_16`, Number.parseInt(e.target.value) || 0)
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
@@ -585,7 +591,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                     onChange={(e) =>
                                       updateLegFormData(`${targetPlayerId}_17`, Number.parseInt(e.target.value) || 0)
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
@@ -600,7 +606,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                     onChange={(e) =>
                                       updateLegFormData(`${targetPlayerId}_18`, Number.parseInt(e.target.value) || 0)
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
@@ -615,7 +621,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                     onChange={(e) =>
                                       updateLegFormData(`${targetPlayerId}_19`, Number.parseInt(e.target.value) || 0)
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
@@ -630,12 +636,12 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                     onChange={(e) =>
                                       updateLegFormData(`${targetPlayerId}_20`, Number.parseInt(e.target.value) || 0)
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
                                   <Label htmlFor={`${targetPlayerId}_high_tonne`} className="text-sm font-medium">
-                                    High Ton
+                                    High Tonne
                                   </Label>
                                   <Input
                                     id={`${targetPlayerId}_high_tonne`}
@@ -648,12 +654,12 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                         Number.parseInt(e.target.value) || 0,
                                       )
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
                                   <Label htmlFor={`${targetPlayerId}_tonne`} className="text-sm font-medium">
-                                    Ton
+                                    Tonne
                                   </Label>
                                   <Input
                                     id={`${targetPlayerId}_tonne`}
@@ -663,7 +669,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                     onChange={(e) =>
                                       updateLegFormData(`${targetPlayerId}_tonne`, Number.parseInt(e.target.value) || 0)
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
@@ -681,7 +687,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                         Number.parseInt(e.target.value) || 0,
                                       )
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
@@ -699,7 +705,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                         Number.parseInt(e.target.value) || 0,
                                       )
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                                 <div>
@@ -714,16 +720,16 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                     onChange={(e) =>
                                       updateLegFormData(`${targetPlayerId}_bull`, Number.parseInt(e.target.value) || 0)
                                     }
-                                    className="mt-1"
+                                    className="mt-1 min-h-[44px] touch-manipulation"
                                   />
                                 </div>
                               </div>
 
-                              <div className="mt-6 pt-4 border-t-2 border-red-200">
+                              <div className="mt-4 sm:mt-6 pt-4 border-t-2 border-red-200">
                                 <h4 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
                                   ⚠️Under-Score
                                 </h4>
-                                <div className="grid grid-cols-3 gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4 bg-red-50 rounded-lg border border-red-200">
                                   <div>
                                     <Label
                                       htmlFor={`${targetPlayerId}_under26`}
@@ -742,7 +748,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                           Number.parseInt(e.target.value) || 0,
                                         )
                                       }
-                                      className="mt-1 border-red-300 focus:border-red-500"
+                                      className="mt-1 border-red-300 focus:border-red-500 min-h-[44px] touch-manipulation"
                                     />
                                   </div>
                                   <div>
@@ -763,7 +769,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                           Number.parseInt(e.target.value) || 0,
                                         )
                                       }
-                                      className="mt-1 border-red-300 focus:border-red-500"
+                                      className="mt-1 border-red-300 focus:border-red-500 min-h-[44px] touch-manipulation"
                                     />
                                   </div>
                                   <div>
@@ -784,7 +790,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                           Number.parseInt(e.target.value) || 0,
                                         )
                                       }
-                                      className="mt-1 border-red-300 focus:border-red-500"
+                                      className="mt-1 border-red-300 focus:border-red-500 min-h-[44px] touch-manipulation"
                                     />
                                   </div>
                                 </div>
@@ -829,7 +835,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                       <TrendingUp className="h-5 w-5 text-blue-600" />
                       Spieler-Gesamtstatistik für dieses Match
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                       {(() => {
                         const playerTotals: { [key: string]: any } = {}
 
@@ -904,7 +910,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                           >
                             <CardContent className="p-4">
                               <div className="flex items-center justify-between mb-3">
-                                <h5 className="font-bold text-lg flex items-center gap-2">
+                                <h5 className="font-bold text-lg flex items-center gap-2 truncate">
                                   {index === 0 && playerTotal.total_wins > 0 && (
                                     <Crown className="h-5 w-5 text-amber-600" />
                                   )}
@@ -1069,7 +1075,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                               </div>
                             </CardHeader>
                             <CardContent>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                                 {legPlayers.map((stat) => (
                                   <Card
                                     key={stat.id}
@@ -1079,11 +1085,11 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                         : ""
                                     }`}
                                   >
-                                    <CardContent className="p-4">
+                                    <CardContent className="p-3 sm:p-4">
                                       <div className="flex items-center justify-between mb-3">
-                                        <h5 className="font-semibold text-lg flex items-center gap-2">
+                                        <h5 className="font-semibold text-sm sm:text-lg flex items-center gap-2 truncate">
                                           {stat.leg_wins > 0 && <Crown className="h-4 w-4 text-amber-600" />}
-                                          {stat.player_name}
+                                          <span className="truncate">{stat.player_name}</span>
                                         </h5>
                                         <div className="flex flex-col items-end gap-1">
                                           {stat.leg_wins > 0 && (
