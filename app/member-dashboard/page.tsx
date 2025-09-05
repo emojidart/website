@@ -1222,10 +1222,10 @@ export default function MemberDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
-      <main className="flex-grow container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+      <main className="flex-grow w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-8">
         {/* Welcome Header */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 uppercase tracking-wide">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-gray-900 mb-2 uppercase tracking-wide">
             Willkommen zurück, {profile?.club_players?.name || "Spieler"}!
           </h1>
           <p className="text-gray-600 text-base sm:text-lg">
@@ -1239,45 +1239,41 @@ export default function MemberDashboard() {
             setActiveMainTab(value as "dashboard" | "statistics" | "penalties" | "ligatabellen")
           }
         >
-          <TabsList className="grid w-full grid-cols-4 mb-6 sm:mb-8 h-auto">
+          <TabsList className="grid w-full grid-cols-4 mb-4 sm:mb-6 lg:mb-8 h-auto gap-1 sm:gap-2">
             <TabsTrigger
               value="dashboard"
-              className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-3 text-xs sm:text-sm"
+              className="flex flex-col items-center gap-1 py-2 sm:py-3 text-xs sm:text-sm px-1 sm:px-2"
             >
               <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Dashboard</span>
-              <span className="sm:hidden">Home</span>
+              <span className="truncate">Dashboard</span>
             </TabsTrigger>
             <TabsTrigger
               value="statistics"
-              className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-3 text-xs sm:text-sm"
+              className="flex flex-col items-center gap-1 py-2 sm:py-3 text-xs sm:text-sm px-1 sm:px-2"
             >
               <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Spielerstatistiken</span>
-              <span className="sm:hidden">Stats</span>
+              <span className="truncate">Stats</span>
             </TabsTrigger>
             <TabsTrigger
               value="penalties"
-              className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-3 text-xs sm:text-sm"
+              className="flex flex-col items-center gap-1 py-2 sm:py-3 text-xs sm:text-sm px-1 sm:px-2"
             >
               <Euro className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Bonusgeld</span>
-              <span className="sm:hidden">Bonus</span>
+              <span className="truncate">Bonus</span>
             </TabsTrigger>
             <TabsTrigger
               value="ligatabellen"
-              className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-3 text-xs sm:text-sm"
+              className="flex flex-col items-center gap-1 py-2 sm:py-3 text-xs sm:text-sm px-1 sm:px-2"
             >
               <Table className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Ligatabellen</span>
-              <span className="sm:hidden">Liga</span>
+              <span className="truncate">Liga</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {/* Profile Card */}
-              <div className="xl:col-span-1">
+              <div className="lg:col-span-1">
                 <Card className="shadow-xl border-0 bg-white">
                   <CardHeader className="text-center pb-4">
                     <div className="flex flex-col items-center">
@@ -1287,6 +1283,7 @@ export default function MemberDashboard() {
                             src={
                               profile?.club_players?.photo_url ||
                               "/placeholder.svg?height=96&width=96&query=darts-player" ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
@@ -1578,6 +1575,7 @@ export default function MemberDashboard() {
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
                                             "/placeholder.svg"
                                           }
                                         />
@@ -1724,23 +1722,29 @@ export default function MemberDashboard() {
           </TabsContent>
 
           <TabsContent value="statistics">
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
               <Tabs defaultValue="by-match" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="by-match">Nach Spielen</TabsTrigger>
-                  <TabsTrigger value="overall">Gesamtstatistik</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
+                  <TabsTrigger value="by-match" className="text-xs sm:text-sm">
+                    Nach Spielen
+                  </TabsTrigger>
+                  <TabsTrigger value="overall" className="text-xs sm:text-sm">
+                    Gesamtstatistik
+                  </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="overall" className="space-y-6">
+                <TabsContent value="overall" className="space-y-4 sm:space-y-6">
                   <Card className="shadow-xl border-0 bg-white">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-2xl font-bold">
-                        <Trophy className="h-6 w-6 text-amber-600" />
+                    <CardHeader className="p-4 sm:p-6">
+                      <CardTitle className="flex items-center gap-2 text-lg sm:text-xl lg:text-2xl font-bold">
+                        <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
                         Gesamtstatistik aller Legs
                       </CardTitle>
-                      <p className="text-muted-foreground">Alle Leg-Statistiken sortiert nach Wins, dann nach 180ern</p>
+                      <p className="text-sm sm:text-base text-muted-foreground">
+                        Alle Leg-Statistiken sortiert nach Wins, dann nach 180ern
+                      </p>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                       {legStatsLoading ? (
                         <div className="text-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mx-auto"></div>
@@ -1827,70 +1831,72 @@ export default function MemberDashboard() {
                                 key={stats.player_id}
                                 className={`${index < 3 ? "border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50" : ""}`}
                               >
-                                <CardContent className="p-6">
-                                  <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-3">
+                                <CardContent className="p-3 sm:p-4 lg:p-6">
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+                                    <div className="flex items-center gap-2 sm:gap-3">
                                       {index < 3 && (
                                         <div className="flex items-center gap-1">
-                                          <Crown className="h-5 w-5 text-amber-600" />
-                                          <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                                          <Crown className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+                                          <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-xs">
                                             #{index + 1}
                                           </Badge>
                                         </div>
                                       )}
-                                      <h3 className="text-xl font-bold">{stats.player_name}</h3>
+                                      <h3 className="text-lg sm:text-xl font-bold truncate">{stats.player_name}</h3>
                                     </div>
-                                    <div className="flex gap-2">
-                                      <Badge variant="default" className="bg-green-100 text-green-800">
+                                    <div className="flex flex-wrap gap-1 sm:gap-2">
+                                      <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
                                         {stats.total_wins} Wins
                                       </Badge>
-                                      <Badge variant="outline">{stats.win_percentage.toFixed(1)}% Win Rate</Badge>
-                                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                      <Badge variant="outline" className="text-xs">
+                                        {stats.win_percentage.toFixed(1)}%
+                                      </Badge>
+                                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
                                         {stats.total_legs} Legs
                                       </Badge>
                                     </div>
                                   </div>
 
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4">
                                     <div className="text-center p-2 sm:p-3 bg-blue-50 rounded-lg">
-                                      <div className="text-lg sm:text-2xl font-bold text-blue-600">
+                                      <div className="text-base sm:text-lg lg:text-2xl font-bold text-blue-600">
                                         {stats.total_legs}
                                       </div>
-                                      <div className="text-xs sm:text-sm text-muted-foreground">Legs gespielt</div>
+                                      <div className="text-xs text-muted-foreground">Legs</div>
                                     </div>
                                     <div className="text-center p-2 sm:p-3 bg-green-50 rounded-lg">
-                                      <div className="text-lg sm:text-2xl font-bold text-green-600">
+                                      <div className="text-base sm:text-lg lg:text-2xl font-bold text-green-600">
                                         {stats.total_wins}
                                       </div>
-                                      <div className="text-xs sm:text-sm text-muted-foreground">Leg Wins</div>
+                                      <div className="text-xs text-muted-foreground">Wins</div>
                                     </div>
                                     <div className="text-center p-2 sm:p-3 bg-purple-50 rounded-lg">
-                                      <div className="text-lg sm:text-2xl font-bold text-purple-600">
+                                      <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-600">
                                         {stats.total_180}
                                       </div>
-                                      <div className="text-xs sm:text-sm text-muted-foreground">180er</div>
+                                      <div className="text-xs text-muted-foreground">180er</div>
                                     </div>
                                     <div className="text-center p-2 sm:p-3 bg-orange-50 rounded-lg">
-                                      <div className="text-lg sm:text-2xl font-bold text-orange-600">
+                                      <div className="text-base sm:text-lg lg:text-2xl font-bold text-orange-600">
                                         {stats.total_171}
                                       </div>
-                                      <div className="text-xs sm:text-sm text-muted-foreground">171er</div>
+                                      <div className="text-xs text-muted-foreground">171er</div>
                                     </div>
                                     <div className="text-center p-2 sm:p-3 bg-yellow-50 rounded-lg">
-                                      <div className="text-lg sm:text-2xl font-bold text-yellow-600">
+                                      <div className="text-base sm:text-lg lg:text-2xl font-bold text-yellow-600">
                                         {stats.total_20}
                                       </div>
-                                      <div className="text-xs sm:text-sm text-muted-foreground">20er</div>
+                                      <div className="text-xs text-muted-foreground">20er</div>
                                     </div>
                                     <div className="text-center p-2 sm:p-3 bg-red-50 rounded-lg">
-                                      <div className="text-lg sm:text-2xl font-bold text-red-600">
+                                      <div className="text-base sm:text-lg lg:text-2xl font-bold text-red-600">
                                         {stats.total_under_26 + stats.total_under_30 + stats.total_semperit}
                                       </div>
-                                      <div className="text-xs sm:text-sm text-muted-foreground">Penalties</div>
+                                      <div className="text-xs text-muted-foreground">Penalties</div>
                                     </div>
                                   </div>
 
-                                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-1 sm:gap-2 text-xs sm:text-sm">
+                                  <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-1 sm:gap-2 text-xs">
                                     <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
                                       <div className="font-semibold text-slate-700 text-xs sm:text-sm">
                                         {stats.total_19}
@@ -1955,19 +1961,19 @@ export default function MemberDashboard() {
                                       <div className="font-semibold text-red-600 text-xs sm:text-sm">
                                         {stats.total_under_26}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">Unter 26</div>
+                                      <div className="text-xs text-muted-foreground">U26</div>
                                     </div>
                                     <div className="text-center p-1 sm:p-2 bg-red-50 rounded">
                                       <div className="font-semibold text-red-600 text-xs sm:text-sm">
                                         {stats.total_under_30}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">Unter 30</div>
+                                      <div className="text-xs text-muted-foreground">U30</div>
                                     </div>
                                     <div className="text-center p-1 sm:p-2 bg-red-50 rounded">
                                       <div className="font-semibold text-red-600 text-xs sm:text-sm">
                                         {stats.total_semperit}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">Semperit</div>
+                                      <div className="text-xs text-muted-foreground">Semp</div>
                                     </div>
                                   </div>
                                 </CardContent>
@@ -2105,20 +2111,20 @@ export default function MemberDashboard() {
 
                                 return (
                                   <Card key={matchId} className="border border-gray-200">
-                                    <CardHeader className="pb-3">
-                                      <div className="flex items-center justify-between">
-                                        <CardTitle className="text-lg font-semibold text-gray-900">
+                                    <CardHeader className="pb-3 p-3 sm:p-4 lg:p-6">
+                                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                                        <CardTitle className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                                           {matchTitle}
                                         </CardTitle>
                                         {matchDate && (
-                                          <Badge variant="outline" className="text-xs">
+                                          <Badge variant="outline" className="text-xs w-fit">
                                             {matchDate}
                                           </Badge>
                                         )}
                                       </div>
                                     </CardHeader>
-                                    <CardContent>
-                                      <div className="space-y-4">
+                                    <CardContent className="p-3 sm:p-4 lg:p-6">
+                                      <div className="space-y-3 sm:space-y-4">
                                         {Object.values(playerStats)
                                           .sort((a: any, b: any) => b.wins - a.wins || b.total180s - a.total180s)
                                           .map((player: any, index) => (
@@ -2130,22 +2136,24 @@ export default function MemberDashboard() {
                                                   : ""
                                               }`}
                                             >
-                                              <CardContent className="p-4">
-                                                <div className="flex items-center justify-between mb-3">
+                                              <CardContent className="p-3 sm:p-4">
+                                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2 sm:gap-0">
                                                   <div className="flex items-center gap-2">
                                                     {index < 3 && player.wins > 0 && (
-                                                      <Crown className="h-4 w-4 text-amber-600" />
+                                                      <Crown className="h-3 w-3 sm:h-4 sm:w-4 text-amber-600" />
                                                     )}
-                                                    <h4 className="font-semibold text-lg">{player.name}</h4>
+                                                    <h4 className="font-semibold text-base sm:text-lg truncate">
+                                                      {player.name}
+                                                    </h4>
                                                   </div>
-                                                  <div className="flex items-center gap-2">
+                                                  <div className="flex items-center gap-1 sm:gap-2">
                                                     <Badge
                                                       variant={player.wins > 0 ? "default" : "secondary"}
-                                                      className={
+                                                      className={`text-xs ${
                                                         player.wins > 0
                                                           ? "bg-green-600 text-white"
                                                           : "bg-gray-200 text-gray-600"
-                                                      }
+                                                      }`}
                                                     >
                                                       {player.wins} Wins
                                                     </Badge>
@@ -2155,7 +2163,7 @@ export default function MemberDashboard() {
                                                   </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">180er:</span>
                                                     <span className="font-medium">{player.total180s}</span>
@@ -2560,13 +2568,15 @@ export default function MemberDashboard() {
         </Tabs>
 
         <Dialog open={isBonusConfigOpen} onOpenChange={setIsBonusConfigOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[95vw] max-w-sm sm:max-w-md mx-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
                 Bonusgeld Konfiguration
               </DialogTitle>
-              <DialogDescription>Passen Sie die Bonusgeld-Beträge für Ihren Verein an.</DialogDescription>
+              <DialogDescription className="text-sm">
+                Passen Sie die Bonusgeld-Beträge für Ihren Verein an.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -2653,9 +2663,11 @@ export default function MemberDashboard() {
             if (!open) setSelectedMatchForResults(null)
           }}
         >
-          <DialogContent className="w-[95vw] max-w-[350px] sm:max-w-md mx-auto">
-            <DialogHeader className="text-center pb-4">
-              <DialogTitle className="text-lg sm:text-xl font-semibold">Spielergebnis eintragen</DialogTitle>
+          <DialogContent className="w-[95vw] max-w-sm sm:max-w-md mx-auto">
+            <DialogHeader className="text-center pb-3 sm:pb-4">
+              <DialogTitle className="text-base sm:text-lg lg:text-xl font-semibold">
+                Spielergebnis eintragen
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 sm:space-y-6">
               <div className="bg-muted/30 rounded-lg p-3 sm:p-4">
