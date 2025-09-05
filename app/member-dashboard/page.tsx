@@ -1303,6 +1303,7 @@ export default function MemberDashboard() {
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg"
                             }
                           />
@@ -1578,6 +1579,7 @@ export default function MemberDashboard() {
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
                                             "/placeholder.svg"
                                           }
                                         />
@@ -1651,71 +1653,69 @@ export default function MemberDashboard() {
                               </Badge>
                             </div>
 
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-6">
-                                <div className="text-center">
-                                  <div className="font-semibold text-lg mb-1">
-                                    {getTeamName(match, true) || "Heim Team"}
+                            <div className="flex flex-col gap-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-6">
+                                  <div className="text-center">
+                                    <div className="font-semibold text-lg mb-1">
+                                      {getTeamName(match, true) || "Heim Team"}
+                                    </div>
+                                    <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      {match.home_team_type === "own" ? "Heim" : "Heim (Gegner)"}
+                                    </div>
                                   </div>
-                                  <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
-                                  <div className="text-xs text-muted-foreground mt-1">
-                                    {match.home_team_type === "own" ? "Heim" : "Heim (Gegner)"}
+                                  <div className="text-2xl font-bold text-muted-foreground">:</div>
+                                  <div className="text-center">
+                                    <div className="font-semibold text-lg mb-1">
+                                      {getTeamName(match, false) || "Auswärts Team"}
+                                    </div>
+                                    <div className="text-3xl font-bold text-blue-600">{match.away_score ?? "-"}</div>
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      {match.away_team_type === "own" ? "Auswärts" : "Auswärts (Gegner)"}
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="text-2xl font-bold text-muted-foreground">:</div>
-                                <div className="text-center">
-                                  <div className="font-semibold text-lg mb-1">
-                                    {getTeamName(match, false) || "Auswärts Team"}
-                                  </div>
-                                  <div className="text-3xl font-bold text-blue-600">{match.away_score ?? "-"}</div>
-                                  <div className="text-xs text-muted-foreground mt-1">
-                                    {match.away_team_type === "own" ? "Auswärts" : "Auswärts (Gegner)"}
+
+                                <div className="text-right">
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <MapPin className="h-4 w-4" />
+                                    <span className="font-medium">{match.venue}</span>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="text-right">
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                                  <MapPin className="h-4 w-4" />
-                                  <span className="font-medium">{match.venue}</span>
+                              {isLeadershipRole() && (
+                                <div className="flex justify-center gap-3 pt-2 border-t border-border/50">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedMatchForStats(match)
+                                      setIsStatsDialogOpen(true)
+                                    }}
+                                    className="bg-green-600 hover:bg-green-700 text-white flex-1 max-w-[140px]"
+                                  >
+                                    <Target className="h-4 w-4 mr-2" />
+                                    Statistiken
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    className="bg-blue-600 hover:bg-blue-700 flex-1 max-w-[140px]"
+                                    onClick={() => {
+                                      setSelectedMatchForResults(match.id)
+                                      setIsResultsDialogOpen(true)
+                                      setEditMatchScores({
+                                        home: match.home_score || 0,
+                                        away: match.away_score || 0,
+                                      })
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
+                                  </Button>
                                 </div>
-
-                                {isLeadershipRole() && (
-                                  <div className="flex gap-1 sm:gap-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => {
-                                        setSelectedMatchForStats(match)
-                                        setIsStatsDialogOpen(true)
-                                      }}
-                                      className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm px-2 py-1 h-8 sm:h-9"
-                                    >
-                                      <Target className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                      <span className="hidden xs:inline">Statistiken</span>
-                                      <span className="xs:hidden">Stats</span>
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm px-2 py-1 h-8 sm:h-9"
-                                      onClick={() => {
-                                        setSelectedMatchForResults(match.id)
-                                        setIsResultsDialogOpen(true)
-                                        setEditMatchScores({
-                                          home: match.home_score || 0,
-                                          away: match.away_score || 0,
-                                        })
-                                      }}
-                                    >
-                                      <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                      <span className="hidden xs:inline">
-                                        {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
-                                      </span>
-                                      <span className="xs:hidden">Edit</span>
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
+                              )}
                             </div>
                           </div>
                         ))}
