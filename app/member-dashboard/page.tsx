@@ -57,6 +57,8 @@ import { Table as UITable, TableBody, TableCell, TableHead, TableHeader, TableRo
 import Image from "next/image"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
+import { DashboardTutorial } from "@/components/dashboard-tutorial"
+
 interface UserProfile {
   id: string
   user_id: string
@@ -765,6 +767,15 @@ export default function MemberDashboard() {
     return teamMemberships.some((membership) => membership.role === "Captain" || membership.role === "Co-Captain")
   }
 
+  const getUserRole = (): "player" | "captain" | "co-captain" => {
+    const captainMembership = teamMemberships.find((membership) => membership.role === "Captain")
+    const coCaptainMembership = teamMemberships.find((membership) => membership.role === "Co-Captain")
+
+    if (captainMembership) return "captain"
+    if (coCaptainMembership) return "co-captain"
+    return "player"
+  }
+
   const getTeamPlayersForStats = () => {
     const leadershipTeams = teamMemberships.filter(
       (membership) => membership.role === "Captain" || membership.role === "Co-Captain",
@@ -1322,6 +1333,8 @@ export default function MemberDashboard() {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
       <main className="flex-grow w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-8">
+        <DashboardTutorial userRole={getUserRole()} />
+
         {/* Welcome Header */}
         <div className="mb-4 sm:mb-6 lg:mb-8">
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-gray-900 mb-2 uppercase tracking-wide">
@@ -1382,6 +1395,8 @@ export default function MemberDashboard() {
                             src={
                               profile?.club_players?.photo_url ||
                               "/placeholder.svg?height=96&width=96&query=darts-player" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
@@ -1662,6 +1677,8 @@ export default function MemberDashboard() {
                                           src={
                                             member.club_players?.photo_url ||
                                             "/placeholder.svg?height=32&width=32&query=darts-player" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
