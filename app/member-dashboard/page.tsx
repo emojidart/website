@@ -58,6 +58,7 @@ import Image from "next/image"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 import { DashboardTutorial } from "@/components/dashboard-tutorial"
+// import { ChatLayout } from "@/components/chat/chat-layout"
 
 interface UserProfile {
   id: string
@@ -136,6 +137,8 @@ interface Match {
   away_score: number | null
   status: string
   week_number: number
+  match_format?: "team" | "individual" | "best_of_three"
+  division_type?: "team_division" | "individual_division"
   home_team: {
     id: string
     name: string
@@ -162,7 +165,7 @@ interface BonusConfig {
   semperit: number
 }
 
-export default function MemberDashboard() {
+export default function DartsClubDashboard() {
   const { session, user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -1330,9 +1333,10 @@ export default function MemberDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
       <Header />
-      <main className="flex-grow w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-8">
+
+      <main className="container mx-auto px-4 py-8">
         <DashboardTutorial userRole={getUserRole()} />
 
         {/* Welcome Header */}
@@ -1395,6 +1399,9 @@ export default function MemberDashboard() {
                             src={
                               profile?.club_players?.photo_url ||
                               "/placeholder.svg?height=96&width=96&query=darts-player" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
@@ -1704,6 +1711,9 @@ export default function MemberDashboard() {
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
+                                            "/placeholder.svg" ||
                                             "/placeholder.svg"
                                           }
                                         />
@@ -1763,6 +1773,17 @@ export default function MemberDashboard() {
                                 <Badge variant="outline" className="font-mono">
                                   Woche {match.week_number}
                                 </Badge>
+                                {match.match_format && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {match.match_format === "team"
+                                      ? "Team (2er)"
+                                      : match.match_format === "best_of_three"
+                                        ? "1v1 (BoF3)"
+                                        : match.match_format === "individual"
+                                          ? "1v1"
+                                          : "Standard"}
+                                  </Badge>
+                                )}
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                   <Calendar className="h-4 w-4" />
                                   <span>{new Date(match.match_date).toLocaleDateString("de-DE")}</span>
@@ -2716,360 +2737,365 @@ export default function MemberDashboard() {
           </TabsContent>
         </Tabs>
 
-        <Dialog open={isBonusConfigOpen} onOpenChange={setIsBonusConfigOpen}>
-          <DialogContent className="w-[95vw] max-w-sm sm:max-w-md mx-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
-                Bonusgeld Konfiguration
-              </DialogTitle>
-              <DialogDescription className="text-sm">
-                Passen Sie die Bonusgeld-Beträge für Ihren Verein an.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="under26">Bonusgeld für Würfe unter 26 (€)</Label>
-                <Input
-                  id="under26"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={tempBonusConfig.under26}
-                  onChange={(e) =>
-                    setTempBonusConfig((prev) => ({
-                      ...prev,
-                      under26: Number.parseFloat(e.target.value) || 0,
-                    }))
-                  }
-                />
+        {/* Team Chat section has been removed */}
+
+        {/* Statistiken */}
+        <section className="mb-8">
+          <Dialog open={isBonusConfigOpen} onOpenChange={setIsBonusConfigOpen}>
+            <DialogContent className="w-[95vw] max-w-sm sm:max-w-md mx-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+                  Bonusgeld Konfiguration
+                </DialogTitle>
+                <DialogDescription className="text-sm">
+                  Passen Sie die Bonusgeld-Beträge für Ihren Verein an.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="under26">Bonusgeld für Würfe unter 26 (€)</Label>
+                  <Input
+                    id="under26"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tempBonusConfig.under26}
+                    onChange={(e) =>
+                      setTempBonusConfig((prev) => ({
+                        ...prev,
+                        under26: Number.parseFloat(e.target.value) || 0,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="under30">Bonusgeld für Würfe unter 30 (€)</Label>
+                  <Input
+                    id="under30"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tempBonusConfig.under30}
+                    onChange={(e) =>
+                      setTempBonusConfig((prev) => ({
+                        ...prev,
+                        under30: Number.parseFloat(e.target.value) || 0,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="semperit">Bonusgeld für Semperit (€)</Label>
+                  <Input
+                    id="semperit"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tempBonusConfig.semperit}
+                    onChange={(e) =>
+                      setTempBonusConfig((prev) => ({
+                        ...prev,
+                        semperit: Number.parseFloat(e.target.value) || 0,
+                      }))
+                    }
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="under30">Bonusgeld für Würfe unter 30 (€)</Label>
-                <Input
-                  id="under30"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={tempBonusConfig.under30}
-                  onChange={(e) =>
-                    setTempBonusConfig((prev) => ({
-                      ...prev,
-                      under30: Number.parseFloat(e.target.value) || 0,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="semperit">Bonusgeld für Semperit (€)</Label>
-                <Input
-                  id="semperit"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={tempBonusConfig.semperit}
-                  onChange={(e) =>
-                    setTempBonusConfig((prev) => ({
-                      ...prev,
-                      semperit: Number.parseFloat(e.target.value) || 0,
-                    }))
-                  }
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsBonusConfigOpen(false)}>
+                  Abbrechen
+                </Button>
+                <Button onClick={saveBonusConfig}>Speichern</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {selectedMatchForStats && (
+            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4 md:p-6">
+              <div className="w-full h-full max-w-[98vw] max-h-[95vh] sm:max-w-3xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl sm:h-auto overflow-hidden">
+                <MatchStatistics
+                  match={selectedMatchForStats}
+                  myTeamId={(() => {
+                    const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+                    const isUserTeamHome = userTeamIds.includes(selectedMatchForStats.home_team_id)
+                    const isUserTeamAway = userTeamIds.includes(selectedMatchForStats.away_team_id)
+
+                    if (isUserTeamHome) return selectedMatchForStats.home_team_id
+                    if (isUserTeamAway) return selectedMatchForStats.away_team_id
+                    return userTeamIds[0] || selectedMatchForStats.home_team_id // fallback
+                  })()}
+                  onClose={() => {
+                    setSelectedMatchForStats(null)
+                    setIsStatsDialogOpen(false)
+                  }}
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsBonusConfigOpen(false)}>
-                Abbrechen
-              </Button>
-              <Button onClick={saveBonusConfig}>Speichern</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          )}
 
-        {selectedMatchForStats && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4 md:p-6">
-            <div className="w-full h-full max-w-[98vw] max-h-[95vh] sm:max-w-3xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl sm:h-auto overflow-hidden">
-              <MatchStatistics
-                match={selectedMatchForStats}
-                myTeamId={(() => {
-                  const userTeamIds = teamMemberships.map((tm) => tm.team_id)
-                  const isUserTeamHome = userTeamIds.includes(selectedMatchForStats.home_team_id)
-                  const isUserTeamAway = userTeamIds.includes(selectedMatchForStats.away_team_id)
-
-                  if (isUserTeamHome) return selectedMatchForStats.home_team_id
-                  if (isUserTeamAway) return selectedMatchForStats.away_team_id
-                  return userTeamIds[0] || selectedMatchForStats.home_team_id // fallback
-                })()}
-                onClose={() => {
-                  setSelectedMatchForStats(null)
-                  setIsStatsDialogOpen(false)
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        <Dialog
-          open={isResultsDialogOpen && selectedMatchForResults !== null}
-          onOpenChange={(open) => {
-            setIsResultsDialogOpen(open)
-            if (!open) setSelectedMatchForResults(null)
-          }}
-        >
-          <DialogContent className="w-[90vw] max-w-xs sm:max-w-sm mx-auto">
-            <DialogHeader className="text-center pb-2 sm:pb-3">
-              <DialogTitle className="text-sm sm:text-base font-semibold">Spielergebnis eintragen</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 sm:space-y-4">
-              <div className="bg-muted/30 rounded-lg p-2 sm:p-3">
-                <div className="grid grid-cols-3 gap-1 sm:gap-2 items-center">
-                  <div className="text-center">
-                    <Label className="text-xs font-medium text-muted-foreground">Heim</Label>
-                    <div className="flex flex-col items-center gap-1 mt-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                        onClick={() =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            home: Math.min(99, prev.home + 1),
-                          }))
-                        }
-                      >
-                        +
-                      </Button>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="99"
-                        value={editMatchScores.home}
-                        onChange={(e) =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            home: Number.parseInt(e.target.value) || 0,
-                          }))
-                        }
-                        className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                        onClick={() =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            home: Math.max(0, prev.home - 1),
-                          }))
-                        }
-                      >
-                        -
-                      </Button>
+          <Dialog
+            open={isResultsDialogOpen && selectedMatchForResults !== null}
+            onOpenChange={(open) => {
+              setIsResultsDialogOpen(open)
+              if (!open) setSelectedMatchForResults(null)
+            }}
+          >
+            <DialogContent className="w-[90vw] max-w-xs sm:max-w-sm mx-auto">
+              <DialogHeader className="text-center pb-2 sm:pb-3">
+                <DialogTitle className="text-sm sm:text-base font-semibold">Spielergebnis eintragen</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 sm:space-y-4">
+                <div className="bg-muted/30 rounded-lg p-2 sm:p-3">
+                  <div className="grid grid-cols-3 gap-1 sm:gap-2 items-center">
+                    <div className="text-center">
+                      <Label className="text-xs font-medium text-muted-foreground">Heim</Label>
+                      <div className="flex flex-col items-center gap-1 mt-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
+                          onClick={() =>
+                            setEditMatchScores((prev) => ({
+                              ...prev,
+                              home: Math.min(99, prev.home + 1),
+                            }))
+                          }
+                        >
+                          +
+                        </Button>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="99"
+                          value={editMatchScores.home}
+                          onChange={(e) =>
+                            setEditMatchScores((prev) => ({
+                              ...prev,
+                              home: Number.parseInt(e.target.value) || 0,
+                            }))
+                          }
+                          className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
+                          onClick={() =>
+                            setEditMatchScores((prev) => ({
+                              ...prev,
+                              home: Math.max(0, prev.home - 1),
+                            }))
+                          }
+                        >
+                          -
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg sm:text-2xl font-bold text-muted-foreground mt-4 sm:mt-6">:</div>
-                  </div>
-                  <div className="text-center">
-                    <Label className="text-xs font-medium text-muted-foreground">Auswärts</Label>
-                    <div className="flex flex-col items-center gap-1 mt-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                        onClick={() =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            away: Math.min(99, prev.away + 1),
-                          }))
-                        }
-                      >
-                        +
-                      </Button>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="99"
-                        value={editMatchScores.away}
-                        onChange={(e) =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            away: Number.parseInt(e.target.value) || 0,
-                          }))
-                        }
-                        className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                        onClick={() =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            away: Math.max(0, prev.away - 1),
-                          }))
-                        }
-                      >
-                        -
-                      </Button>
+                    <div className="text-center">
+                      <div className="text-lg sm:text-2xl font-bold text-muted-foreground mt-4 sm:mt-6">:</div>
+                    </div>
+                    <div className="text-center">
+                      <Label className="text-xs font-medium text-muted-foreground">Auswärts</Label>
+                      <div className="flex flex-col items-center gap-1 mt-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
+                          onClick={() =>
+                            setEditMatchScores((prev) => ({
+                              ...prev,
+                              away: Math.min(99, prev.away + 1),
+                            }))
+                          }
+                        >
+                          +
+                        </Button>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="99"
+                          value={editMatchScores.away}
+                          onChange={(e) =>
+                            setEditMatchScores((prev) => ({
+                              ...prev,
+                              away: Number.parseInt(e.target.value) || 0,
+                            }))
+                          }
+                          className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
+                          onClick={() =>
+                            setEditMatchScores((prev) => ({
+                              ...prev,
+                              away: Math.max(0, prev.away - 1),
+                            }))
+                          }
+                        >
+                          -
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 bg-transparent text-xs sm:text-sm h-8 sm:h-9"
+                    onClick={() => {
+                      setIsResultsDialogOpen(false)
+                      setSelectedMatchForResults(null)
+                    }}
+                  >
+                    Abbrechen
+                  </Button>
+                  <Button
+                    className="flex-1 text-xs sm:text-sm h-8 sm:h-9"
+                    onClick={() => {
+                      if (selectedMatchForResults) {
+                        updateMatchResult(selectedMatchForResults, editMatchScores.home, editMatchScores.away)
+                      }
+                    }}
+                  >
+                    Speichern
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 bg-transparent text-xs sm:text-sm h-8 sm:h-9"
-                  onClick={() => {
-                    setIsResultsDialogOpen(false)
-                    setSelectedMatchForResults(null)
-                  }}
-                >
-                  Abbrechen
-                </Button>
-                <Button
-                  className="flex-1 text-xs sm:text-sm h-8 sm:h-9"
-                  onClick={() => {
-                    if (selectedMatchForResults) {
-                      updateMatchResult(selectedMatchForResults, editMatchScores.home, editMatchScores.away)
-                    }
-                  }}
-                >
-                  Speichern
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
 
-        <Dialog
-          open={isTeamPhotoDialogOpen && selectedMatchForTeamPhoto !== null}
-          onOpenChange={(open) => {
-            setIsTeamPhotoDialogOpen(open)
-            if (!open) {
-              setSelectedMatchForTeamPhoto(null)
-              setTeamPhotoFile(null)
-              setTeamPhotoPreview(null)
-              setTeamPhotoMessage("")
-            }
-          }}
-        >
-          <DialogContent className="w-[90vw] max-w-md mx-auto">
-            <DialogHeader className="text-center pb-2 sm:pb-3">
-              <DialogTitle className="text-sm sm:text-base font-semibold">Teamfoto hochladen</DialogTitle>
-              <DialogDescription>
-                Lade ein Teamfoto für dieses Spiel hoch oder entferne das aktuelle Foto.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              {(() => {
-                const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
-                const hasExistingPhoto = currentMatch?.team_photo_url
+          <Dialog
+            open={isTeamPhotoDialogOpen && selectedMatchForTeamPhoto !== null}
+            onOpenChange={(open) => {
+              setIsTeamPhotoDialogOpen(open)
+              if (!open) {
+                setSelectedMatchForTeamPhoto(null)
+                setTeamPhotoFile(null)
+                setTeamPhotoPreview(null)
+                setTeamPhotoMessage("")
+              }
+            }}
+          >
+            <DialogContent className="w-[90vw] max-w-md mx-auto">
+              <DialogHeader className="text-center pb-2 sm:pb-3">
+                <DialogTitle className="text-sm sm:text-base font-semibold">Teamfoto hochladen</DialogTitle>
+                <DialogDescription>
+                  Lade ein Teamfoto für dieses Spiel hoch oder entferne das aktuelle Foto.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                {(() => {
+                  const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
+                  const hasExistingPhoto = currentMatch?.team_photo_url
 
-                return (
-                  <>
-                    {hasExistingPhoto && !teamPhotoPreview && (
-                      <div className="space-y-2">
-                        <Label>Aktuelles Teamfoto</Label>
-                        <div className="flex items-center justify-center">
-                          <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
-                            <Image
-                              src={currentMatch.team_photo_url || "/placeholder.svg"}
-                              alt="Aktuelles Teamfoto"
-                              fill
-                              style={{ objectFit: "cover" }}
-                            />
+                  return (
+                    <>
+                      {hasExistingPhoto && !teamPhotoPreview && (
+                        <div className="space-y-2">
+                          <Label>Aktuelles Teamfoto</Label>
+                          <div className="flex items-center justify-center">
+                            <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
+                              <Image
+                                src={currentMatch.team_photo_url || "/placeholder.svg"}
+                                alt="Aktuelles Teamfoto"
+                                fill
+                                style={{ objectFit: "cover" }}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(currentMatch.team_photo_url, "_blank")}
+                              className="text-green-600 border-green-600 hover:bg-green-50"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Foto in voller Größe ansehen
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex justify-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(currentMatch.team_photo_url, "_blank")}
-                            className="text-green-600 border-green-600 hover:bg-green-50"
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Foto in voller Größe ansehen
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                      )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="teamPhoto">
-                        {hasExistingPhoto ? "Neues Teamfoto auswählen" : "Teamfoto auswählen"}
-                      </Label>
-                      <Input
-                        id="teamPhoto"
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handleTeamPhotoChange}
-                        className="file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                      />
-                    </div>
-
-                    {teamPhotoPreview && (
                       <div className="space-y-2">
-                        <Label>Neue Foto Vorschau</Label>
-                        <div className="flex items-center justify-center">
-                          <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
-                            <Image
-                              src={teamPhotoPreview || "/placeholder.svg"}
-                              alt="Teamfoto Vorschau"
-                              fill
-                              style={{ objectFit: "cover" }}
-                            />
+                        <Label htmlFor="teamPhoto">
+                          {hasExistingPhoto ? "Neues Teamfoto auswählen" : "Teamfoto auswählen"}
+                        </Label>
+                        <Input
+                          id="teamPhoto"
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={handleTeamPhotoChange}
+                          className="file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                        />
+                      </div>
+
+                      {teamPhotoPreview && (
+                        <div className="space-y-2">
+                          <Label>Neue Foto Vorschau</Label>
+                          <div className="flex items-center justify-center">
+                            <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
+                              <Image
+                                src={teamPhotoPreview || "/placeholder.svg"}
+                                alt="Teamfoto Vorschau"
+                                fill
+                                style={{ objectFit: "cover" }}
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </>
-                )
-              })()}
+                      )}
+                    </>
+                  )
+                })()}
 
-              {teamPhotoMessage && (
-                <Alert>
-                  <AlertDescription>{teamPhotoMessage}</AlertDescription>
-                </Alert>
-              )}
-            </div>
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-              {(() => {
-                const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
-                const hasExistingPhoto = currentMatch?.team_photo_url
+                {teamPhotoMessage && (
+                  <Alert>
+                    <AlertDescription>{teamPhotoMessage}</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                {(() => {
+                  const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
+                  const hasExistingPhoto = currentMatch?.team_photo_url
 
-                return (
-                  <>
-                    {hasExistingPhoto && (
+                  return (
+                    <>
+                      {hasExistingPhoto && (
+                        <Button
+                          variant="destructive"
+                          onClick={handleTeamPhotoRemove}
+                          disabled={teamPhotoUploading}
+                          className="w-full sm:w-auto"
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Foto entfernen
+                        </Button>
+                      )}
                       <Button
-                        variant="destructive"
-                        onClick={handleTeamPhotoRemove}
-                        disabled={teamPhotoUploading}
-                        className="w-full sm:w-auto"
+                        onClick={handleTeamPhotoUpload}
+                        disabled={teamPhotoUploading || !teamPhotoFile}
+                        className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
                       >
-                        <XCircle className="h-4 w-4 mr-2" />
-                        Foto entfernen
+                        <Upload className="h-4 w-4 mr-2" />
+                        {teamPhotoUploading ? "Wird hochgeladen..." : hasExistingPhoto ? "Foto ersetzen" : "Hochladen"}
                       </Button>
-                    )}
-                    <Button
-                      onClick={handleTeamPhotoUpload}
-                      disabled={teamPhotoUploading || !teamPhotoFile}
-                      className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      {teamPhotoUploading ? "Wird hochgeladen..." : hasExistingPhoto ? "Foto ersetzen" : "Hochladen"}
-                    </Button>
-                  </>
-                )
-              })()}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                    </>
+                  )
+                })()}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </section>
       </main>
     </div>
   )

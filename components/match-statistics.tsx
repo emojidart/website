@@ -40,6 +40,8 @@ interface Match {
   home_score: number
   away_score: number
   status: string
+  match_format?: "team" | "individual" | "best_of_three"
+  division_type?: "team_division" | "individual_division"
   home_team: Team | null
   away_team: Team | null
 }
@@ -62,9 +64,13 @@ interface LegStatistic {
   player_name: string
   leg_winner_id?: string
   leg_winner_ids?: string
-  leg_wins: number // Add leg_wins field
+  leg_wins: number
+  legs_won_in_match?: number // actual legs won in individual format
+  player_legs_won?: number // legs won by this player in 1v1 match
+  opponent_legs_won?: number // legs won by opponent in 1v1 match
   throws_180: number
   throws_171: number
+  throws_high_tonne: number
   throws_high_tonne: number
   throws_tonne: number
   throws_shanghai: number
@@ -178,6 +184,12 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
   const [activePlayerId, setActivePlayerId] = useState<string | null>(null)
   const [legWinnerIds, setLegWinnerIds] = useState<string[]>([]) // Support multiple winners
   const [legFormData, setLegFormData] = useState<{ [key: string]: any }>({}) // Declare legFormData variable
+  const [individualMatchResults, setIndividualMatchResults] = useState<{
+    [key: string]: { score: string; legsWon: number }
+  }>({})
+  const [matchFormat, setMatchFormat] = useState<"team" | "individual" | "best_of_three">(
+    match.match_format || (match.division_type === "individual_division" ? "best_of_three" : "team"),
+  )
 
   useEffect(() => {
     fetchPlayers()
@@ -292,45 +304,89 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
 
     setLoading(true)
     try {
-      const legWinnerIdsString = legWinnerIds.length > 0 ? legWinnerIds.join(",") : null
-      const primaryWinnerId = legWinnerIds.length > 0 ? legWinnerIds[0] : null
+      console.log("[v0] Saving leg statistics for format:", matchFormat)
+      let legData: any[] = []
 
-      const legData = selectedPlayers.map((playerId) => ({
-        match_id: match.id,
-        leg_number: currentLeg,
-        player_id: playerId,
-        leg_winner_id: legWinnerIds.includes(playerId) ? playerId : null,
-        leg_winner_ids: legWinnerIdsString, // Store all winner IDs
-        leg_wins: legWinnerIds.includes(playerId) ? 1 : 0,
-        throws_180: legFormData[`${playerId}_180`] || 0,
-        throws_171: legFormData[`${playerId}_171`] || 0,
-        throws_15: legFormData[`${playerId}_15`] || 0,
-        throws_16: legFormData[`${playerId}_16`] || 0,
-        throws_17: legFormData[`${playerId}_17`] || 0,
-        throws_18: legFormData[`${playerId}_18`] || 0,
-        throws_19: legFormData[`${playerId}_19`] || 0,
-        throws_20: legFormData[`${playerId}_20`] || 0,
-        throws_high_tonne: legFormData[`${playerId}_high_tonne`] || 0,
-        throws_tonne: legFormData[`${playerId}_tonne`] || 0,
-        throws_shanghai: legFormData[`${playerId}_shanghai`] || 0,
-        throws_95_plus: legFormData[`${playerId}_95_plus`] || 0,
-        throws_under_26: legFormData[`${playerId}_under26`] || 0,
-        throws_under_30: legFormData[`${playerId}_under30`] || 0,
-        semperit_outs: legFormData[`${playerId}_semperit`] || 0,
-        throws_bull: legFormData[`${playerId}_bull`] || 0,
-        notes: legFormData[`${playerId}_notes`] || "",
-      }))
+      if (matchFormat === "team") {
+        const legWinnerIdsString = legWinnerIds.length > 0 ? legWinnerIds.join(",") : null
 
+        legData = selectedPlayers.map((playerId) => ({
+          match_id: match.id,
+          leg_number: currentLeg,
+          player_id: playerId,
+          leg_winner_id: legWinnerIds.includes(playerId) ? playerId : null,
+          leg_winner_ids: legWinnerIdsString,
+          leg_wins: legWinnerIds.includes(playerId) ? 1 : 0,
+          throws_180: legFormData[`${playerId}_180`] || 0,
+          throws_171: legFormData[`${playerId}_171`] || 0,
+          throws_15: legFormData[`${playerId}_15`] || 0,
+          throws_16: legFormData[`${playerId}_16`] || 0,
+          throws_17: legFormData[`${playerId}_17`] || 0,
+          throws_18: legFormData[`${playerId}_18`] || 0,
+          throws_19: legFormData[`${playerId}_19`] || 0,
+          throws_20: legFormData[`${playerId}_20`] || 0,
+          throws_high_tonne: legFormData[`${playerId}_high_tonne`] || 0,
+          throws_tonne: legFormData[`${playerId}_tonne`] || 0,
+          throws_shanghai: legFormData[`${playerId}_shanghai`] || 0,
+          throws_95_plus: legFormData[`${playerId}_95_plus`] || 0,
+          throws_under_26: legFormData[`${playerId}_under26`] || 0,
+          throws_under_30: legFormData[`${playerId}_under30`] || 0,
+          semperit_outs: legFormData[`${playerId}_semperit`] || 0,
+          throws_bull: legFormData[`${playerId}_bull`] || 0,
+          notes: legFormData[`${playerId}_notes`] || "",
+        }))
+      } else if (matchFormat === "best_of_three" || matchFormat === "individual") {
+        legData = selectedPlayers.map((playerId) => {
+          const result = individualMatchResults[playerId] || { score: "0:0", legsWon: 0 }
+          const [playerLegs, opponentLegs] = result.score.split(":").map(Number)
+          console.log("[v0] Processing player", playerId, "with result:", result)
+
+          return {
+            match_id: match.id,
+            leg_number: currentLeg,
+            player_id: playerId,
+            leg_winner_id: result.legsWon > 0 ? playerId : null,
+            leg_wins: result.legsWon,
+            legs_won_in_match: result.legsWon,
+            player_legs_won: playerLegs || 0,
+            opponent_legs_won: opponentLegs || 0,
+            throws_180: legFormData[`${playerId}_180`] || 0,
+            throws_171: legFormData[`${playerId}_171`] || 0,
+            throws_15: legFormData[`${playerId}_15`] || 0,
+            throws_16: legFormData[`${playerId}_16`] || 0,
+            throws_17: legFormData[`${playerId}_17`] || 0,
+            throws_18: legFormData[`${playerId}_18`] || 0,
+            throws_19: legFormData[`${playerId}_19`] || 0,
+            throws_20: legFormData[`${playerId}_20`] || 0,
+            throws_high_tonne: legFormData[`${playerId}_high_tonne`] || 0,
+            throws_tonne: legFormData[`${playerId}_tonne`] || 0,
+            throws_shanghai: legFormData[`${playerId}_shanghai`] || 0,
+            throws_95_plus: legFormData[`${playerId}_95_plus`] || 0,
+            throws_under_26: legFormData[`${playerId}_under26`] || 0,
+            throws_under_30: legFormData[`${playerId}_under30`] || 0,
+            semperit_outs: legFormData[`${playerId}_semperit`] || 0,
+            throws_bull: legFormData[`${playerId}_bull`] || 0,
+            notes: legFormData[`${playerId}_notes`] || "",
+          }
+        })
+      }
+
+      console.log("[v0] Inserting leg data:", legData)
       const { error } = await supabase.from("leg_statistics").insert(legData)
 
-      if (!error) {
-        setIsLegActive(false)
-        setCurrentLeg(currentLeg + 1)
-        setSelectedPlayers([])
-        setLegFormData({})
-        setLegWinnerIds([])
-        fetchLegStatistics()
+      if (error) {
+        console.log("[v0] Error saving leg statistics:", error)
+        throw error
       }
+
+      console.log("[v0] Successfully saved leg statistics")
+      setIsLegActive(false)
+      setCurrentLeg(currentLeg + 1)
+      setSelectedPlayers([])
+      setLegFormData({})
+      setLegWinnerIds([])
+      setIndividualMatchResults({})
+      fetchLegStatistics()
     } catch (error) {
       console.error("Error saving leg statistics:", error)
     } finally {
@@ -460,14 +516,33 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                       <Target className="h-5 w-5 text-primary" />
                       Spieler für Leg {currentLeg} auswählen
                     </CardTitle>
+                    <div className="flex items-center gap-4 mt-2">
+                      <Label className="text-sm font-medium">Spielformat:</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={matchFormat === "team" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setMatchFormat("team")}
+                        >
+                          Team (2er)
+                        </Button>
+                        <Button
+                          variant={matchFormat === "best_of_three" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setMatchFormat("best_of_three")}
+                        >
+                          1v1 (Best of 3)
+                        </Button>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-6 pt-6 flex-1 flex flex-col">
-                    {selectedPlayers.length > 0 && (
+                    {matchFormat === "team" && selectedPlayers.length > 0 && (
                       <Card className="bg-amber-50 border-amber-200">
                         <CardHeader className="pb-3">
                           <CardTitle className="text-lg flex items-center gap-2">
                             <Crown className="h-4 w-4 text-amber-600" />
-                            Leg-Gewinner auswählen
+                            Leg-Gewinner auswählen (Team-Format)
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -507,13 +582,74 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                               })}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Wähle einen oder mehrere Spieler aus, die dieses Leg gewonnen haben. Bei Unentschieden
-                              können beide Spieler als Gewinner markiert werden.
+                              Wähle einen oder mehrere Spieler aus, die dieses Leg gewonnen haben. Bei Team-Spiel können
+                              beide Spieler als Gewinner markiert werden.
                             </p>
                           </div>
                         </CardContent>
                       </Card>
                     )}
+
+                    {(matchFormat === "best_of_three" || matchFormat === "individual") &&
+                      selectedPlayers.length > 0 && (
+                        <Card className="bg-blue-50 border-blue-200">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              <Trophy className="h-4 w-4 text-blue-600" />
+                              Einzel-Ergebnisse (1v1 Format)
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              <Label className="text-sm font-medium">Ergebnis des Best-of-3 Matches eingeben</Label>
+                              <div className="grid gap-4">
+                                {selectedPlayers.map((playerId) => {
+                                  const player = players.find((p) => p.id === playerId)
+                                  if (!player) return null
+                                  return (
+                                    <div key={playerId} className="p-4 border rounded-lg bg-white">
+                                      <Label className="text-sm font-medium mb-2 block">{player.name}</Label>
+                                      <div className="flex items-center gap-4">
+                                        <div className="flex-1">
+                                          <Label className="text-xs text-muted-foreground">
+                                            Match-Ergebnis (z.B. 2:1)
+                                          </Label>
+                                          <Input
+                                            placeholder="2:1"
+                                            value={individualMatchResults[playerId]?.score || ""}
+                                            onChange={(e) => {
+                                              const score = e.target.value
+                                              const [won, lost] = score.split(":").map((n) => Number.parseInt(n) || 0)
+                                              setIndividualMatchResults((prev) => ({
+                                                ...prev,
+                                                [playerId]: {
+                                                  score,
+                                                  legsWon: won,
+                                                },
+                                              }))
+                                            }}
+                                            className="mt-1"
+                                          />
+                                        </div>
+                                        <div className="w-20">
+                                          <Label className="text-xs text-muted-foreground">Legs gewonnen</Label>
+                                          <div className="mt-1 text-lg font-bold text-center p-2 bg-gray-50 rounded">
+                                            {individualMatchResults[playerId]?.legsWon || 0}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Bei 1v1 Best-of-3: Gib das Endergebnis ein (z.B. 2:1). Die gewonnenen Legs werden
+                                automatisch berechnet.
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
 
                     <div className="grid grid-cols-1 gap-6">
                       <div className="space-y-3">
@@ -982,7 +1118,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                               p.throws_shanghai,
                             0,
                           )
-                          const legWinners = legPlayers.filter((p) => p.leg_wins > 0)
+                          const legWinners = legPlayers.filter((s) => s.leg_wins > 0)
 
                           return (
                             <Card
