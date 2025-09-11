@@ -415,6 +415,58 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
   const { match_date: matchDate, match_time: matchTime } = match
   const teamName = myTeam?.name || "Mein Team"
 
+  const playerTotals = legStats.reduce((acc: any, stat: any) => {
+    const playerId = stat.player_id
+    if (!acc[playerId]) {
+      acc[playerId] = {
+        player_id: playerId,
+        player_name: stat.player_name,
+        total_legs: 0,
+        total_wins: 0,
+        total_180: 0,
+        total_171: 0,
+        total_high_ton: 0,
+        total_ton: 0,
+        total_shanghai: 0,
+        total_95_plus: 0,
+        total_bull: 0,
+        total_19er: 0,
+        total_18er: 0,
+        total_17er: 0,
+        total_16er: 0,
+        total_15er: 0,
+        total_u26: 0,
+        total_u30: 0,
+        total_semp: 0,
+        win_percentage: 0,
+      }
+    }
+
+    // Calculate actual legs played from player_legs_won + opponent_legs_won
+    const actualLegsPlayed = (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0)
+    const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1 // fallback to 1 for team matches
+
+    acc[playerId].total_legs += legsToAdd
+    acc[playerId].total_wins += stat.leg_wins || 0
+    acc[playerId].total_180 += stat.throws_180 || 0
+    acc[playerId].total_171 += stat.throws_171 || 0
+    acc[playerId].total_high_ton += stat.throws_high_tonne || 0
+    acc[playerId].total_ton += stat.throws_tonne || 0
+    acc[playerId].total_shanghai += stat.throws_shanghai || 0
+    acc[playerId].total_95_plus += stat.throws_95_plus || 0
+    acc[playerId].total_bull += stat.throws_bull || 0
+    acc[playerId].total_19er += stat.throws_19 || 0
+    acc[playerId].total_18er += stat.throws_18 || 0
+    acc[playerId].total_17er += stat.throws_17 || 0
+    acc[playerId].total_16er += stat.throws_16 || 0
+    acc[playerId].total_15er += stat.throws_15 || 0
+    acc[playerId].total_u26 += stat.throws_under_26 || 0
+    acc[playerId].total_u30 += stat.throws_under_30 || 0
+    acc[playerId].total_semp += stat.semperit_outs || 0
+
+    return acc
+  }, {})
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="w-full h-full max-w-none max-h-none m-0 p-0 sm:max-w-2xl md:max-w-4xl lg:max-w-6xl xl:max-w-7xl sm:max-h-[95vh] sm:m-4 sm:rounded-lg overflow-y-auto">
@@ -938,7 +990,10 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                               }
                             }
 
-                            playerTotals[playerId].total_legs += 1
+                            const actualLegsPlayed = (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0)
+                            const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1 // fallback to 1 for team matches
+
+                            playerTotals[playerId].total_legs += legsToAdd
                             playerTotals[playerId].total_wins += stat.leg_wins || 0
                             playerTotals[playerId].total_180 += stat.throws_180 || 0
                             playerTotals[playerId].total_171 += stat.throws_171 || 0

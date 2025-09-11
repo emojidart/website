@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { MessageCircle, Send, Users, Clock, Hash, Menu, X } from "lucide-react"
+import { MessageCircle, Send, Users, Clock, Hash, Menu, X, ArrowLeft } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
@@ -227,10 +227,7 @@ export default function ChatPage() {
 
           const { data: playerProfile } = await supabase
             .from("club_players")
-            .select(`
-              name,
-              photo_url
-            `)
+            .select(`name, photo_url`)
             .eq("user_id", newMessage.user_id)
             .single()
 
@@ -454,10 +451,22 @@ export default function ChatPage() {
         <div className="container mx-auto px-4">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                <MessageCircle className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-                Team Chat
-              </h1>
+              <div className="flex items-center gap-3">
+                <Link href="/member-dashboard">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+                  <MessageCircle className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+                  Team Chat
+                </h1>
+              </div>
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
@@ -474,11 +483,7 @@ export default function ChatPage() {
             )}
 
             <div
-              className={`
-              fixed lg:relative inset-y-0 left-0 z-50 w-80 lg:w-72 xl:w-80
-              transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
-              lg:translate-x-0 transition-transform duration-200 ease-in-out
-            `}
+              className={`fixed lg:relative inset-y-0 left-0 z-50 w-80 lg:w-72 xl:w-80 transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 transition-transform duration-200 ease-in-out`}
             >
               <Card className="h-full border-0 shadow-lg">
                 <CardHeader className="pb-4 border-b border-border">
@@ -623,6 +628,7 @@ export default function ChatPage() {
                             {messages.map((message) => {
                               const isOwnMessage = message.user_id === session?.user?.id
                               const playerName = message.club_players?.name || `User ${message.user_id.slice(0, 8)}`
+
                               const photoUrl = message.club_players?.photo_url
 
                               return (
@@ -650,9 +656,7 @@ export default function ChatPage() {
                                       </span>
                                     </div>
                                     <div
-                                      className={`p-3 rounded-lg ${
-                                        isOwnMessage ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                                      }`}
+                                      className={`p-3 rounded-lg ${isOwnMessage ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}
                                     >
                                       <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
                                     </div>

@@ -39,6 +39,7 @@ import {
   RefreshCw,
   ExternalLink,
   Eye,
+  MessageCircle,
 } from "lucide-react"
 import {
   Dialog,
@@ -770,6 +771,17 @@ export default function DartsClubDashboard() {
     return teamMemberships.some((membership) => membership.role === "Captain" || membership.role === "Co-Captain")
   }
 
+  const hasLeadershipInTeam = (teamId: string) => {
+    return teamMemberships.some(
+      (membership) =>
+        membership.team_id === teamId && (membership.role === "Captain" || membership.role === "Co-Captain"),
+    )
+  }
+
+  const getLeadershipTeams = () => {
+    return teamMemberships.filter((membership) => membership.role === "Captain" || membership.role === "Co-Captain")
+  }
+
   const getUserRole = (): "player" | "captain" | "co-captain" => {
     const captainMembership = teamMemberships.find((membership) => membership.role === "Captain")
     const coCaptainMembership = teamMemberships.find((membership) => membership.role === "Co-Captain")
@@ -780,9 +792,7 @@ export default function DartsClubDashboard() {
   }
 
   const getTeamPlayersForStats = () => {
-    const leadershipTeams = teamMemberships.filter(
-      (membership) => membership.role === "Captain" || membership.role === "Co-Captain",
-    )
+    const leadershipTeams = getLeadershipTeams()
     const leadershipTeamIds = leadershipTeams.map((team) => team.team_id)
 
     return teamMembers.filter((member) => leadershipTeamIds.includes(member.team_id) && member.club_players)
@@ -793,9 +803,7 @@ export default function DartsClubDashboard() {
 
     setStatsDisplayLoading(true)
     try {
-      const leadershipTeams = teamMemberships.filter(
-        (membership) => membership.role === "Captain" || membership.role === "Co-Captain",
-      )
+      const leadershipTeams = getLeadershipTeams()
       const leadershipTeamIds = leadershipTeams.map((team) => team.team_id)
       const teamPlayerIds = teamMembers
         .filter((member) => leadershipTeamIds.includes(member.team_id))
@@ -983,8 +991,19 @@ export default function DartsClubDashboard() {
     }
   }
 
-  const updateMatchResult = async (matchId: string, homeScore: number, awayScore: number) => {
+  const updateMatchScore = async (matchId: string, homeScore: number, awayScore: number) => {
     if (!isLeadershipRole()) return
+
+    const match = matches.find((m) => m.id === matchId)
+    if (!match) return
+
+    const hasHomeTeamLeadership = hasLeadershipInTeam(match.home_team_id)
+    const hasAwayTeamLeadership = hasLeadershipInTeam(match.away_team_id)
+
+    if (!hasHomeTeamLeadership && !hasAwayTeamLeadership) {
+      console.log("[v0] User doesn't have leadership role in either team for this match")
+      return
+    }
 
     try {
       const { error } = await supabase
@@ -998,11 +1017,10 @@ export default function DartsClubDashboard() {
 
       if (!error) {
         fetchMatches()
-        setIsResultsDialogOpen(false)
-        setSelectedMatchForResults(null)
+        fetchLigaStatistics()
       }
-    } catch (err) {
-      console.error("Error updating match result:", err)
+    } catch (error) {
+      console.error("Error updating match score:", error)
     }
   }
 
@@ -1131,9 +1149,7 @@ export default function DartsClubDashboard() {
 
     setLegStatsLoading(true)
     try {
-      const leadershipTeams = teamMemberships.filter(
-        (membership) => membership.role === "Captain" || membership.role === "Co-Captain",
-      )
+      const leadershipTeams = getLeadershipTeams()
       const leadershipTeamIds = leadershipTeams.map((team) => team.team_id)
       const teamPlayerIds = teamMembers
         .filter((member) => leadershipTeamIds.includes(member.team_id))
@@ -1206,7 +1222,10 @@ export default function DartsClubDashboard() {
           }
         }
 
-        acc[playerId].total_legs += 1
+        const actualLegsPlayed = (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0)
+        const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1 // fallback to 1 for team matches
+
+        acc[playerId].total_legs += legsToAdd
         acc[playerId].total_wins += stat.leg_wins // This should now work correctly
         acc[playerId].total_180s += stat.throws_180 || 0
         acc[playerId].total_140s += stat.throws_140_179 || 0
@@ -1355,7 +1374,7 @@ export default function DartsClubDashboard() {
             setActiveMainTab(value as "dashboard" | "statistics" | "penalties" | "ligatabellen")
           }
         >
-          <TabsList className="grid w-full grid-cols-4 mb-4 sm:mb-6 lg:mb-8 h-auto gap-1 sm:gap-2 lg:gap-4 max-w-4xl mx-auto">
+          <TabsList className="grid w-full grid-cols-5 mb-4 sm:mb-6 lg:mb-8 h-auto gap-1 sm:gap-2 lg:gap-4 max-w-5xl mx-auto">
             <TabsTrigger
               value="dashboard"
               className="flex flex-col items-center gap-1 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm lg:text-base px-1 sm:px-2 lg:px-4"
@@ -1384,6 +1403,15 @@ export default function DartsClubDashboard() {
               <Table className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
               <span className="truncate">Liga</span>
             </TabsTrigger>
+            <TabsTrigger asChild value="chat">
+              <a
+                href="/chat"
+                className="flex flex-col items-center gap-1 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm lg:text-base px-1 sm:px-2 lg:px-4 hover:bg-accent hover:text-accent-foreground transition-colors"
+              >
+                <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                <span className="truncate">Chat</span>
+              </a>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -1399,33 +1427,6 @@ export default function DartsClubDashboard() {
                             src={
                               profile?.club_players?.photo_url ||
                               "/placeholder.svg?height=96&width=96&query=darts-player" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg" ||
@@ -1687,33 +1688,6 @@ export default function DartsClubDashboard() {
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
                                             "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
-                                            "/placeholder.svg" ||
                                             "/placeholder.svg"
                                           }
                                         />
@@ -1830,7 +1804,7 @@ export default function DartsClubDashboard() {
                                 </div>
                               </div>
 
-                              {isLeadershipRole() && (
+                              {(hasLeadershipInTeam(match.home_team_id) || hasLeadershipInTeam(match.away_team_id)) && (
                                 <div className="flex justify-center gap-3 pt-2 border-t border-border/50">
                                   <Button
                                     size="sm"
@@ -1960,7 +1934,10 @@ export default function DartsClubDashboard() {
                                 }
                               }
 
-                              playerOverallStats[playerId].total_legs += 1
+                              const actualLegsPlayed = (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0)
+                              const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1 // fallback to 1 for team matches
+
+                              playerOverallStats[playerId].total_legs += legsToAdd
                               playerOverallStats[playerId].total_wins += stat.leg_wins || 0
                               playerOverallStats[playerId].total_180 += stat.throws_180 || 0
                               playerOverallStats[playerId].total_171 += stat.throws_171 || 0
@@ -2203,88 +2180,89 @@ export default function DartsClubDashboard() {
                             )
 
                             return Object.entries(statsByMatch)
-                              .sort(([a], [b]) => {
-                                // Sort by match date if available
-                                const matchA = matchDetails[a]
-                                const matchB = matchDetails[b]
-                                if (matchA?.match_date && matchB?.match_date) {
-                                  return new Date(matchB.match_date).getTime() - new Date(matchA.match_date).getTime()
-                                }
-                                return b.localeCompare(a)
+                              .sort(([, a], [, b]) => {
+                                const dateA = a[0]?.matches?.match_date || ""
+                                const dateB = b[0]?.matches?.match_date || ""
+                                return dateB.localeCompare(dateA)
                               })
-                              .map(([matchId, stats]) => {
-                                const match = matchDetails[matchId]
-                                const matchTitle = match
-                                  ? `${getTeamDisplayName(match, true)} vs ${getTeamDisplayName(match, false)}`
-                                  : `Spiel ${matchId}`
+                              .map(([matchKey, matchStats]) => {
+                                const match = matchStats[0]?.matches
                                 const matchDate = match?.match_date
                                   ? new Date(match.match_date).toLocaleDateString("de-DE")
-                                  : ""
+                                  : "Unbekanntes Datum"
 
-                                // Group stats by player for this match
-                                const playerStats = stats.reduce(
+                                const playerStats = matchStats.reduce(
                                   (acc, stat) => {
                                     const playerId = stat.player_id
-                                    const playerName = stat.player?.name || "Unbekannter Spieler"
-
                                     if (!acc[playerId]) {
                                       acc[playerId] = {
-                                        name: playerName,
-                                        legs: [],
-                                        totalLegs: 0,
-                                        wins: 0,
-                                        total180s: 0,
-                                        total171s: 0,
-                                        total15s: 0,
-                                        total16s: 0,
-                                        total17s: 0,
-                                        total18s: 0,
-                                        total19s: 0,
-                                        total20s: 0,
-                                        totalHighTonne: 0,
-                                        totalTonne: 0,
-                                        totalShanghai: 0,
-                                        total95Plus: 0,
-                                        totalUnder26: 0,
-                                        totalUnder30: 0,
-                                        totalSemperit: 0,
-                                        totalBull: 0,
+                                        player_id: playerId,
+                                        player_name: stat.player?.name || "Unbekannt",
+                                        photo_url: stat.player?.photo_url,
+                                        total_legs: 0,
+                                        total_wins: 0,
+                                        total_180: 0,
+                                        total_171: 0,
+                                        total_15: 0,
+                                        total_16: 0,
+                                        total_17: 0,
+                                        total_18: 0,
+                                        total_19: 0,
+                                        total_20: 0,
+                                        total_high_tonne: 0,
+                                        total_tonne: 0,
+                                        total_shanghai: 0,
+                                        total_95_plus: 0,
+                                        total_under_26: 0,
+                                        total_under_30: 0,
+                                        total_semperit: 0,
+                                        total_bull: 0,
+                                        win_percentage: 0,
                                       }
                                     }
 
-                                    acc[playerId].legs.push(stat)
-                                    acc[playerId].totalLegs++
+                                    // Use the same calculation as in the overall statistics
+                                    const actualLegsPlayed = (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0)
+                                    const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1
 
-                                    acc[playerId].wins += stat.leg_wins || 0
-
-                                    acc[playerId].total180s += stat.throws_180 || 0
-                                    acc[playerId].total171s += stat.throws_171 || 0
-                                    acc[playerId].total15s += stat.throws_15 || 0
-                                    acc[playerId].total16s += stat.throws_16 || 0
-                                    acc[playerId].total17s += stat.throws_17 || 0
-                                    acc[playerId].total18s += stat.throws_18 || 0
-                                    acc[playerId].total19s += stat.throws_19 || 0
-                                    acc[playerId].total20s += stat.throws_20 || 0
-                                    acc[playerId].totalHighTonne += stat.throws_high_tonne || 0
-                                    acc[playerId].totalTonne += stat.throws_tonne || 0
-                                    acc[playerId].totalShanghai += stat.throws_shanghai || 0
-                                    acc[playerId].total95Plus += stat.throws_95_plus || 0
-                                    acc[playerId].totalUnder26 += stat.throws_under_26 || 0
-                                    acc[playerId].totalUnder30 += stat.throws_under_30 || 0
-                                    acc[playerId].totalSemperit += stat.throws_semperit_outs || 0
-                                    acc[playerId].totalBull += stat.throws_bull || 0
+                                    acc[playerId].total_legs += legsToAdd
+                                    acc[playerId].total_wins += stat.leg_wins || 0
+                                    acc[playerId].total_180 += stat.throws_180 || 0
+                                    acc[playerId].total_171 += stat.throws_171 || 0
+                                    acc[playerId].total_15 += stat.throws_15 || 0
+                                    acc[playerId].total_16 += stat.throws_16 || 0
+                                    acc[playerId].total_17 += stat.throws_17 || 0
+                                    acc[playerId].total_18 += stat.throws_18 || 0
+                                    acc[playerId].total_19 += stat.throws_19 || 0
+                                    acc[playerId].total_20 += stat.throws_20 || 0
+                                    acc[playerId].total_high_tonne += stat.throws_high_tonne || 0
+                                    acc[playerId].total_tonne += stat.throws_tonne || 0
+                                    acc[playerId].total_shanghai += stat.throws_shanghai || 0
+                                    acc[playerId].total_95_plus += stat.throws_95_plus || 0
+                                    acc[playerId].total_under_26 += stat.throws_under_26 || 0
+                                    acc[playerId].total_under_30 += stat.throws_under_30 || 0
+                                    acc[playerId].total_semperit += stat.semperit_outs || 0
+                                    acc[playerId].total_bull += stat.throws_bull || 0
 
                                     return acc
                                   },
                                   {} as Record<string, any>,
                                 )
 
+                                // Calculate win percentage for each player
+                                Object.values(playerStats).forEach((stats: any) => {
+                                  stats.win_percentage =
+                                    stats.total_legs > 0 ? (stats.total_wins / stats.total_legs) * 100 : 0
+                                })
+
                                 return (
-                                  <Card key={matchId} className="border border-gray-200">
+                                  <Card key={matchKey} className="border border-gray-200">
                                     <CardHeader className="pb-3 p-3 sm:p-4 lg:p-6">
                                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                                         <CardTitle className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                                          {matchTitle}
+                                          {match
+                                            ? `${getTeamDisplayName(match, true)} vs ${getTeamDisplayName(match, false)}`
+                                            : `Spiel ${matchKey}`}
                                         </CardTitle>
                                         {matchDate && (
                                           <Badge variant="outline" className="text-xs w-fit">
@@ -2296,10 +2274,10 @@ export default function DartsClubDashboard() {
                                     <CardContent className="p-3 sm:p-4 lg:p-6">
                                       <div className="space-y-3 sm:space-y-4">
                                         {Object.values(playerStats)
-                                          .sort((a: any, b: any) => b.wins - a.wins || b.total180s - a.total180s)
+                                          .sort((a: any, b: any) => b.wins - a.wins || b.total_180 - a.total_180)
                                           .map((player: any, index) => (
                                             <Card
-                                              key={`${matchId}-${player.name}`}
+                                              key={`${matchKey}-${player.player_id}`}
                                               className={`${
                                                 index < 3 && player.wins > 0
                                                   ? "border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50"
@@ -2313,7 +2291,7 @@ export default function DartsClubDashboard() {
                                                       <Crown className="h-3 w-3 sm:h-4 sm:w-4 text-amber-600" />
                                                     )}
                                                     <h4 className="font-semibold text-base sm:text-lg truncate">
-                                                      {player.name}
+                                                      {player.player_name}
                                                     </h4>
                                                   </div>
                                                   <div className="flex items-center gap-1 sm:gap-2">
@@ -2325,10 +2303,10 @@ export default function DartsClubDashboard() {
                                                           : "bg-gray-200 text-gray-600"
                                                       }`}
                                                     >
-                                                      {player.wins} Wins
+                                                      {player.total_wins} Wins
                                                     </Badge>
                                                     <Badge variant="outline" className="text-xs">
-                                                      {player.totalLegs} Legs
+                                                      {player.total_legs} Legs
                                                     </Badge>
                                                   </div>
                                                 </div>
@@ -2336,82 +2314,82 @@ export default function DartsClubDashboard() {
                                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">180er:</span>
-                                                    <span className="font-medium">{player.total180s}</span>
+                                                    <span className="font-medium">{player.total_180}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">171er:</span>
-                                                    <span className="font-medium">{player.total171s}</span>
+                                                    <span className="font-medium">{player.total_171}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">20er:</span>
-                                                    <span className="font-medium">{player.total20s}</span>
+                                                    <span className="font-medium">{player.total_20}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">19er:</span>
-                                                    <span className="font-medium">{player.total19s}</span>
+                                                    <span className="font-medium">{player.total_19}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">18er:</span>
-                                                    <span className="font-medium">{player.total18s}</span>
+                                                    <span className="font-medium">{player.total_18}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">17er:</span>
-                                                    <span className="font-medium">{player.total17s}</span>
+                                                    <span className="font-medium">{player.total_17}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">16er:</span>
-                                                    <span className="font-medium">{player.total16s}</span>
+                                                    <span className="font-medium">{player.total_16}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">15er:</span>
-                                                    <span className="font-medium">{player.total15s}</span>
+                                                    <span className="font-medium">{player.total_15}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">High Tonne:</span>
-                                                    <span className="font-medium">{player.totalHighTonne}</span>
+                                                    <span className="font-medium">{player.total_high_tonne}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">Tonne:</span>
-                                                    <span className="font-medium">{player.totalTonne}</span>
+                                                    <span className="font-medium">{player.total_tonne}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">Shanghai:</span>
-                                                    <span className="font-medium">{player.totalShanghai}</span>
+                                                    <span className="font-medium">{player.total_shanghai}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">95+:</span>
-                                                    <span className="font-medium">{player.total95Plus}</span>
+                                                    <span className="font-medium">{player.total_95_plus}</span>
                                                   </div>
                                                   <div className="flex justify-between">
                                                     <span className="text-muted-foreground">Bull:</span>
-                                                    <span className="font-medium">{player.totalBull}</span>
+                                                    <span className="font-medium">{player.total_bull}</span>
                                                   </div>
                                                 </div>
 
-                                                {(player.totalUnder26 > 0 ||
-                                                  player.totalUnder30 > 0 ||
-                                                  player.totalSemperit > 0) && (
+                                                {(player.total_under_26 > 0 ||
+                                                  player.total_under_30 > 0 ||
+                                                  player.total_semperit > 0) && (
                                                   <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
                                                     <div className="text-sm font-medium text-red-700 mb-2 flex items-center gap-1">
                                                       ⚠️ Check Bilanz
                                                     </div>
                                                     <div className="grid grid-cols-3 gap-4 text-sm">
-                                                      {player.totalUnder26 > 0 && (
+                                                      {player.total_under_26 > 0 && (
                                                         <div className="flex justify-between text-red-600">
                                                           <span>Unter 26:</span>
-                                                          <span className="font-medium">{player.totalUnder26}</span>
+                                                          <span className="font-medium">{player.total_under_26}</span>
                                                         </div>
                                                       )}
-                                                      {player.totalUnder30 > 0 && (
+                                                      {player.total_under_30 > 0 && (
                                                         <div className="flex justify-between text-red-600">
                                                           <span>Unter 30:</span>
-                                                          <span className="font-medium">{player.totalUnder30}</span>
+                                                          <span className="font-medium">{player.total_under_30}</span>
                                                         </div>
                                                       )}
-                                                      {player.totalSemperit > 0 && (
+                                                      {player.total_semperit > 0 && (
                                                         <div className="flex justify-between text-red-600">
                                                           <span>Semperit:</span>
-                                                          <span className="font-medium">{player.totalSemperit}</span>
+                                                          <span className="font-medium">{player.total_semperit}</span>
                                                         </div>
                                                       )}
                                                     </div>
@@ -2422,8 +2400,8 @@ export default function DartsClubDashboard() {
                                                   <div className="flex justify-between items-center text-sm">
                                                     <span className="text-muted-foreground">Gewinnquote:</span>
                                                     <span className="font-medium">
-                                                      {player.totalLegs > 0
-                                                        ? `${((player.wins / player.totalLegs) * 100).toFixed(1)}%`
+                                                      {player.total_legs > 0
+                                                        ? `${((player.total_wins / player.total_legs) * 100).toFixed(1)}%`
                                                         : "0%"}
                                                     </span>
                                                   </div>
@@ -2960,7 +2938,7 @@ export default function DartsClubDashboard() {
                     className="flex-1 text-xs sm:text-sm h-8 sm:h-9"
                     onClick={() => {
                       if (selectedMatchForResults) {
-                        updateMatchResult(selectedMatchForResults, editMatchScores.home, editMatchScores.away)
+                        updateMatchScore(selectedMatchForResults, editMatchScores.home, editMatchScores.away)
                       }
                     }}
                   >
