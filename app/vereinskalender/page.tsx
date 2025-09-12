@@ -11,6 +11,7 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Filter,
   Target,
   Trophy,
   CalendarDays,
@@ -82,8 +83,6 @@ export default function CalendarPage() {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false)
   const [selectedLeague, setSelectedLeague] = useState("Alle Ligen")
   const [selectedTeam, setSelectedTeam] = useState("Alle Teams")
-  const [selectedGameType, setSelectedGameType] = useState("Alle Spiele")
-  const [selectedResultType, setSelectedResultType] = useState("Alle")
   const [selectedItemType, setSelectedItemType] = useState("Alle")
   const [viewMode, setViewMode] = useState<"month" | "list">("month")
   const [matches, setMatches] = useState<Match[]>([])
@@ -95,6 +94,7 @@ export default function CalendarPage() {
   const [isMultiItemDialogOpen, setIsMultiItemDialogOpen] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const [players, setPlayers] = useState<{ id: string; name: string }[]>([{ id: "0", name: "Alle Spieler" }])
+  const [selectedResultType, setSelectedResultType] = useState("Alle") // Declare the variable here
 
   const fetchData = async () => {
     try {
@@ -179,21 +179,16 @@ export default function CalendarPage() {
       match.home_opponent_team?.name === selectedTeam ||
       match.away_opponent_team?.name === selectedTeam
 
-    let gameTypeMatch = true
-    if (selectedGameType === "Heimspiele") {
-      gameTypeMatch = match.home_team_type === "own"
-    } else if (selectedGameType === "Auswärtsspiele") {
-      gameTypeMatch = match.away_team_type === "own"
-    }
-
     let resultTypeMatch = true
-    if (selectedResultType === "Gespielt") {
-      resultTypeMatch = match.status === "completed" || match.status === "finished"
-    } else if (selectedResultType === "Geplant") {
-      resultTypeMatch = match.status === "scheduled"
+    if (selectedItemType === "Spiele") {
+      if (selectedResultType === "Gespielt") {
+        resultTypeMatch = match.status === "completed" || match.status === "finished"
+      } else if (selectedResultType === "Geplant") {
+        resultTypeMatch = match.status === "scheduled"
+      }
     }
 
-    return leagueMatch && teamMatch && gameTypeMatch && resultTypeMatch
+    return leagueMatch && teamMatch && resultTypeMatch
   })
 
   const filteredEvents = events.filter((event) => {
@@ -370,31 +365,6 @@ export default function CalendarPage() {
     )
   }
 
-  const goToPreviousMonth = () => {
-    setCurrentDate((prevDate) => {
-      const newDate = new Date(prevDate)
-      newDate.setMonth(prevDate.getMonth() - 1)
-      return newDate
-    })
-  }
-
-  const goToNextMonth = () => {
-    setCurrentDate((prevDate) => {
-      const newDate = new Date(prevDate)
-      newDate.setMonth(prevDate.getMonth() + 1)
-      return newDate
-    })
-  }
-
-  const formatMatchDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("de-DE", {
-      weekday: "short",
-      day: "2-digit",
-      month: "2-digit",
-    })
-  }
-
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -419,6 +389,29 @@ export default function CalendarPage() {
             <Card className="shadow-lg border-0 bg-white">
               <CardContent className="p-4 lg:p-6">
                 <div className="flex flex-col gap-4">
+                  <div className="flex justify-center">
+                    <div className="flex bg-gray-100 rounded-lg p-1">
+                      <Button
+                        variant={viewMode === "month" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setViewMode("month")}
+                        className="flex items-center gap-2"
+                      >
+                        <Calendar className="h-4 w-4" />
+                        Monat
+                      </Button>
+                      <Button
+                        variant={viewMode === "list" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setViewMode("list")}
+                        className="flex items-center gap-2"
+                      >
+                        <Filter className="h-4 w-4" />
+                        Liste
+                      </Button>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col gap-3 lg:flex-row lg:gap-4 lg:flex-wrap">
                     <Select value={selectedItemType} onValueChange={setSelectedItemType}>
                       <SelectTrigger className="w-full lg:w-48">
@@ -473,21 +466,22 @@ export default function CalendarPage() {
                       </SelectContent>
                     </Select>
 
-                    <Select
-                      value={selectedMatch?.id || ""}
-                      onValueChange={(value) => setSelectedMatch(matches.find((m) => m.id === value) || null)}
-                    >
+                    <Select value={selectedResultType} onValueChange={setSelectedResultType}>
                       <SelectTrigger className="w-full lg:w-48">
-                        <SelectValue placeholder="Spiel auswählen" />
+                        <SelectValue placeholder="Ergebnis-Typ auswählen" />
                       </SelectTrigger>
                       <SelectContent>
-                        {matches.map((match) => (
-                          <SelectItem key={match.id} value={match.id.toString()}>
-                            <span className="truncate">
-                              {match.home_team?.name || "Heimteam"} vs {match.away_team?.name || "Auswärtsteam"}
-                            </span>
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="Alle">Alle Ergebnisse</SelectItem>
+                        <SelectItem value="Gespielt">
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-green-100 text-green-800 border-green-200">Gespielt</Badge>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="Geplant">
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-blue-100 text-blue-800 border-blue-200">Geplant</Badge>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -497,9 +491,9 @@ export default function CalendarPage() {
                         setSelectedItemType("Alle")
                         setSelectedLeague("Alle Ligen")
                         setSelectedTeam("Alle Teams")
-                        setSelectedMatch(null)
+                        setSelectedResultType("Alle")
                       }}
-                      className="w-full lg:w-auto bg-white hover:bg-gray-50 border-gray-200"
+                      className="w-full sm:w-auto bg-white hover:bg-gray-50 border-gray-200"
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Zurücksetzen
@@ -510,104 +504,122 @@ export default function CalendarPage() {
             </Card>
           </div>
 
-          {/* Calendar Grid */}
-          <Card className="shadow-lg border-0 bg-white mb-6 lg:mb-8">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl lg:text-2xl font-bold">
-                  {currentDate.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}
-                </CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((day) => (
-                  <div key={day} className="p-2 text-center font-semibold text-gray-600 text-xs lg:text-sm">
-                    {day}
+          {viewMode === "month" && (
+            <Card className="shadow-xl border-0 bg-white">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl lg:text-2xl font-bold">
+                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
+                      Heute
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => navigateMonth("next")}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: 42 }, (_, index) => {
-                  const day = getDaysInMonth(currentDate)[index]
-                  const isToday = day?.toDateString() === new Date().toDateString()
-
-                  return (
-                    <div
-                      key={index}
-                      className={`p-1 h-16 sm:h-20 lg:h-32 border border-gray-200 rounded-lg ${
-                        isToday ? "bg-orange-50 border-orange-300" : "bg-white hover:bg-gray-50"
-                      } transition-colors overflow-hidden`}
-                    >
-                      {day && (
-                        <div
-                          className={`text-xs sm:text-sm lg:text-base font-medium mb-1 ${
-                            isToday ? "text-orange-600" : "text-gray-900"
-                          }`}
-                        >
-                          {day.getDate()}
-                        </div>
-                      )}
-
-                      <div className="space-y-1 overflow-hidden">
-                        {day &&
-                          getItemsForDate(day)
-                            .slice(0, window.innerWidth < 640 ? 1 : 2)
-                            .map((item) => {
-                              if (isEvent(item)) {
-                                return (
-                                  <button
-                                    key={item.id}
-                                    onClick={() => openEventDialog(item)}
-                                    className={`w-full text-left p-1 rounded text-xs truncate transition-colors ${
-                                      item.event_type === "Turnier"
-                                        ? "bg-purple-100 text-purple-800 hover:bg-purple-200"
-                                        : "bg-green-100 text-green-800 hover:bg-green-200"
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-1">
-                                      {item.event_type === "Turnier" ? (
-                                        <Trophy className="h-2 w-2 sm:h-3 sm:w-3 flex-shrink-0" />
-                                      ) : (
-                                        <CalendarDays className="h-2 w-2 sm:h-3 sm:w-3 flex-shrink-0" />
-                                      )}
-                                      <span className="truncate text-xs">{item.name}</span>
-                                    </div>
-                                  </button>
-                                )
-                              } else {
-                                const match = item as Match
-                                return (
-                                  <button
-                                    key={match.id}
-                                    onClick={() => openMatchDialog(match)}
-                                    className="w-full text-left p-1 rounded text-xs bg-orange-100 text-orange-800 hover:bg-orange-200 transition-colors truncate"
-                                  >
-                                    <div className="flex items-center gap-1">
-                                      <Target className="h-2 w-2 sm:h-3 sm:w-3 flex-shrink-0" />
-                                      <span className="truncate">
-                                        {getTeamDisplayName(match, true)} vs {getTeamDisplayName(match, false)}
-                                      </span>
-                                    </div>
-                                  </button>
-                                )
-                              }
-                            })}
-                      </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-7 gap-1 lg:gap-2 mb-2">
+                  {dayNames.map((day) => (
+                    <div key={day} className="text-center text-xs lg:text-sm font-medium text-gray-500 p-2">
+                      {day}
                     </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1 lg:gap-2">
+                  {Array.from({ length: 42 }, (_, index) => {
+                    const day = getDaysInMonth(currentDate)[index]
+                    const isToday = day?.toDateString() === new Date().toDateString()
+                    const itemsForDay = day ? getItemsForDate(day) : []
+
+                    return (
+                      <div
+                        key={index}
+                        className={`p-1 lg:p-2 h-20 lg:h-32 border border-gray-200 rounded-lg ${
+                          isToday ? "bg-orange-50 border-orange-300" : "bg-white hover:bg-gray-50"
+                        } transition-colors overflow-hidden`}
+                      >
+                        {day && (
+                          <div
+                            className={`text-sm lg:text-base font-medium mb-1 ${
+                              isToday ? "text-orange-600" : "text-gray-900"
+                            }`}
+                          >
+                            {day.getDate()}
+                          </div>
+                        )}
+
+                        <div className="space-y-1 overflow-hidden">
+                          {itemsForDay.map((item, itemIndex) => {
+                            if (isEvent(item)) {
+                              return (
+                                <button
+                                  key={item.id}
+                                  onClick={() => openEventDialog(item)}
+                                  className={`w-full text-left p-1 rounded text-xs lg:text-sm truncate transition-colors ${
+                                    item.event_type === "Turnier"
+                                      ? "bg-purple-100 text-purple-800 hover:bg-purple-200"
+                                      : "bg-green-100 text-green-800 hover:bg-green-200"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    {item.event_type === "Turnier" ? (
+                                      <Trophy className="h-3 w-3 flex-shrink-0" />
+                                    ) : (
+                                      <CalendarDays className="h-3 w-3 flex-shrink-0" />
+                                    )}
+                                    <span className="truncate">{item.name}</span>
+                                  </div>
+                                </button>
+                              )
+                            } else {
+                              const match = item as Match
+                              return (
+                                <button
+                                  key={match.id}
+                                  onClick={() => openMatchDialog(match)}
+                                  className={`w-full text-left p-1 rounded text-xs lg:text-sm truncate transition-colors ${
+                                    isHomeGame(match)
+                                      ? "bg-orange-100 text-orange-800 hover:bg-orange-200"
+                                      : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    {isHomeGame(match) ? (
+                                      <Home className="h-3 w-3 flex-shrink-0" />
+                                    ) : (
+                                      <Plane className="h-3 w-3 flex-shrink-0" />
+                                    )}
+                                    <span className="truncate">
+                                      {getTeamDisplayName(match, true)} vs {getTeamDisplayName(match, false)}
+                                    </span>
+                                  </div>
+                                </button>
+                              )
+                            }
+                          })}
+                          {itemsForDay.length > 3 && (
+                            <button
+                              onClick={() => openMultiItemDialog(day!, itemsForDay)}
+                              className="w-full text-left p-1 rounded text-xs text-gray-600 hover:bg-gray-100 transition-colors"
+                            >
+                              +{itemsForDay.length - 3} weitere...
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {viewMode === "list" && (
             <div className="space-y-4 lg:space-y-6">
@@ -687,10 +699,10 @@ export default function CalendarPage() {
                       return (
                         <Card key={match.id} className="shadow-lg border-0 bg-white hover:shadow-xl transition-shadow">
                           <CardContent className="p-4 lg:p-6">
-                            <div className="flex flex-col gap-4">
+                            <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
                               <div className="flex-1">
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3">
-                                  <div className="flex items-center gap-2 flex-wrap">
+                                  <div className="flex items-center gap-2">
                                     {getStatusBadge(match.status)}
                                     <Badge variant="outline" className="text-xs">
                                       {match.season?.name || "Liga"}
@@ -699,9 +711,9 @@ export default function CalendarPage() {
                                   <div className="text-sm text-gray-600">Spieltag {match.week_number}</div>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
-                                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    <Avatar className="h-8 w-8 lg:h-10 lg:w-10 flex-shrink-0">
+                                <div className="flex items-center gap-4 mb-3">
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <Avatar className="h-8 w-8 lg:h-10 lg:w-10">
                                       <AvatarImage
                                         src={getTeamLogo(match, true) || "/placeholder.svg?height=40&width=40"}
                                       />
@@ -714,18 +726,21 @@ export default function CalendarPage() {
                                     </span>
                                   </div>
 
-                                  <div className="text-center px-2 flex-shrink-0">
+                                  <div className="text-center px-2">
                                     {match.status === "completed" || match.status === "finished" ? (
-                                      <div className="text-lg lg:text-xl font-bold text-gray-900">
+                                      <div className="text-lg lg:text-xl font-bold">
                                         {match.home_score} : {match.away_score}
                                       </div>
                                     ) : (
-                                      <div className="text-sm text-gray-500 font-medium">vs</div>
+                                      <div className="text-gray-400 font-bold">vs</div>
                                     )}
                                   </div>
 
-                                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    <Avatar className="h-8 w-8 lg:h-10 lg:w-10 flex-shrink-0">
+                                  <div className="flex items-center gap-3 flex-1 justify-end">
+                                    <span className="font-semibold text-sm lg:text-base truncate text-right">
+                                      {getTeamDisplayName(match, false)}
+                                    </span>
+                                    <Avatar className="h-8 w-8 lg:h-10 lg:w-10">
                                       <AvatarImage
                                         src={getTeamLogo(match, false) || "/placeholder.svg?height=40&width=40"}
                                       />
@@ -733,25 +748,44 @@ export default function CalendarPage() {
                                         {getTeamDisplayName(match, false).charAt(0)}
                                       </AvatarFallback>
                                     </Avatar>
-                                    <span className="font-semibold text-sm lg:text-base truncate">
-                                      {getTeamDisplayName(match, false)}
-                                    </span>
                                   </div>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-gray-600">
+                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-sm text-gray-600">
                                   <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4 flex-shrink-0" />
-                                    <span>{formatMatchDate(match.match_date)}</span>
+                                    <Calendar className="h-4 w-4" />
+                                    {new Date(match.match_date).toLocaleDateString("de-DE", {
+                                      weekday: "short",
+                                      day: "2-digit",
+                                      month: "2-digit",
+                                      year: "numeric",
+                                    })}
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <MapPin className="h-4 w-4 flex-shrink-0" />
-                                    <span className="truncate">{match.venue}</span>
+                                    <Clock className="h-4 w-4" />
+                                    {formatTimeWithoutSeconds(match.match_time)} Uhr
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className="h-4 w-4" />
+                                    {match.venue}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {isHomeGame(match) ? (
+                                      <>
+                                        <Home className="h-4 w-4 text-orange-600" />
+                                        <span className="text-orange-600 font-medium">Heimspiel</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Plane className="h-4 w-4 text-blue-600" />
+                                        <span className="text-blue-600 font-medium">Auswärtsspiel</span>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="flex justify-end">
+                              <div className="flex sm:justify-end">
                                 <Button
                                   onClick={() => openMatchDialog(match)}
                                   variant="outline"
