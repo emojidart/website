@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%; /* Pure white */
+    --foreground: 240 10% 3.9%; /* Near black */
+    --card: 0 0% 100%; /* White cards */
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 25 95% 53%; /* Vibrant orange for primary elements */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --secondary: 240 4.8% 95.9%; /* Light gray for secondary elements */
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 5% 25%; /* Updated value */
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%; /* Light gray border */
+    --input: 240 5.9% 90%;
+    --ring: 25 95% 53%; /* Orange ring */
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+  }
+
+  /* Die gesamte .dark Definition wurde entfernt, um sicherzustellen, dass immer der helle Modus verwendet wird. */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Removed brutalist overrides */
+  }
+
+  /* Global placeholder styling */
+  input::placeholder,
+  textarea::placeholder {
+    color: hsl(var(--muted-foreground)); /* Nutze die definierte muted-foreground */
+  }
+
+  /* Override browser autofill background */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  textarea:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px hsl(var(--background)) inset !important;
+    -webkit-text-fill-color: hsl(var(--foreground)) !important; /* Ensure text color is readable */
+    background-color: hsl(var(--background)) !important; /* Fallback for non-webkit browsers */
+  }
+
+  /* Mobile-First Typography */
+  html {
+    font-size: 14px; /* Kleinere Basis-Schriftgröße für Mobile */
+  }
+
+  @media (min-width: 640px) {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    html {
+      font-size: 16px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 16px;
+    }
+  }
+}
+
+/* Mobile-optimierte Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px; /* Schmaler auf Mobile */
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: hsl(var(--card)); /* Use standard card background */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--primary)); /* Use standard primary color */
+  border-radius: 10px;
+  border: 1px solid hsl(var(--card)); /* Dünnerer Border */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--primary)); /* Use standard primary color */
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary)) hsl(var(--card)); /* Use standard primary and card colors */
+}
+
+/* Mobile-optimierte Laufschrift */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%); /* Bewegt den gesamten Inhalt um die Breite eines Inhaltsblocks */
+  }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite; /* Langsamer und flüssiger */
+  display: flex; /* Wichtig für die nebeneinander liegenden Inhalte */
+  white-space: nowrap; /* Verhindert Zeilenumbrüche */
+  width: max-content; /* Passt die Breite an den Inhalt an */
+}
+
+/* Mobile-spezifische Utilities */
+@media (max-width: 640px) {
+  .mobile-hide {
+    display: none !important;
+  }
+
+  .mobile-full-width {
+    width: 100vw !important;
+    margin-left: calc(-50vw + 50%) !important;
+  }
+
+  .mobile-text-sm {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+
+  .mobile-p-2 {
+    padding: 0.5rem !important;
+  }
+
+  .mobile-gap-2 {
+    gap: 0.5rem !important;
+  }
+}
+
+/* Touch-friendly Buttons */
+@media (max-width: 768px) {
+  button,
+  .btn {
+    min-height: 44px; /* Apple's empfohlene Touch-Größe */
+    min-width: 44px;
+  }
+}

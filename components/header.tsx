@@ -6,7 +6,7 @@ import { Menu, LogOut, UserIcon, ChevronDown } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/hooks/use-auth"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { usePathname } from "next/navigation"
 
@@ -16,7 +16,30 @@ export function Header() {
 
   const { session, user } = useAuth()
   const [loggingOut, setLoggingOut] = useState(false)
+  const [playerName, setPlayerName] = useState<string | null>(null)
   const pathname = usePathname()
+
+  useEffect(() => {
+    const fetchPlayerName = async () => {
+      if (session?.user) {
+        try {
+          const { data: profileData } = await supabase
+            .from("user_profiles")
+            .select(`club_players (name)`)
+            .eq("user_id", session.user.id)
+            .single()
+
+          if (profileData?.club_players?.name) {
+            setPlayerName(profileData.club_players.name)
+          }
+        } catch (error) {
+          console.error("Error fetching player name:", error)
+        }
+      }
+    }
+
+    fetchPlayerName()
+  }, [session])
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -205,15 +228,15 @@ export function Header() {
                   className="border-green-500 text-green-600 hover:bg-green-50 hover:border-green-600 bg-transparent transition-all duration-200 font-bold"
                 >
                   <UserIcon className="h-4 w-4 mr-2" />
-                  {user.email?.split("@")[0] || "User"}
+                  {playerName || user.email?.split("@")[0] || "User"}
                   <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
-                  <Link href="/member-dashboard" className="w-full cursor-pointer">
+                  <Link href="/member-profile" className="w-full cursor-pointer">
                     <UserIcon className="h-4 w-4 mr-2" />
-                    Member Dashboard
+                    Member Profil
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -433,7 +456,7 @@ export function Header() {
                 <div className="mt-6 pt-4 border-t border-gray-200 flex flex-col gap-4">
                   <div className="flex items-center gap-2 text-base text-gray-700 px-4 py-2">
                     <UserIcon className="h-5 w-5" />
-                    <span>{user.email}</span>
+                    <span>{playerName || user.email}</span>
                   </div>
                   <Link href="/member-dashboard" passHref>
                     <Button

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { MessageCircle, Send, Users, Clock, Hash, Menu, X, ArrowLeft } from "lucide-react"
+import { MessageCircle, Send, Clock, Hash, Menu, X, ArrowLeft } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
@@ -448,33 +448,18 @@ export default function ChatPage() {
       <Header />
 
       <main className="flex-grow pt-8 pb-20">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 max-w-6xl">
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
-                <Link href="/member-dashboard">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Dashboard
-                  </Button>
-                </Link>
-                <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                  <MessageCircle className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-                  Team Chat
-                </h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
-                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                  {onlineUsers} Online
-                </Badge>
-              </div>
-            </div>
-            <p className="text-muted-foreground">Kommuniziere mit deinen Teamkollegen</p>
+            <Link href="/member-profile">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Zurück
+              </Button>
+            </Link>
           </div>
 
           <div className="flex h-[calc(100vh-240px)] gap-4">

@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Home,
   Target,
+  CalendarDays,
 } from "lucide-react"
 import { useDartData } from "@/hooks/use-dart-data"
 import { AuthSection } from "@/components/auth-section"
@@ -42,6 +43,7 @@ import Link from "next/link"
 import { UserManagement } from "@/components/user-management"
 import { AttendanceManagement } from "@/components/attendance-management"
 import { LeagueManagement } from "@/components/league-management" // Added league management import
+import { TournamentDaysManagement } from "@/components/tournament-days-management" // Added tournament-days management import
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
@@ -69,7 +71,8 @@ export default function AdminPage() {
     | "player-database"
     | "dart-competition"
     | "attendance"
-    | "leagues" // Added leagues view to currentView type
+    | "leagues"
+    | "tournament-days" // Added tournament-days view type
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -232,6 +235,13 @@ export default function AdminPage() {
       color: "bg-slate-500",
       view: "player-database" as const,
     },
+    {
+      title: "Turniertage Cup",
+      description: "Turniertage Cup verwalten",
+      icon: CalendarDays,
+      color: "bg-orange-500",
+      view: "tournament-days" as const,
+    },
   ]
 
   if (authLoading || adminLoading) {
@@ -317,6 +327,7 @@ export default function AdminPage() {
                   {currentView === "dart-competition" && "Dart Competition"}
                   {currentView === "attendance" && "Anwesenheitsliste"}
                   {currentView === "leagues" && "Ligaspiele"}
+                  {currentView === "tournament-days" && "Turniertage Cup"} {/* Added tournament-days view label */}
                 </span>
               </>
             )}
@@ -362,7 +373,9 @@ export default function AdminPage() {
                                                 ? "Anwesenheitsliste"
                                                 : currentView === "leagues"
                                                   ? "Ligaspiele"
-                                                  : "Admin-Zugang"}
+                                                  : currentView === "tournament-days"
+                                                    ? "Turniertage Cup" // Added tournament-days view label
+                                                    : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
                 {session && currentView === "dashboard"
@@ -444,6 +457,10 @@ export default function AdminPage() {
             {currentView === "photos" && <PlayerPhotoManagement user={user} onDataSaved={handleDataSaved} />}
             {currentView === "attendance" && <AttendanceManagement />}
             {currentView === "leagues" && <LeagueManagement />} {/* Added leagues view */}
+            {currentView === "tournament-days" && (
+              <TournamentDaysManagement user={user} onDataSaved={handleDataSaved} />
+            )}{" "}
+            {/* Added tournament-days view */}
             {currentView === "recruitment" && (
               <div className="space-y-6">
                 <div className="flex space-x-4 border-b border-gray-200">
@@ -643,13 +660,17 @@ export default function AdminPage() {
                         </div>
                       </Button>
 
-                      <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
+                      <Button
+                        onClick={() => setCurrentView("tournament-days")}
+                        variant="outline"
+                        className="w-full justify-start bg-transparent h-auto p-4"
+                      >
                         <div className="flex flex-col items-start space-y-1">
                           <div className="flex items-center space-x-2">
-                            <Trophy className="h-4 w-4" />
-                            <span className="font-medium">Spielergebnisse und Statistiken</span>
+                            <CalendarDays className="h-4 w-4" />
+                            <span className="font-medium">Turniertage Cup</span>
                           </div>
-                          <span className="text-xs text-gray-500">erfassen</span>
+                          <span className="text-xs text-gray-500">Events verwalten</span>
                         </div>
                       </Button>
 
@@ -662,6 +683,29 @@ export default function AdminPage() {
                           <span className="text-xs text-gray-500">EMD - LION CUP</span>
                         </div>
                       </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {currentView === "tournament-days" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <CalendarDays className="h-5 w-5" />
+                      <span>Turniertage Cup</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4">Hier können Sie die Turniertage Cup verwalten.</p>
+                    <div className="space-y-3">
+                      <Link href="/tournament-days">
+                        <Button className="w-full">
+                          <CalendarDays className="h-4 w-4 mr-2" />
+                          Zum Turniertage Cup
+                        </Button>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>

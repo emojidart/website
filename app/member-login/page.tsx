@@ -24,7 +24,7 @@ export default function MemberLoginPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && session) {
-      router.push("/member-dashboard")
+      router.push("/member-profile")
     }
   }, [session, authLoading, router])
 
@@ -45,7 +45,7 @@ export default function MemberLoginPage() {
 
       if (data.user) {
         setMessage("Anmeldung erfolgreich!")
-        router.push("/member-dashboard")
+        router.push("/member-profile")
       }
     } catch (error: any) {
       setMessage(`Anmeldung fehlgeschlagen: ${error.message}`)

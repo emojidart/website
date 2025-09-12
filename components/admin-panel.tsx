@@ -431,5 +431,3 @@ export function AdminPanel({
     </div>
   )
 }
-
-
