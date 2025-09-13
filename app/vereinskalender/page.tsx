@@ -541,14 +541,12 @@ export default function CalendarPage() {
                     return (
                       <div
                         key={index}
-                        // Increased mobile height from h-28 to h-36 for better readability
-                        className={`p-1 lg:p-2 h-36 sm:h-40 lg:h-44 border border-gray-200 rounded-lg ${
+                        className={`p-1 lg:p-2 h-48 sm:h-40 lg:h-44 border border-gray-200 rounded-lg ${
                           isToday ? "bg-orange-50 border-orange-300" : "bg-white hover:bg-gray-50"
                         } transition-colors overflow-hidden`}
                       >
                         {day && (
                           <div
-                            // Improved mobile text sizing for day numbers
                             className={`text-base sm:text-lg lg:text-xl font-medium mb-1 ${
                               isToday ? "text-orange-600" : "text-gray-900"
                             }`}
@@ -564,62 +562,46 @@ export default function CalendarPage() {
                                 <button
                                   key={item.id}
                                   onClick={() => openEventDialog(item)}
-                                  // Improved mobile text sizing and padding for events
-                                  className={`w-full text-left p-1.5 rounded text-xs sm:text-sm lg:text-base transition-colors min-h-[32px] ${
-                                    item.event_type === "Turnier"
-                                      ? "bg-purple-100 text-purple-800 hover:bg-purple-200"
-                                      : "bg-green-100 text-green-800 hover:bg-green-200"
-                                  }`}
+                                  className="w-full text-left p-1.5 rounded text-xs sm:text-sm bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors font-medium min-h-[28px] leading-tight"
                                 >
                                   <div className="flex items-center gap-1">
-                                    {item.event_type === "Turnier" ? (
-                                      <Trophy className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                                    ) : (
-                                      <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                                    )}
-                                    <span className="truncate font-medium">
-                                      {/* Increased mobile text length from 8 to 12 characters */}
-                                      {item.name.length > 12 ? item.name.substring(0, 12) + "..." : item.name}
+                                    <Trophy className="h-3 w-3 flex-shrink-0" />
+                                    <span className="truncate">
+                                      {item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name}
                                     </span>
                                   </div>
                                 </button>
                               )
                             } else {
-                              const match = item as Match
-                              const homeTeam = getTeamDisplayName(match, true)
-                              const awayTeam = getTeamDisplayName(match, false)
-                              // Increased abbreviation length for better readability
-                              const homeAbbr = homeTeam.length > 10 ? homeTeam.substring(0, 10) + "." : homeTeam
-                              const awayAbbr = awayTeam.length > 10 ? awayTeam.substring(0, 10) + "." : awayTeam
-
                               return (
                                 <button
-                                  key={match.id}
-                                  onClick={() => openMatchDialog(match)}
-                                  // Improved mobile text sizing and padding for matches
-                                  className={`w-full text-left p-1.5 rounded text-xs sm:text-sm lg:text-base transition-colors min-h-[32px] ${
-                                    isHomeGame(match)
+                                  key={item.id}
+                                  onClick={() => openMatchDialog(item)}
+                                  className={`w-full text-left p-1.5 rounded text-xs sm:text-sm transition-colors font-medium min-h-[28px] leading-tight ${
+                                    isHomeGame(item)
                                       ? "bg-orange-100 text-orange-800 hover:bg-orange-200"
                                       : "bg-blue-100 text-blue-800 hover:bg-blue-200"
                                   }`}
                                 >
                                   <div className="flex items-center gap-1">
-                                    {isHomeGame(match) ? (
-                                      <Home className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                                    {isHomeGame(item) ? (
+                                      <Home className="h-3 w-3 flex-shrink-0" />
                                     ) : (
-                                      <Plane className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                                      <Plane className="h-3 w-3 flex-shrink-0" />
                                     )}
-                                    <span className="font-medium leading-tight">
-                                      <span className="block sm:hidden text-xs leading-tight">
-                                        {/* Better mobile display with line breaks for team names */}
-                                        <div className="truncate">{homeAbbr}</div>
-                                        <div className="text-[10px] text-gray-600">vs</div>
-                                        <div className="truncate">{awayAbbr}</div>
+                                    <div className="flex flex-col leading-none">
+                                      <span className="truncate text-xs">
+                                        {getTeamDisplayName(item, true).length > 15
+                                          ? `${getTeamDisplayName(item, true).substring(0, 15)}...`
+                                          : getTeamDisplayName(item, true)}
                                       </span>
-                                      <span className="hidden sm:block truncate">
-                                        {homeTeam} vs {awayTeam}
+                                      <span className="text-xs opacity-75">vs</span>
+                                      <span className="truncate text-xs">
+                                        {getTeamDisplayName(item, false).length > 15
+                                          ? `${getTeamDisplayName(item, false).substring(0, 15)}...`
+                                          : getTeamDisplayName(item, false)}
                                       </span>
-                                    </span>
+                                    </div>
                                   </div>
                                 </button>
                               )
@@ -628,7 +610,6 @@ export default function CalendarPage() {
                           {itemsForDay.length > 2 && (
                             <button
                               onClick={() => openMultiItemDialog(day!, itemsForDay)}
-                              // Improved mobile styling for "mehr" button
                               className="w-full text-left p-1.5 rounded text-xs sm:text-sm text-gray-600 hover:bg-gray-100 transition-colors font-medium min-h-[28px]"
                             >
                               +{itemsForDay.length - 2} mehr
