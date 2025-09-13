@@ -586,8 +586,64 @@ export default function CalendarPage() {
                           {/* Mobile view: Show only count of items */}
                           <div className="block md:hidden">
                             {itemsForDay.length > 0 && (
-                              <div className="text-xs text-center py-1 px-2 bg-blue-100 text-blue-800 rounded-full">
-                                {itemsForDay.length} {itemsForDay.length === 1 ? "Termin" : "Termine"}
+                              <div className="flex flex-wrap gap-1 justify-center">
+                                {(() => {
+                                  const eventTypes = itemsForDay.reduce(
+                                    (acc, item) => {
+                                      const type = item.type || "event"
+                                      acc[type] = (acc[type] || 0) + 1
+                                      return acc
+                                    },
+                                    {} as Record<string, number>,
+                                  )
+
+                                  return Object.entries(eventTypes).map(([type, count]) => {
+                                    const getTypeConfig = (eventType: string) => {
+                                      switch (eventType) {
+                                        case "tournament":
+                                          return {
+                                            bg: "bg-amber-500",
+                                            text: "text-white",
+                                            label: "T",
+                                            name: "Turnier",
+                                          }
+                                        case "game":
+                                          return {
+                                            bg: "bg-green-500",
+                                            text: "text-white",
+                                            label: "S",
+                                            name: "Spiel",
+                                          }
+                                        case "training":
+                                          return {
+                                            bg: "bg-blue-500",
+                                            text: "text-white",
+                                            label: "Tr",
+                                            name: "Training",
+                                          }
+                                        default:
+                                          return {
+                                            bg: "bg-purple-500",
+                                            text: "text-white",
+                                            label: "E",
+                                            name: "Event",
+                                          }
+                                      }
+                                    }
+
+                                    const config = getTypeConfig(type)
+
+                                    return (
+                                      <div
+                                        key={type}
+                                        className={`inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 text-xs font-medium rounded-md ${config.bg} ${config.text} shadow-sm`}
+                                        title={`${count} ${config.name}${count > 1 ? (type === "game" ? "e" : type === "training" ? "s" : "s") : ""}`}
+                                      >
+                                        {count > 1 ? count : config.label}
+                                      </div>
+                                    )
+                                  })
+                                })()}
                               </div>
                             )}
                           </div>
