@@ -1487,6 +1487,7 @@ export default function DashboardPage() {
                                         src={
                                           member.club_players?.photo_url ||
                                           "/placeholder.svg?height=32&width=32&query=darts-player" ||
+                                          "/placeholder.svg" ||
                                           "/placeholder.svg"
                                         }
                                       />
@@ -1564,14 +1565,12 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="flex items-center gap-2 min-w-0">
                                   <MapPin className="h-4 w-4 flex-shrink-0" />
-                                  <span className="truncate font-medium max-w-[200px] sm:max-w-none">
-                                    {match.venue}
-                                  </span>
+                                  <span className="truncate font-medium text-xs sm:text-sm">{match.venue}</span>
                                 </div>
                               </div>
                             </div>
-                            <Badge variant={match.status === "completed" ? "default" : "secondary"}>
-                              {match.status === "completed" ? "Beendet" : "Geplant"}
+                            <Badge variant={match.status === "completed" ? "default" : "secondary"} className="text-xs">
+                              {match.status === "completed" ? "Beendet" : "Anstehend"}
                             </Badge>
                           </div>
 
@@ -1608,7 +1607,7 @@ export default function DashboardPage() {
                             </div>
 
                             {(hasLeadershipInTeam(match.home_team_id) || hasLeadershipInTeam(match.away_team_id)) && (
-                              <div className="flex flex-col gap-2 pt-2 border-t border-border/50 sm:flex-row sm:justify-center sm:gap-3">
+                              <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -1616,14 +1615,14 @@ export default function DashboardPage() {
                                     setSelectedMatchForStats(match)
                                     setIsStatsDialogOpen(true)
                                   }}
-                                  className="bg-green-600 hover:bg-green-700 text-white border-green-600 w-full sm:flex-1 sm:max-w-[120px]"
+                                  className="bg-green-600 hover:bg-green-700 text-white border-green-600 w-full h-8"
                                 >
-                                  <Target className="h-4 w-4 mr-1 flex-shrink-0" />
-                                  <span className="truncate text-sm">Stats</span>
+                                  <Target className="h-3 w-3 mr-1 flex-shrink-0" />
+                                  <span className="text-xs">Statistiken</span>
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="bg-blue-600 hover:bg-blue-700 w-full sm:flex-1 sm:max-w-[120px]"
+                                  className="bg-blue-600 hover:bg-blue-700 w-full h-8"
                                   onClick={() => {
                                     setSelectedMatchForResults(match.id)
                                     setIsResultsDialogOpen(true)
@@ -1633,15 +1632,15 @@ export default function DashboardPage() {
                                     })
                                   }}
                                 >
-                                  <Edit className="h-4 w-4 mr-1 flex-shrink-0" />
-                                  <span className="truncate text-sm">
-                                    {match.status === "completed" ? "Edit" : "Ergebnis"}
+                                  <Edit className="h-3 w-3 mr-1 flex-shrink-0" />
+                                  <span className="text-xs">
+                                    {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
                                   </span>
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className={`w-full sm:flex-1 sm:max-w-[120px] flex items-center justify-center ${
+                                  className={`w-full h-8 flex items-center justify-center ${
                                     match.team_photo_url
                                       ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
                                       : "bg-green-600 hover:bg-green-700 text-white border-green-600"
@@ -1654,8 +1653,8 @@ export default function DashboardPage() {
                                     setTeamPhotoMessage("")
                                   }}
                                 >
-                                  <Camera className="h-4 w-4 mr-1 flex-shrink-0" />
-                                  <span className="truncate text-sm">{match.team_photo_url ? "Foto" : "Upload"}</span>
+                                  <Camera className="h-3 w-3 mr-1 flex-shrink-0" />
+                                  <span className="text-xs">{match.team_photo_url ? "Teamfoto" : "Foto Upload"}</span>
                                 </Button>
                               </div>
                             )}
@@ -1703,7 +1702,7 @@ export default function DashboardPage() {
             if (!open) setSelectedMatchForResults(null)
           }}
         >
-          <DialogContent className="w-[90vw] max-w-xs sm:max-w-sm mx-auto">
+          <DialogContent className="w-[95vw] max-w-sm mx-auto">
             <DialogHeader className="text-center pb-2 sm:pb-3">
               <DialogTitle className="text-sm sm:text-base font-semibold">Spielergebnis eintragen</DialogTitle>
             </DialogHeader>
@@ -1834,7 +1833,7 @@ export default function DashboardPage() {
         </Dialog>
 
         <Dialog
-          open={isTeamPhotoDialogOpen}
+          open={isTeamPhotoDialogOpen && selectedMatchForTeamPhoto !== null}
           onOpenChange={(open) => {
             setIsTeamPhotoDialogOpen(open)
             if (!open) {
@@ -1845,10 +1844,10 @@ export default function DashboardPage() {
             }
           }}
         >
-          <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[85vh] overflow-y-auto">
             <DialogHeader className="text-center pb-2 sm:pb-3">
-              <DialogTitle className="text-base sm:text-lg font-semibold">Teamfoto hochladen</DialogTitle>
-              <DialogDescription className="text-sm">
+              <DialogTitle className="text-sm sm:text-base font-semibold">Teamfoto hochladen</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm">
                 Lade ein Teamfoto für dieses Spiel hoch oder entferne das aktuelle Foto.
               </DialogDescription>
             </DialogHeader>
@@ -1925,7 +1924,7 @@ export default function DashboardPage() {
                 </Alert>
               )}
             </div>
-            <DialogFooter className="flex-col sm:flex-row gap-2 pt-4">
+            <DialogFooter className="flex flex-col gap-2 pt-4">
               {(() => {
                 const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
                 const hasExistingPhoto = currentMatch?.team_photo_url
@@ -1937,18 +1936,18 @@ export default function DashboardPage() {
                         variant="destructive"
                         onClick={handleTeamPhotoRemove}
                         disabled={teamPhotoUploading}
-                        className="w-full sm:w-auto text-sm"
+                        className="w-full text-xs sm:text-sm h-8"
                       >
-                        <XCircle className="h-4 w-4 mr-2" />
+                        <XCircle className="h-3 w-3 mr-1" />
                         Foto entfernen
                       </Button>
                     )}
                     <Button
                       onClick={handleTeamPhotoUpload}
                       disabled={teamPhotoUploading || !teamPhotoFile}
-                      className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-sm"
+                      className="w-full bg-green-600 hover:bg-green-700 text-xs sm:text-sm h-8"
                     >
-                      <Upload className="h-4 w-4 mr-2" />
+                      <Upload className="h-3 w-3 mr-1" />
                       {teamPhotoUploading ? "Wird hochgeladen..." : hasExistingPhoto ? "Foto ersetzen" : "Hochladen"}
                     </Button>
                   </>
