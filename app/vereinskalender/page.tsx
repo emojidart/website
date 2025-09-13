@@ -541,13 +541,15 @@ export default function CalendarPage() {
                     return (
                       <div
                         key={index}
-                        className={`p-1 lg:p-2 h-20 lg:h-32 border border-gray-200 rounded-lg ${
+                        // Increased mobile height from h-28 to h-36 for better readability
+                        className={`p-1 lg:p-2 h-36 sm:h-40 lg:h-44 border border-gray-200 rounded-lg ${
                           isToday ? "bg-orange-50 border-orange-300" : "bg-white hover:bg-gray-50"
                         } transition-colors overflow-hidden`}
                       >
                         {day && (
                           <div
-                            className={`text-sm lg:text-base font-medium mb-1 ${
+                            // Improved mobile text sizing for day numbers
+                            className={`text-base sm:text-lg lg:text-xl font-medium mb-1 ${
                               isToday ? "text-orange-600" : "text-gray-900"
                             }`}
                           >
@@ -556,13 +558,14 @@ export default function CalendarPage() {
                         )}
 
                         <div className="space-y-1 overflow-hidden">
-                          {itemsForDay.map((item, itemIndex) => {
+                          {itemsForDay.slice(0, 2).map((item, itemIndex) => {
                             if (isEvent(item)) {
                               return (
                                 <button
                                   key={item.id}
                                   onClick={() => openEventDialog(item)}
-                                  className={`w-full text-left p-1 rounded text-xs lg:text-sm truncate transition-colors ${
+                                  // Improved mobile text sizing and padding for events
+                                  className={`w-full text-left p-1.5 rounded text-xs sm:text-sm lg:text-base transition-colors min-h-[32px] ${
                                     item.event_type === "Turnier"
                                       ? "bg-purple-100 text-purple-800 hover:bg-purple-200"
                                       : "bg-green-100 text-green-800 hover:bg-green-200"
@@ -570,21 +573,31 @@ export default function CalendarPage() {
                                 >
                                   <div className="flex items-center gap-1">
                                     {item.event_type === "Turnier" ? (
-                                      <Trophy className="h-3 w-3 flex-shrink-0" />
+                                      <Trophy className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                                     ) : (
-                                      <CalendarDays className="h-3 w-3 flex-shrink-0" />
+                                      <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                                     )}
-                                    <span className="truncate">{item.name}</span>
+                                    <span className="truncate font-medium">
+                                      {/* Increased mobile text length from 8 to 12 characters */}
+                                      {item.name.length > 12 ? item.name.substring(0, 12) + "..." : item.name}
+                                    </span>
                                   </div>
                                 </button>
                               )
                             } else {
                               const match = item as Match
+                              const homeTeam = getTeamDisplayName(match, true)
+                              const awayTeam = getTeamDisplayName(match, false)
+                              // Increased abbreviation length for better readability
+                              const homeAbbr = homeTeam.length > 10 ? homeTeam.substring(0, 10) + "." : homeTeam
+                              const awayAbbr = awayTeam.length > 10 ? awayTeam.substring(0, 10) + "." : awayTeam
+
                               return (
                                 <button
                                   key={match.id}
                                   onClick={() => openMatchDialog(match)}
-                                  className={`w-full text-left p-1 rounded text-xs lg:text-sm truncate transition-colors ${
+                                  // Improved mobile text sizing and padding for matches
+                                  className={`w-full text-left p-1.5 rounded text-xs sm:text-sm lg:text-base transition-colors min-h-[32px] ${
                                     isHomeGame(match)
                                       ? "bg-orange-100 text-orange-800 hover:bg-orange-200"
                                       : "bg-blue-100 text-blue-800 hover:bg-blue-200"
@@ -592,24 +605,33 @@ export default function CalendarPage() {
                                 >
                                   <div className="flex items-center gap-1">
                                     {isHomeGame(match) ? (
-                                      <Home className="h-3 w-3 flex-shrink-0" />
+                                      <Home className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                                     ) : (
-                                      <Plane className="h-3 w-3 flex-shrink-0" />
+                                      <Plane className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                                     )}
-                                    <span className="truncate">
-                                      {getTeamDisplayName(match, true)} vs {getTeamDisplayName(match, false)}
+                                    <span className="font-medium leading-tight">
+                                      <span className="block sm:hidden text-xs leading-tight">
+                                        {/* Better mobile display with line breaks for team names */}
+                                        <div className="truncate">{homeAbbr}</div>
+                                        <div className="text-[10px] text-gray-600">vs</div>
+                                        <div className="truncate">{awayAbbr}</div>
+                                      </span>
+                                      <span className="hidden sm:block truncate">
+                                        {homeTeam} vs {awayTeam}
+                                      </span>
                                     </span>
                                   </div>
                                 </button>
                               )
                             }
                           })}
-                          {itemsForDay.length > 3 && (
+                          {itemsForDay.length > 2 && (
                             <button
                               onClick={() => openMultiItemDialog(day!, itemsForDay)}
-                              className="w-full text-left p-1 rounded text-xs text-gray-600 hover:bg-gray-100 transition-colors"
+                              // Improved mobile styling for "mehr" button
+                              className="w-full text-left p-1.5 rounded text-xs sm:text-sm text-gray-600 hover:bg-gray-100 transition-colors font-medium min-h-[28px]"
                             >
-                              +{itemsForDay.length - 3} weitere...
+                              +{itemsForDay.length - 2} mehr
                             </button>
                           )}
                         </div>
