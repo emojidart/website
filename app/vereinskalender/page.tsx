@@ -27,6 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { format } from "date-fns"
 
 interface Match {
   id: string
@@ -69,6 +70,7 @@ interface Event {
   event_date: string
   event_type: string
   description?: string
+  start_time?: string
 }
 
 type CalendarItem = Match | Event
@@ -92,6 +94,8 @@ export default function CalendarPage() {
   const [teams, setTeams] = useState<string[]>(["Alle Teams"])
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [isMultiItemDialogOpen, setIsMultiItemDialogOpen] = useState(false)
+  const [isMobileBottomSheetOpen, setIsMobileBottomSheetOpen] = useState(false)
+  const [mobileSelectedDate, setMobileSelectedDate] = useState<Date | null>(null)
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const [players, setPlayers] = useState<{ id: string; name: string }[]>([{ id: "0", name: "Alle Spieler" }])
   const [selectedResultType, setSelectedResultType] = useState("Alle") // Declare the variable here
@@ -347,6 +351,14 @@ export default function CalendarPage() {
     return timeString.substring(0, 5) // Remove seconds (HH:MM:SS -> HH:MM)
   }
 
+  const handleMobileTileClick = (date: Date, items: CalendarItem[]) => {
+    if (items.length === 0) return
+
+    // On mobile, always show bottom sheet for any day with items
+    setMobileSelectedDate(date)
+    setIsMobileBottomSheetOpen(true)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
@@ -541,13 +553,28 @@ export default function CalendarPage() {
                     return (
                       <div
                         key={index}
-                        className={`p-1 lg:p-2 h-48 sm:h-40 lg:h-44 border border-gray-200 rounded-lg ${
+                        className={`p-1 lg:p-2 border border-gray-200 rounded-lg transition-colors overflow-hidden ${
                           isToday ? "bg-orange-50 border-orange-300" : "bg-white hover:bg-gray-50"
-                        } transition-colors overflow-hidden`}
+                        } 
+                        h-20 sm:h-24 md:h-32 lg:h-44 cursor-pointer`}
+                        onClick={() => {
+                          if (day && itemsForDay.length > 0) {
+                            // On mobile (< 768px), use bottom sheet, on desktop use existing behavior
+                            if (window.innerWidth < 768) {
+                              handleMobileTileClick(day, itemsForDay)
+                            } else {
+                              if (itemsForDay.length === 1) {
+                                handleItemClick(itemsForDay[0])
+                              } else {
+                                openMultiItemDialog(day, itemsForDay)
+                              }
+                            }
+                          }
+                        }}
                       >
                         {day && (
                           <div
-                            className={`text-base sm:text-lg lg:text-xl font-medium mb-1 ${
+                            className={`text-sm sm:text-base lg:text-xl font-medium mb-1 ${
                               isToday ? "text-orange-600" : "text-gray-900"
                             }`}
                           >
@@ -556,65 +583,88 @@ export default function CalendarPage() {
                         )}
 
                         <div className="space-y-1 overflow-hidden">
-                          {itemsForDay.slice(0, 2).map((item, itemIndex) => {
-                            if (isEvent(item)) {
-                              return (
-                                <button
-                                  key={item.id}
-                                  onClick={() => openEventDialog(item)}
-                                  className="w-full text-left p-1.5 rounded text-xs sm:text-sm bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors font-medium min-h-[28px] leading-tight"
-                                >
-                                  <div className="flex items-center gap-1">
-                                    <Trophy className="h-3 w-3 flex-shrink-0" />
-                                    <span className="truncate">
-                                      {item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name}
-                                    </span>
-                                  </div>
-                                </button>
-                              )
-                            } else {
-                              return (
-                                <button
-                                  key={item.id}
-                                  onClick={() => openMatchDialog(item)}
-                                  className={`w-full text-left p-1.5 rounded text-xs sm:text-sm transition-colors font-medium min-h-[28px] leading-tight ${
-                                    isHomeGame(item)
-                                      ? "bg-orange-100 text-orange-800 hover:bg-orange-200"
-                                      : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-1">
-                                    {isHomeGame(item) ? (
-                                      <Home className="h-3 w-3 flex-shrink-0" />
-                                    ) : (
-                                      <Plane className="h-3 w-3 flex-shrink-0" />
-                                    )}
-                                    <div className="flex flex-col leading-none">
-                                      <span className="truncate text-xs">
-                                        {getTeamDisplayName(item, true).length > 15
-                                          ? `${getTeamDisplayName(item, true).substring(0, 15)}...`
-                                          : getTeamDisplayName(item, true)}
-                                      </span>
-                                      <span className="text-xs opacity-75">vs</span>
-                                      <span className="truncate text-xs">
-                                        {getTeamDisplayName(item, false).length > 15
-                                          ? `${getTeamDisplayName(item, false).substring(0, 15)}...`
-                                          : getTeamDisplayName(item, false)}
+                          {/* Mobile view: Show only count of items */}
+                          <div className="block md:hidden">
+                            {itemsForDay.length > 0 && (
+                              <div className="text-xs text-center py-1 px-2 bg-blue-100 text-blue-800 rounded-full">
+                                {itemsForDay.length} {itemsForDay.length === 1 ? "Termin" : "Termine"}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Desktop view: Show items as before */}
+                          <div className="hidden md:block space-y-1">
+                            {itemsForDay.slice(0, 4).map((item, itemIndex) => {
+                              if (isEvent(item)) {
+                                return (
+                                  <button
+                                    key={item.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      openEventDialog(item)
+                                    }}
+                                    className="w-full text-left p-1.5 rounded text-xs sm:text-sm bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors font-medium min-h-[28px] leading-tight"
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      <Trophy className="h-3 w-3 flex-shrink-0" />
+                                      <span className="truncate">
+                                        {item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name}
                                       </span>
                                     </div>
-                                  </div>
-                                </button>
-                              )
-                            }
-                          })}
-                          {itemsForDay.length > 2 && (
-                            <button
-                              onClick={() => openMultiItemDialog(day!, itemsForDay)}
-                              className="w-full text-left p-1.5 rounded text-xs sm:text-sm text-gray-600 hover:bg-gray-100 transition-colors font-medium min-h-[28px]"
-                            >
-                              +{itemsForDay.length - 2} mehr
-                            </button>
-                          )}
+                                  </button>
+                                )
+                              } else {
+                                return (
+                                  <button
+                                    key={item.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      openMatchDialog(item)
+                                    }}
+                                    className={`w-full text-left p-1.5 rounded text-xs sm:text-sm transition-colors font-medium min-h-[28px] leading-tight ${
+                                      isHomeGame(item)
+                                        ? "bg-orange-100 text-orange-800 hover:bg-orange-200"
+                                        : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      {isHomeGame(item) ? (
+                                        <Home className="h-3 w-3 flex-shrink-0" />
+                                      ) : (
+                                        <Plane className="h-3 w-3 flex-shrink-0" />
+                                      )}
+                                      <div className="flex flex-col leading-none">
+                                        <span className="truncate text-xs">
+                                          {getTeamDisplayName(item, true).length > 15
+                                            ? `${getTeamDisplayName(item, true).substring(0, 15)}...`
+                                            : getTeamDisplayName(item, true)}
+                                        </span>
+                                        <span className="text-xs opacity-75">vs</span>
+                                        <span className="truncate text-xs">
+                                          {getTeamDisplayName(item, false).length > 15
+                                            ? `${getTeamDisplayName(item, false).substring(0, 15)}...`
+                                            : getTeamDisplayName(item, false)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </button>
+                                )
+                              }
+                            })}
+                            {itemsForDay.length > 4 && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  openMultiItemDialog(day!, itemsForDay)
+                                }}
+                                className="w-full text-left p-1.5 rounded text-xs sm:text-sm bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors font-medium min-h-[28px] border-2 border-dashed border-gray-400"
+                              >
+                                <div className="flex items-center justify-center gap-1">
+                                  <span className="font-semibold">+{itemsForDay.length - 4} weitere Termine</span>
+                                </div>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )
@@ -1031,6 +1081,93 @@ export default function CalendarPage() {
               )}
             </DialogContent>
           </Dialog>
+
+          {isMobileBottomSheetOpen && mobileSelectedDate && (
+            <div className="fixed inset-0 z-50 md:hidden">
+              {/* Backdrop */}
+              <div className="absolute inset-0 bg-black/50" onClick={() => setIsMobileBottomSheetOpen(false)} />
+
+              {/* Bottom Sheet */}
+              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-xl max-h-[70vh] overflow-hidden">
+                {/* Handle */}
+                <div className="flex justify-center py-3">
+                  <div className="w-10 h-1 bg-gray-300 rounded-full" />
+                </div>
+
+                {/* Header */}
+                <div className="px-4 pb-4 border-b">
+                  <h3 className="text-lg font-semibold">
+                    {mobileSelectedDate.toLocaleDateString("de-DE", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                    })}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {getItemsForDate(mobileSelectedDate).length}{" "}
+                    {getItemsForDate(mobileSelectedDate).length === 1 ? "Termin" : "Termine"}
+                  </p>
+                </div>
+
+                {/* Content */}
+                <div className="overflow-y-auto max-h-[50vh]">
+                  <div className="p-4 space-y-3">
+                    {getItemsForDate(mobileSelectedDate).map((item) => (
+                      <Card
+                        key={item.id}
+                        className="cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => {
+                          setIsMobileBottomSheetOpen(false)
+                          handleItemClick(item)
+                        }}
+                      >
+                        <CardContent className="p-4">
+                          {isEvent(item) ? (
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 bg-purple-100 rounded-lg">
+                                  <Trophy className="h-5 w-5 text-purple-600" />
+                                </div>
+                                <div>
+                                  <div className="font-medium text-base">{item.name}</div>
+                                  <div className="text-sm text-gray-600">
+                                    {item.start_time && format(new Date(`2000-01-01T${item.start_time}`), "HH:mm")} Uhr
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">{getEventTypeBadge(item.event_type)}</div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg ${isHomeGame(item) ? "bg-orange-100" : "bg-blue-100"}`}>
+                                  {isHomeGame(item) ? (
+                                    <Home className="h-5 w-5 text-orange-600" />
+                                  ) : (
+                                    <Plane className="h-5 w-5 text-blue-600" />
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-base">
+                                    {getTeamDisplayName(item, true)} vs {getTeamDisplayName(item, false)}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    {item.match_time && format(new Date(`2000-01-01T${item.match_time}`), "HH:mm")} Uhr
+                                    {item.season?.name && ` • ${item.season.name}`}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">{getStatusBadge(item.status)}</div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
