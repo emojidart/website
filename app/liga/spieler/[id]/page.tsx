@@ -9,11 +9,12 @@ import { Header } from "@/components/header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Trophy, Target, Zap, Award, Star, Crown } from "lucide-react"
+import { ArrowLeft, Trophy, Target, Zap, Award, Star, Crown, User } from "lucide-react"
 
 interface PlayerStats {
   player_id: string
   name: string
+  photo_url?: string
   total_legs: number
   total_wins: number
   win_percentage: number
@@ -65,7 +66,7 @@ export default function PlayerProfilePage() {
         .from("leg_statistics")
         .select(`
           *,
-          player:club_players!leg_statistics_player_id_fkey(name)
+          player:club_players!leg_statistics_player_id_fkey(name, photo_url)
         `)
         .eq("player_id", params.id)
 
@@ -74,10 +75,14 @@ export default function PlayerProfilePage() {
       if (statsData && statsData.length > 0) {
         // Aggregate all statistics for this player
         const aggregatedStats = statsData.reduce((acc, stat) => {
+          const actualLegsPlayed = (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0)
+          const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1
+
           return {
             player_id: stat.player_id,
-            name: stat.player.name, // Updated to use correct nested structure
-            total_legs: (acc.total_legs || 0) + (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0),
+            name: stat.player.name,
+            photo_url: stat.player.photo_url, // Added photo_url from player data
+            total_legs: (acc.total_legs || 0) + legsToAdd,
             total_wins: (acc.total_wins || 0) + (stat.leg_wins || 0),
             throws_180: (acc.throws_180 || 0) + (stat.throws_180 || 0),
             throws_171: (acc.throws_171 || 0) + (stat.throws_171 || 0),
@@ -448,7 +453,7 @@ export default function PlayerProfilePage() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Back Button */}
-        <Button variant="outline" onClick={() => router.push("/liga-statistiken")} className="mb-6">
+        <Button variant="outline" onClick={() => router.push("/liga")} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Zurück zur Liga Statistik
         </Button>
@@ -456,13 +461,33 @@ export default function PlayerProfilePage() {
         {/* Player Header */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{player.name}</h1>
-              <div className="flex gap-4">
-                <Badge className="bg-green-100 text-green-800 text-lg px-3 py-1">{player.total_wins} Siege</Badge>
-                <Badge variant="outline" className="text-lg px-3 py-1">
-                  {player.win_percentage.toFixed(1)}% Siegquote
-                </Badge>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+                {player.photo_url ? (
+                  <img
+                    src={player.photo_url || "/placeholder.svg"}
+                    alt={player.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none"
+                      e.currentTarget.nextElementSibling.style.display = "flex"
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={`w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center ${player.photo_url ? "hidden" : "flex"}`}
+                >
+                  <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{player.name}</h1>
+                <div className="flex gap-4">
+                  <Badge className="bg-green-100 text-green-800 text-lg px-3 py-1">{player.total_wins} Siege</Badge>
+                  <Badge variant="outline" className="text-lg px-3 py-1">
+                    {player.win_percentage.toFixed(1)}% Siegquote
+                  </Badge>
+                </div>
               </div>
             </div>
             <div className="text-right">

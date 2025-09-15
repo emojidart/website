@@ -73,8 +73,8 @@ export default function LigaPage() {
           .from("matches")
           .select(`
             *,
-            home_team:teams!matches_home_team_id_fkey(id, name),
-            away_team:teams!matches_away_team_id_fkey(id, name),
+            home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
+            away_team:teams!matches_away_team_id_fkey(id, name, logo_url),
             season:seasons(id, name, type)
           `)
           .order("match_date", { ascending: true })
@@ -139,7 +139,7 @@ export default function LigaPage() {
         console.log("[v0] Fetching leg statistics...")
         const { data: legStatsData, error: legStatsError } = await supabase.from("leg_statistics").select(`
             *,
-            player:club_players!leg_statistics_player_id_fkey(name)
+            player:club_players!leg_statistics_player_id_fkey(name, photo_url)
           `)
 
         if (legStatsError) {
@@ -455,50 +455,66 @@ export default function LigaPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {standings.map((team, index) => (
-                            <tr key={team.team} className="border-b hover:bg-gray-50 transition-colors">
-                              <td className="p-2 sm:p-4">
-                                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                                  <span className="font-bold text-orange-600 text-xs sm:text-sm">{index + 1}</span>
-                                </div>
-                              </td>
-                              <td className="p-2 sm:p-4">
-                                <div className="font-semibold text-gray-900 text-sm sm:text-lg">{team.team}</div>
-                              </td>
-                              <td className="text-center p-2 sm:p-4 font-medium text-sm">{team.played}</td>
-                              <td className="text-center p-2 sm:p-4">
-                                <span className="bg-green-100 text-green-800 px-1 sm:px-2 py-1 rounded font-medium text-xs sm:text-sm">
-                                  {team.won}
-                                </span>
-                              </td>
-                              <td className="text-center p-2 sm:p-4">
-                                <span className="bg-yellow-100 text-yellow-800 px-1 sm:px-2 py-1 rounded font-medium text-xs sm:text-sm">
-                                  {team.drawn}
-                                </span>
-                              </td>
-                              <td className="text-center p-2 sm:p-4">
-                                <span className="bg-red-100 text-red-800 px-1 sm:px-2 py-1 rounded font-medium text-xs sm:text-sm">
-                                  {team.lost}
-                                </span>
-                              </td>
-                              <td className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm">
-                                {team.legsFor}:{team.legsAgainst}
-                              </td>
-                              <td className="text-center p-2 sm:p-4">
-                                <span
-                                  className={`font-bold text-xs sm:text-sm ${team.legsDifference >= 0 ? "text-green-600" : "text-red-600"}`}
-                                >
-                                  {team.legsDifference > 0 ? "+" : ""}
-                                  {team.legsDifference}
-                                </span>
-                              </td>
-                              <td className="text-center p-2 sm:p-4">
-                                <div className="bg-orange-100 text-orange-800 px-2 sm:px-3 py-1 sm:py-2 rounded-lg font-bold text-sm sm:text-lg">
-                                  {team.points}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
+                          {standings.map((team, index) => {
+                            const teamData = teams.find((t) => t.name === team.team)
+                            return (
+                              <tr key={team.team} className="border-b hover:bg-gray-50 transition-colors">
+                                <td className="p-2 sm:p-4">
+                                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <span className="font-bold text-orange-600 text-xs sm:text-sm">{index + 1}</span>
+                                  </div>
+                                </td>
+                                <td className="p-2 sm:p-4">
+                                  <div className="flex items-center gap-3">
+                                    {teamData?.logo_url ? (
+                                      <img
+                                        src={teamData.logo_url || "/placeholder.svg"}
+                                        alt={`${team.team} Logo`}
+                                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-gray-200"
+                                      />
+                                    ) : (
+                                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                                        <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                                      </div>
+                                    )}
+                                    <div className="font-semibold text-gray-900 text-sm sm:text-lg">{team.team}</div>
+                                  </div>
+                                </td>
+                                <td className="text-center p-2 sm:p-4 font-medium text-sm">{team.played}</td>
+                                <td className="text-center p-2 sm:p-4">
+                                  <span className="bg-green-100 text-green-800 px-1 sm:px-2 py-1 rounded font-medium text-xs sm:text-sm">
+                                    {team.won}
+                                  </span>
+                                </td>
+                                <td className="text-center p-2 sm:p-4">
+                                  <span className="bg-yellow-100 text-yellow-800 px-1 sm:px-2 py-1 rounded font-medium text-xs sm:text-sm">
+                                    {team.drawn}
+                                  </span>
+                                </td>
+                                <td className="text-center p-2 sm:p-4">
+                                  <span className="bg-red-100 text-red-800 px-1 sm:px-2 py-1 rounded font-medium text-xs sm:text-sm">
+                                    {team.lost}
+                                  </span>
+                                </td>
+                                <td className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm">
+                                  {team.legsFor}:{team.legsAgainst}
+                                </td>
+                                <td className="text-center p-2 sm:p-4">
+                                  <span
+                                    className={`font-bold text-xs sm:text-sm ${team.legsDifference >= 0 ? "text-green-600" : "text-red-600"}`}
+                                  >
+                                    {team.legsDifference > 0 ? "+" : ""}
+                                    {team.legsDifference}
+                                  </span>
+                                </td>
+                                <td className="text-center p-2 sm:p-4">
+                                  <div className="bg-orange-100 text-orange-800 px-2 sm:px-3 py-1 sm:py-2 rounded-lg font-bold text-sm sm:text-lg">
+                                    {team.points}
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -560,6 +576,19 @@ export default function LigaPage() {
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                                   <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
                                     <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                      <div className="flex items-center justify-center gap-2 mb-2">
+                                        {match.home_team?.logo_url ? (
+                                          <img
+                                            src={match.home_team.logo_url || "/placeholder.svg"}
+                                            alt={`${match.home_team.name} Logo`}
+                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                          />
+                                        ) : (
+                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                            <Trophy className="h-4 w-4 text-gray-500" />
+                                          </div>
+                                        )}
+                                      </div>
                                       <div className="font-bold text-lg sm:text-xl mb-1 text-gray-800">
                                         {match.home_team?.name ||
                                           match.home_opponent_team?.name ||
@@ -575,6 +604,19 @@ export default function LigaPage() {
                                       <div className="text-2xl sm:text-4xl font-bold text-gray-800">{awayScore}</div>
                                     </div>
                                     <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                      <div className="flex items-center justify-center gap-2 mb-2">
+                                        {match.away_team?.logo_url ? (
+                                          <img
+                                            src={match.away_team.logo_url || "/placeholder.svg"}
+                                            alt={`${match.away_team.name} Logo`}
+                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                          />
+                                        ) : (
+                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                            <Trophy className="h-4 w-4 text-gray-500" />
+                                          </div>
+                                        )}
+                                      </div>
                                       <div className="font-bold text-lg sm:text-xl mb-1 text-gray-800">
                                         {match.away_team?.name ||
                                           match.away_opponent_team?.name ||
@@ -640,6 +682,19 @@ export default function LigaPage() {
                               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
                                   <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                    <div className="flex items-center justify-center gap-2 mb-2">
+                                      {match.home_team?.logo_url ? (
+                                        <img
+                                          src={match.home_team.logo_url || "/placeholder.svg"}
+                                          alt={`${match.home_team.name} Logo`}
+                                          className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                        />
+                                      ) : (
+                                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                          <Trophy className="h-4 w-4 text-gray-500" />
+                                        </div>
+                                      )}
+                                    </div>
                                     <div className="font-semibold text-base sm:text-lg text-gray-900">
                                       {match.home_team?.name || match.home_opponent_team?.name || "Team nicht gefunden"}
                                     </div>
@@ -647,6 +702,19 @@ export default function LigaPage() {
                                   </div>
                                   <div className="text-xl sm:text-2xl font-bold text-gray-400">vs</div>
                                   <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                    <div className="flex items-center justify-center gap-2 mb-2">
+                                      {match.away_team?.logo_url ? (
+                                        <img
+                                          src={match.away_team.logo_url || "/placeholder.svg"}
+                                          alt={`${match.away_team.name} Logo`}
+                                          className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                        />
+                                      ) : (
+                                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                          <Trophy className="h-4 w-4 text-gray-500" />
+                                        </div>
+                                      )}
+                                    </div>
                                     <div className="font-semibold text-base sm:text-lg text-gray-900">
                                       {match.away_team?.name || match.away_opponent_team?.name || "Team nicht gefunden"}
                                     </div>
@@ -692,7 +760,22 @@ export default function LigaPage() {
                         <Card key={team.id} className="overflow-hidden">
                           <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b p-3 sm:p-6">
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                              <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">{team.name}</CardTitle>
+                              <div className="flex items-center gap-3">
+                                {team.logo_url ? (
+                                  <img
+                                    src={team.logo_url || "/placeholder.svg"}
+                                    alt={`${team.name} Logo`}
+                                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-orange-200"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
+                                  </div>
+                                )}
+                                <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+                                  {team.name}
+                                </CardTitle>
+                              </div>
                               <div className="flex items-center gap-2 sm:gap-4">
                                 <Badge
                                   variant="secondary"

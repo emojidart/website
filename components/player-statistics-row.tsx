@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, ChevronUp } from "lucide-react"
+import { ChevronDown, ChevronUp, User } from "lucide-react"
 
 interface PlayerStatisticsRowProps {
   player: any
@@ -46,12 +46,51 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
           </div>
         </td>
         <td className="p-2 sm:p-4">
-          <a
-            href={`/liga/spieler/${player.player_id}`}
-            className="font-semibold text-gray-900 text-sm sm:text-lg hover:text-blue-600 hover:underline transition-colors cursor-pointer"
-          >
-            {player.name}
-          </a>
+          <div className="group relative">
+            <a
+              href={`/liga/spieler/${player.player_id}`}
+              className="font-semibold text-gray-900 text-sm sm:text-lg hover:text-blue-600 transition-all duration-200 cursor-pointer inline-flex items-center gap-3 group-hover:underline"
+            >
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+                {player.photo_url ? (
+                  <img
+                    src={player.photo_url || "/placeholder.svg"}
+                    alt={player.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none"
+                      e.currentTarget.nextElementSibling.style.display = "flex"
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={`w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center ${player.photo_url ? "hidden" : "flex"}`}
+                >
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {player.name}
+                <svg
+                  className="w-3 h-3 text-gray-400 group-hover:text-blue-600 transition-colors opacity-60 group-hover:opacity-100"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </div>
+            </a>
+            {/* Tooltip on hover */}
+            <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+              Klicken für detaillierte Statistiken
+            </div>
+          </div>
         </td>
         <td className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm">{player.total_legs}</td>
         <td className="text-center p-2 sm:p-4">
