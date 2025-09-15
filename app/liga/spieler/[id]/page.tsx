@@ -453,7 +453,7 @@ export default function PlayerProfilePage() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Back Button */}
-        <Button variant="outline" onClick={() => router.push("/liga")} className="mb-6">
+        <Button variant="outline" onClick={() => router.push("/liga-statistiken")} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Zurück zur Liga Statistik
         </Button>
