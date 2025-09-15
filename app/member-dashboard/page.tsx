@@ -1488,6 +1488,7 @@ export default function DashboardPage() {
                                           member.club_players?.photo_url ||
                                           "/placeholder.svg?height=32&width=32&query=darts-player" ||
                                           "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
                                           "/placeholder.svg"
                                         }
                                       />
@@ -1598,12 +1599,7 @@ export default function DashboardPage() {
                                 </div>
                               </div>
 
-                              <div className="text-right">
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <MapPin className="h-4 w-4" />
-                                  <span className="font-medium">{match.venue}</span>
-                                </div>
-                              </div>
+                              <div className="text-right"></div>
                             </div>
 
                             {(hasLeadershipInTeam(match.home_team_id) || hasLeadershipInTeam(match.away_team_id)) && (

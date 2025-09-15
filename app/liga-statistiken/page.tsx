@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Trophy, Target, Calendar, Users } from "lucide-react"
 import { Header } from "@/components/header"
 import { createBrowserClient } from "@supabase/ssr"
+import { Button } from "@/components/ui/button"
+import { PlayerStatisticsRow } from "@/components/player-statistics-row"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -239,7 +241,11 @@ export default function LigaPage() {
 
       if (!playerStats[playerId]) {
         playerStats[playerId] = {
+          player_id: playerId,
           name: playerName,
+          photo_url: stat.player?.photo_url,
+          total_legs: 0,
+          total_wins: 0,
           legs_played: 0,
           throws_180: 0,
           throws_171: 0,
@@ -248,15 +254,20 @@ export default function LigaPage() {
           throws_17: 0,
           throws_18: 0,
           throws_19: 0,
-          throws_20: 0,
           throws_high_tonne: 0,
           throws_tonne: 0,
           throws_shanghai: 0,
           throws_95_plus: 0,
           throws_bull: 0,
+          win_percentage: 0,
         }
       }
 
+      const actualLegsPlayed = (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0)
+      const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1
+
+      playerStats[playerId].total_legs += legsToAdd
+      playerStats[playerId].total_wins += stat.leg_wins || 0
       playerStats[playerId].legs_played += 1
       playerStats[playerId].throws_180 += stat.throws_180 || 0
       playerStats[playerId].throws_171 += stat.throws_171 || 0
@@ -265,7 +276,6 @@ export default function LigaPage() {
       playerStats[playerId].throws_17 += stat.throws_17 || 0
       playerStats[playerId].throws_18 += stat.throws_18 || 0
       playerStats[playerId].throws_19 += stat.throws_19 || 0
-      playerStats[playerId].throws_20 += stat.throws_20 || 0
       playerStats[playerId].throws_high_tonne += stat.throws_high_tonne || 0
       playerStats[playerId].throws_tonne += stat.throws_tonne || 0
       playerStats[playerId].throws_shanghai += stat.throws_shanghai || 0
@@ -273,7 +283,20 @@ export default function LigaPage() {
       playerStats[playerId].throws_bull += stat.throws_bull || 0
     })
 
-    return Object.values(playerStats).sort((a, b) => b.throws_180 - a.throws_180)
+    return Object.values(playerStats)
+      .map((stats: any) => ({
+        ...stats,
+        win_percentage: stats.total_legs > 0 ? (stats.total_wins / stats.total_legs) * 100 : 0,
+      }))
+      .sort((a: any, b: any) => {
+        if (b.win_percentage !== a.win_percentage) return b.win_percentage - a.win_percentage
+        if (b.total_wins !== a.total_wins) return b.total_wins - a.total_wins
+        if (b.throws_180 !== a.throws_180) return b.throws_180 - a.throws_180
+        if (b.throws_171 !== a.throws_171) return b.throws_171 - a.throws_171
+        if (b.throws_high_tonne !== a.throws_high_tonne) return b.throws_high_tonne - a.throws_high_tonne
+        if (b.throws_tonne !== a.throws_tonne) return b.throws_tonne - a.throws_tonne
+        return b.throws_shanghai - a.throws_shanghai
+      })
   }
 
   const getMatchResultColor = (match, teamId) => {
@@ -501,14 +524,32 @@ export default function LigaPage() {
                           .map((match) => {
                             const homeScore = match.home_score || 0
                             const awayScore = match.away_score || 0
+
+                            const isOurHomeTeam = match.home_team?.id // Our team is home
+                            const isOurAwayTeam = match.away_team?.id // Our team is away
+
                             let matchColor = "bg-gray-50 border-gray-200"
+                            let resultText = "Unentschieden"
 
                             if (homeScore > awayScore) {
-                              matchColor = "bg-green-50 border-green-200"
+                              if (isOurHomeTeam) {
+                                matchColor = "bg-green-50 border-green-200"
+                                resultText = "Heimsieg"
+                              } else {
+                                matchColor = "bg-red-50 border-red-200"
+                                resultText = "Niederlage"
+                              }
                             } else if (awayScore > homeScore) {
-                              matchColor = "bg-red-50 border-red-200"
+                              if (isOurAwayTeam) {
+                                matchColor = "bg-green-50 border-green-200"
+                                resultText = "Auswärtssieg"
+                              } else {
+                                matchColor = "bg-red-50 border-red-200"
+                                resultText = "Niederlage"
+                              }
                             } else {
                               matchColor = "bg-yellow-50 border-yellow-200"
+                              resultText = "Unentschieden"
                             }
 
                             return (
@@ -554,20 +595,16 @@ export default function LigaPage() {
                                     <Badge
                                       className={`
                                         ${
-                                          homeScore > awayScore
+                                          resultText === "Heimsieg" || resultText === "Auswärtssieg"
                                             ? "bg-green-100 text-green-700"
-                                            : awayScore > homeScore
-                                              ? "bg-red-100 text-red-700"
-                                              : "bg-yellow-100 text-yellow-700"
+                                            : resultText === "Unentschieden"
+                                              ? "bg-yellow-100 text-yellow-700"
+                                              : "bg-red-100 text-red-700"
                                         }
                                         font-medium text-xs sm:text-sm
                                       `}
                                     >
-                                      {homeScore > awayScore
-                                        ? "Heimsieg"
-                                        : awayScore > homeScore
-                                          ? "Auswärtssieg"
-                                          : "Unentschieden"}
+                                      {resultText}
                                     </Badge>
                                   </div>
                                 </div>
@@ -751,10 +788,12 @@ export default function LigaPage() {
               <TabsContent value="legstats">
                 <Card className="overflow-hidden shadow-lg">
                   <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 sm:p-6">
-                    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                      <Target className="h-5 w-5 sm:h-6 sm:w-6" />
-                      Spieler-Statistiken ({playerLegStats.length} Spieler)
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                        <Target className="h-5 w-5 sm:h-6 sm:w-6" />
+                        Spieler-Statistiken ({playerLegStats.length} Spieler)
+                      </CardTitle>
+                    </div>
                   </CardHeader>
                   <CardContent className="p-0">
                     {playerLegStats.length === 0 ? (
@@ -777,28 +816,16 @@ export default function LigaPage() {
                                 Legs
                               </th>
                               <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Wins
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Win%
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                 180er
                               </th>
                               <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                 171er
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                20er
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                19er
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                18er
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                17er
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                16er
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                15er
                               </th>
                               <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                 High Tonne
@@ -807,99 +834,55 @@ export default function LigaPage() {
                                 Tonne
                               </th>
                               <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Shanghai
+                                95+
                               </th>
                               <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                95+
+                                Shanghai
                               </th>
                               <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                 Bull
                               </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Details
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
-                            {playerLegStats.map((player, index) => (
-                              <tr key={player.name} className="border-b hover:bg-gray-50 transition-colors">
-                                <td className="p-2 sm:p-4">
-                                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <span className="font-bold text-blue-600 text-xs sm:text-sm">{index + 1}</span>
-                                  </div>
-                                </td>
-                                <td className="p-2 sm:p-4">
-                                  <div className="font-semibold text-gray-900 text-sm sm:text-lg">{player.name}</div>
-                                </td>
-                                <td className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm">
-                                  {player.legs_played}
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-red-100 text-red-800 font-bold text-xs">
-                                    {player.throws_180}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-orange-100 text-orange-800 font-bold text-xs">
-                                    {player.throws_171}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
-                                    {player.throws_20}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
-                                    {player.throws_19}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
-                                    {player.throws_18}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
-                                    {player.throws_17}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
-                                    {player.throws_16}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-yellow-100 text-yellow-800 font-bold text-xs">
-                                    {player.throws_15}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-purple-100 text-purple-800 font-bold text-xs">
-                                    {player.throws_high_tonne}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-green-100 text-green-800 font-bold text-xs">
-                                    {player.throws_tonne}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-indigo-100 text-indigo-800 font-bold text-xs">
-                                    {player.throws_shanghai}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-teal-100 text-teal-800 font-bold text-xs">
-                                    {player.throws_95_plus}
-                                  </Badge>
-                                </td>
-                                <td className="text-center p-2 sm:p-4">
-                                  <Badge className="bg-pink-100 text-pink-800 font-bold text-xs">
-                                    {player.throws_bull}
-                                  </Badge>
-                                </td>
-                              </tr>
+                            {playerLegStats.slice(0, 10).map((player, index) => (
+                              <PlayerStatisticsRow
+                                key={player.name}
+                                player={player}
+                                index={index}
+                                allStats={legStatistics}
+                              />
                             ))}
                           </tbody>
                         </table>
+                        {playerLegStats.length > 10 && (
+                          <div className="p-4 text-center border-t bg-gray-50">
+                            <p className="text-sm text-gray-600 mb-2">
+                              Zeige Top 10 von {playerLegStats.length} Spielern
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                // Show all players inline
+                                const tbody = document.querySelector("tbody")
+                                if (tbody) {
+                                  const hiddenRows = playerLegStats.slice(10)
+                                  hiddenRows.forEach((player, index) => {
+                                    const row = document.createElement("tr")
+                                    row.innerHTML = `<PlayerStatisticsRow player=${JSON.stringify(player)} index=${index + 10} allStats=${JSON.stringify(legStatistics)} />`
+                                    tbody.appendChild(row)
+                                  })
+                                }
+                              }}
+                            >
+                              Alle Spieler anzeigen
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>

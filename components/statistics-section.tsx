@@ -38,7 +38,7 @@ export function StatisticsSection({
                 Gesamtstatistik aller Legs
               </CardTitle>
               <p className="text-sm sm:text-base text-muted-foreground">
-                Alle Leg-Statistiken sortiert nach Wins, dann nach 180ern
+                Alle Leg-Statistiken
               </p>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
@@ -116,6 +116,7 @@ export function StatisticsSection({
                         win_percentage: stats.total_legs > 0 ? (stats.total_wins / stats.total_legs) * 100 : 0,
                       }))
                       .sort((a: any, b: any) => {
+                        if (b.win_percentage !== a.win_percentage) return b.win_percentage - a.win_percentage
                         if (b.total_wins !== a.total_wins) return b.total_wins - a.total_wins
                         if (b.total_180 !== a.total_180) return b.total_180 - a.total_180
                         if (b.total_171 !== a.total_171) return b.total_171 - a.total_171
@@ -194,7 +195,7 @@ export function StatisticsSection({
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-1 sm:gap-2 text-xs">
+                          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-1 sm:gap-2 text-xs sm:text-sm">
                             <div className="text-center p-1 sm:p-2 bg-slate-50 rounded">
                               <div className="font-semibold text-slate-700 text-xs sm:text-sm">{stats.total_19}</div>
                               <div className="text-xs text-muted-foreground">19er</div>
@@ -410,11 +411,7 @@ export function StatisticsSection({
                                   .map((player: any, index) => (
                                     <Card
                                       key={`${matchKey}-${player.player_id}`}
-                                      className={`${
-                                        index < 3 && player.wins > 0
-                                          ? "border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50"
-                                          : ""
-                                      }`}
+                                      className={`${index < 3 && player.wins > 0 ? "border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50" : ""}`}
                                     >
                                       <CardContent className="p-3 sm:p-4">
                                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2 sm:gap-0">
@@ -429,11 +426,7 @@ export function StatisticsSection({
                                           <div className="flex items-center gap-1 sm:gap-2">
                                             <Badge
                                               variant={player.wins > 0 ? "default" : "secondary"}
-                                              className={`text-xs ${
-                                                player.wins > 0
-                                                  ? "bg-green-600 text-white"
-                                                  : "bg-gray-200 text-gray-600"
-                                              }`}
+                                              className={`text-xs ${player.wins > 0 ? "bg-green-600 text-white" : "bg-gray-200 text-gray-600"}`}
                                             >
                                               {player.total_wins} Wins
                                             </Badge>

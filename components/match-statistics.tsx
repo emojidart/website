@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Users, Save, Play, Target, Trophy, TrendingUp, Crown, Minus, Plus } from "lucide-react"
+import { Users, Save, Play, Target, Trophy, TrendingUp, Crown, Minus, Plus, X } from "lucide-react"
 import { createBrowserClient } from "@supabase/ssr"
 import TeamLineupSelector from "@/components/team-lineup-selector"
 
@@ -241,7 +241,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
     const { data, error } = await supabase
       .from("leg_statistics")
       .select(
-        `id, match_id, leg_number, player_id, leg_winner_id, leg_winner_ids, leg_wins, throws_180, throws_171, throws_high_tonne, throws_tonne, throws_shanghai, throws_95_plus, throws_under_26, throws_under_30, semperit_outs, throws_15, throws_16, throws_17, throws_18, throws_19, throws_20, throws_bull, notes, 
+        `id, match_id, leg_number, player_id, leg_winner_id, leg_winner_ids, leg_wins, throws_180, throws_171, throws_high_tonne, throws_tonne, throws_shanghai, throws_95_plus, throws_under_26, throws_under_30, semperit_outs, throws_15, throws_16, throws_17, throws_18, throws_19, throws_20, throws_bull, notes, player_legs_won, opponent_legs_won, legs_won_in_match,
          player:club_players!leg_statistics_player_id_fkey(name),
          leg_winner:club_players!leg_statistics_leg_winner_id_fkey(name)`,
       )
@@ -341,12 +341,14 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
           const [playerLegs, opponentLegs] = result.score.split(":").map(Number)
           console.log("[v0] Processing player", playerId, "with result:", result)
 
+          const playerWon = playerLegs > opponentLegs
+
           return {
             match_id: match.id,
             leg_number: currentLeg,
             player_id: playerId,
-            leg_winner_id: result.legsWon > 0 ? playerId : null,
-            leg_wins: result.legsWon,
+            leg_winner_id: playerWon ? playerId : null,
+            leg_wins: playerWon ? 1 : 0,
             legs_won_in_match: result.legsWon,
             player_legs_won: playerLegs || 0,
             opponent_legs_won: opponentLegs || 0,
@@ -686,7 +688,9 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                         <div className="w-20">
                                           <Label className="text-xs text-muted-foreground">Legs gewonnen</Label>
                                           <div className="mt-1 text-lg font-bold text-center p-2 bg-gray-50 rounded">
-                                            {individualMatchResults[playerId]?.legsWon || 0}
+                                            {individualMatchResults[playerId]?.score
+                                              ? individualMatchResults[playerId].score.replace(":", "/")
+                                              : "0/0"}
                                           </div>
                                         </div>
                                       </div>
@@ -948,255 +952,50 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                       <Trophy className="h-6 w-6 text-amber-600" />
                       Bisherige Legs
                       <Badge variant="secondary" className="ml-auto">
-                        {Array.from(new Set(legStats.map((s) => s.leg_number))).length} Legs gespielt
+                        {legStats.length} Legs gespielt
                       </Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6 flex-1 flex flex-col">
-                    <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                      <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                        Spieler-Gesamtstatistik für dieses Match
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-                        {(() => {
-                          const playerTotals: { [key: string]: any } = {}
-
-                          legStats.forEach((stat) => {
-                            const playerId = stat.player_id
-                            if (!playerTotals[playerId]) {
-                              playerTotals[playerId] = {
-                                player_id: playerId,
-                                player_name: stat.player_name,
-                                total_legs: 0,
-                                total_wins: 0,
-                                total_180: 0,
-                                total_171: 0,
-                                total_15: 0,
-                                total_16: 0,
-                                total_17: 0,
-                                total_18: 0,
-                                total_19: 0,
-                                total_20: 0,
-                                total_high_tonne: 0,
-                                total_tonne: 0,
-                                total_shanghai: 0,
-                                total_95_plus: 0,
-                                total_under_26: 0,
-                                total_under_30: 0,
-                                total_semperit: 0,
-                                total_bull: 0,
-                                win_percentage: 0,
-                              }
-                            }
-
-                            const actualLegsPlayed = (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0)
-                            const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1 // fallback to 1 for team matches
-
-                            playerTotals[playerId].total_legs += legsToAdd
-                            playerTotals[playerId].total_wins += stat.leg_wins || 0
-                            playerTotals[playerId].total_180 += stat.throws_180 || 0
-                            playerTotals[playerId].total_171 += stat.throws_171 || 0
-                            playerTotals[playerId].total_15 += stat.throws_15 || 0
-                            playerTotals[playerId].total_16 += stat.throws_16 || 0
-                            playerTotals[playerId].total_17 += stat.throws_17 || 0
-                            playerTotals[playerId].total_18 += stat.throws_18 || 0
-                            playerTotals[playerId].total_19 += stat.throws_19 || 0
-                            playerTotals[playerId].total_20 += stat.throws_20 || 0
-                            playerTotals[playerId].total_high_tonne += stat.throws_high_tonne || 0
-                            playerTotals[playerId].total_tonne += stat.throws_tonne || 0
-                            playerTotals[playerId].total_shanghai += stat.throws_shanghai || 0
-                            playerTotals[playerId].total_95_plus += stat.throws_95_plus || 0
-                            playerTotals[playerId].total_under_26 += stat.throws_under_26 || 0
-                            playerTotals[playerId].total_under_30 += stat.throws_under_30 || 0
-                            playerTotals[playerId].total_semperit += stat.semperit_outs || 0
-                            playerTotals[playerId].total_bull += stat.throws_bull || 0
-                          })
-
-                          // Calculate win percentage and sort by wins
-                          const sortedPlayerTotals = Object.values(playerTotals)
-                            .map((stats: any) => ({
-                              ...stats,
-                              win_percentage: stats.total_legs > 0 ? (stats.total_wins / stats.total_legs) * 100 : 0,
-                            }))
-                            .sort((a: any, b: any) => {
-                              if (b.total_wins !== a.total_wins) return b.total_wins - a.total_wins
-                              if (b.total_180 !== a.total_180) return b.total_180 - a.total_180
-                              return b.total_171 - a.total_171
-                            })
-
-                          return sortedPlayerTotals.map((playerTotal: any, index: number) => (
-                            <Card
-                              key={playerTotal.player_id}
-                              className={`${
-                                playerTotal.total_wins > 0
-                                  ? "border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100"
-                                  : "bg-gradient-to-br from-white to-slate-50"
-                              }`}
-                            >
-                              <CardContent className="p-4">
-                                <div className="flex items-center justify-between mb-3">
-                                  <h5 className="font-bold text-lg flex items-center gap-2 truncate">
-                                    {index === 0 && playerTotal.total_wins > 0 && (
-                                      <Crown className="h-5 w-5 text-amber-600" />
-                                    )}
-                                    {playerTotal.player_name}
-                                  </h5>
-                                  <div className="flex flex-col items-end gap-1">
-                                    <Badge
-                                      variant={playerTotal.total_wins > 0 ? "default" : "secondary"}
-                                      className={playerTotal.total_wins > 0 ? "bg-green-600 hover:bg-green-700" : ""}
-                                    >
-                                      🏆 {playerTotal.total_wins}/{playerTotal.total_legs} Wins
-                                    </Badge>
-                                    <span className="text-xs text-muted-foreground">
-                                      {playerTotal.win_percentage.toFixed(1)}% Gewinnrate
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">High Scores:</span>
-                                    <div className="flex gap-1 flex-wrap">
-                                      {playerTotal.total_180 > 0 && (
-                                        <Badge variant="outline" className="text-xs bg-red-50 border-red-200">
-                                          🎯 {playerTotal.total_180}×180
-                                        </Badge>
-                                      )}
-                                      {playerTotal.total_171 > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          171×{playerTotal.total_171}
-                                        </Badge>
-                                      )}
-                                      {playerTotal.total_15 > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          15×{playerTotal.total_15}
-                                        </Badge>
-                                      )}
-                                      {playerTotal.total_16 > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          16×{playerTotal.total_16}
-                                        </Badge>
-                                      )}
-                                      {playerTotal.total_17 > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          17×{playerTotal.total_17}
-                                        </Badge>
-                                      )}
-                                      {playerTotal.total_18 > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          18×{playerTotal.total_18}
-                                        </Badge>
-                                      )}
-                                      {playerTotal.total_19 > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          19×{playerTotal.total_19}
-                                        </Badge>
-                                      )}
-                                      {playerTotal.total_20 > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          20×{playerTotal.total_20}
-                                        </Badge>
-                                      )}
-                                      {playerTotal.total_high_tonne > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          HT×{playerTotal.total_high_tonne}
-                                        </Badge>
-                                      )}
-                                      {playerTotal.total_tonne > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          T×{playerTotal.total_tonne}
-                                        </Badge>
-                                      )}
-                                      {playerTotal.total_shanghai > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          SH×{playerTotal.total_shanghai}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {(playerTotal.total_under_26 > 0 ||
-                                    playerTotal.total_under_30 > 0 ||
-                                    playerTotal.total_semperit > 0) && (
-                                    <div className="p-2 bg-red-50 rounded border border-red-200">
-                                      <div className="text-xs font-medium text-red-700 mb-1">⚠️ Under-ScoreGesamt:</div>
-                                      <div className="grid grid-cols-3 gap-2 text-xs">
-                                        {playerTotal.total_under_26 > 0 && (
-                                          <div className="text-center">
-                                            <div className="font-medium text-red-600">{playerTotal.total_under_26}</div>
-                                            <div className="text-red-500">U26</div>
-                                          </div>
-                                        )}
-                                        {playerTotal.total_under_30 > 0 && (
-                                          <div className="text-center">
-                                            <div className="font-medium text-red-600">{playerTotal.total_under_30}</div>
-                                            <div className="text-red-500">U30</div>
-                                          </div>
-                                        )}
-                                        {playerTotal.total_semperit > 0 && (
-                                          <div className="text-center">
-                                            <div className="font-medium text-red-600">{playerTotal.total_semperit}</div>
-                                            <div className="text-red-500">Semp</div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))
-                        })()}
-                      </div>
-                    </div>
-                    <div className="space-y-6">
-                      {Array.from(new Set(legStats.map((s) => s.leg_number)))
-                        .sort((a, b) => b - a)
+                  <CardContent className="p-4 space-y-4 flex-1 overflow-y-auto">
+                    <div className="space-y-4">
+                      {Array.from(new Set(legStats.map((stat) => stat.leg_number)))
+                        .sort((a, b) => a - b)
                         .map((legNumber) => {
-                          const legPlayers = legStats.filter((s) => s.leg_number === legNumber)
-                          const total180s = legPlayers.reduce((sum, p) => sum + p.throws_180, 0)
+                          const legPlayers = legStats.filter((stat) => stat.leg_number === legNumber)
+                          const legWinners = legPlayers.filter((stat) => stat.leg_wins > 0)
+                          const total180s = legPlayers.reduce((sum, stat) => sum + stat.throws_180, 0)
                           const totalHighScores = legPlayers.reduce(
-                            (sum, p) =>
-                              sum +
-                              p.throws_180 +
-                              p.throws_171 +
-                              p.throws_15 +
-                              p.throws_16 +
-                              p.throws_17 +
-                              p.throws_18 +
-                              p.throws_19 +
-                              p.throws_20 +
-                              p.throws_high_tonne +
-                              p.throws_tonne +
-                              p.throws_shanghai,
+                            (sum, stat) => sum + stat.throws_180 + stat.throws_171 + stat.throws_high_tonne,
                             0,
                           )
-                          const legWinners = legPlayers.filter((s) => s.leg_wins > 0)
 
                           return (
-                            <Card
-                              key={legNumber}
-                              className="border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow"
-                            >
+                            <Card key={legNumber} className="border border-slate-200 shadow-sm">
                               <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
-                                    <Badge variant="default" className="text-lg px-3 py-1">
-                                      Leg {legNumber}
-                                    </Badge>
-                                    {legWinners.length > 0 && (
-                                      <Badge
-                                        variant="secondary"
-                                        className="bg-amber-100 text-amber-800 border-amber-300"
-                                      >
-                                        <Crown className="h-3 w-3 mr-1" />
-                                        Gewinner: {legWinners.map((winner) => winner.player_name).join(", ")}
-                                      </Badge>
-                                    )}
-                                    <div className="flex gap-4 text-sm text-muted-foreground">
-                                      <span className="flex items-center gap-1">🎯 {total180s} × 180er</span>
+                                    <div className="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
+                                      {legNumber}
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-lg">Leg {legNumber}</h4>
+                                      {legWinners.length > 0 && (
+                                        <p className="text-sm text-green-600 font-medium flex items-center gap-1">
+                                          <Crown className="h-4 w-4" />
+                                          Gewinner: {legWinners.map((w) => w.player_name).join(", ")}
+                                        </p>
+                                      )}
+                                      {legWinners.length === 0 && (
+                                        <p className="text-sm text-red-600 font-medium flex items-center gap-1">
+                                          <X className="h-4 w-4" />
+                                          Verloren
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                                      <span className="flex items-center gap-1">🎯 {total180s}×180</span>
                                       <span className="flex items-center gap-1">🔥 {totalHighScores} High Scores</span>
                                       <span className="flex items-center gap-1">👥 {legPlayers.length} Spieler</span>
                                     </div>
@@ -1204,42 +1003,158 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                 </div>
                               </CardHeader>
                               <CardContent>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                   {legPlayers.map((stat) => (
                                     <Card
                                       key={stat.id}
-                                      className={`bg-gradient-to-br from-white to-slate-50 border shadow-sm ${
+                                      className={`transition-all duration-200 ${
                                         stat.leg_wins > 0
-                                          ? "border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100"
-                                          : ""
+                                          ? "border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100 shadow-md"
+                                          : "bg-gradient-to-br from-white to-slate-50 border-slate-200"
                                       }`}
                                     >
-                                      <CardContent className="p-2 sm:p-3 lg:p-4">
-                                        <div className="flex items-center justify-between mb-2 sm:mb-3">
-                                          <h5 className="font-semibold text-xs sm:text-sm lg:text-base flex items-center gap-1 sm:gap-2 truncate">
-                                            {stat.leg_wins > 0 && (
-                                              <Crown className="h-3 w-3 sm:h-4 sm:w-4 text-amber-600" />
-                                            )}
-                                            <span className="truncate">{stat.player_name}</span>
-                                          </h5>
-                                          <div className="flex flex-col items-end gap-1">
-                                            {stat.leg_wins > 0 && (
-                                              <Badge
-                                                variant="default"
-                                                className="bg-green-600 hover:bg-green-700 text-xs"
-                                              >
-                                                🏆 GEWINNER
-                                              </Badge>
-                                            )}
-                                            {stat.throws_180 > 0 && (
-                                              <Badge
-                                                variant="secondary"
-                                                className="bg-amber-100 text-amber-800 text-xs"
-                                              >
-                                                🎯 {stat.throws_180}×180
-                                              </Badge>
-                                            )}
+                                      <CardContent className="p-4">
+                                        <div className="space-y-3">
+                                          {/* Player name and winner badge */}
+                                          <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0 flex-1">
+                                              <h5 className="font-semibold text-sm flex items-center gap-2">
+                                                {stat.leg_wins > 0 && (
+                                                  <Crown className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                                                )}
+                                                <span className="break-words">{stat.player_name}</span>
+                                              </h5>
+                                              {stat.player_legs_won != null && stat.opponent_legs_won != null ? (
+                                                <Badge
+                                                  variant="secondary"
+                                                  className="bg-green-100 text-green-800 border-green-200"
+                                                >
+                                                  {stat.player_legs_won}/{stat.opponent_legs_won} Legs
+                                                </Badge>
+                                              ) : (
+                                                <Badge
+                                                  variant="secondary"
+                                                  className="bg-green-100 text-green-800 border-green-200"
+                                                >
+                                                  {stat.leg_wins > 0
+                                                    ? `${stat.leg_wins} Leg${stat.leg_wins > 1 ? "s" : ""}`
+                                                    : "Verloren"}
+                                                </Badge>
+                                              )}
+                                            </div>
                                           </div>
+
+                                          {/* High Scores */}
+                                          <div className="space-y-2">
+                                            <h6 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                              High Scores
+                                            </h6>
+                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                              {stat.throws_180 > 0 && (
+                                                <div className="flex items-center justify-between bg-red-50 px-2 py-1 rounded border border-red-200">
+                                                  <span className="font-medium text-red-700">🎯 180</span>
+                                                  <span className="font-bold text-red-800">{stat.throws_180}×</span>
+                                                </div>
+                                              )}
+                                              {stat.throws_171 > 0 && (
+                                                <div className="flex items-center justify-between bg-orange-50 px-2 py-1 rounded border border-orange-200">
+                                                  <span className="font-medium text-orange-700">171</span>
+                                                  <span className="font-bold text-orange-800">{stat.throws_171}×</span>
+                                                </div>
+                                              )}
+                                              {stat.throws_high_tonne > 0 && (
+                                                <div className="flex items-center justify-between bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                                                  <span className="font-medium text-blue-700">High T</span>
+                                                  <span className="font-bold text-blue-800">
+                                                    {stat.throws_high_tonne}×
+                                                  </span>
+                                                </div>
+                                              )}
+                                              {stat.throws_tonne > 0 && (
+                                                <div className="flex items-center justify-between bg-green-50 px-2 py-1 rounded border border-green-200">
+                                                  <span className="font-medium text-green-700">Tonne</span>
+                                                  <span className="font-bold text-green-800">{stat.throws_tonne}×</span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {/* Other scores */}
+                                          {(stat.throws_15 > 0 ||
+                                            stat.throws_16 > 0 ||
+                                            stat.throws_17 > 0 ||
+                                            stat.throws_18 > 0 ||
+                                            stat.throws_19 > 0 ||
+                                            stat.throws_20 > 0) && (
+                                            <div className="space-y-2">
+                                              <h6 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                Weitere Scores
+                                              </h6>
+                                              <div className="grid grid-cols-3 gap-1 text-xs">
+                                                {[15, 16, 17, 18, 19, 20].map((num) => {
+                                                  const count = stat[`throws_${num}` as keyof typeof stat] as number
+                                                  if (count > 0) {
+                                                    return (
+                                                      <div
+                                                        key={num}
+                                                        className="flex items-center justify-between bg-slate-50 px-2 py-1 rounded border"
+                                                      >
+                                                        <span className="font-medium">{num}er</span>
+                                                        <span className="font-bold">{count}×</span>
+                                                      </div>
+                                                    )
+                                                  }
+                                                  return null
+                                                })}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {/* Under scores */}
+                                          {(stat.throws_under_26 > 0 ||
+                                            stat.throws_under_30 > 0 ||
+                                            stat.semperit_outs > 0) && (
+                                            <div className="space-y-2">
+                                              <h6 className="text-xs font-medium text-red-600 uppercase tracking-wide">
+                                                ⚠️ Under-Scores
+                                              </h6>
+                                              <div className="grid grid-cols-2 gap-1 text-xs">
+                                                {stat.throws_under_26 > 0 && (
+                                                  <div className="flex items-center justify-between bg-red-50 px-2 py-1 rounded border border-red-200">
+                                                    <span className="font-medium text-red-700">U26</span>
+                                                    <span className="font-bold text-red-800">
+                                                      {stat.throws_under_26}×
+                                                    </span>
+                                                  </div>
+                                                )}
+                                                {stat.throws_under_30 > 0 && (
+                                                  <div className="flex items-center justify-between bg-red-50 px-2 py-1 rounded border border-red-200">
+                                                    <span className="font-medium text-red-700">U30</span>
+                                                    <span className="font-bold text-red-800">
+                                                      {stat.throws_under_30}×
+                                                    </span>
+                                                  </div>
+                                                )}
+                                                {stat.semperit_outs > 0 && (
+                                                  <div className="flex items-center justify-between bg-red-50 px-2 py-1 rounded border border-red-200">
+                                                    <span className="font-medium text-red-700">Semp</span>
+                                                    <span className="font-bold text-red-800">
+                                                      {stat.semperit_outs}×
+                                                    </span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {/* Notes */}
+                                          {stat.notes && (
+                                            <div className="pt-2 border-t border-slate-200">
+                                              <p className="text-xs text-muted-foreground italic break-words">
+                                                "{stat.notes}"
+                                              </p>
+                                            </div>
+                                          )}
                                         </div>
                                       </CardContent>
                                     </Card>

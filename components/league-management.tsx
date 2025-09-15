@@ -24,6 +24,7 @@ import {
   ChevronRight,
   AlertTriangle,
   Target,
+  Settings,
 } from "lucide-react"
 import { createBrowserClient } from "@supabase/ssr"
 import { MatchStatistics } from "./match-statistics"
@@ -115,6 +116,19 @@ export function LeagueManagement() {
   const [selectedMatchForResults, setSelectedMatchForResults] = useState<string | null>(null)
   const [selectedMatchForStats, setSelectedMatchForStats] = useState<Match | null>(null)
   const [isStatsDialogOpen, setIsStatsDialogOpen] = useState(false)
+
+  const [isMatchDetailsDialogOpen, setIsMatchDetailsDialogOpen] = useState(false)
+  const [selectedMatchForDetails, setSelectedMatchForDetails] = useState<string | null>(null)
+  const [editMatchDetails, setEditMatchDetails] = useState({
+    home_team_id: "",
+    home_team_type: "own" as "own" | "opponent",
+    away_team_id: "",
+    away_team_type: "own" as "own" | "opponent",
+    match_date: "",
+    match_time: "",
+    week_number: 1,
+    venue: "",
+  })
 
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set())
 
@@ -356,6 +370,67 @@ export function LeagueManagement() {
       fetchData()
     } catch (error) {
       console.error("Error updating match score:", error)
+    }
+  }
+
+  const resetMatchScore = async (matchId: string) => {
+    try {
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          home_score: null,
+          away_score: null,
+          status: "scheduled",
+        })
+        .eq("id", matchId)
+
+      if (error) throw error
+      setEditingMatch(null)
+      setIsResultsDialogOpen(false)
+      setSelectedMatchForResults(null)
+      fetchData()
+    } catch (error) {
+      console.error("Error resetting match score:", error)
+    }
+  }
+
+  const updateMatchDetails = async (matchId: string) => {
+    try {
+      const matchData: any = {
+        match_date: editMatchDetails.match_date,
+        match_time: editMatchDetails.match_time,
+        week_number: editMatchDetails.week_number,
+        venue: editMatchDetails.venue,
+      }
+
+      // Handle home team assignment
+      if (editMatchDetails.home_team_type === "own") {
+        matchData.home_team_id = editMatchDetails.home_team_id
+        matchData.home_opponent_team_id = null // Clear opponent team if switching to own team
+      } else {
+        matchData.home_opponent_team_id = editMatchDetails.home_team_id
+        matchData.home_team_id = null // Clear own team if switching to opponent team
+      }
+
+      // Handle away team assignment
+      if (editMatchDetails.away_team_type === "own") {
+        matchData.away_team_id = editMatchDetails.away_team_id
+        matchData.away_opponent_team_id = null // Clear opponent team if switching to own team
+      } else {
+        matchData.away_opponent_team_id = editMatchDetails.away_team_id
+        matchData.away_team_id = null // Clear own team if switching to opponent team
+      }
+
+      const { error } = await supabase.from("matches").update(matchData).eq("id", matchId)
+
+      if (error) throw error
+      setIsMatchDetailsDialogOpen(false)
+      setSelectedMatchForDetails(null)
+      fetchData()
+      setShowSuccessMessage("Spieldetails erfolgreich aktualisiert!")
+      setTimeout(() => setShowSuccessMessage(""), 3000)
+    } catch (error) {
+      console.error("Error updating match details:", error)
     }
   }
 
@@ -1029,6 +1104,232 @@ export function LeagueManagement() {
                                             <Target className="h-4 w-4 mr-2" />
                                             Statistiken
                                           </Button>
+
+                                          <Dialog
+                                            open={isMatchDetailsDialogOpen && selectedMatchForDetails === match.id}
+                                            onOpenChange={(open) => {
+                                              setIsMatchDetailsDialogOpen(open)
+                                              if (!open) setSelectedMatchForDetails(null)
+                                            }}
+                                          >
+                                            <DialogTrigger asChild>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                  setSelectedMatchForDetails(match.id)
+                                                  setIsMatchDetailsDialogOpen(true)
+                                                  setEditMatchDetails({
+                                                    home_team_id: match.home_team_id,
+                                                    home_team_type: match.home_team_type,
+                                                    away_team_id: match.away_team_id,
+                                                    away_team_type: match.away_team_type,
+                                                    match_date: match.match_date,
+                                                    match_time: match.match_time,
+                                                    week_number: match.week_number,
+                                                    venue: match.venue || "",
+                                                  })
+                                                }}
+                                              >
+                                                <Settings className="h-4 w-4 mr-2" />
+                                                Details
+                                              </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="sm:max-w-lg">
+                                              <DialogHeader>
+                                                <DialogTitle>Spieldetails bearbeiten</DialogTitle>
+                                                <p className="text-sm text-muted-foreground">
+                                                  Ändern Sie Datum, Uhrzeit, Teams und weitere Details
+                                                </p>
+                                              </DialogHeader>
+                                              <div className="space-y-4">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                  <div>
+                                                    <Label htmlFor="week-number">Spieltag</Label>
+                                                    <Input
+                                                      id="week-number"
+                                                      type="number"
+                                                      min="1"
+                                                      value={editMatchDetails.week_number}
+                                                      onChange={(e) =>
+                                                        setEditMatchDetails((prev) => ({
+                                                          ...prev,
+                                                          week_number: Number.parseInt(e.target.value) || 1,
+                                                        }))
+                                                      }
+                                                    />
+                                                  </div>
+                                                  <div>
+                                                    <Label htmlFor="venue">Spielort</Label>
+                                                    <Input
+                                                      id="venue"
+                                                      value={editMatchDetails.venue}
+                                                      onChange={(e) =>
+                                                        setEditMatchDetails((prev) => ({
+                                                          ...prev,
+                                                          venue: e.target.value,
+                                                        }))
+                                                      }
+                                                    />
+                                                  </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                  <div>
+                                                    <Label htmlFor="match-date">Datum</Label>
+                                                    <Input
+                                                      id="match-date"
+                                                      type="date"
+                                                      value={editMatchDetails.match_date}
+                                                      onChange={(e) =>
+                                                        setEditMatchDetails((prev) => ({
+                                                          ...prev,
+                                                          match_date: e.target.value,
+                                                        }))
+                                                      }
+                                                    />
+                                                  </div>
+                                                  <div>
+                                                    <Label htmlFor="match-time">Uhrzeit</Label>
+                                                    <Input
+                                                      id="match-time"
+                                                      type="time"
+                                                      value={editMatchDetails.match_time}
+                                                      onChange={(e) =>
+                                                        setEditMatchDetails((prev) => ({
+                                                          ...prev,
+                                                          match_time: e.target.value,
+                                                        }))
+                                                      }
+                                                    />
+                                                  </div>
+                                                </div>
+
+                                                <div>
+                                                  <Label>Heimteam</Label>
+                                                  <div className="flex gap-2">
+                                                    <Select
+                                                      value={editMatchDetails.home_team_type}
+                                                      onValueChange={(value: "own" | "opponent") =>
+                                                        setEditMatchDetails((prev) => ({
+                                                          ...prev,
+                                                          home_team_type: value,
+                                                          home_team_id: "",
+                                                        }))
+                                                      }
+                                                    >
+                                                      <SelectTrigger className="w-32">
+                                                        <SelectValue />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        <SelectItem value="own">Eigenes Team</SelectItem>
+                                                        <SelectItem value="opponent">Gegner</SelectItem>
+                                                      </SelectContent>
+                                                    </Select>
+                                                    <Select
+                                                      value={editMatchDetails.home_team_id}
+                                                      onValueChange={(value) =>
+                                                        setEditMatchDetails((prev) => ({
+                                                          ...prev,
+                                                          home_team_id: value,
+                                                        }))
+                                                      }
+                                                    >
+                                                      <SelectTrigger className="flex-1">
+                                                        <SelectValue placeholder="Team auswählen" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        {editMatchDetails.home_team_type === "own"
+                                                          ? ownTeams.map((team) => (
+                                                              <SelectItem key={team.id} value={team.id}>
+                                                                {team.name}
+                                                              </SelectItem>
+                                                            ))
+                                                          : opponentTeams.map((team) => (
+                                                              <SelectItem key={team.id} value={team.id}>
+                                                                {team.name}
+                                                              </SelectItem>
+                                                            ))}
+                                                      </SelectContent>
+                                                    </Select>
+                                                  </div>
+                                                </div>
+
+                                                <div>
+                                                  <Label>Auswärtsteam</Label>
+                                                  <div className="flex gap-2">
+                                                    <Select
+                                                      value={editMatchDetails.away_team_type}
+                                                      onValueChange={(value: "own" | "opponent") =>
+                                                        setEditMatchDetails((prev) => ({
+                                                          ...prev,
+                                                          away_team_type: value,
+                                                          away_team_id: "",
+                                                        }))
+                                                      }
+                                                    >
+                                                      <SelectTrigger className="w-32">
+                                                        <SelectValue />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        <SelectItem value="own">Eigenes Team</SelectItem>
+                                                        <SelectItem value="opponent">Gegner</SelectItem>
+                                                      </SelectContent>
+                                                    </Select>
+                                                    <Select
+                                                      value={editMatchDetails.away_team_id}
+                                                      onValueChange={(value) =>
+                                                        setEditMatchDetails((prev) => ({
+                                                          ...prev,
+                                                          away_team_id: value,
+                                                        }))
+                                                      }
+                                                    >
+                                                      <SelectTrigger className="flex-1">
+                                                        <SelectValue placeholder="Team auswählen" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        {editMatchDetails.away_team_type === "own"
+                                                          ? ownTeams.map((team) => (
+                                                              <SelectItem key={team.id} value={team.id}>
+                                                                {team.name}
+                                                              </SelectItem>
+                                                            ))
+                                                          : opponentTeams.map((team) => (
+                                                              <SelectItem key={team.id} value={team.id}>
+                                                                {team.name}
+                                                              </SelectItem>
+                                                            ))}
+                                                      </SelectContent>
+                                                    </Select>
+                                                  </div>
+                                                </div>
+
+                                                <div className="flex gap-3 pt-4">
+                                                  <Button
+                                                    onClick={() => updateMatchDetails(match.id)}
+                                                    className="flex-1"
+                                                    disabled={
+                                                      !editMatchDetails.home_team_id ||
+                                                      !editMatchDetails.away_team_id ||
+                                                      !editMatchDetails.match_date ||
+                                                      !editMatchDetails.match_time
+                                                    }
+                                                  >
+                                                    <Check className="h-4 w-4 mr-2" />
+                                                    Änderungen speichern
+                                                  </Button>
+                                                  <Button
+                                                    variant="outline"
+                                                    onClick={() => setIsMatchDetailsDialogOpen(false)}
+                                                  >
+                                                    Abbrechen
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            </DialogContent>
+                                          </Dialog>
+
                                           <Dialog
                                             open={isResultsDialogOpen && selectedMatchForResults === match.id}
                                             onOpenChange={(open) => {
@@ -1109,19 +1410,31 @@ export function LeagueManagement() {
                                                     </div>
                                                   </div>
                                                 </div>
-                                                <Button
-                                                  onClick={() =>
-                                                    updateMatchScore(
-                                                      match.id,
-                                                      editMatchScores.home,
-                                                      editMatchScores.away,
-                                                    )
-                                                  }
-                                                  className="w-full h-12 text-base font-medium"
-                                                >
-                                                  <Check className="h-4 w-4 mr-2" />
-                                                  Ergebnis speichern
-                                                </Button>
+                                                <div className="flex gap-3">
+                                                  <Button
+                                                    onClick={() =>
+                                                      updateMatchScore(
+                                                        match.id,
+                                                        editMatchScores.home,
+                                                        editMatchScores.away,
+                                                      )
+                                                    }
+                                                    className="flex-1 h-12 text-base font-medium"
+                                                  >
+                                                    <Check className="h-4 w-4 mr-2" />
+                                                    Ergebnis speichern
+                                                  </Button>
+                                                  {match.status === "completed" && (
+                                                    <Button
+                                                      onClick={() => resetMatchScore(match.id)}
+                                                      variant="outline"
+                                                      className="h-12 px-4 text-base font-medium border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                                    >
+                                                      <AlertTriangle className="h-4 w-4 mr-2" />
+                                                      Reset
+                                                    </Button>
+                                                  )}
+                                                </div>
                                               </div>
                                             </DialogContent>
                                           </Dialog>
