@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase"
 import {
   Calendar,
@@ -17,12 +17,22 @@ import {
   Trash2,
   Eye,
   AlertCircle,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface Registration {
   id: string
@@ -35,6 +45,10 @@ interface Registration {
   notizen?: string
   anmelde_zeit: string
   created_at: string
+}
+
+interface GroupedRegistrations {
+  [key: string]: Registration[]
 }
 
 const containerVariants = {
@@ -60,6 +74,12 @@ export function TournamentRegistrations() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState<"all" | "edart" | "steeldart">("all")
   const [sortBy, setSortBy] = useState<"date" | "name" | "registration_time">("date")
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [registrationToDelete, setRegistrationToDelete] = useState<Registration | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchRegistrations()
@@ -120,19 +140,29 @@ export function TournamentRegistrations() {
     setFilteredRegistrations(filtered)
   }
 
-  const deleteRegistration = async (id: string) => {
-    if (!confirm("Anmeldung wirklich löschen?")) return
+  const handleDeleteClick = (registration: Registration) => {
+    setRegistrationToDelete(registration)
+    setDeleteModalOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!registrationToDelete) return
 
     try {
-      const { error } = await supabase.from("anmeldungen").delete().eq("id", id)
+      setDeleting(true)
+      const { error } = await supabase.from("anmeldungen").delete().eq("id", registrationToDelete.id)
 
       if (error) {
         throw error
       }
 
       await fetchRegistrations()
+      setDeleteModalOpen(false)
+      setRegistrationToDelete(null)
     } catch (err: any) {
       alert(`Fehler beim Löschen: ${err.message}`)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -189,6 +219,27 @@ export function TournamentRegistrations() {
     return type === "edart" ? <Users className="h-4 w-4" /> : <Target className="h-4 w-4" />
   }
 
+  const groupRegistrations = (registrations: Registration[]): GroupedRegistrations => {
+    return registrations.reduce((groups, registration) => {
+      const key = `${registration.turnier_datum}_${registration.turnier_zeit}`
+      if (!groups[key]) {
+        groups[key] = []
+      }
+      groups[key].push(registration)
+      return groups
+    }, {} as GroupedRegistrations)
+  }
+
+  const toggleGroup = (groupKey: string) => {
+    const newExpanded = new Set(expandedGroups)
+    if (newExpanded.has(groupKey)) {
+      newExpanded.delete(groupKey)
+    } else {
+      newExpanded.add(groupKey)
+    }
+    setExpandedGroups(newExpanded)
+  }
+
   // Statistics
   const stats = {
     total: filteredRegistrations.length,
@@ -197,6 +248,8 @@ export function TournamentRegistrations() {
     withEmail: filteredRegistrations.filter((r) => r.email).length,
     withPhone: filteredRegistrations.filter((r) => r.telefon).length,
   }
+
+  const groupedRegistrations = groupRegistrations(filteredRegistrations)
 
   if (loading) {
     return (
@@ -225,214 +278,314 @@ export function TournamentRegistrations() {
   }
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-      {/* Header & Stats */}
-      <motion.div variants={itemVariants}>
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader className="border-b border-gray-100 pb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
-                  <Eye className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-semibold text-gray-900">Turnier-Anmeldungen</CardTitle>
-                  <p className="text-sm text-gray-500 mt-1">Übersicht aller registrierten Teilnehmer</p>
-                </div>
-              </div>
-              <Button
-                onClick={exportToCSV}
-                variant="outline"
-                className="border-gray-200 hover:bg-gray-50 bg-transparent"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                CSV Export
-              </Button>
-            </div>
-          </CardHeader>
-
-          <CardContent className="pt-6">
-            {/* Statistics */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-                <div className="text-sm text-gray-600">Gesamt</div>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">{stats.edart}</div>
-                <div className="text-sm text-blue-600">E-Dart</div>
-              </div>
-              <div className="bg-red-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-red-600">{stats.steeldart}</div>
-                <div className="text-sm text-red-600">Steeldart</div>
-              </div>
-              <div className="bg-green-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">{stats.withEmail}</div>
-                <div className="text-sm text-green-600">Mit E-Mail</div>
-              </div>
-              <div className="bg-yellow-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-yellow-600">{stats.withPhone}</div>
-                <div className="text-sm text-yellow-600">Mit Telefon</div>
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="Nach Name, E-Mail oder Telefon suchen..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50"
-                  />
-                </div>
-              </div>
-              <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
-                <SelectTrigger className="w-full md:w-48 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Turniere</SelectItem>
-                  <SelectItem value="edart">Nur E-Dart</SelectItem>
-                  <SelectItem value="steeldart">Nur Steeldart</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                <SelectTrigger className="w-full md:w-48 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date">Nach Turnier-Datum</SelectItem>
-                  <SelectItem value="name">Nach Name</SelectItem>
-                  <SelectItem value="registration_time">Nach Anmeldung</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Registrations List */}
-      <motion.div variants={itemVariants}>
-        {filteredRegistrations.length === 0 ? (
+    <>
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
+        {/* Header & Stats */}
+        <motion.div variants={itemVariants}>
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardContent className="py-12 text-center">
-              <Eye className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Keine Anmeldungen gefunden</h3>
-              <p className="text-gray-600">
-                {searchTerm || filterType !== "all"
-                  ? "Versuche andere Suchkriterien oder Filter."
-                  : "Es sind noch keine Anmeldungen vorhanden."}
-              </p>
+            <CardHeader className="border-b border-gray-100 pb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
+                    <Eye className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-semibold text-gray-900">Turnier-Anmeldungen</CardTitle>
+                    <p className="text-sm text-gray-500 mt-1">Übersicht aller registrierten Teilnehmer</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={exportToCSV}
+                  variant="outline"
+                  className="border-gray-200 hover:bg-gray-50 bg-transparent"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  CSV Export
+                </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent className="pt-6">
+              {/* Statistics */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <div className="bg-gray-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+                  <div className="text-sm text-gray-600">Gesamt</div>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-600">{stats.edart}</div>
+                  <div className="text-sm text-blue-600">E-Dart</div>
+                </div>
+                <div className="bg-red-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-red-600">{stats.steeldart}</div>
+                  <div className="text-sm text-red-600">Steeldart</div>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600">{stats.withEmail}</div>
+                  <div className="text-sm text-green-600">Mit E-Mail</div>
+                </div>
+                <div className="bg-yellow-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-yellow-600">{stats.withPhone}</div>
+                  <div className="text-sm text-yellow-600">Mit Telefon</div>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Nach Name, E-Mail oder Telefon suchen..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50"
+                    />
+                  </div>
+                </div>
+                <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
+                  <SelectTrigger className="w-full md:w-48 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Turniere</SelectItem>
+                    <SelectItem value="edart">Nur E-Dart</SelectItem>
+                    <SelectItem value="steeldart">Nur Steeldart</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                  <SelectTrigger className="w-full md:w-48 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date">Nach Turnier-Datum</SelectItem>
+                    <SelectItem value="name">Nach Name</SelectItem>
+                    <SelectItem value="registration_time">Nach Anmeldung</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid gap-4">
-            {filteredRegistrations.map((registration, index) => (
-              <motion.div
-                key={registration.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow duration-300">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-3">
-                        {/* Header */}
-                        <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-red-400 to-red-600 flex items-center justify-center">
-                              <span className="text-white font-bold text-sm">
-                                {registration.spieler_name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <h3 className="text-lg font-bold text-gray-900">{registration.spieler_name}</h3>
-                              <Badge className={`${getTypeColor(registration.turnier_typ)} border-0`}>
-                                <div className="flex items-center space-x-1">
-                                  {getTypeIcon(registration.turnier_typ)}
-                                  <span>{registration.turnier_typ === "edart" ? "E-Dart" : "Steeldart"}</span>
-                                </div>
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-gray-500">
-                              Angemeldet am {formatDateTime(registration.anmelde_zeit)}
-                            </p>
-                          </div>
-                        </div>
+        </motion.div>
 
-                        {/* Tournament Info */}
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Registrations List */}
+        <motion.div variants={itemVariants}>
+          {Object.keys(groupedRegistrations).length === 0 ? (
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+              <CardContent className="py-12 text-center">
+                <Eye className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Keine Anmeldungen gefunden</h3>
+                <p className="text-gray-600">
+                  {searchTerm || filterType !== "all"
+                    ? "Versuche andere Suchkriterien oder Filter."
+                    : "Es sind noch keine Anmeldungen vorhanden."}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(groupedRegistrations).map(([groupKey, groupRegistrations], groupIndex) => {
+                const isExpanded = expandedGroups.has(groupKey)
+                const firstReg = groupRegistrations[0]
+
+                return (
+                  <motion.div
+                    key={groupKey}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: groupIndex * 0.1 }}
+                  >
+                    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow duration-300">
+                      {/* Group Header */}
+                      <div
+                        className="p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                        onClick={() => toggleGroup(groupKey)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-2">
-                              <Calendar className="h-4 w-4 text-gray-500" />
-                              <span className="font-semibold">{formatDate(registration.turnier_datum)}</span>
+                              {isExpanded ? (
+                                <ChevronDown className="h-5 w-5 text-gray-500" />
+                              ) : (
+                                <ChevronRight className="h-5 w-5 text-gray-500" />
+                              )}
+                              <Calendar className="h-5 w-5 text-red-500" />
+                              <span className="font-semibold text-lg text-gray-900">
+                                {formatDate(firstReg.turnier_datum)}
+                              </span>
                             </div>
                             <div className="flex items-center space-x-2">
                               <Clock className="h-4 w-4 text-gray-500" />
-                              <span className="font-semibold">{registration.turnier_zeit}</span>
+                              <span className="font-medium text-gray-700">{firstReg.turnier_zeit}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <Badge className="bg-orange-100 text-orange-800 border-0">
+                              {groupRegistrations.length} Anmeldung{groupRegistrations.length !== 1 ? "en" : ""}
+                            </Badge>
+                            <div className="flex space-x-1">
+                              {groupRegistrations.map((reg) => (
+                                <Badge key={reg.id} className={`${getTypeColor(reg.turnier_typ)} border-0 text-xs`}>
+                                  {reg.turnier_typ === "edart" ? "E" : "S"}
+                                </Badge>
+                              ))}
                             </div>
                           </div>
                         </div>
+                      </div>
 
-                        {/* Contact Info */}
-                        {(registration.email || registration.telefon) && (
-                          <div className="space-y-2">
-                            {registration.email && (
-                              <div className="flex items-center space-x-2 text-sm">
-                                <Mail className="h-4 w-4 text-gray-500" />
-                                <span className="text-gray-700">{registration.email}</span>
-                              </div>
-                            )}
-                            {registration.telefon && (
-                              <div className="flex items-center space-x-2 text-sm">
-                                <Phone className="h-4 w-4 text-gray-500" />
-                                <span className="text-gray-700">{registration.telefon}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                      {/* Group Content */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="divide-y divide-gray-100">
+                              {groupRegistrations.map((registration, index) => (
+                                <div key={registration.id} className="p-6">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 space-y-3">
+                                      {/* Player Header */}
+                                      <div className="flex items-center space-x-3">
+                                        <div className="flex-shrink-0 h-10 w-10">
+                                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-red-400 to-red-600 flex items-center justify-center">
+                                            <span className="text-white font-bold text-sm">
+                                              {registration.spieler_name.charAt(0).toUpperCase()}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="flex items-center space-x-2">
+                                            <h3 className="text-lg font-bold text-gray-900">
+                                              {registration.spieler_name}
+                                            </h3>
+                                            <Badge className={`${getTypeColor(registration.turnier_typ)} border-0`}>
+                                              <div className="flex items-center space-x-1">
+                                                {getTypeIcon(registration.turnier_typ)}
+                                                <span>
+                                                  {registration.turnier_typ === "edart" ? "E-Dart" : "Steeldart"}
+                                                </span>
+                                              </div>
+                                            </Badge>
+                                          </div>
+                                          <p className="text-sm text-gray-500">
+                                            Angemeldet am {formatDateTime(registration.anmelde_zeit)}
+                                          </p>
+                                        </div>
+                                      </div>
 
-                        {/* Notes */}
-                        {registration.notizen && (
-                          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                            <div className="flex items-start space-x-2">
-                              <MessageSquare className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                              <div>
-                                <div className="text-sm font-medium text-blue-800 mb-1">Notizen:</div>
-                                <p className="text-sm text-blue-700">{registration.notizen}</p>
-                              </div>
+                                      {/* Contact Info */}
+                                      {(registration.email || registration.telefon) && (
+                                        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                                          {registration.email && (
+                                            <div className="flex items-center space-x-2 text-sm">
+                                              <Mail className="h-4 w-4 text-gray-500" />
+                                              <span className="text-gray-700">{registration.email}</span>
+                                            </div>
+                                          )}
+                                          {registration.telefon && (
+                                            <div className="flex items-center space-x-2 text-sm">
+                                              <Phone className="h-4 w-4 text-gray-500" />
+                                              <span className="text-gray-700">{registration.telefon}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+
+                                      {/* Notes */}
+                                      {registration.notizen && (
+                                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                                          <div className="flex items-start space-x-2">
+                                            <MessageSquare className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                            <div>
+                                              <div className="text-sm font-medium text-blue-800 mb-1">Notizen:</div>
+                                              <p className="text-sm text-blue-700">{registration.notizen}</p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="flex-shrink-0 ml-4">
+                                      <Button
+                                        onClick={() => handleDeleteClick(registration)}
+                                        variant="outline"
+                                        size="sm"
+                                        className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 bg-transparent"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          </div>
+                          </motion.div>
                         )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex-shrink-0 ml-4">
-                        <Button
-                          onClick={() => deleteRegistration(registration.id)}
-                          variant="outline"
-                          size="sm"
-                          className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 bg-transparent"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        )}
+                      </AnimatePresence>
+                    </Card>
+                  </motion.div>
+                )
+              })}
+            </div>
+          )}
+        </motion.div>
       </motion.div>
-    </motion.div>
+
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <span>Anmeldung löschen</span>
+            </DialogTitle>
+            <DialogDescription className="text-left">
+              Möchtest du die Anmeldung von{" "}
+              <span className="font-semibold text-gray-900">{registrationToDelete?.spieler_name}</span> wirklich
+              löschen?
+              <br />
+              <span className="text-sm text-gray-500 mt-2 block">
+                Diese Aktion kann nicht rückgängig gemacht werden.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteModalOpen(false)}
+              disabled={deleting}
+              className="bg-transparent"
+            >
+              Abbrechen
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Lösche...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Löschen
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

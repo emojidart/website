@@ -1,626 +1,624 @@
 "use client"
 
-import { Header } from "@/components/header"
-import { TournamentRegistrationModal } from "@/components/tournament-registration-modal"
-import { Calendar, Clock, MapPin, Trophy, Target, Users, Star, Sparkles, UserPlus, Crown, BookOpen } from "lucide-react"
-import { motion } from "framer-motion"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { useState, useEffect } from "react"
+import { createBrowserClient } from "@supabase/ssr"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Trophy, Target, Users, Calendar, TrendingUp, Award, Medal, Star } from "lucide-react"
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
-  },
+const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+
+interface Team {
+  id: string
+  name: string
+  logo_url?: string
+  user_id?: string
 }
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 50 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 12 } },
+interface OpponentTeam {
+  id: string
+  name: string
+  logo_url?: string
 }
 
-const cardVariants = {
-  hidden: { opacity: 0, scale: 0.9, y: 30 },
-  visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 90, damping: 10 } },
+interface Match {
+  id: string
+  home_team_id?: string
+  away_team_id?: string
+  home_opponent_team_id?: string
+  away_opponent_team_id?: string
+  home_score?: number
+  away_score?: number
+  match_date: string
+  dart_type: string
+  home_team?: Team
+  away_team?: Team
+  home_opponent_team?: OpponentTeam
+  away_opponent_team?: OpponentTeam
+  season?: { id: string; name: string; type: string }
 }
 
-const sponsorVariants = {
-  hidden: { opacity: 0, scale: 0.8 },
-  visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 100, damping: 12 } },
-}
+export default function DartLeagueDashboard() {
+  const [teams, setTeams] = useState<Team[]>([])
+  const [opponentTeams, setOpponentTeams] = useState<OpponentTeam[]>([])
+  const [matches, setMatches] = useState<Match[]>([])
+  const [players, setPlayers] = useState<any[]>([])
+  const [legStatistics, setLegStatistics] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dartTypeFilter, setDartTypeFilter] = useState("gesamt")
 
-export default function TournamentPage() {
-  const [registrationModal, setRegistrationModal] = useState<{
-    isOpen: boolean
-    date: string
-    time: string
-    type: "edart" | "steeldart" | "lioncup"
-  }>({
-    isOpen: false,
-    date: "",
-    time: "",
-    type: "steeldart",
-  })
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const { data: ownTeamsData, error: teamsError } = await supabase
+          .from("teams")
+          .select("*")
+          .not("user_id", "is", null)
+          .order("name")
 
-  const isDateInPast = (dateString: string): boolean => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+        const { data: opponentTeamsData, error: opponentError } = await supabase
+          .from("opponent_teams")
+          .select("*")
+          .order("name")
 
-    // Parse German date format (e.g., "27. Okt. 2025")
-    const months: { [key: string]: number } = {
-      "Jan.": 0,
-      "Feb.": 1,
-      "Mär.": 2,
-      "Apr.": 3,
-      Mai: 4,
-      "Jun.": 5,
-      Juli: 6,
-      "Aug.": 7,
-      "Sep.": 8,
-      "Okt.": 9,
-      "Nov.": 10,
-      "Dez.": 11,
-    }
+        if (teamsError) {
+          console.error("Error fetching teams:", teamsError)
+        } else {
+          setTeams(ownTeamsData || [])
+        }
 
-    const parts = dateString.split(" ")
-    if (parts.length >= 3) {
-      const day = Number.parseInt(parts[0].replace(".", ""))
-      const month = months[parts[1]]
-      const year = Number.parseInt(parts[2])
+        if (opponentError) {
+          console.error("Error fetching opponent teams:", opponentError)
+        } else {
+          setOpponentTeams(opponentTeamsData || [])
+        }
 
-      if (!isNaN(day) && month !== undefined && !isNaN(year)) {
-        const eventDate = new Date(year, month, day)
-        return eventDate < today
+        let matchQuery = supabase
+          .from("matches")
+          .select(`
+            *,
+            home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
+            away_team:teams!matches_away_team_id_fkey(id, name, logo_url),
+            season:seasons(id, name, type)
+          `)
+          .order("match_date", { ascending: true })
+
+        if (dartTypeFilter !== "gesamt") {
+          matchQuery = matchQuery.eq("dart_type", dartTypeFilter)
+        }
+
+        const { data: matchesData, error: matchesError } = await matchQuery
+
+        if (matchesError) {
+          console.error("Error fetching matches:", matchesError)
+        } else {
+          const enrichedMatches =
+            matchesData?.map((match) => {
+              const homeOpponentTeam = match.home_opponent_team_id
+                ? opponentTeamsData?.find((team) => team.id === match.home_opponent_team_id)
+                : null
+              const awayOpponentTeam = match.away_opponent_team_id
+                ? opponentTeamsData?.find((team) => team.id === match.away_opponent_team_id)
+                : null
+
+              return {
+                ...match,
+                home_opponent_team: homeOpponentTeam,
+                away_opponent_team: awayOpponentTeam,
+              }
+            }) || []
+
+          setMatches(enrichedMatches)
+        }
+
+        const { data: playersData, error: playersError } = await supabase
+          .from("team_members")
+          .select(`
+            team_id,
+            club_players (
+              id,
+              name,
+              photo_url
+            ),
+            teams (
+              id,
+              name
+            )
+          `)
+          .order("club_players(name)")
+
+        if (playersError) {
+          console.error("Error fetching players:", playersError)
+        } else {
+          const transformedPlayers =
+            playersData
+              ?.map((member: any) => ({
+                id: member.club_players?.id,
+                name: member.club_players?.name,
+                photo_url: member.club_players?.photo_url,
+                team_id: member.team_id,
+                team_name: member.teams?.name,
+              }))
+              .filter((player) => player.id) || []
+
+          setPlayers(transformedPlayers)
+        }
+
+        let legStatsQuery = supabase.from("leg_statistics").select(`
+            *,
+            player:club_players!leg_statistics_player_id_fkey(name, photo_url)
+          `)
+
+        if (dartTypeFilter !== "gesamt") {
+          legStatsQuery = legStatsQuery.eq("dart_type", dartTypeFilter)
+        }
+
+        const { data: legStatsData, error: legStatsError } = await legStatsQuery
+
+        if (legStatsError) {
+          console.error("Error fetching leg statistics:", legStatsError)
+        } else {
+          setLegStatistics(legStatsData || [])
+        }
+      } catch (error) {
+        console.error("Error loading data:", error)
+      } finally {
+        setLoading(false)
       }
     }
 
-    return false
-  }
+    loadData()
+  }, [dartTypeFilter])
 
-  const steeldartDates = [
-    { date: "02. Juli 2025", time: "19:00 Uhr" },
-    { date: "08. Juli 2025", time: "19:00 Uhr" },
-    { date: "21. Juli 2025", time: "19:00 Uhr" },
-    { date: "30. Juli 2025", time: "19:00 Uhr" },
-    { date: "05. Aug. 2025", time: "19:00 Uhr" },
-    { date: "13. Aug. 2025", time: "19:00 Uhr" },
-    { date: "20. Aug. 2025", time: "19:00 Uhr" },
-    { date: "27. Aug. 2025", time: "19:00 Uhr" },
-  ]
+  const calculateStandings = () => {
+    const standings: Record<string, any> = {}
 
-  const edartDates = [
-    { date: "04. Juli 2025", time: "19:30 Uhr" },
-    { date: "11. Juli 2025", time: "19:30 Uhr" },
-    { date: "23. Juli 2025", time: "19:00 Uhr" },
-    { date: "01 Aug. 2025", time: "19:30 Uhr" },
-    { date: "08 Aug. 2025", time: "19:30 Uhr" },
-    { date: "15. Aug. 2025", time: "19:30 Uhr" },
-    { date: "22. Aug. 2025", time: "19:30 Uhr" },
-    { date: "29. Aug. 2025", time: "19:30 Uhr" },
-  ]
+    // Initialize standings for all teams
+    teams.forEach((team) => {
+      standings[team.id] = {
+        id: team.id,
+        name: team.name,
+        logo_url: team.logo_url,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+        legsFor: 0,
+        legsAgainst: 0,
+        legsDiff: 0,
+        points: 0,
+      }
+    })
 
-  const lioncupDates = [
-    { date: "01. Sep. 2025", time: "19:30 Uhr" },
-    { date: "08. Sep. 2025", time: "19:30 Uhr" },
-    { date: "15. Sep. 2025", time: "19:30 Uhr" },
-    { date: "22. Sep. 2025", time: "19:30 Uhr" },
-    { date: "29. Sep. 2025", time: "19:30 Uhr" },
-    { date: "06. Okt. 2025", time: "19:30 Uhr" },
-    { date: "13. Okt. 2025", time: "19:30 Uhr" },
-    { date: "20. Okt. 2025", time: "19:30 Uhr" },
-    { date: "27. Okt. 2025", time: "19:30 Uhr", spielfrei: true },
-    { date: "03. Nov. 2025", time: "19:30 Uhr" },
-    { date: "10. Nov. 2025", time: "19:30 Uhr" },
-    { date: "17. Nov. 2025", time: "19:30 Uhr" },
-    { date: "24. Nov. 2025", time: "19:30 Uhr" },
-    { date: "01. Dez. 2025", time: "19:30 Uhr" },
-    { date: "08. Dez. 2025", time: "19:30 Uhr" },
-    { date: "15. Dez. 2025", time: "19:30 Uhr" },
-    { date: "22. Dez. 2025", time: "19:30 Uhr", spielfrei: true },
-    { date: "29. Dez. 2025", time: "19:30 Uhr", spielfrei: true },
-    { date: "05. Jan. 2026", time: "19:30 Uhr", spielfrei: true },
-    { date: "12. Jan. 2026", time: "19:30 Uhr" },
-    { date: "19. Jan. 2026", time: "19:30 Uhr" },
-    { date: "26. Jan. 2026", time: "19:30 Uhr" },
-    { date: "02. Feb. 2026", time: "19:30 Uhr" },
-    { date: "09. Feb. 2026", time: "19:30 Uhr" },
-    { date: "16. Feb. 2026", time: "19:30 Uhr" },
-    { date: "23. Feb. 2026", time: "19:30 Uhr" },
-    { date: "02. Mär. 2026", time: "19:30 Uhr" },
-    { date: "09. Mär. 2026", time: "19:30 Uhr" },
-    { date: "16. Mär. 2026", time: "19:30 Uhr" },
-    { date: "23. Mär. 2026", time: "19:30 Uhr" },
-    { date: "30. Mär. 2026", time: "19:30 Uhr" },
-    { date: "06. Apr. 2026", time: "19:30 Uhr" },
-    { date: "13. Apr. 2026", time: "19:30 Uhr" },
-    { date: "20. Apr. 2026", time: "19:30 Uhr" },
-    { date: "27. Apr. 2026", time: "19:30 Uhr" },
-    { date: "04. Mai 2026", time: "19:30 Uhr" },
-    { date: "11. Mai 2026", time: "19:30 Uhr", spielfrei: true },
-    { date: "18. Mai 2026", time: "19:30 Uhr" },
-    { date: "25. Mai 2026", time: "19:30 Uhr" },
-  ]
+    // Calculate standings from matches
+    matches.forEach((match) => {
+      if (match.home_score !== null && match.away_score !== null) {
+        const homeId = match.home_team_id
+        const awayId = match.away_team_id
 
-  const handleRegistration = (date: string, time: string, type: "edart" | "steeldart" | "lioncup") => {
-    if (isDateInPast(date)) {
-      return
-    }
+        // Only process matches involving our teams
+        if (homeId || awayId) {
+          if (homeId && standings[homeId]) {
+            standings[homeId].played++
+            standings[homeId].legsFor += match.home_score || 0
+            standings[homeId].legsAgainst += match.away_score || 0
 
-    setRegistrationModal({
-      isOpen: true,
-      date,
-      time,
-      type,
+            if ((match.home_score || 0) > (match.away_score || 0)) {
+              standings[homeId].won++
+              standings[homeId].points += 2
+            } else if ((match.away_score || 0) > (match.home_score || 0)) {
+              standings[homeId].lost++
+            } else {
+              standings[homeId].drawn++
+              standings[homeId].points += 1
+            }
+          }
+
+          if (awayId && standings[awayId]) {
+            standings[awayId].played++
+            standings[awayId].legsFor += match.away_score || 0
+            standings[awayId].legsAgainst += match.home_score || 0
+
+            if ((match.away_score || 0) > (match.home_score || 0)) {
+              standings[awayId].won++
+              standings[awayId].points += 2
+            } else if ((match.home_score || 0) > (match.away_score || 0)) {
+              standings[awayId].lost++
+            } else {
+              standings[awayId].drawn++
+              standings[awayId].points += 1
+            }
+          }
+        }
+      }
+    })
+
+    Object.values(standings).forEach((team) => {
+      team.legsDiff = team.legsFor - team.legsAgainst
+    })
+
+    return Object.values(standings).sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points
+      if (b.legsDiff !== a.legsDiff) return b.legsDiff - a.legsDiff
+      return b.legsFor - a.legsFor
     })
   }
 
-  // Sponsor-Logos - einfach Bilder in public/images/sponsoren/ legen
-  const sponsors = [
-    { name: "Sponsor 1", logo: "/images/sponsoren/sponsor1.png" },
-    { name: "Sponsor 2", logo: "/images/sponsoren/sponsor2.png" },
-    { name: "Sponsor 3", logo: "/images/sponsoren/sponsor3.png" },
-    { name: "Sponsor 4", logo: "/images/sponsoren/sponsor4.png" },
-    { name: "Sponsor 5", logo: "/images/sponsoren/sponsor5.png" },
-    { name: "Sponsor 6", logo: "/images/sponsoren/sponsor6.png" },
-    { name: "Sponsor 7", logo: "/images/sponsoren/sponsor7.png" },
-    { name: "Sponsor 8", logo: "/images/sponsoren/sponsor8.png" },
-    { name: "Sponsor 9", logo: "/images/sponsoren/sponsor9.png" },
-    { name: "Sponsor 10", logo: "/images/sponsoren/sponsor10.png" },
-  ]
+  const getTopScorers = () => {
+    const playerStats: Record<string, any> = {}
 
-  const actualTournamentDays = lioncupDates.filter((date) => !date.spielfrei).length
+    legStatistics.forEach((stat) => {
+      const playerId = stat.player_id
+      if (!playerStats[playerId]) {
+        playerStats[playerId] = {
+          id: playerId,
+          name: stat.player?.name || "Unknown",
+          photo_url: stat.player?.photo_url,
+          totalLegs: 0,
+          totalScore: 0,
+          averageScore: 0,
+          highestFinish: 0,
+          finishes: 0,
+        }
+      }
+
+      playerStats[playerId].totalLegs++
+      playerStats[playerId].totalScore += stat.score || 0
+      if (stat.finish_score && stat.finish_score > playerStats[playerId].highestFinish) {
+        playerStats[playerId].highestFinish = stat.finish_score
+      }
+      if (stat.finish_score) {
+        playerStats[playerId].finishes++
+      }
+    })
+
+    Object.values(playerStats).forEach((player: any) => {
+      player.averageScore = player.totalLegs > 0 ? player.totalScore / player.totalLegs : 0
+    })
+
+    return Object.values(playerStats)
+      .sort((a: any, b: any) => b.averageScore - a.averageScore)
+      .slice(0, 10)
+  }
+
+  const getRecentMatches = () => {
+    return matches
+      .filter((match) => match.home_score !== null && match.away_score !== null)
+      .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime())
+      .slice(0, 5)
+  }
+
+  const getUpcomingMatches = () => {
+    return matches
+      .filter((match) => match.home_score === null && match.away_score === null)
+      .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+      .slice(0, 5)
+  }
+
+  const standings = calculateStandings()
+  const topScorers = getTopScorers()
+  const recentMatches = getRecentMatches()
+  const upcomingMatches = getUpcomingMatches()
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
-      <Header />
-      <main className="pt-8 pb-20">
-        <motion.div
-          className="container mx-auto px-4 md:px-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Hero Section */}
-          <motion.div variants={itemVariants} className="text-center mb-16">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 md:p-12 mb-8">
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-none tracking-tighter mb-6">
-                <span className="block text-red-600">SUMMER SPECIAL</span>
-                <span className="block text-gray-900">DART COMPETITION</span>
-                <span className="block text-yellow-600">2025</span>
-              </h1>
-              <p className="text-lg md:text-xl font-bold uppercase text-gray-600 mb-8">
-                WITH SOFTDART & STEELDART COMP.
-              </p>
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-base font-bold">
-                <div className="flex items-center gap-2 bg-red-50 px-4 py-2 rounded-lg border border-red-100">
-                  <Calendar className="h-5 w-5 text-red-600" />
-                  <span>02. JULI - 29. AUG. 2025</span>
-                </div>
-                <div className="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-lg border border-yellow-100">
-                  <MapPin className="h-5 w-5 text-yellow-600" />
-                  <span>PFEIL-OK SALZBURG</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Dart Liga Dashboard</h1>
+          <p className="text-muted-foreground">Übersicht über Teams, Spieler und Statistiken</p>
+        </div>
+        <Select value={dartTypeFilter} onValueChange={setDartTypeFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Dart-Typ wählen" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="gesamt">Alle Dart-Typen</SelectItem>
+            <SelectItem value="501">501</SelectItem>
+            <SelectItem value="301">301</SelectItem>
+            <SelectItem value="cricket">Cricket</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-          {/* Lioncup Hero Section */}
-          <motion.div variants={itemVariants} className="text-center mb-16">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 mb-8 text-white">
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
-                <Crown className="h-12 w-12 text-white mx-auto" />
-              </div>
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-none tracking-tighter mb-6">
-                <span className="block text-white">EMD - LION CUP</span>
-                <span className="block text-orange-200">2025/2026</span>
-              </h1>
-              <p className="text-lg md:text-xl font-bold uppercase text-orange-100 mb-8">
-                {actualTournamentDays} TURNIERTAGE + 1 FINALTAG
-              </p>
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-base font-bold">
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 backdrop-blur-sm">
-                  <Calendar className="h-5 w-5 text-white" />
-                  <span>01. SEP. 2025 - 01. JUN. 2026</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 backdrop-blur-sm">
-                  <Clock className="h-5 w-5 text-white" />
-                  <span>JEDEN MONTAG 19:30 UHR</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 backdrop-blur-sm">
-                  <Trophy className="h-5 w-5 text-white" />
-                  <span>20 ANTRITTE FÜR FINALE</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Teams</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{teams.length}</div>
+            <p className="text-xs text-muted-foreground">Aktive Teams</p>
+          </CardContent>
+        </Card>
 
-          {/* Tournament Schedule */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-            {/* Steeldart Schedule */}
-            <motion.div
-              variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
-            >
-              {/* Header */}
-              <div className="bg-gradient-to-r from-red-600 to-red-700 p-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 rounded-lg p-2">
-                    <Target className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white uppercase">Steeldart</h2>
-                    <p className="text-red-100 text-sm">Game Days</p>
-                  </div>
-                </div>
-              </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Spieler</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{players.length}</div>
+            <p className="text-xs text-muted-foreground">Registrierte Spieler</p>
+          </CardContent>
+        </Card>
 
-              {/* Schedule List */}
-              <div className="p-6">
-                <div className="space-y-3">
-                  {steeldartDates.map((item, index) => {
-                    const isPast = isDateInPast(item.date)
-                    return (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className={`flex justify-between items-center py-4 px-4 rounded-xl border transition-all duration-200 group ${
-                          isPast
-                            ? "bg-gray-100 border-gray-200 opacity-60"
-                            : "bg-gray-50 border-gray-100 hover:border-red-200 hover:bg-red-50"
-                        }`}
-                      >
-                        <div className="flex-1">
-                          <span
-                            className={`font-bold block ${isPast ? "text-gray-500" : "text-gray-900 group-hover:text-red-700"}`}
-                          >
-                            {item.date}
-                          </span>
-                          <div className={`flex items-center gap-2 mt-1 ${isPast ? "text-gray-400" : "text-red-600"}`}>
-                            <Clock className="h-4 w-4" />
-                            <span className="font-bold text-sm">{item.time}</span>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Spiele</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{matches.length}</div>
+            <p className="text-xs text-muted-foreground">Gesamt Spiele</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Legs</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{legStatistics.length}</div>
+            <p className="text-xs text-muted-foreground">Gespielte Legs</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="standings" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="standings">Tabelle</TabsTrigger>
+          <TabsTrigger value="matches">Spiele</TabsTrigger>
+          <TabsTrigger value="players">Top Spieler</TabsTrigger>
+          <TabsTrigger value="teams">Teams</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="standings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5" />
+                Liga Tabelle
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Pos</th>
+                      <th className="text-left p-2">Team</th>
+                      <th className="text-center p-2">Sp</th>
+                      <th className="text-center p-2">S</th>
+                      <th className="text-center p-2">U</th>
+                      <th className="text-center p-2">N</th>
+                      <th className="text-center p-2">Legs</th>
+                      <th className="text-center p-2">Diff</th>
+                      <th className="text-center p-2">Pkt</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {standings.map((team, index) => (
+                      <tr key={team.id} className="border-b hover:bg-muted/50">
+                        <td className="p-2">
+                          <div className="flex items-center gap-2">
+                            {index + 1}
+                            {index === 0 && <Medal className="h-4 w-4 text-yellow-500" />}
+                            {index === 1 && <Medal className="h-4 w-4 text-gray-400" />}
+                            {index === 2 && <Medal className="h-4 w-4 text-amber-600" />}
                           </div>
+                        </td>
+                        <td className="p-2">
+                          <div className="flex items-center gap-2">
+                            {team.logo_url && (
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={team.logo_url || "/placeholder.svg"} alt={team.name} />
+                                <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                            )}
+                            <span className="font-medium">{team.name}</span>
+                          </div>
+                        </td>
+                        <td className="text-center p-2">{team.played}</td>
+                        <td className="text-center p-2 text-green-600">{team.won}</td>
+                        <td className="text-center p-2 text-yellow-600">{team.drawn}</td>
+                        <td className="text-center p-2 text-red-600">{team.lost}</td>
+                        <td className="text-center p-2">
+                          {team.legsFor}:{team.legsAgainst}
+                        </td>
+                        <td className={`text-center p-2 ${team.legsDiff >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          {team.legsDiff > 0 ? "+" : ""}
+                          {team.legsDiff}
+                        </td>
+                        <td className="text-center p-2 font-bold">{team.points}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="matches" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Letzte Spiele
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {recentMatches.map((match) => (
+                  <div key={match.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="text-center">
+                        <div className="font-medium text-sm">
+                          {match.home_team?.name || match.home_opponent_team?.name}
                         </div>
-                        <Button
-                          onClick={() => handleRegistration(item.date, item.time, "steeldart")}
-                          size="sm"
-                          disabled={isPast}
-                          className={`font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md ${
-                            isPast
-                              ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                              : "bg-red-600 hover:bg-red-700 text-white hover:scale-105"
-                          }`}
-                        >
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          {isPast ? "Vergangen" : "Anmelden"}
-                        </Button>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
-                <div className="flex items-center justify-center text-sm text-gray-600">
-                  <Star className="h-4 w-4 mr-2 text-red-500" />
-                  <span className="font-medium">{steeldartDates.length} Spieltage geplant</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* E-Dart Schedule */}
-            <motion.div
-              variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
-            >
-              {/* Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 rounded-lg p-2">
-                    <Users className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white uppercase">E-Dart</h2>
-                    <p className="text-blue-100 text-sm">Game Days</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Schedule List */}
-              <div className="p-6">
-                <div className="space-y-3">
-                  {edartDates.map((item, index) => {
-                    const isPast = isDateInPast(item.date)
-                    return (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className={`flex justify-between items-center py-4 px-4 rounded-xl border transition-all duration-200 group ${
-                          isPast
-                            ? "bg-gray-100 border-gray-200 opacity-60"
-                            : "bg-gray-50 border-gray-100 hover:border-blue-200 hover:bg-blue-50"
-                        }`}
-                      >
-                        <div className="flex-1">
-                          <span
-                            className={`font-bold block ${isPast ? "text-gray-500" : "text-gray-900 group-hover:text-blue-700"}`}
-                          >
-                            {item.date}
-                          </span>
-                          <div className={`flex items-center gap-2 mt-1 ${isPast ? "text-gray-400" : "text-blue-600"}`}>
-                            <Clock className="h-4 w-4" />
-                            <span className="font-bold text-sm">{item.time}</span>
-                          </div>
+                        <div className="text-xs text-muted-foreground">vs</div>
+                        <div className="font-medium text-sm">
+                          {match.away_team?.name || match.away_opponent_team?.name}
                         </div>
-                        <Button
-                          onClick={() => handleRegistration(item.date, item.time, "edart")}
-                          size="sm"
-                          disabled={isPast}
-                          className={`font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md ${
-                            isPast
-                              ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                              : "bg-blue-600 hover:bg-blue-700 text-white hover:scale-105"
-                          }`}
-                        >
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          {isPast ? "Vergangen" : "Anmelden"}
-                        </Button>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
-                <div className="flex items-center justify-center text-sm text-gray-600">
-                  <Star className="h-4 w-4 mr-2 text-blue-500" />
-                  <span className="font-medium">{edartDates.length} Spieltage geplant</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Lioncup Schedule */}
-            <motion.div
-              variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
-            >
-              {/* Header */}
-              <div className="bg-gradient-to-r from-orange-600 to-orange-700 p-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 rounded-lg p-2">
-                    <Crown className="h-6 w-6 text-white" />
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold">
+                        {match.home_score} : {match.away_score}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(match.match_date).toLocaleDateString("de-DE")}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white uppercase">EMD - Lion Cup</h2>
-                    <p className="text-orange-100 text-sm">Montags 19:30</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Schedule List - Scrollable */}
-              <div className="p-6">
-                <div className="space-y-3">
-                  {lioncupDates.map((item, index) => {
-                    const isPast = isDateInPast(item.date)
-                    const isSpielFrei = item.spielfrei
-                    return (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className={`flex justify-between items-center py-4 px-4 rounded-xl border transition-all duration-200 group ${
-                          isSpielFrei
-                            ? "bg-yellow-50 border-yellow-200"
-                            : isPast
-                              ? "bg-gray-100 border-gray-200 opacity-60"
-                              : "bg-gray-50 border-gray-100 hover:border-orange-200 hover:bg-orange-50"
-                        }`}
-                      >
-                        <div className="flex-1">
-                          <span
-                            className={`font-bold block ${
-                              isSpielFrei
-                                ? "text-yellow-700"
-                                : isPast
-                                  ? "text-gray-500"
-                                  : "text-gray-900 group-hover:text-orange-700"
-                            }`}
-                          >
-                            {item.date}
-                          </span>
-                          <div
-                            className={`flex items-center gap-2 mt-1 ${
-                              isSpielFrei ? "text-yellow-600" : isPast ? "text-gray-400" : "text-orange-600"
-                            }`}
-                          >
-                            <Clock className="h-4 w-4" />
-                            <span className="font-bold text-sm">{item.time}</span>
-                          </div>
-                        </div>
-                        {isSpielFrei ? (
-                          <div className="bg-yellow-200 text-yellow-800 font-bold px-4 py-2 rounded-lg text-sm">
-                            Spielfrei
-                          </div>
-                        ) : (
-                          <Button
-                            onClick={() => handleRegistration(item.date, item.time, "lioncup")}
-                            size="sm"
-                            disabled={isPast}
-                            className={`font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md ${
-                              isPast
-                                ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                                : "bg-orange-600 hover:bg-orange-700 text-white hover:scale-105"
-                            }`}
-                          >
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            {isPast ? "Vergangen" : "Anmelden"}
-                          </Button>
-                        )}
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Crown className="h-4 w-4 mr-2 text-orange-500" />
-                    <span className="font-medium">{actualTournamentDays} Turniertage + Finale</span>
-                  </div>
-                  <Link href="/regelwerk">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300 font-semibold bg-transparent"
-                    >
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      Regelwerk
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* Final Days */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-            {/* Summer Special Final */}
-            <motion.div
-              variants={cardVariants}
-              className="bg-gradient-to-r from-red-600 to-red-800 rounded-2xl shadow-2xl p-8 text-center border border-red-200 hover:shadow-3xl transition-shadow duration-300"
-            >
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
-                <Trophy className="h-12 w-12 text-white mx-auto" />
-              </div>
-              <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-4 text-white">SUMMER SPECIAL FINALE</h2>
-              <div className="text-xl md:text-2xl font-bold text-white mb-4">SAMSTAG: 30. AUG. 2025 - 19:00 UHR</div>
-              <div className="flex items-center justify-center text-white/90">
-                <Trophy className="h-5 w-5 mr-2" />
-                <span className="text-sm font-medium uppercase tracking-wide">Das große Finale</span>
-                <Trophy className="h-5 w-5 ml-2" />
-              </div>
-            </motion.div>
-
-            {/* Lioncup Final */}
-            <motion.div
-              variants={cardVariants}
-              className="bg-gradient-to-r from-orange-600 to-orange-800 rounded-2xl shadow-2xl p-8 text-center border border-orange-200 hover:shadow-3xl transition-shadow duration-300"
-            >
-              <div className="bg-white/10 rounded-full p-4 w-16 h-16 mx-auto mb-6 shadow-lg">
-                <Crown className="h-8 w-8 text-white mx-auto" />
-              </div>
-              <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-4 text-white">EMD - LION CUP FINALE</h2>
-              <div className="text-xl md:text-2xl font-bold text-white mb-4">01. JUNI 2026</div>
-              <div className="flex items-center justify-center text-white/90">
-                <Crown className="h-5 w-5 mr-2" />
-                <span className="text-sm font-medium uppercase tracking-wide">Die Krönung des Champions</span>
-                <Crown className="h-5 w-5 ml-2" />
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* Location & Contact */}
-          <motion.div variants={itemVariants} className="mb-16">
-            <motion.div
-              variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center hover:shadow-2xl transition-shadow duration-300"
-            >
-              <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-full p-4 w-16 h-16 mx-auto mb-6 shadow-lg">
-                <MapPin className="h-8 w-8 text-white mx-auto" />
-              </div>
-              <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-6 text-gray-900">VERANSTALTUNGSORT</h2>
-              <div className="space-y-4 text-lg">
-                <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-                  <div className="font-bold text-red-700 text-xl mb-2">Dart & Freizeit Vereinsheim "Pfeil-OK" e.V.</div>
-                  <div className="flex items-center justify-center gap-2 text-gray-700">
-                    <MapPin className="h-5 w-5 text-red-500" />
-                    <span className="font-semibold">Linzer Bundesstrasse 16, 5020 Salzburg</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* Sponsors Section */}
-          <motion.div variants={itemVariants}>
-            <motion.div
-              variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 hover:shadow-2xl transition-shadow duration-300"
-            >
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
-                  <Sparkles className="h-8 w-8 text-white mx-auto" />
-                </div>
-                <h2 className="text-2xl md:text-3xl font-extrabold uppercase text-gray-900">
-                  UNSERE PARTNER & SPONSOREN
-                </h2>
-                <p className="text-gray-600 mt-2"></p>
-              </div>
-
-              {/* Sponsors Grid */}
-              <motion.div
-                className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {sponsors.map((sponsor, index) => (
-                  <motion.div
-                    key={index}
-                    variants={sponsorVariants}
-                    className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-center hover:border-red-300 hover:bg-red-50 transition-all duration-300 group cursor-pointer hover:shadow-lg"
-                  >
-                    <img
-                      src={sponsor.logo || "/placeholder.svg"}
-                      alt={`${sponsor.name} Logo`}
-                      className="max-w-full max-h-16 object-contain transition-all duration-300 group-hover:scale-110"
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg?height=80&width=120&text=" + sponsor.name
-                      }}
-                    />
-                  </motion.div>
                 ))}
-              </motion.div>
+              </CardContent>
+            </Card>
 
-              {/* Footer */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                <p className="text-gray-700 font-bold text-center flex items-center justify-center">
-                  <Star className="h-5 w-5 mr-2 text-yellow-500" />
-                  VIELEN DANK AN ALLE UNSERE PARTNER UND UNTERSTÜTZER!
-                  <Star className="h-5 w-5 ml-2 text-yellow-500" />
-                </p>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Kommende Spiele
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {upcomingMatches.map((match) => (
+                  <div key={match.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="text-center">
+                        <div className="font-medium text-sm">
+                          {match.home_team?.name || match.home_opponent_team?.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">vs</div>
+                        <div className="font-medium text-sm">
+                          {match.away_team?.name || match.away_opponent_team?.name}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <Badge variant="outline">Geplant</Badge>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {new Date(match.match_date).toLocaleDateString("de-DE")}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="players" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5" />
+                Top Spieler (Durchschnitt)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {topScorers.map((player, index) => (
+                  <div key={player.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-lg">{index + 1}</span>
+                        {index === 0 && <Award className="h-4 w-4 text-yellow-500" />}
+                      </div>
+                      <Avatar>
+                        <AvatarImage src={player.photo_url || "/placeholder.svg"} alt={player.name} />
+                        <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{player.name}</div>
+                        <div className="text-sm text-muted-foreground">{player.totalLegs} Legs gespielt</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold">{player.averageScore.toFixed(1)}</div>
+                      <div className="text-sm text-muted-foreground">Ø Punkte</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </motion.div>
-          </motion.div>
-        </motion.div>
-      </main>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Registration Modal */}
-      <TournamentRegistrationModal
-        isOpen={registrationModal.isOpen}
-        onClose={() => setRegistrationModal({ ...registrationModal, isOpen: false })}
-        tournamentDate={registrationModal.date}
-        tournamentTime={registrationModal.time}
-        tournamentType={registrationModal.type}
-      />
+        <TabsContent value="teams" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {teams.map((team) => {
+              const teamPlayers = players.filter((player) => player.team_id === team.id)
+              const teamStats = standings.find((s) => s.id === team.id)
 
-      <footer className="py-6 bg-gray-200 text-gray-600 text-sm text-center border-t border-gray-300">
-        <p>&copy; 2025 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>
-      </footer>
+              return (
+                <Card key={team.id}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      {team.logo_url && (
+                        <Avatar>
+                          <AvatarImage src={team.logo_url || "/placeholder.svg"} alt={team.name} />
+                          <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                      )}
+                      {team.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {teamStats && (
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div>
+                          <div className="text-lg font-bold">{teamStats.points}</div>
+                          <div className="text-xs text-muted-foreground">Punkte</div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold">{teamStats.won}</div>
+                          <div className="text-xs text-muted-foreground">Siege</div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold">{teamStats.played}</div>
+                          <div className="text-xs text-muted-foreground">Spiele</div>
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <h4 className="font-medium mb-2">Spieler ({teamPlayers.length})</h4>
+                      <div className="space-y-2">
+                        {teamPlayers.slice(0, 3).map((player) => (
+                          <div key={player.id} className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={player.photo_url || "/placeholder.svg"} alt={player.name} />
+                              <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{player.name}</span>
+                          </div>
+                        ))}
+                        {teamPlayers.length > 3 && (
+                          <div className="text-sm text-muted-foreground">+{teamPlayers.length - 3} weitere</div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

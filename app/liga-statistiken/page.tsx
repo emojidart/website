@@ -40,36 +40,29 @@ export default function LigaPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log("[v0] Fetching own teams...")
         const { data: ownTeamsData, error: teamsError } = await supabase
           .from("teams")
           .select("*")
           .not("user_id", "is", null)
           .order("name")
-        console.log("[v0] Own teams data:", ownTeamsData)
 
-        console.log("[v0] Fetching opponent teams...")
         const { data: opponentTeamsData, error: opponentError } = await supabase
           .from("opponent_teams")
           .select("*")
           .order("name")
-        console.log("[v0] Opponent teams data:", opponentTeamsData)
 
         if (teamsError) {
           console.error("Error fetching teams:", teamsError)
         } else {
-          console.log("[v0] Loaded own teams:", ownTeamsData?.length || 0)
           setTeams(ownTeamsData || [])
         }
 
         if (opponentError) {
           console.error("Error fetching opponent teams:", opponentError)
         } else {
-          console.log("[v0] Loaded opponent teams:", opponentTeamsData?.length || 0)
           setOpponentTeams(opponentTeamsData || [])
         }
 
-        console.log("[v0] Fetching matches...")
         let matchQuery = supabase
           .from("matches")
           .select(`
@@ -105,7 +98,6 @@ export default function LigaPage() {
               }
             }) || []
 
-          console.log("[v0] Loaded matches:", enrichedMatches.length)
           setMatches(enrichedMatches)
         }
 
@@ -139,11 +131,9 @@ export default function LigaPage() {
               }))
               .filter((player) => player.id) || []
 
-          console.log("[v0] Loaded players:", transformedPlayers.length)
           setPlayers(transformedPlayers)
         }
 
-        console.log("[v0] Fetching leg statistics...")
         let legStatsQuery = supabase.from("leg_statistics").select(`
             *,
             player:club_players!leg_statistics_player_id_fkey(name, photo_url)
@@ -158,7 +148,6 @@ export default function LigaPage() {
         if (legStatsError) {
           console.error("Error fetching leg statistics:", legStatsError)
         } else {
-          console.log("[v0] Loaded leg statistics:", legStatsData?.length || 0)
           setLegStatistics(legStatsData || [])
         }
       } catch (error) {
@@ -204,12 +193,12 @@ export default function LigaPage() {
 
             if ((match.home_score || 0) > (match.away_score || 0)) {
               standings[homeId].won++
-              standings[homeId].points += 3
+              standings[homeId].points += 2
             } else if ((match.away_score || 0) > (match.home_score || 0)) {
               standings[homeId].lost++
             } else {
               standings[homeId].drawn++
-              standings[homeId].points += 1
+              standings[homeId].points += 0
             }
           }
 
@@ -220,12 +209,12 @@ export default function LigaPage() {
 
             if ((match.away_score || 0) > (match.home_score || 0)) {
               standings[awayId].won++
-              standings[awayId].points += 3
+              standings[awayId].points += 2
             } else if ((match.home_score || 0) > (match.away_score || 0)) {
               standings[awayId].lost++
             } else {
               standings[awayId].drawn++
-              standings[awayId].points += 1
+              standings[awayId].points += 0
             }
           }
         }

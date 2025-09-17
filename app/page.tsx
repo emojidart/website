@@ -5,22 +5,24 @@ import { HeroSection } from "@/components/hero-section"
 import { AboutUsSection } from "@/components/about-us-section"
 import { ImageSlideshow } from "@/components/image-slideshow"
 import { FeaturesSection } from "@/components/features-section"
+import { WeeklyResults } from "@/components/weekly-results"
 import { useDartData } from "@/hooks/use-dart-data"
 
 export default function Home() {
   const { currentPot } = useDartData()
 
-  // Bilder für die Slideshow (von Ihnen bereitgestellt)
+ 
   const slideshowImages = [
     "/images/slideshow/darts-action-1.png",
     "/images/slideshow/darts-action-2.png",
-    "/images/slideshow/darts-action-3.png", // Neues Bild für mehr Abwechslung
+    "/images/slideshow/darts-action-3.png", 
   ]
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
       <Header />
       <main>
+        <WeeklyResults />
         <HeroSection currentPot={currentPot} />
         <FeaturesSection />
         <section className="py-20 px-4 md:px-8 bg-gray-100">

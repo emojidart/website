@@ -8,25 +8,13 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { supabase } from "@/lib/supabase"
-import {
-  Calendar,
-  Clock,
-  User,
-  Mail,
-  Phone,
-  MessageSquare,
-  Target,
-  Users,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react"
+import { Calendar, Clock, User, Mail, Phone, MessageSquare, Crown, CheckCircle, AlertCircle } from "lucide-react"
 
 interface TournamentRegistrationModalProps {
   isOpen: boolean
   onClose: () => void
   tournamentDate: string
   tournamentTime: string
-  tournamentType: "edart" | "steeldart"
 }
 
 export function TournamentRegistrationModal({
@@ -34,7 +22,6 @@ export function TournamentRegistrationModal({
   onClose,
   tournamentDate,
   tournamentTime,
-  tournamentType,
 }: TournamentRegistrationModalProps) {
   const [formData, setFormData] = useState({
     spielerName: "",
@@ -87,7 +74,7 @@ export function TournamentRegistrationModal({
       const { error } = await supabase.from("anmeldungen").insert([
         {
           spieler_name: formData.spielerName,
-          turnier_typ: tournamentType,
+          turnier_typ: "edart",
           turnier_datum: formattedDate,
           turnier_zeit: tournamentTime,
           email: formData.email || null,
@@ -137,22 +124,16 @@ export function TournamentRegistrationModal({
     })
   }
 
-  const isEdart = tournamentType === "edart"
-
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md mx-auto bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
         <DialogHeader className="border-b border-gray-100 pb-4">
           <div className="flex items-center space-x-3">
-            <div
-              className={`p-2 rounded-lg shadow-lg ${isEdart ? "bg-gradient-to-br from-blue-500 to-blue-600" : "bg-gradient-to-br from-red-500 to-red-600"}`}
-            >
-              {isEdart ? <Users className="h-5 w-5 text-white" /> : <Target className="h-5 w-5 text-white" />}
+            <div className="p-2 rounded-lg shadow-lg bg-gradient-to-br from-orange-500 to-orange-600">
+              <Crown className="h-5 w-5 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold text-gray-900">
-                {isEdart ? "E-Dart" : "Steeldart"} Anmeldung
-              </DialogTitle>
+              <DialogTitle className="text-lg font-semibold text-gray-900">Lion Cup Anmeldung</DialogTitle>
               <p className="text-sm text-gray-500 mt-1">Für das Turnier registrieren</p>
             </div>
           </div>
@@ -160,16 +141,14 @@ export function TournamentRegistrationModal({
 
         <div className="py-4">
           {/* Tournament Info */}
-          <div
-            className={`rounded-xl p-4 mb-6 border ${isEdart ? "bg-blue-50 border-blue-100" : "bg-red-50 border-red-100"}`}
-          >
+          <div className="rounded-xl p-4 mb-6 border bg-orange-50 border-orange-100">
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
-                <Calendar className={`h-4 w-4 ${isEdart ? "text-blue-600" : "text-red-600"}`} />
+                <Calendar className="h-4 w-4 text-orange-600" />
                 <span className="font-semibold text-gray-900">{tournamentDate}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Clock className={`h-4 w-4 ${isEdart ? "text-blue-600" : "text-red-600"}`} />
+                <Clock className="h-4 w-4 text-orange-600" />
                 <span className="font-semibold text-gray-900">{tournamentTime}</span>
               </div>
             </div>
@@ -196,7 +175,7 @@ export function TournamentRegistrationModal({
                     value={formData.spielerName}
                     onChange={(e) => setFormData({ ...formData, spielerName: e.target.value })}
                     placeholder="Dein Name"
-                    className="pl-10 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50"
+                    className="pl-10 h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
                     required
                   />
                 </div>
@@ -215,7 +194,7 @@ export function TournamentRegistrationModal({
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="deine@email.de"
-                    className="pl-10 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50"
+                    className="pl-10 h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
                   />
                 </div>
               </div>
@@ -233,7 +212,7 @@ export function TournamentRegistrationModal({
                     value={formData.telefon}
                     onChange={(e) => setFormData({ ...formData, telefon: e.target.value })}
                     placeholder="+43 123 456789"
-                    className="pl-10 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50"
+                    className="pl-10 h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
                   />
                 </div>
               </div>
@@ -250,7 +229,7 @@ export function TournamentRegistrationModal({
                     value={formData.notizen}
                     onChange={(e) => setFormData({ ...formData, notizen: e.target.value })}
                     placeholder="Besondere Wünsche oder Anmerkungen..."
-                    className="pl-10 pt-3 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50 resize-none"
+                    className="pl-10 pt-3 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 resize-none"
                     rows={3}
                   />
                 </div>
@@ -260,11 +239,7 @@ export function TournamentRegistrationModal({
               <Button
                 type="submit"
                 disabled={loading || !formData.spielerName.trim()}
-                className={`w-full h-12 font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
-                  isEdart
-                    ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-                    : "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
-                } text-white`}
+                className="w-full h-12 font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white"
               >
                 {loading ? (
                   <div className="flex items-center space-x-2">

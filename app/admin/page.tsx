@@ -18,7 +18,6 @@ import {
   ChevronRight,
   Home,
   Target,
-  CalendarDays,
   HelpCircle,
 } from "lucide-react"
 import { useDartData } from "@/hooks/use-dart-data"
@@ -43,8 +42,8 @@ import type { RealtimeChannel } from "@supabase/supabase-js"
 import Link from "next/link"
 import { UserManagement } from "@/components/user-management"
 import { AttendanceManagement } from "@/components/attendance-management"
-import { LeagueManagement } from "@/components/league-management" // Added league management import
-import { TournamentDaysManagement } from "@/components/tournament-days-management" // Added tournament-days management import
+import { LeagueManagement } from "@/components/league-management"
+import { TournamentDaysManagement } from "@/components/tournament-days-management"
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
@@ -59,7 +58,6 @@ export default function AdminPage() {
     | "dashboard"
     | "players"
     | "results"
-    | "registrations"
     | "history"
     | "management"
     | "photos"
@@ -74,7 +72,8 @@ export default function AdminPage() {
     | "attendance"
     | "leagues"
     | "tournament-days"
-    | "support-tickets" // Added support-tickets view type
+    | "support-tickets"
+    | "lion-cup-registrations"
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -195,13 +194,6 @@ export default function AdminPage() {
       view: "leagues" as const,
     },
     {
-      title: "Anmeldungen",
-      description: "Turnieranmeldungen einsehen und verwalten",
-      icon: Eye,
-      color: "bg-purple-500",
-      view: "registrations" as const,
-    },
-    {
       title: "Rekrutierung",
       description: "Spielerbewerbungen und Rekrutierung",
       icon: Mail,
@@ -243,13 +235,6 @@ export default function AdminPage() {
       icon: List,
       color: "bg-slate-500",
       view: "player-database" as const,
-    },
-    {
-      title: "Turniertage Cup",
-      description: "Turniertage Cup verwalten",
-      icon: CalendarDays,
-      color: "bg-orange-500",
-      view: "tournament-days" as const,
     },
   ]
 
@@ -322,7 +307,6 @@ export default function AdminPage() {
                 <span className="text-sm font-medium text-gray-700 capitalize">
                   {currentView === "players" && "Spieler verwalten"}
                   {currentView === "results" && "Ergebnisse eingeben"}
-                  {currentView === "registrations" && "Anmeldungen"}
                   {currentView === "history" && "Spiele Historie"}
                   {currentView === "management" && "Spielerverwaltung"}
                   {currentView === "photos" && "Spielerfotos"}
@@ -336,8 +320,9 @@ export default function AdminPage() {
                   {currentView === "dart-competition" && "Dart Competition"}
                   {currentView === "attendance" && "Anwesenheitsliste"}
                   {currentView === "leagues" && "Ligaspiele"}
-                  {currentView === "tournament-days" && "Turniertage Cup"} {/* Added tournament-days view label */}
-                  {currentView === "support-tickets" && "Support Tickets"} {/* Added support-tickets view label */}
+                  {currentView === "tournament-days" && "Turniertage Cup"}
+                  {currentView === "support-tickets" && "Support Tickets"}
+                  {currentView === "lion-cup-registrations" && "Lion Cup Anmeldungen"}
                 </span>
               </>
             )}
@@ -355,38 +340,38 @@ export default function AdminPage() {
                     ? "Spieler verwalten"
                     : currentView === "results"
                       ? "Ergebnisse eingeben"
-                      : currentView === "registrations"
-                        ? "Anmeldungen"
-                        : currentView === "history"
-                          ? "Spiele Historie"
-                          : currentView === "management"
-                            ? "Spielerverwaltung"
-                            : currentView === "photos"
-                              ? "Spielerfotos"
-                              : currentView === "recruitment"
-                                ? "Rekrutierung"
-                                : currentView === "club"
-                                  ? "Vereinsverwaltung"
-                                  : currentView === "tournaments"
-                                    ? "Turniere"
-                                    : currentView === "users"
-                                      ? "Benutzerverwaltung"
-                                      : currentView === "upcoming-tournaments"
-                                        ? "Bevorstehende Turniere"
-                                        : currentView === "tournament-registration"
-                                          ? "Turnieranmeldung"
-                                          : currentView === "player-database"
-                                            ? "Spielerdatenbank"
-                                            : currentView === "dart-competition"
-                                              ? "Dart Competition"
-                                              : currentView === "attendance"
-                                                ? "Anwesenheitsliste"
-                                                : currentView === "leagues"
-                                                  ? "Ligaspiele"
-                                                  : currentView === "tournament-days"
-                                                    ? "Turniertage Cup"
-                                                    : currentView === "support-tickets"
-                                                      ? "Support Tickets" // Added support-tickets view label
+                      : currentView === "history"
+                        ? "Spiele Historie"
+                        : currentView === "management"
+                          ? "Spielerverwaltung"
+                          : currentView === "photos"
+                            ? "Spielerfotos"
+                            : currentView === "recruitment"
+                              ? "Rekrutierung"
+                              : currentView === "club"
+                                ? "Vereinsverwaltung"
+                                : currentView === "tournaments"
+                                  ? "Turniere"
+                                  : currentView === "users"
+                                    ? "Benutzerverwaltung"
+                                    : currentView === "upcoming-tournaments"
+                                      ? "Bevorstehende Turniere"
+                                      : currentView === "tournament-registration"
+                                        ? "Turnieranmeldung"
+                                        : currentView === "player-database"
+                                          ? "Spielerdatenbank"
+                                          : currentView === "dart-competition"
+                                            ? "Dart Competition"
+                                            : currentView === "attendance"
+                                              ? "Anwesenheitsliste"
+                                              : currentView === "leagues"
+                                                ? "Ligaspiele"
+                                                : currentView === "tournament-days"
+                                                  ? "Turniertage Cup"
+                                                  : currentView === "support-tickets"
+                                                    ? "Support Tickets"
+                                                    : currentView === "lion-cup-registrations"
+                                                      ? "Lion Cup Anmeldungen"
                                                       : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
@@ -461,18 +446,16 @@ export default function AdminPage() {
                 isPlayerSelectedViaModal={isPlayerSelectedViaModal}
               />
             )}
-            {currentView === "registrations" && <TournamentRegistrations />}
             {currentView === "history" && <GameHistoryTable />}
             {currentView === "management" && (
               <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />
             )}
             {currentView === "photos" && <PlayerPhotoManagement user={user} onDataSaved={handleDataSaved} />}
             {currentView === "attendance" && <AttendanceManagement />}
-            {currentView === "leagues" && <LeagueManagement />} {/* Added leagues view */}
+            {currentView === "leagues" && <LeagueManagement />}
             {currentView === "tournament-days" && (
               <TournamentDaysManagement user={user} onDataSaved={handleDataSaved} />
-            )}{" "}
-            {/* Added tournament-days view */}
+            )}
             {currentView === "support-tickets" && (
               <div className="space-y-6">
                 <Card>
@@ -698,16 +681,16 @@ export default function AdminPage() {
                       </Button>
 
                       <Button
-                        onClick={() => setCurrentView("tournament-days")}
+                        onClick={() => setCurrentView("lion-cup-registrations")}
                         variant="outline"
                         className="w-full justify-start bg-transparent h-auto p-4"
                       >
                         <div className="flex flex-col items-start space-y-1">
                           <div className="flex items-center space-x-2">
-                            <CalendarDays className="h-4 w-4" />
-                            <span className="font-medium">Turniertage Cup</span>
+                            <Eye className="h-4 w-4" />
+                            <span className="font-medium">Turnier Anmeldungen</span>
                           </div>
-                          <span className="text-xs text-gray-500">Events verwalten</span>
+                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
                         </div>
                       </Button>
 
@@ -725,6 +708,7 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
+            {currentView === "lion-cup-registrations" && <TournamentRegistrations />}
           </div>
         )}
 
