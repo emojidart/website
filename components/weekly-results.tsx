@@ -135,7 +135,7 @@ export function WeeklyResults() {
   const getResultBadge = (homeScore: number | null, awayScore: number | null, isHome: boolean, status: string) => {
     if (status === "scheduled" || homeScore === null || awayScore === null) {
       return (
-        <Badge className="bg-blue-700 text-white font-extrabold text-lg px-4 py-2 shadow-lg border-2 border-blue-500 animate-pulse">
+        <Badge className="bg-primary text-primary-foreground font-bold text-sm px-3 py-1 shadow-sm border animate-pulse">
           GEPLANT
         </Badge>
       )
@@ -143,21 +143,15 @@ export function WeeklyResults() {
 
     if (homeScore === awayScore) {
       return (
-        <Badge className="bg-yellow-700 text-white font-extrabold text-lg px-4 py-2 shadow-lg border-2 border-yellow-500">
-          UNENTSCHIEDEN
-        </Badge>
+        <Badge className="bg-yellow-600 text-white font-bold text-sm px-3 py-1 shadow-sm border">UNENTSCHIEDEN</Badge>
       )
     }
 
     const won = isHome ? homeScore > awayScore : awayScore > homeScore
     return won ? (
-      <Badge className="bg-green-700 text-white font-extrabold text-lg px-4 py-2 shadow-lg border-2 border-green-500">
-        SIEG
-      </Badge>
+      <Badge className="bg-green-600 text-white font-bold text-sm px-3 py-1 shadow-sm border">SIEG</Badge>
     ) : (
-      <Badge className="bg-red-700 text-white font-extrabold text-lg px-4 py-2 shadow-lg border-2 border-red-500">
-        NIEDERLAGE
-      </Badge>
+      <Badge className="bg-red-600 text-white font-bold text-sm px-3 py-1 shadow-sm border">NIEDERLAGE</Badge>
     )
   }
 
@@ -190,11 +184,11 @@ export function WeeklyResults() {
 
   if (loading) {
     return (
-      <section className="py-4 px-4 md:px-8 bg-gray-100">
+      <section className="py-8 px-4 md:px-8 bg-background">
         <div className="max-w-4xl mx-auto">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto mb-2" />
-            <p className="text-gray-700 text-sm">Lade aktuelle Ergebnisse...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Lade aktuelle Ergebnisse...</p>
           </div>
         </div>
       </section>
@@ -202,27 +196,27 @@ export function WeeklyResults() {
   }
 
   return (
-    <section className="py-8 px-4 md:px-8 bg-gray-100">
-      <motion.div className="max-w-5xl mx-auto" variants={containerVariants} initial="hidden" animate="visible">
+    <section className="py-8 px-4 md:px-8 bg-background min-h-screen">
+      <motion.div className="max-w-6xl mx-auto" variants={containerVariants} initial="hidden" animate="visible">
         <motion.div variants={itemVariants} className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 bg-orange-500 text-white px-6 py-3 rounded-full shadow-lg mb-4">
+          <div className="inline-flex items-center gap-3 bg-primary text-primary-foreground px-6 py-3 rounded-full shadow-lg mb-6">
             <TrendingUp className="h-5 w-5" />
             <span className="font-bold text-lg uppercase tracking-wide">Aktuelle Woche</span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-            <span className="text-orange-600">TEAMSPIELE</span>
-          </h2>
-          <p className="text-lg text-gray-600 font-medium mb-4">{currentWeek}</p>
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+            <span className="text-primary">TEAMSPIELE</span>
+          </h1>
+          <p className="text-xl text-muted-foreground font-medium mb-6">{currentWeek}</p>
           <Link
             href="/liga-statistiken"
-            className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 text-lg font-bold transition-colors bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md"
+            className="inline-flex items-center gap-2 text-primary hover:text-primary/80 text-lg font-bold transition-colors bg-card px-6 py-3 rounded-lg shadow-sm hover:shadow-md border"
           >
             <span>Alle Teamspiele</span>
             <ExternalLink className="h-4 w-4" />
           </Link>
         </motion.div>
 
-        <motion.div className="grid gap-4" variants={containerVariants}>
+        <motion.div className="grid gap-6" variants={containerVariants}>
           {matches.map((match, index) => {
             const homeTeamName = getTeamName(match, true)
             const awayTeamName = getTeamName(match, false)
@@ -233,26 +227,104 @@ export function WeeklyResults() {
 
             return (
               <motion.div key={match.id} variants={itemVariants}>
-                <Card className="overflow-hidden shadow-md border border-gray-200 bg-white hover:shadow-lg transition-all duration-300">
+                <Card className="overflow-hidden shadow-md border bg-card hover:shadow-lg transition-all duration-300">
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2 text-base text-gray-600">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                      <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="h-5 w-5" />
-                        {new Date(match.match_date).toLocaleDateString("de-DE", {
-                          weekday: "short",
-                          day: "2-digit",
-                          month: "2-digit",
-                        })}
+                        <span className="font-medium">
+                          {new Date(match.match_date).toLocaleDateString("de-DE", {
+                            weekday: "long",
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })}
+                        </span>
                       </div>
-                      <span className="text-base text-gray-500 font-medium">Spieltag {match.matchday}</span>
+                      <span className="text-muted-foreground font-medium">Spieltag {match.matchday}</span>
                     </div>
 
-                    <div className="grid grid-cols-5 gap-6 items-center">
+                    {/* Mobile Layout */}
+                    <div className="block md:hidden space-y-6">
+                      {/* Home Team */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          {homeTeamLogo ? (
+                            <img
+                              src={homeTeamLogo || "/placeholder.svg"}
+                              alt={`${homeTeamName} Logo`}
+                              className="w-12 h-12 rounded-full object-cover border-2 border-border flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                              <div className="w-6 h-6 bg-muted-foreground/30 rounded-full"></div>
+                            </div>
+                          )}
+                          <h3
+                            className={`text-lg font-bold truncate ${homeIsEmoj ? "text-primary" : "text-foreground"}`}
+                          >
+                            {homeTeamName}
+                          </h3>
+                        </div>
+                        {homeIsEmoj && (
+                          <div className="ml-4">
+                            {getResultBadge(match.home_score, match.away_score, true, match.status)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Score */}
+                      <div className="text-center">
+                        <div className="bg-primary text-primary-foreground rounded-lg p-4 shadow-md inline-block">
+                          <div className="text-2xl font-bold">
+                            {match.status === "scheduled"
+                              ? new Date(match.match_date + "T" + (match.match_time || "20:00:00")).toLocaleTimeString(
+                                  "de-DE",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )
+                              : `${match.home_score ?? "-"} : ${match.away_score ?? "-"}`}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Away Team */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          {awayTeamLogo ? (
+                            <img
+                              src={awayTeamLogo || "/placeholder.svg"}
+                              alt={`${awayTeamName} Logo`}
+                              className="w-12 h-12 rounded-full object-cover border-2 border-border flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                              <div className="w-6 h-6 bg-muted-foreground/30 rounded-full"></div>
+                            </div>
+                          )}
+                          <h3
+                            className={`text-lg font-bold truncate ${awayIsEmoj ? "text-primary" : "text-foreground"}`}
+                          >
+                            {awayTeamName}
+                          </h3>
+                        </div>
+                        {awayIsEmoj && (
+                          <div className="ml-4">
+                            {getResultBadge(match.home_score, match.away_score, false, match.status)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Desktop Layout */}
+                    <div className="hidden md:grid md:grid-cols-5 gap-6 items-center">
                       {/* Home Team */}
                       <div className="col-span-2 text-right">
                         <div className="flex items-center justify-end gap-4">
                           <h3
-                            className={`text-xl font-bold truncate ${homeIsEmoj ? "text-orange-600" : "text-gray-800"}`}
+                            className={`text-xl font-bold truncate ${homeIsEmoj ? "text-primary" : "text-foreground"}`}
                           >
                             {homeTeamName}
                           </h3>
@@ -260,11 +332,11 @@ export function WeeklyResults() {
                             <img
                               src={homeTeamLogo || "/placeholder.svg"}
                               alt={`${homeTeamName} Logo`}
-                              className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+                              className="w-12 h-12 rounded-full object-cover border-2 border-border flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                              <div className="w-6 h-6 bg-gray-400 rounded-full"></div>
+                            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                              <div className="w-6 h-6 bg-muted-foreground/30 rounded-full"></div>
                             </div>
                           )}
                         </div>
@@ -277,7 +349,7 @@ export function WeeklyResults() {
 
                       {/* Score */}
                       <div className="col-span-1 text-center">
-                        <div className="bg-orange-500 text-white rounded-lg p-4 shadow-md">
+                        <div className="bg-primary text-primary-foreground rounded-lg p-4 shadow-md">
                           <div className="text-2xl font-bold">
                             {match.status === "scheduled"
                               ? new Date(match.match_date + "T" + (match.match_time || "20:00:00")).toLocaleTimeString(
@@ -299,15 +371,15 @@ export function WeeklyResults() {
                             <img
                               src={awayTeamLogo || "/placeholder.svg"}
                               alt={`${awayTeamName} Logo`}
-                              className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+                              className="w-12 h-12 rounded-full object-cover border-2 border-border flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                              <div className="w-6 h-6 bg-gray-400 rounded-full"></div>
+                            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                              <div className="w-6 h-6 bg-muted-foreground/30 rounded-full"></div>
                             </div>
                           )}
                           <h3
-                            className={`text-xl font-bold truncate ${awayIsEmoj ? "text-orange-600" : "text-gray-800"}`}
+                            className={`text-xl font-bold truncate ${awayIsEmoj ? "text-primary" : "text-foreground"}`}
                           >
                             {awayTeamName}
                           </h3>
@@ -327,11 +399,11 @@ export function WeeklyResults() {
         </motion.div>
 
         {matches.length === 0 && (
-          <motion.div variants={itemVariants} className="text-center py-6">
-            <div className="bg-white rounded-lg shadow-sm p-6 max-w-sm mx-auto">
-              <Target className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-gray-700 mb-2">Keine Spiele diese Woche</h3>
-              <p className="text-gray-500 text-sm">Aktuell sind keine Teamspielergebnisse für diese Woche verfügbar.</p>
+          <motion.div variants={itemVariants} className="text-center py-12">
+            <div className="bg-card rounded-lg shadow-sm p-8 max-w-md mx-auto border">
+              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-foreground mb-3">Keine Spiele diese Woche</h3>
+              <p className="text-muted-foreground">Aktuell sind keine Teamspielergebnisse für diese Woche verfügbar.</p>
             </div>
           </motion.div>
         )}
