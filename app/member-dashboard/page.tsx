@@ -114,9 +114,6 @@ interface LigaStatistic {
 
 interface Match {
   id: string
-  season_id: string
-  home_team_id: string
-  away_team_id: string
   match_date: string
   match_time: string
   venue: string
@@ -124,6 +121,7 @@ interface Match {
   away_score: number | null
   status: string
   week_number: number
+  dart_type: "steeldart" | "edart"
   match_format?: "team" | "individual" | "best_of_three"
   division_type?: "team_division" | "individual_division"
   home_team: {
@@ -1489,6 +1487,8 @@ export default function DashboardPage() {
                                           "/placeholder.svg?height=32&width=32&query=darts-player" ||
                                           "/placeholder.svg" ||
                                           "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
                                           "/placeholder.svg"
                                         }
                                       />
@@ -1563,6 +1563,9 @@ export default function DashboardPage() {
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-4 w-4 flex-shrink-0" />
                                   <span>{formatMatchDate(match.match_date)}</span>
+                                  <Badge variant="outline" className="text-xs ml-2">
+                                    {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
+                                  </Badge>
                                 </div>
                                 <div className="flex items-center gap-2 min-w-0">
                                   <MapPin className="h-4 w-4 flex-shrink-0" />

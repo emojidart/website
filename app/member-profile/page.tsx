@@ -26,6 +26,7 @@ import {
   Upload,
   Euro,
   Table,
+  HelpCircle,
 } from "lucide-react"
 
 interface UserProfile {
@@ -296,6 +297,13 @@ export default function MemberProfilePage() {
       icon: MessageCircle,
       href: "/chat",
       color: "from-purple-500 to-purple-600",
+    },
+    {
+      title: "Support",
+      description: "Hilfe und Support-Anfragen",
+      icon: HelpCircle,
+      href: "/support",
+      color: "from-red-500 to-red-600",
     },
   ]
 

@@ -57,6 +57,7 @@ export default function MemberStatisticsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [dartTypeFilter, setDartTypeFilter] = useState<"gesamt" | "edart" | "steeldart">("gesamt")
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -74,7 +75,7 @@ export default function MemberStatisticsPage() {
     if (profile?.player_id && teamMembers.length > 0) {
       fetchLegStatistics()
     }
-  }, [profile, teamMembers])
+  }, [profile, teamMembers, dartTypeFilter])
 
   const isLeadershipRole = () => {
     return teamMemberships.some((membership) => membership.role === "Captain" || membership.role === "Co-Captain")
@@ -92,22 +93,9 @@ export default function MemberStatisticsPage() {
 
       console.log("[v0] Fetching user profile for:", session.user.id)
 
-      // Fetch user profile
       const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
-        .select(`
-          id,
-          user_id,
-          player_id,
-          club_players (
-            id,
-            name,
-            photo_url,
-            throwing_hand,
-            age,
-            origin
-          )
-        `)
+        .select(`id, user_id, player_id, club_players (id, name, photo_url, throwing_hand, age, origin)`)
         .eq("user_id", session.user.id)
         .single()
 
@@ -119,20 +107,10 @@ export default function MemberStatisticsPage() {
 
       setProfile(profileData)
 
-      // Fetch team memberships
       if (profileData?.player_id) {
         const { data: teamData, error: teamError } = await supabase
           .from("team_members")
-          .select(`
-            id,
-            team_id,
-            role,
-            teams (
-              id,
-              name,
-              logo_url
-            )
-          `)
+          .select(`id, team_id, role, teams (id, name, logo_url)`)
           .eq("player_id", profileData.player_id)
 
         console.log("[v0] Team data:", teamData, "Error:", teamError)
@@ -148,20 +126,7 @@ export default function MemberStatisticsPage() {
 
           const { data: membersData, error: membersError } = await supabase
             .from("team_members")
-            .select(`
-              id,
-              team_id,
-              player_id,
-              role,
-              club_players (
-                id,
-                name,
-                photo_url,
-                throwing_hand,
-                age,
-                origin
-              )
-            `)
+            .select(`id, team_id, player_id, role, club_players (id, name, photo_url, throwing_hand, age, origin)`)
             .in("team_id", teamIds)
             .order("role", { ascending: false })
 
@@ -183,25 +148,18 @@ export default function MemberStatisticsPage() {
 
   const fetchLegStatistics = async () => {
     if (!isLeadershipRole()) {
-      // For regular players, only fetch their own statistics
       if (!profile?.player_id) return
 
       setLegStatsLoading(true)
       try {
         console.log("[v0] Fetching leg statistics for player:", profile.player_id)
 
-        const { data, error } = await supabase
+        let query = supabase
           .from("leg_statistics")
           .select(`
             *,
-            player:club_players!leg_statistics_player_id_fkey(
-              name,
-              photo_url
-            ),
-            leg_winner:club_players!leg_statistics_leg_winner_id_fkey(
-              name,
-              photo_url
-            ),
+            player:club_players!leg_statistics_player_id_fkey(name, photo_url),
+            leg_winner:club_players!leg_statistics_leg_winner_id_fkey(name, photo_url),
             matches (
               id,
               match_date,
@@ -211,6 +169,7 @@ export default function MemberStatisticsPage() {
               away_team_id,
               home_team_type,
               away_team_type,
+              dart_type,
               home_team:teams!matches_home_team_id_fkey(id, name),
               away_team:teams!matches_away_team_id_fkey(id, name),
               home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
@@ -218,6 +177,12 @@ export default function MemberStatisticsPage() {
             )
           `)
           .eq("player_id", profile.player_id)
+
+        if (dartTypeFilter !== "gesamt") {
+          query = query.eq("dart_type", dartTypeFilter)
+        }
+
+        const { data, error } = await query
           .order("matches(match_date)", { ascending: false })
           .order("leg_number", { ascending: false })
 
@@ -257,18 +222,12 @@ export default function MemberStatisticsPage() {
         return
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("leg_statistics")
         .select(`
           *,
-          player:club_players!leg_statistics_player_id_fkey(
-            name,
-            photo_url
-          ),
-          leg_winner:club_players!leg_statistics_leg_winner_id_fkey(
-            name,
-            photo_url
-          ),
+          player:club_players!leg_statistics_player_id_fkey(name, photo_url),
+          leg_winner:club_players!leg_statistics_leg_winner_id_fkey(name, photo_url),
           matches (
             id,
             match_date,
@@ -278,6 +237,7 @@ export default function MemberStatisticsPage() {
             away_team_id,
             home_team_type,
             away_team_type,
+            dart_type,
             home_team:teams!matches_home_team_id_fkey(id, name),
             away_team:teams!matches_away_team_id_fkey(id, name),
             home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
@@ -285,6 +245,12 @@ export default function MemberStatisticsPage() {
           )
         `)
         .in("player_id", teamPlayerIds)
+
+      if (dartTypeFilter !== "gesamt") {
+        query = query.eq("dart_type", dartTypeFilter)
+      }
+
+      const { data, error } = await query
         .order("matches(match_date)", { ascending: false })
         .order("leg_number", { ascending: false })
 
@@ -302,7 +268,7 @@ export default function MemberStatisticsPage() {
 
       setLegStatistics(processedStats)
 
-      const { data: matchData, error: matchError } = await supabase.from("matches").select(`
+      let matchQuery = supabase.from("matches").select(`
           *,
           home_team:teams!matches_home_team_id_fkey(id, name),
           away_team:teams!matches_away_team_id_fkey(id, name),
@@ -310,6 +276,12 @@ export default function MemberStatisticsPage() {
           away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name),
           season:seasons(id, name, type)
         `)
+
+      if (dartTypeFilter !== "gesamt") {
+        matchQuery = matchQuery.eq("dart_type", dartTypeFilter)
+      }
+
+      const { data: matchData, error: matchError } = await matchQuery
 
       console.log("[v0] Match data:", matchData, "Error:", matchError)
 
@@ -374,6 +346,32 @@ export default function MemberStatisticsPage() {
           <p className="text-gray-600 mt-2">
             {isLeadershipRole() ? "Detaillierte Analyse der Team-Leistung" : "Detaillierte Analyse Ihrer Leistung"}
           </p>
+        </div>
+
+        <div className="mb-6">
+          <div className="flex gap-2">
+            <Button
+              variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
+              onClick={() => setDartTypeFilter("gesamt")}
+              className="flex items-center gap-2"
+            >
+              Gesamt
+            </Button>
+            <Button
+              variant={dartTypeFilter === "edart" ? "default" : "outline"}
+              onClick={() => setDartTypeFilter("edart")}
+              className="flex items-center gap-2"
+            >
+              E-Dart
+            </Button>
+            <Button
+              variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
+              onClick={() => setDartTypeFilter("steeldart")}
+              className="flex items-center gap-2"
+            >
+              Steeldart
+            </Button>
+          </div>
         </div>
 
         <StatisticsSection

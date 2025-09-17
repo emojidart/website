@@ -35,6 +35,7 @@ export default function LigaPage() {
   const [players, setPlayers] = useState([])
   const [legStatistics, setLegStatistics] = useState([])
   const [loading, setLoading] = useState(true)
+  const [dartTypeFilter, setDartTypeFilter] = useState<"gesamt" | "edart" | "steeldart">("gesamt")
 
   useEffect(() => {
     const loadData = async () => {
@@ -69,7 +70,7 @@ export default function LigaPage() {
         }
 
         console.log("[v0] Fetching matches...")
-        const { data: matchesData, error: matchesError } = await supabase
+        let matchQuery = supabase
           .from("matches")
           .select(`
             *,
@@ -78,6 +79,12 @@ export default function LigaPage() {
             season:seasons(id, name, type)
           `)
           .order("match_date", { ascending: true })
+
+        if (dartTypeFilter !== "gesamt") {
+          matchQuery = matchQuery.eq("dart_type", dartTypeFilter)
+        }
+
+        const { data: matchesData, error: matchesError } = await matchQuery
 
         if (matchesError) {
           console.error("Error fetching matches:", matchesError)
@@ -137,10 +144,16 @@ export default function LigaPage() {
         }
 
         console.log("[v0] Fetching leg statistics...")
-        const { data: legStatsData, error: legStatsError } = await supabase.from("leg_statistics").select(`
+        let legStatsQuery = supabase.from("leg_statistics").select(`
             *,
             player:club_players!leg_statistics_player_id_fkey(name, photo_url)
           `)
+
+        if (dartTypeFilter !== "gesamt") {
+          legStatsQuery = legStatsQuery.eq("dart_type", dartTypeFilter)
+        }
+
+        const { data: legStatsData, error: legStatsError } = await legStatsQuery
 
         if (legStatsError) {
           console.error("Error fetching leg statistics:", legStatsError)
@@ -156,7 +169,7 @@ export default function LigaPage() {
     }
 
     loadData()
-  }, [])
+  }, [dartTypeFilter]) // Added dartTypeFilter as dependency
 
   const calculateStandings = () => {
     const standings = {}
@@ -378,6 +391,32 @@ export default function LigaPage() {
             </div>
           </motion.div>
 
+          <motion.div variants={itemVariants} className="mb-6">
+            <div className="flex justify-center gap-2">
+              <Button
+                variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
+                onClick={() => setDartTypeFilter("gesamt")}
+                className="flex items-center gap-2"
+              >
+                Gesamt
+              </Button>
+              <Button
+                variant={dartTypeFilter === "edart" ? "default" : "outline"}
+                onClick={() => setDartTypeFilter("edart")}
+                className="flex items-center gap-2"
+              >
+                E-Dart
+              </Button>
+              <Button
+                variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
+                onClick={() => setDartTypeFilter("steeldart")}
+                className="flex items-center gap-2"
+              >
+                Steeldart
+              </Button>
+            </div>
+          </motion.div>
+
           <motion.div variants={itemVariants}>
             <Tabs defaultValue="standings" className="w-full">
               <div className="mb-4 sm:mb-8">
@@ -420,6 +459,110 @@ export default function LigaPage() {
                 </TabsList>
               </div>
 
+              <TabsContent value="legstats">
+                <Card className="overflow-hidden shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 sm:p-6">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                        <Target className="h-5 w-5 sm:h-6 sm:w-6" />
+                        Spieler-Statistiken ({playerLegStats.length} Spieler) -{" "}
+                        {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {playerLegStats.length === 0 ? (
+                      <div className="text-center py-12 text-gray-500">
+                        <Target className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                        <p className="text-lg">Keine Leg-Statistiken verfügbar</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full min-w-[1200px]">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Rang
+                              </th>
+                              <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Spieler
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Legs
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Wins
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Win%
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                180er
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                171er
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                High Tonne
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Tonne
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                95+
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Shanghai
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Bull
+                              </th>
+                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                Details
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {playerLegStats.slice(0, 10).map((player, index) => (
+                              <PlayerStatisticsRow
+                                key={player.name}
+                                player={player}
+                                index={index}
+                                allStats={legStatistics}
+                              />
+                            ))}
+                          </tbody>
+                        </table>
+                        {playerLegStats.length > 10 && (
+                          <div className="p-4 text-center border-t bg-gray-50">
+                            <p className="text-sm text-gray-600 mb-2">
+                              Zeige Top 10 von {playerLegStats.length} Spielern
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                // Show all players inline
+                                const tbody = document.querySelector("tbody")
+                                if (tbody) {
+                                  const hiddenRows = playerLegStats.slice(10)
+                                  hiddenRows.forEach((player, index) => {
+                                    const row = document.createElement("tr")
+                                    row.innerHTML = `<PlayerStatisticsRow player=${JSON.stringify(player)} index=${index + 10} allStats=${JSON.stringify(legStatistics)} />`
+                                    tbody.appendChild(row)
+                                  })
+                                }
+                              }}
+                            >
+                              Alle Spieler anzeigen
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
               <TabsContent value="standings">
                 <Card className="overflow-hidden shadow-lg">
                   <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 sm:p-6">
@@ -866,110 +1009,6 @@ export default function LigaPage() {
                     })}
                   </div>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="legstats">
-                <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 sm:p-6">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                        <Target className="h-5 w-5 sm:h-6 sm:w-6" />
-                        Spieler-Statistiken ({playerLegStats.length} Spieler)
-                      </CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    {playerLegStats.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500">
-                        <Target className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                        <p className="text-lg">Keine Leg-Statistiken verfügbar</p>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full min-w-[1200px]">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Rang
-                              </th>
-                              <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Spieler
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Legs
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Wins
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Win%
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                180er
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                171er
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                High Tonne
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Tonne
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                95+
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Shanghai
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Bull
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Details
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {playerLegStats.slice(0, 10).map((player, index) => (
-                              <PlayerStatisticsRow
-                                key={player.name}
-                                player={player}
-                                index={index}
-                                allStats={legStatistics}
-                              />
-                            ))}
-                          </tbody>
-                        </table>
-                        {playerLegStats.length > 10 && (
-                          <div className="p-4 text-center border-t bg-gray-50">
-                            <p className="text-sm text-gray-600 mb-2">
-                              Zeige Top 10 von {playerLegStats.length} Spielern
-                            </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                // Show all players inline
-                                const tbody = document.querySelector("tbody")
-                                if (tbody) {
-                                  const hiddenRows = playerLegStats.slice(10)
-                                  hiddenRows.forEach((player, index) => {
-                                    const row = document.createElement("tr")
-                                    row.innerHTML = `<PlayerStatisticsRow player=${JSON.stringify(player)} index=${index + 10} allStats=${JSON.stringify(legStatistics)} />`
-                                    tbody.appendChild(row)
-                                  })
-                                }
-                              }}
-                            >
-                              Alle Spieler anzeigen
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
               </TabsContent>
             </Tabs>
           </motion.div>

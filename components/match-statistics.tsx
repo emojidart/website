@@ -44,6 +44,7 @@ interface Match {
   division_type?: "team_division" | "individual_division"
   home_team: Team | null
   away_team: Team | null
+  dart_type?: string
 }
 
 interface MatchLineup {
@@ -317,6 +318,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
           leg_winner_id: legWinnerIds.includes(playerId) ? playerId : null,
           leg_winner_ids: legWinnerIdsString,
           leg_wins: legWinnerIds.includes(playerId) ? 1 : 0,
+          dart_type: match.dart_type || "steeldart",
           throws_180: legFormData[`${playerId}_180`] || 0,
           throws_171: legFormData[`${playerId}_171`] || 0,
           throws_15: legFormData[`${playerId}_15`] || 0,
@@ -352,6 +354,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
             legs_won_in_match: result.legsWon,
             player_legs_won: playerLegs || 0,
             opponent_legs_won: opponentLegs || 0,
+            dart_type: match.dart_type || "steeldart",
             throws_180: legFormData[`${playerId}_180`] || 0,
             throws_171: legFormData[`${playerId}_171`] || 0,
             throws_15: legFormData[`${playerId}_15`] || 0,

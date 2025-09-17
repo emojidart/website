@@ -19,6 +19,7 @@ import {
   Home,
   Target,
   CalendarDays,
+  HelpCircle,
 } from "lucide-react"
 import { useDartData } from "@/hooks/use-dart-data"
 import { AuthSection } from "@/components/auth-section"
@@ -72,7 +73,8 @@ export default function AdminPage() {
     | "dart-competition"
     | "attendance"
     | "leagues"
-    | "tournament-days" // Added tournament-days view type
+    | "tournament-days"
+    | "support-tickets" // Added support-tickets view type
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -163,6 +165,13 @@ export default function AdminPage() {
       icon: Users,
       color: "bg-blue-500",
       view: "users" as const,
+    },
+    {
+      title: "Support Tickets",
+      description: "Support-Anfragen von Vereinsmitgliedern bearbeiten",
+      icon: HelpCircle,
+      color: "bg-red-500",
+      view: "support-tickets" as const,
     },
     {
       title: "Lion Cup",
@@ -328,6 +337,7 @@ export default function AdminPage() {
                   {currentView === "attendance" && "Anwesenheitsliste"}
                   {currentView === "leagues" && "Ligaspiele"}
                   {currentView === "tournament-days" && "Turniertage Cup"} {/* Added tournament-days view label */}
+                  {currentView === "support-tickets" && "Support Tickets"} {/* Added support-tickets view label */}
                 </span>
               </>
             )}
@@ -374,8 +384,10 @@ export default function AdminPage() {
                                                 : currentView === "leagues"
                                                   ? "Ligaspiele"
                                                   : currentView === "tournament-days"
-                                                    ? "Turniertage Cup" // Added tournament-days view label
-                                                    : "Admin-Zugang"}
+                                                    ? "Turniertage Cup"
+                                                    : currentView === "support-tickets"
+                                                      ? "Support Tickets" // Added support-tickets view label
+                                                      : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
                 {session && currentView === "dashboard"
@@ -461,6 +473,31 @@ export default function AdminPage() {
               <TournamentDaysManagement user={user} onDataSaved={handleDataSaved} />
             )}{" "}
             {/* Added tournament-days view */}
+            {currentView === "support-tickets" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <HelpCircle className="h-5 w-5" />
+                      <span>Support Tickets verwalten</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4">
+                      Hier können Sie alle Support-Anfragen von Vereinsmitgliedern einsehen und bearbeiten.
+                    </p>
+                    <div className="space-y-3">
+                      <Link href="/admin/support-tickets">
+                        <Button className="w-full">
+                          <HelpCircle className="h-4 w-4 mr-2" />
+                          Support Tickets verwalten
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
             {currentView === "recruitment" && (
               <div className="space-y-6">
                 <div className="flex space-x-4 border-b border-gray-200">
@@ -683,29 +720,6 @@ export default function AdminPage() {
                           <span className="text-xs text-gray-500">EMD - LION CUP</span>
                         </div>
                       </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-            {currentView === "tournament-days" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <CalendarDays className="h-5 w-5" />
-                      <span>Turniertage Cup</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">Hier können Sie die Turniertage Cup verwalten.</p>
-                    <div className="space-y-3">
-                      <Link href="/tournament-days">
-                        <Button className="w-full">
-                          <CalendarDays className="h-4 w-4 mr-2" />
-                          Zum Turniertage Cup
-                        </Button>
-                      </Link>
                     </div>
                   </CardContent>
                 </Card>

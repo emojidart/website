@@ -72,6 +72,7 @@ interface Match {
   season: Season
   home_opponent_team?: OpponentTeam
   away_opponent_team?: OpponentTeam
+  dart_type: "steeldart" | "edart"
 }
 
 export function LeagueManagement() {
@@ -84,7 +85,7 @@ export function LeagueManagement() {
   const [activeTab, setActiveTab] = useState("overview")
 
   // Form states
-  const [newMatch, setNewMatch] = useState({
+  const [newMatchState, setNewMatch] = useState({
     home_team_id: "",
     home_team_type: "own" as "own" | "opponent",
     away_team_id: "",
@@ -93,6 +94,7 @@ export function LeagueManagement() {
     match_time: "",
     week_number: 1,
     venue: "",
+    dart_type: "steeldart" as "steeldart" | "edart", // Default to steeldart
   })
 
   const [newSeason, setNewSeason] = useState({
@@ -128,6 +130,7 @@ export function LeagueManagement() {
     match_time: "",
     week_number: 1,
     venue: "",
+    dart_type: "steeldart" as "steeldart" | "edart",
   })
 
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set())
@@ -260,24 +263,25 @@ export function LeagueManagement() {
     try {
       const matchData: any = {
         season_id: selectedSeason,
-        match_date: newMatch.match_date,
-        match_time: newMatch.match_time,
-        week_number: newMatch.week_number,
-        venue: newMatch.venue,
-        home_team_type: newMatch.home_team_type,
-        away_team_type: newMatch.away_team_type,
+        match_date: newMatchState.match_date,
+        match_time: newMatchState.match_time,
+        week_number: newMatchState.week_number,
+        venue: newMatchState.venue,
+        home_team_type: newMatchState.home_team_type,
+        away_team_type: newMatchState.away_team_type,
+        dart_type: newMatchState.dart_type,
       }
 
-      if (newMatch.home_team_type === "own") {
-        matchData.home_team_id = newMatch.home_team_id
+      if (newMatchState.home_team_type === "own") {
+        matchData.home_team_id = newMatchState.home_team_id
       } else {
-        matchData.home_opponent_team_id = newMatch.home_team_id
+        matchData.home_opponent_team_id = newMatchState.home_team_id
       }
 
-      if (newMatch.away_team_type === "own") {
-        matchData.away_team_id = newMatch.away_team_id
+      if (newMatchState.away_team_type === "own") {
+        matchData.away_team_id = newMatchState.away_team_id
       } else {
-        matchData.away_opponent_team_id = newMatch.away_team_id
+        matchData.away_opponent_team_id = newMatchState.away_team_id
       }
 
       const { error } = await supabase.from("matches").insert([matchData])
@@ -293,6 +297,7 @@ export function LeagueManagement() {
         match_time: "",
         week_number: 1,
         venue: "",
+        dart_type: "steeldart",
       })
       fetchData()
     } catch (error) {
@@ -396,11 +401,14 @@ export function LeagueManagement() {
 
   const updateMatchDetails = async (matchId: string) => {
     try {
+      console.log("[v0] Updating match with details:", editMatchDetails)
+
       const matchData: any = {
         match_date: editMatchDetails.match_date,
         match_time: editMatchDetails.match_time,
         week_number: editMatchDetails.week_number,
         venue: editMatchDetails.venue,
+        dart_type: editMatchDetails.dart_type, // Added dart_type to update
       }
 
       // Handle home team assignment
@@ -420,6 +428,8 @@ export function LeagueManagement() {
         matchData.away_opponent_team_id = editMatchDetails.away_team_id
         matchData.away_team_id = null // Clear own team if switching to opponent team
       }
+
+      console.log("[v0] Final match data to update:", matchData)
 
       const { error } = await supabase.from("matches").update(matchData).eq("id", matchId)
 
@@ -585,7 +595,7 @@ export function LeagueManagement() {
   const currentSeason = seasons.find((s) => s.id === selectedSeason)
 
   const handleTeamSelection = (teamId: string, teamType: "own" | "opponent", position: "home" | "away") => {
-    const updatedMatch = { ...newMatch }
+    const updatedMatch = { ...newMatchState }
 
     if (position === "home") {
       updatedMatch.home_team_id = teamId
@@ -870,9 +880,9 @@ export function LeagueManagement() {
                         <Label>Heimteam</Label>
                         <div className="space-y-2">
                           <Select
-                            value={newMatch.home_team_type}
+                            value={newMatchState.home_team_type}
                             onValueChange={(value: "own" | "opponent") =>
-                              setNewMatch({ ...newMatch, home_team_type: value, home_team_id: "" })
+                              setNewMatch({ ...newMatchState, home_team_type: value, home_team_id: "" })
                             }
                           >
                             <SelectTrigger>
@@ -884,14 +894,14 @@ export function LeagueManagement() {
                             </SelectContent>
                           </Select>
                           <Select
-                            value={newMatch.home_team_id}
-                            onValueChange={(value) => handleTeamSelection(value, newMatch.home_team_type, "home")}
+                            value={newMatchState.home_team_id}
+                            onValueChange={(value) => handleTeamSelection(value, newMatchState.home_team_type, "home")}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Team auswählen" />
                             </SelectTrigger>
                             <SelectContent>
-                              {(newMatch.home_team_type === "own" ? ownTeams : opponentTeams).map((team) => (
+                              {(newMatchState.home_team_type === "own" ? ownTeams : opponentTeams).map((team) => (
                                 <SelectItem key={team.id} value={team.id}>
                                   {team.name}
                                 </SelectItem>
@@ -904,9 +914,9 @@ export function LeagueManagement() {
                         <Label>Auswärtsteam</Label>
                         <div className="space-y-2">
                           <Select
-                            value={newMatch.away_team_type}
+                            value={newMatchState.away_team_type}
                             onValueChange={(value: "own" | "opponent") =>
-                              setNewMatch({ ...newMatch, away_team_type: value, away_team_id: "" })
+                              setNewMatch({ ...newMatchState, away_team_type: value, away_team_id: "" })
                             }
                           >
                             <SelectTrigger>
@@ -918,14 +928,14 @@ export function LeagueManagement() {
                             </SelectContent>
                           </Select>
                           <Select
-                            value={newMatch.away_team_id}
-                            onValueChange={(value) => handleTeamSelection(value, newMatch.away_team_type, "away")}
+                            value={newMatchState.away_team_id}
+                            onValueChange={(value) => handleTeamSelection(value, newMatchState.away_team_type, "away")}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Team auswählen" />
                             </SelectTrigger>
                             <SelectContent>
-                              {(newMatch.away_team_type === "own" ? ownTeams : opponentTeams).map((team) => (
+                              {(newMatchState.away_team_type === "own" ? ownTeams : opponentTeams).map((team) => (
                                 <SelectItem key={team.id} value={team.id}>
                                   {team.name}
                                 </SelectItem>
@@ -940,16 +950,16 @@ export function LeagueManagement() {
                         <Label>Datum</Label>
                         <Input
                           type="date"
-                          value={newMatch.match_date}
-                          onChange={(e) => setNewMatch({ ...newMatch, match_date: e.target.value })}
+                          value={newMatchState.match_date}
+                          onChange={(e) => setNewMatch({ ...newMatchState, match_date: e.target.value })}
                         />
                       </div>
                       <div>
                         <Label>Zeit</Label>
                         <Input
                           type="time"
-                          value={newMatch.match_time}
-                          onChange={(e) => setNewMatch({ ...newMatch, match_time: e.target.value })}
+                          value={newMatchState.match_time}
+                          onChange={(e) => setNewMatch({ ...newMatchState, match_time: e.target.value })}
                         />
                       </div>
                       <div>
@@ -957,18 +967,37 @@ export function LeagueManagement() {
                         <Input
                           type="number"
                           min="1"
-                          value={newMatch.week_number}
-                          onChange={(e) => setNewMatch({ ...newMatch, week_number: Number.parseInt(e.target.value) })}
+                          value={newMatchState.week_number}
+                          onChange={(e) =>
+                            setNewMatch({ ...newMatchState, week_number: Number.parseInt(e.target.value) })
+                          }
                         />
                       </div>
                     </div>
                     <div>
                       <Label>Spielort</Label>
                       <Input
-                        value={newMatch.venue}
-                        onChange={(e) => setNewMatch({ ...newMatch, venue: e.target.value })}
+                        value={newMatchState.venue}
+                        onChange={(e) => setNewMatch({ ...newMatchState, venue: e.target.value })}
                         placeholder="z.B. DC SIM - Salzburg"
                       />
+                    </div>
+                    <div>
+                      <Label htmlFor="dart-type">Dart-Art</Label>
+                      <Select
+                        value={newMatchState.dart_type}
+                        onValueChange={(value) =>
+                          setNewMatch({ ...newMatchState, dart_type: value as "steeldart" | "edart" })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Dart-Art auswählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="steeldart">Steeldart</SelectItem>
+                          <SelectItem value="edart">E-Dart</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <Button onClick={createMatch} className="w-full">
                       Spiel erstellen
@@ -1050,6 +1079,9 @@ export function LeagueManagement() {
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                           <Clock className="h-4 w-4" />
                                           <span>{match.match_time}</span>
+                                          <span className="text-xs bg-muted px-2 py-1 rounded">
+                                            {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
+                                          </span>
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-2">
@@ -1117,18 +1149,60 @@ export function LeagueManagement() {
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() => {
-                                                  setSelectedMatchForDetails(match.id)
-                                                  setIsMatchDetailsDialogOpen(true)
+                                                  console.log("[v0] Opening edit dialog for match:", match)
+                                                  console.log("[v0] Match home_team_id:", match.home_team_id)
+                                                  console.log(
+                                                    "[v0] Match home_opponent_team_id:",
+                                                    match.home_opponent_team_id,
+                                                  )
+                                                  console.log("[v0] Match away_team_id:", match.away_team_id)
+                                                  console.log(
+                                                    "[v0] Match away_opponent_team_id:",
+                                                    match.away_opponent_team_id,
+                                                  )
+                                                  console.log("[v0] Match dart_type:", match.dart_type)
+
+                                                  // Determine home team
+                                                  let homeTeamId = ""
+                                                  let homeTeamType: "own" | "opponent" = "own"
+
+                                                  if (match.home_team_id) {
+                                                    homeTeamId = match.home_team_id
+                                                    homeTeamType = "own"
+                                                  } else if (match.home_opponent_team_id) {
+                                                    homeTeamId = match.home_opponent_team_id
+                                                    homeTeamType = "opponent"
+                                                  }
+
+                                                  // Determine away team
+                                                  let awayTeamId = ""
+                                                  let awayTeamType: "own" | "opponent" = "own"
+
+                                                  if (match.away_team_id) {
+                                                    awayTeamId = match.away_team_id
+                                                    awayTeamType = "own"
+                                                  } else if (match.away_opponent_team_id) {
+                                                    awayTeamId = match.away_opponent_team_id
+                                                    awayTeamType = "opponent"
+                                                  }
+
+                                                  console.log("[v0] Resolved home team:", homeTeamId, homeTeamType)
+                                                  console.log("[v0] Resolved away team:", awayTeamId, awayTeamType)
+
                                                   setEditMatchDetails({
-                                                    home_team_id: match.home_team_id,
-                                                    home_team_type: match.home_team_type,
-                                                    away_team_id: match.away_team_id,
-                                                    away_team_type: match.away_team_type,
+                                                    home_team_id: homeTeamId,
+                                                    home_team_type: homeTeamType,
+                                                    away_team_id: awayTeamId,
+                                                    away_team_type: awayTeamType,
                                                     match_date: match.match_date,
                                                     match_time: match.match_time,
                                                     week_number: match.week_number,
                                                     venue: match.venue || "",
+                                                    dart_type: match.dart_type || "steeldart",
                                                   })
+                                                  setEditingMatch(match.id)
+                                                  setSelectedMatchForDetails(match.id)
+                                                  setIsMatchDetailsDialogOpen(true)
                                                 }}
                                               >
                                                 <Settings className="h-4 w-4 mr-2" />
@@ -1303,6 +1377,27 @@ export function LeagueManagement() {
                                                       </SelectContent>
                                                     </Select>
                                                   </div>
+                                                </div>
+
+                                                <div>
+                                                  <Label htmlFor="edit-dart-type">Dart-Art</Label>
+                                                  <Select
+                                                    value={editMatchDetails.dart_type}
+                                                    onValueChange={(value) =>
+                                                      setEditMatchDetails((prev) => ({
+                                                        ...prev,
+                                                        dart_type: value as "steeldart" | "edart",
+                                                      }))
+                                                    }
+                                                  >
+                                                    <SelectTrigger>
+                                                      <SelectValue placeholder="Dart-Art auswählen" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                      <SelectItem value="steeldart">Steeldart</SelectItem>
+                                                      <SelectItem value="edart">E-Dart</SelectItem>
+                                                    </SelectContent>
+                                                  </Select>
                                                 </div>
 
                                                 <div className="flex gap-3 pt-4">
