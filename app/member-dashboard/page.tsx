@@ -1489,6 +1489,7 @@ export default function DashboardPage() {
                                           "/placeholder.svg" ||
                                           "/placeholder.svg" ||
                                           "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
                                           "/placeholder.svg"
                                         }
                                       />
@@ -1892,7 +1893,6 @@ export default function DashboardPage() {
                         id="teamPhoto"
                         type="file"
                         accept="image/*"
-                        capture="environment"
                         onChange={handleTeamPhotoChange}
                         className="text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
                       />
