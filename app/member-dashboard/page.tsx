@@ -29,6 +29,7 @@ import {
   Upload,
   Eye,
   ArrowRight,
+  ImageIcon,
 } from "lucide-react"
 import {
   Dialog,
@@ -258,6 +259,50 @@ export default function DashboardPage() {
     } else {
       setPhotoFile(null)
       setPhotoPreview(null)
+    }
+  }
+
+  const handleCameraPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPhotoFile(file)
+      setPhotoPreview(URL.createObjectURL(file))
+    } else {
+      setPhotoFile(null)
+      setPhotoPreview(null)
+    }
+  }
+
+  const handleGalleryPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPhotoFile(file)
+      setPhotoPreview(URL.createObjectURL(file))
+    } else {
+      setPhotoFile(null)
+      setPhotoPreview(null)
+    }
+  }
+
+  const handleTeamCameraPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setTeamPhotoFile(file)
+      setTeamPhotoPreview(URL.createObjectURL(file))
+    } else {
+      setTeamPhotoFile(null)
+      setTeamPhotoPreview(null)
+    }
+  }
+
+  const handleTeamGalleryPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setTeamPhotoFile(file)
+      setTeamPhotoPreview(URL.createObjectURL(file))
+    } else {
+      setTeamPhotoFile(null)
+      setTeamPhotoPreview(null)
     }
   }
 
@@ -1490,6 +1535,8 @@ export default function DashboardPage() {
                                           "/placeholder.svg" ||
                                           "/placeholder.svg" ||
                                           "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
                                           "/placeholder.svg"
                                         }
                                       />
@@ -1886,16 +1933,52 @@ export default function DashboardPage() {
                     )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="teamPhoto" className="text-sm font-medium">
+                      <Label className="text-sm font-medium">
                         {hasExistingPhoto ? "Neues Teamfoto auswählen" : "Teamfoto auswählen"}
                       </Label>
-                      <Input
-                        id="teamPhoto"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleTeamPhotoChange}
-                        className="text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                      />
+
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <input
+                              id="teamPhotoCamera"
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              onChange={handleTeamCameraPhotoChange}
+                              className="hidden"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => document.getElementById("teamPhotoCamera")?.click()}
+                              className="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+                            >
+                              <Camera className="h-4 w-4 mr-2" />
+                              Kamera
+                            </Button>
+                          </div>
+
+                          <div className="flex-1">
+                            <input
+                              id="teamPhotoGallery"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleTeamGalleryPhotoChange}
+                              className="hidden"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => document.getElementById("teamPhotoGallery")?.click()}
+                              className="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+                            >
+                              <ImageIcon className="h-4 w-4 mr-2" />
+                              Galerie
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     {teamPhotoPreview && (
