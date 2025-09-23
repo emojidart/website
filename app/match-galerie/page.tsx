@@ -10,6 +10,7 @@ import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Image from "next/image"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -39,14 +40,14 @@ export default function MatchGaleriePage() {
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
   const [selectedMatch, setSelectedMatch] = useState<any>(null)
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const loadMatchPhotos = async () => {
       try {
         const { data: matchesData, error: matchesError } = await supabase
           .from("matches")
-          .select(`
-            *,
+          .select(`*
             home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
             away_team:teams!matches_away_team_id_fkey(id, name, logo_url),
             season:seasons(id, name, type)
@@ -57,7 +58,6 @@ export default function MatchGaleriePage() {
         if (matchesError) {
           console.error("Error fetching matches with photos:", matchesError)
         } else {
-          // Get opponent teams data
           const { data: opponentTeamsData, error: opponentError } = await supabase
             .from("opponent_teams")
             .select("*")
@@ -96,6 +96,10 @@ export default function MatchGaleriePage() {
   }, [])
 
   const handlePhotoClick = (photoUrl: string, match: any) => {
+    if (isMobile) {
+      return
+    }
+
     setSelectedPhotoUrl(photoUrl)
     setSelectedMatch(match)
     setIsPhotoModalOpen(true)
@@ -115,8 +119,8 @@ export default function MatchGaleriePage() {
 
     if (homeScore === awayScore) return "Unentschieden"
 
-    const isOurHomeTeam = match.home_team?.id // Our team is home
-    const isOurAwayTeam = match.away_team?.id // Our team is away
+    const isOurHomeTeam = match.home_team?.id
+    const isOurAwayTeam = match.away_team?.id
 
     if (homeScore > awayScore) {
       if (isOurHomeTeam) {
@@ -148,15 +152,15 @@ export default function MatchGaleriePage() {
 
     if (homeScore > awayScore) {
       if (isOurHomeTeam) {
-        return "bg-green-100 text-green-700" // We won at home
+        return "bg-green-100 text-green-700"
       } else {
-        return "bg-red-100 text-red-700" // We lost (opponent won at home)
+        return "bg-red-100 text-red-700"
       }
     } else if (awayScore > homeScore) {
       if (isOurAwayTeam) {
-        return "bg-green-100 text-green-700" // We won away
+        return "bg-green-100 text-green-700"
       } else {
-        return "bg-red-100 text-red-700" // We lost (opponent won away)
+        return "bg-red-100 text-red-700"
       }
     }
 
@@ -236,7 +240,7 @@ export default function MatchGaleriePage() {
                         initial="hidden"
                         animate="visible"
                         transition={{ delay: index * 0.1 }}
-                        className="group cursor-pointer"
+                        className={`group ${!isMobile ? "cursor-pointer" : ""}`}
                         onClick={() => handlePhotoClick(match.team_photo_url, match)}
                       >
                         <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
@@ -249,11 +253,13 @@ export default function MatchGaleriePage() {
                               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                              <div className="bg-white/90 backdrop-blur-sm rounded-full p-2">
-                                <Camera className="h-4 w-4 text-gray-700" />
+                            {!isMobile && (
+                              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <div className="bg-white/90 backdrop-blur-sm rounded-full p-2">
+                                  <Camera className="h-4 w-4 text-gray-700" />
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                           <CardContent className="p-3 sm:p-4">
                             <div className="space-y-2">
