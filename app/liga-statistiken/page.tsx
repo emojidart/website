@@ -514,7 +514,7 @@ export default function LigaPage() {
                     {playerLegStats.length === 0 ? (
                       <div className="text-center py-12 text-gray-500">
                         <Target className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                        <p className="text-lg">Keine Leg-Statistiken verfügbar</p>
+                        <p className="text-lg">Keine Statistiken verfügbar</p>
                       </div>
                     ) : (
                       <>

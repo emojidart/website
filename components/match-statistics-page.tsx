@@ -145,9 +145,9 @@ const NumberInput = ({
           size="sm"
           onClick={handleDecrement}
           disabled={value <= min}
-          className="h-11 w-11 p-0 rounded-none border-r hover:bg-gray-100"
+          className="h-9 w-7 sm:h-11 sm:w-9 p-0 rounded-none border-r hover:bg-gray-100 flex-shrink-0"
         >
-          <Minus className="h-4 w-4" />
+          <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
         <Input
           id={id}
@@ -155,7 +155,7 @@ const NumberInput = ({
           min={min}
           value={value || ""}
           onChange={handleInputChange}
-          className={`border-0 text-center h-11 focus-visible:ring-0 focus-visible:ring-offset-0 ${className}`}
+          className={`border-0 text-center h-9 sm:h-11 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1 min-w-0 text-sm sm:text-base font-semibold ${className}`}
           placeholder="0"
         />
         <Button
@@ -163,10 +163,11 @@ const NumberInput = ({
           variant="ghost"
           size="sm"
           onClick={handleIncrement}
-          className="h-11 w-11 p-0 rounded-none border-l hover:bg-gray-100"
+          className="h-9 w-7 sm:h-11 sm:w-9 p-0 rounded-none border-l hover:bg-gray-100 flex-shrink-0"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
+        {/* </CHANGE> */}
       </div>
     </div>
   )
@@ -579,7 +580,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                 <CardTitle className="flex items-center gap-2">🎯 Statistiken für {currentStats.player_name}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
-                <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <NumberInput
                     id="player_legs_won"
                     label="Legs gewonnen"
@@ -597,6 +598,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                     labelClassName="text-blue-700 font-semibold"
                   />
                 </div>
+                {/* </CHANGE> */}
 
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">🎯 High Scores</h4>
@@ -644,13 +646,14 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                       onChange={(value) => updateCurrentStats("throws_bull", value)}
                     />
                   </div>
+                  {/* </CHANGE> */}
                 </div>
 
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold text-blue-700 mb-3 flex items-center gap-2">
                     🎲 Weitere Scores
                   </h4>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                     <NumberInput
                       id="throws_15"
                       label="15er"
@@ -688,6 +691,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                       onChange={(value) => updateCurrentStats("throws_20", value)}
                     />
                   </div>
+                  {/* </CHANGE> */}
                 </div>
 
                 <div className="space-y-4">
@@ -718,6 +722,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                       labelClassName="text-red-700"
                     />
                   </div>
+                  {/* </CHANGE> */}
                 </div>
 
                 <div className="space-y-2">
@@ -783,7 +788,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                               <h6 className="text-xs font-semibold text-green-700 uppercase tracking-wide">
                                 🎯 High Scores
                               </h6>
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div className="flex justify-between items-center p-2 bg-yellow-50 rounded">
                                   <span className="text-sm font-medium">180er:</span>
                                   <span className="text-lg font-bold text-blue-600">{stat.throws_180}</span>
@@ -813,13 +818,14 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                                   <span className="text-lg font-bold text-cyan-600">{stat.throws_bull}</span>
                                 </div>
                               </div>
+                              {/* </CHANGE> */}
                             </div>
 
                             <div className="space-y-2">
                               <h6 className="text-xs font-semibold text-blue-700 uppercase tracking-wide">
                                 🎲 Zahlen-Scores
                               </h6>
-                              <div className="grid grid-cols-3 gap-2">
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
                                   <span className="text-sm font-medium">15er:</span>
                                   <span className="text-lg font-bold text-slate-600">{stat.throws_15}</span>
@@ -845,6 +851,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                                   <span className="text-lg font-bold text-slate-600">{stat.throws_20}</span>
                                 </div>
                               </div>
+                              {/* </CHANGE> */}
                             </div>
 
                             <div className="space-y-2">
