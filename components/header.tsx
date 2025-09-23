@@ -60,6 +60,8 @@ export function Header() {
 
   const isTurniereActive = ["/upcoming-tournaments", "/live", "/kratzer-tournament-results"].includes(pathname)
 
+  const isLigaActive = ["/liga-statistiken", "/match-galerie"].includes(pathname)
+
   return (
     <header className="relative z-20 w-full bg-gray-100 text-gray-900 border-b border-gray-300 shadow-lg">
       <div className="bg-gradient-to-r from-orange-600 to-orange-500 py-2 sm:py-3 text-center text-xs sm:text-sm font-bold overflow-hidden flex shadow-md">
@@ -188,6 +190,32 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className={`text-sm font-bold transition-colors uppercase px-3 py-1 h-auto ${
+                  isLigaActive ? "text-red-600 border-b-2 border-red-600" : "text-gray-900 hover:text-red-600"
+                }`}
+              >
+                Liga
+                <ChevronDown className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link href="/liga-statistiken" className="w-full cursor-pointer">
+                  Statistiken
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/match-galerie" className="w-full cursor-pointer">
+                  Galerie
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Link
             href="/club"
             className={`text-sm font-bold transition-colors uppercase ${
@@ -195,17 +223,6 @@ export function Header() {
             }`}
           >
             Verein
-          </Link>
-
-          <Link
-            href="/liga-statistiken"
-            className={`text-sm font-bold transition-colors uppercase ${
-              pathname === "/liga-statistiken"
-                ? "text-red-600 border-b-2 border-red-600 pb-1"
-                : "text-gray-900 hover:text-red-600"
-            }`}
-          >
-            Liga
           </Link>
 
           <Link
@@ -419,6 +436,30 @@ export function Header() {
                 </Link>
               </div>
 
+              <div className="space-y-2">
+                <div className="text-sm font-bold text-gray-600 px-4 py-2 uppercase tracking-wide">Liga</div>
+                <Link
+                  href="/liga-statistiken"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/liga"
+                      ? "bg-red-50 text-red-600 font-bold"
+                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  Statistiken
+                </Link>
+                <Link
+                  href="/match-galerie"
+                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
+                    pathname === "/match-galerie"
+                      ? "bg-red-50 text-red-600 font-bold"
+                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  Galerie
+                </Link>
+              </div>
+
               <Link
                 href="/club"
                 className={`flex items-center text-base sm:text-lg font-medium rounded-lg px-4 py-3 transition-all duration-200 ${
@@ -428,17 +469,6 @@ export function Header() {
                 }`}
               >
                 Verein
-              </Link>
-
-              <Link
-                href="/liga-statistiken"
-                className={`flex items-center text-base sm:text-lg font-medium rounded-lg px-4 py-3 transition-all duration-200 ${
-                  pathname === "/liga-statistiken"
-                    ? "bg-red-50 text-red-600 font-bold"
-                    : "text-gray-800 hover:text-red-600 hover:bg-red-50"
-                }`}
-              >
-                Liga
               </Link>
 
               <Link

@@ -83,7 +83,7 @@ export default function PlayerProfilePage() {
             name: stat.player.name,
             photo_url: stat.player.photo_url, // Added photo_url from player data
             total_legs: (acc.total_legs || 0) + legsToAdd,
-            total_wins: (acc.total_wins || 0) + (stat.leg_wins || 0),
+            total_wins: (acc.total_wins || 0) + (stat.player_legs_won || 0),
             throws_180: (acc.throws_180 || 0) + (stat.throws_180 || 0),
             throws_171: (acc.throws_171 || 0) + (stat.throws_171 || 0),
             throws_high_tonne: (acc.throws_high_tonne || 0) + (stat.throws_high_tonne || 0),
@@ -204,6 +204,36 @@ export default function PlayerProfilePage() {
         target: 100,
         color: "bg-emerald-600",
       },
+      {
+        id: "high_finish_bronze",
+        title: "95+ Bronze",
+        description: "10 x 95+ Punkte erreicht",
+        icon: <Trophy className="h-6 w-6" />,
+        achieved: stats.throws_95_plus >= 10,
+        progress: stats.throws_95_plus,
+        target: 10,
+        color: "bg-amber-600",
+      },
+      {
+        id: "high_finish_silver",
+        title: "95+ Silber",
+        description: "50 x 95+ Punkte erreicht",
+        icon: <Trophy className="h-6 w-6" />,
+        achieved: stats.throws_95_plus >= 50,
+        progress: stats.throws_95_plus,
+        target: 50,
+        color: "bg-gray-400",
+      },
+      {
+        id: "high_finish_gold",
+        title: "95+ Gold",
+        description: "100 x 95+ Punkte erreicht",
+        icon: <Crown className="h-6 w-6" />,
+        achieved: stats.throws_95_plus >= 100,
+        progress: stats.throws_95_plus,
+        target: 100,
+        color: "bg-yellow-500",
+      },
 
       // Win Rate Achievements
       {
@@ -317,56 +347,6 @@ export default function PlayerProfilePage() {
         progress: stats.throws_bull,
         target: 25,
         color: "bg-yellow-600",
-      },
-
-      // High Finish Achievements
-      {
-        id: "high_finish_bronze",
-        title: "High Finish Bronze",
-        description: "10 x 95+ Punkte erreicht",
-        icon: <Trophy className="h-6 w-6" />,
-        achieved: stats.throws_95_plus >= 10,
-        progress: stats.throws_95_plus,
-        target: 10,
-        color: "bg-amber-600",
-      },
-      {
-        id: "high_finish_silver",
-        title: "High Finish Silber",
-        description: "50 x 95+ Punkte erreicht",
-        icon: <Trophy className="h-6 w-6" />,
-        achieved: stats.throws_95_plus >= 50,
-        progress: stats.throws_95_plus,
-        target: 50,
-        color: "bg-gray-400",
-      },
-      {
-        id: "high_finish_gold",
-        title: "High Finish Gold",
-        description: "100 x 95+ Punkte erreicht",
-        icon: <Crown className="h-6 w-6" />,
-        achieved: stats.throws_95_plus >= 100,
-        progress: stats.throws_95_plus,
-        target: 100,
-        color: "bg-yellow-500",
-      },
-
-      // Consistency Achievements
-      {
-        id: "consistent_player",
-        title: "Konstanter Spieler",
-        description: "20+ Legs mit 60%+ Siegquote",
-        icon: <Award className="h-6 w-6" />,
-        achieved: stats.total_legs >= 20 && stats.win_percentage >= 60,
-        color: "bg-teal-500",
-      },
-      {
-        id: "reliable_ace",
-        title: "Zuverlässiges Ass",
-        description: "50+ Legs mit 70%+ Siegquote",
-        icon: <Crown className="h-6 w-6" />,
-        achieved: stats.total_legs >= 50 && stats.win_percentage >= 70,
-        color: "bg-teal-600",
       },
 
       // Combo Achievements
@@ -574,10 +554,10 @@ export default function PlayerProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Special Throws */}
+          {/* Under-Scores */}
           <Card>
             <CardHeader>
-              <CardTitle>Spezial Würfe</CardTitle>
+              <CardTitle>Special-Scores</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

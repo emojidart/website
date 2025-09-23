@@ -40,8 +40,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
-
-import { MatchStatistics } from "@/components/match-statistics"
 import Image from "next/image"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -92,7 +90,6 @@ interface LigaStatistic {
   id: string
   player_id: string
   player_name: string
-  game_date: string
   throws_180: number
   throws_171: number
   throws_under_26: number
@@ -105,12 +102,11 @@ interface LigaStatistic {
   throws_19: number
   throws_20: number
   throws_bull: number
-  notes: string | null
-  club_players?: {
+  created_at: string
+  club_players: {
     name: string
     photo_url: string | null
   }
-  created_at?: string
 }
 
 interface Match {
@@ -514,7 +510,6 @@ export default function DashboardPage() {
     setEditingStatId(stat.id)
     setEditingStatData({
       player_id: stat.player_id,
-      game_date: stat.game_date,
       throws_180: stat.throws_180 || 0,
       throws_171: stat.throws_171 || 0,
       throws_under_26: stat.throws_under_26 || 0,
@@ -535,7 +530,7 @@ export default function DashboardPage() {
     if (!editingStatId || !editingStatData) return
 
     try {
-      const { error } = await supabase.from("liga_statistics").update(editingStatData).eq("id", editingStatId)
+      const { error } = await supabase.from("leg_statistics").update(editingStatData).eq("id", editingStatId)
 
       if (error) throw error
 
@@ -560,7 +555,7 @@ export default function DashboardPage() {
     if (!confirm("Sind Sie sicher, dass Sie diese Statistik löschen möchten?")) return
 
     try {
-      const { error } = await supabase.from("liga_statistics").delete().eq("id", statId)
+      const { error } = await supabase.from("leg_statistics").delete().eq("id", statId)
 
       if (error) throw error
 
@@ -846,16 +841,15 @@ export default function DashboardPage() {
       }
 
       const { data, error } = await supabase
-        .from("liga_statistics")
+        .from("leg_statistics")
         .select(`
           *,
-          club_players (
+          club_players!leg_statistics_player_id_fkey (
             name,
             photo_url
           )
         `)
         .in("player_id", teamPlayerIds)
-        .order("game_date", { ascending: false })
         .order("created_at", { ascending: false })
 
       if (error) {
@@ -898,10 +892,9 @@ export default function DashboardPage() {
     }
 
     try {
-      const { error } = await supabase.from("liga_statistics").insert([
+      const { error } = await supabase.from("leg_statistics").insert([
         {
           player_id: statsPlayerId,
-          game_date: gameDate,
           throws_180: throws180,
           throws_171: throws171,
           throws_under_26: throwsUnder26,
@@ -1537,6 +1530,10 @@ export default function DashboardPage() {
                                           "/placeholder.svg" ||
                                           "/placeholder.svg" ||
                                           "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
                                           "/placeholder.svg"
                                         }
                                       />
@@ -1659,8 +1656,18 @@ export default function DashboardPage() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => {
-                                    setSelectedMatchForStats(match)
-                                    setIsStatsDialogOpen(true)
+                                    const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+                                    const isUserTeamHome = userTeamIds.includes(match.home_team_id)
+                                    const isUserTeamAway = userTeamIds.includes(match.away_team_id)
+                                    const myTeamId = isUserTeamHome
+                                      ? match.home_team_id
+                                      : isUserTeamAway
+                                        ? match.away_team_id
+                                        : null
+
+                                    if (myTeamId) {
+                                      router.push(`/statistics/${match.id}?teamId=${myTeamId}`)
+                                    }
                                   }}
                                   className="bg-green-600 hover:bg-green-700 text-white border-green-600 w-full h-8"
                                 >
@@ -1716,8 +1723,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Statistics Section */}
-        {selectedMatchForStats && (
+        {/* Statistics Section - REMOVED: Now handled by separate page */}
+        {/* {selectedMatchForStats && (
           <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4">
             <div className="w-full h-full max-w-[95vw] max-h-[90vh] sm:max-w-3xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl sm:h-auto overflow-hidden bg-white rounded-lg">
               <MatchStatistics
@@ -1740,7 +1747,7 @@ export default function DashboardPage() {
               />
             </div>
           </div>
-        )}
+        )} */}
 
         <Dialog
           open={isResultsDialogOpen && selectedMatchForResults !== null}

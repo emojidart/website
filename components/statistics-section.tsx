@@ -35,11 +35,9 @@ export function StatisticsSection({
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl lg:text-2xl font-bold">
                 <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
-                Gesamtstatistik aller Legs
+                Gesamtstatistik
               </CardTitle>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                Alle Leg-Statistiken
-              </p>
+              <p className="text-sm sm:text-base text-muted-foreground">Alle Statistiken</p>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
               {legStatsLoading ? (
@@ -91,7 +89,7 @@ export function StatisticsSection({
                       const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1
 
                       playerOverallStats[playerId].total_legs += legsToAdd
-                      playerOverallStats[playerId].total_wins += stat.leg_wins || 0
+                      playerOverallStats[playerId].total_wins += stat.player_legs_won || 0
                       playerOverallStats[playerId].total_180 += stat.throws_180 || 0
                       playerOverallStats[playerId].total_171 += stat.throws_171 || 0
                       playerOverallStats[playerId].total_15 += stat.throws_15 || 0
@@ -278,7 +276,7 @@ export function StatisticsSection({
                 <TrendingUp className="h-6 w-6 text-orange-600" />
                 Spielerstatistiken nach Spiel
               </CardTitle>
-              <p className="text-muted-foreground">Detaillierte Leg-Statistiken sortiert nach Spielen</p>
+              <p className="text-muted-foreground">Detaillierte Statistiken sortiert nach Spielen</p>
             </CardHeader>
             <CardContent>
               {legStatsLoading ? (
@@ -289,8 +287,8 @@ export function StatisticsSection({
               ) : legStatistics.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg font-medium">Keine Leg-Statistiken verfügbar</p>
-                  <p className="text-sm">Füge Leg-Statistiken hinzu, um sie hier zu sehen.</p>
+                  <p className="text-lg font-medium">Keine Statistiken verfügbar</p>
+                  <p className="text-sm">Füge Statistiken hinzu, um sie hier zu sehen.</p>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -361,7 +359,7 @@ export function StatisticsSection({
                             const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1
 
                             acc[playerId].total_legs += legsToAdd
-                            acc[playerId].total_wins += stat.leg_wins || 0
+                            acc[playerId].total_wins += stat.player_legs_won || 0
                             acc[playerId].total_180 += stat.throws_180 || 0
                             acc[playerId].total_171 += stat.throws_171 || 0
                             acc[playerId].total_15 += stat.throws_15 || 0
@@ -407,16 +405,16 @@ export function StatisticsSection({
                             <CardContent className="p-3 sm:p-4 lg:p-6">
                               <div className="space-y-3 sm:space-y-4">
                                 {Object.values(playerStats)
-                                  .sort((a: any, b: any) => b.wins - a.wins || b.total_180 - a.total_180)
+                                  .sort((a: any, b: any) => b.total_wins - a.total_wins || b.total_180 - a.total_180)
                                   .map((player: any, index) => (
                                     <Card
                                       key={`${matchKey}-${player.player_id}`}
-                                      className={`${index < 3 && player.wins > 0 ? "border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50" : ""}`}
+                                      className={`${index < 3 && player.total_wins > 0 ? "border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50" : ""}`}
                                     >
                                       <CardContent className="p-3 sm:p-4">
                                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2 sm:gap-0">
                                           <div className="flex items-center gap-2">
-                                            {index < 3 && player.wins > 0 && (
+                                            {index < 3 && player.total_wins > 0 && (
                                               <Crown className="h-3 w-3 sm:h-4 sm:w-4 text-amber-600" />
                                             )}
                                             <h4 className="font-semibold text-base sm:text-lg truncate">
@@ -425,8 +423,8 @@ export function StatisticsSection({
                                           </div>
                                           <div className="flex items-center gap-1 sm:gap-2">
                                             <Badge
-                                              variant={player.wins > 0 ? "default" : "secondary"}
-                                              className={`text-xs ${player.wins > 0 ? "bg-green-600 text-white" : "bg-gray-200 text-gray-600"}`}
+                                              variant={player.total_wins > 0 ? "default" : "secondary"}
+                                              className={`text-xs ${player.total_wins > 0 ? "bg-green-600 text-white" : "bg-gray-200 text-gray-600"}`}
                                             >
                                               {player.total_wins} Wins
                                             </Badge>

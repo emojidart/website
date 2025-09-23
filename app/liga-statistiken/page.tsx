@@ -5,11 +5,13 @@ import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Target, Calendar, Users } from "lucide-react"
+import { Trophy, Target, Calendar, Users, Camera, X } from "lucide-react"
 import { Header } from "@/components/header"
 import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
 import { PlayerStatisticsRow } from "@/components/player-statistics-row"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import Image from "next/image"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -36,6 +38,10 @@ export default function LigaPage() {
   const [legStatistics, setLegStatistics] = useState([])
   const [loading, setLoading] = useState(true)
   const [dartTypeFilter, setDartTypeFilter] = useState<"gesamt" | "edart" | "steeldart">("gesamt")
+  const [playersPerPage, setPlayersPerPage] = useState(10)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -269,7 +275,7 @@ export default function LigaPage() {
       const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1
 
       playerStats[playerId].total_legs += legsToAdd
-      playerStats[playerId].total_wins += stat.leg_wins || 0
+      playerStats[playerId].total_wins += stat.player_legs_won || 0
       playerStats[playerId].legs_played += 1
       playerStats[playerId].throws_180 += stat.throws_180 || 0
       playerStats[playerId].throws_171 += stat.throws_171 || 0
@@ -317,6 +323,28 @@ export default function LigaPage() {
   const standings = calculateStandings()
   const playerLegStats = calculatePlayerLegStats()
 
+  const totalPages = Math.ceil(playerLegStats.length / playersPerPage)
+  const startIndex = (currentPage - 1) * playersPerPage
+  const endIndex = startIndex + playersPerPage
+  const currentPlayers = playerLegStats.slice(startIndex, endIndex)
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPlayersPerPage(newSize)
+    setCurrentPage(1) // Reset to first page when changing page size
+  }
+
   const groupMatchesByTeam = (matchList) => {
     const grouped = {}
 
@@ -336,6 +364,16 @@ export default function LigaPage() {
 
   const groupedCompletedMatches = groupMatchesByTeam(completedMatches)
   const groupedUpcomingMatches = groupMatchesByTeam(upcomingMatches)
+
+  const handlePhotoClick = (photoUrl: string) => {
+    setSelectedPhotoUrl(photoUrl)
+    setIsPhotoModalOpen(true)
+  }
+
+  const closePhotoModal = () => {
+    setIsPhotoModalOpen(false)
+    setSelectedPhotoUrl(null)
+  }
 
   if (loading) {
     return (
@@ -457,6 +495,19 @@ export default function LigaPage() {
                         Spieler-Statistiken ({playerLegStats.length} Spieler) -{" "}
                         {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
                       </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-blue-100">Zeige:</span>
+                        <select
+                          value={playersPerPage}
+                          onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                          className="bg-white text-gray-900 rounded px-2 py-1 text-sm"
+                        >
+                          <option value={10}>10</option>
+                          <option value={25}>25</option>
+                          <option value={50}>50</option>
+                          <option value={playerLegStats.length}>Alle</option>
+                        </select>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -466,92 +517,124 @@ export default function LigaPage() {
                         <p className="text-lg">Keine Leg-Statistiken verfügbar</p>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full min-w-[1200px]">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Rang
-                              </th>
-                              <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Spieler
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Legs
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Wins
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Win%
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                180er
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                171er
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                High Tonne
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Tonne
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                95+
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Shanghai
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Bull
-                              </th>
-                              <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                Details
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {playerLegStats.slice(0, 10).map((player, index) => (
-                              <PlayerStatisticsRow
-                                key={player.name}
-                                player={player}
-                                index={index}
-                                allStats={legStatistics}
-                              />
-                            ))}
-                          </tbody>
-                        </table>
-                        {playerLegStats.length > 10 && (
-                          <div className="p-4 text-center border-t bg-gray-50">
-                            <p className="text-sm text-gray-600 mb-2">
-                              Zeige Top 10 von {playerLegStats.length} Spielern
-                            </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                // Show all players inline
-                                const tbody = document.querySelector("tbody")
-                                if (tbody) {
-                                  const hiddenRows = playerLegStats.slice(10)
-                                  hiddenRows.forEach((player, index) => {
-                                    const row = document.createElement("tr")
-                                    row.innerHTML = `<PlayerStatisticsRow player=${JSON.stringify(player)} index=${index + 10} allStats=${JSON.stringify(legStatistics)} />`
-                                    tbody.appendChild(row)
-                                  })
-                                }
-                              }}
-                            >
-                              Alle Spieler anzeigen
-                            </Button>
+                      <>
+                        <div className="overflow-x-auto custom-scrollbar">
+                          <table className="w-full min-w-[1200px]">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  Rang
+                                </th>
+                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  Spieler
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  Legs
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  Wins
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  Win%
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  180er
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  171er
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  High Tonne
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  Tonne
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  95+
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  Shanghai
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  Bull
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  Details
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {currentPlayers.map((player, index) => (
+                                <PlayerStatisticsRow
+                                  key={player.name}
+                                  player={player}
+                                  index={startIndex + index}
+                                  allStats={legStatistics}
+                                />
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {totalPages > 1 && (
+                          <div className="p-4 border-t bg-gray-50">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                              <div className="text-sm text-gray-600">
+                                Zeige {startIndex + 1} bis {Math.min(endIndex, playerLegStats.length)} von{" "}
+                                {playerLegStats.length} Spielern
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handlePrevPage}
+                                  disabled={currentPage === 1}
+                                >
+                                  Zurück
+                                </Button>
+                                <div className="flex items-center gap-1">
+                                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    let pageNum
+                                    if (totalPages <= 5) {
+                                      pageNum = i + 1
+                                    } else if (currentPage <= 3) {
+                                      pageNum = i + 1
+                                    } else if (currentPage >= totalPages - 2) {
+                                      pageNum = totalPages - 4 + i
+                                    } else {
+                                      pageNum = currentPage - 2 + i
+                                    }
+
+                                    return (
+                                      <Button
+                                        key={pageNum}
+                                        variant={currentPage === pageNum ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setCurrentPage(pageNum)}
+                                        className="w-8 h-8 p-0"
+                                      >
+                                        {pageNum}
+                                      </Button>
+                                    )
+                                  })}
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleNextPage}
+                                  disabled={currentPage === totalPages}
+                                >
+                                  Weiter
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         )}
-                      </div>
+                      </>
                     )}
                   </CardContent>
                 </Card>
               </TabsContent>
+
               <TabsContent value="standings">
                 <Card className="overflow-hidden shadow-lg">
                   <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 sm:p-6">
@@ -757,7 +840,7 @@ export default function LigaPage() {
                                       <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
                                     </div>
                                   </div>
-                                  <div className="text-center sm:text-right">
+                                  <div className="text-center sm:text-right flex flex-col items-center sm:items-end gap-2">
                                     <div className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
                                       {new Date(match.match_date).toLocaleDateString("de-DE", {
                                         weekday: "short",
@@ -766,20 +849,33 @@ export default function LigaPage() {
                                         year: "numeric",
                                       })}
                                     </div>
-                                    <Badge
-                                      className={`
-                                        ${
-                                          resultText === "Heimsieg" || resultText === "Auswärtssieg"
-                                            ? "bg-green-100 text-green-700"
-                                            : resultText === "Unentschieden"
-                                              ? "bg-yellow-100 text-yellow-700"
-                                              : "bg-red-100 text-red-700"
-                                        }
-                                        font-medium text-xs sm:text-sm
-                                      `}
-                                    >
-                                      {resultText}
-                                    </Badge>
+                                    <div className="flex items-center gap-2">
+                                      <Badge
+                                        className={`
+                                          ${
+                                            resultText === "Heimsieg" || resultText === "Auswärtssieg"
+                                              ? "bg-green-100 text-green-700"
+                                              : resultText === "Unentschieden"
+                                                ? "bg-yellow-100 text-yellow-700"
+                                                : "bg-red-100 text-red-700"
+                                          }
+                                          font-medium text-xs sm:text-sm
+                                        `}
+                                      >
+                                        {resultText}
+                                      </Badge>
+                                      {match.team_photo_url && (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-8 w-8 p-0 bg-blue-50 hover:bg-blue-100 border-blue-200"
+                                          onClick={() => handlePhotoClick(match.team_photo_url)}
+                                          title="Teamfoto anzeigen"
+                                        >
+                                          <Camera className="h-4 w-4 text-blue-600" />
+                                        </Button>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -1002,6 +1098,30 @@ export default function LigaPage() {
             </Tabs>
           </motion.div>
         </motion.div>
+
+        <Dialog open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen}>
+          <DialogContent className="w-[95vw] max-w-4xl mx-auto max-h-[90vh] p-0 overflow-hidden">
+            <DialogHeader className="p-4 pb-2">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-lg font-semibold">Teamfoto</DialogTitle>
+                <Button variant="ghost" size="sm" onClick={closePhotoModal} className="h-8 w-8 p-0 hover:bg-gray-100">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </DialogHeader>
+            <div className="relative w-full h-[60vh] sm:h-[70vh]">
+              {selectedPhotoUrl && (
+                <Image
+                  src={selectedPhotoUrl || "/placeholder.svg"}
+                  alt="Teamfoto"
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 768px) 95vw, (max-width: 1200px) 80vw, 70vw"
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   )
