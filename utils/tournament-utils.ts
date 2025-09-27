@@ -1,4 +1,4 @@
-import type { Board } from "@/types/tournament"
+import type { Board, KratzerPlayer, TournamentState } from "@/types/tournament"
 
 export function formatTime(ms: number): string {
   const minutes = Math.floor(ms / 60000)
@@ -103,4 +103,91 @@ export function speakText(text: string, speechEnabled: boolean) {
   }
 
   window.speechSynthesis.speak(utterance)
+}
+
+export function togglePlayerEliminationStatus(
+  players: KratzerPlayer[],
+  playerId: string,
+  currentRound: number,
+): KratzerPlayer[] {
+  return players.map((player) => {
+    if (player.id === playerId) {
+      const newEliminationStatus = !player.isEliminated
+      return {
+        ...player,
+        isEliminated: newEliminationStatus,
+        eliminationRound: newEliminationStatus ? currentRound : null,
+        eliminationTime: newEliminationStatus ? new Date().toISOString() : null,
+        // Give player 1 life if reactivating and they had 0 lives
+        lives: !newEliminationStatus && player.lives === 0 ? 1 : player.lives,
+      }
+    }
+    return player
+  })
+}
+
+export function adjustPlayerLives(
+  players: KratzerPlayer[],
+  playerId: string,
+  livesChange: number,
+  currentRound: number,
+): KratzerPlayer[] {
+  return players.map((player) => {
+    if (player.id === playerId) {
+      const newLives = Math.max(0, player.lives + livesChange)
+      const wasEliminated = player.isEliminated
+      const isNowEliminated = newLives === 0
+
+      return {
+        ...player,
+        lives: newLives,
+        isEliminated: isNowEliminated,
+        eliminationRound:
+          !wasEliminated && isNowEliminated
+            ? currentRound
+            : wasEliminated && !isNowEliminated
+              ? null
+              : player.eliminationRound,
+        eliminationTime:
+          !wasEliminated && isNowEliminated
+            ? new Date().toISOString()
+            : wasEliminated && !isNowEliminated
+              ? null
+              : player.eliminationTime,
+      }
+    }
+    return player
+  })
+}
+
+export function validateTournamentState(tournamentState: TournamentState): {
+  isValid: boolean
+  errors: string[]
+} {
+  const errors: string[] = []
+
+  // Check if there are active players
+  const activePlayers = tournamentState.players.filter((p) => !p.isEliminated)
+  if (activePlayers.length === 0 && tournamentState.players.length > 0) {
+    errors.push("Alle Spieler sind ausgeschieden")
+  }
+
+  // Check for negative lives
+  const playersWithNegativeLives = tournamentState.players.filter((p) => p.lives < 0)
+  if (playersWithNegativeLives.length > 0) {
+    errors.push(`${playersWithNegativeLives.length} Spieler haben negative Leben`)
+  }
+
+  // Check for inconsistent elimination status
+  const inconsistentPlayers = tournamentState.players.filter(
+    (p) => (p.lives === 0 && !p.isEliminated) || (p.lives > 0 && p.isEliminated && !p.eliminationRound),
+  )
+  if (inconsistentPlayers.length > 0) {
+    errors.push(`${inconsistentPlayers.length} Spieler haben inkonsistenten Status`)
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  }
 }

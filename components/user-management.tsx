@@ -23,6 +23,8 @@ import {
   Settings,
   AlertCircle,
   RefreshCw,
+  MailCheck,
+  MailX,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -54,6 +56,7 @@ interface PlayerData {
   has_account?: boolean
   is_admin?: boolean
   user_profile_id?: string
+  email_confirmed?: boolean
 }
 
 interface TeamGroup {
@@ -140,13 +143,20 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
       const { data: userProfiles, error: userProfilesError } = await supabase
         .from("user_profiles")
-        .select("id, player_id, is_admin")
+        .select("id, player_id, is_admin, email_confirmed")
 
       if (userProfilesError) throw userProfilesError
 
       const playersWithAccounts = new Set(userProfiles?.map((p) => p.player_id) || [])
       const adminStatusMap = new Map(
-        userProfiles?.map((p) => [p.player_id, { is_admin: p.is_admin, profile_id: p.id }]) || [],
+        userProfiles?.map((p) => [
+          p.player_id,
+          {
+            is_admin: p.is_admin,
+            profile_id: p.id,
+            email_confirmed: p.email_confirmed,
+          },
+        ]) || [],
       )
 
       const allPlayers: PlayerData[] = []
@@ -172,6 +182,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
               has_account: playersWithAccounts.has(player.id),
               is_admin: adminInfo?.is_admin || false,
               user_profile_id: adminInfo?.profile_id,
+              email_confirmed: adminInfo?.email_confirmed || false,
             }
             unassigned.push(playerData)
           } else {
@@ -197,6 +208,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                 has_account: playersWithAccounts.has(player.id),
                 is_admin: adminInfo?.is_admin || false,
                 user_profile_id: adminInfo?.profile_id,
+                email_confirmed: adminInfo?.email_confirmed || false,
               }
 
               allPlayers.push(playerData)
@@ -314,6 +326,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
         const { error: profileError } = await supabase.from("user_profiles").insert({
           user_id: authData.user.id,
           player_id: accountForm.playerId,
+          email_confirmed: false, // New accounts start with unconfirmed email
         })
 
         console.log("[v0] Profile creation result:", { profileError })
@@ -572,6 +585,37 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
     }
   }
 
+  const getEmailConfirmationBadge = (player: PlayerData) => {
+    if (!player.has_account) return null
+
+    if (player.email_confirmed) {
+      return (
+        <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+          <MailCheck className="h-3 w-3 mr-1" />
+          E-Mail bestätigt
+        </Badge>
+      )
+    } else {
+      return (
+        <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">
+          <MailX className="h-3 w-3 mr-1" />
+          E-Mail unbestätigt
+        </Badge>
+      )
+    }
+  }
+
+  const getAdminBadge = (player: PlayerData) => {
+    if (!player.has_account || !player.is_admin) return null
+
+    return (
+      <Badge className="bg-red-100 text-red-800 border-red-200 text-xs font-semibold">
+        <Settings className="h-3 w-3 mr-1" />
+        Admin
+      </Badge>
+    )
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("de-DE", {
       year: "numeric",
@@ -760,7 +804,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
       {error && <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">{error}</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center space-x-2">
@@ -822,6 +866,19 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <MailCheck className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {allPlayers.filter((p) => p.has_account && p.email_confirmed).length}
+                </p>
+                <p className="text-sm text-gray-600">E-Mail bestätigt</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="space-y-4">
@@ -878,12 +935,8 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                                   Kein Account
                                 </Badge>
                               )}
-                              {player.is_admin && (
-                                <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">
-                                  <Settings className="h-3 w-3 mr-1" />
-                                  Admin
-                                </Badge>
-                              )}
+                              {getAdminBadge(player)}
+                              {getEmailConfirmationBadge(player)}
                               <div className="flex items-center space-x-1 text-sm text-gray-500">
                                 <Calendar className="h-3 w-3" />
                                 <span>Seit {formatDate(player.created_at)}</span>
@@ -992,12 +1045,8 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                                 Kein Account
                               </Badge>
                             )}
-                            {player.is_admin && (
-                              <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">
-                                <Settings className="h-3 w-3 mr-1" />
-                                Admin
-                              </Badge>
-                            )}
+                            {getAdminBadge(player)}
+                            {getEmailConfirmationBadge(player)}
                           </div>
                         </div>
                       </div>

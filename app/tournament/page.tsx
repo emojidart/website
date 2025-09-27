@@ -171,6 +171,8 @@ export default function TournamentPage() {
     { name: "Sponsor 8", logo: "/images/sponsoren/sponsor8.png" },
     { name: "Sponsor 9", logo: "/images/sponsoren/sponsor9.png" },
     { name: "Sponsor 10", logo: "/images/sponsoren/sponsor10.png" },
+	{ name: "Sponsor 10", logo: "/images/sponsoren/sponsor11.png" },
+	{ name: "Sponsor 10", logo: "/images/sponsoren/sponsor12.png" },
   ]
 
   const actualTournamentDays = lioncupDates.filter((date) => !date.spielfrei).length

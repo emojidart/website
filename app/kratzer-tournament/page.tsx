@@ -67,6 +67,8 @@ import {
   Euro,
   Info,
   Trash2,
+  MinusCircle,
+  RotateCcw,
 } from "lucide-react"
 
 // Default settings for tournament
@@ -135,6 +137,14 @@ export default function KratzerTournamentPage() {
   const leagueStatusLivesMap = useRef<Record<string, number>>({})
   const pauseMinutesRef = useRef<HTMLInputElement>(null)
 
+  // Helper function for toasts to avoid repetition
+  const showToast = useCallback(
+    (variant: "success" | "error" | "info" | "warning", description: string) => {
+      toast({ variant, description })
+    },
+    [toast],
+  )
+
   // --- Auth & Initial Data Loading ---
   useEffect(() => {
     const checkUser = async () => {
@@ -161,39 +171,19 @@ export default function KratzerTournamentPage() {
     if (currentUser) {
       checkForActiveTournament()
       loadRegisteredPlayersState()
+      // </CHANGE> Removed loadUserProfile() call since profiles table doesn't exist
     }
   }, [currentUser])
 
-  const loadUserProfile = useCallback(async () => {
-    if (!currentUser?.id) return
-    try {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", currentUser.id).single()
+  // </CHANGE> Removed loadUserProfile function completely
 
-      if (error && error.code !== "PGRST116") throw error // PGRST116 means no rows found (profile not created yet)
-      setUserProfile(data || {})
-    } catch (error: any) {
-      console.error("Profile loading error:", error.message)
-    }
-  }, [currentUser])
-
-  const updateUserInfo = useCallback(() => {
-    if (userProfile && currentUser) {
-      const displayName =
-        userProfile.vorname && userProfile.nachname
-          ? `${userProfile.vorname} ${userProfile.nachname}`
-          : currentUser.email
-      // This part would typically be handled by a Header component that takes props
-      // For now, assume Header manages its own display based on auth context.
-    }
-  }, [userProfile, currentUser])
-
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     setLoading(true)
     const { error } = await supabase.auth.signOut()
     if (error) {
-      toast({ variant: "destructive", description: `Abmeldung fehlgeschlagen: ${error.message}` })
+      showToast("error", `Abmeldung fehlgeschlagen: ${error.message}`)
     } else {
-      toast({ variant: "info", description: "Erfolgreich abgemeldet." })
+      showToast("info", "Erfolgreich abgemeldet.")
       setCurrentUser(null)
       setUserProfile(null)
       setTournamentState((prev) => ({
@@ -210,7 +200,7 @@ export default function KratzerTournamentPage() {
       setRecoveryTournamentData(null)
     }
     setLoading(false)
-  }
+  }, [showToast])
 
   // --- Tournament Recovery / Check for Active Tournament ---
   const checkForActiveTournament = useCallback(async () => {
@@ -220,24 +210,41 @@ export default function KratzerTournamentPage() {
       if (success && data) {
         setActiveTournamentExists(true)
         setRecoveryTournamentData(data)
-        toast({ variant: "info", description: "Laufendes Turnier gefunden! Möchten Sie es wiederherstellen?" })
+        showToast("info", "Laufendes Turnier gefunden! Möchten Sie es wiederherstellen?")
       } else {
         setActiveTournamentExists(false)
         setRecoveryTournamentData(null)
       }
     } catch (error: any) {
       console.error("Error checking for active tournament:", error.message)
-      toast({ variant: "destructive", description: "Fehler beim Prüfen auf aktives Turnier." })
+      showToast("error", "Fehler beim Prüfen auf aktives Turnier.")
     } finally {
       setLoading(false)
     }
-  }, [currentUser, toast])
+  }, [currentUser, showToast])
+
+  const resetTournamentState = useCallback(() => {
+    setTournamentState({
+      currentRound: 0,
+      tournamentId: null,
+      tournamentFinished: false,
+      winner: null,
+      boards: [],
+      players: [],
+      settings: defaultTournamentSettings,
+    })
+    setIsTournamentRunning(false)
+    // Clear all timers
+    Object.values(timers.current).forEach(clearInterval)
+    timers.current = {}
+    clearRegisteredPlayers() // Also clear registered players for a fresh start
+  }, [])
 
   const restoreTournament = useCallback(async () => {
     if (!recoveryTournamentData) return
     setLoading(true)
     try {
-      toast({ variant: "info", description: "Turnier wird wiederhergestellt..." })
+      showToast("info", "Turnier wird wiederhergestellt...")
       setTournamentState((prev) => ({
         ...prev,
         tournamentId: recoveryTournamentData.id,
@@ -280,43 +287,26 @@ export default function KratzerTournamentPage() {
 
       setIsTournamentRunning(true)
       setActiveTournamentExists(false)
-      toast({ variant: "success", description: "Turnier erfolgreich wiederhergestellt!" })
+      showToast("success", "Turnier erfolgreich wiederhergestellt!")
     } catch (error: any) {
       console.error("Error restoring tournament:", error.message)
-      toast({ variant: "destructive", description: "Fehler beim Wiederherstellen des Turniers." })
+      showToast("error", "Fehler beim Wiederherstellen des Turniers.")
       resetTournamentState()
     } finally {
       setLoading(false)
     }
-  }, [recoveryTournamentData, toast])
+  }, [recoveryTournamentData, showToast, resetTournamentState])
 
   const startNewTournamentFromRecovery = useCallback(async () => {
     if (recoveryTournamentData) {
       await updateKratzerTournamentStatus(recoveryTournamentData.id, "cancelled")
-      toast({ variant: "info", description: "Altes Turnier wurde abgebrochen." })
+      showToast("info", "Altes Turnier wurde abgebrochen.")
     }
     resetTournamentState()
     setActiveTournamentExists(false)
     setRecoveryTournamentData(null)
-    toast({ variant: "info", description: "Bereit für ein neues Turnier!" })
-  }, [recoveryTournamentData, toast])
-
-  const resetTournamentState = useCallback(() => {
-    setTournamentState({
-      currentRound: 0,
-      tournamentId: null,
-      tournamentFinished: false,
-      winner: null,
-      boards: [],
-      players: [],
-      settings: defaultTournamentSettings,
-    })
-    setIsTournamentRunning(false)
-    // Clear all timers
-    Object.values(timers.current).forEach(clearInterval)
-    timers.current = {}
-    clearRegisteredPlayers() // Also clear registered players for a fresh start
-  }, [])
+    showToast("info", "Bereit für ein neues Turnier!")
+  }, [recoveryTournamentData, showToast, resetTournamentState])
 
   // --- Core Tournament Logic ---
 
@@ -367,59 +357,15 @@ export default function KratzerTournamentPage() {
           resultsData,
         )
       }
-      toast({ variant: "success", description: `${winnerPlayer.name} ist der Turniersieger!` })
+      showToast("success", `${winnerPlayer.name} ist der Turniersieger!`)
     },
-    [tournamentState, toast],
+    [tournamentState, showToast],
   )
 
-  // 2. handleSuddenDeathTimeout (depends on finishTournament)
-  const handleSuddenDeathTimeout = useCallback(
-    async (boardId: number, boardPlayers: KratzerPlayer[]) => {
-      toast({ variant: "warning", description: `Sudden Death: Zeit abgelaufen für Board ${boardId}!` })
-
-      const updatedPlayers = tournamentState.players.map((p) => {
-        const playerOnBoard = boardPlayers.find((bp) => bp.id === p.id)
-        if (playerOnBoard) {
-          const newLives = p.lives - 1
-          if (newLives <= 0) {
-            return {
-              ...p,
-              lives: 0,
-              isEliminated: true,
-              eliminationRound: tournamentState.currentRound,
-              eliminationTime: new Date().toISOString(),
-            }
-          }
-          return { ...p, lives: newLives }
-        }
-        return p
-      })
-
-      setTournamentState((prev) => ({
-        ...prev,
-        players: updatedPlayers,
-        boards: prev.boards.filter((b) => b.id !== boardId),
-      }))
-
-      if (tournamentState.tournamentId) {
-        await updateKratzerTournamentPlayersData(tournamentState.tournamentId, updatedPlayers)
-      }
-
-      const remainingPlayers = updatedPlayers.filter((p) => !p.isEliminated)
-      if (remainingPlayers.length === 1 && !tournamentState.tournamentFinished) {
-        finishTournament(remainingPlayers[0])
-      } else if (tournamentState.boards.filter((b) => b.id !== boardId).every((b) => b.players.length === 0)) {
-        toast({ variant: "info", description: "Alle Spiele beendet. Starte nächste Runde..." })
-        startNewRound() // This will be defined below
-      }
-    },
-    [tournamentState, toast, finishTournament], // startNewRound will be added to dependencies later
-  )
-
-  // 3. startNewRound (depends on finishTournament)
+  // 2. startNewRound (depends on finishTournament)
   const startNewRound = useCallback(async () => {
     if (tournamentState.tournamentFinished) {
-      toast({ variant: "warning", description: "Das Turnier ist bereits beendet." })
+      showToast("warning", "Das Turnier ist bereits beendet.")
       return
     }
 
@@ -429,7 +375,7 @@ export default function KratzerTournamentPage() {
       if (activePlayers.length === 1) {
         finishTournament(activePlayers[0])
       } else {
-        toast({ variant: "info", description: "Alle Spieler sind ausgeschieden. Kein Gewinner." })
+        showToast("info", "Alle Spieler sind ausgeschieden. Kein Gewinner.")
         // Optionally, reset tournament or mark as finished with no winner
         // updateKratzerTournamentStatus(tournamentState.tournamentId!, 'finished', undefined, undefined, tournamentState.currentRound);
       }
@@ -441,49 +387,26 @@ export default function KratzerTournamentPage() {
     const maxCapacity = currentBoardCount * currentMaxGroupSize
 
     if (maxCapacity < activePlayers.length) {
-      toast({
-        variant: "destructive",
-        description: `Nicht genügend Plätze für Runde ${tournamentState.currentRound + 1}! Benötigt: ${activePlayers.length}, Verfügbar: ${maxCapacity}. Bitte passen Sie die Einstellungen an.`,
-      })
+      showToast(
+        "error",
+        `Nicht genügend Plätze für Runde ${tournamentState.currentRound + 1}! Benötigt: ${activePlayers.length}, Verfügbar: ${maxCapacity}. Bitte passen Sie die Einstellungen an.`,
+      )
       return
     }
 
     setIsNewRoundModalOpen(true) // Open modal for new round confirmation
-  }, [tournamentState.tournamentFinished, tournamentState.players, tournamentState.settings, toast, finishTournament])
+  }, [
+    tournamentState.tournamentFinished,
+    tournamentState.players,
+    tournamentState.settings,
+    showToast,
+    finishTournament,
+  ])
 
-  // Now that startNewRound is defined, update handleSuddenDeathTimeout's dependencies
-  // This is a common pattern for interdependent hooks, but can be tricky.
-  // For simplicity and to avoid re-ordering issues, I'll ensure all dependencies are met.
-  // The `handleSuddenDeathTimeout` already has `startNewRound` in its dependency array,
-  // but since `startNewRound` is defined *after* it, it causes the error.
-  // The current structure of `useCallback` means that `startNewRound` in `handleSuddenDeathTimeout`'s
-  // dependency array will refer to the *current* value of `startNewRound` at the time
-  // `handleSuddenDeathTimeout` is defined.
-  // To fix this, `startNewRound` must be defined before `handleSuddenDeathTimeout` if `handleSuddenDeathTimeout`
-  // uses `startNewRound` in its body.
-  // Let's re-evaluate the order again.
-
-  // Corrected order:
-  // 1. finishTournament
-  // 2. startNewRound (because handleSuddenDeathTimeout and finishGame depend on it)
   // 3. handleSuddenDeathTimeout (depends on finishTournament, startNewRound)
-  // 4. finishGame (depends on finishTournament, startNewRound)
-  // 5. editPlayerLives (depends on finishTournament)
-  // 6. cancelGame (depends on startNewRound)
-  // 7. startBoardTimer (depends on handleSuddenDeathTimeout)
-  // 8. startTournament (depends on startNewRound)
-
-  // Let's re-write the `useCallback` definitions in this order.
-
-  // 1. finishTournament (already defined above, no change needed here)
-
-  // 2. startNewRound (already defined above, no change needed here)
-
-  // 3. handleSuddenDeathTimeout (now depends on finishTournament and startNewRound, both defined)
-  // Re-defining to ensure correct dependency order in the file.
-  const handleSuddenDeathTimeoutCorrected = useCallback(
+  const handleSuddenDeathTimeout = useCallback(
     async (boardId: number, boardPlayers: KratzerPlayer[]) => {
-      toast({ variant: "warning", description: `Sudden Death: Zeit abgelaufen für Board ${boardId}!` })
+      showToast("warning", `Sudden Death: Zeit abgelaufen für Board ${boardId}!`)
 
       const updatedPlayers = tournamentState.players.map((p) => {
         const playerOnBoard = boardPlayers.find((bp) => bp.id === p.id)
@@ -517,11 +440,11 @@ export default function KratzerTournamentPage() {
       if (remainingPlayers.length === 1 && !tournamentState.tournamentFinished) {
         finishTournament(remainingPlayers[0])
       } else if (tournamentState.boards.filter((b) => b.id !== boardId).every((b) => b.players.length === 0)) {
-        toast({ variant: "info", description: "Alle Spiele beendet. Starte nächste Runde..." })
+        showToast("info", "Alle Spiele beendet. Starte nächste Runde...")
         startNewRound()
       }
     },
-    [tournamentState, toast, finishTournament, startNewRound], // Now startNewRound is defined
+    [tournamentState, showToast, finishTournament, startNewRound],
   )
 
   // 4. finishGame (depends on finishTournament, startNewRound)
@@ -578,13 +501,13 @@ export default function KratzerTournamentPage() {
         .every((b) => b.players.length === 0)
 
       if (allBoardsFinished) {
-        toast({ variant: "info", description: "Alle Spiele der Runde beendet. Starte nächste Runde..." })
+        showToast("info", "Alle Spiele der Runde beendet. Starte nächste Runde...")
         startNewRound()
       } else {
-        toast({ variant: "success", description: `Spiel auf Board ${boardId} beendet.` })
+        showToast("success", `Spiel auf Board ${boardId} beendet.`)
       }
     },
-    [tournamentState, toast, startNewRound, finishTournament],
+    [tournamentState, showToast, startNewRound, finishTournament],
   )
 
   // 5. editPlayerLives (depends on finishTournament)
@@ -626,10 +549,55 @@ export default function KratzerTournamentPage() {
       if (remainingPlayers.length === 1 && !tournamentState.tournamentFinished) {
         finishTournament(remainingPlayers[0])
       }
-      toast({ variant: "success", description: "Spielerleben aktualisiert." })
+      showToast("success", "Spielerleben aktualisiert.")
       setLoading(false)
     },
-    [tournamentState, toast, finishTournament],
+    [tournamentState, showToast, finishTournament],
+  )
+
+  const togglePlayerElimination = useCallback(
+    async (playerId: string) => {
+      setLoading(true)
+      const updatedPlayers = tournamentState.players.map((p) => {
+        if (p.id === playerId) {
+          const newEliminationStatus = !p.isEliminated
+          return {
+            ...p,
+            isEliminated: newEliminationStatus,
+            eliminationRound: newEliminationStatus ? tournamentState.currentRound : null,
+            eliminationTime: newEliminationStatus ? new Date().toISOString() : null,
+            lives: !newEliminationStatus && p.lives === 0 ? 1 : p.lives,
+          }
+        }
+        return p
+      })
+
+      setTournamentState((prev) => ({ ...prev, players: updatedPlayers }))
+
+      try {
+        const playerToUpdate = updatedPlayers.find((p) => p.id === playerId)
+        if (playerToUpdate) {
+          const { error } = await supabase
+            .from("kratzer_tournament_players")
+            .update({
+              lives: playerToUpdate.lives,
+              is_eliminated: playerToUpdate.is_eliminated,
+              elimination_round: playerToUpdate.elimination_round,
+              elimination_time: playerToUpdate.elimination_time,
+            })
+            .eq("player_id", playerId)
+
+          if (error) throw error
+          showToast("success", "Spielerstatus erfolgreich geändert!")
+        }
+      } catch (err: any) {
+        showToast("error", `Fehler beim Ändern des Spielerstatus: ${err.message}`)
+        console.error("Error toggling player elimination:", err)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [tournamentState.players, tournamentState.currentRound, showToast],
   )
 
   // 6. cancelGame (depends on startNewRound)
@@ -647,19 +615,19 @@ export default function KratzerTournamentPage() {
           }))
 
           if (tournamentState.boards.filter((b) => b.id !== boardId).every((b) => b.players.length === 0)) {
-            toast({ variant: "info", description: "Alle Spiele beendet. Starte nächste Runde..." })
+            showToast("info", "Alle Spiele beendet. Starte nächste Runde...")
             startNewRound()
           } else {
-            toast({ variant: "info", description: `Spiel auf Board ${boardId} abgebrochen.` })
+            showToast("info", `Spiel auf Board ${boardId} abgebrochen.`)
           }
         },
       })
       setIsConfirmationModalOpen(true)
     },
-    [tournamentState.boards, toast, startNewRound],
+    [tournamentState.boards, showToast, startNewRound],
   )
 
-  // 7. startBoardTimer (depends on handleSuddenDeathTimeoutCorrected)
+  // 7. startBoardTimer (depends on handleSuddenDeathTimeout)
   const startBoardTimer = useCallback(
     (boardId: number, initialStartTime: number | null = null) => {
       const board = tournamentState.boards.find((b) => b.id === boardId)
@@ -696,30 +664,27 @@ export default function KratzerTournamentPage() {
             if (elapsedTime >= timeLimit) {
               clearInterval(timers.current[boardId])
               delete timers.current[boardId]
-              handleSuddenDeathTimeoutCorrected(boardId, board.players)
+              handleSuddenDeathTimeout(boardId, board.players)
             }
           }
         }
       }, 1000)
     },
-    [tournamentState.boards, tournamentState.settings, handleSuddenDeathTimeoutCorrected],
+    [tournamentState.boards, tournamentState.settings, handleSuddenDeathTimeout],
   )
 
   // 8. startTournament (depends on startNewRound)
   const startTournament = useCallback(async () => {
     if (isTournamentRunning) {
-      toast({ variant: "warning", description: "Turnier läuft bereits." })
+      showToast("warning", "Turnier läuft bereits.")
       return
     }
     if (tournamentState.tournamentFinished) {
-      toast({
-        variant: "warning",
-        description: "Das Turnier ist bereits beendet. Bitte starten Sie ein neues Turnier.",
-      })
+      showToast("warning", "Das Turnier ist bereits beendet. Bitte starten Sie ein neues Turnier.")
       return
     }
     if (registeredPlayers.length === 0) {
-      toast({ variant: "warning", description: "Keine Spieler registriert. Bitte registrieren Sie Spieler zuerst." })
+      showToast("warning", "Keine Spieler registriert. Bitte registrieren Sie Spieler zuerst.")
       return
     }
 
@@ -735,11 +700,10 @@ export default function KratzerTournamentPage() {
 
     const { boardCount, maxGroupSize } = tournamentState.settings
     if (boardCount * maxGroupSize < initialPlayers.length) {
-      toast({
-        variant: "destructive",
-        description:
-          "Nicht genügend Plätze für alle Spieler. Bitte erhöhen Sie die Anzahl der Automaten oder die maximale Gruppengröße.",
-      })
+      showToast(
+        "error",
+        "Nicht genügend Plätze für alle Spieler. Bitte erhöhen Sie die Anzahl der Automaten oder die maximale Gruppengröße.",
+      )
       return
     }
 
@@ -758,11 +722,11 @@ export default function KratzerTournamentPage() {
         players: initialPlayers,
       }))
       setIsTournamentRunning(true)
-      toast({ variant: "success", description: "Turnier erfolgreich gestartet!" })
+      showToast("success", "Turnier erfolgreich gestartet!")
       startNewRound() // Start the first round immediately
     } catch (error: any) {
       console.error("Error starting tournament:", error.message)
-      toast({ variant: "destructive", description: `Fehler beim Starten des Turniers: ${error.message}` })
+      showToast("error", `Fehler beim Starten des Turniers: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -772,7 +736,7 @@ export default function KratzerTournamentPage() {
     isTournamentRunning,
     tournamentState.tournamentFinished,
     tournamentState.settings,
-    toast,
+    showToast,
     startNewRound,
   ])
 
@@ -818,7 +782,7 @@ export default function KratzerTournamentPage() {
         currentRound: nextRoundNumber,
         boards: boardsToSave,
       }))
-      toast({ variant: "success", description: `Runde ${nextRoundNumber} gestartet!` })
+      showToast("success", `Runde ${nextRoundNumber} gestartet!`)
 
       if (speechEnabled) {
         speakText(
@@ -828,7 +792,7 @@ export default function KratzerTournamentPage() {
       }
     } catch (error: any) {
       console.error("Error executing new round:", error.message)
-      toast({ variant: "destructive", description: `Fehler beim Starten der Runde: ${error.message}` })
+      showToast("error", `Fehler beim Starten der Runde: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -837,20 +801,20 @@ export default function KratzerTournamentPage() {
     tournamentState.settings,
     tournamentState.players,
     tournamentState.tournamentId,
-    toast,
+    showToast,
   ])
 
   const completeTournament = useCallback(async () => {
     // This function is triggered after a tournament has finished and winner modal is closed.
     // It should perform cleanup and potentially navigate.
     if (!tournamentState.tournamentId) return
-    toast({ variant: "info", description: "Turnier wird abgeschlossen und Daten finalisiert..." })
+    showToast("info", "Turnier wird abgeschlossen und Daten finalisiert...")
     await updateKratzerTournamentStatus(tournamentState.tournamentId, "finished") // Ensure status is 'finished'
     await clearRegisteredPlayers() // Clear registered players
-    toast({ variant: "success", description: "Turnier erfolgreich abgeschlossen. Weiterleitung zur Spielerdatenbank." })
+    showToast("success", "Turnier erfolgreich abgeschlossen. Weiterleitung zur Spielerdatenbank.")
     // Redirect to the main player management page
     window.location.href = "/spielerdatenbank" // Or wherever your main player list is
-  }, [tournamentState.tournamentId, toast, resetTournamentState])
+  }, [tournamentState.tournamentId, showToast, resetTournamentState])
 
   const confirmCancelTournament = useCallback(() => {
     setConfirmationModalConfig({
@@ -859,15 +823,15 @@ export default function KratzerTournamentPage() {
       onConfirm: async () => {
         if (tournamentState.tournamentId) {
           await updateKratzerTournamentStatus(tournamentState.tournamentId, "cancelled")
-          toast({ variant: "info", description: "Turnier abgebrochen." })
+          showToast("info", "Turnier abgebrochen.")
         }
         resetTournamentState()
-        toast({ variant: "info", description: "Turnier abgebrochen. Sie werden zur Spielerdatenbank weitergeleitet." })
-        window.location.href = "/spielerdatenbank" // Redirect to the main player list
+        showToast("info", "Turnier abgebrochen. Sie werden zur Kratzer - Startseite weitergeleitet.")
+        window.location.href = "/kratzer-tournament" // Redirect to the main player list
       },
     })
     setIsConfirmationModalOpen(true)
-  }, [tournamentState.tournamentId, toast, resetTournamentState])
+  }, [tournamentState.tournamentId, showToast, resetTournamentState])
 
   // --- Player Registration Management ---
   const loadRegisteredPlayersState = useCallback(async () => {
@@ -877,18 +841,18 @@ export default function KratzerTournamentPage() {
       if (success && data) {
         setRegisteredPlayers(data)
       } else {
-        toast({ variant: "destructive", description: message })
+        showToast("error", message)
       }
     } catch (error: any) {
-      toast({ variant: "destructive", description: `Fehler beim Laden der registrierten Spieler: ${error.message}` })
+      showToast("error", `Fehler beim Laden der registrierten Spieler: ${error.message}`)
     } finally {
       setLoading(false)
     }
-  }, [toast])
+  }, [showToast])
 
   const handleRegisterPlayers = useCallback(async () => {
     console.log("Client: handleRegisterPlayers gestartet.")
-    toast({ variant: "info", description: "Registrierung wird verarbeitet..." }) // Test toast message
+    showToast("info", "Registrierung wird verarbeitet...") // Test toast message
     setIsRegisteringPlayers(true)
     try {
       const selectedPlayerIds = selectedPlayersForRegistration.map((p) => p.id)
@@ -896,20 +860,20 @@ export default function KratzerTournamentPage() {
       const { success, message } = await registerPlayers(selectedPlayerIds)
       console.log("Client: Antwort von registerPlayers Server Action:", { success, message })
       if (success) {
-        toast({ variant: "success", description: message })
+        showToast("success", message)
         await loadRegisteredPlayersState() // Reload registered players
         setSelectedPlayersForRegistration([]) // Clear selection
       } else {
-        toast({ variant: "destructive", description: message })
+        showToast("error", message)
       }
     } catch (error: any) {
       console.error("Client: Fehler beim Aufruf von registerPlayers Server Action:", error)
-      toast({ variant: "destructive", description: `Fehler beim Registrieren: ${error.message}` })
+      showToast("error", `Fehler beim Registrieren: ${error.message}`)
     } finally {
       setIsRegisteringPlayers(false)
       console.log("Client: handleRegisterPlayers beendet.")
     }
-  }, [selectedPlayersForRegistration, toast, loadRegisteredPlayersState])
+  }, [selectedPlayersForRegistration, showToast, loadRegisteredPlayersState])
 
   const handleClearRegisteredPlayers = useCallback(async () => {
     setConfirmationModalConfig({
@@ -920,20 +884,20 @@ export default function KratzerTournamentPage() {
         try {
           const { success, message } = await clearRegisteredPlayers()
           if (success) {
-            toast({ variant: "success", description: message })
+            showToast("success", message)
             await loadRegisteredPlayersState() // Reload to show empty state
           } else {
-            toast({ variant: "destructive", description: message })
+            showToast("error", message)
           }
         } catch (error: any) {
-          toast({ variant: "destructive", description: `Fehler beim Löschen: ${error.message}` })
+          showToast("error", `Fehler beim Löschen: ${error.message}`)
         } finally {
           setLoading(false)
         }
       },
     })
     setIsConfirmationModalOpen(true)
-  }, [toast, loadRegisteredPlayersState])
+  }, [showToast, loadRegisteredPlayersState])
 
   const handleUpdatePlayerPaidStatus = useCallback(
     async (playerId: string, paid: boolean) => {
@@ -941,18 +905,18 @@ export default function KratzerTournamentPage() {
       try {
         const { success, message } = await updatePlayerPaidStatus(playerId, paid)
         if (success) {
-          toast({ variant: "success", description: message })
+          showToast("success", message)
           await loadRegisteredPlayersState() // Reload to update status in list
         } else {
-          toast({ variant: "destructive", description: message })
+          showToast("error", message)
         }
       } catch (error: any) {
-        toast({ variant: "destructive", description: `Fehler beim Aktualisieren: ${error.message}` })
+        showToast("error", `Fehler beim Aktualisieren: ${error.message}`)
       } finally {
         setLoading(false)
       }
     },
-    [toast, loadRegisteredPlayersState],
+    [showToast, loadRegisteredPlayersState],
   )
 
   // --- UI Related States & Callbacks ---
@@ -973,12 +937,12 @@ export default function KratzerTournamentPage() {
   const startPauseTimer = useCallback(
     (minutes: number) => {
       setIsPauseModalOpen(false)
-      toast({ variant: "info", description: `Pause für ${minutes} Minuten gestartet.` })
+      showToast("info", `Pause für ${minutes} Minuten gestartet.`)
       // Here you could add logic to temporarily disable game controls if desired
       // For now, it's just a visual timer.
       const pauseTimerId = setTimeout(
         () => {
-          toast({ variant: "info", description: "Pause beendet!" })
+          showToast("info", "Pause beendet!")
         },
         minutes * 60 * 1000,
       )
@@ -986,7 +950,7 @@ export default function KratzerTournamentPage() {
       // Store the timer ID if you want to allow manual resume
       // timers.current['pause'] = pauseTimerId;
     },
-    [toast],
+    [showToast],
   )
 
   const showLeagueStatusModal = useCallback(() => {
@@ -1010,10 +974,10 @@ export default function KratzerTournamentPage() {
       if (tournamentState.tournamentId) {
         await updateKratzerTournamentPlayersData(tournamentState.tournamentId, updatedPlayers)
       }
-      toast({ variant: "success", description: "Leben pro Ligastatus aktualisiert." })
+      showToast("success", "Leben pro Ligastatus aktualisiert.")
       setLoading(false)
     },
-    [tournamentState, toast],
+    [tournamentState, showToast],
   )
 
   const showPrizeMoneyModal = useCallback(() => {
@@ -1408,6 +1372,7 @@ export default function KratzerTournamentPage() {
                   players={tournamentState.players}
                   currentRound={tournamentState.currentRound}
                   onEditPlayerLives={editPlayerLives}
+                  onTogglePlayerElimination={togglePlayerElimination}
                   loading={loading}
                 />
               </CardContent>
@@ -2033,10 +1998,17 @@ interface RankingsTableProps {
   players: KratzerPlayer[]
   currentRound: number
   onEditPlayerLives: (playerId: string, newLives: number) => Promise<void>
+  onTogglePlayerElimination: (playerId: string) => Promise<void>
   loading: boolean
 }
 
-function RankingsTable({ players, currentRound, onEditPlayerLives, loading }: RankingsTableProps) {
+function RankingsTable({
+  players,
+  currentRound,
+  onEditPlayerLives,
+  onTogglePlayerElimination,
+  loading,
+}: RankingsTableProps) {
   const sortedPlayers = [...players].sort((a, b) => {
     if (a.isEliminated && !b.isEliminated) return 1
     if (!a.isEliminated && b.isEliminated) return -1
@@ -2053,6 +2025,7 @@ function RankingsTable({ players, currentRound, onEditPlayerLives, loading }: Ra
             <TableHead>Ligastatus</TableHead>
             <TableHead>Leben</TableHead>
             <TableHead>Ausgeschieden</TableHead>
+            <TableHead>Aktionen</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -2067,27 +2040,45 @@ function RankingsTable({ players, currentRound, onEditPlayerLives, loading }: Ra
               <TableCell>
                 <div className="flex items-center gap-1">
                   <Button
-                    onClick={() => onEditPlayerLives(player.id, player.lives + 1)}
-                    disabled={player.isEliminated || loading}
+                    onClick={() => onEditPlayerLives(player.id, Math.max(0, player.lives - 1))}
+                    disabled={loading || player.lives <= 0}
                     variant="ghost"
                     size="sm"
-                    className="p-1 h-auto w-auto"
+                    className="p-1 h-auto w-auto text-red-600 hover:text-red-800"
+                    title="Leben reduzieren"
+                  >
+                    <MinusCircle className="h-4 w-4" />
+                  </Button>
+                  <span className="font-bold text-lg text-gray-900 min-w-[2rem] text-center">{player.lives}</span>
+                  <Button
+                    onClick={() => onEditPlayerLives(player.id, player.lives + 1)}
+                    disabled={loading}
+                    variant="ghost"
+                    size="sm"
+                    className="p-1 h-auto w-auto text-green-600 hover:text-green-800"
+                    title="Leben erhöhen"
                   >
                     <PlusCircle className="h-4 w-4" />
-                  </Button>
-                  <span className="font-bold text-lg text-gray-900">{player.lives}</span>
-                  <Button
-                    onClick={() => onEditPlayerLives(player.id, player.lives - 1)}
-                    disabled={player.isEliminated || loading || player.lives <= 0}
-                    variant="ghost"
-                    size="sm"
-                    className="p-1 h-auto w-auto"
-                  >
-                    <XCircle className="h-4 w-4" />
                   </Button>
                 </div>
               </TableCell>
               <TableCell>{player.isEliminated ? `Runde ${player.eliminationRound}` : "Nein"}</TableCell>
+              <TableCell>
+                <Button
+                  onClick={() => onTogglePlayerElimination(player.id)}
+                  disabled={loading}
+                  variant="ghost"
+                  size="sm"
+                  className={`p-1 h-auto w-auto ${
+                    player.isEliminated
+                      ? "text-green-600 hover:text-green-800"
+                      : "text-orange-600 hover:text-orange-800"
+                  }`}
+                  title={player.isEliminated ? "Spieler reaktivieren" : "Spieler ausscheiden"}
+                >
+                  {player.isEliminated ? <RotateCcw className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

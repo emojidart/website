@@ -204,7 +204,7 @@ export default function LigaPage() {
               standings[homeId].lost++
             } else {
               standings[homeId].drawn++
-              standings[homeId].points += 0
+              standings[homeId].points += 1
             }
           }
 
@@ -220,7 +220,7 @@ export default function LigaPage() {
               standings[awayId].lost++
             } else {
               standings[awayId].drawn++
-              standings[awayId].points += 0
+              standings[awayId].points += 1
             }
           }
         }

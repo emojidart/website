@@ -15,6 +15,7 @@ export interface KratzerPlayer {
   isEliminated: boolean
   eliminationRound: number | null
   eliminationTime: string | null
+  manuallyToggled?: boolean // Added optional field to track manual elimination toggles
 }
 
 export interface Board {
@@ -40,4 +41,5 @@ export interface TournamentState {
   boards: Board[]
   players: KratzerPlayer[] // All players in the tournament, with their current lives/status
   settings: TournamentSettings
+  lastError?: string | null // Added field to track tournament errors for recovery
 }
