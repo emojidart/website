@@ -27,6 +27,8 @@ import {
   Euro,
   Table,
   HelpCircle,
+  Inbox,
+  AlertTriangle,
 } from "lucide-react"
 
 interface UserProfile {
@@ -54,6 +56,24 @@ interface TeamMembership {
   } | null
 }
 
+interface Match {
+  id: string
+  match_date: string
+  home_score: number | null
+  away_score: number | null
+  status: string
+  home_team_id: string
+  away_team_id: string
+  home_team_type: string
+  away_team_type: string
+  home_opponent_team_id?: string
+  away_opponent_team_id?: string
+  home_team?: { name: string } | null
+  away_team?: { name: string } | null
+  home_opponent_team?: { name: string } | null
+  away_opponent_team?: { name: string } | null
+}
+
 export default function MemberProfilePage() {
   const { session, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -73,6 +93,7 @@ export default function MemberProfilePage() {
     total180s: 0,
     totalEvents: 0,
   })
+  const [pendingMatches, setPendingMatches] = useState<Match[]>([])
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -118,6 +139,70 @@ export default function MemberProfilePage() {
 
         setTeamMemberships(teamData || [])
 
+        if (teamData && teamData.length > 0) {
+          const teamIds = teamData.map((t) => t.team_id)
+          const today = new Date().toISOString().split("T")[0]
+
+          const [matchesResponse, opponentTeamsResponse] = await Promise.all([
+            supabase
+              .from("matches")
+              .select(`
+                *,
+                home_team:teams!matches_home_team_id_fkey(id, name),
+                away_team:teams!matches_away_team_id_fkey(id, name),
+                home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
+                away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name),
+                season:seasons(id, name, type)
+              `)
+              .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
+              .lt("match_date", today)
+              .order("match_date", { ascending: true }),
+            supabase.from("opponent_teams").select("*"),
+          ])
+
+          const { data: matchesData, error: matchesError } = matchesResponse
+          const { data: opponentTeamsData, error: opponentTeamsError } = opponentTeamsResponse
+
+          if (matchesError) throw matchesError
+          if (opponentTeamsError) throw opponentTeamsError
+
+          const enrichedMatches =
+            matchesData?.map((match) => {
+              const homeOpponentTeam = match.home_opponent_team_id
+                ? opponentTeamsData?.find((team) => team.id === match.home_opponent_team_id)
+                : null
+              const awayOpponentTeam = match.away_opponent_team_id
+                ? opponentTeamsData?.find((team) => team.id === match.away_opponent_team_id)
+                : null
+
+              return {
+                ...match,
+                home_opponent_team: homeOpponentTeam,
+                away_opponent_team: awayOpponentTeam,
+              }
+            }) || []
+
+          if (enrichedMatches) {
+            const openMatches = enrichedMatches.filter((match) => {
+              const homeScore = match.home_score
+              const awayScore = match.away_score
+
+              // Consider a match open if:
+              // 1. Either score is null/undefined
+              // 2. Both scores are 0 (likely placeholder)
+              // 3. Status is not completed
+              return (
+                homeScore === null ||
+                awayScore === null ||
+                (homeScore === 0 && awayScore === 0) ||
+                match.status !== "completed"
+              )
+            })
+
+            setPendingMatches(openMatches)
+          }
+        }
+
         const { data: legStats, error: legStatsError } = await supabase
           .from("leg_statistics")
           .select(`leg_wins, player_legs_won, opponent_legs_won, throws_180, throws_171`)
@@ -136,7 +221,7 @@ export default function MemberProfilePage() {
             .from("matches")
             .select("id")
             .or(
-              `home_team_id.in.(${teamData?.map((t) => t.team_id).join(",")}),away_team_id.in.(${teamData?.map((t) => t.team_id).join(",")})`,
+              `home_team_id.in.(${teamMemberships?.map((t) => t.team_id).join(",")}),away_team_id.in.(${teamMemberships?.map((t) => t.team_id).join(",")})`,
             )
 
           setStatistics({
@@ -271,6 +356,13 @@ export default function MemberProfilePage() {
       color: "from-indigo-500 to-indigo-600",
     },
     {
+      title: "Match Galerie",
+      description: "Match-Galerie und Spielfotos",
+      icon: Camera,
+      href: "/match-galerie",
+      color: "from-purple-500 to-purple-600",
+    },
+    {
       title: "Bonusgeld",
       description: "Bonuspunkte und Belohnungen",
       icon: Euro,
@@ -307,6 +399,54 @@ export default function MemberProfilePage() {
     },
   ]
 
+  const formatMatchDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const day = String(date.getDate()).padStart(2, "0")
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const year = date.getFullYear()
+    return `${day}.${month}.${year}`
+  }
+
+  const getTeamDisplayName = (match: Match, isHome: boolean) => {
+    if (!match) return "Unbekannt"
+
+    if (isHome) {
+      if (match.home_team_type === "own" && match.home_team) {
+        return match.home_team.name
+      } else if (match.home_team_type === "opponent" && match.home_opponent_team) {
+        return match.home_opponent_team.name
+      }
+    } else {
+      if (match.away_team_type === "own" && match.away_team) {
+        return match.away_team.name
+      } else if (match.away_team_type === "opponent" && match.away_opponent_team) {
+        return match.away_opponent_team.name
+      }
+    }
+
+    return "Unbekannt"
+  }
+
+  const isLeadershipRole = () => {
+    return teamMemberships.some((membership) => membership.role === "Captain" || membership.role === "Co-Captain")
+  }
+
+  const hasLeadershipInTeam = (teamId: string) => {
+    return teamMemberships.some(
+      (membership) =>
+        membership.team_id === teamId && (membership.role === "Captain" || membership.role === "Co-Captain"),
+    )
+  }
+
+  const getUserRole = (): "player" | "captain" | "co-captain" => {
+    const captainMembership = teamMemberships.find((membership) => membership.role === "Captain")
+    const coCaptainMembership = teamMemberships.find((membership) => membership.role === "Co-Captain")
+
+    if (captainMembership) return "captain"
+    if (coCaptainMembership) return "co-captain"
+    return "player"
+  }
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
@@ -339,31 +479,88 @@ export default function MemberProfilePage() {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
 
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-6xl">
+      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl">
+        {pendingMatches.length > 0 && isLeadershipRole() && (
+          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-l-yellow-500">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                <div className="flex-shrink-0">
+                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl shadow-lg">
+                    <Inbox className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  </div>
+                </div>
+                <div className="flex-grow w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Offene Spielergebnisse</h3>
+                    </div>
+                    <Badge className="bg-yellow-500 text-white w-fit">{pendingMatches.length}</Badge>
+                  </div>
+                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                    Du hast {pendingMatches.length} vergangene {pendingMatches.length === 1 ? "Spiel" : "Spiele"}, für{" "}
+                    {pendingMatches.length === 1 ? "das" : "die"} noch kein Ergebnis eingetragen wurde.
+                  </p>
+                  <div className="space-y-2 mb-3 sm:mb-4">
+                    {pendingMatches.slice(0, 3).map((match) => (
+                      <div
+                        key={match.id}
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white/70 rounded-lg p-3 border border-yellow-200 gap-2"
+                      >
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                          <Calendar className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                          <span className="font-medium text-xs sm:text-sm truncate">
+                            {getTeamDisplayName(match, true)} vs {getTeamDisplayName(match, false)}
+                          </span>
+                        </div>
+                        <Badge variant="outline" className="text-xs border-yellow-300 text-yellow-700 w-fit">
+                          {formatMatchDate(match.match_date)}
+                        </Badge>
+                      </div>
+                    ))}
+                    {pendingMatches.length > 3 && (
+                      <div className="text-xs sm:text-sm text-gray-600 text-center py-2">
+                        ... und {pendingMatches.length - 3} weitere
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    onClick={() => router.push("/member-dashboard")}
+                    className="w-full sm:w-auto bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg text-sm sm:text-base"
+                  >
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    Ergebnisse eintragen
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Welcome Section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl mb-6 shadow-xl">
-            <Users className="h-10 w-10 text-white" />
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl mb-4 sm:mb-6 shadow-xl">
+            <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Willkommen zurück!</h1>
-          <p className="text-xl text-gray-600">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Willkommen zurück!</h1>
+          <p className="text-lg sm:text-xl text-gray-600 px-4">
             Schön dich zu sehen, {profile.club_players?.name || "Vereinsmitglied"}
           </p>
         </div>
 
         {/* Profile Card */}
-        <Card className="mb-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
-          <CardContent className="p-8">
-            <div className="flex flex-col md:flex-row items-center gap-6">
+        <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+          <CardContent className="p-4 sm:p-6 lg:p-8">
+            <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-6">
               <div className="relative">
-                <Avatar className="w-24 h-24 border-4 border-orange-200">
+                <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-orange-200">
                   <AvatarImage
                     src={
                       profile.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=dart player avatar"
                     }
                     alt={profile.club_players?.name || "Spieler"}
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-2xl font-bold">
+                  <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xl sm:text-2xl font-bold">
                     {(profile.club_players?.name || "U")
                       .split(" ")
                       .map((n) => n[0])
@@ -374,38 +571,38 @@ export default function MemberProfilePage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 bg-white shadow-lg"
+                  className="absolute -bottom-2 -right-2 rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 bg-white shadow-lg"
                   onClick={() => setIsPhotoDialogOpen(true)}
                 >
-                  <Camera className="h-4 w-4" />
+                  <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </div>
 
               <div className="flex-grow text-center md:text-left">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   {profile.club_players?.name || "Vereinsmitglied"}
                 </h2>
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-4">
-                  <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1">
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 mb-3 sm:mb-4">
+                  <Badge variant="secondary" className="flex items-center gap-2 px-2 sm:px-3 py-1 text-xs sm:text-sm">
                     {getRoleIcon(primaryTeam?.role)}
                     {getRoleLabel(primaryTeam?.role)}
                   </Badge>
                   {primaryTeam?.teams && (
-                    <Badge variant="outline" className="px-3 py-1">
+                    <Badge variant="outline" className="px-2 sm:px-3 py-1 text-xs sm:text-sm">
                       {primaryTeam.teams.name}
                       {hasMultipleTeams && ` (+${teamMemberships.length - 1} weitere)`}
                     </Badge>
                   )}
                   {profile.club_players?.age && (
-                    <Badge variant="outline" className="px-3 py-1">
+                    <Badge variant="outline" className="px-2 sm:px-3 py-1 text-xs sm:text-sm">
                       {profile.club_players.age} Jahre
                     </Badge>
                   )}
                 </div>
                 {hasMultipleTeams && (
                   <div className="mb-2">
-                    <p className="text-sm text-gray-600 mb-1">Alle Teams:</p>
-                    <div className="flex flex-wrap gap-2">
+                    <p className="text-xs sm:text-sm text-gray-600 mb-1">Alle Teams:</p>
+                    <div className="flex flex-wrap gap-1 sm:gap-2">
                       {teamMemberships.map((membership) => (
                         <Badge key={membership.id} variant="outline" className="text-xs">
                           {membership.teams?.name} ({getRoleLabel(membership.role)})
@@ -415,27 +612,31 @@ export default function MemberProfilePage() {
                   </div>
                 )}
                 {profile.club_players?.origin && (
-                  <p className="text-gray-600 mb-2">Herkunft: {profile.club_players.origin}</p>
+                  <p className="text-sm sm:text-base text-gray-600 mb-2">Herkunft: {profile.club_players.origin}</p>
                 )}
                 {profile.club_players?.throwing_hand && (
-                  <p className="text-gray-600">
+                  <p className="text-sm sm:text-base text-gray-600">
                     Wurfhand: {profile.club_players.throwing_hand === "right" ? "Rechts" : "Links"}
                   </p>
                 )}
               </div>
 
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex items-center gap-2 bg-transparent">
-                  <Settings className="h-4 w-4" />
+              <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 bg-transparent text-xs sm:text-sm"
+                >
+                  <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                   Einstellungen
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleLogout}
-                  className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent"
+                  className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent text-xs sm:text-sm"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
                   Abmelden
                 </Button>
               </div>
@@ -444,22 +645,22 @@ export default function MemberProfilePage() {
         </Card>
 
         {/* Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {navigationItems.map((item, index) => (
             <Card
               key={index}
               className="border-0 shadow-xl bg-white/95 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 cursor-pointer group"
               onClick={() => router.push(item.href)}
             >
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div
-                  className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${item.color} rounded-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                  className={`inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br ${item.color} rounded-2xl mb-3 sm:mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}
                 >
-                  <item.icon className="h-8 w-8 text-white" />
+                  <item.icon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-gray-600 mb-4">{item.description}</p>
-                <div className="flex items-center text-orange-600 font-semibold group-hover:text-orange-700 transition-colors">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
+                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">{item.description}</p>
+                <div className="flex items-center text-orange-600 font-semibold group-hover:text-orange-700 transition-colors text-sm sm:text-base">
                   <span>Öffnen</span>
                   <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -468,36 +669,36 @@ export default function MemberProfilePage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <Trophy className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">{statistics.totalWins}</div>
-              <div className="text-sm text-gray-600">Siege</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-600 mx-auto mb-2" />
+              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalWins}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Siege</div>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <Target className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">{statistics.winPercentage}%</div>
-              <div className="text-sm text-gray-600">Siegquote</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Target className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 mx-auto mb-2" />
+              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.winPercentage}%</div>
+              <div className="text-xs sm:text-sm text-gray-600">Siegquote</div>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">{statistics.totalLegs}</div>
-              <div className="text-sm text-gray-600">Legs gespielt</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mx-auto mb-2" />
+              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalLegs}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Legs gespielt</div>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <Calendar className="h-8 w-8 text-green-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">{statistics.totalEvents}</div>
-              <div className="text-sm text-gray-600">Events</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mx-auto mb-2" />
+              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalEvents}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Events</div>
             </CardContent>
           </Card>
         </div>

@@ -164,7 +164,7 @@ export default function LigaPage() {
     }
 
     loadData()
-  }, [dartTypeFilter]) // Added dartTypeFilter as dependency
+  }, [dartTypeFilter])
 
   const calculateStandings = () => {
     const standings = {}
@@ -262,6 +262,7 @@ export default function LigaPage() {
           throws_17: 0,
           throws_18: 0,
           throws_19: 0,
+          throws_20: 0, // Added throws_20 field for 20er statistics
           throws_high_tonne: 0,
           throws_tonne: 0,
           throws_shanghai: 0,
@@ -284,6 +285,7 @@ export default function LigaPage() {
       playerStats[playerId].throws_17 += stat.throws_17 || 0
       playerStats[playerId].throws_18 += stat.throws_18 || 0
       playerStats[playerId].throws_19 += stat.throws_19 || 0
+      playerStats[playerId].throws_20 += stat.throws_20 || 0 // Added throws_20 calculation for 20er statistics
       playerStats[playerId].throws_high_tonne += stat.throws_high_tonne || 0
       playerStats[playerId].throws_tonne += stat.throws_tonne || 0
       playerStats[playerId].throws_shanghai += stat.throws_shanghai || 0
@@ -342,7 +344,7 @@ export default function LigaPage() {
 
   const handlePageSizeChange = (newSize: number) => {
     setPlayersPerPage(newSize)
-    setCurrentPage(1) // Reset to first page when changing page size
+    setCurrentPage(1)
   }
 
   const groupMatchesByTeam = (matchList) => {
@@ -519,7 +521,7 @@ export default function LigaPage() {
                     ) : (
                       <>
                         <div className="overflow-x-auto custom-scrollbar">
-                          <table className="w-full min-w-[1200px]">
+                          <table className="w-full min-w-[1300px]">
                             <thead className="bg-gray-50">
                               <tr>
                                 <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
@@ -542,6 +544,9 @@ export default function LigaPage() {
                                 </th>
                                 <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   171er
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  20er
                                 </th>
                                 <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   High Tonne
@@ -756,8 +761,8 @@ export default function LigaPage() {
                             const homeScore = match.home_score || 0
                             const awayScore = match.away_score || 0
 
-                            const isOurHomeTeam = match.home_team?.id // Our team is home
-                            const isOurAwayTeam = match.away_team?.id // Our team is away
+                            const isOurHomeTeam = match.home_team?.id
+                            const isOurAwayTeam = match.away_team?.id
 
                             let matchColor = "bg-gray-50 border-gray-200"
                             let resultText = "Unentschieden"

@@ -1,20 +1,14 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useCallback } from "react"
-import {
-  getActiveKratzerTournament,
-  getLastKratzerTournamentRound,
-  getKratzerTournamentPlayers,
-} from "@/actions/tournament"
 import type { KratzerPlayer, Board, TournamentSettings } from "@/types/tournament"
 import { formatTime } from "@/utils/tournament-utils"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Monitor, Trophy, Calendar, Users, Heart, AlertTriangle, UserX, Loader2, RefreshCcw } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { supabase } from "@/lib/supabase" // Import the client-side Supabase client
+import { supabase } from "@/lib/supabase"
 
 interface StatCardProps {
   icon: React.ReactNode
@@ -48,16 +42,16 @@ function LiveBoardComponent({ board, suddenDeathEnabled, suddenDeathTime }: Live
   const [elapsedTime, setElapsedTime] = useState(0)
 
   useEffect(() => {
-    if (board.startTime) {
+    if (board.startTime && board.status === "running") {
       const interval = setInterval(() => {
         setElapsedTime(Date.now() - board.startTime!)
       }, 1000)
       return () => clearInterval(interval)
     }
-    setElapsedTime(0) // Reset if no start time
-  }, [board.startTime])
+    setElapsedTime(0)
+  }, [board.startTime, board.status])
 
-  const timeLimit = suddenDeathTime * 60 * 1000 // Convert minutes to milliseconds
+  const timeLimit = suddenDeathTime * 60 * 1000
   const remainingTime = timeLimit - elapsedTime
   const timerClass =
     suddenDeathEnabled && remainingTime <= 60000
@@ -66,12 +60,36 @@ function LiveBoardComponent({ board, suddenDeathEnabled, suddenDeathTime }: Live
         ? "text-orange-500 font-bold"
         : "text-gray-900"
 
+  const getStatusDisplay = () => {
+    switch (board.status) {
+      case "running":
+        return <span className="ml-2 text-sm text-green-600 font-semibold">Läuft</span>
+      case "finished":
+        return <span className="ml-2 text-sm text-gray-500 font-semibold">Beendet</span>
+      case "not_started":
+      default:
+        return <span className="ml-2 text-sm text-orange-500 font-semibold">Bereit</span>
+    }
+  }
+
+  const getCardStyle = () => {
+    switch (board.status) {
+      case "running":
+        return "shadow-xl border-green-200 bg-green-50"
+      case "finished":
+        return "shadow-md border-gray-300 bg-gray-100 opacity-75"
+      case "not_started":
+      default:
+        return "shadow-lg border-orange-200 bg-orange-50"
+    }
+  }
+
   return (
-    <Card data-board-id={board.id} className="shadow-xl border-gray-200">
+    <Card data-board-id={board.id} className={getCardStyle()}>
       <CardHeader className="border-b pb-4">
         <CardTitle className="text-lg font-semibold flex items-center justify-between">
           Board {board.id}
-          {board.startTime && <span className="ml-2 text-sm text-green-600">Läuft</span>}
+          {getStatusDisplay()}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4">
@@ -81,7 +99,7 @@ function LiveBoardComponent({ board, suddenDeathEnabled, suddenDeathTime }: Live
           ) : (
             <ul className="space-y-2">
               {board.players.map((player) => (
-                <li key={player.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                <li key={player.id} className="flex items-center justify-between p-3 rounded-lg bg-white/70">
                   <span className="font-medium text-gray-800">
                     {player.name} ({player.lives} Leben)
                   </span>
@@ -91,7 +109,7 @@ function LiveBoardComponent({ board, suddenDeathEnabled, suddenDeathTime }: Live
           )}
         </div>
 
-        {board.startTime && (
+        {board.status === "running" && board.startTime && (
           <div className="mb-4">
             <p className="text-sm text-gray-600">
               Spielzeit: <span className={`font-semibold ${timerClass}`}>{formatTime(elapsedTime)}</span>
@@ -101,6 +119,20 @@ function LiveBoardComponent({ board, suddenDeathEnabled, suddenDeathTime }: Live
                 Verbleibend: <span className={`font-semibold ${timerClass}`}>{formatTime(remainingTime)}</span>
               </p>
             )}
+          </div>
+        )}
+
+        {board.status === "finished" && board.endTime && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-500">
+              Spiel beendet: {formatTime(board.endTime - (board.startTime || board.endTime))} Spielzeit
+            </p>
+          </div>
+        )}
+
+        {board.status === "not_started" && (
+          <div className="mb-4">
+            <p className="text-sm text-orange-600 font-medium">Wartet auf Start...</p>
           </div>
         )}
       </CardContent>
@@ -184,29 +216,85 @@ export default function LiveTournamentPage() {
   const fetchData = useCallback(async () => {
     setError(null)
     try {
-      const activeTournamentRes = await getActiveKratzerTournament()
-      if (activeTournamentRes.success && activeTournamentRes.data) {
-        const tournamentId = activeTournamentRes.data.id
-        const status = activeTournamentRes.data.status
-        const winnerId = activeTournamentRes.data.winner_id
-        const winnerName = activeTournamentRes.data.winner_name
-        const totalRounds = activeTournamentRes.data.total_rounds
+      // Fetch active tournament directly from Supabase
+      const { data: activeTournament, error: tournamentError } = await supabase
+        .from("kratzer_tournaments")
+        .select("*")
+        .eq("status", "running")
+        .single()
 
-        const playersRes = await getKratzerTournamentPlayers(tournamentId)
-        const lastRoundRes = await getLastKratzerTournamentRound(tournamentId)
+      if (tournamentError && tournamentError.code !== "PGRST116") {
+        throw new Error(`Tournament query error: ${tournamentError.message}`)
+      }
 
-        if (!playersRes.success) throw new Error(playersRes.message)
+      if (activeTournament) {
+        const tournamentId = activeTournament.id
+        const status = activeTournament.status
+        const winnerId = activeTournament.winner_id
+        const winnerName = activeTournament.winner_name
+        const totalRounds = activeTournament.total_rounds
 
-        let currentRound = 0
-        let boards: Board[] = []
-        if (lastRoundRes.success && lastRoundRes.data) {
-          currentRound = lastRoundRes.data.round_number
-          boards = lastRoundRes.data.boards_data
+        const { data: playersData, error: playersError } = await supabase
+          .from("kratzer_tournament_players")
+          .select("*")
+          .eq("kratzer_tournament_id", tournamentId)
+
+        if (playersError) {
+          throw new Error(`Players query error: ${playersError.message}`)
         }
+
+        const { data: latestRound, error: roundError } = await supabase
+          .from("kratzer_tournament_rounds")
+          .select("*")
+          .eq("kratzer_tournament_id", tournamentId)
+          .order("round_number", { ascending: false })
+          .limit(1)
+          .single()
+
+        let currentRound = 1
+        let boards: Board[] = []
+
+        if (!roundError && latestRound) {
+          currentRound = latestRound.round_number
+          if (latestRound.boards_data && Array.isArray(latestRound.boards_data)) {
+            boards = latestRound.boards_data
+              .map((boardData: any) => ({
+                id: boardData.id,
+                players: boardData.players || [],
+                startTime: boardData.startTime,
+                endTime: boardData.endTime || null,
+                status: boardData.status || (boardData.startTime ? "running" : "not_started"),
+                timer: null, // Timer is not stored in DB
+              }))
+              .filter((board: Board) => board.status !== "finished") // Only show active boards
+          }
+        } else if (status === "running") {
+          const boardCount = activeTournament.board_count || 3
+          for (let i = 1; i <= boardCount; i++) {
+            boards.push({
+              id: i,
+              players: [],
+              startTime: null,
+              endTime: null,
+              status: "not_started",
+              timer: null,
+            })
+          }
+        }
+
+        const players: KratzerPlayer[] = playersData.map((player) => ({
+          id: player.player_id,
+          name: player.player_name,
+          ligastatus: player.ligastatus || "N/A",
+          lives: player.lives,
+          isEliminated: player.is_eliminated,
+          eliminationRound: player.elimination_round,
+          eliminationTime: player.elimination_time,
+        }))
 
         let winnerPlayer: KratzerPlayer | null = null
         if (status === "finished" && winnerId && winnerName) {
-          winnerPlayer = playersRes.data.find((p) => p.id === winnerId) || {
+          winnerPlayer = players.find((p) => p.id === winnerId) || {
             id: winnerId,
             name: winnerName,
             ligastatus: "N/A",
@@ -222,17 +310,18 @@ export default function LiveTournamentPage() {
           status: status,
           currentRound: currentRound,
           winner: winnerPlayer,
-          players: playersRes.data,
+          players: players,
           boards: boards,
           settings: {
-            boardCount: activeTournamentRes.data.board_count,
-            maxGroupSize: activeTournamentRes.data.max_group_size,
-            suddenDeathEnabled: activeTournamentRes.data.sudden_death_enabled,
-            suddenDeathTime: activeTournamentRes.data.sudden_death_time,
-            speechEnabled: activeTournamentRes.data.speech_enabled,
+            boardCount: activeTournament.board_count,
+            maxGroupSize: activeTournament.max_group_size,
+            suddenDeathEnabled: activeTournament.sudden_death_enabled,
+            suddenDeathTime: activeTournament.sudden_death_time,
+            speechEnabled: activeTournament.speech_enabled,
           },
         })
       } else {
+        // No active tournament found
         setTournamentData({
           tournamentId: null,
           status: "idle",
@@ -267,13 +356,13 @@ export default function LiveTournamentPage() {
       .on(
         "postgres_changes",
         {
-          event: "*", // Listen to INSERT, UPDATE, DELETE
+          event: "*",
           schema: "public",
-          table: "kratzer_tournaments", // Listen to tournament status changes
+          table: "kratzer_tournaments",
         },
         (payload) => {
           console.log("Realtime: kratzer_tournaments change!", payload)
-          fetchData() // Re-fetch all data on tournament status change
+          fetchData()
         },
       )
       .on(
@@ -281,11 +370,11 @@ export default function LiveTournamentPage() {
         {
           event: "*",
           schema: "public",
-          table: "kratzer_tournament_players", // Listen to player life/elimination changes
+          table: "kratzer_tournament_players",
         },
         (payload) => {
           console.log("Realtime: kratzer_tournament_players change!", payload)
-          fetchData() // Re-fetch all data on player data change
+          fetchData()
         },
       )
       .on(
@@ -293,20 +382,19 @@ export default function LiveTournamentPage() {
         {
           event: "*",
           schema: "public",
-          table: "kratzer_tournament_rounds", // Listen to new rounds/board data changes
+          table: "kratzer_tournament_rounds",
         },
         (payload) => {
           console.log("Realtime: kratzer_tournament_rounds change!", payload)
-          fetchData() // Re-fetch all data on round/board data change
+          fetchData()
         },
       )
       .subscribe()
 
-    // Cleanup function: unsubscribe from Realtime channel when component unmounts
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [fetchData]) // Depend on fetchData to ensure it's always the latest version
+  }, [fetchData])
 
   const isTournamentRunning = tournamentData.status === "running"
   const isTournamentFinished = tournamentData.status === "finished"
@@ -402,12 +490,16 @@ export default function LiveTournamentPage() {
               </CardContent>
             </Card>
 
-            {/* Current Round Boards */}
             {isTournamentRunning && tournamentData.boards.length > 0 && (
               <Card className="mb-8 p-5 shadow-xl border-gray-200">
                 <CardHeader className="border-b pb-4 mb-6">
                   <CardTitle className="text-xl font-semibold flex items-center gap-2 text-gray-900">
-                    <Monitor className="h-6 w-6 text-gray-600" /> Aktive Spiele
+                    <Monitor className="h-6 w-6 text-gray-600" />
+                    Aktive Spiele
+                    <span className="text-sm font-normal text-gray-500">
+                      ({tournamentData.boards.filter((b) => b.status === "running").length} läuft,{" "}
+                      {tournamentData.boards.filter((b) => b.status === "not_started").length} bereit)
+                    </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

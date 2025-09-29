@@ -4,13 +4,15 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Camera, X, Calendar, Trophy } from "lucide-react"
+import { Camera, Calendar, Trophy, ArrowLeft } from "lucide-react"
 import { Header } from "@/components/header"
 import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Image from "next/image"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -35,6 +37,9 @@ const photoVariants = {
 }
 
 export default function MatchGaleriePage() {
+  const { session, loading: authLoading } = useAuth()
+  const router = useRouter()
+
   const [matches, setMatches] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
@@ -43,11 +48,18 @@ export default function MatchGaleriePage() {
   const isMobile = useIsMobile()
 
   useEffect(() => {
+    if (!authLoading && !session) {
+      router.push("/member-login")
+    }
+  }, [session, authLoading, router])
+
+  useEffect(() => {
     const loadMatchPhotos = async () => {
       try {
         const { data: matchesData, error: matchesError } = await supabase
           .from("matches")
-          .select(`*
+          .select(`
+            *,
             home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
             away_team:teams!matches_away_team_id_fkey(id, name, logo_url),
             season:seasons(id, name, type)
@@ -167,7 +179,25 @@ export default function MatchGaleriePage() {
     return "bg-yellow-100 text-yellow-700"
   }
 
-  if (loading) {
+  const getMatchTitle = (match: any) => {
+    let homeTeamName = "Unbekanntes Team"
+    if (match.home_team?.name) {
+      homeTeamName = match.home_team.name
+    } else if (match.home_opponent_team?.name) {
+      homeTeamName = match.home_opponent_team.name
+    }
+
+    let awayTeamName = "Unbekanntes Team"
+    if (match.away_team?.name) {
+      awayTeamName = match.away_team.name
+    } else if (match.away_opponent_team?.name) {
+      awayTeamName = match.away_opponent_team.name
+    }
+
+    return `${homeTeamName} vs ${awayTeamName}`
+  }
+
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-white text-gray-900 font-sans">
         <Header />
@@ -185,6 +215,23 @@ export default function MatchGaleriePage() {
     )
   }
 
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-white text-gray-900 font-sans">
+        <Header />
+        <main className="pt-8 pb-20">
+          <div className="container mx-auto px-4 md:px-6 py-8">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">Anmeldung erforderlich</h1>
+              <p className="text-gray-600 mb-6">Du musst angemeldet sein, um die Match-Galerie zu sehen.</p>
+              <Button onClick={() => router.push("/member-login")}>Zur Anmeldung</Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
       <Header />
@@ -195,6 +242,13 @@ export default function MatchGaleriePage() {
           initial="hidden"
           animate="visible"
         >
+          <div className="mb-6">
+            <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2 mb-4">
+              <ArrowLeft className="h-4 w-4" />
+              Zurück
+            </Button>
+          </div>
+
           <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-12">
             <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl shadow-xl border border-purple-200 p-4 sm:p-8 md:p-12 text-white">
               <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
@@ -351,12 +405,7 @@ export default function MatchGaleriePage() {
                 <div className="flex items-center gap-3">
                   <Camera className="h-5 w-5 text-purple-600" />
                   <DialogTitle className="text-lg font-semibold">
-                    {selectedMatch && (
-                      <>
-                        {selectedMatch.home_team?.name || selectedMatch.home_opponent_team?.name} vs{" "}
-                        {selectedMatch.away_team?.name || selectedMatch.away_opponent_team?.name}
-                      </>
-                    )}
+                    {selectedMatch && getMatchTitle(selectedMatch)}
                   </DialogTitle>
                 </div>
                 <div className="flex items-center gap-2">
@@ -374,9 +423,6 @@ export default function MatchGaleriePage() {
                       </span>
                     </>
                   )}
-                  <Button variant="ghost" size="sm" onClick={closePhotoModal} className="h-8 w-8 p-0 hover:bg-gray-100">
-                    <X className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
             </DialogHeader>
