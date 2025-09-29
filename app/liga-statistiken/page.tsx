@@ -5,13 +5,11 @@ import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Target, Calendar, Users, Camera, X } from "lucide-react"
+import { Trophy, Target, Calendar, Users } from "lucide-react"
 import { Header } from "@/components/header"
 import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
 import { PlayerStatisticsRow } from "@/components/player-statistics-row"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import Image from "next/image"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -40,8 +38,6 @@ export default function LigaPage() {
   const [dartTypeFilter, setDartTypeFilter] = useState<"gesamt" | "edart" | "steeldart">("gesamt")
   const [playersPerPage, setPlayersPerPage] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
-  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
-  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -366,16 +362,6 @@ export default function LigaPage() {
 
   const groupedCompletedMatches = groupMatchesByTeam(completedMatches)
   const groupedUpcomingMatches = groupMatchesByTeam(upcomingMatches)
-
-  const handlePhotoClick = (photoUrl: string) => {
-    setSelectedPhotoUrl(photoUrl)
-    setIsPhotoModalOpen(true)
-  }
-
-  const closePhotoModal = () => {
-    setIsPhotoModalOpen(false)
-    setSelectedPhotoUrl(null)
-  }
 
   if (loading) {
     return (
@@ -761,13 +747,21 @@ export default function LigaPage() {
                             const homeScore = match.home_score || 0
                             const awayScore = match.away_score || 0
 
+                            const isPendingResult =
+                              match.home_score === null ||
+                              match.away_score === null ||
+                              (homeScore === 0 && awayScore === 0)
+
                             const isOurHomeTeam = match.home_team?.id
                             const isOurAwayTeam = match.away_team?.id
 
                             let matchColor = "bg-gray-50 border-gray-200"
                             let resultText = "Unentschieden"
 
-                            if (homeScore > awayScore) {
+                            if (isPendingResult) {
+                              matchColor = "bg-orange-50 border-orange-300"
+                              resultText = "Ergebnis ausstehend"
+                            } else if (homeScore > awayScore) {
                               if (isOurHomeTeam) {
                                 matchColor = "bg-green-50 border-green-200"
                                 resultText = "Heimsieg"
@@ -814,14 +808,26 @@ export default function LigaPage() {
                                           match.home_opponent_team?.name ||
                                           "Team nicht gefunden"}
                                       </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">
-                                        Heim
-                                      </div>
+                                      <div className="text-xs text-gray-500 uppercase tracking-wide">Heim</div>
                                     </div>
                                     <div className="flex items-center gap-2 sm:gap-4 bg-white rounded-lg px-4 sm:px-6 py-2 sm:py-3 shadow-sm">
-                                      <div className="text-2xl sm:text-4xl font-bold text-gray-800">{homeScore}</div>
-                                      <div className="text-xl sm:text-2xl font-medium text-gray-400">:</div>
-                                      <div className="text-2xl sm:text-4xl font-bold text-gray-800">{awayScore}</div>
+                                      {isPendingResult ? (
+                                        <div className="flex items-center gap-2">
+                                          <div className="text-2xl sm:text-4xl font-bold text-orange-500">?</div>
+                                          <div className="text-xl sm:text-2xl font-medium text-gray-400">:</div>
+                                          <div className="text-2xl sm:text-4xl font-bold text-orange-500">?</div>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <div className="text-2xl sm:text-4xl font-bold text-gray-800">
+                                            {homeScore}
+                                          </div>
+                                          <div className="text-xl sm:text-2xl font-medium text-gray-400">:</div>
+                                          <div className="text-2xl sm:text-4xl font-bold text-gray-800">
+                                            {awayScore}
+                                          </div>
+                                        </>
+                                      )}
                                     </div>
                                     <div className="text-center min-w-[120px] sm:min-w-[140px]">
                                       <div className="flex items-center justify-center gap-2 mb-2">
@@ -858,31 +864,33 @@ export default function LigaPage() {
                                       <Badge
                                         className={`
                                           ${
-                                            resultText === "Heimsieg" || resultText === "Auswärtssieg"
-                                              ? "bg-green-100 text-green-700"
-                                              : resultText === "Unentschieden"
-                                                ? "bg-yellow-100 text-yellow-700"
-                                                : "bg-red-100 text-red-700"
+                                            isPendingResult
+                                              ? "bg-orange-100 text-orange-700 border-orange-300"
+                                              : resultText === "Heimsieg" || resultText === "Auswärtssieg"
+                                                ? "bg-green-100 text-green-700"
+                                                : resultText === "Unentschieden"
+                                                  ? "bg-yellow-100 text-yellow-700"
+                                                  : "bg-red-100 text-red-700"
                                           }
                                           font-medium text-xs sm:text-sm
                                         `}
                                       >
                                         {resultText}
                                       </Badge>
-                                      {match.team_photo_url && (
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="h-8 w-8 p-0 bg-blue-50 hover:bg-blue-100 border-blue-200"
-                                          onClick={() => handlePhotoClick(match.team_photo_url)}
-                                          title="Teamfoto anzeigen"
-                                        >
-                                          <Camera className="h-4 w-4 text-blue-600" />
-                                        </Button>
-                                      )}
                                     </div>
                                   </div>
                                 </div>
+                                {isPendingResult && (
+                                  <div className="mt-3 pt-3 border-t border-orange-200">
+                                    <div className="flex items-center gap-2 text-sm text-orange-700">
+                                      <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                                      <span className="font-medium">
+                                        Dieses Spiel wurde noch nicht gespielt oder das Ergebnis wurde noch nicht
+                                        eingetragen.
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )
                           })}
@@ -907,70 +915,103 @@ export default function LigaPage() {
                       <div className="space-y-3 sm:space-y-4">
                         {upcomingMatches
                           .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
-                          .map((match) => (
-                            <div
-                              key={match.id}
-                              className="border border-gray-200 rounded-lg p-3 sm:p-6 hover:shadow-md transition-shadow bg-white"
-                            >
-                              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
-                                  <div className="text-center min-w-[120px] sm:min-w-[140px]">
-                                    <div className="flex items-center justify-center gap-2 mb-2">
-                                      {match.home_team?.logo_url ? (
-                                        <img
-                                          src={match.home_team.logo_url || "/placeholder.svg"}
-                                          alt={`${match.home_team.name} Logo`}
-                                          className="w-8 h-8 rounded-full object-cover border border-gray-300"
-                                        />
-                                      ) : (
-                                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                          <Trophy className="h-4 w-4 text-gray-500" />
-                                        </div>
-                                      )}
+                          .map((match) => {
+                            const matchDate = new Date(match.match_date)
+                            const today = new Date()
+                            const isPastDue = matchDate < today
+                            const hasNoResult =
+                              match.home_score === null ||
+                              match.away_score === null ||
+                              (match.home_score === 0 && match.away_score === 0)
+                            const isOverdue = isPastDue && hasNoResult
+
+                            return (
+                              <div
+                                key={match.id}
+                                className={`border rounded-lg p-3 sm:p-6 hover:shadow-md transition-shadow ${
+                                  isOverdue ? "border-orange-300 bg-orange-50" : "border-gray-200 bg-white"
+                                }`}
+                              >
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                  <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
+                                    <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                      <div className="flex items-center justify-center gap-2 mb-2">
+                                        {match.home_team?.logo_url ? (
+                                          <img
+                                            src={match.home_team.logo_url || "/placeholder.svg"}
+                                            alt={`${match.home_team.name} Logo`}
+                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                          />
+                                        ) : (
+                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                            <Trophy className="h-4 w-4 text-gray-500" />
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                        {match.home_team?.name ||
+                                          match.home_opponent_team?.name ||
+                                          "Team nicht gefunden"}
+                                      </div>
+                                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Heim</div>
                                     </div>
-                                    <div className="font-semibold text-base sm:text-lg text-gray-900">
-                                      {match.home_team?.name || match.home_opponent_team?.name || "Team nicht gefunden"}
+                                    <div className="text-xl sm:text-2xl font-bold text-gray-400">vs</div>
+                                    <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                      <div className="flex items-center justify-center gap-2 mb-2">
+                                        {match.away_team?.logo_url ? (
+                                          <img
+                                            src={match.away_team.logo_url || "/placeholder.svg"}
+                                            alt={`${match.away_team.name} Logo`}
+                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                          />
+                                        ) : (
+                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                            <Trophy className="h-4 w-4 text-gray-500" />
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                        {match.away_team?.name ||
+                                          match.away_opponent_team?.name ||
+                                          "Team nicht gefunden"}
+                                      </div>
+                                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
                                     </div>
-                                    <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Heim</div>
                                   </div>
-                                  <div className="text-xl sm:text-2xl font-bold text-gray-400">vs</div>
-                                  <div className="text-center min-w-[120px] sm:min-w-[140px]">
-                                    <div className="flex items-center justify-center gap-2 mb-2">
-                                      {match.away_team?.logo_url ? (
-                                        <img
-                                          src={match.away_team.logo_url || "/placeholder.svg"}
-                                          alt={`${match.away_team.name} Logo`}
-                                          className="w-8 h-8 rounded-full object-cover border border-gray-300"
-                                        />
-                                      ) : (
-                                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                          <Trophy className="h-4 w-4 text-gray-500" />
-                                        </div>
-                                      )}
+                                  <div className="text-center sm:text-right">
+                                    <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+                                      {new Date(match.match_date).toLocaleDateString("de-DE", {
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "numeric",
+                                      })}
                                     </div>
-                                    <div className="font-semibold text-base sm:text-lg text-gray-900">
-                                      {match.away_team?.name || match.away_opponent_team?.name || "Team nicht gefunden"}
+                                    <div className="text-sm text-gray-600 mb-2">
+                                      {new Date(match.match_date).toLocaleDateString("de-DE", {
+                                        weekday: "long",
+                                      })}
                                     </div>
-                                    <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
+                                    {isOverdue && (
+                                      <Badge className="bg-orange-100 text-orange-700 border-orange-300 font-medium text-xs sm:text-sm">
+                                        Ergebnis überfällig
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
-                                <div className="text-center sm:text-right">
-                                  <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
-                                    {new Date(match.match_date).toLocaleDateString("de-DE", {
-                                      day: "2-digit",
-                                      month: "2-digit",
-                                      year: "numeric",
-                                    })}
+                                {isOverdue && (
+                                  <div className="mt-3 pt-3 border-t border-orange-200">
+                                    <div className="flex items-center gap-2 text-sm text-orange-700">
+                                      <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                                      <span className="font-medium">
+                                        Dieses Spiel sollte bereits gespielt worden sein, aber das Ergebnis wurde noch
+                                        nicht eingetragen.
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="text-sm text-gray-600">
-                                    {new Date(match.match_date).toLocaleDateString("de-DE", {
-                                      weekday: "long",
-                                    })}
-                                  </div>
-                                </div>
+                                )}
                               </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                       </div>
                     )}
                   </CardContent>
@@ -1103,30 +1144,6 @@ export default function LigaPage() {
             </Tabs>
           </motion.div>
         </motion.div>
-
-        <Dialog open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen}>
-          <DialogContent className="w-[95vw] max-w-4xl mx-auto max-h-[90vh] p-0 overflow-hidden">
-            <DialogHeader className="p-4 pb-2">
-              <div className="flex items-center justify-between">
-                <DialogTitle className="text-lg font-semibold">Teamfoto</DialogTitle>
-                <Button variant="ghost" size="sm" onClick={closePhotoModal} className="h-8 w-8 p-0 hover:bg-gray-100">
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </DialogHeader>
-            <div className="relative w-full h-[60vh] sm:h-[70vh]">
-              {selectedPhotoUrl && (
-                <Image
-                  src={selectedPhotoUrl || "/placeholder.svg"}
-                  alt="Teamfoto"
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 768px) 95vw, (max-width: 1200px) 80vw, 70vw"
-                />
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
       </main>
     </div>
   )
