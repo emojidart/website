@@ -49,9 +49,19 @@ export function BonusSection({
     if (!dartType) return legStatistics
 
     return legStatistics.filter((stat) => {
-      // Assuming there's a dart_type field in the statistics
-      // If not available, we'll need to determine this from match data
-      return stat.dart_type === dartType || stat.matches?.dart_type === dartType
+      // Check if dart_type exists in the match data
+      const matchDartType = stat.matches?.dart_type
+
+      if (!matchDartType) {
+        // If no dart_type is specified, include in both
+        return true
+      }
+
+      // Normalize the dart type for comparison (handle variations like "e-dart", "eDart", "edart")
+      const normalizedMatchType = matchDartType.toLowerCase().replace(/[-_\s]/g, "")
+      const normalizedFilterType = dartType.toLowerCase().replace(/[-_\s]/g, "")
+
+      return normalizedMatchType === normalizedFilterType
     })
   }
 

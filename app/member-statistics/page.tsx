@@ -216,6 +216,7 @@ export default function MemberStatisticsPage() {
         .map((member) => member.player_id)
 
       console.log("[v0] Fetching team statistics for players:", teamPlayerIds)
+      console.log("[v0] Leadership team IDs:", leadershipTeamIds)
 
       if (teamPlayerIds.length === 0) {
         setLegStatistics([])
@@ -260,15 +261,29 @@ export default function MemberStatisticsPage() {
         throw error
       }
 
-      const legStats = data || []
-      const processedStats = legStats.map((stat: any) => ({
+      const filteredStats = (data || []).filter((stat: any) => {
+        const match = stat.matches
+        if (!match) return false
+
+        // Check if the match involves one of the user's leadership teams
+        const isHomeTeam = leadershipTeamIds.includes(match.home_team_id)
+        const isAwayTeam = leadershipTeamIds.includes(match.away_team_id)
+
+        return isHomeTeam || isAwayTeam
+      })
+
+      console.log("[v0] Filtered statistics:", filteredStats)
+
+      const processedStats = filteredStats.map((stat: any) => ({
         ...stat,
         leg_wins: stat.leg_wins || 0,
       }))
 
       setLegStatistics(processedStats)
 
-      let matchQuery = supabase.from("matches").select(`
+      let matchQuery = supabase
+        .from("matches")
+        .select(`
           *,
           home_team:teams!matches_home_team_id_fkey(id, name),
           away_team:teams!matches_away_team_id_fkey(id, name),
@@ -276,6 +291,7 @@ export default function MemberStatisticsPage() {
           away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name),
           season:seasons(id, name, type)
         `)
+        .or(`home_team_id.in.(${leadershipTeamIds.join(",")}),away_team_id.in.(${leadershipTeamIds.join(",")})`)
 
       if (dartTypeFilter !== "gesamt") {
         matchQuery = matchQuery.eq("dart_type", dartTypeFilter)

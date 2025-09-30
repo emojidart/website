@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface BonusConfig {
   under26: number
@@ -33,6 +34,7 @@ export default function MemberBonusPage() {
   const [profile, setProfile] = useState<any>(null)
   const [teamMemberships, setTeamMemberships] = useState<any[]>([])
   const [teamMembers, setTeamMembers] = useState<any[]>([])
+  const [selectedTeamId, setSelectedTeamId] = useState<string>("all")
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -141,7 +143,7 @@ export default function MemberBonusPage() {
               )
             `)
             .in("team_id", teamIds)
-            .order("role", { ascending: false }) // Captain first, then Co-Captain, then Player
+            .order("role", { ascending: false })
 
           if (membersError) {
             console.error("[v0] Team members fetch error:", membersError)
@@ -168,17 +170,15 @@ export default function MemberBonusPage() {
   const fetchAllTeamStatistics = async (teamIds: string[], members: any[]) => {
     setLegStatsLoading(true)
     try {
-      const teamPlayerIds = members.map((member) => member.player_id)
+      console.log("[v0] Fetching statistics only for matches involving team IDs:", teamIds)
 
-      console.log("[v0] All team IDs:", teamIds)
-      console.log("[v0] All team player IDs for statistics:", teamPlayerIds)
-
-      if (teamPlayerIds.length === 0) {
-        console.log("[v0] No team players found")
+      if (teamIds.length === 0) {
+        console.log("[v0] No teams found")
         setLegStatistics([])
         return
       }
 
+      // Fetch statistics from matches where one of the user's teams was home OR away
       const { data, error } = await supabase
         .from("leg_statistics")
         .select(`
@@ -191,11 +191,12 @@ export default function MemberBonusPage() {
             name,
             photo_url
           ),
-          matches (
+          matches!inner (
             id,
             match_date,
             match_time,
             venue,
+            dart_type,
             home_team_id,
             away_team_id,
             home_team:teams!matches_home_team_id_fkey(id, name),
@@ -204,27 +205,62 @@ export default function MemberBonusPage() {
             away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name)
           )
         `)
-        .in("player_id", teamPlayerIds)
+        .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`, {
+          foreignTable: "matches",
+        })
         .order("matches(match_date)", { ascending: false })
         .order("leg_number", { ascending: false })
 
       if (error) {
-        console.error("[v0] Error fetching all team leg statistics:", error)
+        console.error("[v0] Error fetching team leg statistics:", error)
         throw error
       }
 
-      console.log("[v0] All team leg statistics loaded:", data?.length || 0, "records")
-      if (data && data.length > 0) {
-        console.log("[v0] Sample team bonus data:", {
-          throws_under_26: data[0].throws_under_26,
-          throws_under_30: data[0].throws_under_30,
-          semperit_outs: data[0].semperit_outs,
+      const filteredData = (data || []).filter((stat) => {
+        const match = stat.matches
+        if (!match) return false
+
+        // Check if the player was a member of the home team
+        const playerHomeTeamMembership = members.find(
+          (member) => member.player_id === stat.player_id && member.team_id === match.home_team_id,
+        )
+
+        // Check if the player was a member of the away team
+        const playerAwayTeamMembership = members.find(
+          (member) => member.player_id === stat.player_id && member.team_id === match.away_team_id,
+        )
+
+        // Determine which team the player was playing for
+        let playerTeamInMatch = null
+        if (playerHomeTeamMembership && teamIds.includes(match.home_team_id)) {
+          playerTeamInMatch = match.home_team_id
+        } else if (playerAwayTeamMembership && teamIds.includes(match.away_team_id)) {
+          playerTeamInMatch = match.away_team_id
+        }
+
+        // Only include this stat if the player was playing for one of the user's teams
+        return playerTeamInMatch !== null
+      })
+
+      console.log(
+        "[v0] Team leg statistics loaded:",
+        filteredData.length,
+        "records (filtered from",
+        data?.length || 0,
+        ")",
+      )
+      if (filteredData.length > 0) {
+        console.log("[v0] Sample bonus data:", {
+          player: filteredData[0].player?.name,
+          throws_under_26: filteredData[0].throws_under_26,
+          throws_under_30: filteredData[0].throws_under_30,
+          semperit_outs: filteredData[0].semperit_outs,
         })
       }
 
-      setLegStatistics(data || [])
+      setLegStatistics(filteredData)
     } catch (err: any) {
-      console.error("Error fetching all team leg statistics:", err)
+      console.error("Error fetching team leg statistics:", err)
     } finally {
       setLegStatsLoading(false)
     }
@@ -234,7 +270,38 @@ export default function MemberBonusPage() {
     setBonusConfig(tempBonusConfig)
     localStorage.setItem("bonusConfig", JSON.stringify(tempBonusConfig))
     setIsBonusConfigOpen(false)
-    // Note: toast functionality would need to be imported if available
+  }
+
+  const getFilteredStatisticsByTeam = () => {
+    if (selectedTeamId === "all") {
+      return legStatistics
+    }
+
+    return legStatistics.filter((stat) => {
+      const match = stat.matches
+      if (!match) return false
+
+      // Determine which team the player was playing for in this match
+      // by checking if the player is a member of the home or away team
+      const playerHomeTeamMembership = teamMembers.find(
+        (member) => member.player_id === stat.player_id && member.team_id === match.home_team_id,
+      )
+
+      const playerAwayTeamMembership = teamMembers.find(
+        (member) => member.player_id === stat.player_id && member.team_id === match.away_team_id,
+      )
+
+      // Determine which team the player was actually playing for
+      let playerTeamInMatch = null
+      if (playerHomeTeamMembership) {
+        playerTeamInMatch = match.home_team_id
+      } else if (playerAwayTeamMembership) {
+        playerTeamInMatch = match.away_team_id
+      }
+
+      // Only show this stat if the player was playing for the selected team
+      return playerTeamInMatch === selectedTeamId
+    })
   }
 
   if (authLoading) {
@@ -258,12 +325,36 @@ export default function MemberBonusPage() {
             <ArrowLeft className="h-4 w-4" />
             Zurück
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">Bonusgeld</h1>
-          <p className="text-gray-600 mt-2">Ihre Bonuspunkte und Belohnungen</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Bonusgeld</h1>
+              <p className="text-gray-600 mt-2">Ihre Bonuspunkte und Belohnungen</p>
+            </div>
+            {teamMemberships.length > 1 && (
+              <div className="flex items-center gap-2">
+                <label htmlFor="team-filter" className="text-sm font-medium whitespace-nowrap">
+                  Team filtern:
+                </label>
+                <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                  <SelectTrigger id="team-filter" className="w-[200px]">
+                    <SelectValue placeholder="Team auswählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Teams</SelectItem>
+                    {teamMemberships.map((membership) => (
+                      <SelectItem key={membership.team_id} value={membership.team_id}>
+                        {membership.teams?.name || "Unbekanntes Team"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </div>
 
         <BonusSection
-          legStatistics={legStatistics}
+          legStatistics={getFilteredStatisticsByTeam()}
           legStatsLoading={legStatsLoading}
           bonusConfig={bonusConfig}
           isBonusConfigOpen={isBonusConfigOpen}

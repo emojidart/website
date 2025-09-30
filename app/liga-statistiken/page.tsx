@@ -253,12 +253,12 @@ export default function LigaPage() {
           legs_played: 0,
           throws_180: 0,
           throws_171: 0,
+          throws_20: 0,
           throws_15: 0,
           throws_16: 0,
           throws_17: 0,
           throws_18: 0,
           throws_19: 0,
-          throws_20: 0, // Added throws_20 field for 20er statistics
           throws_high_tonne: 0,
           throws_tonne: 0,
           throws_shanghai: 0,
@@ -276,12 +276,12 @@ export default function LigaPage() {
       playerStats[playerId].legs_played += 1
       playerStats[playerId].throws_180 += stat.throws_180 || 0
       playerStats[playerId].throws_171 += stat.throws_171 || 0
+      playerStats[playerId].throws_20 += stat.throws_20 || 0
       playerStats[playerId].throws_15 += stat.throws_15 || 0
       playerStats[playerId].throws_16 += stat.throws_16 || 0
       playerStats[playerId].throws_17 += stat.throws_17 || 0
       playerStats[playerId].throws_18 += stat.throws_18 || 0
       playerStats[playerId].throws_19 += stat.throws_19 || 0
-      playerStats[playerId].throws_20 += stat.throws_20 || 0 // Added throws_20 calculation for 20er statistics
       playerStats[playerId].throws_high_tonne += stat.throws_high_tonne || 0
       playerStats[playerId].throws_tonne += stat.throws_tonne || 0
       playerStats[playerId].throws_shanghai += stat.throws_shanghai || 0
@@ -507,7 +507,7 @@ export default function LigaPage() {
                     ) : (
                       <>
                         <div className="overflow-x-auto custom-scrollbar">
-                          <table className="w-full min-w-[1300px]">
+                          <table className="w-full min-w-[1200px]">
                             <thead className="bg-gray-50">
                               <tr>
                                 <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
@@ -530,9 +530,6 @@ export default function LigaPage() {
                                 </th>
                                 <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   171er
-                                </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                  20er
                                 </th>
                                 <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   High Tonne
