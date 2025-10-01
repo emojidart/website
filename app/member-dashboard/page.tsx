@@ -1596,13 +1596,6 @@ export default function DashboardPage() {
                       </div>
                     )}
                   </div>
-                  <Button
-                    onClick={() => setActiveMatchTab("postponed")}
-                    className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white shadow-lg text-sm sm:text-base"
-                  >
-                    <CalendarX className="h-4 w-4 mr-2" />
-                    Alle verschobenen Spiele anzeigen
-                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -1799,18 +1792,27 @@ export default function DashboardPage() {
                     onValueChange={(value) => setActiveMatchTab(value as "upcoming" | "completed" | "postponed")}
                     className="w-full"
                   >
-                    <TabsList className="grid w-full grid-cols-3 mb-6">
-                      <TabsTrigger value="upcoming" className="text-sm">
-                        Kommende Spiele ({getUpcomingMatches().length})
+                    <TabsList className="grid w-full grid-cols-3 mb-6 h-auto gap-1 p-1">
+                      <TabsTrigger
+                        value="upcoming"
+                        className="text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight"
+                      >
+                        <span className="block">Kommende</span>
+                        <span className="block">Spiele ({getUpcomingMatches().length})</span>
                       </TabsTrigger>
                       <TabsTrigger
                         value="postponed"
-                        className={`text-sm ${getPostponedMatches().length > 0 ? "animate-pulse-red" : ""}`}
+                        className={`text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight ${getPostponedMatches().length > 0 ? "animate-pulse-red" : ""}`}
                       >
-                        Verschoben ({getPostponedMatches().length})
+                        <span className="block">Verschoben</span>
+                        <span className="block">({getPostponedMatches().length})</span>
                       </TabsTrigger>
-                      <TabsTrigger value="completed" className="text-sm">
-                        Abgeschlossene Spiele ({getCompletedMatches().length})
+                      <TabsTrigger
+                        value="completed"
+                        className="text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight"
+                      >
+                        <span className="block">Abgeschl.</span>
+                        <span className="block">Spiele ({getCompletedMatches().length})</span>
                       </TabsTrigger>
                     </TabsList>
 
@@ -1825,41 +1827,48 @@ export default function DashboardPage() {
                           {getUpcomingMatches().map((match) => (
                             <div key={match.id} className={`border rounded-lg p-4 ${getMatchBackgroundColor(match)}`}>
                               <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-3">
-                                  <Badge variant="outline" className="font-mono">
-                                    Woche {match.week_number}
-                                  </Badge>
-                                  {match.match_format && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {match.match_format === "team"
-                                        ? "Team (2er)"
-                                        : match.match_format === "best_of_three"
-                                          ? "1v1 (BoF3)"
-                                          : match.match_format === "individual"
-                                            ? "1v1"
-                                            : "Standard"}
+                                <div className="flex flex-col gap-2 flex-1">
+                                  {/* Week and Format badges */}
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant="outline" className="font-mono">
+                                      Woche {match.week_number}
                                     </Badge>
-                                  )}
-                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-muted-foreground">
+                                    {match.match_format && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {match.match_format === "team"
+                                          ? "Team (2er)"
+                                          : match.match_format === "best_of_three"
+                                            ? "1v1 (BoF3)"
+                                            : match.match_format === "individual"
+                                              ? "1v1"
+                                              : "Standard"}
+                                      </Badge>
+                                    )}
+                                    <Badge variant="outline" className="text-xs">
+                                      {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
+                                    </Badge>
+                                  </div>
+
+                                  {/* Date, Time, and Venue */}
+                                  <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                                     <div className="flex items-center gap-2">
                                       <Calendar className="h-4 w-4 flex-shrink-0" />
-                                      <span>
+                                      <span className="whitespace-nowrap">
                                         {formatMatchDate(match.match_date)}
                                         {formatMatchTime(match.match_time)}
                                       </span>
-                                      <Badge variant="outline" className="text-xs ml-2">
-                                        {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
-                                      </Badge>
                                     </div>
-                                    <div className="flex items-center gap-2 min-w-0">
+                                    <div className="flex items-center gap-2">
                                       <MapPin className="h-4 w-4 flex-shrink-0" />
-                                      <span className="truncate font-medium text-xs sm:text-sm">{match.venue}</span>
+                                      <span className="truncate font-medium">{match.venue}</span>
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* Status badge - positioned top right */}
                                 <Badge
                                   variant={match.status === "completed" ? "default" : "secondary"}
-                                  className="text-xs"
+                                  className="text-xs self-start flex-shrink-0"
                                 >
                                   {match.status === "completed"
                                     ? "Beendet"
@@ -2009,41 +2018,48 @@ export default function DashboardPage() {
                           {getPostponedMatches().map((match) => (
                             <div key={match.id} className="border rounded-lg p-4 bg-orange-50 border-orange-200">
                               <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-3">
-                                  <Badge variant="outline" className="font-mono">
-                                    Woche {match.week_number}
-                                  </Badge>
-                                  {match.match_format && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {match.match_format === "team"
-                                        ? "Team (2er)"
-                                        : match.match_format === "best_of_three"
-                                          ? "1v1 (BoF3)"
-                                          : match.match_format === "individual"
-                                            ? "1v1"
-                                            : "Standard"}
+                                <div className="flex flex-col gap-2 flex-1">
+                                  {/* Week and Format badges */}
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant="outline" className="font-mono">
+                                      Woche {match.week_number}
                                     </Badge>
-                                  )}
-                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-muted-foreground">
+                                    {match.match_format && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {match.match_format === "team"
+                                          ? "Team (2er)"
+                                          : match.match_format === "best_of_three"
+                                            ? "1v1 (BoF3)"
+                                            : match.match_format === "individual"
+                                              ? "1v1"
+                                              : "Standard"}
+                                      </Badge>
+                                    )}
+                                    <Badge variant="outline" className="text-xs">
+                                      {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
+                                    </Badge>
+                                  </div>
+
+                                  {/* Date, Time, and Venue */}
+                                  <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                                     <div className="flex items-center gap-2">
                                       <Calendar className="h-4 w-4 flex-shrink-0" />
-                                      <span>
+                                      <span className="whitespace-nowrap">
                                         {formatMatchDate(match.match_date)}
                                         {formatMatchTime(match.match_time)}
                                       </span>
-                                      <Badge variant="outline" className="text-xs ml-2">
-                                        {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
-                                      </Badge>
                                     </div>
-                                    <div className="flex items-center gap-2 min-w-0">
+                                    <div className="flex items-center gap-2">
                                       <MapPin className="h-4 w-4 flex-shrink-0" />
-                                      <span className="truncate font-medium text-xs sm:text-sm">{match.venue}</span>
+                                      <span className="truncate font-medium">{match.venue}</span>
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* Status badge - positioned top right */}
                                 <Badge
                                   variant="outline"
-                                  className="text-xs bg-orange-100 text-orange-800 border-orange-300"
+                                  className="text-xs bg-orange-100 text-orange-800 border-orange-300 self-start flex-shrink-0"
                                 >
                                   Verschoben
                                 </Badge>
@@ -2188,41 +2204,48 @@ export default function DashboardPage() {
                           {getCompletedMatches().map((match) => (
                             <div key={match.id} className={`border rounded-lg p-4 ${getMatchBackgroundColor(match)}`}>
                               <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-3">
-                                  <Badge variant="outline" className="font-mono">
-                                    Woche {match.week_number}
-                                  </Badge>
-                                  {match.match_format && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {match.match_format === "team"
-                                        ? "Team (2er)"
-                                        : match.match_format === "best_of_three"
-                                          ? "1v1 (BoF3)"
-                                          : match.match_format === "individual"
-                                            ? "1v1"
-                                            : "Standard"}
+                                <div className="flex flex-col gap-2 flex-1">
+                                  {/* Week and Format badges */}
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant="outline" className="font-mono">
+                                      Woche {match.week_number}
                                     </Badge>
-                                  )}
-                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-muted-foreground">
+                                    {match.match_format && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {match.match_format === "team"
+                                          ? "Team (2er)"
+                                          : match.match_format === "best_of_three"
+                                            ? "1v1 (BoF3)"
+                                            : match.match_format === "individual"
+                                              ? "1v1"
+                                              : "Standard"}
+                                      </Badge>
+                                    )}
+                                    <Badge variant="outline" className="text-xs">
+                                      {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
+                                    </Badge>
+                                  </div>
+
+                                  {/* Date, Time, and Venue */}
+                                  <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                                     <div className="flex items-center gap-2">
                                       <Calendar className="h-4 w-4 flex-shrink-0" />
-                                      <span>
+                                      <span className="whitespace-nowrap">
                                         {formatMatchDate(match.match_date)}
                                         {formatMatchTime(match.match_time)}
                                       </span>
-                                      <Badge variant="outline" className="text-xs ml-2">
-                                        {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
-                                      </Badge>
                                     </div>
-                                    <div className="flex items-center gap-2 min-w-0">
+                                    <div className="flex items-center gap-2">
                                       <MapPin className="h-4 w-4 flex-shrink-0" />
-                                      <span className="truncate font-medium text-xs sm:text-sm">{match.venue}</span>
+                                      <span className="truncate font-medium">{match.venue}</span>
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* Status badge - positioned top right */}
                                 <Badge
                                   variant={match.status === "completed" ? "default" : "secondary"}
-                                  className="text-xs"
+                                  className="text-xs self-start flex-shrink-0"
                                 >
                                   {match.status === "completed" ? "Beendet" : "Anstehend"}
                                 </Badge>

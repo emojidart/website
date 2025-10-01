@@ -546,7 +546,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="h-5 w-5" />
-            Spielerstatistiken nach dem Spiel eingeben
+            Spielerstatistiken eingeben
           </CardTitle>
           <p className="text-sm text-muted-foreground">
             Wähle einen Spieler aus deinem Team aus und gib seine Statistiken für das gesamte Spiel ein.
