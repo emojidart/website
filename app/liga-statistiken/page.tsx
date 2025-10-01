@@ -227,11 +227,13 @@ export default function LigaPage() {
       team.legsDifference = team.legsFor - team.legsAgainst
     })
 
-    return Object.values(standings).sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points
-      if (b.legsDifference !== a.legsDifference) return b.legsDifference - a.legsDifference
-      return b.legsFor - a.legsFor
-    })
+    return Object.values(standings)
+      .filter((team) => team.played > 0)
+      .sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points
+        if (b.legsDifference !== a.legsDifference) return b.legsDifference - a.legsDifference
+        return b.legsFor - a.legsFor
+      })
   }
 
   const calculatePlayerLegStats = () => {
@@ -318,6 +320,7 @@ export default function LigaPage() {
 
   const completedMatches = matches.filter((match) => match.status === "completed")
   const upcomingMatches = matches.filter((match) => match.status === "scheduled")
+  const postponedMatches = matches.filter((match) => match.status === "postponed")
   const standings = calculateStandings()
   const playerLegStats = calculatePlayerLegStats()
 
@@ -898,36 +901,23 @@ export default function LigaPage() {
               </TabsContent>
 
               <TabsContent value="fixtures">
-                <Card>
-                  <CardHeader className="p-3 sm:p-6">
-                    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                      <Calendar className="h-5 w-5 text-blue-600" />
-                      Kommende Spiele ({upcomingMatches.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 sm:p-6">
-                    {upcomingMatches.length === 0 ? (
-                      <p className="text-center text-gray-500 py-8">Keine kommenden Spiele geplant</p>
-                    ) : (
-                      <div className="space-y-3 sm:space-y-4">
-                        {upcomingMatches
-                          .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
-                          .map((match) => {
-                            const matchDate = new Date(match.match_date)
-                            const today = new Date()
-                            const isPastDue = matchDate < today
-                            const hasNoResult =
-                              match.home_score === null ||
-                              match.away_score === null ||
-                              (match.home_score === 0 && match.away_score === 0)
-                            const isOverdue = isPastDue && hasNoResult
-
-                            return (
+                <div className="space-y-4">
+                  {postponedMatches.length > 0 && (
+                    <Card className="border-red-300 bg-red-50 shadow-lg">
+                      <CardHeader className="bg-gradient-to-r from-red-500 to-red-600 text-white p-3 sm:p-6">
+                        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                          <Calendar className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
+                          Verschobene Spiele ({postponedMatches.length})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-3 sm:p-6">
+                        <div className="space-y-3 sm:space-y-4">
+                          {postponedMatches
+                            .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+                            .map((match) => (
                               <div
                                 key={match.id}
-                                className={`border rounded-lg p-3 sm:p-6 hover:shadow-md transition-shadow ${
-                                  isOverdue ? "border-orange-300 bg-orange-50" : "border-gray-200 bg-white"
-                                }`}
+                                className="border-2 border-red-300 rounded-xl p-3 sm:p-6 bg-white shadow-sm hover:shadow-md transition-all"
                               >
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                                   <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
@@ -952,7 +942,7 @@ export default function LigaPage() {
                                       </div>
                                       <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Heim</div>
                                     </div>
-                                    <div className="text-xl sm:text-2xl font-bold text-gray-400">vs</div>
+                                    <div className="text-xl sm:text-2xl font-bold text-red-500">vs</div>
                                     <div className="text-center min-w-[120px] sm:min-w-[140px]">
                                       <div className="flex items-center justify-center gap-2 mb-2">
                                         {match.away_team?.logo_url ? (
@@ -988,31 +978,142 @@ export default function LigaPage() {
                                         weekday: "long",
                                       })}
                                     </div>
-                                    {isOverdue && (
-                                      <Badge className="bg-orange-100 text-orange-700 border-orange-300 font-medium text-xs sm:text-sm">
-                                        Ergebnis überfällig
-                                      </Badge>
-                                    )}
+                                    <Badge className="bg-red-500 text-white border-red-600 font-medium text-xs sm:text-sm animate-pulse">
+                                      Verschoben
+                                    </Badge>
                                   </div>
                                 </div>
-                                {isOverdue && (
-                                  <div className="mt-3 pt-3 border-t border-orange-200">
-                                    <div className="flex items-center gap-2 text-sm text-orange-700">
-                                      <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
-                                      <span className="font-medium">
-                                        Dieses Spiel sollte bereits gespielt worden sein, aber das Ergebnis wurde noch
-                                        nicht eingetragen.
-                                      </span>
+                                <div className="mt-3 pt-3 border-t border-red-200">
+                                  <div className="flex items-center gap-2 text-sm text-red-700">
+                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                    <span className="font-medium">
+                                      Dieses Spiel wurde verschoben!
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Card>
+                    <CardHeader className="p-3 sm:p-6">
+                      <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                        <Calendar className="h-5 w-5 text-blue-600" />
+                        Kommende Spiele ({upcomingMatches.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-3 sm:p-6">
+                      {upcomingMatches.length === 0 ? (
+                        <p className="text-center text-gray-500 py-8">Keine kommenden Spiele geplant</p>
+                      ) : (
+                        <div className="space-y-3 sm:space-y-4">
+                          {upcomingMatches
+                            .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+                            .map((match) => {
+                              const matchDate = new Date(match.match_date)
+                              const today = new Date()
+                              const isPastDue = matchDate < today
+                              const hasNoResult =
+                                match.home_score === null ||
+                                match.away_score === null ||
+                                (match.home_score === 0 && match.away_score === 0)
+                              const isOverdue = isPastDue && hasNoResult
+
+                              return (
+                                <div
+                                  key={match.id}
+                                  className={`border rounded-lg p-3 sm:p-6 hover:shadow-md transition-shadow ${
+                                    isOverdue ? "border-orange-300 bg-orange-50" : "border-gray-200 bg-white"
+                                  }`}
+                                >
+                                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
+                                      <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                        <div className="flex items-center justify-center gap-2 mb-2">
+                                          {match.home_team?.logo_url ? (
+                                            <img
+                                              src={match.home_team.logo_url || "/placeholder.svg"}
+                                              alt={`${match.home_team.name} Logo`}
+                                              className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                            />
+                                          ) : (
+                                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                              <Trophy className="h-4 w-4 text-gray-500" />
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                          {match.home_team?.name ||
+                                            match.home_opponent_team?.name ||
+                                            "Team nicht gefunden"}
+                                        </div>
+                                        <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Heim</div>
+                                      </div>
+                                      <div className="text-xl sm:text-2xl font-bold text-gray-400">vs</div>
+                                      <div className="text-center min-w-[120px] sm:min-w-[140px]">
+                                        <div className="flex items-center justify-center gap-2 mb-2">
+                                          {match.away_team?.logo_url ? (
+                                            <img
+                                              src={match.away_team.logo_url || "/placeholder.svg"}
+                                              alt={`${match.away_team.name} Logo`}
+                                              className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                            />
+                                          ) : (
+                                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                              <Trophy className="h-4 w-4 text-gray-500" />
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                          {match.away_team?.name ||
+                                            match.away_opponent_team?.name ||
+                                            "Team nicht gefunden"}
+                                        </div>
+                                        <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-center sm:text-right">
+                                      <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+                                        {new Date(match.match_date).toLocaleDateString("de-DE", {
+                                          day: "2-digit",
+                                          month: "2-digit",
+                                          year: "numeric",
+                                        })}
+                                      </div>
+                                      <div className="text-sm text-gray-600 mb-2">
+                                        {new Date(match.match_date).toLocaleDateString("de-DE", {
+                                          weekday: "long",
+                                        })}
+                                      </div>
+                                      {isOverdue && (
+                                        <Badge className="bg-orange-100 text-orange-700 border-orange-300 font-medium text-xs sm:text-sm">
+                                          Ergebnis überfällig
+                                        </Badge>
+                                      )}
                                     </div>
                                   </div>
-                                )}
-                              </div>
-                            )
-                          })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                                  {isOverdue && (
+                                    <div className="mt-3 pt-3 border-t border-orange-200">
+                                      <div className="flex items-center gap-2 text-sm text-orange-700">
+                                        <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                                        <span className="font-medium">
+                                          Dieses Spiel sollte bereits gespielt worden sein, aber das Ergebnis wurde noch
+                                          nicht eingetragen.
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
 
               <TabsContent value="teams">
@@ -1023,118 +1124,125 @@ export default function LigaPage() {
                   </div>
 
                   <div className="grid gap-4 sm:gap-8">
-                    {teams.map((team) => {
-                      const teamPlayers = players.filter((player) => player.team_id === team.id)
-                      const teamStats = standings.find((s) => s.team === team.name)
+                    {teams
+                      .filter((team) => {
+                        const teamHasMatches = standings.some((s) => s.team === team.name)
+                        return teamHasMatches
+                      })
+                      .map((team) => {
+                        const teamPlayers = players.filter((player) => player.team_id === team.id)
+                        const teamStats = standings.find((s) => s.team === team.name)
 
-                      return (
-                        <Card key={team.id} className="overflow-hidden">
-                          <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b p-3 sm:p-6">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                              <div className="flex items-center gap-3">
-                                {team.logo_url ? (
-                                  <img
-                                    src={team.logo_url || "/placeholder.svg"}
-                                    alt={`${team.name} Logo`}
-                                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-orange-200"
-                                  />
-                                ) : (
-                                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-orange-100 rounded-full flex items-center justify-center">
-                                    <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
-                                  </div>
-                                )}
-                                <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
-                                  {team.name}
-                                </CardTitle>
-                              </div>
-                              <div className="flex items-center gap-2 sm:gap-4">
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-orange-100 text-orange-800 font-semibold text-xs sm:text-sm"
-                                >
-                                  {teamPlayers.length} Spieler
-                                </Badge>
-                                {teamStats && (
-                                  <Badge className="bg-orange-600 text-white font-semibold text-xs sm:text-sm">
-                                    {teamStats.points} Punkte
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="p-3 sm:p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                              {teamStats && (
-                                <div>
-                                  <h4 className="font-semibold text-gray-900 mb-3">Saisonstatistik</h4>
-                                  <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                                    <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center">
-                                      <div className="text-xl sm:text-2xl font-bold text-gray-900">
-                                        {teamStats.played}
-                                      </div>
-                                      <div className="text-xs sm:text-sm text-gray-600">Spiele</div>
+                        return (
+                          <Card key={team.id} className="overflow-hidden">
+                            <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b p-3 sm:p-6">
+                              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                                <div className="flex items-center gap-3">
+                                  {team.logo_url ? (
+                                    <img
+                                      src={team.logo_url || "/placeholder.svg"}
+                                      alt={`${team.name} Logo`}
+                                      className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-orange-200"
+                                    />
+                                  ) : (
+                                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                                      <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
                                     </div>
-                                    <div className="bg-green-50 rounded-lg p-2 sm:p-3 text-center">
-                                      <div className="text-xl sm:text-2xl font-bold text-green-600">
-                                        {teamStats.won}
-                                      </div>
-                                      <div className="text-xs sm:text-sm text-gray-600">Siege</div>
-                                    </div>
-                                    <div className="bg-yellow-50 rounded-lg p-2 sm:p-3 text-center">
-                                      <div className="text-xl sm:text-2xl font-bold text-yellow-600">
-                                        {teamStats.drawn}
-                                      </div>
-                                      <div className="text-xs sm:text-sm text-gray-600">Unentschieden</div>
-                                    </div>
-                                    <div className="bg-red-50 rounded-lg p-2 sm:p-3 text-center">
-                                      <div className="text-xl sm:text-2xl font-bold text-red-600">{teamStats.lost}</div>
-                                      <div className="text-xs sm:text-sm text-gray-600">Niederlagen</div>
-                                    </div>
-                                    <div className="bg-blue-50 rounded-lg p-2 sm:p-3 text-center col-span-2">
-                                      <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                                        {teamStats.legsDifference > 0 ? "+" : ""}
-                                        {teamStats.legsDifference}
-                                      </div>
-                                      <div className="text-xs sm:text-sm text-gray-600">Legs-Differenz</div>
-                                    </div>
-                                  </div>
+                                  )}
+                                  <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+                                    {team.name}
+                                  </CardTitle>
                                 </div>
-                              )}
-
-                              <div>
-                                <h4 className="font-semibold text-gray-900 mb-3">Spielerkader</h4>
-                                {teamPlayers.length === 0 ? (
-                                  <div className="text-center py-8 text-gray-500">
-                                    <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                                    <p>Keine Spieler zugeordnet</p>
-                                  </div>
-                                ) : (
-                                  <div className="grid gap-2">
-                                    {teamPlayers.map((player, index) => (
-                                      <div
-                                        key={player.id}
-                                        className="flex items-center gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg"
-                                      >
-                                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                                          <span className="text-xs sm:text-sm font-semibold text-orange-600">
-                                            {index + 1}
-                                          </span>
+                                <div className="flex items-center gap-2 sm:gap-4">
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-orange-100 text-orange-800 font-semibold text-xs sm:text-sm"
+                                  >
+                                    {teamPlayers.length} Spieler
+                                  </Badge>
+                                  {teamStats && (
+                                    <Badge className="bg-orange-600 text-white font-semibold text-xs sm:text-sm">
+                                      {teamStats.points} Punkte
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-3 sm:p-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                                {teamStats && (
+                                  <div>
+                                    <h4 className="font-semibold text-gray-900 mb-3">Saisonstatistik</h4>
+                                    <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center">
+                                        <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                                          {teamStats.played}
                                         </div>
-                                        <div className="flex-1">
-                                          <div className="font-medium text-gray-900 text-sm sm:text-base">
-                                            {player.name}
+                                        <div className="text-xs sm:text-sm text-gray-600">Spiele</div>
+                                      </div>
+                                      <div className="bg-green-50 rounded-lg p-2 sm:p-3 text-center">
+                                        <div className="text-xl sm:text-2xl font-bold text-green-600">
+                                          {teamStats.won}
+                                        </div>
+                                        <div className="text-xs sm:text-sm text-gray-600">Siege</div>
+                                      </div>
+                                      <div className="bg-yellow-50 rounded-lg p-2 sm:p-3 text-center">
+                                        <div className="text-xl sm:text-2xl font-bold text-yellow-600">
+                                          {teamStats.drawn}
+                                        </div>
+                                        <div className="text-xs sm:text-sm text-gray-600">Unentschieden</div>
+                                      </div>
+                                      <div className="bg-red-50 rounded-lg p-2 sm:p-3 text-center">
+                                        <div className="text-xl sm:text-2xl font-bold text-red-600">
+                                          {teamStats.lost}
+                                        </div>
+                                        <div className="text-xs sm:text-sm text-gray-600">Niederlagen</div>
+                                      </div>
+                                      <div className="bg-blue-50 rounded-lg p-2 sm:p-3 text-center col-span-2">
+                                        <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                                          {teamStats.legsDifference > 0 ? "+" : ""}
+                                          {teamStats.legsDifference}
+                                        </div>
+                                        <div className="text-xs sm:text-sm text-gray-600">Legs-Differenz</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div>
+                                  <h4 className="font-semibold text-gray-900 mb-3">Spielerkader</h4>
+                                  {teamPlayers.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-500">
+                                      <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                                      <p>Keine Spieler zugeordnet</p>
+                                    </div>
+                                  ) : (
+                                    <div className="grid gap-2">
+                                      {teamPlayers.map((player, index) => (
+                                        <div
+                                          key={player.id}
+                                          className="flex items-center gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg"
+                                        >
+                                          <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                            <span className="text-xs sm:text-sm font-semibold text-orange-600">
+                                              {index + 1}
+                                            </span>
+                                          </div>
+                                          <div className="flex-1">
+                                            <div className="font-medium text-gray-900 text-sm sm:text-base">
+                                              {player.name}
+                                            </div>
                                           </div>
                                         </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
                   </div>
                 </div>
               </TabsContent>

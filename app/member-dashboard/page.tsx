@@ -30,6 +30,12 @@ import {
   Eye,
   ArrowRight,
   ImageIcon,
+  CalendarX,
+  AlertTriangle,
+  Check,
+  Info,
+  X,
+  RotateCcw,
 } from "lucide-react"
 import {
   Dialog,
@@ -112,29 +118,30 @@ interface LigaStatistic {
 
 interface Match {
   id: string
+  home_team_id: string
+  away_team_id: string
+  home_team_type: "own" | "opponent" | "club_team" // Added club_team
+  away_team_type: "own" | "opponent" | "club_team" // Added club_team
+  home_opponent_team_id: string | null
+  away_opponent_team_id: string | null
   match_date: string
-  match_time: string
+  match_time: string | null // Changed to string | null for consistency
   venue: string
+  week_number: number
   home_score: number | null
   away_score: number | null
   status: string
-  week_number: number
-  dart_type: "steeldart" | "edart"
-  match_format?: "team" | "individual" | "best_of_three"
-  division_type?: "team_division" | "individual_division"
-  home_team: {
-    id: string
-    name: string
-  } | null
-  away_team: {
-    id: string
-    name: string
-  } | null
-  home_opponent_team: any | null
-  away_opponent_team: any | null
-  home_team_type: string
-  away_team_type: string
-  team_photo_url?: string | null
+  season_id: string
+  dart_type: string
+  match_format: string | null
+  team_photo_url: string | null
+  original_date: string | null
+  postponement_reason: string | null
+  home_team?: { id: string; name: string }
+  away_team?: { id: string; name: string }
+  home_opponent_team?: OpponentTeam | null
+  away_opponent_team?: OpponentTeam | null
+  season?: { id: string; name: string; type: string }
 }
 
 interface OpponentTeam {
@@ -229,7 +236,49 @@ export default function DashboardPage() {
 
   const [showSettings, setShowSettings] = useState(false)
 
-  const [activeMatchTab, setActiveMatchTab] = useState<"upcoming" | "completed">("upcoming")
+  const [activeMatchTab, setActiveMatchTab] = useState<"upcoming" | "completed" | "postponed">("upcoming")
+
+  const [isPostponeDialogOpen, setIsPostponeDialogOpen] = useState(false)
+  const [selectedMatchForPostpone, setSelectedMatchForPostpone] = useState<string | null>(null)
+  const [postponeData, setPostponeData] = useState({
+    newDate: "",
+    newTime: "",
+    reason: "",
+  })
+
+  const undoPostponement = async (matchId: string) => {
+    try {
+      const match = matches.find((m) => m.id === matchId)
+      if (!match || !match.original_date) return
+
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          status: "scheduled",
+          match_date: match.original_date, // Restore original date
+          original_date: null,
+          postponement_reason: null,
+        })
+        .eq("id", matchId)
+
+      if (!error) {
+        toast({
+          title: "Verschiebung rückgängig gemacht",
+          description: "Das Spiel wurde auf das ursprüngliche Datum zurückgesetzt.",
+        })
+        fetchMatches()
+      } else {
+        throw error
+      }
+    } catch (error) {
+      console.error("Error undoing postponement:", error)
+      toast({
+        title: "Fehler",
+        description: "Die Verschiebung konnte nicht rückgängig gemacht werden.",
+        variant: "destructive",
+      })
+    }
+  }
 
   // useEffect(() => {
   //   const savedConfig = localStorage.getItem("bonusConfig")
@@ -1010,12 +1059,24 @@ export default function DashboardPage() {
     }
   }
 
-  const getTeamName = (match: any, isHome: boolean) => {
+  const getTeamDisplayName = (match: any, isHome: boolean) => {
+    if (!match) return "Unbekannt"
+
     if (isHome) {
-      return match?.home_team_type === "own" ? match?.home_team?.name : match?.home_opponent_team?.name
+      if (match.home_team_type === "own" && match.home_team) {
+        return match.home_team.name
+      } else if (match.home_team_type === "opponent" && match.home_opponent_team) {
+        return match.home_opponent_team.name
+      }
     } else {
-      return match?.away_team_type === "own" ? match?.away_team?.name : match?.away_opponent_team?.name
+      if (match.away_team_type === "own" && match.away_team) {
+        return match.away_team.name
+      } else if (match.away_team_type === "opponent" && match.away_opponent_team) {
+        return match.away_opponent_team.name
+      }
     }
+
+    return "Unbekannt"
   }
 
   const updateMatchScore = async (matchId: string, homeScore: number, awayScore: number) => {
@@ -1273,19 +1334,20 @@ export default function DashboardPage() {
     }
   }
 
-  const getTeamDisplayName = (match: any, isHome: boolean) => {
+  // Helper function to get team display name, avoiding redeclaration
+  const getTeamDisplayNameHelper = (match: any, isHome: boolean) => {
     if (!match) return "Unbekannt"
 
     if (isHome) {
-      if (match.home_team_type === "club_team" && match.home_team) {
+      if (match.home_team_type === "own" && match.home_team) {
         return match.home_team.name
-      } else if (match.home_team_type === "opponent_team" && match.home_opponent_team) {
+      } else if (match.home_team_type === "opponent" && match.home_opponent_team) {
         return match.home_opponent_team.name
       }
     } else {
-      if (match.away_team_type === "club_team" && match.away_team) {
+      if (match.away_team_type === "own" && match.away_team) {
         return match.away_team.name
-      } else if (match.away_team_type === "opponent_team" && match.away_opponent_team) {
+      } else if (match.away_team_type === "opponent" && match.away_opponent_team) {
         return match.away_opponent_team.name
       }
     }
@@ -1293,9 +1355,32 @@ export default function DashboardPage() {
     return "Unbekannt"
   }
 
+  // Helper function to get team name, resolving undeclared variable issue
+  const getTeamName = (match: any, isHome: boolean): string => {
+    if (!match) return "Unbekannt"
+    if (isHome) {
+      if (match.home_team_type === "own" && match.home_team) {
+        return match.home_team.name
+      } else if (match.home_team_type === "opponent" && match.home_opponent_team) {
+        return match.home_opponent_team.name
+      }
+    } else {
+      if (match.away_team_type === "own" && match.away_team) {
+        return match.away_team.name
+      } else if (match.away_team_type === "opponent" && match.away_opponent_team) {
+        return match.away_opponent_team.name
+      }
+    }
+    return "Unbekannt"
+  }
+
   // Helper functions to filter matches by status
   const getUpcomingMatches = () => {
-    return matches.filter((match) => match.status !== "completed")
+    return matches.filter((match) => match.status !== "completed" && match.status !== "postponed")
+  }
+
+  const getPostponedMatches = () => {
+    return matches.filter((match) => match.status === "postponed")
   }
 
   const getCompletedMatches = () => {
@@ -1336,6 +1421,41 @@ export default function DashboardPage() {
   //       stats.semperit * bonusConfig.semperit,
   //   }))
   // }
+
+  const postponeMatch = async (matchId: string, newDate: string, newTime: string, reason: string) => {
+    try {
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          status: "postponed",
+          original_date: matches.find((m) => m.id === matchId)?.match_date, // Store original date
+          match_date: newDate,
+          match_time: newTime,
+          postponement_reason: reason,
+        })
+        .eq("id", matchId)
+
+      if (!error) {
+        toast({
+          title: "Spiel verschoben",
+          description: "Das Spiel wurde erfolgreich verschoben.",
+        })
+        fetchMatches()
+        setIsPostponeDialogOpen(false)
+        setSelectedMatchForPostpone(null)
+        setPostponeData({ newDate: "", newTime: "", reason: "" })
+      } else {
+        throw error
+      }
+    } catch (error) {
+      console.error("Error postponing match:", error)
+      toast({
+        title: "Fehler",
+        description: "Fehler beim Verschieben des Spiels.",
+        variant: "destructive",
+      })
+    }
+  }
 
   if (authLoading || loading) {
     return (
@@ -1395,23 +1515,99 @@ export default function DashboardPage() {
     return `${day}.${month}.${year}`
   }
 
+  const formatMatchTime = (timeString: string | null) => {
+    if (!timeString) return ""
+    // Remove seconds from time string (HH:mm:ss -> HH:mm)
+    const timeParts = timeString.split(":")
+    const timeWithoutSeconds = `${timeParts[0]}:${timeParts[1]}`
+    return ` um ${timeWithoutSeconds} Uhr`
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <Header />
-      <div className="container mx-auto px-4 py-8">
-        {/* Profile Button */}
-        <div className="mb-8">
-          <Button
-            onClick={() => router.push("/member-profile")}
-            className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 w-fit"
-          >
-            <Eye className="h-5 w-5" />
-            Mein Profil anzeigen
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
+      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl">
+        {/* Changed DashboardTutorial prop name */}
+        <DashboardTutorial role={getUserRole()} />
 
-        <DashboardTutorial userRole={getUserRole()} />
+        {getPostponedMatches().length > 0 && (
+          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-l-orange-500">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                <div className="flex-shrink-0">
+                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-xl shadow-lg">
+                    <CalendarX className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  </div>
+                </div>
+                <div className="flex-grow w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Verschobene Spiele</h3>
+                    </div>
+                    <Badge className="bg-orange-500 text-white w-fit">{getPostponedMatches().length}</Badge>
+                  </div>
+                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                    {getPostponedMatches().length === 1
+                      ? "Ein Spiel wurde"
+                      : `${getPostponedMatches().length} Spiele wurden`}{" "}
+                    verschoben. Bitte beachte die neuen Termine.
+                  </p>
+                  <div className="space-y-2 mb-3 sm:mb-4">
+                    {getPostponedMatches()
+                      .slice(0, 3)
+                      .map((match) => (
+                        <div key={match.id} className="bg-white/70 rounded-lg p-3 border border-orange-200">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                              <Users className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                              <span className="font-medium text-xs sm:text-sm">
+                                {getTeamDisplayNameHelper(match, true)} vs {getTeamDisplayNameHelper(match, false)}
+                              </span>
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs sm:text-sm">
+                              <div className="flex items-center gap-1 text-red-600">
+                                <X className="h-3 w-3" />
+                                <span className="line-through">
+                                  {match.original_date ? formatMatchDate(match.original_date) : "Ursprüngliches Datum"}
+                                </span>
+                              </div>
+                              <ArrowRight className="h-3 w-3 text-gray-400 hidden sm:block" />
+                              <div className="flex items-center gap-1 text-green-600 font-medium">
+                                <Check className="h-3 w-3" />
+                                <span>
+                                  {formatMatchDate(match.match_date)}
+                                  {formatMatchTime(match.match_time)}
+                                </span>
+                              </div>
+                            </div>
+                            {match.postponement_reason && (
+                              <div className="flex items-start gap-1 text-xs text-gray-600 bg-gray-50 rounded p-2">
+                                <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                <span className="italic">{match.postponement_reason}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    {getPostponedMatches().length > 3 && (
+                      <div className="text-xs sm:text-sm text-gray-600 text-center py-2">
+                        ... und {getPostponedMatches().length - 3} weitere
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    onClick={() => setActiveMatchTab("postponed")}
+                    className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white shadow-lg text-sm sm:text-base"
+                  >
+                    <CalendarX className="h-4 w-4 mr-2" />
+                    Alle verschobenen Spiele anzeigen
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="mb-4 sm:mb-6 lg:mb-8">
           {/* Teams Section */}
@@ -1419,7 +1615,7 @@ export default function DashboardPage() {
             <div className="xl:col-span-1"></div>
 
             {/* Main Content */}
-            <div className="xl:col-span-2 space-y-6 sm:space-y-8">
+            <div className="xl:col-span-2 space-y-6 sm:space-8">
               {/* Team Memberships */}
               <Card className="shadow-xl border-0 bg-white">
                 <CardHeader>
@@ -1546,6 +1742,12 @@ export default function DashboardPage() {
                                           "/placeholder.svg" ||
                                           "/placeholder.svg" ||
                                           "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
+                                          "/placeholder.svg" ||
                                           "/placeholder.svg"
                                         }
                                       />
@@ -1594,12 +1796,18 @@ export default function DashboardPage() {
                 <CardContent>
                   <Tabs
                     value={activeMatchTab}
-                    onValueChange={(value) => setActiveMatchTab(value as "upcoming" | "completed")}
+                    onValueChange={(value) => setActiveMatchTab(value as "upcoming" | "completed" | "postponed")}
                     className="w-full"
                   >
-                    <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsList className="grid w-full grid-cols-3 mb-6">
                       <TabsTrigger value="upcoming" className="text-sm">
                         Kommende Spiele ({getUpcomingMatches().length})
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="postponed"
+                        className={`text-sm ${getPostponedMatches().length > 0 ? "animate-pulse-red" : ""}`}
+                      >
+                        Verschoben ({getPostponedMatches().length})
                       </TabsTrigger>
                       <TabsTrigger value="completed" className="text-sm">
                         Abgeschlossene Spiele ({getCompletedMatches().length})
@@ -1635,7 +1843,10 @@ export default function DashboardPage() {
                                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-muted-foreground">
                                     <div className="flex items-center gap-2">
                                       <Calendar className="h-4 w-4 flex-shrink-0" />
-                                      <span>{formatMatchDate(match.match_date)}</span>
+                                      <span>
+                                        {formatMatchDate(match.match_date)}
+                                        {formatMatchTime(match.match_time)}
+                                      </span>
                                       <Badge variant="outline" className="text-xs ml-2">
                                         {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
                                       </Badge>
@@ -1650,16 +1861,32 @@ export default function DashboardPage() {
                                   variant={match.status === "completed" ? "default" : "secondary"}
                                   className="text-xs"
                                 >
-                                  {match.status === "completed" ? "Beendet" : "Anstehend"}
+                                  {match.status === "completed"
+                                    ? "Beendet"
+                                    : match.status === "postponed"
+                                      ? "Verschoben"
+                                      : "Anstehend"}
                                 </Badge>
                               </div>
+
+                              {match.status === "postponed" && match.original_date && (
+                                <Alert className="mb-3 bg-orange-50 border-orange-200">
+                                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                                  <AlertDescription className="text-sm text-orange-800">
+                                    <strong>Verschoben:</strong> Ursprünglich am {formatMatchDate(match.original_date)}
+                                    {match.postponement_reason && (
+                                      <span className="block mt-1">Grund: {match.postponement_reason}</span>
+                                    )}
+                                  </AlertDescription>
+                                </Alert>
+                              )}
 
                               <div className="flex flex-col gap-4">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-6">
                                     <div className="text-center">
                                       <div className="font-semibold text-lg mb-1">
-                                        {getTeamName(match, true) || "Heim Team"}
+                                        {getTeamDisplayNameHelper(match, true)}
                                       </div>
                                       <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
                                       <div className="text-xs text-muted-foreground mt-1">
@@ -1744,8 +1971,205 @@ export default function DashboardPage() {
                                         {match.team_photo_url ? "Teamfoto" : "Foto Upload"}
                                       </span>
                                     </Button>
+
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 w-full h-8"
+                                      onClick={() => {
+                                        setSelectedMatchForPostpone(match.id)
+                                        setPostponeData({
+                                          newDate: match.match_date,
+                                          newTime: match.match_time,
+                                          reason: "",
+                                        })
+                                        setIsPostponeDialogOpen(true)
+                                      }}
+                                    >
+                                      <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
+                                      <span className="text-xs">Verschieben</span>
+                                    </Button>
                                   </div>
                                 )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="postponed">
+                      {getPostponedMatches().length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                          <p>Keine verschobenen Spiele gefunden.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {getPostponedMatches().map((match) => (
+                            <div key={match.id} className="border rounded-lg p-4 bg-orange-50 border-orange-200">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                  <Badge variant="outline" className="font-mono">
+                                    Woche {match.week_number}
+                                  </Badge>
+                                  {match.match_format && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {match.match_format === "team"
+                                        ? "Team (2er)"
+                                        : match.match_format === "best_of_three"
+                                          ? "1v1 (BoF3)"
+                                          : match.match_format === "individual"
+                                            ? "1v1"
+                                            : "Standard"}
+                                    </Badge>
+                                  )}
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-2">
+                                      <Calendar className="h-4 w-4 flex-shrink-0" />
+                                      <span>
+                                        {formatMatchDate(match.match_date)}
+                                        {formatMatchTime(match.match_time)}
+                                      </span>
+                                      <Badge variant="outline" className="text-xs ml-2">
+                                        {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <MapPin className="h-4 w-4 flex-shrink-0" />
+                                      <span className="truncate font-medium text-xs sm:text-sm">{match.venue}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-orange-100 text-orange-800 border-orange-300"
+                                >
+                                  Verschoben
+                                </Badge>
+                              </div>
+
+                              {match.original_date && (
+                                <Alert className="mb-3 bg-orange-100 border-orange-300">
+                                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                                  <AlertDescription className="text-sm text-orange-900">
+                                    <strong>Ursprünglich:</strong> {formatMatchDate(match.original_date)}
+                                    {match.postponement_reason && (
+                                      <span className="block mt-1">
+                                        <strong>Grund:</strong> {match.postponement_reason}
+                                      </span>
+                                    )}
+                                  </AlertDescription>
+                                </Alert>
+                              )}
+
+                              <div className="flex flex-col gap-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-6">
+                                    <div className="text-center">
+                                      <div className="font-semibold text-lg mb-1">
+                                        {getTeamDisplayNameHelper(match, true)}
+                                      </div>
+                                      <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
+                                    </div>
+                                    <div className="text-2xl font-bold text-gray-400">vs</div>
+                                    <div className="text-center">
+                                      <div className="font-semibold text-lg mb-1">{getTeamName(match, false)}</div>
+                                      <div className="text-3xl font-bold text-red-600">{match.away_score ?? "-"}</div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {hasLeadershipInTeam(match.home_team_id) || hasLeadershipInTeam(match.away_team_id) ? (
+                                  <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+                                        const isUserTeamHome = userTeamIds.includes(match.home_team_id)
+                                        const isUserTeamAway = userTeamIds.includes(match.away_team_id)
+                                        const myTeamId = isUserTeamHome
+                                          ? match.home_team_id
+                                          : isUserTeamAway
+                                            ? match.away_team_id
+                                            : null
+
+                                        if (myTeamId) {
+                                          router.push(`/statistics/${match.id}?teamId=${myTeamId}`)
+                                        }
+                                      }}
+                                      className="bg-green-600 hover:bg-green-700 text-white border-green-600 w-full h-8"
+                                    >
+                                      <Target className="h-3 w-3 mr-1 flex-shrink-0" />
+                                      <span className="text-xs">Statistiken</span>
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      className="bg-blue-600 hover:bg-blue-700 w-full h-8"
+                                      onClick={() => {
+                                        setSelectedMatchForResults(match.id)
+                                        setIsResultsDialogOpen(true)
+                                        setEditMatchScores({
+                                          home: match.home_score || 0,
+                                          away: match.away_score || 0,
+                                        })
+                                      }}
+                                    >
+                                      <Edit className="h-3 w-3 mr-1 flex-shrink-0" />
+                                      <span className="text-xs">
+                                        {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
+                                      </span>
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className={`w-full h-8 flex items-center justify-center ${
+                                        match.team_photo_url
+                                          ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                                          : "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                                      }`}
+                                      onClick={() => {
+                                        setSelectedMatchForTeamPhoto(match.id)
+                                        setIsTeamPhotoDialogOpen(true)
+                                        setTeamPhotoFile(null)
+                                        setTeamPhotoPreview(null)
+                                        setTeamPhotoMessage("")
+                                      }}
+                                    >
+                                      <Camera className="h-3 w-3 mr-1 flex-shrink-0" />
+                                      <span className="text-xs">
+                                        {match.team_photo_url ? "Teamfoto" : "Foto Upload"}
+                                      </span>
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 w-full h-8"
+                                      onClick={() => {
+                                        setSelectedMatchForPostpone(match.id)
+                                        setPostponeData({
+                                          newDate: match.match_date,
+                                          newTime: match.match_time,
+                                          reason: match.postponement_reason || "",
+                                        })
+                                        setIsPostponeDialogOpen(true)
+                                      }}
+                                    >
+                                      <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
+                                      <span className="text-xs">Neu planen</span>
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="bg-red-600 hover:bg-red-700 text-white border-red-600 w-full h-8"
+                                      onClick={() => undoPostponement(match.id)}
+                                    >
+                                      <RotateCcw className="h-3 w-3 mr-1 flex-shrink-0" />
+                                      <span className="text-xs">Rückgängig machen</span>
+                                    </Button>
+                                  </div>
+                                ) : null}
                               </div>
                             </div>
                           ))}
@@ -1782,7 +2206,10 @@ export default function DashboardPage() {
                                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-muted-foreground">
                                     <div className="flex items-center gap-2">
                                       <Calendar className="h-4 w-4 flex-shrink-0" />
-                                      <span>{formatMatchDate(match.match_date)}</span>
+                                      <span>
+                                        {formatMatchDate(match.match_date)}
+                                        {formatMatchTime(match.match_time)}
+                                      </span>
                                       <Badge variant="outline" className="text-xs ml-2">
                                         {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
                                       </Badge>
@@ -1806,7 +2233,7 @@ export default function DashboardPage() {
                                   <div className="flex items-center gap-6">
                                     <div className="text-center">
                                       <div className="font-semibold text-lg mb-1">
-                                        {getTeamName(match, true) || "Heim Team"}
+                                        {getTeamDisplayNameHelper(match, true)}
                                       </div>
                                       <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
                                       <div className="text-xs text-muted-foreground mt-1">
@@ -1931,304 +2358,366 @@ export default function DashboardPage() {
             </div>
           </div>
         )} */}
+      </main>
 
-        <Dialog
-          open={isResultsDialogOpen && selectedMatchForResults !== null}
-          onOpenChange={(open) => {
-            setIsResultsDialogOpen(open)
-            if (!open) setSelectedMatchForResults(null)
-          }}
-        >
-          <DialogContent className="w-[95vw] max-w-sm mx-auto">
-            <DialogHeader className="text-center pb-2 sm:pb-3">
-              <DialogTitle className="text-sm sm:text-base font-semibold">Spielergebnis eintragen</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 sm:space-y-4">
-              <div className="bg-muted/30 rounded-lg p-2 sm:p-3">
-                <div className="grid grid-cols-3 gap-1 sm:gap-2 items-center">
-                  <div className="text-center">
-                    <Label className="text-xs font-medium text-muted-foreground">Heim</Label>
-                    <div className="flex flex-col items-center gap-1 mt-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                        onClick={() =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            home: Math.min(99, prev.home + 1),
-                          }))
-                        }
-                      >
-                        +
-                      </Button>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="99"
-                        value={editMatchScores.home}
-                        onChange={(e) =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            home: Number.parseInt(e.target.value) || 0,
-                          }))
-                        }
-                        className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                        onClick={() =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            home: Math.max(0, prev.home - 1),
-                          }))
-                        }
-                      >
-                        -
-                      </Button>
-                    </div>
+      <Dialog
+        open={isResultsDialogOpen && selectedMatchForResults !== null}
+        onOpenChange={(open) => {
+          setIsResultsDialogOpen(open)
+          if (!open) setSelectedMatchForResults(null)
+        }}
+      >
+        <DialogContent className="w-[95vw] max-w-sm mx-auto">
+          <DialogHeader className="text-center pb-2 sm:pb-3">
+            <DialogTitle className="text-sm sm:text-base font-semibold">Spielergebnis eintragen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="bg-muted/30 rounded-lg p-2 sm:p-3">
+              <div className="grid grid-cols-3 gap-1 sm:gap-2 items-center">
+                <div className="text-center">
+                  <Label className="text-xs font-medium text-muted-foreground">Heim</Label>
+                  <div className="flex flex-col items-center gap-1 mt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
+                      onClick={() =>
+                        setEditMatchScores((prev) => ({
+                          ...prev,
+                          home: Math.min(99, prev.home + 1),
+                        }))
+                      }
+                    >
+                      +
+                    </Button>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="99"
+                      value={editMatchScores.home}
+                      onChange={(e) =>
+                        setEditMatchScores((prev) => ({
+                          ...prev,
+                          home: Number.parseInt(e.target.value) || 0,
+                        }))
+                      }
+                      className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
+                      onClick={() =>
+                        setEditMatchScores((prev) => ({
+                          ...prev,
+                          home: Math.max(0, prev.home - 1),
+                        }))
+                      }
+                    >
+                      -
+                    </Button>
                   </div>
-                  <div className="text-center">
-                    <div className="text-lg sm:text-2xl font-bold text-muted-foreground mt-4 sm:mt-6">:</div>
-                  </div>
-                  <div className="text-center">
-                    <Label className="text-xs font-medium text-muted-foreground">Auswärts</Label>
-                    <div className="flex flex-col items-center gap-1 mt-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                        onClick={() =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            away: Math.min(99, prev.away + 1),
-                          }))
-                        }
-                      >
-                        +
-                      </Button>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="99"
-                        value={editMatchScores.away}
-                        onChange={(e) =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            away: Number.parseInt(e.target.value) || 0,
-                          }))
-                        }
-                        className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                        onClick={() =>
-                          setEditMatchScores((prev) => ({
-                            ...prev,
-                            away: Math.max(0, prev.away - 1),
-                          }))
-                        }
-                      >
-                        -
-                      </Button>
-                    </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg sm:text-2xl font-bold text-muted-foreground mt-4 sm:mt-6">:</div>
+                </div>
+                <div className="text-center">
+                  <Label className="text-xs font-medium text-muted-foreground">Auswärts</Label>
+                  <div className="flex flex-col items-center gap-1 mt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
+                      onClick={() =>
+                        setEditMatchScores((prev) => ({
+                          ...prev,
+                          away: Math.min(99, prev.away + 1),
+                        }))
+                      }
+                    >
+                      +
+                    </Button>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="99"
+                      value={editMatchScores.away}
+                      onChange={(e) =>
+                        setEditMatchScores((prev) => ({
+                          ...prev,
+                          away: Number.parseInt(e.target.value) || 0,
+                        }))
+                      }
+                      className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
+                      onClick={() =>
+                        setEditMatchScores((prev) => ({
+                          ...prev,
+                          away: Math.max(0, prev.away - 1),
+                        }))
+                      }
+                    >
+                      -
+                    </Button>
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 bg-transparent text-xs sm:text-sm h-8 sm:h-9"
-                  onClick={() => {
-                    setIsResultsDialogOpen(false)
-                    setSelectedMatchForResults(null)
-                  }}
-                >
-                  Abbrechen
-                </Button>
-                <Button
-                  className="flex-1 text-xs sm:text-sm h-8 sm:h-9"
-                  onClick={() => {
-                    if (selectedMatchForResults) {
-                      updateMatchScore(selectedMatchForResults, editMatchScores.home, editMatchScores.away)
-                    }
-                  }}
-                >
-                  Speichern
-                </Button>
-              </div>
             </div>
-          </DialogContent>
-        </Dialog>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 bg-transparent text-xs sm:text-sm h-8 sm:h-9"
+                onClick={() => {
+                  setIsResultsDialogOpen(false)
+                  setSelectedMatchForResults(null)
+                }}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                className="flex-1 text-xs sm:text-sm h-8 sm:h-9"
+                onClick={() => {
+                  if (selectedMatchForResults) {
+                    updateMatchScore(selectedMatchForResults, editMatchScores.home, editMatchScores.away)
+                  }
+                }}
+              >
+                Speichern
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        <Dialog
-          open={isTeamPhotoDialogOpen && selectedMatchForTeamPhoto !== null}
-          onOpenChange={(open) => {
-            setIsTeamPhotoDialogOpen(open)
-            if (!open) {
-              setSelectedMatchForTeamPhoto(null)
-              setTeamPhotoFile(null)
-              setTeamPhotoPreview(null)
-              setTeamPhotoMessage("")
-            }
-          }}
-        >
-          <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[85vh] overflow-y-auto">
-            <DialogHeader className="text-center pb-2 sm:pb-3">
-              <DialogTitle className="text-sm sm:text-base font-semibold">Teamfoto hochladen</DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm">
-                Lade ein Teamfoto für dieses Spiel hoch oder entferne das aktuelle Foto.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              {(() => {
-                const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
-                const hasExistingPhoto = currentMatch?.team_photo_url
+      <Dialog
+        open={isTeamPhotoDialogOpen && selectedMatchForTeamPhoto !== null}
+        onOpenChange={(open) => {
+          setIsTeamPhotoDialogOpen(open)
+          if (!open) {
+            setSelectedMatchForTeamPhoto(null)
+            setTeamPhotoFile(null)
+            setTeamPhotoPreview(null)
+            setTeamPhotoMessage("")
+          }
+        }}
+      >
+        <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[85vh] overflow-y-auto">
+          <DialogHeader className="text-center pb-2 sm:pb-3">
+            <DialogTitle className="text-sm sm:text-base font-semibold">Teamfoto hochladen</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
+              Lade ein Teamfoto für dieses Spiel hoch oder entferne das aktuelle Foto.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {(() => {
+              const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
+              const hasExistingPhoto = currentMatch?.team_photo_url
 
-                return (
-                  <>
-                    {hasExistingPhoto && !teamPhotoPreview && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Aktuelles Teamfoto</Label>
-                        <div className="flex items-center justify-center">
-                          <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
-                            <Image
-                              src={currentMatch.team_photo_url || "/placeholder.svg"}
-                              alt="Aktuelles Teamfoto"
-                              fill
-                              style={{ objectFit: "cover" }}
-                            />
-                          </div>
+              return (
+                <>
+                  {hasExistingPhoto && !teamPhotoPreview && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Aktuelles Teamfoto</Label>
+                      <div className="flex items-center justify-center">
+                        <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
+                          <Image
+                            src={currentMatch.team_photo_url || "/placeholder.svg"}
+                            alt="Aktuelles Teamfoto"
+                            fill
+                            style={{ objectFit: "cover" }}
+                          />
                         </div>
-                        <div className="flex justify-center">
+                      </div>
+                      <div className="flex justify-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(currentMatch.team_photo_url, "_blank")}
+                          className="text-green-600 border-green-600 hover:bg-green-50 text-sm"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Vollbild ansehen
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      {hasExistingPhoto ? "Neues Teamfoto auswählen" : "Teamfoto auswählen"}
+                    </Label>
+
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <input
+                            id="teamPhotoCamera"
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            onChange={handleTeamCameraPhotoChange}
+                            className="hidden"
+                          />
                           <Button
+                            type="button"
                             variant="outline"
-                            size="sm"
-                            onClick={() => window.open(currentMatch.team_photo_url, "_blank")}
-                            className="text-green-600 border-green-600 hover:bg-green-50 text-sm"
+                            onClick={() => document.getElementById("teamPhotoCamera")?.click()}
+                            className="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
                           >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Vollbild ansehen
+                            <Camera className="h-4 w-4 mr-2" />
+                            Kamera
+                          </Button>
+                        </div>
+
+                        <div className="flex-1">
+                          <input
+                            id="teamPhotoGallery"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleTeamGalleryPhotoChange}
+                            className="hidden"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => document.getElementById("teamPhotoGallery")?.click()}
+                            className="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+                          >
+                            <ImageIcon className="h-4 w-4 mr-2" />
+                            Galerie
                           </Button>
                         </div>
                       </div>
-                    )}
+                    </div>
+                  </div>
 
+                  {teamPhotoPreview && (
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">
-                        {hasExistingPhoto ? "Neues Teamfoto auswählen" : "Teamfoto auswählen"}
-                      </Label>
-
-                      <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <input
-                              id="teamPhotoCamera"
-                              type="file"
-                              accept="image/*"
-                              capture="environment"
-                              onChange={handleTeamCameraPhotoChange}
-                              className="hidden"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => document.getElementById("teamPhotoCamera")?.click()}
-                              className="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
-                            >
-                              <Camera className="h-4 w-4 mr-2" />
-                              Kamera
-                            </Button>
-                          </div>
-
-                          <div className="flex-1">
-                            <input
-                              id="teamPhotoGallery"
-                              type="file"
-                              accept="image/*"
-                              onChange={handleTeamGalleryPhotoChange}
-                              className="hidden"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => document.getElementById("teamPhotoGallery")?.click()}
-                              className="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
-                            >
-                              <ImageIcon className="h-4 w-4 mr-2" />
-                              Galerie
-                            </Button>
-                          </div>
+                      <Label className="text-sm font-medium">Neue Foto Vorschau</Label>
+                      <div className="flex items-center justify-center">
+                        <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
+                          <Image
+                            src={teamPhotoPreview || "/placeholder.svg"}
+                            alt="Teamfoto Vorschau"
+                            fill
+                            style={{ objectFit: "cover" }}
+                          />
                         </div>
                       </div>
                     </div>
+                  )}
+                </>
+              )
+            })()}
 
-                    {teamPhotoPreview && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Neue Foto Vorschau</Label>
-                        <div className="flex items-center justify-center">
-                          <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
-                            <Image
-                              src={teamPhotoPreview || "/placeholder.svg"}
-                              alt="Teamfoto Vorschau"
-                              fill
-                              style={{ objectFit: "cover" }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )
-              })()}
+            {teamPhotoMessage && (
+              <Alert>
+                <AlertDescription className="text-sm">{teamPhotoMessage}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+          <DialogFooter className="flex flex-col gap-2 pt-4">
+            {(() => {
+              const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
+              const hasExistingPhoto = currentMatch?.team_photo_url
 
-              {teamPhotoMessage && (
-                <Alert>
-                  <AlertDescription className="text-sm">{teamPhotoMessage}</AlertDescription>
-                </Alert>
-              )}
-            </div>
-            <DialogFooter className="flex flex-col gap-2 pt-4">
-              {(() => {
-                const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
-                const hasExistingPhoto = currentMatch?.team_photo_url
-
-                return (
-                  <>
-                    {hasExistingPhoto && (
-                      <Button
-                        variant="destructive"
-                        onClick={handleTeamPhotoRemove}
-                        disabled={teamPhotoUploading}
-                        className="w-full text-xs sm:text-sm h-8"
-                      >
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Foto entfernen
-                      </Button>
-                    )}
+              return (
+                <>
+                  {hasExistingPhoto && (
                     <Button
-                      onClick={handleTeamPhotoUpload}
-                      disabled={teamPhotoUploading || !teamPhotoFile}
-                      className="w-full bg-green-600 hover:bg-green-700 text-xs sm:text-sm h-8"
+                      variant="destructive"
+                      onClick={handleTeamPhotoRemove}
+                      disabled={teamPhotoUploading}
+                      className="w-full text-xs sm:text-sm h-8"
                     >
-                      <Upload className="h-3 w-3 mr-1" />
-                      {teamPhotoUploading ? "Wird hochgeladen..." : hasExistingPhoto ? "Foto ersetzen" : "Hochladen"}
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Foto entfernen
                     </Button>
-                  </>
-                )
-              })()}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+                  )}
+                  <Button
+                    onClick={handleTeamPhotoUpload}
+                    disabled={teamPhotoUploading || !teamPhotoFile}
+                    className="w-full bg-green-600 hover:bg-green-700 text-xs sm:text-sm h-8"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    {teamPhotoUploading ? "Wird hochgeladen..." : hasExistingPhoto ? "Foto ersetzen" : "Hochladen"}
+                  </Button>
+                </>
+              )
+            })()}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPostponeDialogOpen} onOpenChange={setIsPostponeDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Spiel verschieben</DialogTitle>
+            <DialogDescription>
+              Gib das neue Datum, die neue Uhrzeit und den Grund für die Verschiebung ein.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newDate">Neues Datum</Label>
+              <Input
+                id="newDate"
+                type="date"
+                value={postponeData.newDate}
+                onChange={(e) => setPostponeData({ ...postponeData, newDate: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newTime">Neue Uhrzeit</Label>
+              <Input
+                id="newTime"
+                type="time"
+                value={postponeData.newTime}
+                onChange={(e) => setPostponeData({ ...postponeData, newTime: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reason">Grund für Verschiebung</Label>
+              <Input
+                id="reason"
+                type="text"
+                placeholder="z.B. Spieler krank, Halle nicht verfügbar..."
+                value={postponeData.reason}
+                onChange={(e) => setPostponeData({ ...postponeData, reason: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPostponeDialogOpen(false)}>
+              Abbrechen
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedMatchForPostpone) {
+                  postponeMatch(
+                    selectedMatchForPostpone,
+                    postponeData.newDate,
+                    postponeData.newTime,
+                    postponeData.reason,
+                  )
+                }
+              }}
+              disabled={!postponeData.newDate || !postponeData.newTime || !postponeData.reason}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Verschieben
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
