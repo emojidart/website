@@ -289,6 +289,13 @@ export default function SupportPage() {
       <Header />
 
       <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <Button variant="outline" onClick={() => router.push("/member-profile")} className="flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Zurück zum Dashboard
+          </Button>
+        </div>
+
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Support</h1>

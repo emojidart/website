@@ -5,7 +5,6 @@ import type React from "react"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,7 +19,6 @@ import {
   Calendar,
   Target,
   MapPin,
-  Hand,
   Loader2,
   AlertCircle,
   Edit,
@@ -36,6 +34,7 @@ import {
   Info,
   X,
   RotateCcw,
+  ArrowLeft,
 } from "lucide-react"
 import {
   Dialog,
@@ -1531,11 +1530,11 @@ export default function DashboardPage() {
         <DashboardTutorial role={getUserRole()} />
 
         <div className="mb-6">
-          <Button asChild className="w-full sm:w-auto">
-            <a href="/member-profile">Zum Member Profil</a>
+          <Button variant="outline" onClick={() => router.push("/member-profile")} className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Zurück zum Profil
           </Button>
         </div>
-        {/* </CHANGE> */}
 
         {getPostponedMatches().length > 0 && (
           <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-l-orange-500">
@@ -1609,6 +1608,10 @@ export default function DashboardPage() {
           </Card>
         )}
 
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Placeholder for potential new cards or sections */}
+        </div>
+
         <div className="mb-4 sm:mb-6 lg:mb-8">
           {/* Teams Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
@@ -1616,175 +1619,6 @@ export default function DashboardPage() {
 
             {/* Main Content */}
             <div className="xl:col-span-2 space-y-6 sm:space-8">
-              {/* Team Memberships */}
-              <Card className="shadow-xl border-0 bg-white">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl lg:text-2xl font-bold">
-                    <Users className="h-6 w-6 lg:h-7 lg:w-7 text-orange-600" />
-                    Meine Teams
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {teamMemberships.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Users className="h-12 w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-300" />
-                      <p className="text-base lg:text-lg">Du bist noch keinem Team zugeordnet.</p>
-                      <p className="text-sm lg:text-base mt-2">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 gap-4 lg:gap-6">
-                      {teamMemberships.map((membership) => (
-                        <div
-                          key={membership.id}
-                          className="border-2 border-gray-200 rounded-xl p-4 lg:p-6 hover:border-orange-300 transition-colors"
-                        >
-                          <div className="flex items-center gap-3 mb-3">
-                            {membership.teams?.logo_url ? (
-                              <Avatar className="h-12 w-12 lg:h-16 lg:w-16">
-                                <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
-                                <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-lg lg:text-xl">
-                                  {membership.teams.name?.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                            ) : (
-                              <div className="h-12 w-12 lg:h-16 lg:w-16 bg-orange-100 rounded-full flex items-center justify-center">
-                                <Target className="h-6 w-6 text-orange-600" />
-                              </div>
-                            )}
-                            <div>
-                              <h3 className="font-bold text-gray-900">
-                                {membership.teams?.name || "Unbekanntes Team"}
-                              </h3>
-                              <div className="flex items-center gap-2">
-                                {getRoleIcon(membership.role)}
-                                <Badge className={`text-xs border ${getRoleBadgeColor(membership.role)}`}>
-                                  {getRoleText(membership.role)}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Team Members */}
-              <Card className="shadow-xl border-0 bg-white">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                    <Users className="h-6 w-6 text-orange-600" />
-                    Meine Teammitglieder
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {teamMembers.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>Keine Teammitglieder gefunden.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {teamMemberships.map((membership) => {
-                        const teamMembersForThisTeam = teamMembers.filter(
-                          (member) => member.team_id === membership.team_id,
-                        )
-
-                        return (
-                          <div key={membership.id} className="border-2 border-gray-200 rounded-xl p-4">
-                            <div className="flex items-center gap-3 mb-4">
-                              {membership.teams?.logo_url ? (
-                                <Avatar className="h-10 w-10">
-                                  <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
-                                  <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">
-                                    {membership.teams.name?.charAt(0)}
-                                  </AvatarFallback>
-                                </Avatar>
-                              ) : (
-                                <div className="h-10 w-10 bg-orange-100 rounded-full flex items-center justify-center">
-                                  <Target className="h-5 w-5 text-orange-600" />
-                                </div>
-                              )}
-                              <h3 className="font-bold text-lg text-gray-900">
-                                {membership.teams?.name || "Unbekanntes Team"}
-                              </h3>
-                              <Badge variant="outline" className="ml-auto">
-                                {teamMembersForThisTeam.length} Mitglieder
-                              </Badge>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {teamMembersForThisTeam.map((member) => (
-                                <div
-                                  key={member.id}
-                                  className={`p-3 rounded-lg border-2 transition-colors ${
-                                    member.player_id === profile?.player_id
-                                      ? "border-orange-300 bg-orange-50"
-                                      : "border-gray-200 bg-gray-50"
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarImage
-                                        src={
-                                          member.club_players?.photo_url ||
-                                          "/placeholder.svg?height=32&width=32&query=darts-player" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg" ||
-                                          "/placeholder.svg"
-                                        }
-                                      />
-                                      <AvatarFallback className="text-xs bg-orange-100 text-orange-700">
-                                        {member.club_players?.name?.charAt(0) || "?"}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-medium text-sm text-gray-900 truncate">
-                                        {member.club_players?.name || "Unbekannt"}
-                                        {member.player_id === profile?.player_id && (
-                                          <span className="text-orange-600 ml-1">(Du)</span>
-                                        )}
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        {getRoleIcon(member.role)}
-                                        <span className="text-xs text-gray-600">{getRoleText(member.role)}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {member.club_players?.throwing_hand && (
-                                    <div className="text-xs text-gray-500 flex items-center gap-1">
-                                      <Hand className="h-3 w-3" />
-                                      {member.club_players.throwing_hand}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
               {/* Spielplan Section with Tabs */}
               <Card className="shadow-xl border-0 bg-white">
                 <CardHeader>

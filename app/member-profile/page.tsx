@@ -146,8 +146,7 @@ export default function MemberProfilePage() {
           const [matchesResponse, opponentTeamsResponse] = await Promise.all([
             supabase
               .from("matches")
-              .select(`
-                *,
+              .select(`*,
                 home_team:teams!matches_home_team_id_fkey(id, name),
                 away_team:teams!matches_away_team_id_fkey(id, name),
                 home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
@@ -347,6 +346,13 @@ export default function MemberProfilePage() {
       icon: BarChart3,
       href: "/member-dashboard",
       color: "from-blue-500 to-blue-600",
+    },
+    {
+      title: "Meine Teams",
+      description: "Teams und Teammitglieder verwalten",
+      icon: Users,
+      href: "/meine-teams",
+      color: "from-teal-500 to-teal-600",
     },
     {
       title: "Spieler Statistiken",

@@ -36,7 +36,7 @@ export default function MemberLeaguePage() {
         <div className="mb-6">
           <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2 mb-4">
             <ArrowLeft className="h-4 w-4" />
-            Zurück
+            Zurück zum Profil
           </Button>
           <h1 className="text-3xl font-bold text-gray-900">Liga Tabellen</h1>
           <p className="text-gray-600 mt-2">Aktuelle Ligastände und Ergebnisse</p>

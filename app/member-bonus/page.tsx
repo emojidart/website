@@ -323,7 +323,7 @@ export default function MemberBonusPage() {
         <div className="mb-6">
           <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2 mb-4">
             <ArrowLeft className="h-4 w-4" />
-            Zurück
+            Zurück zum Profil
           </Button>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

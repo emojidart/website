@@ -457,7 +457,7 @@ export default function ChatPage() {
                 className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Zurück
+                Zurück zum Profil
               </Button>
             </Link>
           </div>
