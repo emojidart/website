@@ -1530,6 +1530,13 @@ export default function DashboardPage() {
         {/* Changed DashboardTutorial prop name */}
         <DashboardTutorial role={getUserRole()} />
 
+        <div className="mb-6">
+          <Button asChild className="w-full sm:w-auto">
+            <a href="/member-profile">Zum Member Profil</a>
+          </Button>
+        </div>
+        {/* </CHANGE> */}
+
         {getPostponedMatches().length > 0 && (
           <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-l-orange-500">
             <CardContent className="p-4 sm:p-6">
