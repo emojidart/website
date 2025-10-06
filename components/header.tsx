@@ -425,7 +425,7 @@ export function Header() {
                   Live
                 </Link>
                 <Link
-                  href="/kratzer-tournament-results"
+                  href="/all-results"
                   className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
                     pathname === "/kratzer-tournament-results"
                       ? "bg-red-50 text-red-600 font-bold"

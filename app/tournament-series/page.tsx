@@ -41,7 +41,8 @@ interface Tournament {
     legs_won: number
     legs_lost: number
     placement_points: number
-    form: string // Added form field for win/loss sequence
+    bonus_points: number // Added bonus_points field
+    form: string
   }[]
 }
 
@@ -270,6 +271,21 @@ export default function TournamentSeriesPage() {
             .eq("tournament_type", tournament.tournament_type)
             .order("match_id", { ascending: true })
 
+          // Determine the final match ID based on tournament type
+          let finalMatchId: number
+          if (tournament.tournament_type.includes("32")) {
+            finalMatchId = 63 // 32er DKO grand final
+          } else if (tournament.tournament_type.includes("16")) {
+            finalMatchId = 31 // 16er DKO grand final
+          } else if (tournament.tournament_type.includes("8")) {
+            finalMatchId = 15 // 8er DKO grand final
+          } else {
+            finalMatchId = 31 // Default to 16er
+          }
+
+          const bracketResetOccurred =
+            matchStatesData?.some((match) => match.match_id === finalMatchId && match.winner !== null) || false
+
           const rankings =
             rankingsData?.map((ranking) => {
               const playerMatches = matchStatesData?.filter(
@@ -303,13 +319,16 @@ export default function TournamentSeriesPage() {
                 .filter((result) => result !== "")
                 .join("")
 
+              const bonusPoints = ranking.placement === 1 && !bracketResetOccurred ? 5 : 0
+
               return {
                 player_name: ranking.player_name,
                 placement: ranking.placement,
                 legs_won: legsWon,
                 legs_lost: legsLost,
                 placement_points: 0,
-                form: form, // Added form field
+                bonus_points: bonusPoints,
+                form: form,
               }
             }) || []
 
@@ -696,20 +715,22 @@ export default function TournamentSeriesPage() {
                           <h4 className="text-lg font-bold text-gray-900 mb-4">Platzierungen</h4>
                           <div className="bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
                             {/* Table Header */}
-                            <div className="grid grid-cols-[80px_1fr_auto_100px_100px_100px] gap-4 p-4 bg-gray-100 border-b-2 border-gray-200 font-bold text-sm text-gray-700">
+                            <div className="grid grid-cols-[80px_1fr_auto_100px_80px_100px_100px_120px] gap-4 p-4 bg-gray-100 border-b-2 border-gray-200 font-bold text-sm text-gray-700">
                               <div className="text-center">Platz</div>
                               <div>Spieler</div>
                               <div className="text-center">Form</div>
                               <div className="text-center">Punkte</div>
+                              <div className="text-center">Bonus</div>
                               <div className="text-center">Legs W</div>
                               <div className="text-center">Legs L</div>
+                              <div className="text-center">Gesamt</div>
                             </div>
                             {/* Table Rows */}
                             <div className="divide-y-2 divide-gray-200">
                               {tournament.rankings.map((ranking, rankIndex) => (
                                 <div
                                   key={rankIndex}
-                                  className="grid grid-cols-[80px_1fr_auto_100px_100px_100px] gap-4 p-4 items-center hover:bg-gray-50 transition-colors"
+                                  className="grid grid-cols-[80px_1fr_auto_100px_80px_100px_100px_120px] gap-4 p-4 items-center hover:bg-gray-50 transition-colors"
                                 >
                                   <div className="flex justify-center">
                                     <div
@@ -740,8 +761,23 @@ export default function TournamentSeriesPage() {
                                   <div className="text-center text-yellow-600 font-bold text-lg">
                                     {ranking.placement_points}
                                   </div>
+                                  <div className="text-center">
+                                    {ranking.bonus_points > 0 ? (
+                                      <span className="inline-flex items-center justify-center bg-gradient-to-r from-yellow-400 to-yellow-500 text-white font-bold text-sm px-2 py-1 rounded-full shadow-md">
+                                        +{ranking.bonus_points}
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-400">-</span>
+                                    )}
+                                  </div>
                                   <div className="text-center text-green-600 font-bold text-lg">{ranking.legs_won}</div>
                                   <div className="text-center text-red-600 font-bold text-lg">{ranking.legs_lost}</div>
+                                  {/* Gesamt Calculation */}
+                                  <div className="text-center">
+                                    <span className="inline-flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg px-3 py-1 rounded-lg shadow-md">
+                                      {ranking.placement_points + ranking.bonus_points + ranking.legs_won}
+                                    </span>
+                                  </div>
                                 </div>
                               ))}
                             </div>

@@ -5,11 +5,12 @@ import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Target, Calendar, Users } from "lucide-react"
+import { Trophy, Target, Calendar, Users, Info } from "lucide-react"
 import { Header } from "@/components/header"
 import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
 import { PlayerStatisticsRow } from "@/components/player-statistics-row"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -295,9 +296,10 @@ export default function LigaPage() {
       .map((stats: any) => ({
         ...stats,
         win_percentage: stats.total_legs > 0 ? (stats.total_wins / stats.total_legs) * 100 : 0,
+        weighted_win_rate: ((stats.total_wins + 10) / (stats.total_legs + 20)) * 100,
       }))
       .sort((a: any, b: any) => {
-        if (b.win_percentage !== a.win_percentage) return b.win_percentage - a.win_percentage
+        if (b.weighted_win_rate !== a.weighted_win_rate) return b.weighted_win_rate - a.weighted_win_rate
         if (b.total_wins !== a.total_wins) return b.total_wins - a.total_wins
         if (b.throws_180 !== a.throws_180) return b.throws_180 - a.throws_180
         if (b.throws_171 !== a.throws_171) return b.throws_171 - a.throws_171
@@ -501,6 +503,31 @@ export default function LigaPage() {
                       </div>
                     </div>
                   </CardHeader>
+
+                  <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200">
+                    <Alert className="bg-white border-blue-300">
+                      <Info className="h-4 w-4 text-blue-600" />
+                      <AlertTitle className="text-blue-900 font-semibold">Wie funktioniert das Ranking?</AlertTitle>
+                      <AlertDescription className="text-gray-700 mt-2">
+                        <p className="mb-2">
+                          Das Ranking basiert auf einer <strong>gewichteten Win-Rate</strong>, um faire Platzierungen zu
+                          gewährleisten:
+                        </p>
+                        <ul className="list-disc list-inside space-y-1 text-sm">
+                          <li>
+                            <strong>Alle Spieler</strong> starten bei ca. 50% und müssen sich durch mehr Spiele
+                            hocharbeiten
+                          </li>
+                          <li>
+                            <strong>Alle Spieler</strong> mit vielen gespielten Legs werden fair bewertet
+                          </li>
+                          <li>Je mehr Legs du spielst, desto mehr zählt deine echte Win-Rate</li>
+                        </ul>
+                   
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+
                   <CardContent className="p-0">
                     {playerLegStats.length === 0 ? (
                       <div className="text-center py-12 text-gray-500">
@@ -510,47 +537,50 @@ export default function LigaPage() {
                     ) : (
                       <>
                         <div className="overflow-x-auto custom-scrollbar">
-                          <table className="w-full min-w-[1200px]">
+                          <table className="w-full min-w-[1400px]">
                             <thead className="bg-gray-50">
                               <tr>
-                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-16">
                                   Rang
                                 </th>
-                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm min-w-[180px]">
                                   Spieler
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
                                   Legs
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
                                   Wins
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-24">
                                   Win%
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-28">
+                                  Gewichtet %
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
                                   180er
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
                                   171er
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-28">
                                   High Tonne
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
                                   Tonne
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
                                   95+
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-24">
                                   Shanghai
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
                                   Bull
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
-                                  Details
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-36">
+                                  <span className="sr-only">Details</span>
                                 </th>
                               </tr>
                             </thead>
@@ -986,9 +1016,7 @@ export default function LigaPage() {
                                 <div className="mt-3 pt-3 border-t border-red-200">
                                   <div className="flex items-center gap-2 text-sm text-red-700">
                                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                                    <span className="font-medium">
-                                      Dieses Spiel wurde verschoben!
-                                    </span>
+                                    <span className="font-medium">Dieses Spiel wurde verschoben!</span>
                                   </div>
                                 </div>
                               </div>

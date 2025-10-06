@@ -36,6 +36,7 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
       <tr
         className={`border-b hover:bg-gray-50 transition-colors ${index < 3 ? "bg-gradient-to-r from-amber-50 to-yellow-50" : ""}`}
       >
+        {/* Rank */}
         <td className="p-2 sm:p-4">
           <div
             className={`w-6 h-6 sm:w-8 sm:h-8 ${index < 3 ? "bg-amber-100" : "bg-blue-100"} rounded-full flex items-center justify-center`}
@@ -45,6 +46,7 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
             </span>
           </div>
         </td>
+        {/* Player Name */}
         <td className="p-2 sm:p-4">
           <div className="group relative">
             <a
@@ -86,61 +88,82 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
                 </svg>
               </div>
             </a>
-            {/* Tooltip on hover */}
             <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
               Klicken für detaillierte Statistiken
             </div>
           </div>
         </td>
+        {/* Legs */}
         <td className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm">{player.total_legs}</td>
+        {/* Wins */}
         <td className="text-center p-2 sm:p-4">
           <Badge className="bg-green-100 text-green-800 font-bold text-xs">{player.total_wins}</Badge>
         </td>
+        {/* Win% */}
         <td className="text-center p-2 sm:p-4">
           <Badge variant="outline" className="font-bold text-xs">
             {player.win_percentage.toFixed(1)}%
           </Badge>
         </td>
         <td className="text-center p-2 sm:p-4">
+          <Badge
+            className={`font-bold text-xs ${
+              player.weighted_win_rate >= 60
+                ? "bg-green-100 text-green-800"
+                : player.weighted_win_rate >= 50
+                  ? "bg-blue-100 text-blue-800"
+                  : player.weighted_win_rate >= 40
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-red-100 text-red-800"
+            }`}
+          >
+            {player.weighted_win_rate.toFixed(1)}%
+          </Badge>
+        </td>
+        {/* 180er */}
+        <td className="text-center p-2 sm:p-4">
           <Badge className="bg-red-100 text-red-800 font-bold text-xs">{player.throws_180}</Badge>
         </td>
+        {/* 171er */}
         <td className="text-center p-2 sm:p-4">
           <Badge className="bg-purple-100 text-purple-800 font-bold text-xs">{player.throws_171}</Badge>
         </td>
+        {/* High Tonne */}
         <td className="text-center p-2 sm:p-4">
           <Badge className="bg-orange-100 text-orange-800 font-bold text-xs">{player.throws_high_tonne}</Badge>
         </td>
+        {/* Tonne */}
         <td className="text-center p-2 sm:p-4">
           <Badge className="bg-green-100 text-green-800 font-bold text-xs">{player.throws_tonne}</Badge>
         </td>
+        {/* 95+ */}
         <td className="text-center p-2 sm:p-4">
           <Badge className="bg-teal-100 text-teal-800 font-bold text-xs">{player.throws_95_plus}</Badge>
         </td>
+        {/* Shanghai */}
         <td className="text-center p-2 sm:p-4">
           <Badge className="bg-indigo-100 text-indigo-800 font-bold text-xs">{player.throws_shanghai}</Badge>
         </td>
+        {/* Bull */}
         <td className="text-center p-2 sm:p-4">
           <Badge className="bg-pink-100 text-pink-800 font-bold text-xs">{player.throws_bull}</Badge>
         </td>
+        {/* Details */}
         <td className="text-center p-2 sm:p-4">
-          <Button variant="outline" size="sm" onClick={() => setShowDetails(!showDetails)} className="text-xs">
-            {showDetails ? (
-              <>
-                <ChevronUp className="h-3 w-3 mr-1" />
-                Weniger
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-3 w-3 mr-1" />
-                Mehr anzeigen
-              </>
-            )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDetails(!showDetails)}
+            className="h-8 w-8 p-0"
+            title={showDetails ? "Weniger anzeigen" : "Details anzeigen"}
+          >
+            {showDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </td>
       </tr>
       {showDetails && (
         <tr className="bg-gray-50">
-          <td colSpan={13} className="p-4">
+          <td colSpan={14} className="p-4">
             <div className="bg-white rounded-lg p-4 shadow-sm">
               <h4 className="font-semibold text-gray-900 mb-3">Detaillierte Statistiken für {player.name}</h4>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
