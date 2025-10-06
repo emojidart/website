@@ -178,12 +178,12 @@ export function Header() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/live" className="w-full cursor-pointer">
+                <Link href="/live-all" className="w-full cursor-pointer">
                   Live
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/kratzer-tournament-results" className="w-full cursor-pointer">
+                <Link href="/all-results" className="w-full cursor-pointer">
                   Beendete Turniere
                 </Link>
               </DropdownMenuItem>
@@ -415,7 +415,7 @@ export function Header() {
                   Events
                 </Link>
                 <Link
-                  href="/live"
+                  href="/live-all"
                   className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
                     pathname === "/live"
                       ? "bg-red-50 text-red-600 font-bold"

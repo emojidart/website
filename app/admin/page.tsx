@@ -224,7 +224,7 @@ export default function AdminPage() {
     },
     {
       title: "Turniere",
-      description: "Kratzer-Turnier und weitere Tools",
+      description: "DKO Turnier oder Kratzer-Turnier starten",
       icon: Trophy,
       color: "bg-amber-500",
       view: "tournaments" as const,
@@ -549,6 +549,12 @@ export default function AdminPage() {
                         <Button variant="outline" className="w-full justify-start bg-transparent">
                           <Trophy className="h-4 w-4 mr-2" />
                           Kratzer-Turnier
+                        </Button>
+                      </Link>
+                      <Link href="/dko_tournament_registration">
+                        <Button variant="outline" className="w-full justify-start bg-transparent">
+                          <Trophy className="h-4 w-4 mr-2" />
+                          DKO Turnier
                         </Button>
                       </Link>
                     </div>
