@@ -1,6 +1,11 @@
-import TournamentBracket from "@/components/tournament-bracket_16er"
+import { Suspense } from "react"
+import TournamentBracket from "@/components/tournament-bracket-16er"
 import { Header } from "@/components/header"
 import { Trophy } from "lucide-react"
+
+function BracketContent() {
+  return <TournamentBracket />
+}
 
 export default function Home() {
   return (
@@ -17,13 +22,13 @@ export default function Home() {
                 <span className="block text-white">16er Doppel-KO</span>
                 <span className="block text-orange-200">Turnier</span>
               </h1>
-              <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-2 sm:mb-4">
-                
-              </p>
+              <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-2 sm:mb-4"></p>
             </div>
           </div>
 
-          <TournamentBracket />
+          <Suspense fallback={<div className="text-center py-8">Lade Turnier...</div>}>
+            <BracketContent />
+          </Suspense>
         </div>
       </main>
     </div>
