@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import TournamentBracket from "@/components/tournament-bracket-16er"
+import TournamentBracket from "@/components/tournament-bracket_16er"
 import { Header } from "@/components/header"
 import { Trophy } from "lucide-react"
 
