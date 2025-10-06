@@ -74,6 +74,7 @@ export default function AdminPage() {
     | "tournament-days"
     | "support-tickets"
     | "lion-cup-registrations"
+    | "tournament-management"
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -224,10 +225,17 @@ export default function AdminPage() {
     },
     {
       title: "Turniere",
-      description: "DKO Turnier oder Kratzer-Turnier starten",
+      description: "Turnier starten",
       icon: Trophy,
       color: "bg-amber-500",
       view: "tournaments" as const,
+    },
+    {
+      title: "Turnier verwalten",
+      description: "Turnierdaten und Tabellen verwalten",
+      icon: Settings,
+      color: "bg-purple-500",
+      view: "tournament-management" as const,
     },
     {
       title: "Spielerdatenbank",
@@ -323,6 +331,7 @@ export default function AdminPage() {
                   {currentView === "tournament-days" && "Turniertage Cup"}
                   {currentView === "support-tickets" && "Support Tickets"}
                   {currentView === "lion-cup-registrations" && "Lion Cup Anmeldungen"}
+                  {currentView === "tournament-management" && "Turnier verwalten"}
                 </span>
               </>
             )}
@@ -372,7 +381,9 @@ export default function AdminPage() {
                                                     ? "Support Tickets"
                                                     : currentView === "lion-cup-registrations"
                                                       ? "Lion Cup Anmeldungen"
-                                                      : "Admin-Zugang"}
+                                                      : currentView === "tournament-management"
+                                                        ? "Turnier verwalten"
+                                                        : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
                 {session && currentView === "dashboard"
@@ -715,6 +726,29 @@ export default function AdminPage() {
               </div>
             )}
             {currentView === "lion-cup-registrations" && <TournamentRegistrations />}
+            {currentView === "tournament-management" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Settings className="h-5 w-5" />
+                      <span>Turnier verwalten</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4">
+                      Hier können Sie alle Turnierdaten, Tabellen und Spielstände verwalten.
+                    </p>
+                    <Link href="/admin/tournaments">
+                      <Button className="w-full">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Zur Turnierverwaltung
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         )}
 
