@@ -417,7 +417,7 @@ export function Header() {
                 <Link
                   href="/live-all"
                   className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
-                    pathname === "/live"
+                    pathname === "/live-all"
                       ? "bg-red-50 text-red-600 font-bold"
                       : "text-gray-700 hover:text-red-600 hover:bg-red-50"
                   }`}
@@ -427,7 +427,7 @@ export function Header() {
                 <Link
                   href="/all-results"
                   className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
-                    pathname === "/kratzer-tournament-results"
+                    pathname === "/all-results"
                       ? "bg-red-50 text-red-600 font-bold"
                       : "text-gray-700 hover:text-red-600 hover:bg-red-50"
                   }`}
@@ -441,7 +441,7 @@ export function Header() {
                 <Link
                   href="/liga-statistiken"
                   className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
-                    pathname === "/liga"
+                    pathname === "/liga-statistiken"
                       ? "bg-red-50 text-red-600 font-bold"
                       : "text-gray-700 hover:text-red-600 hover:bg-red-50"
                   }`}
@@ -481,6 +481,35 @@ export function Header() {
               >
                 Kontakt
               </Link>
+
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <a
+                  href="https://www.sportaustria.at/de/service-center/ausbildungs-und-fortbildungsangebot/management-fortbildung"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button
+                    variant="outline"
+                    className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 hover:border-purple-600 bg-transparent transition-all duration-200 py-3 px-4 rounded-lg text-base justify-start font-bold"
+                  >
+                    <svg
+                      className="h-4 w-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                    Sportaustria
+                  </Button>
+                </a>
+              </div>
 
               {session && user ? (
                 <div className="mt-6 pt-4 border-t border-gray-200 flex flex-col gap-4">
