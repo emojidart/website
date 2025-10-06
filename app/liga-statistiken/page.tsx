@@ -523,7 +523,7 @@ export default function LigaPage() {
                           </li>
                           <li>Je mehr Legs du spielst, desto mehr zählt deine echte Win-Rate</li>
                         </ul>
-                   
+                       
                       </AlertDescription>
                     </Alert>
                   </div>
@@ -537,50 +537,47 @@ export default function LigaPage() {
                     ) : (
                       <>
                         <div className="overflow-x-auto custom-scrollbar">
-                          <table className="w-full min-w-[1400px]">
+                          <table className="w-full min-w-[1200px]">
                             <thead className="bg-gray-50">
                               <tr>
-                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-16">
+                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   Rang
                                 </th>
-                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm min-w-[180px]">
+                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   Spieler
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   Legs
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   Wins
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-24">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   Win%
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-28">
-                                  Gewichtet %
-                                </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   180er
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   171er
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-28">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   High Tonne
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   Tonne
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   95+
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-24">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   Shanghai
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-20">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   Bull
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm w-36">
-                                  <span className="sr-only">Details</span>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  Details
                                 </th>
                               </tr>
                             </thead>
