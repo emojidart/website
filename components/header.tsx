@@ -181,17 +181,17 @@ export function Header() {
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/live-all" className="w-full cursor-pointer">
-                  Live
+                  Liveticker
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/all-results" className="w-full cursor-pointer">
-                  Beendete Turniere
+               <Link href="/livestream" className="w-full cursor-pointer">
+                 Livestream
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/livestream" className="w-full cursor-pointer">
-                  Livestream
+                  <Link href="/all-results" className="w-full cursor-pointer"> 
+                   Beendete Turniere
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
