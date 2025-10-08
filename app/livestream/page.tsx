@@ -115,8 +115,7 @@ export default function LivestreamPage() {
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">EMD Darts - Live Match Übertragung</h1>
                 <p className="text-sm sm:text-base text-muted-foreground">
-                  Hier werden bald spannende Live-Matches aus der EMD Arena übertragen. Kameras und Equipment werden
-                  derzeit eingerichtet.
+                  Hier werden bald spannende Live-Matches aus der EMD Arena übertragen.
                 </p>
               </div>
 
@@ -163,7 +162,7 @@ export default function LivestreamPage() {
                   <div className="space-y-1">
                     <h4 className="font-semibold text-sm sm:text-base">Chat derzeit nicht verfügbar</h4>
                     <p className="text-xs sm:text-sm text-muted-foreground max-w-[280px] px-4">
-                      Der Live-Chat wird in Kürze aktiviert. Genieße bis dahin den Stream!
+                      Der Live-Chat wird in Kürze aktiviert.
                     </p>
                   </div>
                 </div>
