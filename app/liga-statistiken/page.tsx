@@ -1,16 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Target, Calendar, Users, Info } from "lucide-react"
+import { Trophy, Target, Calendar, Users } from "lucide-react"
 import { Header } from "@/components/header"
 import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
 import { PlayerStatisticsRow } from "@/components/player-statistics-row"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { PointsInfoBox } from "@/components/points-info-box"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -29,7 +29,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-export default function LigaPage() {
+export default function DartLeaguePage() {
   const [matches, setMatches] = useState([])
   const [teams, setTeams] = useState([])
   const [opponentTeams, setOpponentTeams] = useState([])
@@ -237,77 +237,116 @@ export default function LigaPage() {
       })
   }
 
-  const calculatePlayerLegStats = () => {
-    const playerStats = {}
+  const calculatePlayerPoints = (player: any, detailedStats: any) => {
+    const legWinPoints = player.total_wins * 3
+    const throw180Points = player.throws_180 * 25
+    const throw171Points = player.throws_171 * 25
+    const highTonnePoints = player.throws_high_tonne * 18
+    const tonnePoints = player.throws_tonne * 15
+    const throw95PlusPoints = player.throws_95_plus * 12
+    const shanghaiPoints = player.throws_shanghai * 10
+    const bullPoints = player.throws_bull * 8
+    const throw20Points = player.throws_20 * 6
+    const throw19Points = (detailedStats.throws_19 || 0) * 5
+    const throw18Points = (detailedStats.throws_18 || 0) * 4
+    const throw17Points = (detailedStats.throws_17 || 0) * 3
+    const throw16Points = (detailedStats.throws_16 || 0) * 2
+    const throw15Points = (detailedStats.throws_15 || 0) * 1
+    // </CHANGE>
+
+    return (
+      legWinPoints +
+      throw180Points +
+      throw171Points +
+      highTonnePoints +
+      tonnePoints +
+      throw95PlusPoints +
+      shanghaiPoints +
+      bullPoints +
+      throw20Points +
+      throw19Points +
+      throw18Points +
+      throw17Points +
+      throw16Points +
+      throw15Points
+    )
+  }
+
+  const playerStatistics = useMemo(() => {
+    if (!legStatistics) return []
+
+    const playerMap = new Map()
 
     legStatistics.forEach((stat) => {
       const playerId = stat.player_id
-      const playerName = stat.player?.name
-
-      if (!playerId || !playerName) return
-
-      if (!playerStats[playerId]) {
-        playerStats[playerId] = {
+      if (!playerMap.has(playerId)) {
+        playerMap.set(playerId, {
           player_id: playerId,
-          name: playerName,
+          name: stat.player?.name,
           photo_url: stat.player?.photo_url,
           total_legs: 0,
           total_wins: 0,
-          legs_played: 0,
           throws_180: 0,
           throws_171: 0,
-          throws_20: 0,
-          throws_15: 0,
-          throws_16: 0,
-          throws_17: 0,
-          throws_18: 0,
-          throws_19: 0,
           throws_high_tonne: 0,
           throws_tonne: 0,
-          throws_shanghai: 0,
           throws_95_plus: 0,
+          throws_shanghai: 0,
           throws_bull: 0,
-          win_percentage: 0,
-        }
+          throws_20: 0,
+        })
       }
 
-      const actualLegsPlayed = (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0)
-      const legsToAdd = actualLegsPlayed > 0 ? actualLegsPlayed : 1
+      const player = playerMap.get(playerId)
+      const playerLegsWon = stat.player_legs_won || 0
+      const opponentLegsWon = stat.opponent_legs_won || 0
+      const legsInThisMatch = playerLegsWon + opponentLegsWon
 
-      playerStats[playerId].total_legs += legsToAdd
-      playerStats[playerId].total_wins += stat.player_legs_won || 0
-      playerStats[playerId].legs_played += 1
-      playerStats[playerId].throws_180 += stat.throws_180 || 0
-      playerStats[playerId].throws_171 += stat.throws_171 || 0
-      playerStats[playerId].throws_20 += stat.throws_20 || 0
-      playerStats[playerId].throws_15 += stat.throws_15 || 0
-      playerStats[playerId].throws_16 += stat.throws_16 || 0
-      playerStats[playerId].throws_17 += stat.throws_17 || 0
-      playerStats[playerId].throws_18 += stat.throws_18 || 0
-      playerStats[playerId].throws_19 += stat.throws_19 || 0
-      playerStats[playerId].throws_high_tonne += stat.throws_high_tonne || 0
-      playerStats[playerId].throws_tonne += stat.throws_tonne || 0
-      playerStats[playerId].throws_shanghai += stat.throws_shanghai || 0
-      playerStats[playerId].throws_95_plus += stat.throws_95_plus || 0
-      playerStats[playerId].throws_bull += stat.throws_bull || 0
+      player.total_legs += legsInThisMatch
+      player.total_wins += playerLegsWon
+      // </CHANGE>
+      player.throws_180 += stat.throws_180 || 0
+      player.throws_171 += stat.throws_171 || 0
+      player.throws_high_tonne += stat.throws_high_tonne || 0
+      player.throws_tonne += stat.throws_tonne || 0
+      player.throws_95_plus += stat.throws_95_plus || 0
+      player.throws_shanghai += stat.throws_shanghai || 0
+      player.throws_bull += stat.throws_bull || 0
+      player.throws_20 += stat.throws_20 || 0
     })
 
-    return Object.values(playerStats)
-      .map((stats: any) => ({
-        ...stats,
-        win_percentage: stats.total_legs > 0 ? (stats.total_wins / stats.total_legs) * 100 : 0,
-        weighted_win_rate: ((stats.total_wins + 10) / (stats.total_legs + 20)) * 100,
-      }))
-      .sort((a: any, b: any) => {
-        if (b.weighted_win_rate !== a.weighted_win_rate) return b.weighted_win_rate - a.weighted_win_rate
-        if (b.total_wins !== a.total_wins) return b.total_wins - a.total_wins
-        if (b.throws_180 !== a.throws_180) return b.throws_180 - a.throws_180
-        if (b.throws_171 !== a.throws_171) return b.throws_171 - a.throws_171
-        if (b.throws_high_tonne !== a.throws_high_tonne) return b.throws_high_tonne - a.throws_high_tonne
-        if (b.throws_tonne !== a.throws_tonne) return b.throws_tonne - a.throws_tonne
-        return b.throws_shanghai - a.throws_shanghai
+    return Array.from(playerMap.values())
+      .map((player) => {
+        const detailedStats = legStatistics
+          .filter((stat) => stat.player_id === player.player_id)
+          .reduce((acc, stat) => {
+            return {
+              throws_15: (acc.throws_15 || 0) + (stat.throws_15 || 0),
+              throws_16: (acc.throws_16 || 0) + (stat.throws_16 || 0),
+              throws_17: (acc.throws_17 || 0) + (stat.throws_17 || 0),
+              throws_18: (acc.throws_18 || 0) + (stat.throws_18 || 0),
+              throws_19: (acc.throws_19 || 0) + (stat.throws_19 || 0),
+            }
+          }, {})
+
+        const totalPoints = calculatePlayerPoints(player, detailedStats)
+
+        return {
+          ...player,
+          win_percentage: player.total_legs > 0 ? (player.total_wins / player.total_legs) * 100 : 0,
+          total_points: totalPoints,
+        }
       })
-  }
+      .sort((a, b) => {
+        if (b.total_points !== a.total_points) {
+          return b.total_points - a.total_points
+        }
+        if (b.total_wins !== a.total_wins) {
+          return b.total_wins - a.total_wins
+        }
+        return b.throws_180 - a.throws_180
+      })
+  }, [legStatistics])
 
   const getMatchResultColor = (match, teamId) => {
     const isHomeTeam = match.home_team?.id === teamId
@@ -324,8 +363,7 @@ export default function LigaPage() {
   const upcomingMatches = matches.filter((match) => match.status === "scheduled")
   const postponedMatches = matches.filter((match) => match.status === "postponed")
   const standings = calculateStandings()
-  const playerLegStats = calculatePlayerLegStats()
-
+  const playerLegStats = playerStatistics // Renamed from playerLegStats to playerStatistics
   const totalPages = Math.ceil(playerLegStats.length / playersPerPage)
   const startIndex = (currentPage - 1) * playersPerPage
   const endIndex = startIndex + playersPerPage
@@ -387,9 +425,9 @@ export default function LigaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
-      <main className="pt-8 pb-20">
+      <main className="container mx-auto px-4 py-8">
         <motion.div
           className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8"
           variants={containerVariants}
@@ -480,6 +518,8 @@ export default function LigaPage() {
               </div>
 
               <TabsContent value="legstats">
+                <PointsInfoBox />
+
                 <Card className="overflow-hidden shadow-lg">
                   <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 sm:p-6">
                     <div className="flex items-center justify-between">
@@ -504,30 +544,6 @@ export default function LigaPage() {
                     </div>
                   </CardHeader>
 
-                  <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200">
-                    <Alert className="bg-white border-blue-300">
-                      <Info className="h-4 w-4 text-blue-600" />
-                      <AlertTitle className="text-blue-900 font-semibold">Wie funktioniert das Ranking?</AlertTitle>
-                      <AlertDescription className="text-gray-700 mt-2">
-                        <p className="mb-2">
-                          Das Ranking basiert auf einer <strong>gewichteten Win-Rate</strong>, um faire Platzierungen zu
-                          gewährleisten:
-                        </p>
-                        <ul className="list-disc list-inside space-y-1 text-sm">
-                          <li>
-                            <strong>Alle Spieler</strong> starten bei ca. 50% und müssen sich durch mehr Spiele
-                            hocharbeiten
-                          </li>
-                          <li>
-                            <strong>Alle Spieler</strong> mit vielen gespielten Legs werden fair bewertet
-                          </li>
-                          <li>Je mehr Legs du spielst, desto mehr zählt deine echte Win-Rate</li>
-                        </ul>
-                       
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-
                   <CardContent className="p-0">
                     {playerLegStats.length === 0 ? (
                       <div className="text-center py-12 text-gray-500">
@@ -538,13 +554,16 @@ export default function LigaPage() {
                       <>
                         <div className="overflow-x-auto custom-scrollbar">
                           <table className="w-full min-w-[1200px]">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-yellow-400">
                               <tr>
                                 <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   Rang
                                 </th>
                                 <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   Spieler
+                                </th>
+                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                  Punkte
                                 </th>
                                 <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
                                   Legs

@@ -86,6 +86,7 @@ interface LegStatistic {
   throws_bull: number
   notes: string
   dart_type?: string
+  is_substitute?: boolean
 }
 
 interface MatchStatisticsPageProps {
@@ -167,7 +168,6 @@ const NumberInput = ({
         >
           <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
-        {/* </CHANGE> */}
       </div>
     </div>
   )
@@ -185,6 +185,8 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
   const [successModalOpen, setSuccessModalOpen] = useState(false)
   const [savedPlayerName, setSavedPlayerName] = useState("")
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("")
+  const [validationErrorOpen, setValidationErrorOpen] = useState(false)
+  const [validationErrorMessage, setValidationErrorMessage] = useState("")
   const [currentStats, setCurrentStats] = useState<LegStatistic>({
     match_id: match.id,
     leg_number: 1,
@@ -213,6 +215,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
     throws_bull: 0,
     notes: "",
     dart_type: match.dart_type || "steeldart",
+    is_substitute: false,
   })
 
   useEffect(() => {
@@ -248,10 +251,10 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
     const { data, error } = await supabase
       .from("leg_statistics")
       .select(`
-        id, match_id, leg_number, player_id, leg_winner_id, leg_wins, 
+        id, match_id, leg_number, player_id, leg_winner_id, leg_wins,
         throws_180, throws_171, throws_high_tonne, throws_tonne, throws_shanghai,
         throws_95_plus, throws_under_26, throws_under_30, semperit_outs,
-        throws_15, throws_16, throws_17, throws_18, throws_19, throws_20, throws_bull, 
+        throws_15, throws_16, throws_17, throws_18, throws_19, throws_20, throws_bull,
         notes, player_legs_won, opponent_legs_won, legs_won_in_match, dart_type,
         player:club_players!leg_statistics_player_id_fkey(name)
       `)
@@ -327,14 +330,49 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
         throws_bull: 0,
         notes: "",
         dart_type: match.dart_type || "steeldart",
+        is_substitute: false,
       })
     }
 
     setSelectedPlayerId(playerId)
   }
 
+  const validateLegCounts = (): { isValid: boolean; message: string } => {
+    const playerLegs = currentStats.player_legs_won || 0
+    const opponentLegs = currentStats.opponent_legs_won || 0
+    const totalLegs = playerLegs + opponentLegs
+
+    if (currentStats.is_substitute) {
+      if (totalLegs < 1) {
+        return {
+          isValid: false,
+          message: `Ungültige Leg-Anzahl! Auch eingewechselte Spieler müssen mindestens 1 Leg gespielt haben. Bitte gib mindestens 1 Leg ein (z.B. 1:0 oder 0:1).`,
+        }
+      }
+      return { isValid: true, message: "" }
+    }
+
+    const MIN_LEGS = 6
+
+    if (totalLegs < MIN_LEGS) {
+      return {
+        isValid: false,
+        message: `Ungültige Leg-Anzahl! Es wurden nur ${totalLegs} Legs eingegeben, aber mindestens ${MIN_LEGS} Legs müssen gespielt werden. Bitte korrigiere die Eingabe oder markiere den Spieler als "Eingewechselt", falls er nur wenige Legs gespielt hat.`,
+      }
+    }
+
+    return { isValid: true, message: "" }
+  }
+
   const savePlayerStats = async () => {
     if (!selectedPlayerId || !currentStats.player_name) return
+
+    const validation = validateLegCounts()
+    if (!validation.isValid) {
+      setValidationErrorMessage(validation.message)
+      setValidationErrorOpen(true)
+      return
+    }
 
     setLoading(true)
     try {
@@ -414,6 +452,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
           throws_bull: 0,
           notes: "",
           dart_type: match.dart_type || "steeldart",
+          is_substitute: false,
         })
       }
     } catch (error) {
@@ -498,8 +537,38 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
     }
   }, [successModalOpen])
 
+  const totalLegs = (currentStats.player_legs_won || 0) + (currentStats.opponent_legs_won || 0)
+  const isLegCountValid = currentStats.is_substitute ? totalLegs >= 1 : totalLegs >= 6
+
   return (
     <div className="space-y-6">
+      <Card className="border-2 border-amber-500 bg-amber-50">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">⚠️</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-amber-900 text-lg mb-2">Wichtig: Korrekte Leg-Angaben erforderlich!</h3>
+              <p className="text-amber-800 text-sm leading-relaxed">
+                Bitte gib die <strong>vollständige Leg-Anzahl</strong> ein (mindestens 6 Legs pro Spiel). Beispiele:{" "}
+                <strong>6:0</strong>, <strong>3:3</strong>, <strong>7:5</strong> usw.
+                <br />
+                <span className="text-amber-900 font-semibold">
+                  Falsche Angaben können zur Sperrung oder zum Ausschluss von der Wertung
+                  führen!
+                </span>
+                <br />
+                <em className="text-amber-700">
+                  Ausnahme: Wenn ein Spieler eingewechselt wurde, markiere dies mit der Checkbox "Eingewechselter
+                  Spieler".
+                </em>
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {showHeader && (
         <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50">
           <CardContent className="p-6">
@@ -580,6 +649,27 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                 <CardTitle className="flex items-center gap-2">🎯 Statistiken für {currentStats.player_name}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
+                <div className="p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="is_substitute"
+                      checked={currentStats.is_substitute || false}
+                      onChange={(e) => updateCurrentStats("is_substitute", e.target.checked)}
+                      className="mt-1 h-5 w-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                    />
+                    <div className="flex-1">
+                      <label htmlFor="is_substitute" className="text-sm font-semibold text-purple-900 cursor-pointer">
+                        Eingewechselter Spieler
+                      </label>
+                      <p className="text-xs text-purple-700 mt-1">
+                        Aktiviere diese Option, wenn der Spieler während des Spiels eingewechselt wurde und daher
+                        weniger als 6 Legs gespielt hat.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <NumberInput
                     id="player_legs_won"
@@ -598,7 +688,30 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                     labelClassName="text-blue-700 font-semibold"
                   />
                 </div>
-                {/* </CHANGE> */}
+
+                <div
+                  className={`p-3 rounded-lg border-2 ${
+                    isLegCountValid ? "bg-green-50 border-green-300" : "bg-red-50 border-red-300 animate-pulse"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {isLegCountValid ? (
+                      <>
+                        <span className="text-green-600 font-bold text-lg">✓</span>
+                        <span className="text-green-800 font-semibold">
+                          Gesamt: {totalLegs} Legs {currentStats.is_substitute && "(Eingewechselt)"}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-red-600 font-bold text-lg">✗</span>
+                        <span className="text-red-800 font-semibold">
+                          Nur {totalLegs} Legs eingegeben - Mindestens 6 erforderlich!
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
 
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">🎯 High Scores</h4>
@@ -646,7 +759,6 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                       onChange={(value) => updateCurrentStats("throws_bull", value)}
                     />
                   </div>
-                  {/* </CHANGE> */}
                 </div>
 
                 <div className="space-y-4">
@@ -691,7 +803,6 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                       onChange={(value) => updateCurrentStats("throws_20", value)}
                     />
                   </div>
-                  {/* </CHANGE> */}
                 </div>
 
                 <div className="space-y-4">
@@ -722,7 +833,6 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                       labelClassName="text-red-700"
                     />
                   </div>
-                  {/* </CHANGE> */}
                 </div>
 
                 <div className="space-y-2">
@@ -741,8 +851,10 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                 <div className="flex justify-end pt-4 border-t">
                   <Button
                     onClick={savePlayerStats}
-                    disabled={loading}
-                    className="bg-green-600 hover:bg-green-700 min-h-[44px] px-8"
+                    disabled={loading || !isLegCountValid}
+                    className={`min-h-[44px] px-8 ${
+                      isLegCountValid ? "bg-green-600 hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
+                    }`}
                   >
                     <Save className="h-4 w-4 mr-2" />
                     {currentStats.id ? "Statistiken aktualisieren" : "Statistiken speichern"}
@@ -818,7 +930,6 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                                   <span className="text-lg font-bold text-cyan-600">{stat.throws_bull}</span>
                                 </div>
                               </div>
-                              {/* </CHANGE> */}
                             </div>
 
                             <div className="space-y-2">
@@ -851,7 +962,6 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                                   <span className="text-lg font-bold text-slate-600">{stat.throws_20}</span>
                                 </div>
                               </div>
-                              {/* </CHANGE> */}
                             </div>
 
                             <div className="space-y-2">
@@ -906,6 +1016,25 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
         </CardContent>
       </Card>
 
+      <Dialog open={validationErrorOpen} onOpenChange={setValidationErrorOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <span className="text-4xl">⚠️</span>
+            </div>
+            <DialogTitle className="text-xl font-bold text-red-800">Ungültige Leg-Anzahl!</DialogTitle>
+            <DialogDescription className="text-base text-gray-700 mt-4 text-left">
+              {validationErrorMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button onClick={() => setValidationErrorOpen(false)} className="bg-red-600 hover:bg-red-700 px-8">
+              Verstanden
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={successModalOpen} onOpenChange={setSuccessModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader className="text-center">
@@ -939,12 +1068,11 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteModalOpen(false)} disabled={loading}>
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
               Abbrechen
             </Button>
-            <Button variant="destructive" onClick={deletePlayerStats} disabled={loading}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              {loading ? "Wird gelöscht..." : "Löschen"}
+            <Button variant="destructive" onClick={deletePlayerStats}>
+              {loading ? "Lösche..." : "Löschen"}
             </Button>
           </DialogFooter>
         </DialogContent>

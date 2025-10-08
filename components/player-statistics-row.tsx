@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, ChevronUp, User } from "lucide-react"
+import { ChevronDown, ChevronUp, User, Calculator } from "lucide-react"
+import { PlayerPointsModal } from "./player-points-modal"
 
 interface PlayerStatisticsRowProps {
   player: any
@@ -13,6 +14,7 @@ interface PlayerStatisticsRowProps {
 
 export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatisticsRowProps) {
   const [showDetails, setShowDetails] = useState(false)
+  const [showPointsModal, setShowPointsModal] = useState(false)
 
   // Calculate detailed stats for this specific player
   const playerDetailedStats = allStats
@@ -30,6 +32,24 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
         throws_171: (acc.throws_171 || 0) + (stat.throws_171 || 0),
       }
     }, {})
+
+  const pointsBreakdown = {
+    legWinPoints: player.total_wins * 3,
+    throw180Points: player.throws_180 * 25,
+    throw171Points: player.throws_171 * 25,
+    highTonnePoints: player.throws_high_tonne * 18,
+    tonnePoints: player.throws_tonne * 15,
+    throw95PlusPoints: player.throws_95_plus * 12,
+    shanghaiPoints: player.throws_shanghai * 10,
+    bullPoints: player.throws_bull * 8,
+    throw20Points: player.throws_20 * 6,
+    throw19Points: (playerDetailedStats.throws_19 || 0) * 5,
+    throw18Points: (playerDetailedStats.throws_18 || 0) * 4,
+    throw17Points: (playerDetailedStats.throws_17 || 0) * 3,
+    throw16Points: (playerDetailedStats.throws_16 || 0) * 2,
+    throw15Points: (playerDetailedStats.throws_15 || 0) * 1,
+    totalPoints: player.total_points || 0,
+  }
 
   return (
     <>
@@ -86,10 +106,25 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
                 </svg>
               </div>
             </a>
-            {/* Tooltip on hover */}
             <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
               Klicken für detaillierte Statistiken
             </div>
+          </div>
+        </td>
+        <td className="text-center p-2 sm:p-4">
+          <div className="flex flex-col items-center gap-1">
+            <Badge className="bg-amber-100 text-amber-800 font-bold text-xs">
+              {player.total_points?.toFixed(1) || "0.0"}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPointsModal(true)}
+              className="h-5 w-5 p-0 hover:bg-amber-100"
+              title="Punktedetails anzeigen"
+            >
+              <Calculator className="h-3 w-3 text-amber-600" />
+            </Button>
           </div>
         </td>
         <td className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm">{player.total_legs}</td>
@@ -140,7 +175,7 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
       </tr>
       {showDetails && (
         <tr className="bg-gray-50">
-          <td colSpan={13} className="p-4">
+          <td colSpan={14} className="p-4">
             <div className="bg-white rounded-lg p-4 shadow-sm">
               <h4 className="font-semibold text-gray-900 mb-3">Detaillierte Statistiken für {player.name}</h4>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -173,6 +208,12 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
           </td>
         </tr>
       )}
+      <PlayerPointsModal
+        isOpen={showPointsModal}
+        onClose={() => setShowPointsModal(false)}
+        player={player}
+        pointsBreakdown={pointsBreakdown}
+      />
     </>
   )
 }
