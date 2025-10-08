@@ -706,7 +706,8 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                       <>
                         <span className="text-red-600 font-bold text-lg">✗</span>
                         <span className="text-red-800 font-semibold">
-                          Nur {totalLegs} Legs eingegeben - Mindestens 6 erforderlich!
+                          Nur {totalLegs} Legs eingegeben - Mindestens {currentStats.is_substitute ? "1" : "6"}{" "}
+                          erforderlich!
                         </span>
                       </>
                     )}
