@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
-import { Search, UserPlus, X, Play, Trophy, ArrowLeft, Euro, AlertCircle, ArrowRight } from "lucide-react"
+import { Search, UserPlus, X, Play, Trophy, ArrowLeft, Euro, AlertCircle, ArrowRight, Star } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
@@ -14,17 +14,23 @@ interface Player {
   name: string
 }
 
+interface PlayerWithFrequency extends Player {
+  playCount: number
+  lastPlayed: string | null
+}
+
 interface RegisteredPlayer {
   id: number
   player_id: number
   player_name: string
   registered_at: string
-  paid: boolean // paid ist jetzt direkt aus der Datenbank
+  paid: boolean
 }
 
 export default function DKOTournamentRegistration() {
   const { user, isAdmin, loading: authLoading, adminLoading } = useAuth()
   const [availablePlayers, setAvailablePlayers] = useState<Player[]>([])
+  const [frequentPlayers, setFrequentPlayers] = useState<PlayerWithFrequency[]>([])
   const [registeredPlayers, setRegisteredPlayers] = useState<RegisteredPlayer[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedPlayers, setSelectedPlayers] = useState<Set<number>>(new Set())
@@ -32,6 +38,7 @@ export default function DKOTournamentRegistration() {
   const [tournamentName, setTournamentName] = useState("")
   const [showPaymentWarning, setShowPaymentWarning] = useState(false)
   const [showNameWarning, setShowNameWarning] = useState(false)
+  const [playerViewMode, setPlayerViewMode] = useState<"frequent" | "all">("frequent")
   const [activeTournament, setActiveTournament] = useState<{
     tournamentId: string
     tournamentName: string
@@ -45,7 +52,47 @@ export default function DKOTournamentRegistration() {
     fetchPlayers()
     fetchRegisteredPlayers()
     checkForActiveTournament()
+    fetchFrequentPlayers()
   }, [])
+
+  const fetchFrequentPlayers = async () => {
+    try {
+      const { data: frequentPlayersData, error } = await supabase
+        .from("tournament_series_aggregated")
+        .select("player_name, tournaments_played")
+        .order("tournaments_played", { ascending: false })
+        .limit(100) // Erhöhe Limit auf 100, um alle Spieler anzuzeigen
+
+      if (error) throw error
+
+      if (!frequentPlayersData || frequentPlayersData.length === 0) {
+        setFrequentPlayers([])
+        return
+      }
+
+      const { data: allPlayers, error: playersError } = await supabase.from("spieldatenbank").select("id, name")
+
+      if (playersError) throw playersError
+
+      const frequentPlayersArray: PlayerWithFrequency[] = frequentPlayersData
+        .map((fp) => {
+          const player = allPlayers?.find((p) => p.name === fp.player_name)
+          if (!player) return null
+          return {
+            id: player.id,
+            name: fp.player_name,
+            playCount: fp.tournaments_played,
+            lastPlayed: null,
+          }
+        })
+        .filter((p): p is PlayerWithFrequency => p !== null)
+
+      setFrequentPlayers(frequentPlayersArray)
+    } catch (error) {
+      console.error("Fehler beim Laden der häufig gespielten Spieler:", error)
+      setFrequentPlayers([])
+    }
+  }
 
   const fetchPlayers = async () => {
     try {
@@ -80,6 +127,7 @@ export default function DKOTournamentRegistration() {
       newSelected.delete(playerId)
     } else {
       newSelected.add(playerId)
+      setSearchTerm("")
     }
     setSelectedPlayers(newSelected)
   }
@@ -93,7 +141,7 @@ export default function DKOTournamentRegistration() {
         .map((p) => ({
           player_id: p.id,
           player_name: p.name,
-          paid: false, // Neue Spieler sind standardmäßig nicht bezahlt
+          paid: false,
         }))
 
       const { error } = await supabase.from("dko_tournament_registration").insert(playersToRegister)
@@ -101,6 +149,7 @@ export default function DKOTournamentRegistration() {
       if (error) throw error
 
       await fetchRegisteredPlayers()
+      await fetchFrequentPlayers() // Refresh frequent players
       setSelectedPlayers(new Set())
     } catch (error) {
       console.error("Fehler beim Registrieren der Spieler:", error)
@@ -156,7 +205,7 @@ export default function DKOTournamentRegistration() {
         tournamentId: activeTournament.tournament_id,
         tournamentName: activeTournament.tournament_name,
         tournamentType: activeTournament.tournament_type,
-        incompleteMatches: 0, // Not needed anymore
+        incompleteMatches: 0,
       })
     } catch (error) {
       console.error("Fehler beim Prüfen auf aktives Turnier:", error)
@@ -254,6 +303,10 @@ export default function DKOTournamentRegistration() {
       !registeredPlayers.some((rp) => rp.player_id === player.id),
   )
 
+  const availableFrequentPlayers = frequentPlayers.filter(
+    (player) => !registeredPlayers.some((rp) => rp.player_id === player.id),
+  )
+
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-100">
@@ -300,8 +353,7 @@ export default function DKOTournamentRegistration() {
             <UserPlus className="w-8 h-8" />
           </div>
           <h1 className="text-4xl sm:text-5xl font-black mb-4 tracking-tight">DKO TURNIER REGISTRIERUNG</h1>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto">
-          </p>
+          <p className="text-xl text-white/90 max-w-2xl mx-auto"></p>
         </div>
       </div>
 
@@ -481,23 +533,76 @@ export default function DKOTournamentRegistration() {
           <div className="bg-white border-2 border-white rounded-lg p-6 shadow-lg">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Verfügbare Spieler</h2>
-              <span className="text-sm text-gray-500">{filteredPlayers.length} Spieler</span>
+              <span className="text-sm text-gray-500">
+                {playerViewMode === "frequent" ? availableFrequentPlayers.length : filteredPlayers.length} Spieler
+              </span>
             </div>
 
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Spieler suchen..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none bg-white shadow-md"
-              />
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setPlayerViewMode("frequent")}
+                className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors ${
+                  playerViewMode === "frequent"
+                    ? "bg-orange-500 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Star className="w-4 h-4" />
+                  Häufig verwendet
+                </div>
+              </button>
+              <button
+                onClick={() => setPlayerViewMode("all")}
+                className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors ${
+                  playerViewMode === "all" ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Alle Spieler
+              </button>
             </div>
+
+            {playerViewMode === "all" && (
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Spieler suchen..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none bg-white shadow-md"
+                />
+              </div>
+            )}
 
             <div className="space-y-2 max-h-96 overflow-y-auto mb-4">
               {loading ? (
                 <p className="text-center text-gray-500 py-8">Lade Spieler...</p>
+              ) : playerViewMode === "frequent" ? (
+                availableFrequentPlayers.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">Keine häufig verwendeten Spieler gefunden</p>
+                ) : (
+                  availableFrequentPlayers.map((player) => (
+                    <label
+                      key={player.id}
+                      className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-200 rounded-lg hover:border-orange-400 cursor-pointer transition-colors shadow-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedPlayers.has(player.id)}
+                        onChange={() => handlePlayerSelect(player.id)}
+                        className="w-5 h-5 border-2 border-white rounded focus:ring-orange-500 accent-orange-500 shadow-sm"
+                      />
+                      <div className="flex-1">
+                        <span className="font-semibold text-gray-900">{player.name}</span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-orange-600 font-medium">{player.playCount}x gespielt</span>
+                        </div>
+                      </div>
+                      <Star className="w-4 h-4 text-orange-500 fill-orange-500" />
+                    </label>
+                  ))
+                )
               ) : filteredPlayers.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">Keine Spieler gefunden</p>
               ) : (

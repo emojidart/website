@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { RotateCcw, Check } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useSpeechAnnouncer, SpeechAnnouncerSettings } from "@/components/speech-announcer"
 
 interface Match {
   id: number
@@ -19,6 +20,7 @@ interface Match {
   winner?: string
   loser?: string
   machineNumber?: number
+  callCount?: number
 }
 
 interface TournamentBracketProps {
@@ -97,6 +99,7 @@ const loadMatchStatesFromDatabase = async (
         winner: state.winner || undefined,
         loser: state.loser || undefined,
         machineNumber: state.machine_number || undefined,
+        callCount: state.callCount !== undefined ? state.callCount : undefined,
       }
     })
 
@@ -467,6 +470,7 @@ const markTournamentAsCancelled = async (tournamentId: string) => {
 
 export default function TournamentBracket({ bracketSize = 8, tournamentType = "8er_dko" }: TournamentBracketProps) {
   const initializingRef = useRef(false)
+  const autoResolveRanRef = useRef(false)
 
   const [tournamentId, setTournamentId] = useState<string>("")
   const [tournamentName, setTournamentName] = useState<string>("")
@@ -480,6 +484,8 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
   const [loadingRankings, setLoadingRankings] = useState(false)
   const [savingToSeries, setSavingToSeries] = useState(false)
   const [successDialogOpen, setSuccessDialogOpen] = useState(false)
+  const [speechEnabled, setSpeechEnabled] = useState(false)
+  const { announce } = useSpeechAnnouncer({ enabled: speechEnabled })
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -513,6 +519,59 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
       return () => clearTimeout(timeoutId)
     }
   }, [matches, tournamentType, tournamentId, loading])
+
+  useEffect(() => {
+    if (loading || !tournamentId || autoResolveRanRef.current) return
+
+    autoResolveRanRef.current = true
+
+    const timer = setTimeout(() => {
+      setMatches((prev) => {
+        const newMatches = { ...prev }
+        let hasChanges = false
+
+        Object.values(newMatches).forEach((match: Match) => {
+          if (match.winner || !match.player1 || !match.player2) return
+
+          const isP1Freilos = isFreilos(match.player1)
+          const isP2Freilos = isFreilos(match.player2)
+
+          if (!isP1Freilos && !isP2Freilos) return
+
+          const realPlayer = isP1Freilos ? match.player2 : match.player1
+          const freilosPlayer = isP1Freilos ? match.player1 : match.player2
+
+          console.log(`[v0] Auto-resolving Freilos match ${match.id}: ${realPlayer} beats ${freilosPlayer}`)
+
+          match.winner = realPlayer
+          match.loser = freilosPlayer
+          match.score1 = isP1Freilos ? 0 : 2
+          match.score2 = isP2Freilos ? 0 : 2
+
+          if (match.id === 14) {
+            if (match.winner === match.player1) {
+              saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
+            } else {
+              newMatches[15].player1 = match.player1
+              newMatches[15].player2 = match.player2
+            }
+          } else if (match.id === 15) {
+            saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
+          } else {
+            progressPlayers(newMatches, match.id, realPlayer, freilosPlayer)
+            trackPlayerElimination(newMatches, freilosPlayer, tournamentType, tournamentId, tournamentName, bracketSize)
+          }
+
+          hasChanges = true
+        })
+
+        autoResolveRanRef.current = false
+        return hasChanges ? newMatches : prev
+      })
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [matches, loading, tournamentType, tournamentId, tournamentName, bracketSize])
 
   const getAvailableMachines = (): number[] => {
     const usedMachines = Object.values(matches)
@@ -592,107 +651,206 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
         .sort((a, b) => a - b)
 
       sortedPlacements.forEach((placement, index) => {
-        // Count how many distinct placement tiers are below this one
-        // Each tier = +2 points
         tiersBelow[placement] = sortedPlacements.length - index - 1
       })
 
       console.log("[v0] Placement counts:", placementCounts)
       console.log("[v0] Tiers below each placement:", tiersBelow)
-      // </CHANGE>
 
       const { data: matchStates, error: matchError } = await supabase
         .from("dko_match_states")
-        .select("player1, player2, score1, score2, winner")
+        .select("match_id, player1, player2, score1, score2, winner, updated_at")
         .eq("tournament_type", tournamentType)
         .eq("tournament_id", tournamentId)
+        .order("match_id", { ascending: true })
 
       if (matchError) throw matchError
+
+      const playerMatchHistory: Record<string, Array<{ matchId: number; result: "W" | "L"; timestamp: string }>> = {}
+
+      matchStates?.forEach((match) => {
+        if (!match.winner) return
+
+        if (match.player1 && !isFreilos(match.player1)) {
+          if (!playerMatchHistory[match.player1]) {
+            playerMatchHistory[match.player1] = []
+          }
+          playerMatchHistory[match.player1].push({
+            matchId: match.match_id,
+            result: match.winner === match.player1 ? "W" : "L",
+            timestamp: match.updated_at || new Date().toISOString(),
+          })
+        }
+
+        if (match.player2 && !isFreilos(match.player2)) {
+          if (!playerMatchHistory[match.player2]) {
+            playerMatchHistory[match.player2] = []
+          }
+          playerMatchHistory[match.player2].push({
+            matchId: match.match_id,
+            result: match.winner === match.player2 ? "W" : "L",
+            timestamp: match.updated_at || new Date().toISOString(),
+          })
+        }
+      })
+
+      Object.keys(playerMatchHistory).forEach((playerName) => {
+        playerMatchHistory[playerName].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      })
+
+      console.log("[v0] Player match history:", playerMatchHistory)
 
       const bracketResetOccurred = matches[15].winner !== undefined
       console.log("[v0] Bracket reset occurred:", bracketResetOccurred)
 
-      const playerPoints: Record<string, { placement_points: number; legs_points: number; bonus_points: number }> = {}
+      const playerStats: Record<
+        string,
+        {
+          placement: number
+          placement_points: number
+          legs_points: number
+          bonus_points: number
+          legs_won: number
+          legs_lost: number
+          matches_played: number
+          matches_won: number
+          matches_lost: number
+        }
+      > = {}
 
       rankings.forEach((ranking) => {
         const playerName = ranking.player_name
         const placement = ranking.placement
-
-        // Example: Platz 7 = 10 + 0*2 = 10, Platz 5 = 10 + 1*2 = 12, Platz 3 = 10 + 2*2 = 14
         const placementPoints = 10 + tiersBelow[placement] * 2
-
         const bonus = placement === 1 && !bracketResetOccurred ? 5 : 0
 
-        console.log(
-          `[v0] ${playerName} (Platz ${placement}): ${tiersBelow[placement]} Stufen darunter → ${placementPoints} Platzierungspunkte + ${bonus} Bonus ${bracketResetOccurred ? "(kein Bonus wegen Bracket Reset)" : ""}`,
-        )
-        // </CHANGE>
-
-        playerPoints[playerName] = {
+        playerStats[playerName] = {
+          placement: placement,
           placement_points: placementPoints,
           legs_points: 0,
           bonus_points: bonus,
+          legs_won: 0,
+          legs_lost: 0,
+          matches_played: 0,
+          matches_won: 0,
+          matches_lost: 0,
         }
       })
 
       matchStates?.forEach((match) => {
         if (match.player1 && !isFreilos(match.player1)) {
-          if (!playerPoints[match.player1]) {
-            playerPoints[match.player1] = { placement_points: 0, legs_points: 0, bonus_points: 0 }
+          if (!playerStats[match.player1]) {
+            playerStats[match.player1] = {
+              placement: 0,
+              placement_points: 0,
+              legs_points: 0,
+              bonus_points: 0,
+              legs_won: 0,
+              legs_lost: 0,
+              matches_played: 0,
+              matches_won: 0,
+              matches_lost: 0,
+            }
           }
-          playerPoints[match.player1].legs_points += match.score1 || 0
+
+          const score1 = match.score1 || 0
+          const score2 = match.score2 || 0
+
+          playerStats[match.player1].legs_won += score1
+          playerStats[match.player1].legs_lost += score2
+          playerStats[match.player1].legs_points += score1
+
+          if (match.winner) {
+            playerStats[match.player1].matches_played += 1
+            if (match.winner === match.player1) {
+              playerStats[match.player1].matches_won += 1
+            } else {
+              playerStats[match.player1].matches_lost += 1
+            }
+          }
         }
 
         if (match.player2 && !isFreilos(match.player2)) {
-          if (!playerPoints[match.player2]) {
-            playerPoints[match.player2] = { placement_points: 0, legs_points: 0, bonus_points: 0 }
+          if (!playerStats[match.player2]) {
+            playerStats[match.player2] = {
+              placement: 0,
+              placement_points: 0,
+              legs_points: 0,
+              bonus_points: 0,
+              legs_won: 0,
+              legs_lost: 0,
+              matches_played: 0,
+              matches_won: 0,
+              matches_lost: 0,
+            }
           }
-          playerPoints[match.player2].legs_points += match.score2 || 0
+
+          const score1 = match.score1 || 0
+          const score2 = match.score2 || 0
+
+          playerStats[match.player2].legs_won += score2
+          playerStats[match.player2].legs_lost += score1
+          playerStats[match.player2].legs_points += score2
+
+          if (match.winner) {
+            playerStats[match.player2].matches_played += 1
+            if (match.winner === match.player2) {
+              playerStats[match.player2].matches_won += 1
+            } else {
+              playerStats[match.player2].matches_lost += 1
+            }
+          }
         }
       })
 
-      console.log("[v0] Calculated points:", playerPoints)
+      console.log("[v0] Calculated player statistics:", playerStats)
 
-      for (const [playerName, points] of Object.entries(playerPoints)) {
-        const totalPoints = points.placement_points + points.legs_points + points.bonus_points
+      const tournamentEntries = Object.entries(playerStats).map(([playerName, stats]) => {
+        const totalPoints = stats.placement_points + stats.legs_points + stats.bonus_points
+
+        let form = ""
+        if (stats.placement === 1) form = "W"
+        else if (stats.placement <= 3) form = "D"
+        else form = "L"
+
+        const matchHistory = playerMatchHistory[playerName] || []
+        const chronologicalForm = matchHistory.map((m) => m.result).join(",")
 
         console.log(
-          `[v0] ${playerName}: ${points.placement_points} (Platzierung) + ${points.legs_points} (Legs) + ${points.bonus_points} (Bonus) = ${totalPoints} Gesamt`,
+          `[v0] ${playerName}: Platz ${stats.placement} | ` +
+            `${stats.placement_points}P (Platzierung) + ${stats.legs_points}P (Legs) + ${stats.bonus_points}P (Bonus) = ${totalPoints}P | ` +
+            `Legs: ${stats.legs_won}W-${stats.legs_lost}L | Matches: ${stats.matches_won}W-${stats.matches_lost}L | ` +
+            `Form: ${chronologicalForm}`,
         )
 
-        const { data: existingPlayer } = await supabase
-          .from("tournament_series_standings")
-          .select("total_points, placement_points, legs_points, bonus_points, tournaments_played")
-          .eq("player_name", playerName)
-          .maybeSingle()
-
-        if (existingPlayer) {
-          const { error: updateError } = await supabase
-            .from("tournament_series_standings")
-            .update({
-              total_points: existingPlayer.total_points + totalPoints,
-              placement_points: existingPlayer.placement_points + points.placement_points,
-              legs_points: existingPlayer.legs_points + points.legs_points,
-              bonus_points: existingPlayer.bonus_points + points.bonus_points,
-              tournaments_played: existingPlayer.tournaments_played + 1,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("player_name", playerName)
-
-          if (updateError) throw updateError
-        } else {
-          const { error: insertError } = await supabase.from("tournament_series_standings").insert({
-            player_name: playerName,
-            total_points: totalPoints,
-            placement_points: points.placement_points,
-            legs_points: points.legs_points,
-            bonus_points: points.bonus_points,
-            tournaments_played: 1,
-          })
-
-          if (insertError) throw insertError
+        return {
+          player_name: playerName,
+          tournament_id: tournamentId,
+          tournament_name: tournamentName,
+          tournament_type: tournamentType,
+          tournament_date: new Date().toISOString(),
+          placement: stats.placement,
+          placement_points: stats.placement_points,
+          legs_points: stats.legs_points,
+          bonus_points: stats.bonus_points,
+          total_points: totalPoints,
+          legs_won: stats.legs_won,
+          legs_lost: stats.legs_lost,
+          matches_played: stats.matches_played,
+          matches_won: stats.matches_won,
+          matches_lost: stats.matches_lost,
+          form: chronologicalForm,
         }
+      })
+
+      const { error: insertError } = await supabase.from("tournament_series_standings").insert(tournamentEntries)
+
+      if (insertError) {
+        console.error("[v0] Error inserting tournament entries:", insertError)
+        throw insertError
       }
+
+      console.log(`[v0] Successfully inserted ${tournamentEntries.length} tournament entries`)
 
       const { error: historyError } = await supabase.from("tournament_series_history").insert({
         tournament_id: tournamentId,
@@ -779,16 +937,41 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
   const assignMachine = (machineNumber: number) => {
     if (selectedMatchId === null) return
 
+    const match = matches[selectedMatchId]
+
     setMatches((prev) => ({
       ...prev,
       [selectedMatchId]: {
         ...prev[selectedMatchId],
         machineNumber,
+        callCount: 1,
       },
     }))
 
+    if (match.player1 && match.player2) {
+      announce(match.player1, match.player2, machineNumber, 1)
+    }
+
     setMachineDialogOpen(false)
     setSelectedMatchId(null)
+  }
+
+  const repeatCall = (matchId: number) => {
+    const match = matches[matchId]
+    if (!match.machineNumber || !match.player1 || !match.player2) return
+
+    const currentCall = match.callCount || 1
+    const nextCall = Math.min(currentCall + 1, 3)
+
+    setMatches((prev) => ({
+      ...prev,
+      [matchId]: {
+        ...prev[matchId],
+        callCount: nextCall,
+      },
+    }))
+
+    announce(match.player1, match.player2, match.machineNumber, nextCall)
   }
 
   const updateScore = (matchId: number, player: 1 | 2, score: number) => {
@@ -818,6 +1001,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
       }
 
       match.machineNumber = undefined
+      match.callCount = undefined
 
       newMatches[matchId] = match
 
@@ -1075,6 +1259,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
         winner: undefined,
         loser: undefined,
         machineNumber: undefined,
+        callCount: undefined,
       }
 
       if (oldWinner || oldLoser) {
@@ -1298,13 +1483,14 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="w-full mx-auto space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground">
               {bracketSize}er DKO - {tournamentName}
             </h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center flex-wrap">
+            <SpeechAnnouncerSettings enabled={speechEnabled} onToggle={setSpeechEnabled} />
             <Button onClick={fetchRankings} variant="outline" disabled={loadingRankings || !tournamentId}>
               {loadingRankings ? "Lädt..." : "Rangliste"}
             </Button>
@@ -1325,6 +1511,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={repeatCall}
               />
             ))}
           </div>
@@ -1339,6 +1526,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={repeatCall}
                 isLoser
               />
             ))}
@@ -1354,6 +1542,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={repeatCall}
               />
             ))}
           </div>
@@ -1368,6 +1557,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={repeatCall}
                 isLoser
               />
             ))}
@@ -1381,6 +1571,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
               onConfirm={confirmMatch}
               onStartMatch={startMatch}
               onReset={resetMatch}
+              onRepeatCall={repeatCall}
               isLoser
             />
           </div>
@@ -1393,6 +1584,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
               onConfirm={confirmMatch}
               onStartMatch={startMatch}
               onReset={resetMatch}
+              onRepeatCall={repeatCall}
             />
           </div>
 
@@ -1404,6 +1596,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
               onConfirm={confirmMatch}
               onStartMatch={startMatch}
               onReset={resetMatch}
+              onRepeatCall={repeatCall}
               isLoser
             />
           </div>
@@ -1417,6 +1610,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
               onConfirm={confirmMatch}
               onStartMatch={startMatch}
               onReset={resetMatch}
+              onRepeatCall={repeatCall}
               isGrandFinal
             />
           </div>
@@ -1436,6 +1630,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
                   onConfirm={confirmMatch}
                   onStartMatch={startMatch}
                   onReset={resetMatch}
+                  onRepeatCall={repeatCall}
                   isGrandFinal
                 />
               </div>
@@ -1572,11 +1767,21 @@ interface MatchCardProps {
   onConfirm: (matchId: number) => void
   onStartMatch: (matchId: number) => void
   onReset: (matchId: number) => void
+  onRepeatCall: (matchId: number) => void
   isLoser?: boolean
   isGrandFinal?: boolean
 }
 
-function MatchCard({ match, onScoreUpdate, onConfirm, onStartMatch, onReset, isLoser, isGrandFinal }: MatchCardProps) {
+function MatchCard({
+  match,
+  onScoreUpdate,
+  onConfirm,
+  onStartMatch,
+  onReset,
+  onRepeatCall,
+  isLoser,
+  isGrandFinal,
+}: MatchCardProps) {
   const isPlayer1Winner = match.winner === match.player1
   const isPlayer2Winner = match.winner === match.player2
   const isPlayer1Loser = match.loser === match.player1
@@ -1586,6 +1791,8 @@ function MatchCard({ match, onScoreUpdate, onConfirm, onStartMatch, onReset, isL
     match.machineNumber && !match.winner && match.score1 !== match.score2 && (match.score1 > 0 || match.score2 > 0)
 
   const hasFreilos = isFreilos(match.player1) || isFreilos(match.player2)
+
+  const currentCall = match.callCount || 0
 
   return (
     <Card
@@ -1604,6 +1811,11 @@ function MatchCard({ match, onScoreUpdate, onConfirm, onStartMatch, onReset, isL
             <span className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-1 rounded animate-pulse">
               🎯 Automat {match.machineNumber}
             </span>
+          )}
+          {isRunning && currentCall < 3 && (
+            <Button size="sm" onClick={() => onRepeatCall(match.id)} variant="outline" className="h-7 text-xs">
+              {currentCall === 1 ? "2. Aufruf" : "3. Aufruf"}
+            </Button>
           )}
           {canConfirm && (
             <Button

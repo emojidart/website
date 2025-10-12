@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { RotateCcw, Check } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useSpeechAnnouncer } from "@/components/speech-announcer"
 
 interface Match {
   id: number
@@ -19,6 +20,7 @@ interface Match {
   winner?: string
   loser?: string
   machineNumber?: number
+  callCount?: number
 }
 
 interface TournamentBracketProps {
@@ -266,31 +268,14 @@ const removePlayerFromRankings = async (playerName: string, tournamentType: stri
 
 const getPlacementForEliminationMatch = (matchId: number, bracketSize: number): number => {
   if (bracketSize === 32) {
-    // Loser Round 1 (matches 17-24): 8 players eliminated → placement 25 (25-32)
     if (matchId >= 17 && matchId <= 24) return 25
-
-    // Loser Round 2 (matches 33-40): 8 players eliminated → placement 17 (17-24)
     if (matchId >= 33 && matchId <= 40) return 17
-
-    // Loser Round 3 (matches 41-44): 4 players eliminated → placement 13 (13-16)
     if (matchId >= 41 && matchId <= 44) return 13
-
-    // Loser Round 4 (matches 49-52): 4 players eliminated → placement 9 (9-12)
     if (matchId >= 49 && matchId <= 52) return 9
-
-    // Loser Round 5 (matches 53-54): 2 players eliminated → placement 7 (7-8)
     if (matchId === 53 || matchId === 54) return 7
-
-    // Loser Round 6 (matches 57-58): 2 players eliminated → placement 5 (5-6)
     if (matchId === 57 || matchId === 58) return 5
-
-    // Loser Round 7 (match 59): 1 player eliminated → placement 4
     if (matchId === 59) return 4
-
-    // Loser Round 8 (match 61): 1 player eliminated → placement 3
     if (matchId === 61) return 3
-
-    // Grand Final (match 62 or 63): 1 player eliminated → placement 2
     if (matchId === 62 || matchId === 63) return 2
   }
 
@@ -478,6 +463,7 @@ const markTournamentAsCancelled = async (tournamentId: string) => {
 
 export default function TournamentBracket({ bracketSize = 32, tournamentType = "32er_dko" }: TournamentBracketProps) {
   const initializingRef = useRef(false)
+  const autoResolveRanRef = useRef(false)
 
   const [tournamentId, setTournamentId] = useState<string>("")
   const [tournamentName, setTournamentName] = useState<string>("")
@@ -493,6 +479,9 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
   const [successDialogOpen, setSuccessDialogOpen] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  const [announcementsEnabled, setAnnouncementsEnabled] = useState(false)
+  const { announce } = useSpeechAnnouncer({ enabled: announcementsEnabled })
 
   const initializeMatches = () => {
     const teamNames = [
@@ -532,7 +521,6 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
 
     const initialMatches: Record<number, Match> = {}
 
-    // Round 1: Matches 1-16 (16 matches) - Now populated with team names
     for (let i = 1; i <= 16; i++) {
       const player1Index = (i - 1) * 2
       const player2Index = player1Index + 1
@@ -545,64 +533,46 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       }
     }
 
-    // Loser Round 1: Matches 17-24 (8 matches)
     for (let i = 17; i <= 24; i++) {
       initialMatches[i] = { id: i, player1: "", player2: "", score1: 0, score2: 0 }
     }
 
-    // Round 2: Matches 25-32 (8 matches)
     for (let i = 25; i <= 32; i++) {
       initialMatches[i] = { id: i, player1: "", player2: "", score1: 0, score2: 0 }
     }
 
-    // Loser Round 2: Matches 33-40 (8 matches)
     for (let i = 33; i <= 40; i++) {
       initialMatches[i] = { id: i, player1: "", player2: "", score1: 0, score2: 0 }
     }
 
-    // Loser Round 3: Matches 41-44 (4 matches)
     for (let i = 41; i <= 44; i++) {
       initialMatches[i] = { id: i, player1: "", player2: "", score1: 0, score2: 0 }
     }
 
-    // Round 3: Matches 45-48 (4 matches)
     for (let i = 45; i <= 48; i++) {
       initialMatches[i] = { id: i, player1: "", player2: "", score1: 0, score2: 0 }
     }
 
-    // Loser Round 4: Matches 49-52 (4 matches)
     for (let i = 49; i <= 52; i++) {
       initialMatches[i] = { id: i, player1: "", player2: "", score1: 0, score2: 0 }
     }
 
-    // Loser Round 5: Matches 53-54 (2 matches)
     for (let i = 53; i <= 54; i++) {
       initialMatches[i] = { id: i, player1: "", player2: "", score1: 0, score2: 0 }
     }
 
-    // Round 4: Matches 55-56 (2 matches)
     for (let i = 55; i <= 56; i++) {
       initialMatches[i] = { id: i, player1: "", player2: "", score1: 0, score2: 0 }
     }
 
-    // Loser Round 6: Matches 57-58 (2 matches)
     for (let i = 57; i <= 58; i++) {
       initialMatches[i] = { id: i, player1: "", player2: "", score1: 0, score2: 0 }
     }
 
-    // Loser Round 7: Match 59 (1 match)
     initialMatches[59] = { id: 59, player1: "", player2: "", score1: 0, score2: 0 }
-
-    // Semi-final: Match 60 (1 match)
     initialMatches[60] = { id: 60, player1: "", player2: "", score1: 0, score2: 0 }
-
-    // Loser Round 8: Match 61 (1 match)
     initialMatches[61] = { id: 61, player1: "", player2: "", score1: 0, score2: 0 }
-
-    // Grand Final: Match 62 (1 match)
     initialMatches[62] = { id: 62, player1: "", player2: "", score1: 0, score2: 0 }
-
-    // Bracket Reset: Match 63 (1 match)
     initialMatches[63] = { id: 63, player1: "", player2: "", score1: 0, score2: 0 }
 
     return initialMatches
@@ -619,6 +589,59 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       return () => clearTimeout(timeoutId)
     }
   }, [matches, tournamentType, tournamentId, loading])
+
+  useEffect(() => {
+    if (loading || !tournamentId || autoResolveRanRef.current) return
+
+    autoResolveRanRef.current = true
+
+    const timer = setTimeout(() => {
+      setMatches((prev) => {
+        const newMatches = { ...prev }
+        let hasChanges = false
+
+        Object.values(newMatches).forEach((match: Match) => {
+          if (match.winner || !match.player1 || !match.player2) return
+
+          const isP1Freilos = isFreilos(match.player1)
+          const isP2Freilos = isFreilos(match.player2)
+
+          if (!isP1Freilos && !isP2Freilos) return
+
+          const realPlayer = isP1Freilos ? match.player2 : match.player1
+          const freilosPlayer = isP1Freilos ? match.player1 : match.player2
+
+          console.log(`[v0] Auto-resolving Freilos match ${match.id}: ${realPlayer} beats ${freilosPlayer}`)
+
+          match.winner = realPlayer
+          match.loser = freilosPlayer
+          match.score1 = isP1Freilos ? 0 : 2
+          match.score2 = isP2Freilos ? 0 : 2
+
+          if (match.id === 62) {
+            if (match.winner === match.player1) {
+              saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
+            } else {
+              newMatches[63].player1 = match.player1
+              newMatches[63].player2 = match.player2
+            }
+          } else if (match.id === 63) {
+            saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
+          } else {
+            progressPlayers(newMatches, match.id, realPlayer, freilosPlayer)
+            trackPlayerElimination(newMatches, freilosPlayer, tournamentType, tournamentId, tournamentName, bracketSize)
+          }
+
+          hasChanges = true
+        })
+
+        autoResolveRanRef.current = false
+        return hasChanges ? newMatches : prev
+      })
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [matches, loading, tournamentType, tournamentId, tournamentName, bracketSize])
 
   const getAvailableMachines = (): number[] => {
     const usedMachines = Object.values(matches)
@@ -698,7 +721,6 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
         .sort((a, b) => a - b)
 
       sortedPlacements.forEach((placement, index) => {
-        // Count how many distinct placement tiers are below this one
         tiersBelow[placement] = sortedPlacements.length - index - 1
       })
 
@@ -707,94 +729,193 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
 
       const { data: matchStates, error: matchError } = await supabase
         .from("dko_match_states")
-        .select("player1, player2, score1, score2, winner")
+        .select("match_id, player1, player2, score1, score2, winner, updated_at")
         .eq("tournament_type", tournamentType)
         .eq("tournament_id", tournamentId)
+        .order("match_id", { ascending: true })
 
       if (matchError) throw matchError
+
+      const playerMatchHistory: Record<string, Array<{ matchId: number; result: "W" | "L"; timestamp: string }>> = {}
+
+      matchStates?.forEach((match) => {
+        if (!match.winner) return
+
+        if (match.player1 && !isFreilos(match.player1)) {
+          if (!playerMatchHistory[match.player1]) {
+            playerMatchHistory[match.player1] = []
+          }
+          playerMatchHistory[match.player1].push({
+            matchId: match.match_id,
+            result: match.winner === match.player1 ? "W" : "L",
+            timestamp: match.updated_at || new Date().toISOString(),
+          })
+        }
+
+        if (match.player2 && !isFreilos(match.player2)) {
+          if (!playerMatchHistory[match.player2]) {
+            playerMatchHistory[match.player2] = []
+          }
+          playerMatchHistory[match.player2].push({
+            matchId: match.match_id,
+            result: match.winner === match.player2 ? "W" : "L",
+            timestamp: match.updated_at || new Date().toISOString(),
+          })
+        }
+      })
+
+      Object.keys(playerMatchHistory).forEach((playerName) => {
+        playerMatchHistory[playerName].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      })
+
+      console.log("[v0] Player match history:", playerMatchHistory)
 
       const bracketResetOccurred = matches[63].winner !== undefined
       console.log("[v0] Bracket reset occurred:", bracketResetOccurred)
 
-      const playerPoints: Record<string, { placement_points: number; legs_points: number; bonus_points: number }> = {}
+      const playerStats: Record<
+        string,
+        {
+          placement: number
+          placement_points: number
+          legs_points: number
+          bonus_points: number
+          legs_won: number
+          legs_lost: number
+          matches_played: number
+          matches_won: number
+          matches_lost: number
+        }
+      > = {}
 
       rankings.forEach((ranking) => {
         const playerName = ranking.player_name
         const placement = ranking.placement
-
         const placementPoints = 10 + tiersBelow[placement] * 2
-
         const bonus = placement === 1 && !bracketResetOccurred ? 5 : 0
 
-        console.log(
-          `[v0] ${playerName} (Platz ${placement}): ${tiersBelow[placement]} Stufen darunter → ${placementPoints} Platzierungspunkte + ${bonus} Bonus ${bracketResetOccurred ? "(kein Bonus wegen Bracket Reset)" : ""}`,
-        )
-
-        playerPoints[playerName] = {
+        playerStats[playerName] = {
+          placement: placement,
           placement_points: placementPoints,
           legs_points: 0,
           bonus_points: bonus,
+          legs_won: 0,
+          legs_lost: 0,
+          matches_played: 0,
+          matches_won: 0,
+          matches_lost: 0,
         }
       })
 
       matchStates?.forEach((match) => {
         if (match.player1 && !isFreilos(match.player1)) {
-          if (!playerPoints[match.player1]) {
-            playerPoints[match.player1] = { placement_points: 0, legs_points: 0, bonus_points: 0 }
+          if (!playerStats[match.player1]) {
+            playerStats[match.player1] = {
+              placement: 0,
+              placement_points: 0,
+              legs_points: 0,
+              bonus_points: 0,
+              legs_won: 0,
+              legs_lost: 0,
+              matches_played: 0,
+              matches_won: 0,
+              matches_lost: 0,
+            }
           }
-          playerPoints[match.player1].legs_points += match.score1 || 0
+
+          const score1 = match.score1 || 0
+          const score2 = match.score2 || 0
+
+          playerStats[match.player1].legs_won += score1
+          playerStats[match.player1].legs_lost += score2
+          playerStats[match.player1].legs_points += score1
+
+          if (match.winner) {
+            playerStats[match.player1].matches_played += 1
+            if (match.winner === match.player1) {
+              playerStats[match.player1].matches_won += 1
+            } else {
+              playerStats[match.player1].matches_lost += 1
+            }
+          }
         }
 
         if (match.player2 && !isFreilos(match.player2)) {
-          if (!playerPoints[match.player2]) {
-            playerPoints[match.player2] = { placement_points: 0, legs_points: 0, bonus_points: 0 }
+          if (!playerStats[match.player2]) {
+            playerStats[match.player2] = {
+              placement: 0,
+              placement_points: 0,
+              legs_points: 0,
+              bonus_points: 0,
+              legs_won: 0,
+              legs_lost: 0,
+              matches_played: 0,
+              matches_won: 0,
+              matches_lost: 0,
+            }
           }
-          playerPoints[match.player2].legs_points += match.score2 || 0
+
+          const score1 = match.score1 || 0
+          const score2 = match.score2 || 0
+
+          playerStats[match.player2].legs_won += score2
+          playerStats[match.player2].legs_lost += score1
+          playerStats[match.player2].legs_points += score2
+
+          if (match.winner) {
+            playerStats[match.player2].matches_played += 1
+            if (match.winner === match.player2) {
+              playerStats[match.player2].matches_won += 1
+            } else {
+              playerStats[match.player2].matches_lost += 1
+            }
+          }
         }
       })
 
-      console.log("[v0] Calculated points:", playerPoints)
+      console.log("[v0] Calculated player statistics:", playerStats)
 
-      for (const [playerName, points] of Object.entries(playerPoints)) {
-        const totalPoints = points.placement_points + points.legs_points + points.bonus_points
+      const tournamentEntries = Object.entries(playerStats).map(([playerName, stats]) => {
+        const totalPoints = stats.placement_points + stats.legs_points + stats.bonus_points
+
+        const matchHistory = playerMatchHistory[playerName] || []
+        const chronologicalForm = matchHistory.map((m) => m.result).join(",")
 
         console.log(
-          `[v0] ${playerName}: ${points.placement_points} (Platzierung) + ${points.legs_points} (Legs) + ${points.bonus_points} (Bonus) = ${totalPoints} Gesamt`,
+          `[v0] ${playerName}: Platz ${stats.placement} | ` +
+            `${stats.placement_points}P (Platzierung) + ${stats.legs_points}P (Legs) + ${stats.bonus_points}P (Bonus) = ${totalPoints}P | ` +
+            `Legs: ${stats.legs_won}W-${stats.legs_lost}L | Matches: ${stats.matches_won}W-${stats.matches_lost}L | ` +
+            `Form: ${chronologicalForm}`,
         )
 
-        const { data: existingPlayer } = await supabase
-          .from("tournament_series_standings")
-          .select("total_points, placement_points, legs_points, bonus_points, tournaments_played")
-          .eq("player_name", playerName)
-          .maybeSingle()
-
-        if (existingPlayer) {
-          const { error: updateError } = await supabase
-            .from("tournament_series_standings")
-            .update({
-              total_points: existingPlayer.total_points + totalPoints,
-              placement_points: existingPlayer.placement_points + points.placement_points,
-              legs_points: existingPlayer.legs_points + points.legs_points,
-              bonus_points: existingPlayer.bonus_points + points.bonus_points,
-              tournaments_played: existingPlayer.tournaments_played + 1,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("player_name", playerName)
-
-          if (updateError) throw updateError
-        } else {
-          const { error: insertError } = await supabase.from("tournament_series_standings").insert({
-            player_name: playerName,
-            total_points: totalPoints,
-            placement_points: points.placement_points,
-            legs_points: points.legs_points,
-            bonus_points: points.bonus_points,
-            tournaments_played: 1,
-          })
-
-          if (insertError) throw insertError
+        return {
+          player_name: playerName,
+          tournament_id: tournamentId,
+          tournament_name: tournamentName,
+          tournament_type: tournamentType,
+          tournament_date: new Date().toISOString(),
+          placement: stats.placement,
+          placement_points: stats.placement_points,
+          legs_points: stats.legs_points,
+          bonus_points: stats.bonus_points,
+          total_points: totalPoints,
+          legs_won: stats.legs_won,
+          legs_lost: stats.legs_lost,
+          matches_played: stats.matches_played,
+          matches_won: stats.matches_won,
+          matches_lost: stats.matches_lost,
+          form: chronologicalForm,
         }
+      })
+
+      const { error: insertError } = await supabase.from("tournament_series_standings").insert(tournamentEntries)
+
+      if (insertError) {
+        console.error("[v0] Error inserting tournament entries:", insertError)
+        throw insertError
       }
+
+      console.log(`[v0] Successfully inserted ${tournamentEntries.length} tournament entries`)
 
       const { error: historyError } = await supabase.from("tournament_series_history").insert({
         tournament_id: tournamentId,
@@ -806,9 +927,7 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       if (historyError) throw historyError
 
       await markTournamentAsCompleted(tournamentId)
-
       await deleteFreiloseFromDatabase(tournamentType, tournamentId)
-
       await clearTournamentRegistration(tournamentId)
 
       setSuccessDialogOpen(false)
@@ -886,11 +1005,36 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       [selectedMatchId]: {
         ...prev[selectedMatchId],
         machineNumber,
+        callCount: 1,
       },
     }))
 
+    if (announcementsEnabled) {
+      const match = matches[selectedMatchId]
+      announce(match.player1, match.player2, machineNumber, 1)
+    }
+
     setMachineDialogOpen(false)
     setSelectedMatchId(null)
+  }
+
+  const handleRepeatCall = (matchId: number) => {
+    const match = matches[matchId]
+    const nextCallCount = (match.callCount || 1) + 1
+
+    if (nextCallCount > 3) return
+
+    setMatches((prev) => ({
+      ...prev,
+      [matchId]: {
+        ...prev[matchId],
+        callCount: nextCallCount,
+      },
+    }))
+
+    if (announcementsEnabled && match.machineNumber) {
+      announce(match.player1, match.player2, match.machineNumber, nextCallCount)
+    }
   }
 
   const updateScore = (matchId: number, player: 1 | 2, score: number) => {
@@ -920,6 +1064,7 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       }
 
       match.machineNumber = undefined
+      match.callCount = undefined
 
       newMatches[matchId] = match
 
@@ -952,7 +1097,6 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       number,
       { winner: { matchId: number; position: 1 | 2 } | null; loser: { matchId: number; position: 1 | 2 } | null }
     > = {
-      // Round 1 (Matches 1-16): Winners to Round 2, Losers to Loser Round 1
       1: { winner: { matchId: 25, position: 1 }, loser: { matchId: 17, position: 1 } },
       2: { winner: { matchId: 25, position: 2 }, loser: { matchId: 17, position: 2 } },
       3: { winner: { matchId: 26, position: 1 }, loser: { matchId: 18, position: 1 } },
@@ -969,8 +1113,6 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       14: { winner: { matchId: 31, position: 2 }, loser: { matchId: 23, position: 2 } },
       15: { winner: { matchId: 32, position: 1 }, loser: { matchId: 24, position: 1 } },
       16: { winner: { matchId: 32, position: 2 }, loser: { matchId: 24, position: 2 } },
-
-      // Loser Round 1 (Matches 17-24): Winners to Loser Round 2, Losers eliminated
       17: { winner: { matchId: 33, position: 1 }, loser: null },
       18: { winner: { matchId: 34, position: 1 }, loser: null },
       19: { winner: { matchId: 35, position: 1 }, loser: null },
@@ -979,8 +1121,6 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       22: { winner: { matchId: 38, position: 1 }, loser: null },
       23: { winner: { matchId: 39, position: 1 }, loser: null },
       24: { winner: { matchId: 40, position: 1 }, loser: null },
-
-      // Round 2 (Matches 25-32): Winners to Round 3, Losers to Loser Round 2
       25: { winner: { matchId: 45, position: 1 }, loser: { matchId: 40, position: 2 } },
       26: { winner: { matchId: 45, position: 2 }, loser: { matchId: 39, position: 2 } },
       27: { winner: { matchId: 46, position: 1 }, loser: { matchId: 38, position: 2 } },
@@ -989,8 +1129,6 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       30: { winner: { matchId: 47, position: 2 }, loser: { matchId: 35, position: 2 } },
       31: { winner: { matchId: 48, position: 1 }, loser: { matchId: 34, position: 2 } },
       32: { winner: { matchId: 48, position: 2 }, loser: { matchId: 33, position: 2 } },
-
-      // Loser Round 2 (Matches 33-40): Winners to Loser Round 3, Losers eliminated
       33: { winner: { matchId: 41, position: 1 }, loser: null },
       34: { winner: { matchId: 41, position: 2 }, loser: null },
       35: { winner: { matchId: 42, position: 1 }, loser: null },
@@ -999,50 +1137,28 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       38: { winner: { matchId: 43, position: 2 }, loser: null },
       39: { winner: { matchId: 44, position: 1 }, loser: null },
       40: { winner: { matchId: 44, position: 2 }, loser: null },
-
-      // Loser Round 3 (Matches 41-44): Winners to Loser Round 4, Losers eliminated
       41: { winner: { matchId: 49, position: 1 }, loser: null },
       42: { winner: { matchId: 50, position: 1 }, loser: null },
       43: { winner: { matchId: 51, position: 1 }, loser: null },
       44: { winner: { matchId: 52, position: 1 }, loser: null },
-
-      // Round 3 (Matches 45-48): Winners to Round 4, Losers to Loser Round 4
       45: { winner: { matchId: 55, position: 1 }, loser: { matchId: 52, position: 2 } },
       46: { winner: { matchId: 55, position: 2 }, loser: { matchId: 51, position: 2 } },
       47: { winner: { matchId: 56, position: 1 }, loser: { matchId: 50, position: 2 } },
       48: { winner: { matchId: 56, position: 2 }, loser: { matchId: 49, position: 2 } },
-
-      // Loser Round 4 (Matches 49-52): Winners to Loser Round 5, Losers eliminated
       49: { winner: { matchId: 53, position: 1 }, loser: null },
       50: { winner: { matchId: 53, position: 2 }, loser: null },
       51: { winner: { matchId: 54, position: 1 }, loser: null },
       52: { winner: { matchId: 54, position: 2 }, loser: null },
-
-      // Loser Round 5 (Matches 53-54): Winners to Loser Round 6, Losers eliminated
       53: { winner: { matchId: 57, position: 1 }, loser: null },
       54: { winner: { matchId: 58, position: 1 }, loser: null },
-
-      // Round 4 (Matches 55-56): Winners to Semi-final, Losers to Loser Round 6
       55: { winner: { matchId: 60, position: 1 }, loser: { matchId: 58, position: 2 } },
       56: { winner: { matchId: 60, position: 2 }, loser: { matchId: 57, position: 2 } },
-
-      // Loser Round 6 (Matches 57-58): Winners to Loser Round 7, Losers eliminated
       57: { winner: { matchId: 59, position: 1 }, loser: null },
       58: { winner: { matchId: 59, position: 2 }, loser: null },
-
-      // Loser Round 7 (Match 59): Winner to Loser Round 8, Loser eliminated
       59: { winner: { matchId: 61, position: 1 }, loser: null },
-
-      // Semi-final (Match 60): Winner to Grand Final, Loser to Loser Round 8
       60: { winner: { matchId: 62, position: 1 }, loser: { matchId: 61, position: 2 } },
-
-      // Loser Round 8 (Match 61): Winner to Grand Final, Loser eliminated
       61: { winner: { matchId: 62, position: 2 }, loser: null },
-
-      // Grand Final (Match 62): If loser bracket player wins, bracket reset
       62: { winner: null, loser: null },
-
-      // Bracket Reset (Match 63): Final match if needed
       63: { winner: null, loser: null },
     }
 
@@ -1263,6 +1379,7 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
         winner: undefined,
         loser: undefined,
         machineNumber: undefined,
+        callCount: undefined,
       }
 
       if (oldWinner || oldLoser) {
@@ -1279,7 +1396,6 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
     winner?: string,
     loser?: string,
   ) => {
-    // Clear winners from subsequent matches
     if (matchId >= 1 && matchId <= 2) {
       if (allMatches[25]?.player1 === winner) allMatches[25].player1 = ""
       if (allMatches[25]?.player2 === winner) allMatches[25].player2 = ""
@@ -1332,7 +1448,6 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       if (allMatches[63]?.player2 === winner) allMatches[63].player2 = ""
     }
 
-    // Clear losers from subsequent Loser Bracket matches
     if (matchId >= 1 && matchId <= 2) {
       if (allMatches[17]?.player1 === loser) allMatches[17].player1 = ""
       if (allMatches[17]?.player2 === loser) allMatches[17].player2 = ""
@@ -1591,7 +1706,16 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
               {bracketSize}er DKO - {tournamentName}
             </h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={announcementsEnabled}
+                onChange={(e) => setAnnouncementsEnabled(e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
+              />
+              <span>Ansage aktivieren</span>
+            </label>
             <Button onClick={fetchRankings} variant="outline" disabled={loadingRankings || !tournamentId}>
               {loadingRankings ? "Lädt..." : "Rangliste"}
             </Button>
@@ -1602,7 +1726,6 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
         </div>
 
         <div className="space-y-8">
-          {/* Runde 1 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-orange-600 border-b-2 border-orange-600 pb-2">Runde 1</h2>
             {[...Array(16)].map((_, i) => (
@@ -1613,11 +1736,12 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
               />
             ))}
           </div>
 
-          {/* Verlierer-Runde 1 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 1</h2>
             {[...Array(8)].map((_, i) => (
@@ -1628,12 +1752,13 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
                 isLoser
               />
             ))}
           </div>
 
-          {/* Runde 2 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Runde 2</h2>
             {[...Array(8)].map((_, i) => (
@@ -1644,11 +1769,12 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
               />
             ))}
           </div>
 
-          {/* Verlierer-Runde 2 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 2</h2>
             {[...Array(8)].map((_, i) => (
@@ -1659,12 +1785,13 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
                 isLoser
               />
             ))}
           </div>
 
-          {/* Verlierer-Runde 3 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 3</h2>
             {[...Array(4)].map((_, i) => (
@@ -1675,12 +1802,13 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
                 isLoser
               />
             ))}
           </div>
 
-          {/* Runde 3 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Runde 3</h2>
             {[...Array(4)].map((_, i) => (
@@ -1691,11 +1819,12 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
               />
             ))}
           </div>
 
-          {/* Verlierer-Runde 4 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 4</h2>
             {[...Array(4)].map((_, i) => (
@@ -1706,12 +1835,13 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
                 isLoser
               />
             ))}
           </div>
 
-          {/* Verlierer-Runde 5 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 5</h2>
             {[...Array(2)].map((_, i) => (
@@ -1722,12 +1852,13 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
                 isLoser
               />
             ))}
           </div>
 
-          {/* Runde 4 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Runde 4</h2>
             {[...Array(2)].map((_, i) => (
@@ -1738,11 +1869,12 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
               />
             ))}
           </div>
 
-          {/* Verlierer-Runde 6 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 6</h2>
             {[...Array(2)].map((_, i) => (
@@ -1753,12 +1885,13 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
                 isLoser
               />
             ))}
           </div>
 
-          {/* Verlierer-Runde 7 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 7</h2>
             <MatchCard
@@ -1767,11 +1900,12 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
               onConfirm={confirmMatch}
               onStartMatch={startMatch}
               onReset={resetMatch}
+              onRepeatCall={handleRepeatCall}
+              announcementsEnabled={announcementsEnabled}
               isLoser
             />
           </div>
 
-          {/* Halbfinale */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Halbfinale</h2>
             <MatchCard
@@ -1780,10 +1914,11 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
               onConfirm={confirmMatch}
               onStartMatch={startMatch}
               onReset={resetMatch}
+              onRepeatCall={handleRepeatCall}
+              announcementsEnabled={announcementsEnabled}
             />
           </div>
 
-          {/* Verlierer-Runde 8 */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 8</h2>
             <MatchCard
@@ -1792,11 +1927,12 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
               onConfirm={confirmMatch}
               onStartMatch={startMatch}
               onReset={resetMatch}
+              onRepeatCall={handleRepeatCall}
+              announcementsEnabled={announcementsEnabled}
               isLoser
             />
           </div>
 
-          {/* Großes Finale */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Großes Finale</h2>
             <p className="text-sm text-muted-foreground">Sieger Gewinnerseite vs. Sieger Verliererseite</p>
@@ -1806,11 +1942,12 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
               onConfirm={confirmMatch}
               onStartMatch={startMatch}
               onReset={resetMatch}
+              onRepeatCall={handleRepeatCall}
+              announcementsEnabled={announcementsEnabled}
               isGrandFinal
             />
           </div>
 
-          {/* Bracket Reset */}
           {(matches[63].player1 ||
             matches[63].player2 ||
             (matches[62].winner === matches[62].player2 && matches[62].winner)) &&
@@ -1826,12 +1963,13 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
                   onConfirm={confirmMatch}
                   onStartMatch={startMatch}
                   onReset={resetMatch}
+                  onRepeatCall={handleRepeatCall}
+                  announcementsEnabled={announcementsEnabled}
                   isGrandFinal
                 />
               </div>
             )}
 
-          {/* Tournament Winner */}
           {(matches[63].winner || (matches[62].winner === matches[62].player1 && matches[62].player1)) && (
             <Card className="p-6 bg-primary text-primary-foreground">
               <h3 className="text-2xl font-bold text-center">🏆 Turniersieger</h3>
@@ -1963,11 +2101,23 @@ interface MatchCardProps {
   onConfirm: (matchId: number) => void
   onStartMatch: (matchId: number) => void
   onReset: (matchId: number) => void
+  onRepeatCall: (matchId: number) => void
+  announcementsEnabled: boolean
   isLoser?: boolean
   isGrandFinal?: boolean
 }
 
-function MatchCard({ match, onScoreUpdate, onConfirm, onStartMatch, onReset, isLoser, isGrandFinal }: MatchCardProps) {
+function MatchCard({
+  match,
+  onScoreUpdate,
+  onConfirm,
+  onStartMatch,
+  onReset,
+  onRepeatCall,
+  announcementsEnabled,
+  isLoser,
+  isGrandFinal,
+}: MatchCardProps) {
   const isPlayer1Winner = match.winner === match.player1
   const isPlayer2Winner = match.winner === match.player2
   const isPlayer1Loser = match.loser === match.player1
@@ -1977,6 +2127,10 @@ function MatchCard({ match, onScoreUpdate, onConfirm, onStartMatch, onReset, isL
     match.machineNumber && !match.winner && match.score1 !== match.score2 && (match.score1 > 0 || match.score2 > 0)
 
   const hasFreilos = isFreilos(match.player1) || isFreilos(match.player2)
+
+  const callCount = match.callCount || 0
+  const showSecondCall = announcementsEnabled && isRunning && callCount === 1
+  const showThirdCall = announcementsEnabled && isRunning && callCount === 2
 
   return (
     <Card
@@ -1995,6 +2149,26 @@ function MatchCard({ match, onScoreUpdate, onConfirm, onStartMatch, onReset, isL
             <span className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-1 rounded animate-pulse">
               🎯 Automat {match.machineNumber}
             </span>
+          )}
+          {showSecondCall && (
+            <Button
+              size="sm"
+              onClick={() => onRepeatCall(match.id)}
+              variant="outline"
+              className="h-7 text-xs border-orange-500 text-orange-600 hover:bg-orange-50"
+            >
+              2. Aufruf
+            </Button>
+          )}
+          {showThirdCall && (
+            <Button
+              size="sm"
+              onClick={() => onRepeatCall(match.id)}
+              variant="outline"
+              className="h-7 text-xs border-red-500 text-red-600 hover:bg-red-50"
+            >
+              3. Aufruf
+            </Button>
           )}
           {canConfirm && (
             <Button

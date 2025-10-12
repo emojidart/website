@@ -592,7 +592,7 @@ export default function RegelwerkPage() {
                 <h3 className="font-bold text-green-700 mb-3">Ergebnisse & Veröffentlichung</h3>
                 <p className="text-gray-700">
                   Die Ergebnisse und Ranglisten werden <strong>fortlaufend geführt</strong> und{" "}
-                  <strong>einmal wöchentlich</strong> auf der <strong>emojisdartverein.at Homepage</strong>{" "}
+                  <strong>einmal wöchentlich</strong> auf der <strong>emojisdartverein.com Homepage</strong>{" "}
                   veröffentlicht.
                 </p>
               </div>

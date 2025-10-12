@@ -29,6 +29,8 @@ import {
   HelpCircle,
   Inbox,
   AlertTriangle,
+  Bell,
+  CheckCircle,
 } from "lucide-react"
 
 interface UserProfile {
@@ -74,6 +76,34 @@ interface Match {
   away_opponent_team?: { name: string } | null
 }
 
+interface Notification {
+  id: string
+  recipient_player_id: string
+  message: string
+  statistics_entry_id: string
+  is_read: boolean
+  created_at: string
+  leg_statistics?: {
+    match_id: string
+    leg_number: number
+    player_legs_won: number
+    opponent_legs_won: number
+    player_id: string
+  }
+  match?: {
+    match_date: string
+    home_team?: { name: string }
+    away_team?: { name: string }
+    home_opponent_team?: { name: string }
+    away_opponent_team?: { name: string }
+    home_team_type: string
+    away_team_type: string
+  }
+  player?: {
+    name: string
+  }
+}
+
 export default function MemberProfilePage() {
   const { session, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -94,6 +124,7 @@ export default function MemberProfilePage() {
     totalEvents: 0,
   })
   const [pendingMatches, setPendingMatches] = useState<Match[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -107,6 +138,83 @@ export default function MemberProfilePage() {
     }
   }, [session])
 
+  const fetchNotifications = async (playerId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("recipient_player_id", playerId)
+        .eq("is_read", false)
+        .order("created_at", { ascending: false })
+
+      if (error) throw error
+
+      const enrichedNotifications = await Promise.all(
+        (data || []).map(async (notification) => {
+          if (notification.statistics_entry_id) {
+            const { data: legData } = await supabase
+              .from("leg_statistics")
+              .select(`
+                match_id, 
+                leg_number, 
+                player_legs_won, 
+                opponent_legs_won,
+                player_id
+              `)
+              .eq("id", notification.statistics_entry_id)
+              .single()
+
+            if (legData) {
+              const { data: matchData } = await supabase
+                .from("matches")
+                .select(`
+                  match_date,
+                  home_team_type,
+                  away_team_type,
+                  home_team:teams!matches_home_team_id_fkey(name),
+                  away_team:teams!matches_away_team_id_fkey(name),
+                  home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(name),
+                  away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(name)
+                `)
+                .eq("id", legData.match_id)
+                .single()
+
+              const { data: playerData } = await supabase
+                .from("club_players")
+                .select("name")
+                .eq("id", legData.player_id)
+                .single()
+
+              return {
+                ...notification,
+                leg_statistics: legData,
+                match: matchData,
+                player: playerData,
+              }
+            }
+          }
+          return notification
+        }),
+      )
+
+      setNotifications(enrichedNotifications)
+    } catch (err) {
+      console.error("Error fetching notifications:", err)
+    }
+  }
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", notificationId)
+
+      if (error) throw error
+
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId))
+    } catch (err) {
+      console.error("Error marking notification as read:", err)
+    }
+  }
+
   const fetchProfile = async () => {
     if (!session?.user) return
 
@@ -114,7 +222,6 @@ export default function MemberProfilePage() {
       setLoading(true)
       setError(null)
 
-      // Fetch user profile from user_profiles table
       const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
         .select(`id, user_id, player_id, club_players (id, name, photo_url, throwing_hand, age, origin)`)
@@ -128,6 +235,8 @@ export default function MemberProfilePage() {
       setProfile(profileData)
 
       if (profileData?.player_id) {
+        await fetchNotifications(profileData.player_id)
+
         const { data: teamData, error: teamError } = await supabase
           .from("team_members")
           .select(`id, team_id, role, teams (id, name, logo_url)`)
@@ -186,10 +295,6 @@ export default function MemberProfilePage() {
               const homeScore = match.home_score
               const awayScore = match.away_score
 
-              // Consider a match open if:
-              // 1. Either score is null/undefined
-              // 2. Both scores are 0 (likely placeholder)
-              // 3. Status is not completed
               return (
                 homeScore === null ||
                 awayScore === null ||
@@ -256,7 +361,6 @@ export default function MemberProfilePage() {
       const sanitizedPlayerName = profile.club_players.name.replace(/[^a-zA-Z0-9_.-]/g, "").replace(/\s/g, "_")
       const filePath = `player-avatars/${sanitizedPlayerName}-${Date.now()}.${fileExtension}`
 
-      // Upload to Supabase storage
       const { error: uploadError } = await supabase.storage.from("player-avatars").upload(filePath, photoFile, {
         cacheControl: "3600",
         upsert: false,
@@ -266,10 +370,8 @@ export default function MemberProfilePage() {
         throw uploadError
       }
 
-      // Get public URL
       const { data: publicUrlData } = supabase.storage.from("player-avatars").getPublicUrl(filePath)
 
-      // Update player record
       const { error: updateError } = await supabase
         .from("club_players")
         .update({ photo_url: publicUrlData.publicUrl })
@@ -279,7 +381,6 @@ export default function MemberProfilePage() {
         throw updateError
       }
 
-      // Update local state
       setProfile((prev) =>
         prev
           ? {
@@ -437,22 +538,6 @@ export default function MemberProfilePage() {
     return teamMemberships.some((membership) => membership.role === "Captain" || membership.role === "Co-Captain")
   }
 
-  const hasLeadershipInTeam = (teamId: string) => {
-    return teamMemberships.some(
-      (membership) =>
-        membership.team_id === teamId && (membership.role === "Captain" || membership.role === "Co-Captain"),
-    )
-  }
-
-  const getUserRole = (): "player" | "captain" | "co-captain" => {
-    const captainMembership = teamMemberships.find((membership) => membership.role === "Captain")
-    const coCaptainMembership = teamMemberships.find((membership) => membership.role === "Co-Captain")
-
-    if (captainMembership) return "captain"
-    if (coCaptainMembership) return "co-captain"
-    return "player"
-  }
-
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
@@ -486,6 +571,85 @@ export default function MemberProfilePage() {
       <Header />
 
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl">
+        {notifications.length > 0 && (
+          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-500">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                <div className="flex-shrink-0">
+                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl shadow-lg">
+                    <Bell className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  </div>
+                </div>
+                <div className="flex-grow w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Admin-Benachrichtigungen</h3>
+                    </div>
+                    <Badge className="bg-red-500 text-white w-fit">{notifications.length}</Badge>
+                  </div>
+                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                    Du hast {notifications.length} neue{" "}
+                    {notifications.length === 1 ? "Benachrichtigung" : "Benachrichtigungen"} vom Admin bezüglich
+                    fehlerhafter Statistik-Einträge.
+                  </p>
+                  <div className="space-y-2">
+                    {notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className="flex flex-col bg-white/70 rounded-lg p-3 border border-red-200 gap-2"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 mb-1">{notification.message}</p>
+                            {notification.match && (
+                              <div className="text-xs text-gray-700 font-medium mb-1">
+                                {notification.match.home_team_type === "own" && notification.match.home_team?.name
+                                  ? notification.match.home_team.name
+                                  : notification.match.home_opponent_team?.name || "Unbekannt"}{" "}
+                                vs{" "}
+                                {notification.match.away_team_type === "own" && notification.match.away_team?.name
+                                  ? notification.match.away_team.name
+                                  : notification.match.away_opponent_team?.name || "Unbekannt"}
+                                {" - "}
+                                {formatMatchDate(notification.match.match_date)}
+                              </div>
+                            )}
+                            {notification.player && (
+                              <div className="text-xs text-gray-600 mb-1">
+                                Spieler: <span className="font-medium">{notification.player.name}</span>
+                              </div>
+                            )}
+                            {notification.leg_statistics && (
+                              <div className="text-xs text-gray-600">
+                                Leg {notification.leg_statistics.leg_number} - Ergebnis:{" "}
+                                {notification.leg_statistics.player_legs_won}:
+                                {notification.leg_statistics.opponent_legs_won}
+                              </div>
+                            )}
+                            <div className="text-xs text-gray-500 mt-1">
+                              Gemeldet am: {formatMatchDate(notification.created_at)}
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => markNotificationAsRead(notification.id)}
+                            className="flex-shrink-0 h-8 w-8 p-0"
+                            title="Als gelesen markieren"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {pendingMatches.length > 0 && isLeadershipRole() && (
           <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-l-yellow-500">
             <CardContent className="p-4 sm:p-6">
@@ -543,7 +707,6 @@ export default function MemberProfilePage() {
           </Card>
         )}
 
-        {/* Welcome Section */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl mb-4 sm:mb-6 shadow-xl">
             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
@@ -554,7 +717,6 @@ export default function MemberProfilePage() {
           </p>
         </div>
 
-        {/* Profile Card */}
         <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
           <CardContent className="p-4 sm:p-6 lg:p-8">
             <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-6">
@@ -650,7 +812,6 @@ export default function MemberProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Navigation Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {navigationItems.map((item, index) => (
             <Card

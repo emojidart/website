@@ -18,6 +18,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Skull,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -27,23 +28,43 @@ interface SeriesStanding {
   placement_points: number
   legs_points: number
   bonus_points: number
+  legs_won: number
+  legs_lost: number
   tournaments_played: number
+  total_matches_played: number
+  total_matches_won: number
+  total_matches_lost: number
+}
+
+interface NemesisData {
+  player_name: string
+  nemesis: string
+  losses_count: number
+}
+
+interface TournamentEntry {
+  id: string
+  tournament_id: string
+  tournament_name: string
+  player_name: string
+  placement: number
+  legs_won: number
+  legs_lost: number
+  matches_played: number
+  matches_won: number
+  matches_lost: number
+  placement_points: number
+  bonus_points: number
+  form: string
+  added_at: string
 }
 
 interface Tournament {
   tournament_id: string
   tournament_name: string
   tournament_type: string
-  added_at: string
-  rankings?: {
-    player_name: string
-    placement: number
-    legs_won: number
-    legs_lost: number
-    placement_points: number
-    bonus_points: number // Added bonus_points field
-    form: string
-  }[]
+  tournament_date: string
+  rankings?: TournamentEntry[]
 }
 
 const QUALIFICATION_REQUIREMENT = 20
@@ -89,6 +110,20 @@ function getPositionIcon(position: number) {
     default:
       return null
   }
+}
+
+function getPlacementColor(placement: number) {
+  if (placement === 1) return "bg-yellow-400 text-white"
+  if (placement === 2) return "bg-gray-300 text-white"
+  if (placement === 3) return "bg-amber-400 text-white"
+  return "bg-gray-100 text-gray-700"
+}
+
+function getPlacementIcon(placement: number) {
+  if (placement === 1) return "🥇"
+  if (placement === 2) return "🥈"
+  if (placement === 3) return "🥉"
+  return null
 }
 
 function QualificationProgress({ current, required }: { current: number; required: number }) {
@@ -137,8 +172,22 @@ function QualificationStatus({ tournamentsPlayed }: { tournamentsPlayed: number 
   )
 }
 
-function MobilePlayerCard({ player, position }: { player: SeriesStanding; position: number }) {
+function MobilePlayerCard({
+  player,
+  position,
+  nemesis,
+}: {
+  player: SeriesStanding
+  position: number
+  nemesis?: NemesisData
+}) {
   const isTopThree = position <= 3
+  const calculatedTotalPoints = player.placement_points + player.legs_won + player.bonus_points
+  const winRate =
+    player.total_matches_played > 0
+      ? ((player.total_matches_won / player.total_matches_played) * 100).toFixed(1)
+      : "0.0"
+  const legDifference = player.legs_won - player.legs_lost
 
   return (
     <motion.div
@@ -154,7 +203,7 @@ function MobilePlayerCard({ player, position }: { player: SeriesStanding; positi
           {isTopThree && getPositionIcon(position)}
           <div className="min-w-0 flex-1 overflow-hidden">
             <div
-              className={`text-sm sm:text-base font-bold ${isTopThree ? "text-gray-900" : "text-gray-700"} 
+              className={`text-sm sm:text-base font-bold ${isTopThree ? "text-gray-900" : "text-gray-700"}
                          truncate max-w-full block`}
               title={player.player_name}
             >
@@ -172,7 +221,7 @@ function MobilePlayerCard({ player, position }: { player: SeriesStanding; positi
         {/* Main Score */}
         <div className="text-right flex-shrink-0">
           <div className="flex items-center gap-1">
-            <span className="text-xl sm:text-2xl font-bold text-yellow-600">{player.total_points}</span>
+            <span className="text-xl sm:text-2xl font-bold text-yellow-600">{calculatedTotalPoints}</span>
             <Trophy className="h-4 w-4 text-yellow-500" />
           </div>
         </div>
@@ -185,17 +234,63 @@ function MobilePlayerCard({ player, position }: { player: SeriesStanding; positi
           <div className="text-sm font-bold text-blue-800">{player.placement_points}</div>
         </div>
         <div className="bg-green-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-green-600 font-medium">Legs</div>
-          <div className="text-sm font-bold text-green-800">{player.legs_points}</div>
+          <div className="text-xs text-green-600 font-medium">Legs W</div>
+          <div className="text-sm font-bold text-green-800">{player.legs_won}</div>
+        </div>
+        <div className="bg-red-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-red-600 font-medium">Legs L</div>
+          <div className="text-sm font-bold text-red-800">{player.legs_lost}</div>
         </div>
         <div className="bg-yellow-50 rounded-lg p-2 text-center">
           <div className="text-xs text-yellow-600 font-medium">Bonus</div>
           <div className="text-sm font-bold text-yellow-800">{player.bonus_points}</div>
         </div>
-        <div className="bg-gray-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-gray-600 font-medium">Antritte</div>
-          <div className="text-sm font-bold text-gray-800">{player.tournaments_played}</div>
+      </div>
+
+      {/* Additional Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+        <div className="bg-purple-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-purple-600 font-medium">Matches</div>
+          <div className="text-sm font-bold text-purple-800">{player.total_matches_played}</div>
         </div>
+        <div className="bg-teal-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-teal-600 font-medium">Siege</div>
+          <div className="text-sm font-bold text-teal-800">{player.total_matches_won}</div>
+        </div>
+        <div className="bg-orange-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-orange-600 font-medium">Siegrate</div>
+          <div className="text-sm font-bold text-orange-800">{winRate}%</div>
+        </div>
+        <div className="bg-indigo-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-indigo-600 font-medium">Leg-Diff</div>
+          <div className={`text-sm font-bold ${legDifference >= 0 ? "text-green-800" : "text-red-800"}`}>
+            {legDifference >= 0 ? "+" : ""}
+            {legDifference}
+          </div>
+        </div>
+      </div>
+
+      {nemesis && nemesis.losses_count > 0 && (
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-3 mb-3 border-2 border-red-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Skull className="h-5 w-5 text-red-600" />
+              <div>
+                <div className="text-xs text-red-600 font-semibold">Angstgegner</div>
+                <div className="text-sm font-bold text-red-800">{nemesis.nemesis}</div>
+              </div>
+            </div>
+            <div className="bg-red-600 text-white rounded-full px-3 py-1 text-xs font-bold">
+              {nemesis.losses_count}x verloren
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Antritte Row */}
+      <div className="bg-gray-50 rounded-lg p-2 text-center mb-3">
+        <div className="text-xs text-gray-600 font-medium">Antritte</div>
+        <div className="text-sm font-bold text-gray-800">{player.tournaments_played}</div>
       </div>
 
       {/* Progress/Status Row */}
@@ -220,22 +315,99 @@ export default function TournamentSeriesPage() {
   )
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null)
+  const [nemesisData, setNemesisData] = useState<Map<string, NemesisData>>(new Map())
 
   useEffect(() => {
     fetchStandings()
     fetchTournaments()
+    fetchNemesisData()
   }, [])
+
+  const fetchNemesisData = async () => {
+    try {
+      const { data, error } = await supabase.from("dko_match_states").select("winner, loser").not("loser", "is", null)
+
+      if (error) throw error
+
+      // Count losses for each player against each opponent
+      const lossesMap = new Map<string, Map<string, number>>()
+
+      data?.forEach((match: any) => {
+        const loser = match.loser
+        const winner = match.winner
+
+        if (!lossesMap.has(loser)) {
+          lossesMap.set(loser, new Map())
+        }
+
+        const opponentLosses = lossesMap.get(loser)!
+        opponentLosses.set(winner, (opponentLosses.get(winner) || 0) + 1)
+      })
+
+      // Find the nemesis (most losses against) for each player
+      const nemesisMap = new Map<string, NemesisData>()
+
+      lossesMap.forEach((opponents, player) => {
+        let maxLosses = 0
+        let nemesis = ""
+
+        opponents.forEach((count, opponent) => {
+          if (count > maxLosses) {
+            maxLosses = count
+            nemesis = opponent
+          }
+        })
+
+        if (nemesis) {
+          nemesisMap.set(player, {
+            player_name: player,
+            nemesis: nemesis,
+            losses_count: maxLosses,
+          })
+        }
+      })
+
+      setNemesisData(nemesisMap)
+    } catch (error) {
+      console.error("Error fetching nemesis data:", error)
+    }
+  }
 
   const fetchStandings = async () => {
     try {
       const { data, error } = await supabase
-        .from("tournament_series_standings")
-        .select("player_name, total_points, placement_points, legs_points, bonus_points, tournaments_played")
-        .order("total_points", { ascending: false })
+        .from("tournament_series_aggregated")
+        .select(
+          "player_name, placement_points, bonus_points, total_legs_won, total_legs_lost, tournaments_played, total_matches_played, total_matches_won, total_matches_lost",
+        )
 
       if (error) throw error
 
-      setStandings(data || [])
+      const mappedData =
+        data?.map((row: any) => ({
+          player_name: row.player_name,
+          total_points: row.placement_points + row.total_legs_won + row.bonus_points,
+          placement_points: row.placement_points,
+          legs_points: row.total_legs_won,
+          bonus_points: row.bonus_points,
+          legs_won: row.total_legs_won,
+          legs_lost: row.total_legs_lost,
+          tournaments_played: row.tournaments_played,
+          total_matches_played: row.total_matches_played,
+          total_matches_won: row.total_matches_won,
+          total_matches_lost: row.total_matches_lost,
+        })) || []
+
+      mappedData.sort((a, b) => {
+        const totalA = a.placement_points + a.legs_won + a.bonus_points
+        const totalB = b.placement_points + b.legs_won + b.bonus_points
+        if (totalB !== totalA) return totalB - totalA
+        if (b.legs_won !== a.legs_won) return b.legs_won - a.legs_won
+        if (b.placement_points !== a.placement_points) return b.placement_points - a.placement_points
+        return a.tournaments_played - b.tournaments_played
+      })
+
+      setStandings(mappedData)
     } catch (error) {
       console.error("Error fetching standings:", error)
     } finally {
@@ -245,131 +417,67 @@ export default function TournamentSeriesPage() {
 
   const fetchTournaments = async () => {
     try {
-      const { data: tournamentsData, error: tournamentsError } = await supabase
-        .from("tournament_series_history")
-        .select("tournament_id, tournament_name, tournament_type, added_at")
-        .order("added_at", { ascending: false })
+      const { data: uniqueTournaments, error: tournamentsError } = await supabase
+        .from("tournament_series_standings")
+        .select("tournament_id, tournament_name, tournament_date")
+        .order("tournament_date", { ascending: false })
 
       if (tournamentsError) throw tournamentsError
 
+      const uniqueTournamentMap = new Map()
+      uniqueTournaments?.forEach((t) => {
+        if (!uniqueTournamentMap.has(t.tournament_id)) {
+          uniqueTournamentMap.set(t.tournament_id, t)
+        }
+      })
+
       const tournamentsWithRankings = await Promise.all(
-        (tournamentsData || []).map(async (tournament) => {
-          const { data: rankingsData } = await supabase
-            .from("dko_rankings")
+        Array.from(uniqueTournamentMap.values()).map(async (tournament) => {
+          const { data: entries, error: entriesError } = await supabase
+            .from("tournament_series_standings")
             .select("*")
             .eq("tournament_id", tournament.tournament_id)
             .order("placement", { ascending: true })
 
-          const { data: matchStatesData } = await supabase
-            .from("dko_match_states")
-            .select("*")
-            .eq("tournament_id", tournament.tournament_id)
+          if (entriesError) throw entriesError
 
-          const { data: matchStatsData } = await supabase
-            .from("dko_match_states")
-            .select("*")
-            .eq("tournament_type", tournament.tournament_type)
-            .order("match_id", { ascending: true })
-
-          // Determine the final match ID based on tournament type
-          let finalMatchId: number
-          if (tournament.tournament_type.includes("32")) {
-            finalMatchId = 63 // 32er DKO grand final
-          } else if (tournament.tournament_type.includes("16")) {
-            finalMatchId = 31 // 16er DKO grand final
-          } else if (tournament.tournament_type.includes("8")) {
-            finalMatchId = 15 // 8er DKO grand final
-          } else {
-            finalMatchId = 31 // Default to 16er
-          }
-
-          const bracketResetOccurred =
-            matchStatesData?.some((match) => match.match_id === finalMatchId && match.winner !== null) || false
+          const tournamentType = entries?.[0]?.tournament_type || "8er_dko"
 
           const rankings =
-            rankingsData?.map((ranking) => {
-              const playerMatches = matchStatesData?.filter(
-                (match) => match.player1 === ranking.player_name || match.player2 === ranking.player_name,
-              )
-
-              let legsWon = 0
-              let legsLost = 0
-
-              playerMatches?.forEach((match) => {
-                if (match.player1 === ranking.player_name) {
-                  legsWon += match.score1 || 0
-                  legsLost += match.score2 || 0
-                } else if (match.player2 === ranking.player_name) {
-                  legsWon += match.score2 || 0
-                  legsLost += match.score1 || 0
-                }
-              })
-
-              const playerMatchStats =
-                matchStatsData?.filter(
-                  (match) => match.player1 === ranking.player_name || match.player2 === ranking.player_name,
-                ) || []
-
-              const form = playerMatchStats
-                .map((match) => {
-                  if (match.winner === ranking.player_name) return "W"
-                  if (match.loser === ranking.player_name) return "L"
-                  return ""
-                })
-                .filter((result) => result !== "")
-                .join("")
-
-              const bonusPoints = ranking.placement === 1 && !bracketResetOccurred ? 5 : 0
-
+            entries?.map((entry) => {
               return {
-                player_name: ranking.player_name,
-                placement: ranking.placement,
-                legs_won: legsWon,
-                legs_lost: legsLost,
-                placement_points: 0,
-                bonus_points: bonusPoints,
-                form: form,
+                player_name: entry.player_name,
+                placement: entry.placement,
+                legs_won: entry.legs_won,
+                legs_lost: entry.legs_lost,
+                placement_points: entry.placement_points,
+                bonus_points: entry.bonus_points || 0,
+                form: entry.form,
               }
             }) || []
 
-          // Count distinct placement tiers
-          const placementCounts: Record<number, number> = {}
-          rankings.forEach((r) => {
-            placementCounts[r.placement] = (placementCounts[r.placement] || 0) + 1
-          })
-
-          const sortedPlacements = Object.keys(placementCounts)
-            .map(Number)
-            .sort((a, b) => a - b)
-
-          // Calculate tiers below each placement
-          const tiersBelow: Record<number, number> = {}
-          sortedPlacements.forEach((placement, index) => {
-            tiersBelow[placement] = sortedPlacements.length - index - 1
-          })
-
-          // Assign placement points to each ranking
-          rankings.forEach((ranking) => {
-            ranking.placement_points = 10 + tiersBelow[ranking.placement] * 2
-          })
-
           rankings.sort((a, b) => {
-            // Primary sort: placement (ascending)
             if (a.placement !== b.placement) {
               return a.placement - b.placement
             }
-            // Secondary sort: legs won (descending - more legs won = better)
-            if (a.legs_won !== b.legs_won) {
+            const totalA = a.placement_points + a.bonus_points + a.legs_won
+            const totalB = b.placement_points + b.bonus_points + b.legs_won
+            if (totalB !== totalA) {
+              return totalB - totalA
+            }
+            if (b.legs_won !== a.legs_won) {
               return b.legs_won - a.legs_won
             }
-            // Tertiary sort: leg difference (descending - better leg difference = better)
             const aDiff = a.legs_won - a.legs_lost
             const bDiff = b.legs_won - b.legs_lost
             return bDiff - aDiff
           })
 
           return {
-            ...tournament,
+            tournament_id: tournament.tournament_id,
+            tournament_name: tournament.tournament_name,
+            tournament_type: tournamentType,
+            tournament_date: tournament.tournament_date,
             rankings,
           }
         }),
@@ -387,20 +495,6 @@ export default function TournamentSeriesPage() {
     if (type.includes("32")) return "32er DKO"
     if (type.includes("64")) return "64er DKO"
     return type
-  }
-
-  const getPlacementColor = (placement: number) => {
-    if (placement === 1) return "bg-yellow-500 text-white"
-    if (placement === 2) return "bg-gray-400 text-white"
-    if (placement === 3) return "bg-orange-600 text-white"
-    return "bg-gray-200 text-gray-700"
-  }
-
-  const getPlacementIcon = (placement: number) => {
-    if (placement === 1) return "🥇"
-    if (placement === 2) return "🥈"
-    if (placement === 3) return "🥉"
-    return null
   }
 
   const qualifiedPlayers = standings.filter((s) => s.tournaments_played >= QUALIFICATION_REQUIREMENT)
@@ -461,7 +555,6 @@ export default function TournamentSeriesPage() {
             variants={cardVariants}
             className="bg-gradient-to-br from-pink-50 via-red-50 to-pink-50 rounded-2xl shadow-2xl border-2 border-red-200 overflow-hidden"
           >
-            {/* Header with Trophy Icon and Title */}
             <div className="text-center pt-6 pb-4 px-4">
               <div className="flex justify-center mb-4">
                 <div className="relative">
@@ -493,13 +586,11 @@ export default function TournamentSeriesPage() {
               </div>
             </div>
 
-            {/* Prize Pool Section */}
             <div className="text-center px-4 py-4 border-t-2 border-red-200">
               <h2 className="text-2xl sm:text-3xl font-black text-gray-900 mb-1">AKTUELLER POT</h2>
               <p className="text-sm sm:text-base text-gray-600 font-semibold">EMD - LION CUP II 2025</p>
             </div>
 
-            {/* Main Prize Amount */}
             <div className="text-center py-6 px-4">
               <div className="inline-block">
                 <div className="flex items-baseline justify-center gap-2">
@@ -510,7 +601,6 @@ export default function TournamentSeriesPage() {
                 </div>
               </div>
 
-              {/* Growth Info */}
               <div className="flex items-center justify-center gap-2 mt-4 text-sm sm:text-base">
                 <TrendingUp className="h-5 w-5 text-green-600" />
                 <span className="font-bold text-gray-700">Steigt mit jedem Antritt um €4,00!</span>
@@ -521,7 +611,6 @@ export default function TournamentSeriesPage() {
               </div>
             </div>
 
-            {/* Yellow Banner */}
             <div className="bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-300 px-4 py-4 border-t-2 border-yellow-500">
               <div className="flex items-center justify-center gap-2 text-center">
                 <Sparkles className="h-5 w-5 text-yellow-700 flex-shrink-0" />
@@ -565,7 +654,9 @@ export default function TournamentSeriesPage() {
               <TrendingUp className="w-8 h-8 text-green-600 flex-shrink-0" />
               <div className="min-w-0">
                 <p className="text-gray-600 text-xs sm:text-sm">Höchste Punktzahl</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{standings[0]?.total_points || 0}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                  {standings[0] ? standings[0].placement_points + standings[0].legs_won + standings[0].bonus_points : 0}
+                </p>
               </div>
             </div>
           </motion.div>
@@ -581,7 +672,6 @@ export default function TournamentSeriesPage() {
           </motion.div>
         </div>
 
-        {/* Tabs */}
         <div className="px-4">
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-3 overflow-x-auto">
             <div className="flex space-x-2 min-w-max sm:min-w-0 sm:grid sm:grid-cols-4 sm:space-x-0 sm:gap-3">
@@ -647,7 +737,6 @@ export default function TournamentSeriesPage() {
         {activeTab === "turnier-historie" ? (
           <div className="px-4">
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              {/* Header */}
               <div className="bg-gradient-to-r from-red-600 to-red-700 p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -671,7 +760,6 @@ export default function TournamentSeriesPage() {
                       variants={cardVariants}
                       className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden hover:border-red-500 transition-colors"
                     >
-                      {/* Tournament Header - Clickable */}
                       <button
                         onClick={() =>
                           setExpandedTournament(
@@ -697,7 +785,7 @@ export default function TournamentSeriesPage() {
                               </span>
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
-                                {new Date(tournament.added_at).toLocaleDateString("de-DE")}
+                                {new Date(tournament.tournament_date).toLocaleDateString("de-DE")}
                               </span>
                             </div>
                           </div>
@@ -709,12 +797,10 @@ export default function TournamentSeriesPage() {
                         )}
                       </button>
 
-                      {/* Expanded Tournament Results */}
                       {expandedTournament === tournament.tournament_id && tournament.rankings && (
                         <div className="border-t-2 border-gray-200 p-6 bg-gray-50">
                           <h4 className="text-lg font-bold text-gray-900 mb-4">Platzierungen</h4>
                           <div className="bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
-                            {/* Table Header */}
                             <div className="grid grid-cols-[80px_1fr_auto_100px_80px_100px_100px_120px] gap-4 p-4 bg-gray-100 border-b-2 border-gray-200 font-bold text-sm text-gray-700">
                               <div className="text-center">Platz</div>
                               <div>Spieler</div>
@@ -725,7 +811,6 @@ export default function TournamentSeriesPage() {
                               <div className="text-center">Legs L</div>
                               <div className="text-center">Gesamt</div>
                             </div>
-                            {/* Table Rows */}
                             <div className="divide-y-2 divide-gray-200">
                               {tournament.rankings.map((ranking, rankIndex) => (
                                 <div
@@ -743,7 +828,7 @@ export default function TournamentSeriesPage() {
                                   <div className="text-center font-mono font-bold text-sm">
                                     {ranking.form ? (
                                       <div className="flex gap-0.5">
-                                        {ranking.form.split("").map((result, idx) => (
+                                        {ranking.form.split(",").map((result, idx) => (
                                           <span
                                             key={idx}
                                             className={`inline-flex items-center justify-center w-6 h-6 rounded ${
@@ -772,7 +857,6 @@ export default function TournamentSeriesPage() {
                                   </div>
                                   <div className="text-center text-green-600 font-bold text-lg">{ranking.legs_won}</div>
                                   <div className="text-center text-red-600 font-bold text-lg">{ranking.legs_lost}</div>
-                                  {/* Gesamt Calculation */}
                                   <div className="text-center">
                                     <span className="inline-flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg px-3 py-1 rounded-lg shadow-md">
                                       {ranking.placement_points + ranking.bonus_points + ranking.legs_won}
@@ -794,13 +878,14 @@ export default function TournamentSeriesPage() {
                 )}
               </div>
 
-              {/* Footer */}
               <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
                 <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600">
                   <span>Gesamt: {tournaments.length} Turniere</span>
                   <span>
                     Zuletzt hinzugefügt:{" "}
-                    {tournaments.length > 0 ? new Date(tournaments[0].added_at).toLocaleDateString("de-DE") : "-"}
+                    {tournaments.length > 0
+                      ? new Date(tournaments[0].tournament_date).toLocaleDateString("de-DE")
+                      : "-"}
                   </span>
                 </div>
               </div>
@@ -809,7 +894,6 @@ export default function TournamentSeriesPage() {
         ) : (
           <div className="px-4">
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              {/* Header */}
               <div className="bg-gradient-to-r from-red-600 to-red-700 p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -831,7 +915,6 @@ export default function TournamentSeriesPage() {
                 </div>
               </div>
 
-              {/* Info Banner */}
               <div className="bg-blue-50 border-b border-blue-100 p-3 sm:p-4">
                 <div className="flex items-center space-x-2 text-blue-800">
                   <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -841,7 +924,6 @@ export default function TournamentSeriesPage() {
                 </div>
               </div>
 
-              {/* Mobile Cards */}
               <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
                 {filteredPlayers.length > 0 ? (
                   filteredPlayers.map((player, index) => (
@@ -849,6 +931,7 @@ export default function TournamentSeriesPage() {
                       key={player.player_name}
                       player={player}
                       position={standings.findIndex((s) => s.player_name === player.player_name) + 1}
+                      nemesis={nemesisData.get(player.player_name)}
                     />
                   ))
                 ) : (
@@ -856,7 +939,6 @@ export default function TournamentSeriesPage() {
                 )}
               </div>
 
-              {/* Footer Stats */}
               <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
                 <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-0">
                   <span>Gesamt: {filteredPlayers.length} Spieler</span>
