@@ -1,965 +1,882 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Pencil, Trash2, Loader2, AlertCircle } from "lucide-react"
+import { Pencil, Trash2, Plus, Save, X, ChevronDown, ChevronUp, Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Header } from "@/components/header"
+import { useAuth } from "@/hooks/use-auth"
 
-type TournamentStatus = {
-  id: number
+type TournamentEntry = {
+  id: string
+  player_name: string
   tournament_id: string
   tournament_name: string
-  status: string
-  created_at: string
-}
-
-type TournamentSeriesStanding = {
-  id: number
-  player_name: string
-  total_points: number
-  tournaments_played: number
-  created_at: string
-  updated_at: string
+  tournament_date: string
+  placement: number
+  legs_won: number
+  legs_lost: number
+  matches_played: number
+  matches_won: number
+  matches_lost: number
   placement_points: number
-  legs_points: number
   bonus_points: number
+  legs_points: number
+  form: string
 }
 
-type TournamentSeriesHistory = {
-  id: number
+type Tournament = {
   tournament_id: string
   tournament_name: string
-  added_at: string
-  tournament_type: string
+  tournament_date: string
+  entries: TournamentEntry[]
 }
 
-type DKORanking = {
-  id: number
-  player_name: string
-  tournaments_played: number
-  created_at: string
-  updated_at: string
-  placement_points: number
-}
-
-type DKOMatchState = {
-  id: number
-  tournament_id: string
-  tournament_type: string
-  player1: string
-  player2: string
-  score1: number
-  score2: number
-  winner: string
-  loser: string
-  machine_num: string
-  updated_at: string
-  text: string
-  tcount: number
-}
-
-export default function AdminTournamentsPage() {
-  const { user, isAdmin, adminLoading } = useAuth()
+export default function TournamentManagePage() {
+  const { user, isAdmin, loading: authLoading, adminLoading } = useAuth()
+  const router = useRouter()
+  const [tournaments, setTournaments] = useState<Tournament[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editingEntry, setEditingEntry] = useState<TournamentEntry | null>(null)
+  const [editingTournament, setEditingTournament] = useState<Tournament | null>(null)
+  const [expandedTournaments, setExpandedTournaments] = useState<Record<string, boolean>>({})
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [newEntry, setNewEntry] = useState<Partial<TournamentEntry>>({})
   const { toast } = useToast()
 
-  const [tournaments, setTournaments] = useState<TournamentStatus[]>([])
-  const [seriesStandings, setSeriesStandings] = useState<TournamentSeriesStanding[]>([])
-  const [seriesHistory, setSeriesHistory] = useState<TournamentSeriesHistory[]>([])
-  const [dkoRankings, setDKORankings] = useState<DKORanking[]>([])
-  const [matchStates, setMatchStates] = useState<DKOMatchState[]>([])
-
-  const [loading, setLoading] = useState(true)
-  const [selectedTournament, setSelectedTournament] = useState<string | null>(null)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false)
-  const [deleteAllTable, setDeleteAllTable] = useState<string>("")
-  const [deleteAllConfirmText, setDeleteAllConfirmText] = useState("")
-  const [currentEditItem, setCurrentEditItem] = useState<any>(null)
-  const [currentEditTable, setCurrentEditTable] = useState<string>("")
-
   useEffect(() => {
-    if (!adminLoading && !isAdmin) {
-      window.location.href = "/"
-    }
-  }, [isAdmin, adminLoading])
+    fetchTournaments()
+  }, [])
 
-  useEffect(() => {
-    if (isAdmin) {
-      fetchAllData()
-    }
-  }, [isAdmin])
+  async function fetchTournaments() {
+    const currentlyExpanded = { ...expandedTournaments }
 
-  const fetchAllData = async () => {
     setLoading(true)
-    setErrors({})
-    try {
-      await Promise.all([
-        fetchTournaments(),
-        fetchSeriesStandings(),
-        fetchSeriesHistory(),
-        fetchDKORankings(),
-        fetchMatchStates(),
-      ])
-    } catch (error) {
-      console.error("[v0] Error fetching data:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchTournaments = async () => {
-    console.log("[v0] Fetching tournaments...")
-    const { data, error } = await supabase
-      .from("tournaments_status")
-      .select("*")
-      .order("created_at", { ascending: false })
-
-    if (error) {
-      console.error("[v0] Error fetching tournaments:", error)
-      setErrors((prev) => ({ ...prev, tournaments_status: error.message }))
-      return
-    }
-    console.log("[v0] Tournaments fetched:", data?.length || 0)
-    setTournaments(data || [])
-  }
-
-  const fetchSeriesStandings = async () => {
-    console.log("[v0] Fetching series standings...")
     const { data, error } = await supabase
       .from("tournament_series_standings")
       .select("*")
-      .order("total_points", { ascending: false })
+      .order("tournament_date", { ascending: false })
 
     if (error) {
-      console.error("[v0] Error fetching series standings:", error)
-      setErrors((prev) => ({ ...prev, tournament_series_standings: error.message }))
-      return
-    }
-    console.log("[v0] Series standings fetched:", data?.length || 0)
-    setSeriesStandings(data || [])
-  }
-
-  const fetchSeriesHistory = async () => {
-    console.log("[v0] Fetching series history...")
-    const { data, error } = await supabase
-      .from("tournament_series_history")
-      .select("*")
-      .order("added_at", { ascending: false })
-
-    if (error) {
-      console.error("[v0] Error fetching series history:", error)
-      setErrors((prev) => ({ ...prev, tournament_series_history: error.message }))
-      return
-    }
-    console.log("[v0] Series history fetched:", data?.length || 0)
-    setSeriesHistory(data || [])
-  }
-
-  const fetchDKORankings = async () => {
-    console.log("[v0] Fetching DKO rankings...")
-    const { data, error } = await supabase.from("dko_rankings").select("*")
-
-    if (error) {
-      console.error("[v0] Error fetching DKO rankings:", error)
-      setErrors((prev) => ({ ...prev, dko_rankings: error.message }))
-      return
-    }
-    console.log("[v0] DKO rankings fetched:", data?.length || 0)
-    setDKORankings(data || [])
-  }
-
-  const fetchMatchStates = async () => {
-    console.log("[v0] Fetching match states...")
-    const { data, error } = await supabase.from("dko_match_states").select("*")
-
-    if (error) {
-      console.error("[v0] Error fetching match states:", error)
-      setErrors((prev) => ({ ...prev, dko_match_states: error.message }))
-      return
-    }
-    console.log("[v0] Match states fetched:", data?.length || 0)
-    setMatchStates(data || [])
-  }
-
-  const handleDelete = async (table: string, id: number) => {
-    try {
-      const { error } = await supabase.from(table).delete().eq("id", id)
-
-      if (error) throw error
-
-      toast({
-        title: "Erfolgreich gelöscht",
-        description: "Der Eintrag wurde gelöscht",
-      })
-
-      await fetchAllData()
-      setDeleteDialogOpen(false)
-    } catch (error) {
-      console.error("Error deleting:", error)
       toast({
         title: "Fehler",
-        description: "Eintrag konnte nicht gelöscht werden",
+        description: "Turniere konnten nicht geladen werden",
         variant: "destructive",
       })
-    }
-  }
-
-  const handleDeleteAll = async (table: string) => {
-    if (deleteAllConfirmText !== "ALLES LÖSCHEN") {
-      toast({
-        title: "Fehler",
-        description: 'Bitte gib "ALLES LÖSCHEN" ein, um fortzufahren',
-        variant: "destructive",
-      })
+      setLoading(false)
       return
     }
 
-    try {
-      const { error } = await supabase.from(table).delete().neq("id", 0)
+    const grouped = (data as TournamentEntry[]).reduce((acc, entry) => {
+      const existing = acc.find((t) => t.tournament_id === entry.tournament_id)
+      if (existing) {
+        existing.entries.push(entry)
+      } else {
+        acc.push({
+          tournament_id: entry.tournament_id,
+          tournament_name: entry.tournament_name,
+          tournament_date: entry.tournament_date,
+          entries: [entry],
+        })
+      }
+      return acc
+    }, [] as Tournament[])
 
-      if (error) throw error
+    grouped.forEach((tournament) => {
+      tournament.entries.sort((a, b) => a.placement - b.placement)
+    })
 
-      toast({
-        title: "Erfolgreich gelöscht",
-        description: "Alle Einträge wurden gelöscht",
-      })
+    setTournaments(grouped)
 
-      await fetchAllData()
-      setDeleteAllDialogOpen(false)
-      setDeleteAllConfirmText("")
-    } catch (error) {
-      console.error("Error deleting all:", error)
-      toast({
-        title: "Fehler",
-        description: "Einträge konnten nicht gelöscht werden",
-        variant: "destructive",
-      })
+    if (Object.keys(currentlyExpanded).length === 0 && grouped.length > 0) {
+      setExpandedTournaments({ [grouped[0].tournament_id]: true })
+    } else {
+      setExpandedTournaments(currentlyExpanded)
     }
+
+    setLoading(false)
   }
 
-  const handleEdit = async (table: string, id: number, updates: any) => {
-    try {
-      const { error } = await supabase.from(table).update(updates).eq("id", id)
+  const toggleTournament = (tournamentId: string) => {
+    setExpandedTournaments((prev) => ({
+      ...prev,
+      [tournamentId]: !prev[tournamentId],
+    }))
+  }
 
-      if (error) throw error
-
-      toast({
-        title: "Erfolgreich aktualisiert",
-        description: "Der Eintrag wurde aktualisiert",
+  async function updateEntry(entry: TournamentEntry) {
+    const { error } = await supabase
+      .from("tournament_series_standings")
+      .update({
+        player_name: entry.player_name,
+        placement: entry.placement,
+        legs_won: entry.legs_won,
+        legs_lost: entry.legs_lost,
+        matches_played: entry.matches_played,
+        matches_won: entry.matches_won,
+        matches_lost: entry.matches_lost,
+        placement_points: entry.placement_points,
+        bonus_points: entry.bonus_points,
+        legs_points: entry.legs_points,
+        form: entry.form,
       })
+      .eq("id", entry.id)
 
-      await fetchAllData()
-      setEditDialogOpen(false)
-    } catch (error) {
-      console.error("Error updating:", error)
+    if (error) {
       toast({
         title: "Fehler",
         description: "Eintrag konnte nicht aktualisiert werden",
         variant: "destructive",
       })
+      return
     }
+
+    toast({
+      title: "Erfolg",
+      description: "Eintrag wurde aktualisiert",
+    })
+    setEditingEntry(null)
+    const tournamentId = entry.tournament_id
+    setExpandedTournaments((prev) => ({ ...prev, [tournamentId]: true }))
+    fetchTournaments()
   }
 
-  if (adminLoading || loading) {
+  async function deleteEntry(id: string) {
+    if (!confirm("Möchtest du diesen Eintrag wirklich löschen?")) return
+
+    const { error } = await supabase.from("tournament_series_standings").delete().eq("id", id)
+
+    if (error) {
+      toast({
+        title: "Fehler",
+        description: "Eintrag konnte nicht gelöscht werden",
+        variant: "destructive",
+      })
+      return
+    }
+
+    toast({
+      title: "Erfolg",
+      description: "Eintrag wurde gelöscht",
+    })
+    fetchTournaments()
+  }
+
+  async function addEntry() {
+    if (!newEntry.player_name || !newEntry.tournament_id || !newEntry.tournament_name) {
+      toast({
+        title: "Fehler",
+        description: "Bitte fülle alle Pflichtfelder aus",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const { error } = await supabase.from("tournament_series_standings").insert([
+      {
+        player_name: newEntry.player_name,
+        tournament_id: newEntry.tournament_id,
+        tournament_name: newEntry.tournament_name,
+        tournament_date: newEntry.tournament_date || new Date().toISOString(),
+        placement: newEntry.placement || 0,
+        legs_won: newEntry.legs_won || 0,
+        legs_lost: newEntry.legs_lost || 0,
+        matches_played: newEntry.matches_played || 0,
+        matches_won: newEntry.matches_won || 0,
+        matches_lost: newEntry.matches_lost || 0,
+        placement_points: newEntry.placement_points || 0,
+        bonus_points: newEntry.bonus_points || 0,
+        legs_points: newEntry.legs_points || 0,
+        form: newEntry.form || "",
+      },
+    ])
+
+    if (error) {
+      toast({
+        title: "Fehler",
+        description: "Eintrag konnte nicht hinzugefügt werden",
+        variant: "destructive",
+      })
+      return
+    }
+
+    toast({
+      title: "Erfolg",
+      description: "Eintrag wurde hinzugefügt",
+    })
+    setIsAddDialogOpen(false)
+    setNewEntry({})
+    fetchTournaments()
+  }
+
+  async function updateTournamentInfo(tournament: Tournament) {
+    const { error } = await supabase
+      .from("tournament_series_standings")
+      .update({
+        tournament_name: tournament.tournament_name,
+        tournament_date: tournament.tournament_date,
+      })
+      .eq("tournament_id", tournament.tournament_id)
+
+    if (error) {
+      toast({
+        title: "Fehler",
+        description: "Turnierinformationen konnten nicht aktualisiert werden",
+        variant: "destructive",
+      })
+      return
+    }
+
+    toast({
+      title: "Erfolg",
+      description: "Turnierinformationen wurden aktualisiert",
+    })
+    setEditingTournament(null)
+    setExpandedTournaments((prev) => ({ ...prev, [tournament.tournament_id]: true }))
+    fetchTournaments()
+  }
+
+  const exportToCSV = () => {
+    const csvRows = []
+
+    // CSV Header
+    csvRows.push(
+      [
+        "Turnier ID",
+        "Turniername",
+        "Turnierdatum",
+        "Spielername",
+        "Platzierung",
+        "Legs gewonnen",
+        "Legs verloren",
+        "Spiele gespielt",
+        "Spiele gewonnen",
+        "Spiele verloren",
+        "Platzierungspunkte",
+        "Bonuspunkte",
+        "Legs-Punkte",
+        "Form",
+      ].join(","),
+    )
+
+    // Add data rows
+    tournaments.forEach((tournament) => {
+      tournament.entries.forEach((entry) => {
+        csvRows.push(
+          [
+            entry.tournament_id,
+            `"${entry.tournament_name}"`,
+            new Date(entry.tournament_date).toLocaleDateString("de-DE"),
+            `"${entry.player_name}"`,
+            entry.placement,
+            entry.legs_won,
+            entry.legs_lost,
+            entry.matches_played,
+            entry.matches_won,
+            entry.matches_lost,
+            entry.placement_points,
+            entry.bonus_points,
+            entry.legs_points,
+            `"${entry.form}"`,
+          ].join(","),
+        )
+      })
+    })
+
+    // Create and download file
+    const csvContent = csvRows.join("\n")
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", `turnierserie_backup_${new Date().toISOString().split("T")[0]}.csv`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast({
+      title: "Export erfolgreich",
+      description: "CSV-Datei wurde heruntergeladen",
+    })
+  }
+
+  const exportToJSON = () => {
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      tournaments: tournaments.map((tournament) => ({
+        tournament_id: tournament.tournament_id,
+        tournament_name: tournament.tournament_name,
+        tournament_date: tournament.tournament_date,
+        entries: tournament.entries.map((entry) => ({
+          id: entry.id,
+          player_name: entry.player_name,
+          placement: entry.placement,
+          legs_won: entry.legs_won,
+          legs_lost: entry.legs_lost,
+          matches_played: entry.matches_played,
+          matches_won: entry.matches_won,
+          matches_lost: entry.matches_lost,
+          placement_points: entry.placement_points,
+          bonus_points: entry.bonus_points,
+          legs_points: entry.legs_points,
+          form: entry.form,
+        })),
+      })),
+    }
+
+    const jsonContent = JSON.stringify(exportData, null, 2)
+    const blob = new Blob([jsonContent], { type: "application/json" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", `turnierserie_backup_${new Date().toISOString().split("T")[0]}.json`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast({
+      title: "Export erfolgreich",
+      description: "JSON-Datei wurde heruntergeladen",
+    })
+  }
+
+  if (authLoading || adminLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex flex-col bg-gray-100">
+        <Header />
+        <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow">
+          <Card className="w-full max-w-md p-6 shadow-lg">
+            <CardContent className="text-center">
+              <p className="text-gray-700">Lade...</p>
+            </CardContent>
+          </Card>
+        </main>
       </div>
     )
   }
 
-  if (!isAdmin) {
-    return null
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-100">
+        <Header />
+        <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow">
+          <Card className="w-full max-w-md p-6 shadow-lg">
+            <CardTitle className="text-2xl font-bold text-center mb-6">Zugriff verweigert</CardTitle>
+            <CardContent className="text-center">
+              <p className="mb-4 text-gray-700">
+                Sie benötigen Admin-Rechte, um auf die Turnierverwaltung zuzugreifen.
+              </p>
+              <Button onClick={() => router.push("/admin")} className="w-full">
+                Zurück zur Admin-Seite
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    )
   }
 
-  const filteredMatchStates = selectedTournament
-    ? matchStates.filter((m) => m.tournament_id === selectedTournament)
-    : matchStates
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Lade Turniere...</div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <Header />
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Turnierverwaltung</h1>
-          <p className="text-muted-foreground">Verwalte alle Turniere und zugehörige Daten</p>
-        </div>
-
-        {Object.keys(errors).length > 0 && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Fehler beim Laden der Daten</AlertTitle>
-            <AlertDescription>
-              <div className="mt-2 space-y-1">
-                {Object.entries(errors).map(([table, error]) => (
-                  <div key={table} className="text-sm">
-                    <strong>{table}:</strong> {error}
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold">Turnierverwaltung</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={exportToCSV}>
+              <Download className="mr-2 h-4 w-4" />
+              CSV Export
+            </Button>
+            <Button variant="outline" onClick={exportToJSON}>
+              <Download className="mr-2 h-4 w-4" />
+              JSON Backup
+            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Neuer Eintrag
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Neuen Eintrag hinzufügen</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="player_name">Spielername *</Label>
+                    <Input
+                      id="player_name"
+                      value={newEntry.player_name || ""}
+                      onChange={(e) => setNewEntry({ ...newEntry, player_name: e.target.value })}
+                    />
                   </div>
-                ))}
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <Tabs defaultValue="tournaments" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="tournaments">Turniere</TabsTrigger>
-            <TabsTrigger value="standings">Serien Tabelle</TabsTrigger>
-            <TabsTrigger value="history">Serien Historie</TabsTrigger>
-            <TabsTrigger value="rankings">DKO Rankings</TabsTrigger>
-            <TabsTrigger value="matches">Match States</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="tournaments">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Turniere (tournaments_status)</CardTitle>
-                    <CardDescription>Alle Turniere mit Status und Typ (8er, 16er, 32er)</CardDescription>
+                  <div className="grid gap-2">
+                    <Label htmlFor="tournament_id">Turnier ID *</Label>
+                    <Input
+                      id="tournament_id"
+                      value={newEntry.tournament_id || ""}
+                      onChange={(e) => setNewEntry({ ...newEntry, tournament_id: e.target.value })}
+                    />
                   </div>
-                  {!errors.tournaments_status && tournaments.length > 0 && (
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        setDeleteAllTable("tournaments_status")
-                        setDeleteAllDialogOpen(true)
+                  <div className="grid gap-2">
+                    <Label htmlFor="tournament_name">Turniername *</Label>
+                    <Input
+                      id="tournament_name"
+                      value={newEntry.tournament_name || ""}
+                      onChange={(e) => setNewEntry({ ...newEntry, tournament_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="tournament_date">Turnierdatum</Label>
+                    <Input
+                      id="tournament_date"
+                      type="date"
+                      value={newEntry.tournament_date ? newEntry.tournament_date.split("T")[0] : ""}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const date = new Date(e.target.value + "T12:00:00")
+                          if (!isNaN(date.getTime())) {
+                            setNewEntry({ ...newEntry, tournament_date: date.toISOString() })
+                          }
+                        }
                       }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Alles löschen
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {errors.tournaments_status ? (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Tabelle nicht verfügbar</AlertTitle>
-                    <AlertDescription>{errors.tournaments_status}</AlertDescription>
-                  </Alert>
-                ) : tournaments.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">Keine Turniere vorhanden</div>
-                ) : (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Turnier ID</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Erstellt am</TableHead>
-                          <TableHead className="text-right">Aktionen</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {tournaments.map((tournament) => (
-                          <TableRow key={tournament.id}>
-                            <TableCell className="font-mono">{tournament.id}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground font-mono">
-                              {tournament.tournament_id.substring(0, 8)}...
-                            </TableCell>
-                            <TableCell className="font-medium">{tournament.tournament_name}</TableCell>
-                            <TableCell>
-                              <span
-                                className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                                  tournament.status === "completed"
-                                    ? "bg-green-100 text-green-700"
-                                    : tournament.status === "cancelled"
-                                      ? "bg-red-100 text-red-700"
-                                      : "bg-blue-100 text-blue-700"
-                                }`}
-                              >
-                                {tournament.status}
-                              </span>
-                            </TableCell>
-                            <TableCell>{new Date(tournament.created_at).toLocaleString("de-DE")}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentEditItem(tournament)
-                                    setCurrentEditTable("tournaments_status")
-                                    setEditDialogOpen(true)
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentEditItem(tournament)
-                                    setCurrentEditTable("tournaments_status")
-                                    setDeleteDialogOpen(true)
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    />
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="standings">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Serien Tabelle (tournament_series_standings)</CardTitle>
-                    <CardDescription>Aktuelle Standings der Turnierserie</CardDescription>
-                  </div>
-                  {!errors.tournament_series_standings && seriesStandings.length > 0 && (
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        setDeleteAllTable("tournament_series_standings")
-                        setDeleteAllDialogOpen(true)
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Alles löschen
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {errors.tournament_series_standings ? (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Tabelle nicht verfügbar</AlertTitle>
-                    <AlertDescription>{errors.tournament_series_standings}</AlertDescription>
-                  </Alert>
-                ) : seriesStandings.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">Keine Standings vorhanden</div>
-                ) : (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Rang</TableHead>
-                          <TableHead>Spieler</TableHead>
-                          <TableHead>Gesamtpunkte</TableHead>
-                          <TableHead>Platzierungspunkte</TableHead>
-                          <TableHead>Legs Punkte</TableHead>
-                          <TableHead>Bonuspunkte</TableHead>
-                          <TableHead>Turniere</TableHead>
-                          <TableHead className="text-right">Aktionen</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {seriesStandings.map((standing, index) => (
-                          <TableRow key={standing.id}>
-                            <TableCell>
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
-                                {index + 1}
-                              </span>
-                            </TableCell>
-                            <TableCell className="font-medium">{standing.player_name}</TableCell>
-                            <TableCell className="font-bold text-lg">{standing.total_points}</TableCell>
-                            <TableCell>{standing.placement_points}</TableCell>
-                            <TableCell>{standing.legs_points}</TableCell>
-                            <TableCell>{standing.bonus_points}</TableCell>
-                            <TableCell>{standing.tournaments_played}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentEditItem(standing)
-                                    setCurrentEditTable("tournament_series_standings")
-                                    setEditDialogOpen(true)
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentEditItem(standing)
-                                    setCurrentEditTable("tournament_series_standings")
-                                    setDeleteDialogOpen(true)
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="history">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Serien Historie (tournament_series_history)</CardTitle>
-                    <CardDescription>Historische Turnierdaten</CardDescription>
-                  </div>
-                  {!errors.tournament_series_history && seriesHistory.length > 0 && (
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        setDeleteAllTable("tournament_series_history")
-                        setDeleteAllDialogOpen(true)
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Alles löschen
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {errors.tournament_series_history ? (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Tabelle nicht verfügbar</AlertTitle>
-                    <AlertDescription>{errors.tournament_series_history}</AlertDescription>
-                  </Alert>
-                ) : seriesHistory.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">Keine Historie vorhanden</div>
-                ) : (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Turnier ID</TableHead>
-                          <TableHead>Turniername</TableHead>
-                          <TableHead>Typ</TableHead>
-                          <TableHead>Hinzugefügt am</TableHead>
-                          <TableHead className="text-right">Aktionen</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {seriesHistory.map((history) => (
-                          <TableRow key={history.id}>
-                            <TableCell className="font-mono">{history.id}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground font-mono">
-                              {history.tournament_id.substring(0, 8)}...
-                            </TableCell>
-                            <TableCell className="font-medium">{history.tournament_name}</TableCell>
-                            <TableCell>
-                              <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-primary/10 text-primary">
-                                {history.tournament_type}
-                              </span>
-                            </TableCell>
-                            <TableCell>{new Date(history.added_at).toLocaleString("de-DE")}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentEditItem(history)
-                                    setCurrentEditTable("tournament_series_history")
-                                    setEditDialogOpen(true)
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentEditItem(history)
-                                    setCurrentEditTable("tournament_series_history")
-                                    setDeleteDialogOpen(true)
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="rankings">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>DKO Rankings (dko_rankings)</CardTitle>
-                    <CardDescription>Gesamtrangliste aller Spieler</CardDescription>
-                  </div>
-                  {!errors.dko_rankings && dkoRankings.length > 0 && (
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        setDeleteAllTable("dko_rankings")
-                        setDeleteAllDialogOpen(true)
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Alles löschen
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {errors.dko_rankings ? (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Tabelle nicht verfügbar</AlertTitle>
-                    <AlertDescription>{errors.dko_rankings}</AlertDescription>
-                  </Alert>
-                ) : dkoRankings.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">Keine Rankings vorhanden</div>
-                ) : (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Rang</TableHead>
-                          <TableHead>Spieler</TableHead>
-                          <TableHead>Platzierungspunkte</TableHead>
-                          <TableHead>Turniere</TableHead>
-                          <TableHead className="text-right">Aktionen</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {dkoRankings.map((ranking, index) => (
-                          <TableRow key={ranking.id}>
-                            <TableCell>
-                              <span
-                                className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
-                                  index === 0
-                                    ? "bg-yellow-100 text-yellow-700"
-                                    : index === 1
-                                      ? "bg-gray-100 text-gray-700"
-                                      : index === 2
-                                        ? "bg-orange-100 text-orange-700"
-                                        : "bg-primary/10 text-primary"
-                                }`}
-                              >
-                                {index + 1}
-                              </span>
-                            </TableCell>
-                            <TableCell className="font-medium">{ranking.player_name}</TableCell>
-                            <TableCell>{ranking.placement_points}</TableCell>
-                            <TableCell>{ranking.tournaments_played}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentEditItem(ranking)
-                                    setCurrentEditTable("dko_rankings")
-                                    setEditDialogOpen(true)
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentEditItem(ranking)
-                                    setCurrentEditTable("dko_rankings")
-                                    setDeleteDialogOpen(true)
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="matches">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <CardTitle>Match States (dko_match_states)</CardTitle>
-                    <CardDescription>Alle Matches mit Ergebnissen</CardDescription>
-                    {!errors.dko_match_states && tournaments.length > 0 && (
-                      <div className="mt-4">
-                        <Select
-                          value={selectedTournament || "all"}
-                          onValueChange={(value) => setSelectedTournament(value === "all" ? null : value)}
-                        >
-                          <SelectTrigger className="w-[300px]">
-                            <SelectValue placeholder="Turnier filtern" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Alle Turniere</SelectItem>
-                            {tournaments.map((t) => (
-                              <SelectItem key={t.tournament_id} value={t.tournament_id}>
-                                {t.tournament_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </div>
-                  {!errors.dko_match_states && matchStates.length > 0 && (
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        setDeleteAllTable("dko_match_states")
-                        setDeleteAllDialogOpen(true)
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Alles löschen
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {errors.dko_match_states ? (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Tabelle nicht verfügbar</AlertTitle>
-                    <AlertDescription>{errors.dko_match_states}</AlertDescription>
-                  </Alert>
-                ) : filteredMatchStates.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    {selectedTournament ? "Keine Matches für dieses Turnier" : "Keine Matches vorhanden"}
-                  </div>
-                ) : (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Typ</TableHead>
-                          <TableHead>Spieler 1</TableHead>
-                          <TableHead>Score</TableHead>
-                          <TableHead>Spieler 2</TableHead>
-                          <TableHead>Gewinner</TableHead>
-                          <TableHead>Verlierer</TableHead>
-                          <TableHead>Maschine</TableHead>
-                          <TableHead className="text-right">Aktionen</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredMatchStates.map((match) => (
-                          <TableRow key={match.id}>
-                            <TableCell className="font-mono">{match.id}</TableCell>
-                            <TableCell>
-                              <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-primary/10 text-primary">
-                                {match.tournament_type}
-                              </span>
-                            </TableCell>
-                            <TableCell className="font-medium">{match.player1 || "TBD"}</TableCell>
-                            <TableCell className="font-mono text-center">
-                              {match.score1} : {match.score2}
-                            </TableCell>
-                            <TableCell className="font-medium">{match.player2 || "TBD"}</TableCell>
-                            <TableCell>
-                              {match.winner && <span className="font-medium text-green-600">{match.winner}</span>}
-                            </TableCell>
-                            <TableCell>
-                              {match.loser && <span className="text-muted-foreground">{match.loser}</span>}
-                            </TableCell>
-                            <TableCell>{match.machine_num}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentEditItem(match)
-                                    setCurrentEditTable("dko_match_states")
-                                    setEditDialogOpen(true)
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentEditItem(match)
-                                    setCurrentEditTable("dko_match_states")
-                                    setDeleteDialogOpen(true)
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Eintrag bearbeiten</DialogTitle>
-              <DialogDescription>Bearbeite die Daten für {currentEditTable}</DialogDescription>
-            </DialogHeader>
-            {currentEditItem && (
-              <div className="grid gap-4 py-4">
-                {Object.entries(currentEditItem).map(([key, value]) => {
-                  if (key === "id" || key === "created_at" || key === "updated_at") return null
-                  return (
-                    <div key={key} className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor={key} className="text-right">
-                        {key}
-                      </Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="placement">Platzierung</Label>
                       <Input
-                        id={key}
-                        defaultValue={value as string}
-                        className="col-span-3"
-                        onChange={(e) => {
-                          setCurrentEditItem({
-                            ...currentEditItem,
-                            [key]: e.target.value,
-                          })
-                        }}
+                        id="placement"
+                        type="number"
+                        value={newEntry.placement || 0}
+                        onChange={(e) => setNewEntry({ ...newEntry, placement: Number.parseInt(e.target.value) })}
                       />
                     </div>
-                  )
-                })}
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                Abbrechen
-              </Button>
-              <Button
-                onClick={() => {
-                  const { id, created_at, updated_at, ...updates } = currentEditItem
-                  handleEdit(currentEditTable, currentEditItem.id, updates)
-                }}
-              >
-                Speichern
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                    <div className="grid gap-2">
+                      <Label htmlFor="matches_played">Spiele</Label>
+                      <Input
+                        id="matches_played"
+                        type="number"
+                        value={newEntry.matches_played || 0}
+                        onChange={(e) => setNewEntry({ ...newEntry, matches_played: Number.parseInt(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="matches_won">Siege</Label>
+                      <Input
+                        id="matches_won"
+                        type="number"
+                        value={newEntry.matches_won || 0}
+                        onChange={(e) => setNewEntry({ ...newEntry, matches_won: Number.parseInt(e.target.value) })}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="matches_lost">Niederlagen</Label>
+                      <Input
+                        id="matches_lost"
+                        type="number"
+                        value={newEntry.matches_lost || 0}
+                        onChange={(e) => setNewEntry({ ...newEntry, matches_lost: Number.parseInt(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="legs_won">Legs gewonnen</Label>
+                      <Input
+                        id="legs_won"
+                        type="number"
+                        value={newEntry.legs_won || 0}
+                        onChange={(e) => setNewEntry({ ...newEntry, legs_won: Number.parseInt(e.target.value) })}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="legs_lost">Legs verloren</Label>
+                      <Input
+                        id="legs_lost"
+                        type="number"
+                        value={newEntry.legs_lost || 0}
+                        onChange={(e) => setNewEntry({ ...newEntry, legs_lost: Number.parseInt(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="placement_points">Platzierungspunkte</Label>
+                      <Input
+                        id="placement_points"
+                        type="number"
+                        value={newEntry.placement_points || 0}
+                        onChange={(e) =>
+                          setNewEntry({ ...newEntry, placement_points: Number.parseInt(e.target.value) })
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="bonus_points">Bonuspunkte</Label>
+                      <Input
+                        id="bonus_points"
+                        type="number"
+                        value={newEntry.bonus_points || 0}
+                        onChange={(e) => setNewEntry({ ...newEntry, bonus_points: Number.parseInt(e.target.value) })}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="legs_points">Legs-Punkte</Label>
+                      <Input
+                        id="legs_points"
+                        type="number"
+                        value={newEntry.legs_points || 0}
+                        onChange={(e) => setNewEntry({ ...newEntry, legs_points: Number.parseInt(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="form">Form</Label>
+                    <Input
+                      id="form"
+                      value={newEntry.form || ""}
+                      onChange={(e) => setNewEntry({ ...newEntry, form: e.target.value })}
+                      placeholder="z.B. WWLWL"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Abbrechen
+                  </Button>
+                  <Button onClick={addEntry}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Speichern
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
 
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Eintrag löschen</DialogTitle>
-              <DialogDescription>
-                Bist du sicher, dass du diesen Eintrag löschen möchtest? Diese Aktion kann nicht rückgängig gemacht
-                werden.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                Abbrechen
-              </Button>
-              <Button variant="destructive" onClick={() => handleDelete(currentEditTable, currentEditItem?.id)}>
-                Löschen
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <div className="space-y-8">
+          {tournaments.map((tournament) => {
+            const isExpanded = expandedTournaments[tournament.tournament_id]
 
-        <Dialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Alle Einträge löschen</DialogTitle>
-              <DialogDescription>
-                Diese Aktion löscht ALLE Einträge aus der Tabelle <strong>{deleteAllTable}</strong>. Diese Aktion kann
-                nicht rückgängig gemacht werden!
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <Label htmlFor="confirm-text">
-                Bitte gib <strong>"ALLES LÖSCHEN"</strong> ein, um fortzufahren:
-              </Label>
-              <Input
-                id="confirm-text"
-                value={deleteAllConfirmText}
-                onChange={(e) => setDeleteAllConfirmText(e.target.value)}
-                placeholder="ALLES LÖSCHEN"
-                className="mt-2"
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setDeleteAllDialogOpen(false)
-                  setDeleteAllConfirmText("")
-                }}
-              >
-                Abbrechen
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => handleDeleteAll(deleteAllTable)}
-                disabled={deleteAllConfirmText !== "ALLES LÖSCHEN"}
-              >
-                Alles löschen
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </main>
-    </div>
+            return (
+              <Card key={tournament.tournament_id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    {editingTournament?.tournament_id === tournament.tournament_id && editingTournament !== null ? (
+                      <div className="flex-1 flex items-center gap-4">
+                        <div className="flex-1 space-y-2">
+                          <Input
+                            value={editingTournament.tournament_name}
+                            onChange={(e) =>
+                              setEditingTournament({ ...editingTournament, tournament_name: e.target.value })
+                            }
+                            className="text-2xl font-bold"
+                            placeholder="Turniername"
+                          />
+                          <Input
+                            type="date"
+                            value={editingTournament.tournament_date.split("T")[0]}
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                const date = new Date(e.target.value + "T12:00:00")
+                                if (!isNaN(date.getTime())) {
+                                  setEditingTournament({
+                                    ...editingTournament,
+                                    tournament_date: date.toISOString(),
+                                  })
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => updateTournamentInfo(editingTournament)}>
+                            <Save className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingTournament(null)}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleTournament(tournament.tournament_id)}
+                          className="mr-4"
+                        >
+                          {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        </Button>
+                        <div className="flex-1">
+                          <div className="text-2xl">{tournament.tournament_name}</div>
+                          <div className="text-sm text-muted-foreground font-normal mt-1">
+                            {new Date(tournament.tournament_date).toLocaleDateString("de-DE", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-sm text-muted-foreground font-normal">
+                            {tournament.entries.length} Spieler
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => setEditingTournament(tournament)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                {isExpanded && (
+                  <CardContent>
+                    <div className="relative overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12">Platz</TableHead>
+                            <TableHead>Spieler</TableHead>
+                            <TableHead className="text-center">Gesamt</TableHead>
+                            <TableHead className="text-center">Platz-P</TableHead>
+                            <TableHead className="text-center">Legs+</TableHead>
+                            <TableHead className="text-center">Legs-</TableHead>
+                            <TableHead className="text-center">Spiele</TableHead>
+                            <TableHead className="text-center">S</TableHead>
+                            <TableHead className="text-center">N</TableHead>
+                            <TableHead className="text-center">Bonus-P</TableHead>
+                            <TableHead>Form</TableHead>
+                            <TableHead className="text-right sticky right-0 bg-background shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">
+                              Aktionen
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {tournament.entries.map((entry, index) => {
+                            const isEditing = editingEntry?.id === entry.id && editingEntry !== null
+                            const totalPoints = entry.placement_points + entry.legs_won + entry.bonus_points
+
+                            return (
+                              <TableRow key={entry.id}>
+                                {isEditing ? (
+                                  <>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        value={editingEntry.placement}
+                                        onChange={(e) =>
+                                          setEditingEntry({
+                                            ...editingEntry,
+                                            placement: Number.parseInt(e.target.value),
+                                          })
+                                        }
+                                        className="w-16"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        value={editingEntry.player_name}
+                                        onChange={(e) =>
+                                          setEditingEntry({ ...editingEntry, player_name: e.target.value })
+                                        }
+                                      />
+                                    </TableCell>
+                                    <TableCell className="text-center font-bold">
+                                      {editingEntry.placement_points +
+                                        editingEntry.legs_won +
+                                        editingEntry.bonus_points}
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        value={editingEntry.placement_points}
+                                        onChange={(e) =>
+                                          setEditingEntry({
+                                            ...editingEntry,
+                                            placement_points: Number.parseInt(e.target.value),
+                                          })
+                                        }
+                                        className="w-16"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        value={editingEntry.legs_won}
+                                        onChange={(e) =>
+                                          setEditingEntry({
+                                            ...editingEntry,
+                                            legs_won: Number.parseInt(e.target.value),
+                                          })
+                                        }
+                                        className="w-16"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        value={editingEntry.legs_lost}
+                                        onChange={(e) =>
+                                          setEditingEntry({
+                                            ...editingEntry,
+                                            legs_lost: Number.parseInt(e.target.value),
+                                          })
+                                        }
+                                        className="w-16"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        value={editingEntry.matches_played}
+                                        onChange={(e) =>
+                                          setEditingEntry({
+                                            ...editingEntry,
+                                            matches_played: Number.parseInt(e.target.value),
+                                          })
+                                        }
+                                        className="w-16"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        value={editingEntry.matches_won}
+                                        onChange={(e) =>
+                                          setEditingEntry({
+                                            ...editingEntry,
+                                            matches_won: Number.parseInt(e.target.value),
+                                          })
+                                        }
+                                        className="w-16"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        value={editingEntry.matches_lost}
+                                        onChange={(e) =>
+                                          setEditingEntry({
+                                            ...editingEntry,
+                                            matches_lost: Number.parseInt(e.target.value),
+                                          })
+                                        }
+                                        className="w-16"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        value={editingEntry.bonus_points}
+                                        onChange={(e) =>
+                                          setEditingEntry({
+                                            ...editingEntry,
+                                            bonus_points: Number.parseInt(e.target.value),
+                                          })
+                                        }
+                                        className="w-16"
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        value={editingEntry.form}
+                                        onChange={(e) => setEditingEntry({ ...editingEntry, form: e.target.value })}
+                                        className="w-24"
+                                      />
+                                    </TableCell>
+                                    <TableCell className="text-right sticky right-0 bg-background shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">
+                                      <div className="flex justify-end gap-2">
+                                        <Button size="sm" onClick={() => updateEntry(editingEntry)}>
+                                          <Save className="h-4 w-4" />
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={() => setEditingEntry(null)}>
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </>
+                                ) : (
+                                  <>
+                                    <TableCell className="font-bold">{entry.placement}</TableCell>
+                                    <TableCell className="font-medium">{entry.player_name}</TableCell>
+                                    <TableCell className="text-center font-bold text-lg">{totalPoints}</TableCell>
+                                    <TableCell className="text-center">{entry.placement_points}</TableCell>
+                                    <TableCell className="text-center">{entry.legs_won}</TableCell>
+                                    <TableCell className="text-center">{entry.legs_lost}</TableCell>
+                                    <TableCell className="text-center">{entry.matches_played}</TableCell>
+                                    <TableCell className="text-center">{entry.matches_won}</TableCell>
+                                    <TableCell className="text-center">{entry.matches_lost}</TableCell>
+                                    <TableCell className="text-center">{entry.bonus_points}</TableCell>
+                                    <TableCell>
+                                      <div className="flex gap-0">
+                                        {entry.form
+                                          .replace(/,/g, "")
+                                          .split("")
+                                          .map((result, i) => (
+                                            <span
+                                              key={i}
+                                              className={`w-5 h-5 flex items-center justify-center text-xs font-bold rounded ${
+                                                result === "W" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                                              }`}
+                                            >
+                                              {result}
+                                            </span>
+                                          ))}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-right sticky right-0 bg-background shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">
+                                      <div className="flex justify-end gap-2">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            setEditingEntry(entry)
+                                          }}
+                                        >
+                                          <Pencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button size="sm" variant="destructive" onClick={() => deleteEntry(entry.id)}>
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </>
+                                )}
+                              </TableRow>
+                            )
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            )
+          })}
+        </div>
+      </div>
+    </>
   )
 }

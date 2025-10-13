@@ -58,9 +58,7 @@ export function Header() {
 
   const isLionCupActive = ["/regelwerk", "/tabelle-lion-cup"].includes(pathname)
 
-  const isTurniereActive = ["/upcoming-tournaments", "/live", "/kratzer-tournament-results", "/livestream"].includes(
-    pathname,
-  )
+  const isTurniereActive = ["/upcoming-tournaments", "/live", "/livestream"].includes(pathname)
 
   const isLigaActive = ["/liga-statistiken", "/match-galerie"].includes(pathname)
 
@@ -185,13 +183,8 @@ export function Header() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-               <Link href="/livestream" className="w-full cursor-pointer">
-                 Livestream
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                  <Link href="/all-results" className="w-full cursor-pointer"> 
-                   Beendete Turniere
+                <Link href="/livestream" className="w-full cursor-pointer">
+                  Livestream
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -430,16 +423,6 @@ export function Header() {
                   }`}
                 >
                   Live
-                </Link>
-                <Link
-                  href="/all-results"
-                  className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
-                    pathname === "/all-results"
-                      ? "bg-red-50 text-red-600 font-bold"
-                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
-                  }`}
-                >
-                  Beendete Turniere
                 </Link>
                 <Link
                   href="/livestream"
