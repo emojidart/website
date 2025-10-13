@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Edit, Trash2, Loader2, Users, Search } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import type { SpielerdatenbankEntry } from "./spielerdatenbank-form"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface SpielerdatenbankTableProps {
   onEditPlayer: (player: SpielerdatenbankEntry) => void
@@ -32,32 +33,30 @@ export function SpielerdatenbankTable({ onEditPlayer, onDataChanged }: Spielerda
   const [ligastatusFilter, setLigastatusFilter] = useState<string | null>(null)
   const [vereinFilter, setVereinFilter] = useState<string | null>(null)
   const [uniqueVereine, setUniqueVereine] = useState<string[]>([])
-  const [uniqueLigastatus, setUniqueLigastatus] = useState<string[]>([]) // New state for unique ligastatus
+  const [uniqueLigastatus, setUniqueLigastatus] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(10) // Anzahl der Spieler pro Seite
+  const [itemsPerPage] = useState(10)
   const [totalPlayers, setTotalPlayers] = useState(0)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
 
-  // Debounce search term
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm)
-      setCurrentPage(1) // Reset to first page on new search
-    }, 500) // 500ms debounce time
+      setCurrentPage(1)
+    }, 500)
 
     return () => {
       clearTimeout(handler)
     }
   }, [searchTerm])
 
-  // Fetch unique Vereine for the filter dropdown
   useEffect(() => {
     const fetchUniqueVereine = async () => {
       try {
         const { data, error } = await supabase
           .from("spieldatenbank")
           .select("verein")
-          .not("verein", "is", null) // Only get entries where verein is not null
+          .not("verein", "is", null)
           .order("verein", { ascending: true })
 
         if (error) {
@@ -72,14 +71,13 @@ export function SpielerdatenbankTable({ onEditPlayer, onDataChanged }: Spielerda
     fetchUniqueVereine()
   }, [])
 
-  // Fetch unique Ligastatus for the filter dropdown
   useEffect(() => {
     const fetchUniqueLigastatus = async () => {
       try {
         const { data, error } = await supabase
           .from("spieldatenbank")
           .select("ligastatus")
-          .not("ligastatus", "is", null) // Only get entries where ligastatus is not null
+          .not("ligastatus", "is", null)
           .order("ligastatus", { ascending: true })
 
         if (error) {
@@ -98,10 +96,10 @@ export function SpielerdatenbankTable({ onEditPlayer, onDataChanged }: Spielerda
     setLoading(true)
     setError(null)
     try {
-      let query = supabase.from("spieldatenbank").select("*", { count: "exact" }) // Get data and exact count
+      let query = supabase.from("spieldatenbank").select("*", { count: "exact" })
 
       if (debouncedSearchTerm) {
-        query = query.ilike("name", `%${debouncedSearchTerm}%`) // Case-insensitive search by name
+        query = query.ilike("name", `%${debouncedSearchTerm}%`)
       }
       if (ligastatusFilter) {
         query = query.eq("ligastatus", ligastatusFilter)
@@ -129,7 +127,7 @@ export function SpielerdatenbankTable({ onEditPlayer, onDataChanged }: Spielerda
 
   useEffect(() => {
     fetchPlayers()
-  }, [fetchPlayers, onDataChanged]) // onDataChanged triggers a re-fetch when data is added/edited/deleted
+  }, [fetchPlayers, onDataChanged])
 
   const handleDeletePlayer = async (id: string) => {
     if (!window.confirm("Sind Sie sicher, dass Sie diesen Spieler löschen möchten?")) {
@@ -142,7 +140,7 @@ export function SpielerdatenbankTable({ onEditPlayer, onDataChanged }: Spielerda
       if (error) {
         throw error
       }
-      onDataChanged() // Trigger re-fetch in parent and this component
+      onDataChanged()
     } catch (err: any) {
       setError(`Fehler beim Löschen des Spielers: ${err.message}`)
       console.error("Error deleting player:", err)
@@ -155,7 +153,7 @@ export function SpielerdatenbankTable({ onEditPlayer, onDataChanged }: Spielerda
 
   const getPaginationItems = () => {
     const pages = []
-    const maxPagesToShow = 5 // Max number of page links to show
+    const maxPagesToShow = 5
     const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2))
     const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1)
 
@@ -285,6 +283,7 @@ export function SpielerdatenbankTable({ onEditPlayer, onDataChanged }: Spielerda
               <Table>
                 <TableHeader className="bg-gray-50">
                   <TableRow>
+                    <TableHead className="w-[80px] text-gray-700">Foto</TableHead>
                     <TableHead className="w-[150px] text-gray-700">Name</TableHead>
                     <TableHead className="text-gray-700">Verein</TableHead>
                     <TableHead className="text-gray-700">Ligastatus</TableHead>
@@ -295,6 +294,14 @@ export function SpielerdatenbankTable({ onEditPlayer, onDataChanged }: Spielerda
                 <TableBody>
                   {players.map((player) => (
                     <TableRow key={player.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={player.profile_picture_url || undefined} alt={player.name} />
+                          <AvatarFallback className="bg-gray-200 text-gray-600">
+                            {player.name.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </TableCell>
                       <TableCell className="font-medium text-gray-800">{player.name}</TableCell>
                       <TableCell className="text-gray-700">{player.verein || "-"}</TableCell>
                       <TableCell className="text-gray-700">{player.ligastatus || "-"}</TableCell>

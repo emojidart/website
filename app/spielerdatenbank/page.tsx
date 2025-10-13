@@ -3,32 +3,30 @@
 import { useState, useEffect, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import { AuthSection } from "@/components/auth-section"
-import { SpieldatenbankForm, type SpielerdatenbankEntry } from "@/components/spielerdatenbank-form" // Korrigierter Importpfad
-import { SpielerdatenbankTable } from "@/components/spielerdatenbank-table" // Neue Komponente
+import { SpieldatenbankForm, type SpielerdatenbankEntry } from "@/components/spielerdatenbank-form"
+import { SpielerdatenbankTable } from "@/components/spielerdatenbank-table"
 import { Header } from "@/components/header"
-import { User } from "@supabase/supabase-js"
+import type { User } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, List, Users } from 'lucide-react' // Neue Icons
+import { PlusCircle, List } from "lucide-react"
 
 export default function SpielerdatenbankPage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [authMessage, setAuthMessage] = useState("")
-  const [activeTab, setActiveTab] = useState<"add" | "manage">("add") // 'add' für Formular, 'manage' für Tabelle
+  const [activeTab, setActiveTab] = useState<"add" | "manage">("add")
   const [selectedPlayerForEdit, setSelectedPlayerForEdit] = useState<SpielerdatenbankEntry | null>(null)
 
-  // Callback, um die Spielerdaten in der Tabelle neu zu laden
   const handleDataChanged = useCallback(() => {
-    // Wenn die Tabelle aktiv ist, erzwingen wir ein Neuladen
-    // Dies wird durch den useEffect in SpielerdatenbankTable ausgelöst, wenn onDataChanged aufgerufen wird
-    // Hier können wir einfach den Bearbeitungsmodus beenden, falls aktiv
-    setSelectedPlayerForEdit(null);
-    setActiveTab("manage"); // Wechselt zur Verwaltungsansicht nach dem Speichern
-  }, []);
+    setSelectedPlayerForEdit(null)
+    setActiveTab("manage")
+  }, [])
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       setUser(user)
       setLoading(false)
     }
@@ -62,14 +60,14 @@ export default function SpielerdatenbankPage() {
   }
 
   const handleEditPlayer = (player: SpielerdatenbankEntry) => {
-    setSelectedPlayerForEdit(player);
-    setActiveTab("add"); // Wechselt zum Formular, um den Spieler zu bearbeiten
-  };
+    setSelectedPlayerForEdit(player)
+    setActiveTab("add")
+  }
 
   const handleCancelEdit = () => {
-    setSelectedPlayerForEdit(null);
-    setActiveTab("manage"); // Wechselt zurück zur Tabelle
-  };
+    setSelectedPlayerForEdit(null)
+    setActiveTab("manage")
+  }
 
   if (loading) {
     return (
@@ -84,7 +82,7 @@ export default function SpielerdatenbankPage() {
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
       <Header />
       <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl">
-        <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">Spielerdatenbank Admin</h1> {/* Korrigierter Titel */}
+        <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">Spielerdatenbank Admin</h1>
 
         {!user ? (
           <AuthSection
@@ -95,11 +93,13 @@ export default function SpielerdatenbankPage() {
           />
         ) : (
           <div className="space-y-8">
-            {/* Tab Navigation */}
             <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-2 shadow-lg overflow-x-auto mb-8">
               <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                 <Button
-                  onClick={() => { setActiveTab("add"); setSelectedPlayerForEdit(null); }}
+                  onClick={() => {
+                    setActiveTab("add")
+                    setSelectedPlayerForEdit(null)
+                  }}
                   className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
                     activeTab === "add"
                       ? "bg-red-600 text-white shadow-md"
@@ -123,7 +123,6 @@ export default function SpielerdatenbankPage() {
               </div>
             </div>
 
-            {/* Content based on active tab */}
             {activeTab === "add" && (
               <SpieldatenbankForm
                 initialData={selectedPlayerForEdit}
@@ -132,10 +131,7 @@ export default function SpielerdatenbankPage() {
               />
             )}
             {activeTab === "manage" && (
-              <SpielerdatenbankTable
-                onEditPlayer={handleEditPlayer}
-                onDataChanged={handleDataChanged}
-              />
+              <SpielerdatenbankTable onEditPlayer={handleEditPlayer} onDataChanged={handleDataChanged} />
             )}
           </div>
         )}

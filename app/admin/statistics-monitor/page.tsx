@@ -22,6 +22,7 @@ import {
   Bell,
   BellOff,
   CheckCircle2,
+  Users,
 } from "lucide-react"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -66,6 +67,8 @@ interface StatisticsEntry {
   is_substitute?: boolean
   created_by?: string
   team_captains?: string
+  team_name?: string
+  team_id?: string
   notificationInfo?: NotificationInfo
 }
 
@@ -86,27 +89,6 @@ export default function AdminStatisticsMonitorPage() {
   const fetchStatistics = async () => {
     try {
       setLoading(true)
-
-      const { data: allNotifications } = await supabase
-        .from("notifications")
-        .select("id, is_read, statistics_entry_id, leg_statistics_id, recipient_player_id, created_at")
-        .order("created_at", { ascending: false })
-        .limit(50)
-
-      console.log("[v0] ========== ALL NOTIFICATIONS DUMP ==========")
-      console.log("[v0] Total notifications in database:", allNotifications?.length || 0)
-      console.log("[v0] Full notification data:")
-      allNotifications?.forEach((notif, idx) => {
-        console.log(`[v0] Notification ${idx + 1}:`, {
-          id: notif.id,
-          is_read: notif.is_read,
-          statistics_entry_id: notif.statistics_entry_id,
-          leg_statistics_id: notif.leg_statistics_id,
-          recipient_player_id: notif.recipient_player_id,
-          created_at: notif.created_at,
-        })
-      })
-      console.log("[v0] ===============================================")
 
       const daysAgo = new Date()
       daysAgo.setDate(daysAgo.getDate() - Number.parseInt(filterDays))
@@ -129,41 +111,104 @@ export default function AdminStatisticsMonitorPage() {
       const enrichedEntries = await Promise.all(
         data.map(async (entry: any) => {
           let teamCaptains = "Kein Team zugeordnet"
+          let teamName = "Kein Team"
+          let teamId = null
 
-          if (entry.player?.id) {
-            // Get player's team
+          if (entry.match_id && entry.player?.id) {
+            const { data: matchData, error: matchError } = await supabase
+              .from("matches")
+              .select(`
+                *,
+                home_team:teams!matches_home_team_id_fkey(id, name),
+                away_team:teams!matches_away_team_id_fkey(id, name),
+                home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
+                away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name)
+              `)
+              .eq("id", entry.match_id)
+              .maybeSingle()
+
+            if (matchData && !matchError) {
+              // Collect own team IDs from the match (not opponent teams)
+              const ownTeamIds: string[] = []
+
+              if (matchData.home_team_type === "own" && matchData.home_team_id) {
+                ownTeamIds.push(matchData.home_team_id)
+              }
+
+              if (matchData.away_team_type === "own" && matchData.away_team_id) {
+                ownTeamIds.push(matchData.away_team_id)
+              }
+
+              // Check which of the own teams the player belongs to
+              if (ownTeamIds.length > 0) {
+                for (const teamIdToCheck of ownTeamIds) {
+                  const { data: teamMember } = await supabase
+                    .from("team_members")
+                    .select("team_id")
+                    .eq("player_id", entry.player.id)
+                    .eq("team_id", teamIdToCheck)
+                    .maybeSingle()
+
+                  if (teamMember) {
+                    teamId = teamIdToCheck
+                    console.log(`[v0] ✓ Found team from match: ${entry.player.name}`)
+                    break
+                  }
+                }
+              }
+
+              if (!teamId) {
+                console.log(`[v0] ⚠ Player not in match teams, using fallback: ${entry.player.name}`)
+              }
+            }
+          }
+
+          // Fallback: Use team_members table if no team found from match
+          if (!teamId && entry.player?.id) {
             const { data: teamMemberData } = await supabase
               .from("team_members")
-              .select("team_id")
+              .select(`
+                team_id,
+                teams (
+                  id,
+                  name
+                )
+              `)
               .eq("player_id", entry.player.id)
               .limit(1)
               .single()
 
             if (teamMemberData?.team_id) {
-              // Get captains and co-captains for this team
-              const { data: captainsData } = await supabase
-                .from("team_members")
-                .select(`
-                  role,
-                  club_players (
-                    name
-                  )
-                `)
-                .eq("team_id", teamMemberData.team_id)
-                .in("role", ["Captain", "Co-Captain"])
-                .order("role", { ascending: true })
+              teamId = teamMemberData.team_id
+              console.log("[v0] ℹ Using fallback team for:", entry.player.name)
+            }
+          }
 
-              if (captainsData && captainsData.length > 0) {
-                const captainNames = captainsData
-                  .map((c: any) => {
-                    const role = c.role === "Captain" ? "Kapitän" : "Co-Kapitän"
-                    return `${c.club_players?.name} (${role})`
-                  })
-                  .join(", ")
-                teamCaptains = captainNames
-              } else {
-                teamCaptains = "Keine Kapitäne gefunden"
-              }
+          // Get team name and captain
+          if (teamId) {
+            const { data: teamData } = await supabase.from("teams").select("name").eq("id", teamId).single()
+
+            teamName = teamData?.name || "Unbekanntes Team"
+
+            const { data: captainsData } = await supabase
+              .from("team_members")
+              .select(`
+                role,
+                club_players (
+                  name
+                )
+              `)
+              .eq("team_id", teamId)
+              .eq("role", "Captain")
+
+            if (captainsData && captainsData.length > 0) {
+              const captainNames = captainsData
+                .map((c: any) => c.club_players?.name)
+                .filter(Boolean)
+                .join(", ")
+              teamCaptains = captainNames
+            } else {
+              teamCaptains = "Kein Kapitän gefunden"
             }
           }
 
@@ -179,21 +224,11 @@ export default function AdminStatisticsMonitorPage() {
             .eq("leg_statistics_id", entry.id)
             .order("created_at", { ascending: false })
 
-          // Combine and deduplicate by notification ID
           const allNotifs = [...(notifsByStatEntry || []), ...(notifsByLegStat || [])]
           const uniqueNotifs = Array.from(new Map(allNotifs.map((n) => [n.id, n])).values())
           const notificationsData = uniqueNotifs.sort(
             (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
           )
-
-          console.log("[v0] ===== NOTIFICATION QUERY DEBUG =====")
-          console.log("[v0] Entry ID:", entry.id)
-          console.log("[v0] Entry Player:", entry.player?.name)
-          console.log("[v0] Notifications by statistics_entry_id:", notifsByStatEntry?.length || 0)
-          console.log("[v0] Notifications by leg_statistics_id:", notifsByLegStat?.length || 0)
-          console.log("[v0] Total unique notifications:", notificationsData.length)
-          console.log("[v0] Full notifications data:", JSON.stringify(notificationsData, null, 2))
-          console.log("[v0] ===================================")
 
           const recipients = await Promise.all(
             (notificationsData || []).map(async (n: any) => {
@@ -216,8 +251,6 @@ export default function AdminStatisticsMonitorPage() {
             lastSent: notificationsData?.[0]?.created_at || null,
             recipients,
           }
-
-          console.log("[v0] Notification info for", entry.player?.name, ":", notificationInfo)
 
           return {
             id: entry.id,
@@ -248,6 +281,8 @@ export default function AdminStatisticsMonitorPage() {
             is_substitute: entry.is_substitute,
             created_by: entry.created_by,
             team_captains: teamCaptains,
+            team_name: teamName,
+            team_id: teamId,
             notificationInfo,
           }
         }),
@@ -325,34 +360,25 @@ export default function AdminStatisticsMonitorPage() {
     setNotificationStatus(null)
 
     try {
-      // Get player's team members (captains and co-captains)
-      const { data: teamMemberData } = await supabase
-        .from("team_members")
-        .select("team_id")
-        .eq("player_id", selectedEntry.player_id)
-        .limit(1)
-        .single()
-
-      if (!teamMemberData?.team_id) {
+      if (!selectedEntry.team_id) {
         throw new Error("Kein Team für diesen Spieler gefunden")
       }
 
-      // Get all captains and co-captains for this team
       const { data: captainsData } = await supabase
         .from("team_members")
         .select("player_id")
-        .eq("team_id", teamMemberData.team_id)
-        .in("role", ["Captain", "Co-Captain"])
+        .eq("team_id", selectedEntry.team_id)
+        .eq("role", "Captain")
 
       if (!captainsData || captainsData.length === 0) {
-        throw new Error("Keine Kapitäne für dieses Team gefunden")
+        throw new Error("Kein Kapitän für dieses Team gefunden")
       }
 
       const notifications = captainsData.map((captain) => ({
         recipient_player_id: captain.player_id,
         statistics_entry_id: selectedEntry.id,
         message: notificationMessage.trim(),
-        admin_note: `Fehlerhafte Statistik für ${selectedEntry.player_name} - ${getTotalLegs(selectedEntry)} Legs`,
+        admin_note: `Fehlerhafte Statistik für ${selectedEntry.player_name} (${selectedEntry.team_name}) - ${getTotalLegs(selectedEntry)} Legs`,
       }))
 
       const { error: insertError } = await supabase.from("notifications").insert(notifications)
@@ -361,7 +387,7 @@ export default function AdminStatisticsMonitorPage() {
 
       setNotificationStatus({
         type: "success",
-        message: `Benachrichtigung erfolgreich an ${captainsData.length} Team-Verantwortliche gesendet!`,
+        message: `Benachrichtigung erfolgreich an ${captainsData.length} Kapitän${captainsData.length > 1 ? "e" : ""} gesendet!`,
       })
 
       await fetchStatistics()
@@ -610,10 +636,18 @@ export default function AdminStatisticsMonitorPage() {
 
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center space-x-2 text-gray-600">
+                            <Users className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" />
+                            <div className="text-sm">
+                              <div className="font-medium text-gray-900">Team:</div>
+                              <div className="text-gray-700">{entry.team_name}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2 text-gray-600">
                             <Crown className="h-4 w-4 mt-0.5 flex-shrink-0 text-yellow-600" />
-                            <div>
-                              <span className="font-medium">Team-Verantwortliche:</span>
-                              <div className="text-gray-900 font-semibold">{entry.team_captains}</div>
+                            <div className="text-sm">
+                              <div className="font-medium text-gray-900">Kapitän:</div>
+                              <div className="text-gray-700">{entry.team_captains}</div>
                             </div>
                           </div>
 
@@ -729,14 +763,20 @@ export default function AdminStatisticsMonitorPage() {
                     )}
 
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Team-Verantwortliche</h4>
+                      <h4 className="font-medium text-gray-900 mb-2">Team</h4>
+                      <div className="flex items-start space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <Users className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="font-medium text-blue-900">{selectedEntry.team_name}</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Kapitän</h4>
                       <div className="flex items-start space-x-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                         <Crown className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                         <div className="font-medium text-yellow-900">{selectedEntry.team_captains}</div>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Einer der Team-Verantwortlichen hat diese Statistik eingetragen
-                      </p>
+                      <p className="text-xs text-gray-500 mt-2">Der Kapitän ist für diese Statistik verantwortlich</p>
                     </div>
 
                     <div>
@@ -823,10 +863,10 @@ export default function AdminStatisticsMonitorPage() {
                         <MessageSquare className="h-4 w-4 mr-2" />
                         {selectedEntry.notificationInfo && selectedEntry.notificationInfo.total > 0
                           ? "Erneut Benachrichtigung senden"
-                          : "Benachrichtigung an Team-Verantwortliche senden"}
+                          : "Benachrichtigung an Kapitän senden"}
                       </Button>
                       <p className="text-xs text-gray-500 mt-2 text-center">
-                        Sende eine Nachricht an die Kapitäne über diesen Eintrag
+                        Sende eine Nachricht an den Kapitän über diesen Eintrag
                       </p>
                     </div>
                   </CardContent>
@@ -851,11 +891,22 @@ export default function AdminStatisticsMonitorPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {selectedEntry && (
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 mb-3">
+                <div className="flex items-start gap-2 mb-2">
+                  <Users className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900">Team:</div>
+                    <div className="text-gray-700">{selectedEntry.team_name}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {selectedEntry && (
               <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                 <div className="flex items-start gap-2 mb-2">
                   <Crown className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
                   <div className="text-sm">
-                    <div className="font-medium text-gray-900">Empfänger:</div>
+                    <div className="font-medium text-gray-900">Empfänger (Kapitän):</div>
                     <div className="text-gray-700">{selectedEntry.team_captains}</div>
                   </div>
                 </div>
@@ -875,7 +926,7 @@ export default function AdminStatisticsMonitorPage() {
                 rows={5}
                 className="resize-none"
               />
-              <p className="text-xs text-gray-500 mt-1">Diese Nachricht wird an alle Team-Verantwortlichen gesendet</p>
+              <p className="text-xs text-gray-500 mt-1">Diese Nachricht wird an den Kapitän gesendet</p>
             </div>
 
             {notificationStatus && (

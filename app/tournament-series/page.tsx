@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
+import Image from "next/image"
 import {
   Trophy,
   Users,
@@ -34,6 +35,7 @@ interface SeriesStanding {
   total_matches_played: number
   total_matches_won: number
   total_matches_lost: number
+  profile_picture_url?: string
 }
 
 interface NemesisData {
@@ -201,6 +203,18 @@ function MobilePlayerCard({
         <div className="flex items-center space-x-3 min-w-0 flex-1 mr-3">
           <div className={getPositionBadge(position)}>{position}</div>
           {isTopThree && getPositionIcon(position)}
+
+          <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 flex-shrink-0">
+            <Image
+              src={player.profile_picture_url || "/placeholder-user.jpg"}
+              alt={`Profilbild von ${player.player_name}`}
+              width={48}
+              height={48}
+              className="object-cover"
+              unoptimized={true}
+            />
+          </div>
+
           <div className="min-w-0 flex-1 overflow-hidden">
             <div
               className={`text-sm sm:text-base font-bold ${isTopThree ? "text-gray-900" : "text-gray-700"}
@@ -453,6 +467,21 @@ export default function TournamentSeriesPage() {
 
       if (error) throw error
 
+      const { data: profilePictures, error: profileError } = await supabase
+        .from("spieldatenbank")
+        .select("name, profile_picture_url")
+
+      if (profileError) {
+        console.error("Error fetching profile pictures:", profileError)
+      }
+
+      const profilePictureMap = new Map<string, string>()
+      profilePictures?.forEach((profile: any) => {
+        if (profile.profile_picture_url) {
+          profilePictureMap.set(profile.name.toLowerCase(), profile.profile_picture_url)
+        }
+      })
+
       const mappedData =
         data?.map((row: any) => ({
           player_name: row.player_name,
@@ -466,6 +495,7 @@ export default function TournamentSeriesPage() {
           total_matches_played: row.total_matches_played,
           total_matches_won: row.total_matches_won,
           total_matches_lost: row.total_matches_lost,
+          profile_picture_url: profilePictureMap.get(row.player_name.toLowerCase()) || undefined,
         })) || []
 
       mappedData.sort((a, b) => {

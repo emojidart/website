@@ -1,29 +1,104 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
+import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
-import { useDartData } from "@/hooks/use-dart-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { PlayerProfileCard } from "@/components/player-profile-card"
-import { User, Search, AlertCircle, Users, UserCheck, UserX, Trophy } from "lucide-react"
+import { User, Search, AlertCircle, Users, UserCheck, Trophy } from "lucide-react"
 import Image from "next/image"
-import type { CombinedPlayerData } from "@/hooks/use-dart-data"
-import * as VisuallyHidden from "@radix-ui/react-visually-hidden" // Import VisuallyHidden
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden"
+
+interface PlayerData {
+  player_name: string
+  placement_points: number
+  bonus_points: number
+  total_legs_won: number
+  total_legs_lost: number
+  tournaments_played: number
+  total_matches_played: number
+  total_matches_won: number
+  total_matches_lost: number
+  total_points: number
+  profile_picture_url?: string
+}
 
 export default function PlayersPage() {
-  const { combinedPlayers, loading, error } = useDartData()
-  const [selectedPlayer, setSelectedPlayer] = useState<CombinedPlayerData | null>(null)
+  const [players, setPlayers] = useState<PlayerData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerData | null>(null)
   const [selectedPlayerRank, setSelectedPlayerRank] = useState<number | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
 
-  // Sort combinedPlayers once to get the global ranking
-  const sortedCombinedPlayers = [...combinedPlayers].sort((a, b) => b.combinedScore - a.combinedScore)
+  useEffect(() => {
+    fetchPlayers()
+  }, [])
 
-  const filteredPlayers = sortedCombinedPlayers.filter((player) =>
-    player.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  const fetchPlayers = async () => {
+    try {
+      setLoading(true)
+
+      const { data, error: fetchError } = await supabase
+        .from("tournament_series_aggregated")
+        .select(
+          "player_name, placement_points, bonus_points, total_legs_won, total_legs_lost, tournaments_played, total_matches_played, total_matches_won, total_matches_lost",
+        )
+
+      if (fetchError) throw fetchError
+
+      const { data: profileData, error: profileError } = await supabase
+        .from("spieldatenbank")
+        .select("name, profile_picture_url")
+
+      if (profileError) {
+        console.error("Error fetching profile pictures:", profileError)
+      }
+
+      const profileMap = new Map<string, string>()
+      profileData?.forEach((profile) => {
+        if (profile.profile_picture_url) {
+          profileMap.set(profile.name.toLowerCase(), profile.profile_picture_url)
+        }
+      })
+
+      const mappedData =
+        data?.map((row: any) => ({
+          player_name: row.player_name,
+          placement_points: row.placement_points,
+          bonus_points: row.bonus_points,
+          total_legs_won: row.total_legs_won,
+          total_legs_lost: row.total_legs_lost,
+          tournaments_played: row.tournaments_played,
+          total_matches_played: row.total_matches_played,
+          total_matches_won: row.total_matches_won,
+          total_matches_lost: row.total_matches_lost,
+          total_points: row.placement_points + row.total_legs_won + row.bonus_points,
+          profile_picture_url: profileMap.get(row.player_name.toLowerCase()) || undefined, // Add profile picture
+        })) || []
+
+      // Sort by total points
+      mappedData.sort((a, b) => {
+        if (b.total_points !== a.total_points) return b.total_points - a.total_points
+        if (b.total_legs_won !== a.total_legs_won) return b.total_legs_won - a.total_legs_won
+        if (b.placement_points !== a.placement_points) return b.placement_points - a.placement_points
+        return a.tournaments_played - b.tournaments_played
+      })
+
+      setPlayers(mappedData)
+    } catch (err) {
+      console.error("Error fetching players:", err)
+      setError(err instanceof Error ? err.message : "Fehler beim Laden der Spielerdaten")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredPlayers = players.filter((player) =>
+    player.player_name.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   if (loading) {
@@ -57,18 +132,15 @@ export default function PlayersPage() {
     )
   }
 
-  const handlePlayerClick = (player: CombinedPlayerData) => {
-    // Find the rank of the clicked player in the globally sorted list
-    const rank = sortedCombinedPlayers.findIndex((p) => p.name === player.name) + 1
+  const handlePlayerClick = (player: PlayerData) => {
+    const rank = players.findIndex((p) => p.player_name === player.player_name) + 1
     setSelectedPlayer(player)
     setSelectedPlayerRank(rank)
   }
 
-  // Calculate overall stats for the hero section
-  const totalPlayersCount = combinedPlayers.length
-  const activePlayersCount = combinedPlayers.filter((p) => !p.is_blocked).length // Assuming is_blocked exists
-  const blockedPlayersCount = combinedPlayers.filter((p) => p.is_blocked).length // Assuming is_blocked exists
-  const qualifiedForFinalsCount = combinedPlayers.filter((player) => player.totalParticipations >= 10).length
+  const totalPlayersCount = players.length
+  const activePlayersCount = players.filter((p) => p.tournaments_played > 0).length
+  const qualifiedForFinalsCount = players.filter((player) => player.tournaments_played >= 10).length
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
@@ -92,10 +164,10 @@ export default function PlayersPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-lg sm:text-xl font-medium mb-10 opacity-90"
             >
-              Finde alle Spieler der Competition 2025 
+              Finde alle Spieler der Competition 2025
             </motion.p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -123,26 +195,14 @@ export default function PlayersPage() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.4 }}
-                className="bg-white/15 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg flex flex-col items-center justify-center"
-              >
-                <div className="p-3 rounded-full bg-white/20 mb-3">
-                  <UserX className="h-6 w-6 text-white" />
-                </div>
-                <div className="text-4xl font-bold mb-1">{blockedPlayersCount}</div>
-                <div className="text-sm opacity-80">Gesperrte Spieler</div>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3, delay: 0.5 }}
                 className="bg-white/15 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg flex flex-col items-center justify-center"
               >
                 <div className="p-3 rounded-full bg-white/20 mb-3">
-                  <Trophy className="h-6 w-6 text-white" /> {/* Changed icon to Trophy */}
+                  <Trophy className="h-6 w-6 text-white" />
                 </div>
                 <div className="text-4xl font-bold mb-1">{qualifiedForFinalsCount}</div>
-                <div className="text-sm opacity-80">Für Finale qualifiziert</div> {/* Changed text */}
+                <div className="text-sm opacity-80">Für Finale qualifiziert</div>
               </motion.div>
             </div>
           </div>
@@ -187,11 +247,10 @@ export default function PlayersPage() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {filteredPlayers.map((player) => {
-                      // Find the rank of the current player in the globally sorted list
-                      const playerRank = sortedCombinedPlayers.findIndex((p) => p.name === player.name) + 1
+                      const playerRank = players.findIndex((p) => p.player_name === player.player_name) + 1
                       return (
                         <motion.div
-                          key={player.name}
+                          key={player.player_name}
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ duration: 0.2 }}
@@ -207,21 +266,25 @@ export default function PlayersPage() {
                               {player.profile_picture_url ? (
                                 <Image
                                   src={player.profile_picture_url || "/placeholder.svg"}
-                                  alt={`Profilbild von ${player.name}`}
+                                  alt={`Profilbild von ${player.player_name}`}
                                   width={64}
                                   height={64}
                                   className="object-cover"
                                   unoptimized={true}
                                 />
                               ) : (
-                                <span className="text-3xl font-bold text-gray-600">
-                                  {player.name.charAt(0).toUpperCase()}
-                                </span>
+                                <Image
+                                  src="/placeholder-user.JPG"
+                                  alt="Dummy Profilbild"
+                                  width={64}
+                                  height={64}
+                                  className="object-cover"
+                                />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-lg font-semibold text-gray-900 truncate">{player.name}</h3>
-                              <p className="text-sm text-gray-500">Gesamt Score: {player.combinedScore}</p>
+                              <h3 className="text-lg font-semibold text-gray-900 truncate">{player.player_name}</h3>
+                              <p className="text-sm text-gray-500">Gesamt Score: {player.total_points}</p>
                               <p className="text-xs text-gray-400">Rang: {playerRank}</p>
                             </div>
                           </div>
@@ -237,16 +300,13 @@ export default function PlayersPage() {
           {/* Player Profile Dialog */}
           <Dialog open={!!selectedPlayer} onOpenChange={() => setSelectedPlayer(null)}>
             <DialogContent className="max-w-md max-h-[90vh] p-4 overflow-y-auto rounded-xl">
-              {" "}
-              {/* Changed p-0 to p-4 */}
               <VisuallyHidden.Root>
-                <DialogTitle>Spielerprofil von {selectedPlayer?.name}</DialogTitle>
+                <DialogTitle>Spielerprofil von {selectedPlayer?.player_name}</DialogTitle>
                 <DialogDescription>Detaillierte Informationen und Statistiken des Spielers.</DialogDescription>
               </VisuallyHidden.Root>
               {selectedPlayer && selectedPlayerRank !== null && (
                 <PlayerProfileCard player={selectedPlayer} rank={selectedPlayerRank} className="w-full" />
               )}
-              {/* Removed the custom close button, relying on shadcn's default */}
             </DialogContent>
           </Dialog>
         </section>

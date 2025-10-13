@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { RotateCcw, Check } from "lucide-react"
@@ -485,6 +486,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
   const [savingToSeries, setSavingToSeries] = useState(false)
   const [successDialogOpen, setSuccessDialogOpen] = useState(false)
   const [speechEnabled, setSpeechEnabled] = useState(false)
+  const [profilePictures, setProfilePictures] = useState<Record<string, string>>({})
   const { announce } = useSpeechAnnouncer({ enabled: speechEnabled })
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -509,6 +511,34 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
     }
     return initialMatches
   })
+
+  useEffect(() => {
+    const fetchProfilePictures = async () => {
+      try {
+        const { data, error } = await supabase.from("spieldatenbank").select("name, profile_picture_url")
+
+        if (error) {
+          console.error("Error fetching profile pictures:", error)
+          return
+        }
+
+        if (data) {
+          const picturesMap: Record<string, string> = {}
+          data.forEach((player) => {
+            if (player.name && player.profile_picture_url) {
+              picturesMap[player.name.toLowerCase()] = player.profile_picture_url
+            }
+          })
+          setProfilePictures(picturesMap)
+          console.log("[v0] Profile pictures loaded:", Object.keys(picturesMap).length)
+        }
+      } catch (error) {
+        console.error("Error fetching profile pictures:", error)
+      }
+    }
+
+    fetchProfilePictures()
+  }, [])
 
   useEffect(() => {
     if (!loading && tournamentId) {
@@ -1512,6 +1542,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
                 onStartMatch={startMatch}
                 onReset={resetMatch}
                 onRepeatCall={repeatCall}
+                profilePictures={profilePictures}
               />
             ))}
           </div>
@@ -1528,6 +1559,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
                 onReset={resetMatch}
                 onRepeatCall={repeatCall}
                 isLoser
+                profilePictures={profilePictures}
               />
             ))}
           </div>
@@ -1543,6 +1575,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
                 onStartMatch={startMatch}
                 onReset={resetMatch}
                 onRepeatCall={repeatCall}
+                profilePictures={profilePictures}
               />
             ))}
           </div>
@@ -1559,6 +1592,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
                 onReset={resetMatch}
                 onRepeatCall={repeatCall}
                 isLoser
+                profilePictures={profilePictures}
               />
             ))}
           </div>
@@ -1573,6 +1607,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
               onReset={resetMatch}
               onRepeatCall={repeatCall}
               isLoser
+              profilePictures={profilePictures}
             />
           </div>
 
@@ -1585,6 +1620,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
               onStartMatch={startMatch}
               onReset={resetMatch}
               onRepeatCall={repeatCall}
+              profilePictures={profilePictures}
             />
           </div>
 
@@ -1598,6 +1634,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
               onReset={resetMatch}
               onRepeatCall={repeatCall}
               isLoser
+              profilePictures={profilePictures}
             />
           </div>
 
@@ -1612,6 +1649,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
               onReset={resetMatch}
               onRepeatCall={repeatCall}
               isGrandFinal
+              profilePictures={profilePictures}
             />
           </div>
 
@@ -1632,6 +1670,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
                   onReset={resetMatch}
                   onRepeatCall={repeatCall}
                   isGrandFinal
+                  profilePictures={profilePictures}
                 />
               </div>
             )}
@@ -1768,6 +1807,7 @@ interface MatchCardProps {
   onStartMatch: (matchId: number) => void
   onReset: (matchId: number) => void
   onRepeatCall: (matchId: number) => void
+  profilePictures: Record<string, string>
   isLoser?: boolean
   isGrandFinal?: boolean
 }
@@ -1779,6 +1819,7 @@ function MatchCard({
   onStartMatch,
   onReset,
   onRepeatCall,
+  profilePictures,
   isLoser,
   isGrandFinal,
 }: MatchCardProps) {
@@ -1793,6 +1834,12 @@ function MatchCard({
   const hasFreilos = isFreilos(match.player1) || isFreilos(match.player2)
 
   const currentCall = match.callCount || 0
+
+  const getProfilePicture = (playerName: string): string => {
+    if (!playerName || isFreilos(playerName)) return "/placeholder-user.png"
+    const picture = profilePictures[playerName.toLowerCase()]
+    return picture || "/placeholder-user.jpg"
+  }
 
   return (
     <Card
@@ -1856,6 +1903,12 @@ function MatchCard({
         )}
       >
         <div className="flex-1 min-w-0 flex items-center gap-2">
+          {match.player1 && !isFreilos(match.player1) && (
+            <Avatar className="h-8 w-8 flex-shrink-0">
+              <AvatarImage src={getProfilePicture(match.player1) || "/placeholder.svg"} alt={match.player1} />
+              <AvatarFallback>{match.player1.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+          )}
           <p
             className={cn(
               "text-sm truncate",
@@ -1890,6 +1943,12 @@ function MatchCard({
         )}
       >
         <div className="flex-1 min-w-0 flex items-center gap-2">
+          {match.player2 && !isFreilos(match.player2) && (
+            <Avatar className="h-8 w-8 flex-shrink-0">
+              <AvatarImage src={getProfilePicture(match.player2) || "/placeholder.svg"} alt={match.player2} />
+              <AvatarFallback>{match.player2.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+          )}
           <p
             className={cn(
               "text-sm truncate",
