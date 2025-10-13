@@ -307,6 +307,76 @@ function MobilePlayerCard({
   )
 }
 
+function MobileTournamentRankingCard({ ranking, index }: { ranking: any; index: number }) {
+  const isTopThree = ranking.placement <= 3
+  const totalPoints = ranking.placement_points + ranking.bonus_points + ranking.legs_won
+
+  return (
+    <div
+      className={`bg-white rounded-lg border-2 p-3 ${
+        isTopThree ? "border-yellow-400 bg-gradient-to-r from-yellow-50 to-white" : "border-gray-200"
+      }`}
+    >
+      {/* Header with placement and name */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div
+            className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm flex-shrink-0 ${getPlacementColor(ranking.placement)}`}
+          >
+            {getPlacementIcon(ranking.placement) || ranking.placement}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-bold text-gray-900 text-sm truncate" title={ranking.player_name}>
+              {ranking.player_name}
+            </div>
+            {ranking.form && (
+              <div className="flex gap-0.5 mt-1">
+                {ranking.form.split(",").map((result: string, idx: number) => (
+                  <span
+                    key={idx}
+                    className={`inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold ${
+                      result === "W" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                    }`}
+                  >
+                    {result}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex-shrink-0">
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg px-3 py-1 rounded-lg shadow-md">
+            {totalPoints}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-yellow-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-yellow-600 font-medium">Punkte</div>
+          <div className="text-base font-bold text-yellow-700">{ranking.placement_points}</div>
+        </div>
+        {ranking.bonus_points > 0 && (
+          <div className="bg-amber-50 rounded-lg p-2 text-center">
+            <div className="text-xs text-amber-600 font-medium">Bonus</div>
+            <div className="text-base font-bold text-amber-700">+{ranking.bonus_points}</div>
+          </div>
+        )}
+        <div className="bg-green-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-green-600 font-medium">Legs W</div>
+          <div className="text-base font-bold text-green-700">{ranking.legs_won}</div>
+        </div>
+        <div className="bg-red-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-red-600 font-medium">Legs L</div>
+          <div className="text-base font-bold text-red-700">{ranking.legs_lost}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function TournamentSeriesPage() {
   const [standings, setStandings] = useState<SeriesStanding[]>([])
   const [loading, setLoading] = useState(true)
@@ -766,41 +836,45 @@ export default function TournamentSeriesPage() {
                             expandedTournament === tournament.tournament_id ? null : tournament.tournament_id,
                           )
                         }
-                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        className="w-full p-3 sm:p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center justify-center w-12 h-12 bg-red-500 text-white rounded-full font-bold">
+                        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                          <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-red-500 text-white rounded-full font-bold text-sm sm:text-base flex-shrink-0">
                             {tournaments.length - index}
                           </div>
-                          <div className="text-left">
-                            <h3 className="text-xl font-bold text-gray-900">{tournament.tournament_name}</h3>
-                            <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                          <div className="text-left min-w-0 flex-1">
+                            <h3 className="text-sm sm:text-xl font-bold text-gray-900 truncate">
+                              {tournament.tournament_name}
+                            </h3>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1 text-xs sm:text-sm text-gray-600">
                               <span className="flex items-center gap-1">
-                                <Medal className="w-4 h-4" />
-                                {getTournamentTypeLabel(tournament.tournament_type)}
+                                <Medal className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                                <span className="truncate">{getTournamentTypeLabel(tournament.tournament_type)}</span>
                               </span>
                               <span className="flex items-center gap-1">
-                                <Users className="w-4 h-4" />
+                                <Users className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                                 {tournament.rankings?.length || 0} Spieler
                               </span>
                               <span className="flex items-center gap-1">
-                                <Calendar className="w-4 h-4" />
+                                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                                 {new Date(tournament.tournament_date).toLocaleDateString("de-DE")}
                               </span>
                             </div>
                           </div>
                         </div>
                         {expandedTournament === tournament.tournament_id ? (
-                          <ChevronUp className="w-6 h-6 text-gray-400" />
+                          <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0" />
                         ) : (
-                          <ChevronDown className="w-6 h-6 text-gray-400" />
+                          <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0" />
                         )}
                       </button>
 
                       {expandedTournament === tournament.tournament_id && tournament.rankings && (
-                        <div className="border-t-2 border-gray-200 p-6 bg-gray-50">
-                          <h4 className="text-lg font-bold text-gray-900 mb-4">Platzierungen</h4>
-                          <div className="bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
+                        <div className="border-t-2 border-gray-200 p-3 sm:p-6 bg-gray-50">
+                          <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Platzierungen</h4>
+
+                          {/* Desktop table view - hidden on mobile */}
+                          <div className="hidden lg:block bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
                             <div className="grid grid-cols-[80px_1fr_auto_100px_80px_100px_100px_120px] gap-4 p-4 bg-gray-100 border-b-2 border-gray-200 font-bold text-sm text-gray-700">
                               <div className="text-center">Platz</div>
                               <div>Spieler</div>
@@ -866,6 +940,13 @@ export default function TournamentSeriesPage() {
                               ))}
                             </div>
                           </div>
+
+                          {/* Mobile card view - shown on mobile and tablet */}
+                          <div className="lg:hidden space-y-3">
+                            {tournament.rankings.map((ranking, rankIndex) => (
+                              <MobileTournamentRankingCard key={rankIndex} ranking={ranking} index={rankIndex} />
+                            ))}
+                          </div>
                         </div>
                       )}
                     </motion.div>
@@ -879,7 +960,7 @@ export default function TournamentSeriesPage() {
               </div>
 
               <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
-                <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600">
+                <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-0">
                   <span>Gesamt: {tournaments.length} Turniere</span>
                   <span>
                     Zuletzt hinzugefügt:{" "}
