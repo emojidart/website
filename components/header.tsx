@@ -123,7 +123,7 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
               <DropdownMenuItem asChild>
-                <Link href="/tabelle-lion-cup" className="w-full cursor-pointer">
+                <Link href="/tournament-series" className="w-full cursor-pointer">
                   Tabelle
                 </Link>
               </DropdownMenuItem>
@@ -362,7 +362,7 @@ export function Header() {
                   <span className="ml-2 bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">NEU</span>
                 </div>
                 <Link
-                  href="/tabelle-lion-cup"
+                  href="/tournament-series"
                   className={`flex items-center text-base font-medium rounded-lg px-6 py-2 ml-2 transition-all duration-200 ${
                     pathname === "/tabelle-lion-cup"
                       ? "bg-orange-50 text-orange-600 font-bold"
