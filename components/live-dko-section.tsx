@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
-import { Trophy, Zap, Clock, Target, RefreshCcw } from "lucide-react"
+import { Trophy, Zap, Clock, Target, RefreshCcw, Calendar } from "lucide-react"
 
 interface Match {
   id: number
@@ -22,6 +22,15 @@ interface Match {
 interface ActiveTournament {
   tournament_id: string
   tournament_type: string
+  status: string
+  tournament_name: string
+  created_at: string
+}
+
+interface Ranking {
+  player_name: string
+  placement: number
+  eliminated_at: string
 }
 
 const isFreilos = (playerName: string): boolean => {
@@ -48,13 +57,14 @@ export default function LiveDKOSection() {
   const [loading, setLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
   const [activeTournament, setActiveTournament] = useState<ActiveTournament | null>(null)
+  const [rankings, setRankings] = useState<Ranking[]>([])
 
   useEffect(() => {
     const loadActiveTournament = async () => {
       try {
         const { data, error } = await supabase
           .from("tournaments_status")
-          .select("tournament_id, tournament_type")
+          .select("tournament_id, tournament_type, status, tournament_name, created_at")
           .eq("status", "active")
           .limit(1)
           .single()
@@ -68,6 +78,9 @@ export default function LiveDKOSection() {
           setActiveTournament({
             tournament_id: data.tournament_id,
             tournament_type: data.tournament_type,
+            status: data.status,
+            tournament_name: data.tournament_name,
+            created_at: data.created_at,
           })
         }
       } catch (error) {
@@ -93,11 +106,24 @@ export default function LiveDKOSection() {
               setActiveTournament({
                 tournament_id: data.tournament_id,
                 tournament_type: data.tournament_type,
+                status: data.status,
+                tournament_name: data.tournament_name,
+                created_at: data.created_at,
               })
               setLoading(false)
             } else if (data.status === "cancelled" || data.status === "completed") {
-              setActiveTournament(null)
-              setMatches({})
+              if (data.status === "completed") {
+                setActiveTournament({
+                  tournament_id: data.tournament_id,
+                  tournament_type: data.tournament_type,
+                  status: data.status,
+                  tournament_name: data.tournament_name,
+                  created_at: data.created_at,
+                })
+              } else {
+                setActiveTournament(null)
+                setMatches({})
+              }
             }
           } else if (payload.eventType === "DELETE") {
             setActiveTournament(null)
@@ -109,7 +135,7 @@ export default function LiveDKOSection() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, []) // Removed activeTournament dependency to prevent subscription recreation
+  }, [])
 
   useEffect(() => {
     if (!activeTournament) return
@@ -141,7 +167,6 @@ export default function LiveDKOSection() {
           setMatches(matchesData)
         }
       } catch (error) {
-        console.error("Error loading matches:", error)
       } finally {
         setLoading(false)
       }
@@ -191,6 +216,68 @@ export default function LiveDKOSection() {
     }
   }, [activeTournament])
 
+  useEffect(() => {
+    if (!activeTournament) return
+
+    const loadRankings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("dko_rankings")
+          .select("player_name, placement, eliminated_at")
+          .eq("tournament_type", activeTournament.tournament_type)
+          .eq("tournament_id", activeTournament.tournament_id)
+          .order("placement", { ascending: true })
+
+        if (error) throw error
+
+        setRankings(data || [])
+      } catch (error) {}
+    }
+
+    loadRankings()
+  }, [activeTournament])
+
+  useEffect(() => {
+    if (!activeTournament) return
+
+    const channel = supabase
+      .channel("dko_rankings_updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "dko_rankings",
+          filter: `tournament_id=eq.${activeTournament.tournament_id}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const newRanking = payload.new as Ranking
+            setRankings((prev) => {
+              const exists = prev.some((r) => r.player_name === newRanking.player_name)
+              if (exists) return prev
+              return [...prev, newRanking].sort((a, b) => a.placement - b.placement)
+            })
+          } else if (payload.eventType === "DELETE") {
+            const deletedRanking = payload.old as Ranking
+            setRankings((prev) => prev.filter((r) => r.player_name !== deletedRanking.player_name))
+          } else if (payload.eventType === "UPDATE") {
+            const updatedRanking = payload.new as Ranking
+            setRankings((prev) =>
+              prev
+                .map((r) => (r.player_name === updatedRanking.player_name ? updatedRanking : r))
+                .sort((a, b) => a.placement - b.placement),
+            )
+          }
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [activeTournament])
+
   const activeMatches = Object.values(matches).filter((m) => m.machineNumber && !m.winner)
   const completedMatches = Object.values(matches)
     .filter((m) => m.winner)
@@ -203,6 +290,7 @@ export default function LiveDKOSection() {
     .slice(0, 4)
 
   const tournamentWinner = matches[31]?.winner || matches[30]?.winner
+  const isTournamentCompleted = activeTournament?.status === "completed"
   const completedCount = Object.values(matches).filter((m) => m.winner).length
 
   if (loading) {
@@ -234,12 +322,24 @@ export default function LiveDKOSection() {
             <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
           </div>
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
-            <span className="block text-white">DKO TOURNAMENT</span>
-            <span className="block text-orange-200">Live Bracket</span>
+            <span className="block text-white">{activeTournament.tournament_name}</span>
+            <span className="block text-orange-200 text-xl sm:text-3xl md:text-4xl mt-2">
+              {activeTournament.tournament_type.replace("_", " ").toUpperCase()}
+            </span>
           </h2>
-          <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-2 sm:mb-4">
-            {activeTournament.tournament_type.replace("_", " ").toUpperCase()}
-          </p>
+          <div className="flex items-center justify-center gap-2 text-orange-100 mb-4">
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-sm sm:text-base font-medium">
+              Gestartet:{" "}
+              {new Date(activeTournament.created_at + "Z").toLocaleString("de-DE", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
           <div className="flex items-center justify-center gap-2 mt-4">
             <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
             <span className="text-sm sm:text-base font-semibold text-white">LIVE</span>
@@ -247,7 +347,7 @@ export default function LiveDKOSection() {
         </div>
       </motion.div>
 
-      {tournamentWinner ? (
+      {isTournamentCompleted && tournamentWinner ? (
         <motion.div variants={itemVariants}>
           <Card className="overflow-hidden shadow-lg border-2 border-orange-500">
             <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6">
@@ -267,7 +367,7 @@ export default function LiveDKOSection() {
           <Card className="overflow-hidden shadow-lg">
             <CardContent className="p-6 text-center">
               <div className="bg-orange-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
-                <Zap className="h-8 w-8 text-orange-600 mx-auto" />
+                <Zap className="h-8 w-8 sm:h-10 sm:w-10 text-orange-600 mx-auto" />
               </div>
               <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{activeMatches.length}</p>
               <p className="text-sm text-gray-600 font-medium">Aktive Spiele</p>
@@ -276,7 +376,7 @@ export default function LiveDKOSection() {
           <Card className="overflow-hidden shadow-lg">
             <CardContent className="p-6 text-center">
               <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
-                <Clock className="h-8 w-8 text-blue-600 mx-auto" />
+                <Clock className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600 mx-auto" />
               </div>
               <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{upcomingMatches.length}</p>
               <p className="text-sm text-gray-600 font-medium">Anstehend</p>
@@ -285,7 +385,7 @@ export default function LiveDKOSection() {
           <Card className="overflow-hidden shadow-lg">
             <CardContent className="p-6 text-center">
               <div className="bg-green-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
-                <Target className="h-8 w-8 text-green-600 mx-auto" />
+                <Target className="h-8 w-8 sm:h-10 sm:w-10 text-green-600 mx-auto" />
               </div>
               <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{completedCount}</p>
               <p className="text-sm text-gray-600 font-medium">Abgeschlossen</p>
@@ -419,6 +519,65 @@ export default function LiveDKOSection() {
                         </span>
                       </div>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {rankings.length > 0 && (
+        <motion.div variants={itemVariants} className="mb-8">
+          <Card className="overflow-hidden shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
+                Aktuelle Rangliste
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6">
+              <div className="space-y-2">
+                {rankings.map((ranking) => (
+                  <div
+                    key={`${ranking.placement}-${ranking.player_name}`}
+                    className={cn(
+                      "flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all hover:shadow-md",
+                      ranking.placement === 1 && "bg-yellow-50 border-yellow-400",
+                      ranking.placement === 2 && "bg-gray-100 border-gray-400",
+                      ranking.placement === 3 && "bg-orange-50 border-orange-400",
+                      ranking.placement > 3 && "bg-gradient-to-r from-gray-50 to-white border-gray-200",
+                    )}
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="flex-shrink-0">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-sm sm:text-base font-bold px-2 sm:px-3 py-1",
+                            ranking.placement === 1
+                              ? "bg-yellow-200 text-yellow-800 border-yellow-400"
+                              : ranking.placement === 2
+                                ? "bg-gray-200 text-gray-800 border-gray-400"
+                                : ranking.placement === 3
+                                  ? "bg-orange-100 text-orange-800 border-orange-400"
+                                  : "bg-gray-100 text-gray-700 border-gray-300",
+                          )}
+                        >
+                          {ranking.placement === 1
+                            ? "🥇"
+                            : ranking.placement === 2
+                              ? "🥈"
+                              : ranking.placement === 3
+                                ? "🥉"
+                                : `${ranking.placement}.`}
+                        </Badge>
+                      </div>
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">{ranking.player_name}</span>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      Platz {ranking.placement}
+                    </Badge>
                   </div>
                 ))}
               </div>

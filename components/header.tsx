@@ -92,14 +92,17 @@ export function Header() {
           </Link>
 
           <Link
-            href="/tournament"
-            className={`text-sm font-bold transition-colors uppercase ${
-              pathname === "/tournament"
+            href="/buffalo-steel-cup"
+            className={`text-sm font-bold transition-colors uppercase relative inline-flex items-center gap-2 ${
+              pathname === "/buffalo-steel-cup"
                 ? "text-red-600 border-b-2 border-red-600 pb-1"
                 : "text-gray-900 hover:text-red-600"
             }`}
           >
-            Kalender
+            <span className="whitespace-nowrap">🦬 Buffalo Steel Cup</span>
+            <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+              In Kürze
+            </span>
           </Link>
 
           <DropdownMenu>
@@ -142,7 +145,7 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className={`text-sm font-bold transition-colors uppercase px-3 py-1 h-auto ${
+                className={`text-sm font-bold transition-colors uppercase px-3 py-1 h-auto relative ${
                   isTurnierserieActive ? "text-red-600 border-b-2 border-red-600" : "text-gray-900 hover:text-red-600"
                 }`}
               >
@@ -338,16 +341,23 @@ export function Header() {
                 Startseite
               </Link>
 
-              <Link
-                href="/tournament"
-                className={`flex items-center text-base sm:text-lg font-medium rounded-lg px-4 py-3 transition-all duration-200 ${
-                  pathname === "/tournament"
-                    ? "bg-red-50 text-red-600 font-bold"
-                    : "text-gray-800 hover:text-red-600 hover:bg-red-50"
-                }`}
-              >
-                Kalender
-              </Link>
+              <div className="space-y-2">
+                <Link
+                  href="/buffalo-steel-cup"
+                  className={`flex items-center text-base font-medium rounded-lg px-4 py-2 transition-all duration-200 ${
+                    pathname === "/buffalo-steel-cup"
+                      ? "bg-red-50 text-red-600 font-bold"
+                      : "text-gray-700 hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="whitespace-nowrap">🦬 Buffalo Steel Cup</span>
+                    <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                      In Kürze
+                    </span>
+                  </span>
+                </Link>
+              </div>
 
               <div className="space-y-2">
                 <div className="text-sm font-bold text-orange-600 px-4 py-2 uppercase tracking-wide flex items-center">
