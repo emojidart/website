@@ -99,7 +99,7 @@ export function Header() {
                 : "text-gray-900 hover:text-red-600"
             }`}
           >
-            <span className="whitespace-nowrap">🦬 Buffalo Steel Cup</span>
+            <span className="whitespace-nowrap">🦬 Buffalo - Steel Cup</span>
             <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
               In Kürze
             </span>

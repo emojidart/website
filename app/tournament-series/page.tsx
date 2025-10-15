@@ -619,6 +619,44 @@ export default function TournamentSeriesPage() {
   const prizePoolFromAppearances = totalAppearances * 4
   const totalPrizePool = prizePoolFromParticipants + prizePoolFromAppearances
 
+  const TOTAL_TOURNAMENT_DAYS = 34
+  const completedTournaments = tournaments.length
+  const remainingTournaments = Math.max(0, TOTAL_TOURNAMENT_DAYS - completedTournaments)
+
+  // Calculate average participations per tournament
+  const avgParticipationsPerTournament = completedTournaments > 0 ? totalAppearances / completedTournaments : 0
+
+  // Predict future participations
+  const predictedFutureAppearances = Math.round(avgParticipationsPerTournament * remainingTournaments)
+  const predictedTotalAppearances = totalAppearances + predictedFutureAppearances
+
+  // Calculate predicted prize pool
+  const predictedPrizePoolFromAppearances = predictedTotalAppearances * 4
+  const predictedPrizePoolFromParticipants = totalParticipants * 5
+
+  // Determine current host sponsoring based on actual appearances
+  let currentHostSponsoring = 0
+  if (totalAppearances >= 501) {
+    currentHostSponsoring = 250
+  } else if (totalAppearances >= 1) {
+    currentHostSponsoring = 100
+  }
+
+  // Predict host sponsoring for final prize pool based on predicted appearances
+  let predictedHostSponsoring = 0
+  if (predictedTotalAppearances >= 501) {
+    predictedHostSponsoring = 250
+  } else if (predictedTotalAppearances > 0) {
+    predictedHostSponsoring = 100
+  }
+
+  // Calculate qualified players for finale fee
+  const predictedQualifiedPlayers = Math.round(totalParticipants * 0.6) // Estimate 60% will qualify
+  const finaleFeesTotal = predictedQualifiedPlayers * 5
+
+  const predictedTotalPrizePool =
+    predictedPrizePoolFromParticipants + predictedPrizePoolFromAppearances + predictedHostSponsoring + finaleFeesTotal
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
@@ -677,7 +715,7 @@ export default function TournamentSeriesPage() {
               </div>
 
               <p className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Gesamtwertung</p>
-              <p className="text-sm sm:text-base text-gray-500 mb-4">Live-Wertung aller Turnierteilnehmer</p>
+              <p className="text-sm sm:text-base text-gray-500 mb-4">Live-Wertung aller Teilnehmer</p>
 
               <div className="flex justify-center items-center gap-4">
                 <div className="h-1 w-12 bg-gradient-to-r from-red-500 to-yellow-500 rounded-full"></div>
@@ -721,6 +759,191 @@ export default function TournamentSeriesPage() {
                   </p>
                 </div>
                 <Sparkles className="h-5 w-5 text-yellow-700 flex-shrink-0" />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="px-4">
+          <motion.div
+            variants={cardVariants}
+            className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl shadow-2xl border-2 border-indigo-300 overflow-hidden"
+          >
+            <div className="text-center px-4 py-4 border-b-2 border-indigo-200 bg-gradient-to-r from-indigo-500 to-purple-600">
+              <h2 className="text-2xl sm:text-3xl font-black text-white mb-1 flex items-center justify-center gap-2">
+                <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8" />
+                PREISGELD PREDICTION
+              </h2>
+              <p className="text-sm sm:text-base text-indigo-100 font-semibold">
+                Hochrechnung basierend auf aktuellen Teilnehmern
+              </p>
+            </div>
+
+            <div className="text-center py-6 px-4">
+              <div className="inline-block">
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-3xl sm:text-4xl text-gray-600 font-bold">€</span>
+                  <span className="text-5xl sm:text-6xl md:text-7xl font-black bg-gradient-to-r from-indigo-600 to-purple-700 bg-clip-text text-transparent">
+                    {predictedTotalPrizePool.toFixed(2)}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-500 mt-2 font-medium">
+                  Geschätzter Endstand nach {TOTAL_TOURNAMENT_DAYS} Turniertagen + Finale
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 px-4 pb-4">
+              <div className="bg-white rounded-lg p-3 shadow-md border border-indigo-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <Calendar className="h-4 w-4 text-indigo-600" />
+                  <p className="text-xs font-semibold text-gray-600">Turniertage</p>
+                </div>
+                <p className="text-lg sm:text-xl font-bold text-indigo-700">
+                  {completedTournaments} / {TOTAL_TOURNAMENT_DAYS}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Noch {remainingTournaments} verbleibend</p>
+              </div>
+
+              <div className="bg-white rounded-lg p-3 shadow-md border border-green-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <Users className="h-4 w-4 text-green-600" />
+                  <p className="text-xs font-semibold text-gray-600">Ø Antritte/Turnier</p>
+                </div>
+                <p className="text-lg sm:text-xl font-bold text-green-700">
+                  {avgParticipationsPerTournament.toFixed(1)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Aktuell: {totalAppearances} gesamt</p>
+              </div>
+
+              <div className="bg-white rounded-lg p-3 shadow-md border border-purple-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="h-4 w-4 text-purple-600" />
+                  <p className="text-xs font-semibold text-gray-600">Prognostiziert</p>
+                </div>
+                <p className="text-lg sm:text-xl font-bold text-purple-700">{predictedTotalAppearances}</p>
+                <p className="text-xs text-gray-500 mt-1">Antritte bis Saisonende</p>
+              </div>
+
+              <div className="bg-white rounded-lg p-3 shadow-md border border-yellow-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <Award className="h-4 w-4 text-yellow-600" />
+                  <p className="text-xs font-semibold text-gray-600">Bonus</p>
+                </div>
+                <p className="text-lg sm:text-xl font-bold text-yellow-700">€ {predictedHostSponsoring.toFixed(2)}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {predictedTotalAppearances >= 501
+                    ? "Ab 501 Antritte"
+                    : predictedTotalAppearances >= 1
+                      ? "Bis 500 Antritte"
+                      : "Noch nicht erreicht"}
+                </p>
+              </div>
+            </div>
+
+            <div className="px-4 pb-4">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-300 mb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-green-600" />
+                    <p className="text-sm font-bold text-gray-800">Fortschritt zum €100 Bonus</p>
+                  </div>
+                  <div className="text-sm font-bold text-green-700">
+                    {totalAppearances >= 500 ? (
+                      <span className="flex items-center gap-1 text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        Erreicht!
+                      </span>
+                    ) : (
+                      <span>{totalAppearances} / 500</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="relative w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                  <div
+                    className={`h-4 rounded-full transition-all duration-500 ${
+                      totalAppearances >= 500
+                        ? "bg-gradient-to-r from-green-500 to-green-600"
+                        : "bg-gradient-to-r from-green-400 to-green-500"
+                    }`}
+                    style={{ width: `${Math.min((totalAppearances / 500) * 100, 100)}%` }}
+                  />
+                </div>
+
+                <div className="flex justify-between text-xs text-gray-600 mt-1">
+                  <span>0</span>
+                  <span className="text-green-600 font-semibold">500 (€100)</span>
+                </div>
+
+                <p className="text-xs text-gray-600 mt-2 text-center">
+                  {totalAppearances >= 500 ? (
+                    <span className="font-semibold text-green-700">✓ €100 Wirt-Bonus erreicht!</span>
+                  ) : (
+                    <span>
+                      Noch <span className="font-bold text-green-700">{500 - totalAppearances}</span> Antritte bis zum
+                      €100 Bonus
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg p-4 border-2 border-yellow-300">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-yellow-600" />
+                    <p className="text-sm font-bold text-gray-800">Fortschritt zum €250 Bonus</p>
+                  </div>
+                  <div className="text-sm font-bold text-yellow-700">
+                    {totalAppearances >= 501 ? (
+                      <span className="flex items-center gap-1 text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        Erreicht!
+                      </span>
+                    ) : totalAppearances >= 500 ? (
+                      <span>{totalAppearances} / 501</span>
+                    ) : (
+                      <span>0 / 501</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="relative w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                  <div
+                    className={`h-4 rounded-full transition-all duration-500 ${
+                      totalAppearances >= 501
+                        ? "bg-gradient-to-r from-green-500 to-green-600"
+                        : totalAppearances >= 500
+                          ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
+                          : "bg-gray-300"
+                    }`}
+                    style={{
+                      width: `${totalAppearances >= 500 ? Math.min(((totalAppearances - 500) / 1) * 100, 100) : 0}%`,
+                    }}
+                  />
+                </div>
+
+                <div className="flex justify-between text-xs text-gray-600 mt-1">
+                  <span>500 (€100)</span>
+                  <span className="text-yellow-700 font-semibold">501 (€250)</span>
+                </div>
+
+                <p className="text-xs text-gray-600 mt-2 text-center">
+                  {totalAppearances >= 501 ? (
+                    <span className="font-semibold text-green-700">
+                      🎉 Das maximale Bonus von €250 wurde erreicht!
+                    </span>
+                  ) : totalAppearances >= 500 ? (
+                    <span>
+                      Noch <span className="font-bold text-yellow-700">{501 - totalAppearances}</span> Antritt bis €250
+                    </span>
+                  ) : (
+                    <span>
+                      Aktuell: <span className="font-bold text-yellow-700">{totalAppearances}</span> Antritte • Noch{" "}
+                      <span className="font-bold text-yellow-700">{501 - totalAppearances}</span> Antritte bis €250
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
           </motion.div>
