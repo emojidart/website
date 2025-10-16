@@ -154,28 +154,16 @@ export default function MemberProfilePage() {
           if (notification.statistics_entry_id) {
             const { data: legData } = await supabase
               .from("leg_statistics")
-              .select(`
-                match_id, 
-                leg_number, 
-                player_legs_won, 
-                opponent_legs_won,
-                player_id
-              `)
+              .select(`match_id, leg_number, player_legs_won, opponent_legs_won, player_id`)
               .eq("id", notification.statistics_entry_id)
               .single()
 
             if (legData) {
               const { data: matchData } = await supabase
                 .from("matches")
-                .select(`
-                  match_date,
-                  home_team_type,
-                  away_team_type,
-                  home_team:teams!matches_home_team_id_fkey(name),
-                  away_team:teams!matches_away_team_id_fkey(name),
-                  home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(name),
-                  away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(name)
-                `)
+                .select(
+                  `match_date, home_team_type, away_team_type, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name), home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(name), away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(name)`,
+                )
                 .eq("id", legData.match_id)
                 .single()
 
@@ -489,6 +477,13 @@ export default function MemberProfilePage() {
       icon: Calendar,
       href: "/vereinskalender",
       color: "from-green-500 to-green-600",
+    },
+    {
+      title: "Feed",
+      description: "Poste, kommentiere und bleib verbunden",
+      icon: MessageCircle,
+      href: "/community",
+      color: "from-orange-500 to-red-600",
     },
     {
       title: "Team Chat",

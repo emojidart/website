@@ -6,20 +6,21 @@ import { AboutUsSection } from "@/components/about-us-section"
 import { ImageSlideshow } from "@/components/image-slideshow"
 import { FeaturesSection } from "@/components/features-section"
 import { WeeklyResults } from "@/components/weekly-results"
+import { SocialSidebar } from "@/components/social-sidebar"
 import { useDartData } from "@/hooks/use-dart-data"
 
 export default function Home() {
   const { currentPot } = useDartData()
 
- 
   const slideshowImages = [
     "/images/slideshow/darts-action-1.png",
     "/images/slideshow/darts-action-2.png",
-    "/images/slideshow/darts-action-3.png", 
+    "/images/slideshow/darts-action-3.png",
   ]
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
+      <SocialSidebar />
       <Header />
       <main>
         <WeeklyResults />

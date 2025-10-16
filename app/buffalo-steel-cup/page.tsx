@@ -1,7 +1,7 @@
 "use client"
 
 import { Header } from "@/components/header"
-import { Calendar, MapPin, Info, Sparkles, Star, Target } from "lucide-react"
+import { Calendar, MapPin, Sparkles, Star, Target, Trophy, Euro } from "lucide-react"
 import { motion } from "framer-motion"
 
 const containerVariants = {
@@ -38,6 +38,14 @@ const pulseVariants = {
 }
 
 export default function BuffaloSteelCupPage() {
+  const spieltage = [
+    { mittwoch: "Mi. 07. Jän. 2026 - 19:30 Uhr", samstag: "Sa. 10. Jän. 2026 - 19:00 Uhr" },
+    { mittwoch: "Mi. 14. Jän. 2026 - 19:30 Uhr", samstag: "Sa. 17. Jän. 2026 - 19:00 Uhr" },
+    { mittwoch: "Mi. 21. Jän. 2026 - 19:30 Uhr", samstag: "Sa. 24. Jän. 2026 - 19:00 Uhr" },
+    { mittwoch: "Mi. 28. Jän. 2026 - 19:30 Uhr", samstag: "Sa. 31. Jän. 2026 - 19:00 Uhr" },
+    { mittwoch: "Mi. 04. Feb. 2026 - 19:30 Uhr", samstag: "Sa. 07. Feb. 2026 - 19:00 Uhr" },
+  ]
+
   const sponsors = [
     { name: "Sponsor 1", logo: "/images/sponsoren/sponsor1.png" },
     { name: "Sponsor 2", logo: "/images/sponsoren/sponsor2.png" },
@@ -85,116 +93,132 @@ export default function BuffaloSteelCupPage() {
                 </motion.div>
 
                 <h1 className="text-4xl md:text-6xl lg:text-8xl font-extrabold uppercase leading-none tracking-tighter mb-6">
-                  <span className="block text-white text-balance">EMD - BUFFALO</span>
-                  <span className="block text-red-500 text-balance">STEEL CUP</span>
-                  <span className="block text-gray-300 text-4xl md:text-5xl lg:text-6xl mt-4">2026</span>
+                  <span className="block text-white text-balance">EMD-BUFFALO-STEEL</span>
+                  <span className="block text-red-500 text-balance">DART SERIEN CUP</span>
+                  <span className="block text-gray-300 text-3xl md:text-4xl lg:text-5xl mt-4">EMD TO PFEIL OK - SINCE 2023</span>
                 </h1>
+
+              
 
                 <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 text-base md:text-lg font-bold mb-8">
                   <div className="flex items-center gap-2 bg-white/10 px-6 py-3 rounded-xl border border-white/20 backdrop-blur-sm">
                     <Calendar className="h-5 w-5 text-red-400" />
-                    <span className="text-white">07. JAN. - 07. FEB. 2026</span>
+                    <span className="text-white">07. JÄN. - 07. FEB. 2026</span>
                   </div>
                   <div className="flex items-center gap-2 bg-white/10 px-6 py-3 rounded-xl border border-white/20 backdrop-blur-sm">
                     <MapPin className="h-5 w-5 text-red-400" />
                     <span className="text-white">PFEIL-OK SALZBURG</span>
                   </div>
                 </div>
-
-                <motion.div
-                  variants={pulseVariants}
-                  initial="initial"
-                  animate="animate"
-                  className="inline-block bg-gradient-to-r from-red-600 to-red-700 px-8 py-4 rounded-2xl shadow-2xl border-2 border-red-400"
-                >
-                  <p className="text-xl md:text-2xl font-extrabold uppercase text-white tracking-wide text-balance">
-                    Weitere Infos & Details folgen in Kürze
-                  </p>
-                </motion.div>
               </div>
             </div>
           </motion.div>
 
-          {/* Info Cards */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             <motion.div
               variants={cardVariants}
               className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center hover:shadow-2xl transition-all duration-300 hover:scale-105"
             >
-              <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
-                <Calendar className="h-8 w-8 text-white mx-auto" />
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
+                <Euro className="h-8 w-8 text-white mx-auto" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">Zeitraum</h3>
-              <p className="text-gray-600 font-semibold">07. Januar 2026</p>
-              <p className="text-gray-600 font-semibold">bis</p>
-              <p className="text-gray-600 font-semibold">07. Februar 2026</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">Anmeldung</h3>
+              <p className="text-3xl font-extrabold text-green-600 mb-2">€ 10,-</p>
+              <p className="text-gray-600 font-semibold">Einmalig</p>
             </motion.div>
 
             <motion.div
               variants={cardVariants}
               className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center hover:shadow-2xl transition-all duration-300 hover:scale-105"
-            >
-              <div className="bg-gradient-to-br from-gray-700 to-gray-900 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
-                <Target className="h-8 w-8 text-white mx-auto" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">Modus</h3>
-              <p className="text-gray-600 font-semibold">Steel Dart</p>
-              <p className="text-gray-500 text-sm mt-2">Folgen in Kürze</p>
-            </motion.div>
-          </motion.div>
-
-          {/* Spieltage Section */}
-          <motion.div variants={itemVariants} className="mb-16">
-            <motion.div
-              variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center hover:shadow-2xl transition-all duration-300"
             >
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
-                <Calendar className="h-8 w-8 text-white mx-auto" />
+                <Target className="h-8 w-8 text-white mx-auto" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3 uppercase">Spieltage</h3>
-              <p className="text-lg text-gray-600 font-semibold">Folgen in Kürze</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">Startgeld</h3>
+              <p className="text-3xl font-extrabold text-blue-600 mb-2">€ 5,-</p>
+              <p className="text-gray-600 font-semibold">Pro Teilnahme</p>
+            </motion.div>
+
+            <motion.div
+              variants={cardVariants}
+              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            >
+              <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
+                <Trophy className="h-8 w-8 text-white mx-auto" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">Auszahlung</h3>
+              <p className="text-gray-600 font-semibold mb-2">1. - 5. Platz</p>
+              <p className="text-gray-600 font-semibold">Gesamtpot</p>
             </motion.div>
           </motion.div>
 
-          {/* Coming Soon Banner */}
           <motion.div variants={itemVariants} className="mb-16">
             <motion.div
               variants={cardVariants}
-              className="bg-gradient-to-r from-red-600 via-red-700 to-gray-900 rounded-2xl shadow-2xl border border-red-500 p-8 md:p-12 text-center relative overflow-hidden"
+              className="bg-gradient-to-br from-yellow-500 via-yellow-600 to-orange-600 rounded-2xl shadow-xl border border-yellow-400 p-8 text-center"
             >
-              <div className="absolute inset-0 bg-[url('/dart-pattern.jpg')] opacity-5" />
-              <div className="relative z-10">
-                <motion.div
-                  animate={{
-                    rotate: [0, 5, -5, 0],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "easeInOut",
-                  }}
-                  className="inline-block mb-6"
-                >
-                  <Info className="h-16 w-16 text-white" />
-                </motion.div>
-                <h2 className="text-3xl md:text-5xl font-extrabold uppercase mb-4 text-white text-balance">
-                  Bald geht's los!
-                </h2>
-                <p className="text-lg md:text-xl text-white/90 mb-6 max-w-2xl mx-auto text-pretty">
-                  Der EMD - Buffalo Steel Cup 2026 wird ein unvergessliches Turnier. Alle wichtigen Informationen zu
-                  Anmeldung, Spielmodus und Zeitplan werden in Kürze hier veröffentlicht.
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-4 text-white/80 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-yellow-400" />
-                    <span className="font-semibold">Spannende Matches</span>
+              <div className="bg-white rounded-full p-4 w-16 h-16 mx-auto mb-6 shadow-lg">
+                <Trophy className="h-8 w-8 text-yellow-600 mx-auto" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-6 text-white">
+                Preisverteilung & Belohnungen
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                {[
+                  { place: "1. Platz", percent: "30%" },
+                  { place: "2. Platz", percent: "25%" },
+                  { place: "3. Platz", percent: "20%" },
+                  { place: "4. Platz", percent: "15%" },
+                  { place: "5. Platz", percent: "10%" },
+                ].map((prize, index) => (
+                  <div key={index} className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                    <div className="text-white font-bold text-lg mb-2">{prize.place}</div>
+                    <div className="text-white text-3xl font-extrabold">{prize.percent}</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Star className="h-5 w-5 text-yellow-400" />
-                    <span className="font-semibold">Großartige Atmosphäre</span>
-                  </div>
+                ))}
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                <p className="text-white font-bold text-lg">+ Überraschung & Urkunde für alle Gewinner</p>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="mb-16">
+            <motion.div variants={cardVariants} className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+              <div className="text-center mb-8">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
+                  <Calendar className="h-8 w-8 text-white mx-auto" />
                 </div>
+                <h2 className="text-2xl md:text-3xl font-extrabold uppercase text-gray-900">Spieltage</h2>
+              </div>
+
+              <div className="space-y-4">
+                {spieltage.map((tag, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="bg-gradient-to-r from-gray-50 to-red-50 border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300"
+                  >
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="bg-blue-500 text-white font-bold rounded-full w-10 h-10 flex items-center justify-center text-lg">
+                          {index + 1}
+                        </div>
+                        <div className="text-left">
+                          <p className="font-bold text-gray-900">{tag.mittwoch}</p>
+                        </div>
+                      </div>
+                      <div className="hidden md:block text-gray-400 font-bold text-2xl">/</div>
+                      <div className="flex items-center gap-3 flex-1 md:justify-end">
+                        <div className="text-left md:text-right">
+                          <p className="font-bold text-gray-900">{tag.samstag}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </motion.div>
           </motion.div>
