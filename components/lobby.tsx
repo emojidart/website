@@ -836,22 +836,34 @@ export function Lobby() {
       </Card>
 
       <Tabs defaultValue="players" className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-3 h-12">
-          <TabsTrigger value="players" className="gap-2 text-base">
-            <Users className="w-4 h-4" />
-            Verfügbare Spieler
+        <TabsList className="grid w-full grid-cols-3 h-auto sm:h-12">
+          <TabsTrigger
+            value="players"
+            className="gap-1 sm:gap-2 text-xs sm:text-sm md:text-base px-2 sm:px-4 py-2 sm:py-3"
+          >
+            <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Verfügbare Spieler</span>
+            <span className="xs:hidden">Spieler</span>
           </TabsTrigger>
-          <TabsTrigger value="challenges" className="gap-2 text-base">
-            <Trophy className="w-4 h-4" />
-            Herausforderungen
+          <TabsTrigger
+            value="challenges"
+            className="gap-1 sm:gap-2 text-xs sm:text-sm md:text-base px-2 sm:px-4 py-2 sm:py-3"
+          >
+            <Trophy className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Herausforderungen</span>
+            <span className="xs:hidden">Challenges</span>
             {(incomingChallenges.length > 0 || outgoingChallenges.length > 0) && (
-              <Badge variant="destructive" className="ml-1">
+              <Badge variant="destructive" className="ml-1 text-[10px] sm:text-xs px-1 sm:px-2">
                 {incomingChallenges.length + outgoingChallenges.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="results" className="gap-2 text-base" onClick={() => loadResults()}>
-            <Target className="w-4 h-4" />
+          <TabsTrigger
+            value="results"
+            className="gap-1 sm:gap-2 text-xs sm:text-sm md:text-base px-2 sm:px-4 py-2 sm:py-3"
+            onClick={() => loadResults()}
+          >
+            <Target className="w-3 h-3 sm:w-4 sm:h-4" />
             Ergebnisse
           </TabsTrigger>
         </TabsList>
@@ -1002,14 +1014,22 @@ export function Lobby() {
             </div>
           ) : (
             <Tabs defaultValue="my-results" className="space-y-6">
-              <TabsList className="grid w-full max-w-md grid-cols-2 h-12">
-                <TabsTrigger value="my-results" className="gap-2 text-base">
-                  <Target className="w-4 h-4" />
-                  Meine Ergebnisse
+              <TabsList className="grid w-full max-w-md grid-cols-2 h-auto sm:h-12">
+                <TabsTrigger
+                  value="my-results"
+                  className="gap-1 sm:gap-2 text-xs sm:text-sm md:text-base px-2 sm:px-4 py-2 sm:py-3"
+                >
+                  <Target className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Meine Ergebnisse</span>
+                  <span className="xs:hidden">Meine</span>
                 </TabsTrigger>
-                <TabsTrigger value="all-results" className="gap-2 text-base">
-                  <Trophy className="w-4 h-4" />
-                  Alle Ergebnisse
+                <TabsTrigger
+                  value="all-results"
+                  className="gap-1 sm:gap-2 text-xs sm:text-sm md:text-base px-2 sm:px-4 py-2 sm:py-3"
+                >
+                  <Trophy className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Alle Ergebnisse</span>
+                  <span className="xs:hidden">Alle</span>
                 </TabsTrigger>
               </TabsList>
 

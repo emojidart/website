@@ -527,7 +527,7 @@ export function Header() {
                     <UserIcon className="h-5 w-5" />
                     <span>{playerName || user.email}</span>
                   </div>
-                  <Link href="/member-dashboard" passHref>
+                  <Link href="/member-profile" passHref>
                     <Button
                       variant="outline"
                       className="w-full border-green-500 text-green-600 hover:bg-green-50 hover:border-green-600 bg-transparent transition-all duration-200 py-3 px-4 rounded-lg text-base justify-start font-bold"
