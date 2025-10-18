@@ -31,6 +31,7 @@ import {
   AlertTriangle,
   Bell,
   CheckCircle,
+  Dumbbell,
 } from "lucide-react"
 
 interface UserProfile {
@@ -449,6 +450,20 @@ export default function MemberProfilePage() {
       icon: BarChart3,
       href: "/member-statistics",
       color: "from-indigo-500 to-indigo-600",
+    },
+    {
+      title: "Training",
+      description: "Trainingsübungen und Fortschritt",
+      icon: Dumbbell,
+      href: "/training",
+      color: "from-orange-500 to-red-600",
+    },
+    {
+      title: "Lobby",
+      description: "Spiele gegen andere Spieler",
+      icon: Target,
+      href: "/lobby",
+      color: "from-pink-500 to-pink-600",
     },
     {
       title: "Match Galerie",

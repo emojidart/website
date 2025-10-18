@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Crown, ShieldCheck, Users, Target, Hand, ArrowLeft } from "lucide-react"
+import { CaptainPlayerManagement } from "@/components/captain-player-management"
 
 interface UserProfile {
   id: string
@@ -81,19 +82,7 @@ export default function MeineTeamsPage() {
       // Fetch user profile
       const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
-        .select(`
-          id,
-          user_id,
-          player_id,
-          club_players (
-            id,
-            name,
-            photo_url,
-            throwing_hand,
-            age,
-            origin
-          )
-        `)
+        .select(`id, user_id, player_id, club_players (id, name, photo_url, throwing_hand, age, origin)`)
         .eq("user_id", session.user.id)
         .single()
 
@@ -107,16 +96,7 @@ export default function MeineTeamsPage() {
       if (profileData?.player_id) {
         const { data: teamData, error: teamError } = await supabase
           .from("team_members")
-          .select(`
-            id,
-            team_id,
-            role,
-            teams (
-              id,
-              name,
-              logo_url
-            )
-          `)
+          .select(`id, team_id, role, teams (id, name, logo_url)`)
           .eq("player_id", profileData.player_id)
 
         if (teamError) {
@@ -130,20 +110,7 @@ export default function MeineTeamsPage() {
 
           const { data: membersData, error: membersError } = await supabase
             .from("team_members")
-            .select(`
-              id,
-              team_id,
-              player_id,
-              role,
-              club_players (
-                id,
-                name,
-                photo_url,
-                throwing_hand,
-                age,
-                origin
-              )
-            `)
+            .select(`id, team_id, player_id, role, club_players (id, name, photo_url, throwing_hand, age, origin)`)
             .in("team_id", teamIds)
             .order("role", { ascending: false })
 
@@ -243,6 +210,13 @@ export default function MeineTeamsPage() {
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Meine Teams</h1>
           <p className="text-lg sm:text-xl text-gray-600">Übersicht deiner Teams und Teammitglieder</p>
         </div>
+
+        {/* Captain Player Management Section */}
+        {profile?.player_id && (
+          <div className="mb-6 sm:mb-8">
+            <CaptainPlayerManagement onPlayerAdded={fetchTeamData} />
+          </div>
+        )}
 
         {/* Team Memberships */}
         <Card className="shadow-xl border-0 bg-white mb-6 sm:mb-8">
@@ -354,6 +328,8 @@ export default function MeineTeamsPage() {
                                   src={
                                     member.club_players?.photo_url ||
                                     "/placeholder.svg?height=32&width=32&query=darts-player" ||
+                                    "/placeholder.svg" ||
+                                    "/placeholder.svg" ||
                                     "/placeholder.svg"
                                   }
                                 />
