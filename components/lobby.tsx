@@ -5,11 +5,11 @@ import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Trophy, Users, Send, Loader2, User, Target, Eye } from "lucide-react"
+import { Trophy, Users, Send, Loader2, Target, Eye, RotateCw } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 type OnlinePlayer = {
@@ -17,6 +17,7 @@ type OnlinePlayer = {
   username: string
   status: "online" | "in_game"
   last_seen: string
+  photo_url?: string | null
 }
 
 type Challenge = {
@@ -28,6 +29,8 @@ type Challenge = {
   created_at: string
   challenger_name?: string
   opponent_name?: string
+  challenger_photo_url?: string | null
+  opponent_photo_url?: string | null
 }
 
 type GameResult = {
@@ -43,6 +46,8 @@ type GameResult = {
   player2_name?: string
   player1_throws?: number
   player2_throws?: number
+  player1_photo_url?: string | null
+  player2_photo_url?: string | null
 }
 
 type ThrowDetail = {
@@ -62,10 +67,12 @@ export function Lobby() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const [currentUserName, setCurrentUserName] = useState<string>("")
+  const [currentUserPhoto, setCurrentUserPhoto] = useState<string | null>(null)
   const [players, setPlayers] = useState<OnlinePlayer[]>([])
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [allPendingChallenges, setAllPendingChallenges] = useState<Challenge[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [myResults, setMyResults] = useState<GameResult[]>([])
   const [allResults, setAllResults] = useState<GameResult[]>([])
   const [resultsLoading, setResultsLoading] = useState(false)
@@ -91,13 +98,15 @@ export function Lobby() {
 
       const { data: profile } = await supabase
         .from("user_profiles")
-        .select("player_id, club_players(name)")
+        .select("player_id, club_players(name, photo_url)")
         .eq("user_id", user!.id)
         .single()
 
       if (profile?.club_players) {
         const playerName = (profile.club_players as any).name
+        const playerPhoto = (profile.club_players as any).photo_url
         setCurrentUserName(playerName)
+        setCurrentUserPhoto(playerPhoto)
 
         await supabase.from("player_online_status").upsert({
           user_id: user!.id,
@@ -157,15 +166,30 @@ export function Lobby() {
   async function loadPlayers() {
     if (!user) return
 
-    const { data } = await supabase
+    const { data: onlineStatuses } = await supabase
       .from("player_online_status")
       .select("*")
       .eq("status", "online")
       .neq("user_id", user.id)
       .order("last_seen", { ascending: false })
 
-    if (data) {
-      setPlayers(data)
+    if (onlineStatuses) {
+      const playersWithPhotos = await Promise.all(
+        onlineStatuses.map(async (status) => {
+          const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("club_players(photo_url)")
+            .eq("user_id", status.user_id)
+            .single()
+
+          return {
+            ...status,
+            photo_url: (profile?.club_players as any)?.photo_url || null,
+          }
+        }),
+      )
+
+      setPlayers(playersWithPhotos)
     }
   }
 
@@ -186,13 +210,13 @@ export function Lobby() {
         pendingChallenges.map(async (challenge) => {
           const { data: challengerProfile } = await supabase
             .from("user_profiles")
-            .select("club_players(name)")
+            .select("club_players(name, photo_url)")
             .eq("user_id", challenge.challenger_id)
             .single()
 
           const { data: opponentProfile } = await supabase
             .from("user_profiles")
-            .select("club_players(name)")
+            .select("club_players(name, photo_url)")
             .eq("user_id", challenge.opponent_id)
             .single()
 
@@ -200,6 +224,8 @@ export function Lobby() {
             ...challenge,
             challenger_name: (challengerProfile?.club_players as any)?.name || "Unbekannt",
             opponent_name: (opponentProfile?.club_players as any)?.name || "Unbekannt",
+            challenger_photo_url: (challengerProfile?.club_players as any)?.photo_url || null,
+            opponent_photo_url: (opponentProfile?.club_players as any)?.photo_url || null,
           }
         }),
       )
@@ -300,13 +326,13 @@ export function Lobby() {
       games.map(async (game) => {
         const { data: player1Profile } = await supabase
           .from("user_profiles")
-          .select("club_players(name)")
+          .select("club_players(name, photo_url)")
           .eq("user_id", game.player1_id)
           .single()
 
         const { data: player2Profile } = await supabase
           .from("user_profiles")
-          .select("club_players(name)")
+          .select("club_players(name, photo_url)")
           .eq("user_id", game.player2_id)
           .single()
 
@@ -326,6 +352,8 @@ export function Lobby() {
           ...game,
           player1_name: (player1Profile?.club_players as any)?.name || "Spieler 1",
           player2_name: (player2Profile?.club_players as any)?.name || "Spieler 2",
+          player1_photo_url: (player1Profile?.club_players as any)?.photo_url || null,
+          player2_photo_url: (player2Profile?.club_players as any)?.photo_url || null,
           player1_throws: player1Throws?.length || 0,
           player2_throws: player2Throws?.length || 0,
         }
@@ -599,9 +627,17 @@ export function Lobby() {
             <div
               className={`flex flex-col items-center p-3 sm:p-4 rounded-lg ${isPlayer1Winner ? "bg-green-50" : "bg-gray-50"}`}
             >
-              <Avatar className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 mb-2">
-                <AvatarFallback className="bg-transparent">
-                  <User className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <Avatar className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-blue-200 mb-2">
+                <AvatarImage
+                  src={game.player1_photo_url || "/placeholder.svg?height=48&width=48&query=dart player avatar"}
+                  alt={game.player1_name}
+                />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                  {(game.player1_name || "U")
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <p className="font-semibold text-xs sm:text-sm text-center mb-1 truncate w-full px-1">
@@ -619,9 +655,17 @@ export function Lobby() {
             <div
               className={`flex flex-col items-center p-3 sm:p-4 rounded-lg ${!isPlayer1Winner ? "bg-green-50" : "bg-gray-50"}`}
             >
-              <Avatar className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-teal-600 mb-2">
-                <AvatarFallback className="bg-transparent">
-                  <User className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <Avatar className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-green-200 mb-2">
+                <AvatarImage
+                  src={game.player2_photo_url || "/placeholder.svg?height=48&width=48&query=dart player avatar"}
+                  alt={game.player2_name}
+                />
+                <AvatarFallback className="bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                  {(game.player2_name || "U")
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <p className="font-semibold text-xs sm:text-sm text-center mb-1 truncate w-full px-1">
@@ -666,9 +710,17 @@ export function Lobby() {
                   {/* Player Headers */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-                      <Avatar className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600">
-                        <AvatarFallback className="bg-transparent">
-                          <User className="w-6 h-6 text-white" />
+                      <Avatar className="w-12 h-12 border-2 border-blue-300">
+                        <AvatarImage
+                          src={game.player1_photo_url || "/placeholder.svg?height=48&width=48&query=dart player avatar"}
+                          alt={game.player1_name}
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                          {(game.player1_name || "U")
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -678,9 +730,17 @@ export function Lobby() {
                       {isPlayer1Winner && <Trophy className="w-6 h-6 text-yellow-500 ml-auto" />}
                     </div>
                     <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-                      <Avatar className="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-600">
-                        <AvatarFallback className="bg-transparent">
-                          <User className="w-6 h-6 text-white" />
+                      <Avatar className="w-12 h-12 border-2 border-green-300">
+                        <AvatarImage
+                          src={game.player2_photo_url || "/placeholder.svg?height=48&width=48&query=dart player avatar"}
+                          alt={game.player2_name}
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                          {(game.player2_name || "U")
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -797,6 +857,13 @@ export function Lobby() {
     )
   }
 
+  async function refreshLobby() {
+    if (!user) return
+    setIsRefreshing(true)
+    await Promise.all([loadPlayers(), loadChallenges()])
+    setIsRefreshing(false)
+  }
+
   if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -819,18 +886,38 @@ export function Lobby() {
     <div className="space-y-6">
       <Card className="bg-white shadow-lg border-orange-200">
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-600">
-              <AvatarFallback className="bg-transparent">
-                <User className="w-7 h-7 text-white" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex items-center gap-3">
-              <p className="font-semibold text-xl">{currentUserName}</p>
-              <Badge variant="outline" className="text-green-600 border-green-600">
-                Online
-              </Badge>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="w-14 h-14 border-4 border-orange-200">
+                <AvatarImage
+                  src={currentUserPhoto || "/placeholder.svg?height=56&width=56&query=dart player avatar"}
+                  alt={currentUserName}
+                />
+                <AvatarFallback className="bg-gradient-to-br from-orange-500 to-red-600 text-white text-xl font-bold">
+                  {(currentUserName || "U")
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex items-center gap-3">
+                <p className="font-semibold text-xl">{currentUserName}</p>
+                <Badge variant="outline" className="text-green-600 border-green-600">
+                  Online
+                </Badge>
+              </div>
             </div>
+            <Button
+              onClick={refreshLobby}
+              disabled={isRefreshing}
+              variant="outline"
+              size="icon"
+              className="shrink-0 bg-transparent"
+              title="Lobby aktualisieren"
+            >
+              <RotateCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -875,7 +962,7 @@ export function Lobby() {
                 <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground font-medium">Keine Spieler online</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Schau später nochmal vorbei oder lade einen Freund ein!
+                  Schau später nochmal vorbei!
                 </p>
               </CardContent>
             </Card>
@@ -895,9 +982,17 @@ export function Lobby() {
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <Avatar className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600">
-                            <AvatarFallback className="bg-transparent">
-                              <User className="w-6 h-6 text-white" />
+                          <Avatar className="w-12 h-12 border-2 border-blue-200">
+                            <AvatarImage
+                              src={player.photo_url || "/placeholder.svg?height=48&width=48&query=dart player avatar"}
+                              alt={player.username}
+                            />
+                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                              {(player.username || "U")
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col gap-1">
@@ -937,9 +1032,21 @@ export function Lobby() {
                   <Card key={challenge.id} className="border-orange-300 bg-white shadow-lg">
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3 mb-4">
-                        <Avatar className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600">
-                          <AvatarFallback className="bg-transparent">
-                            <User className="w-6 h-6 text-white" />
+                        <Avatar className="w-12 h-12 border-2 border-orange-200">
+                          <AvatarImage
+                            src={
+                              challenge.challenger_photo_url ||
+                              "/placeholder.svg?height=48&width=48&query=dart player avatar" ||
+                              "/placeholder.svg"
+                            }
+                            alt={challenge.challenger_name}
+                          />
+                          <AvatarFallback className="bg-gradient-to-br from-orange-500 to-red-600 text-white">
+                            {(challenge.challenger_name || "U")
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
@@ -974,9 +1081,21 @@ export function Lobby() {
                   <Card key={challenge.id} className="bg-white shadow-md">
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3">
-                        <Avatar className="w-12 h-12 bg-gradient-to-br from-gray-400 to-gray-600">
-                          <AvatarFallback className="bg-transparent">
-                            <User className="w-6 h-6 text-white" />
+                        <Avatar className="w-12 h-12 border-2 border-gray-300">
+                          <AvatarImage
+                            src={
+                              challenge.opponent_photo_url ||
+                              "/placeholder.svg?height=48&width=48&query=dart player avatar" ||
+                              "/placeholder.svg"
+                            }
+                            alt={challenge.opponent_name}
+                          />
+                          <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-white">
+                            {(challenge.opponent_name || "U")
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
@@ -997,7 +1116,7 @@ export function Lobby() {
                 <Trophy className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground font-medium">Keine aktiven Herausforderungen</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Gehe zu "Verfügbare Spieler" um jemanden herauszufordern!
+                  Gehe zu "Spieler" um jemanden herauszufordern!
                 </p>
               </CardContent>
             </Card>

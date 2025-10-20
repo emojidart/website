@@ -35,6 +35,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Switch } from "@/components/ui/switch"
+import { deleteUserAccount } from "@/app/actions/delete-user"
+import { listAuthUsers } from "@/app/actions/list-users"
+import { confirmUser } from "@/app/actions/confirm-user"
 
 interface UserManagementProps {
   user: SupabaseUser | null
@@ -143,18 +146,29 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
       const { data: userProfiles, error: userProfilesError } = await supabase
         .from("user_profiles")
-        .select("id, player_id, is_admin, email_confirmed")
+        .select("id, player_id, user_id, is_admin, email_confirmed")
 
       if (userProfilesError) throw userProfilesError
 
-      const playersWithAccounts = new Set(userProfiles?.map((p) => p.player_id) || [])
+      const authUsersResult = await listAuthUsers()
+
+      if (!authUsersResult.success) {
+        console.error("[v0] Error fetching auth users:", authUsersResult.error)
+        setError(`Fehler beim Laden der Benutzerdaten: ${authUsersResult.error}`)
+        setLoading(false)
+        return
+      }
+
+      const authUsers = authUsersResult.users || []
+
+      const playersWithAccounts = new Set(userProfiles?.filter((p) => p.user_id !== null).map((p) => p.player_id) || [])
       const adminStatusMap = new Map(
         userProfiles?.map((p) => [
           p.player_id,
           {
             is_admin: p.is_admin,
             profile_id: p.id,
-            email_confirmed: p.email_confirmed,
+            email_confirmed: p.email_confirmed, // Use email_confirmed from user_profiles, not auth
           },
         ]) || [],
       )
@@ -166,6 +180,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
         clubPlayers.forEach((player) => {
           const playerTeamMemberships = teamMembers?.filter((tm) => tm.player_id === player.id) || []
           const adminInfo = adminStatusMap.get(player.id)
+          const hasAccount = playersWithAccounts.has(player.id)
 
           if (playerTeamMemberships.length === 0) {
             const playerData: PlayerData = {
@@ -179,10 +194,10 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
               origin: player.origin,
               team_id: undefined,
               team_name: undefined,
-              has_account: playersWithAccounts.has(player.id),
+              has_account: hasAccount, // Use hasAccount from Set
               is_admin: adminInfo?.is_admin || false,
               user_profile_id: adminInfo?.profile_id,
-              email_confirmed: adminInfo?.email_confirmed || false,
+              email_confirmed: adminInfo?.email_confirmed || false, // Use from user_profiles
             }
             unassigned.push(playerData)
           } else {
@@ -205,10 +220,10 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                 origin: player.origin,
                 team_id: teamMembership?.team_id,
                 team_name: teamMembership?.teams?.name,
-                has_account: playersWithAccounts.has(player.id),
+                has_account: hasAccount, // Use hasAccount from Set
                 is_admin: adminInfo?.is_admin || false,
                 user_profile_id: adminInfo?.profile_id,
-                email_confirmed: adminInfo?.email_confirmed || false,
+                email_confirmed: adminInfo?.email_confirmed || false, // Use from user_profiles
               }
 
               allPlayers.push(playerData)
@@ -307,10 +322,18 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
     try {
       console.log("[v0] Creating auth user with email:", accountForm.email)
+      console.log("[v0] Player ID:", accountForm.playerId)
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: accountForm.email,
         password: accountForm.password,
+        options: {
+          emailRedirectTo:
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`,
+          data: {
+            player_id: accountForm.playerId,
+          },
+        },
       })
 
       console.log("[v0] Auth signup result:", { authData, authError })
@@ -320,33 +343,54 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
         throw authError
       }
 
-      if (authData.user) {
-        console.log("[v0] Creating user profile for user:", authData.user.id)
+      if (!authData.user) {
+        console.log("[v0] ERROR: No user object returned from Supabase!")
+        throw new Error("Kein User-Objekt von Supabase zurückgegeben")
+      }
 
-        const { error: profileError } = await supabase.from("user_profiles").insert({
+      console.log("[v0] Auth user created successfully with ID:", authData.user.id)
+      console.log("[v0] Creating user profile for user:", authData.user.id)
+      console.log("[v0] Profile data:", {
+        user_id: authData.user.id,
+        player_id: accountForm.playerId,
+        is_admin: false,
+        email_confirmed: false,
+      })
+
+      const { data: profileData, error: profileError } = await supabase
+        .from("user_profiles")
+        .insert({
           user_id: authData.user.id,
           player_id: accountForm.playerId,
-          email_confirmed: false, // New accounts start with unconfirmed email
+          is_admin: false,
+          email_confirmed: false,
         })
+        .select()
 
-        console.log("[v0] Profile creation result:", { profileError })
+      console.log("[v0] Profile creation result:", { profileData, profileError })
 
-        if (profileError) throw profileError
-
-        setAccountCreationStatus({
-          type: "success",
-          message: "Account erfolgreich erstellt! Der Benutzer erhält eine Bestätigungs-E-Mail.",
-        })
-
-        setAccountForm({
-          playerId: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-        })
-
-        await fetchAllUsers()
+      if (profileError) {
+        console.log("[v0] ERROR: Profile creation failed:", profileError)
+        throw profileError
       }
+
+      console.log("[v0] Profile created successfully:", profileData)
+
+      setAccountCreationStatus({
+        type: "success",
+        message:
+          "Account erfolgreich erstellt! Eine Bestätigungs-E-Mail wurde an den Benutzer gesendet. Der Account wird aktiviert, sobald die E-Mail bestätigt wurde.",
+      })
+
+      setAccountForm({
+        playerId: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      })
+
+      await fetchAllUsers()
+      onDataSaved()
     } catch (err: any) {
       console.log("[v0] Account creation error:", err)
 
@@ -471,28 +515,22 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
   }
 
   const deleteAccount = async () => {
-    if (
-      !confirm(
-        `Sind Sie sicher, dass Sie den Account für ${managementForm.playerName} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`,
-      )
-    ) {
-      return
-    }
-
+    console.log("[v0] Starting account deletion for player:", managementForm.playerId)
     setIsManagingAccount(true)
     setManagementStatus({ type: null, message: "" })
 
     try {
-      const { error: profileError } = await supabase
-        .from("user_profiles")
-        .delete()
-        .eq("player_id", managementForm.playerId)
+      const result = await deleteUserAccount(managementForm.playerId)
 
-      if (profileError) throw profileError
+      if (!result.success) {
+        throw new Error(result.error || "Unbekannter Fehler beim Löschen")
+      }
+
+      console.log("[v0] Account successfully deleted")
 
       setManagementStatus({
         type: "success",
-        message: "Account-Verknüpfung erfolgreich entfernt! Der Benutzer kann sich nicht mehr anmelden.",
+        message: "Account erfolgreich gelöscht! Der Benutzer wurde aus Supabase entfernt.",
       })
 
       await fetchAllUsers()
@@ -507,12 +545,71 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
       })
       setManagementAction(null)
     } catch (err: any) {
+      console.log("[v0] Error deleting account:", err)
       setManagementStatus({
         type: "error",
         message: `Fehler beim Löschen des Accounts: ${err.message}`,
       })
     } finally {
       setIsManagingAccount(false)
+    }
+  }
+
+  const manuallyConfirmUser = async (player: PlayerData) => {
+    console.log("[v0] Starting manual email confirmation for player:", player.name)
+
+    if (!player.has_account) {
+      console.log("[v0] Error: Player has no account")
+      setError("Spieler hat keinen Account")
+      return
+    }
+
+    try {
+      console.log("[v0] Fetching auth users...")
+      // Find the auth user for this player
+      const authUsersResult = await listAuthUsers()
+      console.log("[v0] Auth users result:", authUsersResult)
+
+      if (!authUsersResult.success) {
+        throw new Error("Fehler beim Laden der Auth-Daten")
+      }
+
+      const authUser = authUsersResult.users?.find((user) => user.user_metadata.player_id === player.id)
+      console.log("[v0] Found auth user:", authUser)
+
+      if (!authUser) {
+        throw new Error("Auth-User nicht gefunden")
+      }
+
+      console.log("[v0] Calling confirmUser with userId:", authUser.id)
+      const result = await confirmUser(authUser.id)
+      console.log("[v0] Confirm user result:", result)
+
+      if (!result.success) {
+        let errorMessage = result.error || "Unbekannter Fehler"
+        if (result.errorCode) {
+          errorMessage += ` (Code: ${result.errorCode})`
+        }
+        if (result.errorStatus) {
+          errorMessage += ` (Status: ${result.errorStatus})`
+        }
+        if (result.fullError) {
+          console.log("[v0] Full error details:", result.fullError)
+          errorMessage += `\n\nDetails: ${result.fullError}`
+        }
+        throw new Error(errorMessage)
+      }
+
+      console.log("[v0] Email confirmed successfully, refreshing data...")
+      // Refresh the data to show updated status
+      await fetchAllUsers()
+      onDataSaved()
+
+      setError("")
+      console.log("[v0] Manual confirmation completed successfully")
+    } catch (err: any) {
+      console.log("[v0] Error during manual confirmation:", err)
+      setError(`Fehler beim Bestätigen der E-Mail: ${err.message}`)
     }
   }
 
@@ -531,7 +628,17 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
   const getPlayersWithoutAccounts = () => {
     const allPlayers = teamGroups.flatMap((team) => team.players)
-    return [...allPlayers, ...unassignedPlayers].filter((player) => !player.has_account)
+    const allPlayersList = [...allPlayers, ...unassignedPlayers]
+
+    // Erstelle eine Map, um Duplikate zu entfernen (ein Spieler kann in mehreren Teams sein)
+    const uniquePlayersMap = new Map<string, PlayerData>()
+    allPlayersList.forEach((player) => {
+      if (!player.has_account && !uniquePlayersMap.has(player.id)) {
+        uniquePlayersMap.set(player.id, player)
+      }
+    })
+
+    return Array.from(uniquePlayersMap.values())
   }
 
   useEffect(() => {
@@ -972,6 +1079,12 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                {!player.email_confirmed && (
+                                  <DropdownMenuItem onClick={() => manuallyConfirmUser(player)}>
+                                    <MailCheck className="mr-2 h-4 w-4" />
+                                    E-Mail manuell bestätigen
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem onClick={() => openAccountManagement(player, "email")}>
                                   <Mail className="mr-2 h-4 w-4" />
                                   E-Mail ändern
@@ -1078,6 +1191,12 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              {!player.email_confirmed && (
+                                <DropdownMenuItem onClick={() => manuallyConfirmUser(player)}>
+                                  <MailCheck className="mr-2 h-4 w-4" />
+                                  E-Mail manuell bestätigen
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem onClick={() => openAccountManagement(player, "email")}>
                                 <Mail className="mr-2 h-4 w-4" />
                                 E-Mail ändern
@@ -1105,6 +1224,232 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
           </Card>
         )}
       </div>
+
+      <Dialog open={managementAction !== null} onOpenChange={(open) => !open && setManagementAction(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              {managementAction === "email" && (
+                <>
+                  <Mail className="h-5 w-5 text-blue-600" />
+                  <span>E-Mail-Adresse ändern</span>
+                </>
+              )}
+              {managementAction === "password" && (
+                <>
+                  <Key className="h-5 w-5 text-green-600" />
+                  <span>Passwort ändern</span>
+                </>
+              )}
+              {managementAction === "delete" && (
+                <>
+                  <Trash2 className="h-5 w-5 text-red-600" />
+                  <span>Account löschen</span>
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Spieler:</p>
+              <p className="font-semibold text-gray-900">{managementForm.playerName}</p>
+            </div>
+
+            {managementAction === "email" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="new-email">Neue E-Mail-Adresse</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="new-email"
+                      type="email"
+                      placeholder="neue-email@example.com"
+                      value={managementForm.newEmail}
+                      onChange={(e) => setManagementForm((prev) => ({ ...prev, newEmail: e.target.value }))}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                {managementStatus.type && (
+                  <div
+                    className={`p-3 rounded-lg flex items-center space-x-2 ${
+                      managementStatus.type === "success"
+                        ? "bg-green-50 border border-green-200 text-green-700"
+                        : "bg-red-50 border border-red-200 text-red-700"
+                    }`}
+                  >
+                    {managementStatus.type === "success" ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4" />
+                    )}
+                    <span className="text-sm">{managementStatus.message}</span>
+                  </div>
+                )}
+
+                <Button
+                  onClick={updateEmail}
+                  disabled={isManagingAccount}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  {isManagingAccount ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>E-Mail wird aktualisiert...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Mail className="h-4 w-4" />
+                      <span>E-Mail aktualisieren</span>
+                    </div>
+                  )}
+                </Button>
+              </>
+            )}
+
+            {managementAction === "password" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">Neues Passwort</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="new-password"
+                      type="password"
+                      placeholder="Mindestens 6 Zeichen"
+                      value={managementForm.newPassword}
+                      onChange={(e) => setManagementForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-new-password">Neues Passwort bestätigen</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="confirm-new-password"
+                      type="password"
+                      placeholder="Passwort wiederholen"
+                      value={managementForm.confirmNewPassword}
+                      onChange={(e) =>
+                        setManagementForm((prev) => ({
+                          ...prev,
+                          confirmNewPassword: e.target.value,
+                        }))
+                      }
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                {managementStatus.type && (
+                  <div
+                    className={`p-3 rounded-lg flex items-center space-x-2 ${
+                      managementStatus.type === "success"
+                        ? "bg-green-50 border border-green-200 text-green-700"
+                        : "bg-red-50 border border-red-200 text-red-700"
+                    }`}
+                  >
+                    {managementStatus.type === "success" ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4" />
+                    )}
+                    <span className="text-sm">{managementStatus.message}</span>
+                  </div>
+                )}
+
+                <Button
+                  onClick={updatePassword}
+                  disabled={isManagingAccount}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  {isManagingAccount ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Passwort wird aktualisiert...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Key className="h-4 w-4" />
+                      <span>Passwort aktualisieren</span>
+                    </div>
+                  )}
+                </Button>
+              </>
+            )}
+
+            {managementAction === "delete" && (
+              <>
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start space-x-2">
+                    <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-red-900">
+                        Warnung: Diese Aktion kann nicht rückgängig gemacht werden!
+                      </p>
+                      <p className="text-sm text-red-700 mt-1">
+                        Der Account für <strong>{managementForm.playerName}</strong> wird dauerhaft gelöscht. Der
+                        Spieler kann sich danach nicht mehr anmelden.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {managementStatus.type && (
+                  <div
+                    className={`p-3 rounded-lg flex items-center space-x-2 ${
+                      managementStatus.type === "success"
+                        ? "bg-green-50 border border-green-200 text-green-700"
+                        : "bg-red-50 border border-red-200 text-red-700"
+                    }`}
+                  >
+                    {managementStatus.type === "success" ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4" />
+                    )}
+                    <span className="text-sm">{managementStatus.message}</span>
+                  </div>
+                )}
+
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => setManagementAction(null)}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isManagingAccount}
+                  >
+                    Abbrechen
+                  </Button>
+                  <Button
+                    onClick={deleteAccount}
+                    disabled={isManagingAccount}
+                    className="flex-1 bg-red-600 hover:bg-red-700"
+                  >
+                    {isManagingAccount ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Wird gelöscht...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <Trash2 className="h-4 w-4" />
+                        <span>Account löschen</span>
+                      </div>
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
