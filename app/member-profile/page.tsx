@@ -1,7 +1,6 @@
 "use client"
 import { Header } from "@/components/header"
 import type React from "react"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -32,6 +31,7 @@ import {
   Bell,
   CheckCircle,
   Dumbbell,
+  Download,
 } from "lucide-react"
 
 interface UserProfile {
@@ -126,6 +126,43 @@ export default function MemberProfilePage() {
   })
   const [pendingMatches, setPendingMatches] = useState<Match[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
+
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [showInstallButton, setShowInstallButton] = useState(false)
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      setShowInstallButton(true)
+    }
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
+
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setShowInstallButton(false)
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
+    }
+  }, [])
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      return
+    }
+
+    deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+
+    if (outcome === "accepted") {
+      console.log("User accepted the install prompt")
+    }
+
+    setDeferredPrompt(null)
+    setShowInstallButton(false)
+  }
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -800,6 +837,17 @@ export default function MemberProfilePage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                {showInstallButton && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleInstallClick}
+                    className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 border-0 text-xs sm:text-sm shadow-lg"
+                  >
+                    <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                    App installieren
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
