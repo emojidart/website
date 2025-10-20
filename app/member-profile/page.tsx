@@ -576,8 +576,8 @@ export default function MemberProfilePage() {
                     App auf deinem Gerät installieren
                   </h3>
                   <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    Installiere die Dartverein-App auf deinem Handy oder PC für schnellen Zugriff und ein besseres
-                    Erlebnis - auch offline verfügbar!
+                    Installiere die EMD-App auf deinem Handy oder PC für schnellen Zugriff und ein besseres
+                    Erlebnis!
                   </p>
                   <Button
                     onClick={handleInstallClick}
