@@ -1,20 +1,23 @@
 {
   "name": "Emoj's Dartverein",
   "short_name": "Dartverein",
+  "description": "Offizielle Website des Emoj's Dartvereins - Spielerverwaltung, Statistiken und mehr",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#d97706",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icon-192.jpg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/jpeg"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-512.jpg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/jpeg"
     }
-  ]
+  ],
+  "categories": ["sports", "lifestyle"]
 }
