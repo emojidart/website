@@ -1,7 +1,6 @@
 "use client"
 import { Header } from "@/components/header"
 import type React from "react"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -34,7 +33,77 @@ import {
   Dumbbell,
   Download,
 } from "lucide-react"
-import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
+
+interface UserProfile {
+  id: string
+  user_id: string
+  player_id: string
+  club_players: {
+    id: string
+    name: string
+    photo_url: string | null
+    throwing_hand: string | null
+    age: number | null
+    origin: string | null
+  } | null
+}
+
+interface TeamMembership {
+  id: string
+  team_id: string
+  role: string | null
+  teams: {
+    id: string
+    name: string
+    logo_url: string | null
+  } | null
+}
+
+interface Match {
+  id: string
+  match_date: string
+  home_score: number | null
+  away_score: number | null
+  status: string
+  home_team_id: string
+  away_team_id: string
+  home_team_type: string
+  away_team_type: string
+  home_opponent_team_id?: string
+  away_opponent_team_id?: string
+  home_team?: { name: string } | null
+  away_team?: { name: string } | null
+  home_opponent_team?: { name: string } | null
+  away_opponent_team?: { name: string } | null
+}
+
+interface Notification {
+  id: string
+  recipient_player_id: string
+  message: string
+  statistics_entry_id: string
+  is_read: boolean
+  created_at: string
+  leg_statistics?: {
+    match_id: string
+    leg_number: number
+    player_legs_won: number
+    opponent_legs_won: number
+    player_id: string
+  }
+  match?: {
+    match_date: string
+    home_team?: { name: string }
+    away_team?: { name: string }
+    home_opponent_team?: { name: string }
+    away_opponent_team?: { name: string }
+    home_team_type: string
+    away_team_type: string
+  }
+  player?: {
+    name: string
+  }
+}
 
 export default function MemberProfilePage() {
   const { session, loading: authLoading } = useAuth()
@@ -58,11 +127,9 @@ export default function MemberProfilePage() {
   const [pendingMatches, setPendingMatches] = useState<Match[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
 
-  // PWA installation state
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [showInstallButton, setShowInstallButton] = useState(false)
 
-  // PWA installation effect
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
@@ -70,13 +137,7 @@ export default function MemberProfilePage() {
       setShowInstallButton(true)
     }
 
-    const handleAppInstalled = () => {
-      setShowInstallButton(false)
-      setDeferredPrompt(null)
-    }
-
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
-    window.addEventListener("appinstalled", handleAppInstalled)
 
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setShowInstallButton(false)
@@ -84,24 +145,19 @@ export default function MemberProfilePage() {
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
-      window.removeEventListener("appinstalled", handleAppInstalled)
     }
   }, [])
 
-  // PWA installation handler
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
       return
     }
 
     deferredPrompt.prompt()
-
     const { outcome } = await deferredPrompt.userChoice
 
     if (outcome === "accepted") {
       console.log("User accepted the install prompt")
-    } else {
-      console.log("User dismissed the install prompt")
     }
 
     setDeferredPrompt(null)
@@ -562,36 +618,6 @@ export default function MemberProfilePage() {
       <Header />
 
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl">
-        {showInstallButton && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-l-blue-500">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg">
-                    <Download className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
-                </div>
-                <div className="flex-grow w-full">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
-                    App auf deinem Gerät installieren
-                  </h3>
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    Installiere die Dartverein-App auf deinem Handy oder PC für schnellen Zugriff und ein besseres
-                    Erlebnis - auch offline verfügbar!
-                  </p>
-                  <Button
-                    onClick={handleInstallClick}
-                    className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg text-sm sm:text-base"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Jetzt installieren
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {notifications.length > 0 && (
           <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-500">
             <CardContent className="p-4 sm:p-6">
@@ -816,10 +842,10 @@ export default function MemberProfilePage() {
                     variant="outline"
                     size="sm"
                     onClick={handleInstallClick}
-                    className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 border-0 text-xs sm:text-sm"
+                    className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 border-0 text-xs sm:text-sm shadow-lg"
                   >
                     <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                    App auf PC oder Handy installieren
+                    App installieren
                   </Button>
                 )}
                 <Button
