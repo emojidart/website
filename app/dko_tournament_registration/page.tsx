@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
-import { Search, UserPlus, X, Play, Trophy, ArrowLeft, Euro, AlertCircle, ArrowRight, Star } from "lucide-react"
+import { Search, UserPlus, X, Play, Trophy, ArrowLeft, Euro, AlertCircle, ArrowRight, Star, Camera } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { BrowserQRCodeReader } from "@zxing/browser"
 
 interface Player {
   id: number
@@ -48,11 +49,31 @@ export default function DKOTournamentRegistration() {
   const [showCancelActiveTournamentDialog, setShowCancelActiveTournamentDialog] = useState(false)
   const router = useRouter()
 
+  const [showScanner, setShowScanner] = useState(false)
+  const [scannerMessage, setScannerMessage] = useState("")
+  const [isScanning, setIsScanning] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [scanSuccess, setScanSuccess] = useState(false)
+
   useEffect(() => {
     fetchPlayers()
     fetchRegisteredPlayers()
     checkForActiveTournament()
     fetchFrequentPlayers()
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop())
+      }
+      if (scanIntervalRef.current) {
+        clearInterval(scanIntervalRef.current)
+      }
+    }
   }, [])
 
   const fetchFrequentPlayers = async () => {
@@ -61,7 +82,7 @@ export default function DKOTournamentRegistration() {
         .from("tournament_series_aggregated")
         .select("player_name, tournaments_played")
         .order("tournaments_played", { ascending: false })
-        .limit(100) // Erhöhe Limit auf 100, um alle Spieler anzuzeigen
+        .limit(100)
 
       if (error) throw error
 
@@ -149,7 +170,7 @@ export default function DKOTournamentRegistration() {
       if (error) throw error
 
       await fetchRegisteredPlayers()
-      await fetchFrequentPlayers() // Refresh frequent players
+      await fetchFrequentPlayers()
       setSelectedPlayers(new Set())
     } catch (error) {
       console.error("Fehler beim Registrieren der Spieler:", error)
@@ -228,7 +249,6 @@ export default function DKOTournamentRegistration() {
 
       if (registrationError) throw registrationError
 
-      console.log("[v0] Active tournament cancelled successfully")
       setActiveTournament(null)
       setShowCancelActiveTournamentDialog(false)
       await fetchRegisteredPlayers()
@@ -253,6 +273,210 @@ export default function DKOTournamentRegistration() {
 
     const route = routeMap[tournamentType] || "/16erdko"
     router.push(`${route}?tournamentId=${tournamentId}&tournamentName=${encodedName}`)
+  }
+
+  const startScanner = async () => {
+    setShowScanner(true)
+    setScannerMessage("Kamera wird gestartet...")
+    setScanSuccess(false)
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.log("[v0] MediaDevices API not available")
+        setScannerMessage(
+          "Kamera-Zugriff nicht verfügbar! Bitte stelle sicher, dass:\n• Die Seite über HTTPS läuft\n• Dein Browser Kamera-Zugriff unterstützt\n• Du die Kamera-Berechtigung erteilt hast",
+        )
+        setTimeout(() => {
+          setShowScanner(false)
+          setScannerMessage("")
+        }, 5000)
+        return
+      }
+
+      console.log("[v0] Requesting camera access...")
+
+      // Request camera access with specific constraints
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment", // Use back camera on mobile
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      })
+
+      console.log("[v0] Camera access granted")
+      streamRef.current = stream
+
+      const video = videoRef.current
+      if (!video) {
+        throw new Error("Video element not found")
+      }
+
+      video.srcObject = stream
+      await video.play()
+      console.log("[v0] Video playing")
+
+      setIsScanning(true)
+      setScannerMessage("Bereit zum Scannen...")
+
+      // Create QR code reader
+      const codeReader = new BrowserQRCodeReader()
+
+      // Start scanning loop
+      scanIntervalRef.current = setInterval(async () => {
+        try {
+          const canvas = canvasRef.current
+          if (!canvas || !video) return
+
+          const context = canvas.getContext("2d")
+          if (!context) return
+
+          // Set canvas size to match video
+          canvas.width = video.videoWidth
+          canvas.height = video.videoHeight
+
+          // Draw current video frame to canvas
+          context.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+          // Try to decode QR code from canvas
+          const result = await codeReader.decodeFromCanvas(canvas)
+
+          if (result) {
+            console.log("[v0] QR Code detected:", result.getText())
+            const decodedText = result.getText()
+            setScannerMessage("QR-Code erkannt! Suche Spieler...")
+
+            // Stop scanning temporarily
+            if (scanIntervalRef.current) {
+              clearInterval(scanIntervalRef.current)
+              scanIntervalRef.current = null
+            }
+
+            try {
+              const { data: player, error: playerError } = await supabase
+                .from("spieldatenbank")
+                .select("id, name")
+                .eq("player_code", decodedText)
+                .single()
+
+              if (playerError || !player) {
+                console.log("[v0] Player not found for code:", decodedText)
+                setScannerMessage("Spieler nicht gefunden!")
+                setTimeout(() => {
+                  setScannerMessage("Bereit zum Scannen...")
+                  // Restart scanning
+                  startScanningLoop(codeReader)
+                }, 2000)
+                return
+              }
+
+              const alreadyRegistered = registeredPlayers.some((rp) => rp.player_id === player.id)
+              if (alreadyRegistered) {
+                console.log("[v0] Player already registered:", player.name)
+                setScannerMessage(`${player.name} ist bereits registriert!`)
+                setTimeout(() => {
+                  setScannerMessage("Bereit zum Scannen...")
+                  startScanningLoop(codeReader)
+                }, 2000)
+                return
+              }
+
+              const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
+                player_id: player.id,
+                player_name: player.name,
+                paid: false,
+              })
+
+              if (insertError) throw insertError
+
+              console.log("[v0] Player registered successfully:", player.name)
+              setScannerMessage(`✓ ${player.name} erfolgreich registriert!`)
+              setScanSuccess(true)
+              await fetchRegisteredPlayers()
+              await fetchFrequentPlayers()
+
+              setTimeout(() => {
+                setScannerMessage("Bereit zum Scannen...")
+                setScanSuccess(false)
+                startScanningLoop(codeReader)
+              }, 2000)
+            } catch (error) {
+              console.error("[v0] Error registering player:", error)
+              setScannerMessage("Fehler beim Registrieren!")
+              setTimeout(() => {
+                setScannerMessage("Bereit zum Scannen...")
+                startScanningLoop(codeReader)
+              }, 2000)
+            }
+          }
+        } catch (error) {
+          // Ignore decode errors (no QR code in frame)
+        }
+      }, 300) // Scan every 300ms
+
+      const startScanningLoop = (reader: BrowserQRCodeReader) => {
+        if (scanIntervalRef.current) return
+
+        scanIntervalRef.current = setInterval(async () => {
+          try {
+            const canvas = canvasRef.current
+            const video = videoRef.current
+            if (!canvas || !video) return
+
+            const context = canvas.getContext("2d")
+            if (!context) return
+
+            canvas.width = video.videoWidth
+            canvas.height = video.videoHeight
+            context.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+            const result = await reader.decodeFromCanvas(canvas)
+            if (result) {
+              console.log("[v0] QR Code detected in loop:", result.getText())
+              // Process the result (same logic as above)
+            }
+          } catch (error) {
+            // Ignore
+          }
+        }, 300)
+      }
+    } catch (error) {
+      console.error("[v0] Camera error:", error)
+      setScannerMessage("Kamera konnte nicht gestartet werden! Bitte Berechtigungen prüfen.")
+      setTimeout(() => {
+        setShowScanner(false)
+        setScannerMessage("")
+      }, 3000)
+    }
+  }
+
+  const stopScanner = () => {
+    console.log("[v0] Stopping scanner...")
+
+    // Stop scanning interval
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current)
+      scanIntervalRef.current = null
+    }
+
+    // Stop video stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        track.stop()
+        console.log("[v0] Camera track stopped")
+      })
+      streamRef.current = null
+    }
+
+    // Clear video element
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+
+    setIsScanning(false)
+    setShowScanner(false)
+    setScannerMessage("")
+    setScanSuccess(false)
   }
 
   const allPlayersPaid = registeredPlayers.every((player) => player.paid)
@@ -356,6 +580,49 @@ export default function DKOTournamentRegistration() {
           <p className="text-xl text-white/90 max-w-2xl mx-auto"></p>
         </div>
       </div>
+
+      {showScanner && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Mitgliedskarte scannen</h3>
+              <button
+                onClick={stopScanner}
+                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="relative mb-4">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full rounded-lg border-4 border-orange-500"
+                style={{ minHeight: "300px", maxHeight: "400px" }}
+              />
+              <canvas ref={canvasRef} className="hidden" />
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div className="w-64 h-64 border-4 border-orange-500 rounded-lg"></div>
+              </div>
+            </div>
+
+            <div
+              className={`text-center p-3 rounded-lg font-semibold ${
+                scanSuccess ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
+              }`}
+            >
+              {scannerMessage || "Bereit zum Scannen..."}
+            </div>
+
+            <p className="text-sm text-gray-600 mt-4 text-center">
+              Halte die Mitgliedskarte vor die Kamera, um den QR-Code zu scannen
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-6">
@@ -537,6 +804,14 @@ export default function DKOTournamentRegistration() {
                 {playerViewMode === "frequent" ? availableFrequentPlayers.length : filteredPlayers.length} Spieler
               </span>
             </div>
+
+            <button
+              onClick={startScanner}
+              className="w-full mb-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg"
+            >
+              <Camera className="w-5 h-5" />
+              Mitgliedskarte scannen
+            </button>
 
             <div className="flex gap-2 mb-4">
               <button

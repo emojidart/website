@@ -1,5 +1,4 @@
 "use client"
-import { Header } from "@/components/header"
 import { BonusSection } from "@/components/bonus-section"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
@@ -8,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 interface BonusConfig {
   under26: number
@@ -306,29 +306,27 @@ export default function MemberBonusPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-        <Header />
+      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
         </main>
+        <MobileBottomNav />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-      <Header />
-
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-6">
-          <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2 mb-4">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+      <main className="flex-grow container mx-auto px-4 py-4 max-w-7xl">
+        <div className="mb-4">
+          <Button variant="outline" size="sm" onClick={() => router.back()} className="flex items-center gap-2 mb-3">
             <ArrowLeft className="h-4 w-4" />
             Zurück zum Profil
           </Button>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Bonusgeld</h1>
-              <p className="text-gray-600 mt-2">Ihre Bonuspunkte und Belohnungen</p>
+              <h1 className="text-2xl font-bold text-gray-900">Bonusgeld</h1>
+              <p className="text-sm text-gray-600 mt-1">Ihre Bonuspunkte und Belohnungen</p>
             </div>
             {teamMemberships.length > 1 && (
               <div className="flex items-center gap-2">
@@ -336,7 +334,7 @@ export default function MemberBonusPage() {
                   Team filtern:
                 </label>
                 <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                  <SelectTrigger id="team-filter" className="w-[200px]">
+                  <SelectTrigger id="team-filter" className="w-full">
                     <SelectValue placeholder="Team auswählen" />
                   </SelectTrigger>
                   <SelectContent>
@@ -364,6 +362,7 @@ export default function MemberBonusPage() {
           saveBonusConfig={saveBonusConfig}
         />
       </main>
+      <MobileBottomNav />
     </div>
   )
 }

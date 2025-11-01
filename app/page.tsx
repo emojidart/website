@@ -1,41 +1,1456 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Header } from "@/components/header"
-import { HeroSection } from "@/components/hero-section"
-import { AboutUsSection } from "@/components/about-us-section"
-import { ImageSlideshow } from "@/components/image-slideshow"
-import { FeaturesSection } from "@/components/features-section"
-import { WeeklyResults } from "@/components/weekly-results"
-import { SocialSidebar } from "@/components/social-sidebar"
-import { useDartData } from "@/hooks/use-dart-data"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { createBrowserClient } from "@supabase/ssr"
+import {
+  Trophy,
+  TrendingUp,
+  Sparkles,
+  ArrowRight,
+  Calendar,
+  MapPin,
+  Clock,
+  Info,
+  Euro,
+  Target,
+  Swords,
+  Users,
+  PartyPopper,
+  Gamepad2,
+  X,
+  Zap,
+  CheckCircle2,
+  Download,
+} from "lucide-react"
+import Image from "next/image"
+import { FAQChatWidget } from "@/components/faq-chat-widget"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
-export default function Home() {
-  const { currentPot } = useDartData()
+const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
-  const slideshowImages = [
-    "/images/slideshow/darts-action-1.png",
-    "/images/slideshow/darts-action-2.png",
-    "/images/slideshow/darts-action-3.png",
-  ]
+interface Match {
+  id: string
+  home_team_id: string | null
+  away_team_id: string | null
+  home_opponent_team_id: string | null
+  away_opponent_team_id: string | null
+  home_score: number | null
+  away_score: number | null
+  match_date: string
+  matchday: number
+  status: string
+  match_time?: string
+  home_team?: {
+    id: string
+    name: string
+    logo_url?: string
+  }
+  away_team?: {
+    id: string
+    name: string
+    logo_url?: string
+  }
+  home_opponent_team?: {
+    id: string
+    name: string
+    logo_url?: string
+  }
+  away_opponent_team?: {
+    id: string
+    name: string
+    logo_url?: string
+  }
+}
+
+interface Tournament {
+  id: string
+  name: string
+  date: string
+  time: string
+  location: string
+  entry_fee: number
+  mode: string
+  details: string | null
+  photo_url: string | null
+}
+
+interface Event {
+  id: string
+  name: string
+  event_date: string
+  event_time: string | null
+  location: string | null
+  event_type: string
+  description: string | null
+  photo_url: string | null
+  max_participants: number | null
+}
+
+interface CombinedEvent {
+  id: string
+  name: string
+  date: string
+  time: string
+  location: string
+  details: string | null
+  photo_url: string | null
+  type: "tournament" | "event"
+  eventType?: string
+  entry_fee?: number
+  mode?: string
+  max_participants?: number | null
+}
+
+interface LionCupEvent {
+  id: string
+  name: string
+  event_date: string
+  event_time: string | null
+  event_type: string
+  description: string | null
+}
+
+interface ActiveTournament {
+  tournament_id: string
+  tournament_name: string
+  tournament_type: string
+  status: string
+}
+
+function CountdownTimer({ targetDate }: { targetDate: Date }) {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  })
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = targetDate.getTime() - new Date().getTime()
+
+      if (difference > 0) {
+        setTimeLeft({
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((difference / 1000 / 60) % 60),
+          seconds: Math.floor((difference / 1000) % 60),
+        })
+      }
+    }
+
+    calculateTimeLeft()
+    const timer = setInterval(calculateTimeLeft, 1000)
+
+    return () => clearInterval(timer)
+  }, [targetDate])
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
-      <SocialSidebar />
-      <Header />
-      <main>
-        <WeeklyResults />
-        <HeroSection currentPot={currentPot} />
-        <FeaturesSection />
-        <section className="py-20 px-4 md:px-8 bg-gray-100">
-          <div className="max-w-6xl mx-auto">
-            <ImageSlideshow images={slideshowImages} />
+    <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 text-center">
+      <div>
+        <div className="text-2xl sm:text-3xl lg:text-5xl font-black">{timeLeft.days}</div>
+        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Tage</div>
+      </div>
+      <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
+      <div>
+        <div className="text-2xl sm:text-3xl lg:text-5xl font-black">{timeLeft.hours}</div>
+        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Std</div>
+      </div>
+      <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
+      <div>
+        <div className="text-2xl sm:text-3xl lg:text-5xl font-black">{timeLeft.minutes}</div>
+        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Min</div>
+      </div>
+      <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
+      <div>
+        <div className="text-2xl sm:text-3xl lg:text-5xl font-black">{timeLeft.seconds}</div>
+        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Sek</div>
+      </div>
+    </div>
+  )
+}
+
+function getEventTypeIcon(eventType: string) {
+  const type = eventType.toLowerCase()
+  if (type.includes("party")) return PartyPopper
+  if (type.includes("spiel")) return Gamepad2
+  if (type.includes("turnier")) return Trophy
+  return Users
+}
+
+function getEventTypeLabel(eventType: string) {
+  const type = eventType.toLowerCase()
+  if (type.includes("party")) return "Party"
+  if (type.includes("spiel")) return "Spielabend"
+  if (type.includes("turnier")) return "Turnier"
+  if (type.includes("versammlung")) return "Versammlung"
+  return eventType
+}
+
+export default function Home() {
+  const [matches, setMatches] = useState<Match[]>([])
+  const [loading, setLoading] = useState(true)
+  const [cupPrizePool, setCupPrizePool] = useState<number>(0)
+  const [combinedEvents, setCombinedEvents] = useState<CombinedEvent[]>([])
+  const [nextEvent, setNextEvent] = useState<LionCupEvent | null>(null)
+  const [nextTournamentEvent, setNextTournamentEvent] = useState<LionCupEvent | null>(null)
+  const [lionCupLoading, setLionCupLoading] = useState(true)
+  const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null)
+  const [showTournamentModal, setShowTournamentModal] = useState(false)
+  const [activeTournament, setActiveTournament] = useState<ActiveTournament | null>(null)
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [showInstallButton, setShowInstallButton] = useState(false)
+
+  const buffaloCupNextDate = new Date("2026-01-07T19:00:00")
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      setShowInstallButton(true)
+    }
+
+    const handleAppInstalled = () => {
+      setShowInstallButton(false)
+      setDeferredPrompt(null)
+    }
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
+    window.addEventListener("appinstalled", handleAppInstalled)
+
+    // Check if app is already installed
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setShowInstallButton(false)
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
+      window.removeEventListener("appinstalled", handleAppInstalled)
+    }
+  }, [])
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      alert("Installation nicht verfügbar. Auf iOS: Teilen-Menü → Zum Home-Bildschirm hinzufügen")
+      return
+    }
+
+    deferredPrompt.prompt()
+
+    const { outcome } = await deferredPrompt.userChoice
+
+    setDeferredPrompt(null)
+    setShowInstallButton(false)
+  }
+
+  useEffect(() => {
+    const loadMatches = async () => {
+      try {
+        const { data: opponentTeamsData } = await supabase.from("opponent_teams").select("*")
+
+        const now = new Date()
+        const today = now.toISOString().split("T")[0]
+
+        const { data: matchesData } = await supabase
+          .from("matches")
+          .select(`
+            *,
+            home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
+            away_team:teams!matches_away_team_id_fkey(id, name, logo_url)
+          `)
+          .eq("status", "scheduled")
+          .gte("match_date", today)
+          .order("match_date", { ascending: true })
+          .order("match_time", { ascending: true })
+          .limit(4)
+
+        if (matchesData) {
+          const enrichedMatches =
+            matchesData?.map((match) => {
+              const homeOpponentTeam = match.home_opponent_team_id
+                ? opponentTeamsData?.find((team: any) => team.id === match.home_opponent_team_id)
+                : null
+              const awayOpponentTeam = match.away_opponent_team_id
+                ? opponentTeamsData?.find((team: any) => team.id === match.away_opponent_team_id)
+                : null
+
+              return {
+                ...match,
+                home_opponent_team: homeOpponentTeam,
+                away_opponent_team: awayOpponentTeam,
+              }
+            }) || []
+
+          setMatches(enrichedMatches)
+        }
+      } catch (error) {
+        console.error("Error loading matches:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadMatches()
+  }, [])
+
+  useEffect(() => {
+    const fetchCupData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("tournament_series_aggregated")
+          .select("player_name, tournaments_played")
+
+        if (error) {
+          throw error
+        }
+
+        const totalParticipants = data?.length || 0
+        const totalAppearances = data?.reduce((sum, player) => sum + player.tournaments_played, 0) || 0
+
+        const prizePoolFromParticipants = totalParticipants * 5
+        const prizePoolFromAppearances = totalAppearances * 4
+
+        let hostSponsoring = 0
+        if (totalAppearances >= 501) {
+          hostSponsoring = 250
+        } else if (totalAppearances >= 1) {
+          hostSponsoring = 100
+        }
+
+        const totalPrizePool = prizePoolFromParticipants + prizePoolFromAppearances + hostSponsoring
+
+        setCupPrizePool(totalPrizePool)
+      } catch (error) {
+        console.error("Error fetching cup data:", error)
+        setCupPrizePool(0)
+      }
+    }
+
+    fetchCupData()
+  }, [])
+
+  useEffect(() => {
+    const fetchEventsAndTournaments = async () => {
+      try {
+        const today = new Date().toISOString().split("T")[0]
+
+        const { data: tournamentsData, error: tournamentsError } = await supabase
+          .from("tournaments")
+          .select("*")
+          .gte("date", today)
+          .order("date", { ascending: true })
+          .order("time", { ascending: true })
+
+        if (tournamentsError) {
+          console.error("Error fetching tournaments:", tournamentsError)
+        }
+
+        const { data: eventsData, error: eventsError } = await supabase
+          .from("events")
+          .select("*")
+          .not("name", "ilike", "%LION%")
+          .gte("event_date", today)
+          .order("event_date", { ascending: true })
+          .order("event_time", { ascending: true })
+
+        if (eventsError) {
+          console.error("Error fetching events:", eventsError)
+        }
+
+        const combined: CombinedEvent[] = []
+
+        if (tournamentsData) {
+          tournamentsData.forEach((tournament) => {
+            combined.push({
+              id: tournament.id,
+              name: tournament.name,
+              date: tournament.date,
+              time: tournament.time,
+              location: tournament.location,
+              details: tournament.details,
+              photo_url: tournament.photo_url,
+              type: "tournament",
+              entry_fee: tournament.entry_fee,
+              mode: tournament.mode,
+            })
+          })
+        }
+
+        if (eventsData) {
+          eventsData.forEach((event) => {
+            combined.push({
+              id: event.id,
+              name: event.name,
+              date: event.event_date,
+              time: event.event_time || "19:00",
+              location: event.location || "Wird bekannt gegeben",
+              details: event.description,
+              photo_url: event.photo_url,
+              type: "event",
+              eventType: event.event_type,
+              max_participants: event.max_participants,
+            })
+          })
+        }
+
+        combined.sort((a, b) => {
+          const dateA = new Date(`${a.date}T${a.time}`)
+          const dateB = new Date(`${b.date}T${b.time}`)
+          return dateA.getTime() - dateB.getTime()
+        })
+
+        setCombinedEvents(combined.slice(0, 6))
+      } catch (error) {
+        console.error("Error fetching events and tournaments:", error)
+      }
+    }
+
+    fetchEventsAndTournaments()
+  }, [])
+
+  useEffect(() => {
+    const loadActiveTournament = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("tournaments_status")
+          .select("tournament_id, tournament_name, tournament_type, status")
+          .eq("status", "active")
+          .limit(1)
+          .single()
+
+        if (error && error.code !== "PGRST116") {
+          console.error("Error loading active tournament:", error)
+          return
+        }
+
+        if (data) {
+          setActiveTournament({
+            tournament_id: data.tournament_id,
+            tournament_name: data.tournament_name,
+            tournament_type: data.tournament_type,
+            status: data.status,
+          })
+        } else {
+          setActiveTournament(null)
+        }
+      } catch (error) {
+        console.error("Error loading active tournament:", error)
+      }
+    }
+
+    loadActiveTournament()
+
+    const channel = supabase
+      .channel("tournament_status_home")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tournaments_status",
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            const data = payload.new as any
+            if (data.status === "active") {
+              setActiveTournament({
+                tournament_id: data.tournament_id,
+                tournament_name: data.tournament_name,
+                tournament_type: data.tournament_type,
+                status: data.status,
+              })
+            } else if (data.status === "cancelled" || data.status === "completed") {
+              setActiveTournament(null)
+            }
+          } else if (payload.eventType === "DELETE") {
+            setActiveTournament(null)
+          }
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  useEffect(() => {
+    const fetchLionCupEvent = async () => {
+      try {
+        const lionCupSchedule = [
+          { date: "2025-11-03", time: "19:30", type: "Turnier" },
+          { date: "2025-11-10", time: "19:30", type: "Turnier" },
+          { date: "2025-11-17", time: "19:30", type: "Turnier" },
+          { date: "2025-11-24", time: "19:30", type: "Turnier" },
+          { date: "2025-12-01", time: "19:30", type: "Turnier" },
+          { date: "2025-12-08", time: "19:30", type: "Turnier" },
+          { date: "2025-12-15", time: "19:30", type: "Turnier" },
+          { date: "2025-12-22", time: "19:30", type: "Spielfrei" },
+          { date: "2025-12-29", time: "19:30", type: "Spielfrei" },
+          { date: "2026-01-05", time: "19:30", type: "Spielfrei" },
+          { date: "2026-01-12", time: "19:30", type: "Turnier" },
+          { date: "2026-01-19", time: "19:30", type: "Turnier" },
+          { date: "2026-01-26", time: "19:30", type: "Turnier" },
+          { date: "2026-02-02", time: "19:30", type: "Turnier" },
+          { date: "2026-02-09", time: "19:30", type: "Turnier" },
+          { date: "2026-02-16", time: "19:30", type: "Turnier" },
+          { date: "2026-02-23", time: "19:30", type: "Turnier" },
+          { date: "2026-03-02", time: "19:30", type: "Turnier" },
+          { date: "2026-03-09", time: "19:30", type: "Turnier" },
+          { date: "2026-03-16", time: "19:30", type: "Turnier" },
+          { date: "2026-03-23", time: "19:30", type: "Turnier" },
+          { date: "2026-03-30", time: "19:30", type: "Turnier" },
+          { date: "2026-04-06", time: "19:30", type: "Turnier" },
+          { date: "2026-04-13", time: "19:30", type: "Turnier" },
+          { date: "2026-04-20", time: "19:30", type: "Turnier" },
+          { date: "2026-04-27", time: "19:30", type: "Turnier" },
+          { date: "2026-05-04", time: "19:30", type: "Turnier" },
+          { date: "2026-05-11", time: "19:30", type: "Spielfrei" },
+          { date: "2026-05-18", time: "19:30", type: "Turnier" },
+          { date: "2026-05-25", time: "19:30", type: "Turnier" },
+        ]
+
+        const today = new Date().toISOString().split("T")[0]
+
+        const upcomingEvents = lionCupSchedule.filter((event) => event.date >= today)
+
+        if (upcomingEvents.length > 0) {
+          const nextEventData = {
+            id: "lion-cup-next",
+            name: "EMD LION CUP",
+            event_date: upcomingEvents[0].date,
+            event_time: upcomingEvents[0].time,
+            event_type: upcomingEvents[0].type,
+            description: null,
+          }
+          setNextEvent(nextEventData)
+
+          const nextTournamentData = upcomingEvents.find((event) => event.type === "Turnier")
+          if (nextTournamentData) {
+            setNextTournamentEvent({
+              id: "lion-cup-tournament",
+              name: "EMD LION CUP",
+              event_date: nextTournamentData.date,
+              event_time: nextTournamentData.time,
+              event_type: "Turnier",
+              description: null,
+            })
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching Lion Cup event:", error)
+      } finally {
+        setLionCupLoading(false)
+      }
+    }
+
+    fetchLionCupEvent()
+  }, [])
+
+  const getTeamName = (match: Match, isHome: boolean) => {
+    if (isHome) {
+      return match.home_team?.name || match.home_opponent_team?.name || "Unbekanntes Team"
+    } else {
+      return match.away_team?.name || match.away_opponent_team?.name || "Unbekanntes Team"
+    }
+  }
+
+  const getTeamLogo = (match: Match, isHome: boolean) => {
+    if (isHome) {
+      return match.home_team?.logo_url || match.home_opponent_team?.logo_url
+    } else {
+      return match.away_team?.logo_url || match.away_opponent_team?.logo_url
+    }
+  }
+
+  const createEventDate = (event: LionCupEvent | null) => {
+    if (!event) return new Date("2025-11-15T19:00:00")
+    const time = event.event_time || "19:00:00"
+    return new Date(`${event.event_date}T${time}`)
+  }
+
+  const lionCupNextDate = createEventDate(nextTournamentEvent)
+  const isNextEventSpielfrei = nextEvent?.event_type?.toLowerCase() === "spielfrei"
+
+  if (loading || lionCupLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-gray-600">Lade Daten...</p>
           </div>
-        </section>
-        <AboutUsSection />
-      </main>
-      <footer className="py-6 bg-gray-200 text-gray-600 text-sm text-center border-t border-gray-300">
-        <p>&copy; 2025 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>
+        </main>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+
+      {activeTournament && (
+        <div className="bg-red-600 border-b-4 border-red-700 shadow-md">
+          <div className="container mx-auto px-4 py-3 sm:py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="relative flex-shrink-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-white rounded-full animate-pulse shadow-lg"></div>
+                </div>
+                <div className="text-white flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold bg-white/20 backdrop-blur-sm uppercase tracking-wider">
+                      LIVE
+                    </span>
+                  </div>
+                  <h3 className="text-sm sm:text-lg font-bold leading-tight truncate">
+                    {activeTournament.tournament_name}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-white/90">
+                    {activeTournament.tournament_type.replace("_", " ").toUpperCase()}
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="bg-white text-red-600 hover:bg-red-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 flex-shrink-0 text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5"
+                onClick={() => (window.location.href = "/live-all-app")}
+              >
+                <span className="hidden sm:inline">Jetzt Live</span>
+                <span className="sm:hidden">Live</span>
+                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <section className="container mx-auto px-4 py-8 lg:py-12 overflow-x-hidden">
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white overflow-hidden rounded-2xl shadow-2xl">
+            <div className="absolute inset-0 bg-[url('/stadium-crowd-atmosphere.jpg')] bg-cover bg-center opacity-10" />
+
+            <div className="relative p-4 sm:p-6 lg:p-10 flex flex-col min-h-full">
+              <div className="w-full mx-auto flex-1 flex flex-col">
+                <div className="flex items-center justify-center mb-6 sm:mb-8">
+                  <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 flex items-center justify-center">
+                    <Image src="/images/logo1.png" alt="Logo 1" width={96} height={96} className="object-contain p-2" />
+                  </div>
+                </div>
+
+                <div className="text-center mb-4 sm:mb-6">
+                  <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-900 px-3 py-1.5 rounded-full font-bold text-xs mb-3">
+                    <Trophy className="w-3.5 h-3.5" />
+                    <span>TURNIERSERIE 2025</span>
+                  </div>
+                  <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-1">EMD - LION CUP</h1>
+                  <div className="h-10 flex items-center justify-center mb-1">
+                    {isNextEventSpielfrei && nextEvent && (
+                      <div className="inline-block">
+                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20">
+                          <div className="flex items-center gap-2 text-xs">
+                            <Calendar className="w-3.5 h-3.5 text-yellow-400" />
+                            <span className="text-orange-100">
+                              Spielfrei am{" "}
+                              {new Date(nextEvent.event_date).toLocaleDateString("de-DE", {
+                                day: "2-digit",
+                                month: "long",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">Nächstes Turnier</p>
+                  <p className="text-sm lg:text-base text-orange-200">
+                    {nextTournamentEvent
+                      ? `${new Date(lionCupNextDate).toLocaleDateString("de-DE", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })} • ${nextTournamentEvent.event_time || "19:00"} Uhr`
+                      : "15. November 2025 • 19:00 Uhr"}
+                  </p>
+                </div>
+
+                <div className="flex justify-center mb-4 sm:mb-6">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 sm:px-4 lg:px-8 py-3 sm:py-4 border border-white/20">
+                    <CountdownTimer targetDate={lionCupNextDate} />
+                  </div>
+                </div>
+
+                <div className="mb-4 sm:mb-6 flex-1 flex flex-col justify-center">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 lg:p-6 border border-white/20">
+                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
+                        <span className="text-yellow-300 text-xs lg:text-sm font-bold uppercase tracking-wider">
+                          Aktuelles Preisgeld
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-green-300">
+                        <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                        <span className="text-[10px] sm:text-xs font-bold">+€4 pro Teilnahme</span>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl sm:text-4xl lg:text-5xl font-black mb-1">€{cupPrizePool.toFixed(2)}</div>
+                      <p className="text-orange-200 text-xs lg:text-sm">
+                        Wächst mit jedem Teilnehmer und jeder Teilnahme
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    size="lg"
+                    className="bg-yellow-400 hover:bg-yellow-500 text-orange-900 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl w-full sm:w-auto"
+                    onClick={() => (window.location.href = "/tournament-series-app")}
+                  >
+                    Zur Wertung
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl backdrop-blur-sm w-full sm:w-auto"
+                    onClick={() => (window.location.href = "/lion-cup-regelwerk")}
+                  >
+                    Regelwerk
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl backdrop-blur-sm w-full sm:w-auto"
+                    onClick={() => (window.location.href = "/upcoming-tournaments-app")}
+                  >
+                    Anmelden
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 text-white overflow-hidden rounded-2xl shadow-2xl">
+            <div className="absolute inset-0 bg-[url('/stadium-crowd-atmosphere.jpg')] bg-cover bg-center opacity-5" />
+
+            <div className="relative p-4 sm:p-6 lg:p-10 flex flex-col min-h-full">
+              <div className="w-full mx-auto flex-1 flex flex-col">
+                <div className="flex items-center justify-center mb-6 sm:mb-8">
+                  <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 flex items-center justify-center">
+                    <Image src="/images/logo2.png" alt="Logo 2" width={96} height={96} className="object-contain p-2" />
+                  </div>
+                </div>
+
+                <div className="text-center mb-4 sm:mb-6">
+                  <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-1">BUFFALO-STEEL</h1>
+                  <div className="h-10 mb-1" />
+                  <h2 className="text-lg sm:text-xl lg:text-3xl font-bold text-slate-300 mb-2">DART SERIEN CUP</h2>
+                  <p className="text-base sm:text-lg lg:text-xl text-slate-200 mb-1">Nächstes Turnier</p>
+                  <p className="text-sm lg:text-base text-slate-300">07. Jänner 2026 • 19:00 Uhr</p>
+                </div>
+
+                <div className="flex justify-center mb-4 sm:mb-6">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 sm:px-4 lg:px-8 py-3 sm:py-4 border border-white/20">
+                    <CountdownTimer targetDate={buffaloCupNextDate} />
+                  </div>
+                </div>
+
+                <div className="mb-4 sm:mb-6 flex-1 flex flex-col justify-center">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 lg:p-6 border border-white/20">
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-base sm:text-lg mb-1">Pfeil-OK Salzburg</p>
+                        <p className="text-slate-300 text-sm">Linzer Bundesstrasse 16</p>
+                        <p className="text-slate-300 text-sm">5020 Salzburg</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    size="lg"
+                    className="bg-slate-400 hover:bg-slate-500 text-slate-900 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl w-full sm:w-auto"
+                    onClick={() => (window.location.href = "/buffalo-steel-cup")}
+                  >
+                    Mehr Infos
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl backdrop-blur-sm w-full sm:w-auto"
+                    onClick={() => (window.location.href = "/buffalo-steel-cup")}
+                  >
+                    Anmeldung folgt
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="container mx-auto px-4 py-12">
+        <div className="space-y-8">
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Nächste Spiele</h2>
+              <Button
+                variant="ghost"
+                className="text-primary font-semibold"
+                onClick={() => (window.location.href = "/liga-statistiken-app")}
+              >
+                Alle Spiele
+              </Button>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {matches.slice(0, 4).map((match) => (
+                <Card key={match.id} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(match.match_date).toLocaleDateString("de-DE", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex flex-col items-center flex-1">
+                        {getTeamLogo(match, true) ? (
+                          <img
+                            src={getTeamLogo(match, true) || "/placeholder.svg"}
+                            alt={getTeamName(match, true)}
+                            className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 mb-2"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                            <Trophy className="h-8 w-8 text-gray-400" />
+                          </div>
+                        )}
+                        <p className="font-semibold text-sm text-center">{getTeamName(match, true)}</p>
+                      </div>
+                      <div className="text-2xl font-bold text-gray-400">vs</div>
+                      <div className="flex flex-col items-center flex-1">
+                        {getTeamLogo(match, false) ? (
+                          <img
+                            src={getTeamLogo(match, false) || "/placeholder.svg"}
+                            alt={getTeamName(match, false)}
+                            className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 mb-2"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                            <Trophy className="h-8 w-8 text-gray-400" />
+                          </div>
+                        )}
+                        <p className="font-semibold text-sm text-center">{getTeamName(match, false)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {matches.length === 0 && (
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-12 text-center">
+                  <p className="text-gray-500">Keine anstehenden Spiele</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Turniere & Veranstaltungen</h2>
+              <Button
+                variant="ghost"
+                className="text-primary font-semibold"
+                onClick={() => (window.location.href = "/veranstaltungen")}
+              >
+                Alle Veranstaltungen
+              </Button>
+            </div>
+
+            {combinedEvents.length === 0 ? (
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-12 text-center">
+                  <Info className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-500">Derzeit sind keine weiteren Turniere oder Veranstaltungen geplant.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid md:grid-cols-3 gap-6">
+                {combinedEvents.map((item) => {
+                  const EventIcon = item.type === "event" && item.eventType ? getEventTypeIcon(item.eventType) : Trophy
+
+                  return (
+                    <Dialog key={item.id}>
+                      <DialogTrigger asChild>
+                        <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow overflow-hidden group cursor-pointer">
+                          <div className="relative h-48 bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
+                            {item.photo_url ? (
+                              <Image
+                                src={item.photo_url || "/placeholder.svg"}
+                                alt={item.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/40">
+                                <EventIcon className="h-16 w-16 text-primary" />
+                              </div>
+                            )}
+                            <div className="absolute top-4 left-4">
+                              <span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
+                                {item.type === "tournament"
+                                  ? "TURNIER"
+                                  : getEventTypeLabel(item.eventType || "").toUpperCase()}
+                              </span>
+                            </div>
+                          </div>
+                          <CardContent className="p-4">
+                            <p className="text-xs text-gray-500 mb-2">
+                              {new Date(item.date)
+                                .toLocaleDateString("de-DE", {
+                                  day: "2-digit",
+                                  month: "long",
+                                  year: "numeric",
+                                })
+                                .toUpperCase()}
+                            </p>
+                            <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{item.name}</h3>
+                            <p className="text-sm text-gray-600 line-clamp-2">
+                              {item.details ||
+                                `${
+                                  item.type === "tournament"
+                                    ? `${item.mode === "edart" ? "E-Dart" : item.mode === "steeldart" ? "Steel Dart" : "Beide Modi"} Turnier`
+                                    : getEventTypeLabel(item.eventType || "")
+                                } um ${item.time} Uhr`}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle className="text-2xl sm:text-3xl font-black text-primary">
+                            {item.name}
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 sm:space-y-6">
+                          {item.photo_url && (
+                            <div
+                              className="relative w-full h-48 sm:h-64 rounded-xl overflow-hidden cursor-pointer group"
+                              onClick={() => setFullscreenPhoto(item.photo_url)}
+                            >
+                              <Image
+                                src={item.photo_url || "/placeholder.svg"}
+                                alt={item.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                sizes="(max-width: 768px) 100vw, 800px"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-3">
+                                  <svg
+                                    className="w-6 h-6 text-gray-900"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                                    />
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 sm:p-6 border border-orange-200">
+                            <div className="flex items-center gap-3 mb-4">
+                              <EventIcon className="w-8 h-8 text-orange-600" />
+                              <div>
+                                <h4 className="text-xl font-bold text-gray-900">
+                                  {item.type === "tournament" ? "Turnierinformationen" : "Veranstaltungsinformationen"}
+                                </h4>
+                                <p className="text-sm text-gray-700">Alle wichtigen Details auf einen Blick</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex items-start gap-3">
+                              <Calendar className="w-5 h-5 text-orange-600 mt-1" />
+                              <div>
+                                <p className="font-semibold text-gray-900">Datum</p>
+                                <p className="text-gray-700">
+                                  {new Date(item.date).toLocaleDateString("de-DE", {
+                                    day: "2-digit",
+                                    month: "long",
+                                    year: "numeric",
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <Clock className="w-5 h-5 text-orange-600 mt-1" />
+                              <div>
+                                <p className="font-semibold text-gray-900">Uhrzeit</p>
+                                <p className="text-gray-700">{item.time} Uhr</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <MapPin className="w-5 h-5 text-orange-600 mt-1" />
+                              <div>
+                                <p className="font-semibold text-gray-900">Ort</p>
+                                <p className="text-gray-700">{item.location}</p>
+                              </div>
+                            </div>
+
+                            {item.type === "tournament" && (
+                              <>
+                                <div className="flex items-start gap-3">
+                                  {item.mode === "edart" ? (
+                                    <Target className="w-5 h-5 text-orange-600 mt-1" />
+                                  ) : item.mode === "steeldart" ? (
+                                    <Swords className="w-5 h-5 text-orange-600 mt-1" />
+                                  ) : (
+                                    <Users className="w-5 h-5 text-orange-600 mt-1" />
+                                  )}
+                                  <div>
+                                    <p className="font-semibold text-gray-900">Modus</p>
+                                    <p className="text-gray-700">
+                                      {item.mode === "edart"
+                                        ? "E-Dart"
+                                        : item.mode === "steeldart"
+                                          ? "Steel Dart"
+                                          : "Beide Modi"}
+                                    </p>
+                                  </div>
+                                </div>
+                                {item.entry_fee !== undefined && (
+                                  <div className="flex items-start gap-3">
+                                    <Euro className="w-5 h-5 text-orange-600 mt-1" />
+                                    <div>
+                                      <p className="font-semibold text-gray-900">Startgeld</p>
+                                      <p className="text-gray-700">€{item.entry_fee.toFixed(2)}</p>
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+
+                            {item.type === "event" && item.eventType && (
+                              <div className="flex items-start gap-3">
+                                <EventIcon className="w-5 h-5 text-orange-600 mt-1" />
+                                <div>
+                                  <p className="font-semibold text-gray-900">Art der Veranstaltung</p>
+                                  <p className="text-gray-700">{getEventTypeLabel(item.eventType)}</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {item.max_participants && (
+                              <div className="flex items-start gap-3">
+                                <Users className="w-5 h-5 text-orange-600 mt-1" />
+                                <div>
+                                  <p className="font-semibold text-gray-900">Max. Teilnehmer</p>
+                                  <p className="text-gray-700">{item.max_participants}</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {item.details && (
+                              <div className="flex items-start gap-3">
+                                <Info className="w-5 h-5 text-orange-600 mt-1" />
+                                <div>
+                                  <p className="font-semibold text-gray-900">Details</p>
+                                  <p className="text-gray-700">{item.details}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <Button
+                            className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-base sm:text-lg py-4 sm:py-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => {
+                              if (item.type === "tournament") {
+                                window.location.href = `/veranstaltungen/${item.id}/anmeldung`
+                              }
+                            }}
+                            disabled={item.type === "event"}
+                          >
+                            {item.type === "tournament" ? "Jetzt anmelden" : "Nur für Turniere"}
+                            <ArrowRight className="w-5 h-5 ml-2" />
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <section className="bg-white py-16 lg:py-24 border-y border-gray-200">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <p className="text-orange-600 font-bold text-sm uppercase tracking-wider mb-3">Unsere Partner</p>
+            <h2 className="text-3xl lg:text-5xl font-black text-gray-900 mb-4">Gemeinsam für den Dartsport</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Wir danken unseren Sponsoren und Partnern für ihre Unterstützung und ihr Vertrauen in EMD Dart
+            </p>
+          </div>
+
+          <div className="mb-16">
+            <div className="text-center mb-8">
+              <span className="inline-block bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider shadow-lg">
+                Hauptsponsor
+              </span>
+            </div>
+            <div className="max-w-md mx-auto">
+              <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-12 shadow-xl border-2 border-gray-200 hover:shadow-2xl hover:border-orange-300 transition-all duration-500 group hover:scale-105">
+                <div className="relative h-32 flex items-center justify-center">
+                  <Image
+                    src="/images/sponsoren/sponsor1.png"
+                    alt="Hauptsponsor"
+                    width={280}
+                    height={120}
+                    className="object-contain transition-all duration-500 group-hover:scale-110"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-16">
+            <div className="text-center mb-8">
+              <span className="inline-block bg-slate-700 text-white px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider shadow-md">
+                Premium Partner
+              </span>
+            </div>
+            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {[2, 3, 4].map((num) => (
+                <div
+                  key={num}
+                  className="bg-white rounded-xl p-8 shadow-md border border-gray-200 hover:shadow-xl hover:border-orange-400 hover:-translate-y-1 transition-all duration-300 group"
+                >
+                  <div className="relative h-24 flex items-center justify-center">
+                    <Image
+                      src={`/images/sponsoren/sponsor${num}.png`}
+                      alt={`Premium Partner ${num}`}
+                      width={200}
+                      height={80}
+                      className="object-contain transition-all duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-center mb-8">
+              <span className="inline-block bg-gray-200 text-gray-700 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
+                Offizielle Partner
+              </span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+              {[5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
+                <div
+                  key={num}
+                  className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:border-orange-300 hover:-translate-y-0.5 transition-all duration-300 group"
+                >
+                  <div className="relative h-16 flex items-center justify-center">
+                    <Image
+                      src={`/images/sponsoren/sponsor${num}.png`}
+                      alt={`Partner ${num}`}
+                      width={120}
+                      height={60}
+                      className="object-contain transition-all duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-16 text-center">
+            <div className="bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 rounded-2xl p-8 lg:p-12 border-2 border-orange-200 shadow-lg">
+              <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
+                Werden Sie Teil unserer Erfolgsgeschichte
+              </h3>
+              <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
+                Interessiert an einer Partnerschaft? Kontaktieren Sie uns und profitieren Sie von unserer wachsenden
+                Community.
+              </p>
+              <Button
+                size="lg"
+                className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-8 py-6 text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                onClick={() => (window.location.href = "/sponsoring")}
+              >
+                Sponsor werden
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <FAQChatWidget />
+
+      <section className="bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 py-16 lg:py-24">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="text-white">
+              {showInstallButton ? (
+                <>
+                  <div className="flex items-center gap-3 mb-6">
+                    <Download className="w-12 h-12 text-yellow-400" />
+                    <h2 className="text-4xl lg:text-5xl font-black">Lade dir die EMD Dart App runter</h2>
+                  </div>
+                  <p className="text-lg lg:text-xl text-orange-100 mb-8 leading-relaxed">
+                    Bleib immer auf dem Laufenden mit Live-Scores, Turnierergebnissen, Spielplänen und exklusiven News.
+                    Verfolge deine Lieblingsspieler und Teams in Echtzeit!
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 mb-6">
+                    <CheckCircle2 className="w-12 h-12 text-green-400" />
+                    <h2 className="text-4xl lg:text-5xl font-black">App bereits installiert!</h2>
+                  </div>
+                  <p className="text-lg lg:text-xl text-orange-100 mb-8 leading-relaxed">
+                    Super! Du nutzt bereits die EMD Dart App. Bleib immer auf dem Laufenden mit Live-Scores,
+                    Turnierergebnissen, Spielplänen und exklusiven News.
+                  </p>
+                </>
+              )}
+
+              <div className="space-y-4 mb-8">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center flex-shrink-0 mt-1">
+                    <svg className="w-4 h-4 text-orange-900" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-1">Live-Scores & Ergebnisse</h3>
+                    <p className="text-orange-100">Verfolge alle Spiele in Echtzeit</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center flex-shrink-0 mt-1">
+                    <svg className="w-4 h-4 text-orange-900" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-1">Turnier-Anmeldungen</h3>
+                    <p className="text-orange-100">Melde dich direkt über die App an</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center flex-shrink-0 mt-1">
+                    <svg className="w-4 h-4 text-orange-900" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-1">Push-Benachrichtigungen</h3>
+                    <p className="text-orange-100">Verpasse keine wichtigen Updates</p>
+                  </div>
+                </div>
+              </div>
+
+              {showInstallButton ? (
+                <>
+                  <Button
+                    onClick={handleInstallClick}
+                    size="lg"
+                    className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-orange-900 font-bold text-base lg:text-lg px-8 py-6 shadow-2xl hover:shadow-3xl transition-all duration-300 mb-6"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    Jetzt installieren
+                  </Button>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                    <h3 className="font-bold text-lg mb-3">So installierst du die App:</h3>
+                    <div className="space-y-2 text-sm text-orange-100">
+                      <p>
+                        <strong>Auf dem Handy:</strong> Tippe auf das Teilen-Symbol und wähle "Zum Home-Bildschirm"
+                      </p>
+                      <p>
+                        <strong>Am PC:</strong> Klicke auf das Install-Symbol in der Adressleiste deines Browsers
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                  <h3 className="font-bold text-lg mb-3">Du nutzt die App bereits!</h3>
+                  <p className="text-sm text-orange-100">
+                    Genieße alle Vorteile der EMD Dart App direkt auf deinem Gerät.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-center lg:justify-end">
+              <div className="relative w-full max-w-sm">
+                <Image
+                  src="/images/emd-app.png"
+                  alt="EMD Dart App auf Handy"
+                  width={1800}
+                  height={1800}
+                  className="object-contain drop-shadow-2xl"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="bg-slate-900 text-white mt-16">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <a
+                href="https://www.facebook.com/groups/1902196843213608"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-600 flex items-center justify-center transition-colors"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+              </a>
+              <a
+                href="https://www.instagram.com/emojsdartverein/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-600 flex items-center justify-center transition-colors"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                </svg>
+              </a>
+              <a
+                href="https://www.youtube.com/@emojsdartvereinev.9194"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-600 flex items-center justify-center transition-colors"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                </svg>
+              </a>
+              <a
+                href="https://www.tiktok.com/@emojizyy3md?_t=8ahlStO563y&_r=1"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-600 flex items-center justify-center transition-colors"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
+                </svg>
+              </a>
+              <a
+                href="https://api.whatsapp.com/send/?phone=436604696464&text&type=phone_number&app_absent=0"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-600 flex items-center justify-center transition-colors"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                </svg>
+              </a>
+            </div>
+
+            <div className="flex items-center gap-6 text-sm">
+              <a href="/impressum" className="text-slate-300 hover:text-orange-500 transition-colors">
+                Impressum
+              </a>
+              <a href="/datenschutz" className="text-slate-300 hover:text-orange-500 transition-colors">
+                Datenschutz
+              </a>
+              <a href="/kontakt" className="text-slate-300 hover:text-orange-500 transition-colors">
+                Kontakt
+              </a>
+            </div>
+
+            <div className="text-center md:text-right">
+              <p className="text-sm text-slate-400">
+                &copy; {new Date().getFullYear()} EMD Salzburg – Erstellt von <strong>Grafikguru</strong>.
+              </p>
+              <p className="text-xs text-slate-500">Alle Rechte vorbehalten.</p>
+            </div>
+          </div>
+        </div>
       </footer>
+
+      {fullscreenPhoto && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setFullscreenPhoto(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+            onClick={(e) => {
+              e.stopPropagation()
+              setFullscreenPhoto(null)
+            }}
+            aria-label="Foto schließen"
+          >
+            <X className="w-8 h-8" />
+          </button>
+          <div className="relative w-full h-full max-w-7xl max-h-[90vh]">
+            <Image
+              src={fullscreenPhoto || "/placeholder.svg"}
+              alt="Vollbild"
+              fill
+              className="object-contain"
+              sizes="100vw"
+            />
+          </div>
+        </div>
+      )}
+
+      <MobileBottomNav />
     </div>
   )
 }

@@ -135,7 +135,7 @@ export function WeeklyResults() {
   const getResultBadge = (homeScore: number | null, awayScore: number | null, isHome: boolean, status: string) => {
     if (status === "scheduled" || homeScore === null || awayScore === null) {
       return (
-        <Badge className="bg-primary text-primary-foreground font-bold text-sm px-3 py-1 shadow-sm border animate-pulse">
+        <Badge className="bg-primary text-primary-foreground font-bold text-xs md:text-sm px-2 py-0.5 md:px-3 md:py-1 shadow-sm border animate-pulse">
           GEPLANT
         </Badge>
       )
@@ -143,15 +143,21 @@ export function WeeklyResults() {
 
     if (homeScore === awayScore) {
       return (
-        <Badge className="bg-yellow-600 text-white font-bold text-sm px-3 py-1 shadow-sm border">UNENTSCHIEDEN</Badge>
+        <Badge className="bg-yellow-600 text-white font-bold text-xs md:text-sm px-2 py-0.5 md:px-3 md:py-1 shadow-sm border">
+          UNENTSCHIEDEN
+        </Badge>
       )
     }
 
     const won = isHome ? homeScore > awayScore : awayScore > homeScore
     return won ? (
-      <Badge className="bg-green-600 text-white font-bold text-sm px-3 py-1 shadow-sm border">SIEG</Badge>
+      <Badge className="bg-green-600 text-white font-bold text-xs md:text-sm px-2 py-0.5 md:px-3 md:py-1 shadow-sm border">
+        SIEG
+      </Badge>
     ) : (
-      <Badge className="bg-red-600 text-white font-bold text-sm px-3 py-1 shadow-sm border">NIEDERLAGE</Badge>
+      <Badge className="bg-red-600 text-white font-bold text-xs md:text-sm px-2 py-0.5 md:px-3 md:py-1 shadow-sm border">
+        NIEDERLAGE
+      </Badge>
     )
   }
 
@@ -184,11 +190,11 @@ export function WeeklyResults() {
 
   if (loading) {
     return (
-      <section className="py-8 px-4 md:px-8 bg-background">
+      <section className="py-4 md:py-8 px-4 md:px-8 bg-background">
         <div className="max-w-4xl mx-auto">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Lade aktuelle Ergebnisse...</p>
+            <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-primary mx-auto mb-3" />
+            <p className="text-sm md:text-base text-muted-foreground">Lade aktuelle Ergebnisse...</p>
           </div>
         </div>
       </section>
@@ -196,27 +202,27 @@ export function WeeklyResults() {
   }
 
   return (
-    <section className="py-8 px-4 md:px-8 bg-background min-h-screen">
+    <section className="py-4 md:py-8 px-4 md:px-8 bg-background">
       <motion.div className="max-w-6xl mx-auto" variants={containerVariants} initial="hidden" animate="visible">
-        <motion.div variants={itemVariants} className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 bg-primary text-primary-foreground px-6 py-3 rounded-full shadow-lg mb-6">
-            <TrendingUp className="h-5 w-5" />
-            <span className="font-bold text-lg uppercase tracking-wide">Aktuelle Woche</span>
+        <motion.div variants={itemVariants} className="text-center mb-4 md:mb-8">
+          <div className="inline-flex items-center gap-2 md:gap-3 bg-primary text-primary-foreground px-3 py-1.5 md:px-6 md:py-3 rounded-full shadow-lg mb-3 md:mb-6">
+            <TrendingUp className="h-4 w-4 md:h-5 md:w-5" />
+            <span className="font-bold text-sm md:text-lg uppercase tracking-wide">Aktuelle Woche</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2 md:mb-4">
             <span className="text-primary">TEAMSPIELE</span>
           </h1>
-          <p className="text-xl text-muted-foreground font-medium mb-6">{currentWeek}</p>
+          <p className="text-base md:text-xl text-muted-foreground font-medium mb-3 md:mb-6">{currentWeek}</p>
           <Link
             href="/liga-statistiken"
-            className="inline-flex items-center gap-2 text-primary hover:text-primary/80 text-lg font-bold transition-colors bg-card px-6 py-3 rounded-lg shadow-sm hover:shadow-md border"
+            className="inline-flex items-center gap-2 text-primary hover:text-primary/80 text-sm md:text-lg font-bold transition-colors bg-card px-4 py-2 md:px-6 md:py-3 rounded-lg shadow-sm hover:shadow-md border"
           >
             <span>Alle Teamspiele</span>
-            <ExternalLink className="h-4 w-4" />
+            <ExternalLink className="h-3 w-3 md:h-4 md:w-4" />
           </Link>
         </motion.div>
 
-        <motion.div className="grid gap-6" variants={containerVariants}>
+        <motion.div className="grid gap-3 md:gap-6" variants={containerVariants}>
           {matches.map((match, index) => {
             const homeTeamName = getTeamName(match, true)
             const awayTeamName = getTeamName(match, false)
@@ -228,55 +234,53 @@ export function WeeklyResults() {
             return (
               <motion.div key={match.id} variants={itemVariants}>
                 <Card className="overflow-hidden shadow-md border bg-card hover:shadow-lg transition-all duration-300">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="h-5 w-5" />
-                        <span className="font-medium">
+                  <CardContent className="p-3 md:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 md:mb-6 gap-2 md:gap-4">
+                      <div className="flex items-center gap-1.5 md:gap-2 text-muted-foreground">
+                        <Calendar className="h-4 w-4 md:h-5 md:w-5" />
+                        <span className="font-medium text-xs md:text-base">
                           {new Date(match.match_date).toLocaleDateString("de-DE", {
-                            weekday: "long",
+                            weekday: "short",
                             day: "2-digit",
                             month: "2-digit",
-                            year: "numeric",
                           })}
                         </span>
                       </div>
-                      <span className="text-muted-foreground font-medium">Spieltag {match.matchday}</span>
+                      <span className="text-muted-foreground font-medium text-xs md:text-base">
+                        Spieltag {match.matchday}
+                      </span>
                     </div>
 
-                    {/* Mobile Layout */}
-                    <div className="block md:hidden space-y-6">
-                      {/* Home Team */}
+                    <div className="block md:hidden space-y-3">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
                           {homeTeamLogo ? (
                             <img
                               src={homeTeamLogo || "/placeholder.svg"}
                               alt={`${homeTeamName} Logo`}
-                              className="w-12 h-12 rounded-full object-cover border-2 border-border flex-shrink-0"
+                              className="w-8 h-8 rounded-full object-cover border border-border flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
-                              <div className="w-6 h-6 bg-muted-foreground/30 rounded-full"></div>
+                            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                              <div className="w-4 h-4 bg-muted-foreground/30 rounded-full"></div>
                             </div>
                           )}
                           <h3
-                            className={`text-lg font-bold truncate ${homeIsEmoj ? "text-primary" : "text-foreground"}`}
+                            className={`text-sm font-bold truncate ${homeIsEmoj ? "text-primary" : "text-foreground"}`}
                           >
                             {homeTeamName}
                           </h3>
                         </div>
                         {homeIsEmoj && (
-                          <div className="ml-4">
+                          <div className="ml-2">
                             {getResultBadge(match.home_score, match.away_score, true, match.status)}
                           </div>
                         )}
                       </div>
 
-                      {/* Score */}
                       <div className="text-center">
-                        <div className="bg-primary text-primary-foreground rounded-lg p-4 shadow-md inline-block">
-                          <div className="text-2xl font-bold">
+                        <div className="bg-primary text-primary-foreground rounded-lg p-2 shadow-md inline-block">
+                          <div className="text-lg font-bold">
                             {match.status === "scheduled"
                               ? new Date(match.match_date + "T" + (match.match_time || "20:00:00")).toLocaleTimeString(
                                   "de-DE",
@@ -290,37 +294,34 @@ export function WeeklyResults() {
                         </div>
                       </div>
 
-                      {/* Away Team */}
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
                           {awayTeamLogo ? (
                             <img
                               src={awayTeamLogo || "/placeholder.svg"}
                               alt={`${awayTeamName} Logo`}
-                              className="w-12 h-12 rounded-full object-cover border-2 border-border flex-shrink-0"
+                              className="w-8 h-8 rounded-full object-cover border border-border flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
-                              <div className="w-6 h-6 bg-muted-foreground/30 rounded-full"></div>
+                            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                              <div className="w-4 h-4 bg-muted-foreground/30 rounded-full"></div>
                             </div>
                           )}
                           <h3
-                            className={`text-lg font-bold truncate ${awayIsEmoj ? "text-primary" : "text-foreground"}`}
+                            className={`text-sm font-bold truncate ${awayIsEmoj ? "text-primary" : "text-foreground"}`}
                           >
                             {awayTeamName}
                           </h3>
                         </div>
                         {awayIsEmoj && (
-                          <div className="ml-4">
+                          <div className="ml-2">
                             {getResultBadge(match.home_score, match.away_score, false, match.status)}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Desktop Layout */}
                     <div className="hidden md:grid md:grid-cols-5 gap-6 items-center">
-                      {/* Home Team */}
                       <div className="col-span-2 text-right">
                         <div className="flex items-center justify-end gap-4">
                           <h3
@@ -347,7 +348,6 @@ export function WeeklyResults() {
                         )}
                       </div>
 
-                      {/* Score */}
                       <div className="col-span-1 text-center">
                         <div className="bg-primary text-primary-foreground rounded-lg p-4 shadow-md">
                           <div className="text-2xl font-bold">
@@ -364,7 +364,6 @@ export function WeeklyResults() {
                         </div>
                       </div>
 
-                      {/* Away Team */}
                       <div className="col-span-2 text-left">
                         <div className="flex items-center gap-4">
                           {awayTeamLogo ? (
@@ -399,11 +398,13 @@ export function WeeklyResults() {
         </motion.div>
 
         {matches.length === 0 && (
-          <motion.div variants={itemVariants} className="text-center py-12">
-            <div className="bg-card rounded-lg shadow-sm p-8 max-w-md mx-auto border">
-              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-foreground mb-3">Keine Spiele diese Woche</h3>
-              <p className="text-muted-foreground">Aktuell sind keine Teamspielergebnisse für diese Woche verfügbar.</p>
+          <motion.div variants={itemVariants} className="text-center py-8 md:py-12">
+            <div className="bg-card rounded-lg shadow-sm p-6 md:p-8 max-w-md mx-auto border">
+              <Target className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-3 md:mb-4" />
+              <h3 className="text-lg md:text-xl font-bold text-foreground mb-2 md:mb-3">Keine Spiele diese Woche</h3>
+              <p className="text-sm md:text-base text-muted-foreground">
+                Aktuell sind keine Teamspielergebnisse für diese Woche verfügbar.
+              </p>
             </div>
           </motion.div>
         )}

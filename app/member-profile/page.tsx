@@ -1,5 +1,6 @@
 "use client"
 import { Header } from "@/components/header"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
@@ -561,7 +562,7 @@ export default function MemberProfilePage() {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
 
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl">
+      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8 max-w-6xl">
         {showInstallButton && (
           <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-l-blue-500">
             <CardContent className="p-4 sm:p-6">
@@ -576,8 +577,7 @@ export default function MemberProfilePage() {
                     App auf deinem Gerät installieren
                   </h3>
                   <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    Installiere die EMD-App auf deinem Handy oder PC für schnellen Zugriff und ein besseres
-                    Erlebnis!
+                    Installiere die EMD-App auf deinem Handy oder PC für schnellen Zugriff und ein besseres Erlebnis!
                   </p>
                   <Button
                     onClick={handleInstallClick}
@@ -968,6 +968,8 @@ export default function MemberProfilePage() {
           </div>
         </div>
       )}
+
+      <MobileBottomNav />
     </div>
   )
 }

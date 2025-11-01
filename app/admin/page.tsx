@@ -19,6 +19,7 @@ import {
   Home,
   Target,
   HelpCircle,
+  PartyPopper,
 } from "lucide-react"
 import { useDartData } from "@/hooks/use-dart-data"
 import { AuthSection } from "@/components/auth-section"
@@ -35,6 +36,7 @@ import { PlayerRecruitmentList } from "@/components/player-recruitment-list"
 import { PlayerApplicationsList } from "@/components/player-applications-list"
 import { UpcomingTournamentsManagement } from "@/components/admin/upcoming-tournaments-management"
 import { TournamentRegistrationsList } from "@/components/admin/tournament-registrations-list"
+import { EventsManagement } from "@/components/admin/events-management"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -75,6 +77,7 @@ export default function AdminPage() {
     | "support-tickets"
     | "lion-cup-registrations"
     | "tournament-management"
+    | "events"
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -193,6 +196,13 @@ export default function AdminPage() {
       icon: Target,
       color: "bg-green-500",
       view: "leagues" as const,
+    },
+    {
+      title: "Veranstaltungen",
+      description: "Partys, Spielabende und andere Events verwalten",
+      icon: PartyPopper,
+      color: "bg-purple-500",
+      view: "events" as const,
     },
     {
       title: "Rekrutierung",
@@ -332,6 +342,7 @@ export default function AdminPage() {
                   {currentView === "support-tickets" && "Support Tickets"}
                   {currentView === "lion-cup-registrations" && "Lion Cup Anmeldungen"}
                   {currentView === "tournament-management" && "Turnier verwalten"}
+                  {currentView === "events" && "Veranstaltungen"}
                 </span>
               </>
             )}
@@ -383,7 +394,9 @@ export default function AdminPage() {
                                                       ? "Lion Cup Anmeldungen"
                                                       : currentView === "tournament-management"
                                                         ? "Turnier verwalten"
-                                                        : "Admin-Zugang"}
+                                                        : currentView === "events"
+                                                          ? "Veranstaltungen"
+                                                          : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
                 {session && currentView === "dashboard"
@@ -488,6 +501,21 @@ export default function AdminPage() {
                         </Button>
                       </Link>
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {currentView === "events" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <PartyPopper className="h-5 w-5" />
+                      <span>Veranstaltungen verwalten</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <EventsManagement user={user} />
                   </CardContent>
                 </Card>
               </div>

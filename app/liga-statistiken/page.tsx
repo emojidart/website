@@ -40,6 +40,22 @@ export default function DartLeaguePage() {
   const [playersPerPage, setPlayersPerPage] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
 
+  const formatMatchDate = (dateString: string) => {
+    const [year, month, day] = dateString.split("-").map(Number)
+    const paddedDay = String(day).padStart(2, "0")
+    const paddedMonth = String(month).padStart(2, "0")
+    return `${paddedDay}.${paddedMonth}.${year}`
+  }
+
+  const formatMatchDateWithWeekday = (dateString: string) => {
+    const [year, month, day] = dateString.split("-").map(Number)
+    const date = new Date(year, month - 1, day) // month is 0-indexed in JS
+    const weekday = date.toLocaleDateString("de-DE", { weekday: "short" })
+    const paddedDay = String(day).padStart(2, "0")
+    const paddedMonth = String(month).padStart(2, "0")
+    return `${weekday}, ${paddedDay}.${paddedMonth}.${year}`
+  }
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -252,7 +268,6 @@ export default function DartLeaguePage() {
     const throw17Points = (detailedStats.throws_17 || 0) * 3
     const throw16Points = (detailedStats.throws_16 || 0) * 2
     const throw15Points = (detailedStats.throws_15 || 0) * 1
-    // </CHANGE>
 
     return (
       legWinPoints +
@@ -304,7 +319,6 @@ export default function DartLeaguePage() {
 
       player.total_legs += legsInThisMatch
       player.total_wins += playerLegsWon
-      // </CHANGE>
       player.throws_180 += stat.throws_180 || 0
       player.throws_171 += stat.throws_171 || 0
       player.throws_high_tonne += stat.throws_high_tonne || 0
@@ -359,11 +373,17 @@ export default function DartLeaguePage() {
     return teamWon ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
   }
 
-  const completedMatches = matches.filter((match) => match.status === "completed")
+  const completedMatches = matches.filter(
+    (match) =>
+      match.status === "completed" &&
+      match.home_score !== null &&
+      match.away_score !== null &&
+      !(match.home_score === 0 && match.away_score === 0),
+  )
   const upcomingMatches = matches.filter((match) => match.status === "scheduled")
   const postponedMatches = matches.filter((match) => match.status === "postponed")
   const standings = calculateStandings()
-  const playerLegStats = playerStatistics // Renamed from playerLegStats to playerStatistics
+  const playerLegStats = playerStatistics
   const totalPages = Math.ceil(playerLegStats.length / playersPerPage)
   const startIndex = (currentPage - 1) * playersPerPage
   const endIndex = startIndex + playersPerPage
@@ -798,13 +818,22 @@ export default function DartLeaguePage() {
                               match.away_score === null ||
                               (homeScore === 0 && awayScore === 0)
 
+                            const matchDate = new Date(match.match_date)
+                            const today = new Date()
+                            today.setHours(0, 0, 0, 0)
+                            matchDate.setHours(0, 0, 0, 0)
+                            const isFutureDate = matchDate > today
+
                             const isOurHomeTeam = match.home_team?.id
                             const isOurAwayTeam = match.away_team?.id
 
                             let matchColor = "bg-gray-50 border-gray-200"
                             let resultText = "Unentschieden"
 
-                            if (isPendingResult) {
+                            if (isFutureDate) {
+                              matchColor = "bg-orange-50 border-orange-300"
+                              resultText = "Datum in der Zukunft"
+                            } else if (isPendingResult) {
                               matchColor = "bg-orange-50 border-orange-300"
                               resultText = "Ergebnis ausstehend"
                             } else if (homeScore > awayScore) {
@@ -899,24 +928,21 @@ export default function DartLeaguePage() {
                                   </div>
                                   <div className="text-center sm:text-right flex flex-col items-center sm:items-end gap-2">
                                     <div className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
-                                      {new Date(match.match_date).toLocaleDateString("de-DE", {
-                                        weekday: "short",
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                        year: "numeric",
-                                      })}
+                                      {formatMatchDateWithWeekday(match.match_date)}
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <Badge
                                         className={`
                                           ${
-                                            isPendingResult
+                                            isFutureDate
                                               ? "bg-orange-100 text-orange-700 border-orange-300"
-                                              : resultText === "Heimsieg" || resultText === "Auswärtssieg"
-                                                ? "bg-green-100 text-green-700"
-                                                : resultText === "Unentschieden"
-                                                  ? "bg-yellow-100 text-yellow-700"
-                                                  : "bg-red-100 text-red-700"
+                                              : isPendingResult
+                                                ? "bg-orange-100 text-orange-700 border-orange-300"
+                                                : resultText === "Heimsieg" || resultText === "Auswärtssieg"
+                                                  ? "bg-green-100 text-green-700"
+                                                  : resultText === "Unentschieden"
+                                                    ? "bg-yellow-100 text-yellow-700"
+                                                    : "bg-red-100 text-red-700"
                                           }
                                           font-medium text-xs sm:text-sm
                                         `}
@@ -926,7 +952,18 @@ export default function DartLeaguePage() {
                                     </div>
                                   </div>
                                 </div>
-                                {isPendingResult && (
+                                {isFutureDate && (
+                                  <div className="mt-3 pt-3 border-t border-orange-200">
+                                    <div className="flex items-center gap-2 text-sm text-orange-700">
+                                      <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                                      <span className="font-medium">
+                                        Achtung: Das Spieldatum liegt in der Zukunft! Möglicherweise wurde das Spiel
+                                        vorverschoben oder das Datum ist noch nicht aktualisiert.
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                                {isPendingResult && !isFutureDate && (
                                   <div className="mt-3 pt-3 border-t border-orange-200">
                                     <div className="flex items-center gap-2 text-sm text-orange-700">
                                       <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
@@ -1013,11 +1050,7 @@ export default function DartLeaguePage() {
                                   </div>
                                   <div className="text-center sm:text-right">
                                     <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
-                                      {new Date(match.match_date).toLocaleDateString("de-DE", {
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                        year: "numeric",
-                                      })}
+                                      {formatMatchDate(match.match_date)}
                                     </div>
                                     <div className="text-sm text-gray-600 mb-2">
                                       {new Date(match.match_date).toLocaleDateString("de-DE", {
@@ -1121,11 +1154,7 @@ export default function DartLeaguePage() {
                                     </div>
                                     <div className="text-center sm:text-right">
                                       <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
-                                        {new Date(match.match_date).toLocaleDateString("de-DE", {
-                                          day: "2-digit",
-                                          month: "2-digit",
-                                          year: "numeric",
-                                        })}
+                                        {formatMatchDate(match.match_date)}
                                       </div>
                                       <div className="text-sm text-gray-600 mb-2">
                                         {new Date(match.match_date).toLocaleDateString("de-DE", {

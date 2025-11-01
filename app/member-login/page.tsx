@@ -12,6 +12,7 @@ import { Mail, Lock, ArrowRight, Users, Crown, ShieldCheck } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useEffect } from "react"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 export default function MemberLoginPage() {
   const [email, setEmail] = useState("")
@@ -61,6 +62,7 @@ export default function MemberLoginPage() {
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
         </main>
+        <MobileBottomNav />
       </div>
     )
   }
@@ -68,14 +70,14 @@ export default function MemberLoginPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
-      <main className="flex-grow flex items-center justify-center p-4">
+      <main className="flex-grow flex items-center justify-center p-4 pb-24 md:pb-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl mb-6 shadow-lg">
               <Users className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-3">Member-Zugang</h1>
-            <p className="text-gray-600 text-lg">Willkommen zurück bei Emoj!'s Dartverein</p>
+            <p className="text-gray-600 text-lg">Willkommen bei Emoj!'s Dartverein</p>
           </div>
 
           <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
@@ -110,7 +112,7 @@ export default function MemberLoginPage() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="deine@email.de"
+                      placeholder="deine@email.at"
                       className="pl-12 h-14 border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50 transition-all duration-200 text-lg rounded-xl"
                       required
                     />
@@ -180,6 +182,7 @@ export default function MemberLoginPage() {
           </div>
         </div>
       </main>
+      <MobileBottomNav />
     </div>
   )
 }

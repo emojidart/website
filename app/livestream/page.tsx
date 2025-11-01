@@ -18,7 +18,22 @@ export default function LivestreamPage() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      <section className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center space-y-6">
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
+              <Radio className="w-4 h-4" />
+              <span>Live Übertragung</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">LIVESTREAM</h1>
+            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
+              Erlebe spannende Darts-Action live aus der EMD Arena
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <main className="container mx-auto px-3 sm:px-4 py-8 sm:py-16">
         <div className="grid lg:grid-cols-[1fr_380px] gap-4 sm:gap-6">
           {/* Main Video Area */}
           <div className="space-y-3 sm:space-y-4">
@@ -113,7 +128,7 @@ export default function LivestreamPage() {
             {/* Stream Info */}
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">EMD Darts - Live Match Übertragung</h1>
+                <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">EMD Darts - Live Match Übertragung</h2>
                 <p className="text-sm sm:text-base text-muted-foreground">
                   Hier werden bald spannende Live-Matches aus der EMD Arena übertragen.
                 </p>

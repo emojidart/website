@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 
@@ -10,12 +10,18 @@ export const metadata: Metadata = {
   description: "Offizielle Website des Emoj's Dartvereins",
   generator: "v0.app",
   manifest: "/manifest.json",
-  themeColor: "#d97706",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Emoj's Dartverein",
   },
+  icons: {
+    apple: "/icon-192.png",
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: "#d97706",
 }
 
 export default function RootLayout({
@@ -25,14 +31,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#d97706" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Emoj's Dartverein" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-      </head>
       <body className={`${inter.className} antialiased`}>{children}</body>
     </html>
   )

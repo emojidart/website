@@ -17,7 +17,7 @@ export function PointsInfoBox() {
             Die Spieler werden nach einem Punktesystem bewertet: <strong>Leg-Wins (3 Pkt)</strong>,{" "}
             <strong>180er/171er (25 Pkt)</strong>, <strong>High Tonne (18 Pkt)</strong>, <strong>Tonne (15 Pkt)</strong>
             , <strong>95+ (12 Pkt)</strong>, <strong>Shanghai (10 Pkt)</strong>, <strong>Bull (8 Pkt)</strong> und{" "}
-            <strong>Standart-Würfe 15-20 (1-6 Pkt)</strong>. Klicke auf das Taschenrechner-Symbol für Details.
+            <strong>Standart-Würfe 15-20 (1-6 Pkt)</strong>.
           </p>
           {/* </CHANGE> */}
         </div>

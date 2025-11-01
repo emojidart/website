@@ -235,39 +235,45 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
         </motion.div>
 
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12 w-full max-w-5xl"
+          className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8 w-full max-w-5xl px-2"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
           <motion.div
             variants={cardVariants}
-            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-4 sm:p-6 border shadow-xl ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
+            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-2 sm:p-4 border shadow-xl ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
           >
-            <Calendar className={`h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 mb-2 sm:mb-3 text-orange-600`} />
-            <span className={`text-xl sm:text-2xl lg:text-3xl font-bold text-center text-white`}>34 TURNIERTAGE</span>
-            <span className={`text-xs sm:text-sm lg:text-base uppercase text-center font-semibold text-orange-200`}>
-              + 1 FINALTAG
+            <Calendar className={`h-5 w-5 sm:h-8 sm:w-8 mb-1 sm:mb-2 text-orange-600`} />
+            <span className={`text-xs sm:text-lg lg:text-xl font-bold text-center text-white leading-tight`}>
+              34 TAGE
+            </span>
+            <span className={`text-[10px] sm:text-xs lg:text-sm uppercase text-center font-semibold text-orange-200`}>
+              + FINALE
             </span>
           </motion.div>
           <motion.div
             variants={cardVariants}
-            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-4 sm:p-6 border shadow-xl ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
+            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-2 sm:p-4 border shadow-xl ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
           >
-            <MapPin className={`h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 mb-2 sm:mb-3 text-orange-600`} />
-            <span className={`text-xl sm:text-2xl lg:text-3xl font-bold text-center text-white`}>PFEIL-OK</span>
-            <span className={`text-xs sm:text-sm lg:text-base uppercase text-center font-semibold text-orange-200`}>
+            <MapPin className={`h-5 w-5 sm:h-8 sm:w-8 mb-1 sm:mb-2 text-orange-600`} />
+            <span className={`text-xs sm:text-lg lg:text-xl font-bold text-center text-white leading-tight`}>
+              PFEIL-OK
+            </span>
+            <span className={`text-[10px] sm:text-xs lg:text-sm uppercase text-center font-semibold text-orange-200`}>
               SALZBURG
             </span>
           </motion.div>
           <motion.div
             variants={cardVariants}
-            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-4 sm:p-6 border shadow-xl sm:col-span-2 lg:col-span-1 ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
+            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-2 sm:p-4 border shadow-xl ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
           >
-            <Trophy className={`h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 mb-2 sm:mb-3 text-orange-600`} />
-            <span className={`text-xl sm:text-2xl lg:text-3xl font-bold text-white`}>20 ANTRITTE</span>
-            <span className={`text-xs sm:text-sm lg:text-base uppercase text-center font-semibold text-orange-200`}>
-              FÜR FINALE
+            <Trophy className={`h-5 w-5 sm:h-8 sm:w-8 mb-1 sm:mb-2 text-orange-600`} />
+            <span className={`text-xs sm:text-lg lg:text-xl font-bold text-center text-white leading-tight`}>
+              20 ANTRITTE
+            </span>
+            <span className={`text-[10px] sm:text-xs lg:text-sm uppercase text-center font-semibold text-orange-200`}>
+              FINALE
             </span>
           </motion.div>
         </motion.div>

@@ -3,6 +3,7 @@
 import { Header } from "@/components/header"
 import { Calendar, MapPin, Sparkles, Star, Target, Trophy, Euro } from "lucide-react"
 import { motion } from "framer-motion"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -98,7 +99,7 @@ export default function BuffaloSteelCupPage() {
                   <span className="block text-gray-300 text-3xl md:text-4xl lg:text-5xl mt-4">EMD TO PFEIL OK - SINCE 2023</span>
                 </h1>
 
-              
+
 
                 <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 text-base md:text-lg font-bold mb-8">
                   <div className="flex items-center gap-2 bg-white/10 px-6 py-3 rounded-xl border border-white/20 backdrop-blur-sm">
@@ -293,6 +294,8 @@ export default function BuffaloSteelCupPage() {
           </motion.div>
         </motion.div>
       </main>
+
+      <MobileBottomNav />
 
       <footer className="py-6 bg-gray-200 text-gray-600 text-sm text-center border-t border-gray-300">
         <p>&copy; 2026 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>
