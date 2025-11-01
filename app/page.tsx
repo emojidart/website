@@ -1298,36 +1298,26 @@ export default function Home() {
                 </div>
               </div>
 
-              {showInstallButton ? (
-                <>
-                  <Button
-                    onClick={handleInstallClick}
-                    size="lg"
-                    className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-orange-900 font-bold text-base lg:text-lg px-8 py-6 shadow-2xl hover:shadow-3xl transition-all duration-300 mb-6"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    Jetzt installieren
-                  </Button>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                    <h3 className="font-bold text-lg mb-3">So installierst du die App:</h3>
-                    <div className="space-y-2 text-sm text-orange-100">
-                      <p>
-                        <strong>Auf dem Handy:</strong> Tippe auf das Teilen-Symbol und wähle "Zum Home-Bildschirm"
-                      </p>
-                      <p>
-                        <strong>Am PC:</strong> Klicke auf das Install-Symbol in der Adressleiste deines Browsers
-                      </p>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                  <h3 className="font-bold text-lg mb-3">Du nutzt die App bereits!</h3>
-                  <p className="text-sm text-orange-100">
-                    Genieße alle Vorteile der EMD Dart App direkt auf deinem Gerät.
-                  </p>
-                </div>
-              )}
+             {showInstallButton ? (
+  <>
+    <Button
+      onClick={handleInstallClick}
+      size="lg"
+      className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-orange-900 font-bold text-base lg:text-lg px-8 py-6 shadow-2xl hover:shadow-3xl transition-all duration-300 mb-6"
+    >
+      <Download className="w-5 h-5 mr-2" />
+      Jetzt installieren
+    </Button>
+  </>
+) : (
+  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+    <h3 className="font-bold text-lg mb-3">Du nutzt die App bereits!</h3>
+    <p className="text-sm text-orange-100">
+      Genieße alle Vorteile der EMD Dart App direkt auf deinem Gerät.
+    </p>
+  </div>
+)}
+
             </div>
 
             <div className="flex justify-center lg:justify-end">
