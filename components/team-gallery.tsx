@@ -166,7 +166,7 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
           <h1 className="text-6xl md:text-8xl font-bold tracking-tight mb-6 text-balance leading-none animate-in fade-in slide-in-from-bottom-8 duration-700">
             UNSERE
             <br />
-            MANNSCHAFTEN
+            TEAMS
           </h1>
         </div>
         <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto text-pretty leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
