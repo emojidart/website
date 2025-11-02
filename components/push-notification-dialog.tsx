@@ -8,26 +8,60 @@ export function PushNotificationDialog() {
   const [isSupported, setIsSupported] = useState(false)
 
   useEffect(() => {
-    // Check if push notifications are supported
-    const isPushSupported = "serviceWorker" in navigator && "PushManager" in window
-    setIsSupported(isPushSupported)
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true
 
-    // Check if notifications have already been requested
-    if (isPushSupported && Notification.permission === "default") {
-      // Show dialog only if user hasn't responded yet
-      setIsOpen(true)
+    if (!isStandalone) {
+      return // Don't show dialog in browser
     }
+
+    const delayTimer = setTimeout(() => {
+      const isPushSupported = "serviceWorker" in navigator && "PushManager" in window
+      setIsSupported(isPushSupported)
+
+      if (isPushSupported && Notification.permission === "default") {
+        setIsOpen(true)
+      }
+    }, 8000) // 8 Sekunden nach App-Load
+
+    return () => clearTimeout(delayTimer)
   }, [])
 
   const handleEnable = async () => {
     try {
       const permission = await Notification.requestPermission()
       if (permission === "granted") {
-        console.log("[v0] Push notifications enabled")
+        if ("serviceWorker" in navigator) {
+          const registration = await navigator.serviceWorker.register("/sw.js")
+
+          await navigator.serviceWorker.ready
+
+          const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+
+          if (vapidPublicKey) {
+            try {
+              const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+              })
+
+              await fetch("/api/push/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(subscription),
+              })
+
+              localStorage.setItem("pushSubscription", JSON.stringify(subscription))
+            } catch (subError) {
+              console.error("Push subscription error:", subError)
+            }
+          }
+        }
+
         setIsOpen(false)
       }
     } catch (error) {
-      console.error("[v0] Error requesting notification permission:", error)
+      console.error("Error requesting notification permission:", error)
     }
   }
 
@@ -41,12 +75,9 @@ export function PushNotificationDialog() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-      {/* Backdrop */}
       <div className="fixed inset-0 bg-black/50" onClick={handleDismiss} aria-hidden="true" />
 
-      {/* Dialog */}
       <div className="relative bg-white rounded-lg shadow-lg max-w-sm w-full p-6 space-y-4 z-50">
-        {/* Close button */}
         <button
           onClick={handleDismiss}
           className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-600"
@@ -55,7 +86,6 @@ export function PushNotificationDialog() {
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header with icon */}
         <div className="flex items-start gap-3">
           <div className="bg-orange-100 p-2 rounded-full flex-shrink-0">
             <Bell className="w-5 h-5 text-orange-600" />
@@ -65,12 +95,10 @@ export function PushNotificationDialog() {
           </div>
         </div>
 
-        {/* Description */}
         <p className="text-sm text-gray-600">
           Erhalte Push-Benachrichtigungen für Live-Scores, Turnierergebnisse und wichtige Updates direkt auf dein Gerät.
         </p>
 
-        {/* Buttons */}
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleDismiss}
@@ -88,4 +116,17 @@ export function PushNotificationDialog() {
       </div>
     </div>
   )
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/")
+
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
 }
