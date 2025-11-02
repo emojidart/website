@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Bell, Send, CheckCircle, XCircle } from "lucide-react"
 
 export default function PushTestPage() {
@@ -8,29 +8,44 @@ export default function PushTestPage() {
   const [body, setBody] = useState("Test Benachrichtigung")
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
+  const [subscriptionCount, setSubscriptionCount] = useState(0)
+  const [errorMessage, setErrorMessage] = useState("")
+
+  useEffect(() => {
+    const checkSubscriptions = async () => {
+      try {
+        const response = await fetch("/api/push/check")
+        const data = await response.json()
+        console.log("[v0] Push check response:", data)
+
+        if (!data.success) {
+          setErrorMessage("Fehler beim Abrufen der Subscriptions: " + data.error)
+          setSubscriptionCount(0)
+        } else {
+          setSubscriptionCount(data.count || 0)
+          if (data.count && data.count > 0) {
+            setErrorMessage("")
+          } else {
+            setErrorMessage("Keine Push-Subscription gefunden. Bitte aktiviere zuerst Push-Benachrichtigungen.")
+          }
+        }
+      } catch (error) {
+        console.error("[v0] Error checking subscriptions:", error)
+        setErrorMessage("Fehler beim Überprüfen der Subscriptions")
+      }
+    }
+    checkSubscriptions()
+  }, [])
 
   const handleSendTest = async () => {
     setStatus("sending")
     setMessage("")
 
     try {
-      // Get subscription from localStorage
-      const subscriptionData = localStorage.getItem("pushSubscription")
-
-      if (!subscriptionData) {
-        setStatus("error")
-        setMessage("Keine Push-Subscription gefunden. Bitte aktiviere zuerst Push-Benachrichtigungen.")
-        return
-      }
-
-      const subscription = JSON.parse(subscriptionData)
-
-      // Send test notification
       const response = await fetch("/api/push/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          subscription,
           title,
           body,
           data: { url: "/" },
@@ -41,7 +56,7 @@ export default function PushTestPage() {
 
       if (result.success) {
         setStatus("success")
-        setMessage("Push-Benachrichtigung erfolgreich gesendet!")
+        setMessage(`Push-Benachrichtigung erfolgreich an ${result.successCount} Geräte gesendet!`)
       } else {
         setStatus("error")
         setMessage(result.error || "Fehler beim Senden der Benachrichtigung")
@@ -63,9 +78,15 @@ export default function PushTestPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Push Notification Test</h1>
-              <p className="text-sm text-gray-600">Teste Push-Benachrichtigungen für deine App</p>
+              <p className="text-sm text-gray-600">Aktive Subscriptions: {subscriptionCount}</p>
             </div>
           </div>
+
+          {errorMessage && subscriptionCount === 0 && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
+              <p className="text-sm">{errorMessage}</p>
+            </div>
+          )}
 
           {/* Form */}
           <div className="space-y-4">
@@ -117,7 +138,7 @@ export default function PushTestPage() {
             {/* Send Button */}
             <button
               onClick={handleSendTest}
-              disabled={status === "sending"}
+              disabled={status === "sending" || subscriptionCount === 0}
               className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               <Send className="w-5 h-5" />
@@ -129,7 +150,8 @@ export default function PushTestPage() {
           <div className="pt-4 border-t">
             <h3 className="text-sm font-semibold text-gray-900 mb-2">Anleitung:</h3>
             <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
-              <li>Stelle sicher, dass Push-Benachrichtigungen aktiviert sind</li>
+              <li>Installiere die App auf deinem Handy</li>
+              <li>Aktiviere Push-Benachrichtigungen im Dialog</li>
               <li>Gib einen Titel und eine Nachricht ein</li>
               <li>Klicke auf "Test-Benachrichtigung senden"</li>
               <li>Du solltest eine Push-Benachrichtigung auf deinem Gerät erhalten</li>
