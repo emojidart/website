@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     title: "Emoj's Dartverein",
   },
   icons: {
-    apple: "/emd-logo.png",
+    apple: "/icon-192.png",
   },
 }
 
