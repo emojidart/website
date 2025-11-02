@@ -10,11 +10,11 @@ export function SplashScreen() {
   useEffect(() => {
     const fadeOutTimer = setTimeout(() => {
       setIsFadingOut(true)
-    }, 3500)
+    }, 5000)
 
     const hideTimer = setTimeout(() => {
       setIsVisible(false)
-    }, 4000)
+    }, 6000)
 
     return () => {
       clearTimeout(fadeOutTimer)
@@ -26,7 +26,7 @@ export function SplashScreen() {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 flex items-center justify-center transition-opacity duration-700 ${
+      className={`fixed inset-0 z-[9999] bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 flex items-center justify-center transition-opacity duration-1000 ${
         isFadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >

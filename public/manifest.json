@@ -51,35 +51,5 @@
       "purpose": "maskable"
     }
   ],
-  "shortcuts": [
-    {
-      "name": "Live Turniere",
-      "short_name": "Live",
-      "description": "Schaue dir Live-Turniere an",
-      "url": "/live-all-app",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png",
-          "purpose": "any"
-        }
-      ]
-    },
-    {
-      "name": "LION CUP Wertung",
-      "short_name": "Wertung",
-      "description": "Verfolge deine Position in der LION CUP Wertung",
-      "url": "/tournament-series-app",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png",
-          "purpose": "any"
-        }
-      ]
-    }
-  ],
   "prefer_related_applications": false
 }
