@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
     const payload = JSON.stringify({
       title: "Neue Veranstaltung!",
       body: name,
-      icon: photo_url || "/icon-192.png",
       image: photo_url,
       badge: "/icon-192.png",
       data: { link: `/veranstaltungen` },
