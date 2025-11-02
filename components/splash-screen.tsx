@@ -47,7 +47,7 @@ export function SplashScreen() {
 
         <div className="animate-splash-text-enter text-center">
           <h1 className="text-2xl sm:text-4xl font-black text-white text-shadow">EMD Dart</h1>
-          <p className="text-white/80 text-sm sm:text-base mt-2">Willkommen</p>
+          <p className="text-white/80 text-sm sm:text-base mt-2">Bin gleich soweit</p>
         </div>
 
         <div className="animate-splash-dots-enter flex gap-1.5 mt-4">
