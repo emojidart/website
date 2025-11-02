@@ -1,7 +1,7 @@
 {
   "name": "Vereinsapp",
-  "short_name": "EMD",
-  "description": "Offizielle Website des Emoj's Dartvereins - Spielerverwaltung, Statistiken, Live-Scores und mehr. Verfolge Turniere, Spiele und deine Lieblingsspieler in Echtzeit.",
+  "short_name": "EMD - Vereinsapp",
+  "description": "EMD Vereinsapp - Turniere, Spieler und Statistiken",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
