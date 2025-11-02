@@ -14,7 +14,7 @@ self.addEventListener("push", (event) => {
   console.log("[v0] Push notification received:", event)
 
   let notificationData = {
-    title: "EMD Dart",
+    title: "EMD Vereinsapp", // Updated default title from "EMD Dart" to "EMD Vereinsapp"
     body: "Neue Benachrichtigung",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
@@ -54,5 +54,20 @@ self.addEventListener("notificationclick", (event) => {
   console.log("[v0] Notification clicked:", event)
   event.notification.close()
 
-  event.waitUntil(clients.openWindow("/"))
+  const link = event.notification.data?.link || "/veranstaltungen"
+
+  event.waitUntil(
+    clients.matchAll({ type: "window" }).then((clientList) => {
+      // Check if app is already open
+      for (let i = 0; i < clientList.length; i++) {
+        if (clientList[i].url === link && "focus" in clientList[i]) {
+          return clientList[i].focus()
+        }
+      }
+      // If not open, open new window with the link
+      if (clients.openWindow) {
+        return clients.openWindow(link)
+      }
+    }),
+  )
 })
