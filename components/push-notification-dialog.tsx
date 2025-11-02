@@ -68,17 +68,29 @@ export function PushNotificationDialog() {
 
       localStorage.setItem("pushSubscription", JSON.stringify(subscription))
 
-      await fetch("/api/push/subscribe", {
+      const response = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(subscription),
       })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error("[v0] API error:", errorData)
+        setStatus("error")
+        setErrorMessage(errorData.error || "Speichern fehlgeschlagen")
+        return
+      }
+
+      const result = await response.json()
+      console.log("[v0] Subscription erfolgreich gespeichert:", result)
 
       setStatus("success")
       setTimeout(() => {
         setIsOpen(false)
       }, 3000)
     } catch (error) {
+      console.error("[v0] Error in handleEnable:", error)
       setStatus("error")
       setErrorMessage(error instanceof Error ? error.message : "Unbekannter Fehler")
     }
