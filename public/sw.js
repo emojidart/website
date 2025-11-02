@@ -14,10 +14,11 @@ self.addEventListener("push", (event) => {
   console.log("[v0] Push notification received:", event)
 
   let notificationData = {
-    title: "EMD Vereinsapp", // Updated default title from "EMD Dart" to "EMD Vereinsapp"
+    title: "EMD Vereinsapp",
     body: "Neue Benachrichtigung",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
+    image: undefined,
     data: {},
   }
 
@@ -30,6 +31,7 @@ self.addEventListener("push", (event) => {
         body: data.body || notificationData.body,
         icon: data.icon || notificationData.icon,
         badge: data.badge || notificationData.badge,
+        image: data.image || notificationData.image,
         data: data.data || {},
       }
     } catch (e) {
@@ -37,16 +39,20 @@ self.addEventListener("push", (event) => {
     }
   }
 
-  event.waitUntil(
-    self.registration.showNotification(notificationData.title, {
-      body: notificationData.body,
-      icon: notificationData.icon,
-      badge: notificationData.badge,
-      data: notificationData.data,
-      vibrate: [200, 100, 200],
-      tag: "emd-dart-notification",
-    }),
-  )
+  const notificationOptions = {
+    body: notificationData.body,
+    icon: notificationData.icon,
+    badge: notificationData.badge,
+    data: notificationData.data,
+    vibrate: [200, 100, 200],
+    tag: "emd-dart-notification",
+  }
+
+  if (notificationData.image) {
+    notificationOptions.image = notificationData.image
+  }
+
+  event.waitUntil(self.registration.showNotification(notificationData.title, notificationOptions))
 })
 
 // Handle notification clicks
