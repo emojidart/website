@@ -6,6 +6,8 @@ import { Bell, X } from "lucide-react"
 export function PushNotificationDialog() {
   const [isOpen, setIsOpen] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [showError, setShowError] = useState(false)
 
   useEffect(() => {
     const isStandalone =
@@ -29,19 +31,15 @@ export function PushNotificationDialog() {
 
   const handleEnable = async () => {
     try {
-      console.log("[v0] Push notification enable clicked")
       const permission = await Notification.requestPermission()
-      console.log("[v0] Notification permission:", permission)
 
       if (permission === "granted") {
         if ("serviceWorker" in navigator) {
           const registration = await navigator.serviceWorker.register("/sw.js")
-          console.log("[v0] Service worker registered:", registration)
 
           await navigator.serviceWorker.ready
 
           const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-          console.log("[v0] VAPID Public Key exists:", !!vapidPublicKey)
 
           if (vapidPublicKey) {
             try {
@@ -50,31 +48,37 @@ export function PushNotificationDialog() {
                 applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
               })
 
-              console.log("[v0] Subscription created:", subscription)
-
               // Save to localStorage
               localStorage.setItem("pushSubscription", JSON.stringify(subscription))
-              console.log("[v0] Subscription saved to localStorage")
 
-              // Also save to API (for server-side storage)
-              const response = await fetch("/api/push/subscribe", {
+              // Also save to API
+              await fetch("/api/push/subscribe", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(subscription),
               })
-              console.log("[v0] API response:", response.status)
+
+              setShowSuccess(true)
+              setTimeout(() => {
+                setIsOpen(false)
+                setShowSuccess(false)
+              }, 2000)
             } catch (subError) {
-              console.error("[v0] Push subscription error:", subError)
+              setShowError(true)
+              setTimeout(() => setShowError(false), 3000)
             }
           } else {
-            console.error("[v0] NEXT_PUBLIC_VAPID_PUBLIC_KEY is not set!")
+            setShowError(true)
+            setTimeout(() => setShowError(false), 3000)
           }
         }
-
-        setIsOpen(false)
+      } else {
+        setShowError(true)
+        setTimeout(() => setShowError(false), 3000)
       }
     } catch (error) {
-      console.error("[v0] Error requesting notification permission:", error)
+      setShowError(true)
+      setTimeout(() => setShowError(false), 3000)
     }
   }
 
@@ -84,6 +88,40 @@ export function PushNotificationDialog() {
 
   if (!isOpen || !isSupported) {
     return null
+  }
+
+  if (showSuccess) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50" />
+        <div className="relative bg-white rounded-lg shadow-lg max-w-sm w-full p-6 space-y-4 z-50 text-center">
+          <div className="flex justify-center">
+            <div className="bg-green-100 p-3 rounded-full">
+              <Bell className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900">Push-Benachrichtigungen aktiviert!</h2>
+          <p className="text-sm text-gray-600">Du erhältst jetzt Live-Updates und wichtige Benachrichtigungen.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (showError) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50" />
+        <div className="relative bg-white rounded-lg shadow-lg max-w-sm w-full p-6 space-y-4 z-50 text-center">
+          <div className="flex justify-center">
+            <div className="bg-red-100 p-3 rounded-full">
+              <X className="w-6 h-6 text-red-600" />
+            </div>
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900">Fehler beim Aktivieren</h2>
+          <p className="text-sm text-gray-600">Bitte versuche es später erneut.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
