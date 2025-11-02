@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
+import { SplashScreen } from "@/components/splash-screen"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -15,13 +16,11 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Emoj's Dartverein",
   },
-  icons: {
-    apple: "/icon-192.png",
-  },
 }
 
 export const viewport: Viewport = {
   themeColor: "#d97706",
+  backgroundColor: "#d97706",
 }
 
 export default function RootLayout({
@@ -31,7 +30,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de">
-      <body className={`${inter.className} antialiased`}>{children}</body>
+      <body className={`${inter.className} antialiased`}>
+        <SplashScreen />
+        {children}
+      </body>
     </html>
   )
 }
