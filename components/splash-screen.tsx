@@ -8,16 +8,14 @@ export function SplashScreen() {
   const [isFadingOut, setIsFadingOut] = useState(false)
 
   useEffect(() => {
-    /* Fade out after 5 seconds and hide after 6 seconds */
     const fadeOutTimer = setTimeout(() => {
       setIsFadingOut(true)
-    }, 5000)
+    }, 5500)
 
     const hideTimer = setTimeout(() => {
       setIsVisible(false)
-      /* Reset body background to white when splash screen is hidden */
       document.body.style.backgroundColor = "white"
-    }, 6000)
+    }, 6500)
 
     return () => {
       clearTimeout(fadeOutTimer)
@@ -29,7 +27,7 @@ export function SplashScreen() {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 flex items-center justify-center transition-opacity duration-1000 ${
+      className={`fixed inset-0 z-[9999] bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 flex items-center justify-center transition-opacity duration-700 ${
         isFadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
@@ -37,7 +35,7 @@ export function SplashScreen() {
         <div className="animate-splash-logo-enter flex items-center justify-center">
           <div className="w-24 h-24 sm:w-32 sm:h-32 relative">
             <Image
-              src="/images/logo1.png"
+              src="/images/emd-logo.png"
               alt="EMD Dart Logo"
               width={128}
               height={128}
