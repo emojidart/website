@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Emoj's Dartverein",
   },
+  icons: {
+    apple: "/icon-192.png",
+  },
 }
 
 export const viewport: Viewport = {
