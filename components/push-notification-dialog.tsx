@@ -29,14 +29,19 @@ export function PushNotificationDialog() {
 
   const handleEnable = async () => {
     try {
+      console.log("[v0] Push notification enable clicked")
       const permission = await Notification.requestPermission()
+      console.log("[v0] Notification permission:", permission)
+
       if (permission === "granted") {
         if ("serviceWorker" in navigator) {
           const registration = await navigator.serviceWorker.register("/sw.js")
+          console.log("[v0] Service worker registered:", registration)
 
           await navigator.serviceWorker.ready
 
           const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+          console.log("[v0] VAPID Public Key exists:", !!vapidPublicKey)
 
           if (vapidPublicKey) {
             try {
@@ -45,23 +50,31 @@ export function PushNotificationDialog() {
                 applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
               })
 
-              await fetch("/api/push/subscribe", {
+              console.log("[v0] Subscription created:", subscription)
+
+              // Save to localStorage
+              localStorage.setItem("pushSubscription", JSON.stringify(subscription))
+              console.log("[v0] Subscription saved to localStorage")
+
+              // Also save to API (for server-side storage)
+              const response = await fetch("/api/push/subscribe", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(subscription),
               })
-
-              localStorage.setItem("pushSubscription", JSON.stringify(subscription))
+              console.log("[v0] API response:", response.status)
             } catch (subError) {
-              console.error("Push subscription error:", subError)
+              console.error("[v0] Push subscription error:", subError)
             }
+          } else {
+            console.error("[v0] NEXT_PUBLIC_VAPID_PUBLIC_KEY is not set!")
           }
         }
 
         setIsOpen(false)
       }
     } catch (error) {
-      console.error("Error requesting notification permission:", error)
+      console.error("[v0] Error requesting notification permission:", error)
     }
   }
 
