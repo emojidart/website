@@ -29,6 +29,7 @@ import {
 import Image from "next/image"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { PushNotificationDialog } from "@/components/push-notification-dialog"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -593,6 +594,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+
+      <PushNotificationDialog />
 
       {activeTournament && (
         <div className="bg-red-600 border-b-4 border-red-700 shadow-md">
