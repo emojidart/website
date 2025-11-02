@@ -138,3 +138,54 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  @keyframes splash-logo-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.7);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes splash-text-enter {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes splash-dots-enter {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-splash-logo-enter {
+    animation: splash-logo-enter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .animate-splash-text-enter {
+    animation: splash-text-enter 0.8s ease-out 0.2s forwards;
+    opacity: 0;
+  }
+
+  .animate-splash-dots-enter {
+    animation: splash-dots-enter 0.6s ease-out 0.4s forwards;
+    opacity: 0;
+  }
+
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
