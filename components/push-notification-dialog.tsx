@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { Bell, X, CheckCircle, AlertCircle } from "lucide-react"
+import { createBrowserClient } from "@supabase/ssr"
+
+const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 export function PushNotificationDialog() {
   const [isOpen, setIsOpen] = useState(false)
