@@ -1,80 +1,58 @@
 // Service Worker for Push Notifications
-
 self.addEventListener("install", (event) => {
-  console.log("Service Worker installiert")
+  console.log("[v0] Service Worker installing...")
   self.skipWaiting()
 })
 
 self.addEventListener("activate", (event) => {
-  console.log("Service Worker aktiviert")
-  event.waitUntil(self.clients.claim())
+  console.log("[v0] Service Worker activated")
+  event.waitUntil(clients.claim())
 })
 
+// Handle push notifications
 self.addEventListener("push", (event) => {
-  console.log("Push-Benachrichtigung empfangen:", event)
+  console.log("[v0] Push notification received:", event)
 
-  let data = {
+  let notificationData = {
     title: "EMD Dart",
     body: "Neue Benachrichtigung",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
-    data: {
-      url: "/",
-    },
+    data: {},
   }
 
+  // Parse push data if available
   if (event.data) {
     try {
-      data = { ...data, ...event.data.json() }
+      const data = event.data.json()
+      notificationData = {
+        title: data.title || notificationData.title,
+        body: data.body || notificationData.body,
+        icon: data.icon || notificationData.icon,
+        badge: data.badge || notificationData.badge,
+        data: data.data || {},
+      }
     } catch (e) {
-      console.error("Fehler beim Parsen der Push-Daten:", e)
+      console.error("[v0] Error parsing push data:", e)
     }
   }
 
-  const options = {
-    body: data.body,
-    icon: data.icon,
-    badge: data.badge,
-    vibrate: [200, 100, 200],
-    data: data.data,
-    actions: [
-      {
-        action: "open",
-        title: "Öffnen",
-      },
-      {
-        action: "close",
-        title: "Schließen",
-      },
-    ],
-  }
-
-  event.waitUntil(self.registration.showNotification(data.title, options))
-})
-
-self.addEventListener("notificationclick", (event) => {
-  console.log("Benachrichtigung geklickt:", event)
-  event.notification.close()
-
-  if (event.action === "close") {
-    return
-  }
-
-  const urlToOpen = event.notification.data?.url || "/"
-
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      // Prüfe, ob bereits ein Fenster offen ist
-      for (let i = 0; i < clientList.length; i++) {
-        const client = clientList[i]
-        if (client.url === urlToOpen && "focus" in client) {
-          return client.focus()
-        }
-      }
-      // Öffne neues Fenster
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(urlToOpen)
-      }
+    self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      data: notificationData.data,
+      vibrate: [200, 100, 200],
+      tag: "emd-dart-notification",
     }),
   )
+})
+
+// Handle notification clicks
+self.addEventListener("notificationclick", (event) => {
+  console.log("[v0] Notification clicked:", event)
+  event.notification.close()
+
+  event.waitUntil(clients.openWindow("/"))
 })
