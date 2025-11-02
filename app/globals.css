@@ -134,8 +134,14 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    background-color: #d97706;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    /* Set body background to orange to match splash screen for PWA startup */
+    background-color: #d97706;
+    color: white;
   }
 }
 
