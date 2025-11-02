@@ -2,10 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const subscription = await request.json()
-
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,30 +20,18 @@ export async function POST(request: NextRequest) {
       },
     )
 
-    const { endpoint, keys } = subscription
-
-    const { data, error } = await supabase
-      .from("push_subscriptions")
-      .insert({
-        endpoint,
-        auth: keys?.auth,
-        p256dh: keys?.p256dh,
-      })
-      .select()
+    const { count, error } = await supabase.from("push_subscriptions").select("*", { count: "exact", head: true })
 
     if (error) {
-      console.error("[v0] Error saving subscription to Supabase:", error)
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Push subscription saved to Supabase:", data)
-
     return NextResponse.json({
       success: true,
-      message: "Subscription saved successfully",
+      count: count || 0,
     })
   } catch (error) {
-    console.error("[v0] Error saving subscription:", error)
-    return NextResponse.json({ success: false, error: "Failed to save subscription" }, { status: 500 })
+    console.error("[v0] Error checking subscriptions:", error)
+    return NextResponse.json({ success: false, error: "Failed to check subscriptions" }, { status: 500 })
   }
 }
