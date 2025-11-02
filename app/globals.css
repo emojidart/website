@@ -135,17 +135,23 @@
   }
 
   html {
-    background-color: #d97706;
+    background-color: #f97316;
   }
 
   body {
-    /* Set body background to orange to match splash screen for PWA startup */
-    background-color: #d97706;
-    color: white;
+    /* Removed orange background and white color - these should only be on splash screen, not the entire body */
+    color: var(--foreground);
+    background-color: var(--background);
   }
 }
 
 @layer components {
+  /* Added .splash-screen-container to apply orange only to the splash screen */
+  .splash-screen-container {
+    background-color: #d97706;
+    color: white;
+  }
+
   @keyframes splash-logo-enter {
     from {
       opacity: 0;

@@ -41,7 +41,7 @@ import {
   AlertTriangle,
   Home,
   CalendarDays,
-  FileText,
+  Crown,
 } from "lucide-react"
 import Image from "next/image"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
@@ -941,11 +941,11 @@ export default function AnmeldungPage() {
             <span className="text-xs font-medium">Events</span>
           </a>
           <a
-            href="/tournament-series-app"
+            href="/upcoming-tournaments-app"
             className="flex flex-col items-center justify-center flex-1 h-full text-primary transition-colors"
           >
-            <FileText className="w-5 h-5 mb-1" />
-            <span className="text-xs font-medium">Anmeldung</span>
+            <Crown className="w-5 h-5 mb-1" />
+            <span className="text-xs font-medium">Lion Cup</span>
           </a>
         </div>
       </nav>
