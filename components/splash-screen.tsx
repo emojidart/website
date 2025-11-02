@@ -34,7 +34,7 @@ export function SplashScreen() {
         <div className="animate-splash-logo-enter flex items-center justify-center">
           <div className="w-24 h-24 sm:w-32 sm:h-32 relative">
             <Image
-              src="/images/logo1.png"
+              src="/images/emd-logo.png"
               alt="EMD Dart Logo"
               width={128}
               height={128}
