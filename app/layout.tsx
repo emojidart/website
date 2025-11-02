@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Emoj's Dartverein",
   description: "Offizielle Website des Emoj's Dartvereins",
-  generator: "grafikguru",
+  generator: "v0.app",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -19,8 +19,8 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#d97706",
-  backgroundColor: "#ffffff",
+  themeColor: "#f97316",
+  backgroundColor: "#f97316",
   width: "device-width",
   initialScale: 1,
 }
@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="de">
       <head>
-        <meta name="theme-color" content="#d97706" />
+        <meta name="theme-color" content="#f97316" />
       </head>
       <body className={`${inter.className} antialiased`}>
         <SplashScreen />
