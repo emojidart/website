@@ -4,10 +4,11 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Camera, Calendar, Trophy, ArrowLeft } from "lucide-react"
+import { Camera, Calendar, Trophy } from "lucide-react"
 import { Header } from "@/components/header"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { FAQChatWidget } from "@/components/faq-chat-widget"
 import { createBrowserClient } from "@supabase/ssr"
-import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Image from "next/image"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -211,6 +212,8 @@ export default function MatchGaleriePage() {
             </div>
           </div>
         </main>
+        <MobileBottomNav />
+        <FAQChatWidget />
       </div>
     )
   }
@@ -224,10 +227,11 @@ export default function MatchGaleriePage() {
             <div className="text-center">
               <h1 className="text-2xl font-bold text-gray-900 mb-4">Anmeldung erforderlich</h1>
               <p className="text-gray-600 mb-6">Du musst angemeldet sein, um die Match-Galerie zu sehen.</p>
-              <Button onClick={() => router.push("/member-login")}>Zur Anmeldung</Button>
             </div>
           </div>
         </main>
+        <MobileBottomNav />
+        <FAQChatWidget />
       </div>
     )
   }
@@ -235,6 +239,7 @@ export default function MatchGaleriePage() {
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
       <Header />
+
       <main className="pt-8 pb-20">
         <motion.div
           className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8"
@@ -242,26 +247,19 @@ export default function MatchGaleriePage() {
           initial="hidden"
           animate="visible"
         >
-          <div className="mb-6">
-            <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2 mb-4">
-              <ArrowLeft className="h-4 w-4" />
-              Zurück zum Profil
-            </Button>
-          </div>
-
           <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-12">
-            <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl shadow-xl border border-purple-200 p-4 sm:p-8 md:p-12 text-white">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
               <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
                 <Camera className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
               </div>
               <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
                 <span className="block text-white">MATCH-GALERIE</span>
-                <span className="block text-purple-200">Herbstsaison 2025</span>
+                <span className="block text-orange-200">Herbstsaison 2025</span>
               </h1>
-              <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-purple-100 mb-2 sm:mb-4">
+              <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-2 sm:mb-4">
                 Alle Teamfotos und Spielmomente
               </p>
-              <div className="flex items-center justify-center gap-4 text-purple-100">
+              <div className="flex items-center justify-center gap-4 text-orange-100">
                 <div className="flex items-center gap-2">
                   <Camera className="h-4 w-4" />
                   <span className="text-sm font-medium">{matches.length} Fotos</span>
@@ -272,7 +270,7 @@ export default function MatchGaleriePage() {
 
           <motion.div variants={itemVariants}>
             <Card className="overflow-hidden shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3 sm:p-6">
+              <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 sm:p-6">
                 <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <Camera className="h-5 w-5 sm:h-6 sm:w-6" />
                   Match-Fotos ({matches.length})
@@ -403,7 +401,7 @@ export default function MatchGaleriePage() {
             <DialogHeader className="p-4 pb-2 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Camera className="h-5 w-5 text-purple-600" />
+                  <Camera className="h-5 w-5 text-orange-600" />
                   <DialogTitle className="text-lg font-semibold">
                     {selectedMatch && getMatchTitle(selectedMatch)}
                   </DialogTitle>
@@ -485,6 +483,9 @@ export default function MatchGaleriePage() {
           </DialogContent>
         </Dialog>
       </main>
+
+      <MobileBottomNav />
+      <FAQChatWidget />
     </div>
   )
 }

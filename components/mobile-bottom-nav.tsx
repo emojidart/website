@@ -12,6 +12,7 @@ import {
   HelpCircle,
   LogOut,
   MessageCircle,
+  Images,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -88,6 +89,13 @@ export function MobileBottomNav() {
       name: "Mitgliedskarte",
       href: "/member-card",
       icon: UserCircle,
+      action: null,
+    })
+
+    moreMenuItems.splice(2, 0, {
+      name: "Match Galerie",
+      href: "/match-galerie",
+      icon: Images,
       action: null,
     })
 

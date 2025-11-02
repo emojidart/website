@@ -315,12 +315,12 @@ export default function Home() {
         const prizePoolFromParticipants = totalParticipants * 5
         const prizePoolFromAppearances = totalAppearances * 4
 
-        let hostSponsoring = 0
-        if (totalAppearances >= 501) {
-          hostSponsoring = 250
-        } else if (totalAppearances >= 1) {
-          hostSponsoring = 100
-        }
+      let hostSponsoring = 0
+if (totalAppearances >= 501) {
+  hostSponsoring = 250
+} else if (totalAppearances >= 500) {
+  hostSponsoring = 100  // ✅ RICHTIG! Ab 500 Antritte = 100€
+}
 
         const totalPrizePool = prizePoolFromParticipants + prizePoolFromAppearances + hostSponsoring
 
@@ -756,7 +756,7 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mb-4 sm:mb-6">
-                  <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-1">BUFFALO-STEEL</h1>
+                  <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-1">EMD-BUFFALO-STEEL</h1>
                   <div className="h-10 mb-1" />
                   <h2 className="text-lg sm:text-xl lg:text-3xl font-bold text-slate-300 mb-2">DART SERIEN CUP</h2>
                   <p className="text-base sm:text-lg lg:text-xl text-slate-200 mb-1">Nächstes Turnier</p>

@@ -201,6 +201,19 @@ export function Header() {
                             </a>
                           </NavigationMenuLink>
                         </li>
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <a
+                              href="/match-galerie"
+                              className="block select-none space-y-1 rounded-lg p-4 leading-none no-underline outline-none transition-all hover:bg-orange-50 hover:shadow-md border border-transparent hover:border-orange-100"
+                            >
+                              <div className="text-sm font-semibold leading-none text-orange-600">Match Galerie</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1.5">
+                                Fotos von Matches und Events
+                              </p>
+                            </a>
+                          </NavigationMenuLink>
+                        </li>
                       </ul>
                     </NavigationMenuContent>
                   </NavigationMenuItem>

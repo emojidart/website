@@ -167,9 +167,27 @@ export function EventsManagement({ user }: EventsManagementProps) {
         if (error) throw error
         setFormMessage({ type: "success", text: "Veranstaltung erfolgreich aktualisiert!" })
       } else {
-        const { error } = await supabase.from("events").insert([eventData])
+        const { data: insertedData, error } = await supabase.from("events").insert([eventData]).select()
         if (error) throw error
-        setFormMessage({ type: "success", text: "Veranstaltung erfolgreich hinzugefügt!" })
+
+        const newEventId = insertedData?.[0]?.id
+        if (newEventId) {
+          await fetch("/api/push/send-event", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              eventId: newEventId,
+              name: form.name,
+              event_type: form.event_type,
+              photo_url: photoUrl,
+            }),
+          })
+        }
+
+        setFormMessage({
+          type: "success",
+          text: "Veranstaltung erfolgreich hinzugefügt und Benachrichtigung versendet!",
+        })
       }
 
       resetForm()
