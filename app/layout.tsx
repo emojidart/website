@@ -2,27 +2,26 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { SplashScreen } from "@/components/splash-screen"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Emoj's Dartverein",
   description: "Offizielle Website des Emoj's Dartvereins",
-  generator: "grafikguru",
+  generator: "v0.app",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Emoj's Dartverein",
+  },
+  icons: {
+    apple: "/icon-192.png",
   },
 }
 
 export const viewport: Viewport = {
   themeColor: "#d97706",
-  backgroundColor: "#ffffff",
-  width: "device-width",
-  initialScale: 1,
 }
 
 export default function RootLayout({
@@ -32,13 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de">
-      <head>
-        <meta name="theme-color" content="#d97706" />
-      </head>
-      <body className={`${inter.className} antialiased`}>
-        <SplashScreen />
-        {children}
-      </body>
+      <body className={`${inter.className} antialiased`}>{children}</body>
     </html>
   )
 }
