@@ -990,7 +990,7 @@ export default function Home() {
                               <EventIcon className="w-8 h-8 text-orange-600" />
                               <div>
                                 <h4 className="text-xl font-bold text-gray-900">
-                                  {item.type === "tournament" ? "Turnierinformationen" : "Veranstaltungsinformationen"}
+                                  {item.type === "tournament" ? "Turnierinformationen" : "Info"}
                                 </h4>
                                 <p className="text-sm text-gray-700">Alle wichtigen Details auf einen Blick</p>
                               </div>
