@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { SplashScreen } from "@/components/splash-screen"
+import { PushNotificationDialog } from "@/components/push-notification-dialog"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -39,6 +40,7 @@ export default function RootLayout({
     <html lang="de">
       <body className={`${inter.className} antialiased`}>
         <SplashScreen />
+        <PushNotificationDialog />
         {children}
       </body>
     </html>
