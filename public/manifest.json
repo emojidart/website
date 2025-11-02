@@ -1,13 +1,30 @@
 {
-  "name": "Emoj's Dartverein",
-  "short_name": "EMD App",
-  "description": "Offizielle Website des Emoj's Dartvereins - Spielerverwaltung, Statistiken und mehr",
+  "name": "Emoj's Dartverein - EMD Dart",
+  "short_name": "EMD Dart",
+  "description": "Offizielle Website des Emoj's Dartvereins - Spielerverwaltung, Statistiken, Live-Scores und mehr. Verfolge Turniere, Spiele und deine Lieblingsspieler in Echtzeit.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#d97706",
-  "orientation": "any",
-  "categories": ["sports", "lifestyle"],
+  "categories": ["sports", "lifestyle", "entertainment"],
+  "screenshots": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "purpose": "any"
+    }
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -20,14 +37,49 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "wide"
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Turniere",
+      "short_name": "Live",
+      "description": "Schaue dir Live-Turniere an",
+      "url": "/live-all-app",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any"
+        }
+      ]
+    },
+    {
+      "name": "LION CUP Wertung",
+      "short_name": "Wertung",
+      "description": "Verfolge deine Position in der LION CUP Wertung",
+      "url": "/tournament-series-app",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
 }
