@@ -59,6 +59,22 @@ export default function LiveDKOSection() {
   const [activeTournament, setActiveTournament] = useState<ActiveTournament | null>(null)
   const [rankings, setRankings] = useState<Ranking[]>([])
 
+  const getBracketSize = (): 8 | 16 | 32 | 64 => {
+    if (!activeTournament) return 16
+    const match = activeTournament.tournament_type.match(/(\d+)er_dko|dko_(\d+)/)
+    if (match) {
+      // Extract the number from either capture group
+      const size = Number.parseInt(match[1] || match[2])
+      if (size === 8 || size === 16 || size === 32 || size === 64) {
+        return size
+      }
+    }
+    return 16
+  }
+
+  const bracketSize = getBracketSize()
+  console.log("[v0] Final bracketSize:", bracketSize)
+
   useEffect(() => {
     const loadActiveTournament = async () => {
       try {
@@ -289,7 +305,15 @@ export default function LiveDKOSection() {
     )
     .slice(0, 4)
 
-  const tournamentWinner = matches[31]?.winner || matches[30]?.winner
+  const getTournamentWinner = () => {
+    if (bracketSize === 8) return matches[15]?.winner || matches[14]?.winner
+    if (bracketSize === 16) return matches[31]?.winner || matches[30]?.winner
+    if (bracketSize === 32) return matches[63]?.winner || matches[62]?.winner
+    if (bracketSize === 64) return matches[127]?.winner || matches[126]?.winner
+    return null
+  }
+
+  const tournamentWinner = getTournamentWinner()
   const isTournamentCompleted = activeTournament?.status === "completed"
   const completedCount = Object.values(matches).filter((m) => m.winner).length
 
@@ -444,19 +468,46 @@ export default function LiveDKOSection() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {upcomingMatches.map((match) => (
                   <div key={match.id} className="border border-gray-200 rounded-xl p-4 sm:p-6 bg-gray-50">
                     <Badge variant="outline" className="mb-4">
                       Match {match.id}
                     </Badge>
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
-                        <span className="font-medium text-gray-900">{match.player1}</span>
+                      <div
+                        className={cn(
+                          "flex items-center justify-between p-2 rounded text-sm",
+                          match.winner === match.player1
+                            ? "bg-green-100 border border-green-500 font-bold"
+                            : "bg-gray-100",
+                        )}
+                      >
+                        <span className={cn("text-sm", match.winner === match.player1 && "font-bold text-gray-900")}>
+                          {match.player1}
+                        </span>
+                        <span
+                          className={cn("text-sm font-semibold", match.winner === match.player1 && "text-green-600")}
+                        >
+                          {match.score1}
+                        </span>
                       </div>
-                      <div className="text-center text-xs text-gray-500 font-semibold">VS</div>
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
-                        <span className="font-medium text-gray-900">{match.player2}</span>
+                      <div
+                        className={cn(
+                          "flex items-center justify-between p-2 rounded text-sm",
+                          match.winner === match.player2
+                            ? "bg-green-100 border border-green-500 font-bold"
+                            : "bg-gray-100",
+                        )}
+                      >
+                        <span className={cn("text-sm", match.winner === match.player2 && "font-bold text-gray-900")}>
+                          {match.player2}
+                        </span>
+                        <span
+                          className={cn("text-sm font-semibold", match.winner === match.player2 && "text-green-600")}
+                        >
+                          {match.score2}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -480,7 +531,7 @@ export default function LiveDKOSection() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {completedMatches.map((match) => (
                   <div key={match.id} className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
-                    <Badge variant="secondary" className="mb-3 text-xs">
+                    <Badge variant="secondary" className="text-xs mb-3">
                       Match {match.id}
                     </Badge>
                     <div className="space-y-2">
@@ -592,20 +643,142 @@ export default function LiveDKOSection() {
             <CardTitle className="text-lg sm:text-xl">Kompletter Bracket</CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 space-y-6">
-            <BracketRound title="Runde 1" matches={Object.values(matches).filter((m) => m.id >= 1 && m.id <= 8)} />
-            <BracketRound
-              title="Verlierer Runde 1"
-              matches={Object.values(matches).filter((m) => m.id >= 9 && m.id <= 12)}
-              isLoser
-            />
-            <BracketRound title="Runde 2" matches={Object.values(matches).filter((m) => m.id >= 13 && m.id <= 16)} />
-            <BracketRound
-              title="Verlierer Runde 2"
-              matches={Object.values(matches).filter((m) => m.id >= 17 && m.id <= 20)}
-              isLoser
-            />
-            <BracketRound title="Runde 3" matches={Object.values(matches).filter((m) => m.id >= 23 && m.id <= 24)} />
-            <BracketRound title="Finale" matches={Object.values(matches).filter((m) => m.id >= 28 && m.id <= 31)} />
+            {bracketSize === 8 && (
+              <>
+                <BracketRound title="Runde 1" matches={Object.values(matches).filter((m) => m.id >= 1 && m.id <= 4)} />
+                <BracketRound
+                  title="Verlierer Runde 1"
+                  matches={Object.values(matches).filter((m) => m.id >= 5 && m.id <= 6)}
+                  isLoser
+                />
+                <BracketRound title="Runde 2" matches={Object.values(matches).filter((m) => m.id >= 7 && m.id <= 8)} />
+                <BracketRound
+                  title="Verlierer Runde 2"
+                  matches={Object.values(matches).filter((m) => m.id >= 9 && m.id <= 10)}
+                  isLoser
+                />
+                <BracketRound
+                  title="Verlierer Runde 3"
+                  matches={Object.values(matches).filter((m) => m.id === 11)}
+                  isLoser
+                />
+                <BracketRound title="Halbfinale" matches={Object.values(matches).filter((m) => m.id === 12)} />
+                <BracketRound
+                  title="Verlierer Runde 4"
+                  matches={Object.values(matches).filter((m) => m.id === 13)}
+                  isLoser
+                />
+                <BracketRound title="Großes Finale" matches={Object.values(matches).filter((m) => m.id === 14)} />
+                <BracketRound title="Bracket Reset" matches={Object.values(matches).filter((m) => m.id === 15)} />
+              </>
+            )}
+            {bracketSize === 16 && (
+              <>
+                <BracketRound title="Runde 1" matches={Object.values(matches).filter((m) => m.id >= 1 && m.id <= 8)} />
+                <BracketRound
+                  title="Verlierer Runde 1"
+                  matches={Object.values(matches).filter((m) => m.id >= 9 && m.id <= 12)}
+                  isLoser
+                />
+                <BracketRound
+                  title="Runde 2"
+                  matches={Object.values(matches).filter((m) => m.id >= 13 && m.id <= 16)}
+                />
+                <BracketRound
+                  title="Verlierer Runde 2"
+                  matches={Object.values(matches).filter((m) => m.id >= 17 && m.id <= 20)}
+                  isLoser
+                />
+                <BracketRound
+                  title="Verlierer Runde 3"
+                  matches={Object.values(matches).filter((m) => m.id >= 21 && m.id <= 22)}
+                  isLoser
+                />
+                <BracketRound
+                  title="Runde 3"
+                  matches={Object.values(matches).filter((m) => m.id >= 23 && m.id <= 24)}
+                />
+                <BracketRound
+                  title="Verlierer Runde 4"
+                  matches={Object.values(matches).filter((m) => m.id >= 25 && m.id <= 26)}
+                  isLoser
+                />
+                <BracketRound title="Halbfinale" matches={Object.values(matches).filter((m) => m.id === 28)} />
+                <BracketRound
+                  title="Verlierer Runde 5"
+                  matches={Object.values(matches).filter((m) => m.id === 27)}
+                  isLoser
+                />
+                <BracketRound
+                  title="Verlierer Runde 6"
+                  matches={Object.values(matches).filter((m) => m.id === 29)}
+                  isLoser
+                />
+                <BracketRound title="Großes Finale" matches={Object.values(matches).filter((m) => m.id === 30)} />
+                <BracketRound title="Bracket Reset" matches={Object.values(matches).filter((m) => m.id === 31)} />
+              </>
+            )}
+            {bracketSize === 32 && (
+              <>
+                <BracketRound title="Runde 1" matches={Object.values(matches).filter((m) => m.id >= 1 && m.id <= 16)} />
+                <BracketRound
+                  title="Verlierer Runde 1"
+                  matches={Object.values(matches).filter((m) => m.id >= 17 && m.id <= 24)}
+                  isLoser
+                />
+                <BracketRound
+                  title="Runde 2"
+                  matches={Object.values(matches).filter((m) => m.id >= 25 && m.id <= 32)}
+                />
+                <BracketRound
+                  title="Verlierer Runde 2"
+                  matches={Object.values(matches).filter((m) => m.id >= 33 && m.id <= 40)}
+                  isLoser
+                />
+                <BracketRound
+                  title="Verlierer Runde 3"
+                  matches={Object.values(matches).filter((m) => m.id >= 41 && m.id <= 44)}
+                  isLoser
+                />
+                <BracketRound
+                  title="Runde 3"
+                  matches={Object.values(matches).filter((m) => m.id >= 45 && m.id <= 48)}
+                />
+                <BracketRound
+                  title="Verlierer Runde 4"
+                  matches={Object.values(matches).filter((m) => m.id >= 49 && m.id <= 52)}
+                  isLoser
+                />
+                <BracketRound
+                  title="Verlierer Runde 5"
+                  matches={Object.values(matches).filter((m) => m.id >= 53 && m.id <= 54)}
+                  isLoser
+                />
+                <BracketRound
+                  title="Runde 4"
+                  matches={Object.values(matches).filter((m) => m.id >= 55 && m.id <= 56)}
+                />
+                <BracketRound
+                  title="Verlierer Runde 6"
+                  matches={Object.values(matches).filter((m) => m.id >= 57 && m.id <= 58)}
+                  isLoser
+                />
+                <BracketRound
+                  title="Verlierer Runde 7"
+                  matches={Object.values(matches).filter((m) => m.id === 59)}
+                  isLoser
+                />
+                <BracketRound title="Halbfinale" matches={Object.values(matches).filter((m) => m.id === 60)} />
+                <BracketRound
+                  title="Verlierer Runde 8"
+                  matches={Object.values(matches).filter((m) => m.id === 61)}
+                  isLoser
+                />
+                <BracketRound title="Großes Finale" matches={Object.values(matches).filter((m) => m.id === 62)} />
+                <BracketRound title="Bracket Reset" matches={Object.values(matches).filter((m) => m.id === 63)} />
+              </>
+            )}
+            {bracketSize === 64 && <>{/* Additional logic for 64-player bracket can be added here */}</>}
           </CardContent>
         </Card>
       </motion.div>
