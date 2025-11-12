@@ -9,7 +9,21 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { UserCircle, Mail, MapPin, Calendar, CreditCard, QrCode, Download, Target, Wallet, History } from "lucide-react"
+import {
+  UserCircle,
+  Mail,
+  MapPin,
+  Calendar,
+  CreditCard,
+  QrCode,
+  Download,
+  Target,
+  Wallet,
+  History,
+  Smartphone,
+  Zap,
+  HandCoins,
+} from "lucide-react"
 import type { UserProfile } from "@/types"
 import { QRCodeSVG } from "qrcode.react"
 import html2canvas from "html2canvas"
@@ -301,9 +315,6 @@ export default function MemberCardPage() {
                         src={
                           profile.club_players?.photo_url ||
                           "/placeholder.svg?height=96&width=96&query=dart player avatar" ||
-                          "/placeholder.svg" ||
-                          "/placeholder.svg" ||
-                          "/placeholder.svg" ||
                           "/placeholder.svg"
                         }
                         alt={profile.club_players?.name || "Spieler"}
@@ -369,10 +380,46 @@ export default function MemberCardPage() {
                     </div>
                     <p className="text-sm text-gray-600 mb-2">
                       {playerCode !== "Noch kein Turniercode"
-                        ? "Scanne diesen Code für schnellen Turnieranmeldung"
+                        ? "Jetzt anmelden – QR-Code scannen"
                         : "QR-Code wird erstellt nach erster Turnieranmeldung"}
                     </p>
                     <p className="text-xs text-gray-500 font-mono">{memberNumber}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="mb-6 border-0 shadow-xl bg-gradient-to-br from-orange-50 to-orange-100 border-l-4 border-orange-600">
+                <CardContent className="p-6 sm:p-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+                      <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4 flex-shrink-0">
+                        <HandCoins className="h-6 w-6 text-white" />
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-900 mb-2">Vor Ort aufladen</h4>
+                      <p className="text-sm text-gray-700">
+                        Lade dein Guthaben jederzeit direkt vor Ort auf und zahle flexibel.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+                      <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4 flex-shrink-0">
+                        <Zap className="h-6 w-6 text-white" />
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-900 mb-2">Bargeldlos & Schnell</h4>
+                      <p className="text-sm text-gray-700">
+                        Melde dich jederzeit schnell und bargeldlos über deinen QR-Code an.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+                      <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4 flex-shrink-0">
+                        <Smartphone className="h-6 w-6 text-white" />
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-900 mb-2">Jederzeit auszahlen</h4>
+                      <p className="text-sm text-gray-700">
+                        Dein Guthaben kann jederzeit ausgezahlt werden.
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

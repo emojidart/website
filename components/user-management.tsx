@@ -25,6 +25,8 @@ import {
   RefreshCw,
   MailCheck,
   MailX,
+  Link2,
+  Link2Off as LinkOff,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -60,6 +62,8 @@ interface PlayerData {
   is_admin?: boolean
   user_profile_id?: string
   email_confirmed?: boolean
+  spieldatenbank_id?: string | null
+  spieldatenbank_linked?: boolean
 }
 
 interface TeamGroup {
@@ -83,6 +87,12 @@ interface AccountManagementForm {
   newEmail: string
   newPassword: string
   confirmNewPassword: string
+}
+
+interface LinkingForm {
+  playerId: string
+  playerName: string
+  selectedSpielerId: string
 }
 
 export function UserManagement({ user, onDataSaved }: UserManagementProps) {
@@ -118,6 +128,19 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
     message: string
   }>({ type: null, message: "" })
   const [managementAction, setManagementAction] = useState<"email" | "password" | "delete" | null>(null)
+
+  const [isLinkingAccount, setIsLinkingAccount] = useState(false)
+  const [linkingForm, setLinkingForm] = useState<LinkingForm>({
+    playerId: "",
+    playerName: "",
+    selectedSpielerId: "",
+  })
+  const [linkingStatus, setLinkingStatus] = useState<{
+    type: "success" | "error" | null
+    message: string
+  }>({ type: null, message: "" })
+  const [spielerOptions, setSpielgerOptions] = useState<Array<{ id: string; name: string; verein: string }>>([])
+  const [linkingDialogOpen, setLinkingDialogOpen] = useState(false)
 
   const fetchAllUsers = async () => {
     setLoading(true)
@@ -168,7 +191,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
           {
             is_admin: p.is_admin,
             profile_id: p.id,
-            email_confirmed: p.email_confirmed, // Use email_confirmed from user_profiles, not auth
+            email_confirmed: p.email_confirmed,
           },
         ]) || [],
       )
@@ -194,10 +217,12 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
               origin: player.origin,
               team_id: undefined,
               team_name: undefined,
-              has_account: hasAccount, // Use hasAccount from Set
+              has_account: hasAccount,
               is_admin: adminInfo?.is_admin || false,
               user_profile_id: adminInfo?.profile_id,
-              email_confirmed: adminInfo?.email_confirmed || false, // Use from user_profiles
+              email_confirmed: adminInfo?.email_confirmed || false,
+              spieldatenbank_id: player.spieldatenbank_id,
+              spieldatenbank_linked: !!player.spieldatenbank_id,
             }
             unassigned.push(playerData)
           } else {
@@ -220,10 +245,12 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                 origin: player.origin,
                 team_id: teamMembership?.team_id,
                 team_name: teamMembership?.teams?.name,
-                has_account: hasAccount, // Use hasAccount from Set
+                has_account: hasAccount,
                 is_admin: adminInfo?.is_admin || false,
                 user_profile_id: adminInfo?.profile_id,
-                email_confirmed: adminInfo?.email_confirmed || false, // Use from user_profiles
+                email_confirmed: adminInfo?.email_confirmed || false,
+                spieldatenbank_id: player.spieldatenbank_id,
+                spieldatenbank_linked: !!player.spieldatenbank_id,
               }
 
               allPlayers.push(playerData)
@@ -273,7 +300,6 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
       if (error) throw error
 
-      // Refresh the data to show updated admin status
       await fetchAllUsers()
       onDataSaved()
     } catch (err: any) {
@@ -375,6 +401,20 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
       }
 
       console.log("[v0] Profile created successfully:", profileData)
+
+      try {
+        const { data: clubPlayer } = await supabase
+          .from("club_players")
+          .select("spieldatenbank_id")
+          .eq("id", accountForm.playerId)
+          .single()
+
+        if (clubPlayer && !clubPlayer.spieldatenbank_id) {
+          console.log("[v0] No spieldatenbank_id found for this player yet - member card linking needs manual setup")
+        }
+      } catch (err) {
+        console.log("[v0] Could not fetch spieldatenbank_id status:", err)
+      }
 
       setAccountCreationStatus({
         type: "success",
@@ -555,6 +595,79 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
     }
   }
 
+  const loadSpielerdatenbank = async () => {
+    try {
+      const { data: spieler, error } = await supabase.from("spieldatenbank").select("id, name, verein").order("name")
+
+      if (error) throw error
+
+      setSpielgerOptions(spieler || [])
+    } catch (err: any) {
+      console.error("[v0] Error loading spielerdatenbank:", err)
+      setLinkingStatus({
+        type: "error",
+        message: `Fehler beim Laden der Spielerdatenbank: ${err.message}`,
+      })
+    }
+  }
+
+  const linkToSpieldatenbank = async () => {
+    if (!linkingForm.selectedSpielerId) {
+      setLinkingStatus({
+        type: "error",
+        message: "Bitte wählen Sie einen Spieler aus der Spielerdatenbank aus.",
+      })
+      return
+    }
+
+    setIsLinkingAccount(true)
+    setLinkingStatus({ type: null, message: "" })
+
+    try {
+      console.log("[v0] Linking club_player to spieldatenbank:", {
+        playerId: linkingForm.playerId,
+        spielerId: linkingForm.selectedSpielerId,
+      })
+
+      const { error } = await supabase
+        .from("club_players")
+        .update({ spieldatenbank_id: linkingForm.selectedSpielerId })
+        .eq("id", linkingForm.playerId)
+
+      if (error) throw error
+
+      setLinkingStatus({
+        type: "success",
+        message: "Spieler erfolgreich mit Spielerdatenbank verknüpft! Member Card ist jetzt aktiviert.",
+      })
+
+      setTimeout(() => {
+        setLinkingDialogOpen(false)
+        fetchAllUsers()
+        onDataSaved()
+      }, 1500)
+    } catch (err: any) {
+      console.error("[v0] Error linking to spieldatenbank:", err)
+      setLinkingStatus({
+        type: "error",
+        message: `Fehler beim Verknüpfen: ${err.message}`,
+      })
+    } finally {
+      setIsLinkingAccount(false)
+    }
+  }
+
+  const openLinkingDialog = async (player: PlayerData) => {
+    setLinkingForm({
+      playerId: player.id,
+      playerName: player.name,
+      selectedSpielerId: "",
+    })
+    await loadSpielerdatenbank()
+    setLinkingStatus({ type: null, message: "" })
+    setLinkingDialogOpen(true)
+  }
+
   const manuallyConfirmUser = async (player: PlayerData) => {
     console.log("[v0] Starting manual email confirmation for player:", player.name)
 
@@ -566,7 +679,6 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
     try {
       console.log("[v0] Fetching auth users...")
-      // Find the auth user for this player
       const authUsersResult = await listAuthUsers()
       console.log("[v0] Auth users result:", authUsersResult)
 
@@ -601,7 +713,6 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
       }
 
       console.log("[v0] Email confirmed successfully, refreshing data...")
-      // Refresh the data to show updated status
       await fetchAllUsers()
       onDataSaved()
 
@@ -617,7 +728,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
     setManagementForm({
       playerId: player.id,
       playerName: player.name,
-      currentEmail: "", // Would need to fetch from auth.users in real app
+      currentEmail: "",
       newEmail: "",
       newPassword: "",
       confirmNewPassword: "",
@@ -630,7 +741,6 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
     const allPlayers = teamGroups.flatMap((team) => team.players)
     const allPlayersList = [...allPlayers, ...unassignedPlayers]
 
-    // Erstelle eine Map, um Duplikate zu entfernen (ein Spieler kann in mehreren Teams sein)
     const uniquePlayersMap = new Map<string, PlayerData>()
     allPlayersList.forEach((player) => {
       if (!player.has_account && !uniquePlayersMap.has(player.id)) {
@@ -689,6 +799,26 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
         return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Co-Kapitän</Badge>
       default:
         return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Spieler</Badge>
+    }
+  }
+
+  const getMemberCardBadge = (player: PlayerData) => {
+    if (!player.has_account) return null
+
+    if (player.spieldatenbank_linked) {
+      return (
+        <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+          <Link2 className="h-3 w-3 mr-1" />
+          Member Card aktiv
+        </Badge>
+      )
+    } else {
+      return (
+        <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">
+          <LinkOff className="h-3 w-3 mr-1" />
+          Keine Member Card
+        </Badge>
+      )
     }
   }
 
@@ -976,12 +1106,12 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center space-x-2">
-              <MailCheck className="h-5 w-5 text-green-600" />
+              <Link2 className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {allPlayers.filter((p) => p.has_account && p.email_confirmed).length}
+                  {allPlayers.filter((p) => p.has_account && p.spieldatenbank_linked).length}
                 </p>
-                <p className="text-sm text-gray-600">E-Mail bestätigt</p>
+                <p className="text-sm text-gray-600">Member Card aktiv</p>
               </div>
             </div>
           </CardContent>
@@ -1030,7 +1160,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                           {getRoleIcon(player.role)}
                           <div>
                             <h3 className="font-semibold text-gray-900">{player.name}</h3>
-                            <div className="flex items-center space-x-2 mt-1">
+                            <div className="flex items-center space-x-2 mt-1 flex-wrap gap-1">
                               {getRoleBadge(player.role)}
                               {player.has_account ? (
                                 <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
@@ -1042,6 +1172,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                                   Kein Account
                                 </Badge>
                               )}
+                              {getMemberCardBadge(player)}
                               {getAdminBadge(player)}
                               {getEmailConfirmationBadge(player)}
                               <div className="flex items-center space-x-1 text-sm text-gray-500">
@@ -1083,6 +1214,12 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                                   <DropdownMenuItem onClick={() => manuallyConfirmUser(player)}>
                                     <MailCheck className="mr-2 h-4 w-4" />
                                     E-Mail manuell bestätigen
+                                  </DropdownMenuItem>
+                                )}
+                                {!player.spieldatenbank_linked && (
+                                  <DropdownMenuItem onClick={() => openLinkingDialog(player)}>
+                                    <Link2 className="mr-2 h-4 w-4" />
+                                    Mit Member Card verknüpfen
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem onClick={() => openAccountManagement(player, "email")}>
@@ -1143,7 +1280,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                         {getRoleIcon(player.role)}
                         <div>
                           <h3 className="font-semibold text-gray-900">{player.name}</h3>
-                          <div className="flex items-center space-x-2 mt-1">
+                          <div className="flex items-center space-x-2 mt-1 flex-wrap gap-1">
                             {getRoleBadge(player.role)}
                             <Badge variant="outline" className="text-xs text-yellow-700 border-yellow-300">
                               Kein Team
@@ -1158,6 +1295,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                                 Kein Account
                               </Badge>
                             )}
+                            {getMemberCardBadge(player)}
                             {getAdminBadge(player)}
                             {getEmailConfirmationBadge(player)}
                           </div>
@@ -1195,6 +1333,12 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                                 <DropdownMenuItem onClick={() => manuallyConfirmUser(player)}>
                                   <MailCheck className="mr-2 h-4 w-4" />
                                   E-Mail manuell bestätigen
+                                </DropdownMenuItem>
+                              )}
+                              {!player.spieldatenbank_linked && (
+                                <DropdownMenuItem onClick={() => openLinkingDialog(player)}>
+                                  <Link2 className="mr-2 h-4 w-4" />
+                                  Mit Member Card verknüpfen
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem onClick={() => openAccountManagement(player, "email")}>
@@ -1447,6 +1591,100 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                 </div>
               </>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={linkingDialogOpen} onOpenChange={setLinkingDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Link2 className="h-5 w-5 text-blue-600" />
+              <span>Mit Member Card verknüpfen</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-700">
+                Wählen Sie einen Spieler aus der Spielerdatenbank aus, um diesem Vereinsspieler eine Member Card zu
+                aktivieren.
+              </p>
+            </div>
+
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Spieler:</p>
+              <p className="font-semibold text-gray-900">{linkingForm.playerName}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="spieler-select">Spieler aus Spielerdatenbank</Label>
+              <Select
+                value={linkingForm.selectedSpielerId}
+                onValueChange={(value) => setLinkingForm((prev) => ({ ...prev, selectedSpielerId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Spieler auswählen..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {spielerOptions.map((spieler) => (
+                    <SelectItem key={spieler.id} value={spieler.id}>
+                      <div className="flex items-center space-x-2">
+                        <span>{spieler.name}</span>
+                        <Badge variant="outline" className="text-xs ml-2">
+                          {spieler.verein}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {linkingStatus.type && (
+              <div
+                className={`p-3 rounded-lg flex items-center space-x-2 ${
+                  linkingStatus.type === "success"
+                    ? "bg-green-50 border border-green-200 text-green-700"
+                    : "bg-red-50 border border-red-200 text-red-700"
+                }`}
+              >
+                {linkingStatus.type === "success" ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <AlertCircle className="h-4 w-4" />
+                )}
+                <span className="text-sm">{linkingStatus.message}</span>
+              </div>
+            )}
+
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => setLinkingDialogOpen(false)}
+                variant="outline"
+                className="flex-1"
+                disabled={isLinkingAccount}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={linkToSpieldatenbank}
+                disabled={isLinkingAccount || !linkingForm.selectedSpielerId}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                {isLinkingAccount ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Wird verknüpft...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Link2 className="h-4 w-4" />
+                    <span>Verknüpfen</span>
+                  </div>
+                )}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

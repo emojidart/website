@@ -35,12 +35,12 @@ interface PlayerWithFrequency extends Player {
 
 interface RegisteredPlayer {
   id: number
-  player_id: string // Changed to string (UUID from club_players)
+  player_id: string
   player_name: string
   registered_at: string
   paid: boolean
   entry_fee: number
-  deducted_from_credit?: boolean // Track if credit was deducted
+  deducted_from_credit?: boolean
 }
 
 export default function DKOTournamentRegistration() {
@@ -75,7 +75,6 @@ export default function DKOTournamentRegistration() {
   const [scanSuccess, setScanSuccess] = useState(false)
   const [tournamentFormCompleted, setTournamentFormCompleted] = useState(false)
 
-  // Modal states
   const [showCreditErrorModal, setShowCreditErrorModal] = useState<{
     open: boolean
     playerName?: string
@@ -109,6 +108,11 @@ export default function DKOTournamentRegistration() {
   } | null>(null)
 
   const [showPaidLockModal, setShowPaidLockModal] = useState<{ open: boolean; playerName?: string }>({ open: false })
+
+  const [showPlayersWithoutAccountModal, setShowPlayersWithoutAccountModal] = useState<{
+    open: boolean
+    players?: Array<{ id: number; name: string }>
+  }>({ open: false })
 
   const handleScannedPlayerConfirm = async (shouldDeduct: boolean) => {
     if (!scannedPlayerForConfirm) return
@@ -158,7 +162,6 @@ export default function DKOTournamentRegistration() {
         })
       }
 
-      console.log("[v0] Player registered successfully:", scannedPlayerForConfirm.name)
       setScannerMessage(`✓ ${scannedPlayerForConfirm.name} erfolgreich registriert!`)
       setScanSuccess(true)
       setScannedPlayerForConfirm(null)
@@ -193,9 +196,7 @@ export default function DKOTournamentRegistration() {
     if (selectedPlayers.size === 0) return
 
     try {
-      console.log("[v0] Starting player registration...")
       const entryFee = Number.parseFloat(tournamentEntryFee) || 0
-      console.log("[v0] Entry fee:", entryFee)
 
       const playersWithCredit: Array<{
         id: number
@@ -210,8 +211,6 @@ export default function DKOTournamentRegistration() {
         const player = availablePlayers.find((p) => p.id === playerId)
         if (!player) continue
 
-        console.log("[v0] Checking player:", player.name)
-
         if (entryFee > 0) {
           let clubPlayerId: string | null = null
           let creditData: { credit_balance: number } | null = null
@@ -222,18 +221,8 @@ export default function DKOTournamentRegistration() {
             .eq("spieldatenbank_id", player.id)
             .maybeSingle()
 
-          console.log(
-            "[v0] Club player lookup - ID:",
-            player.id,
-            "Result:",
-            clubPlayer?.id,
-            "Error:",
-            clubError?.message,
-          )
-
           if (!clubError && clubPlayer) {
             clubPlayerId = clubPlayer.id
-            console.log("[v0] Found club_player UUID:", clubPlayerId)
 
             const { data: creditDataFromClub, error: creditError } = await supabase
               .from("player_credits")
@@ -241,28 +230,15 @@ export default function DKOTournamentRegistration() {
               .eq("player_id", clubPlayerId)
               .maybeSingle()
 
-            console.log(
-              "[v0] Credit lookup for UUID",
-              clubPlayerId,
-              "Result:",
-              creditDataFromClub,
-              "Error:",
-              creditError?.message,
-            )
-
             if (!creditError && creditDataFromClub) {
               creditData = creditDataFromClub
-              console.log("[v0] Found credit:", creditData.credit_balance)
             }
-          } else {
-            console.log("[v0] Club player not found for spieldatenbank_id:", player.id)
           }
 
           if (creditData && clubPlayerId) {
             const currentCredit = creditData.credit_balance
 
             if (currentCredit < entryFee) {
-              console.log("[v0] Insufficient balance!")
               setShowInsufficientBalanceModal({
                 open: true,
                 playerName: player.name,
@@ -272,7 +248,6 @@ export default function DKOTournamentRegistration() {
               return
             }
 
-            console.log("[v0] Player has sufficient credit, adding to list")
             playersWithCredit.push({
               id: player.id,
               name: player.name,
@@ -281,7 +256,6 @@ export default function DKOTournamentRegistration() {
               clubPlayerId: clubPlayerId,
             })
           } else {
-            console.log("[v0] Player has no credit account (spieldatenbank_id:", player.id, ")")
             playersWithoutCredit.push(playerId)
           }
         } else {
@@ -289,11 +263,7 @@ export default function DKOTournamentRegistration() {
         }
       }
 
-      console.log("[v0] Players with credit:", playersWithCredit.length)
-      console.log("[v0] Players without credit:", playersWithoutCredit.length)
-
       if (playersWithCredit.length > 0) {
-        console.log("[v0] Showing credit confirmation modal...")
         setShowCreditConfirmModal({
           open: true,
           players: playersWithCredit,
@@ -301,10 +271,8 @@ export default function DKOTournamentRegistration() {
           entryFee,
         })
       } else if (playersWithoutCredit.length > 0) {
-        console.log("[v0] Registering players without credit directly...")
         await registerPlayersDirectly(playersWithoutCredit, entryFee)
       } else {
-        console.log("[v0] No players to register")
         setShowErrorModal({ open: true })
       }
     } catch (error) {
@@ -315,6 +283,9 @@ export default function DKOTournamentRegistration() {
 
   const registerPlayersDirectly = async (playerIds: number[], entryFee: number) => {
     try {
+      const successfullyRegistered: number[] = []
+      const playersWithoutAccount: Array<{ id: number; name: string }> = []
+
       for (const playerId of playerIds) {
         const player = availablePlayers.find((p) => p.id === playerId)
         if (!player) continue
@@ -326,6 +297,11 @@ export default function DKOTournamentRegistration() {
           .maybeSingle()
 
         const playerUUID = clubPlayer?.id || null
+
+        if (!playerUUID) {
+          playersWithoutAccount.push({ id: playerId, name: player.name })
+          continue
+        }
 
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
           player_id: playerUUID,
@@ -345,12 +321,24 @@ export default function DKOTournamentRegistration() {
           }
           return
         }
+
+        successfullyRegistered.push(playerId)
+      }
+
+      if (playersWithoutAccount.length > 0) {
+        setShowPlayersWithoutAccountModal({
+          open: true,
+          players: playersWithoutAccount,
+        })
       }
 
       await fetchRegisteredPlayers()
       await fetchFrequentPlayers()
       setSelectedPlayers(new Set())
-      setShowSuccessModal({ open: true, playerCount: playerIds.length })
+
+      if (successfullyRegistered.length > 0) {
+        setShowSuccessModal({ open: true, playerCount: successfullyRegistered.length })
+      }
     } catch (error) {
       console.error("[v0] Error in registerPlayersDirectly:", error)
       setShowErrorModal({ open: true })
@@ -358,14 +346,11 @@ export default function DKOTournamentRegistration() {
   }
 
   const registerPlayersWithoutCreditDeduction = async () => {
-    console.log("[v0] Registering players WITHOUT credit deduction...")
-
     try {
       const entryFee = showCreditConfirmModal.entryFee || 0
       const playersWithoutCredit = showCreditConfirmModal.playersWithoutCredit || []
 
       if (!playersWithoutCredit || playersWithoutCredit.length === 0) {
-        console.log("[v0] No players without credit to register")
         setShowCreditConfirmModal({ open: false })
         return
       }
@@ -380,22 +365,14 @@ export default function DKOTournamentRegistration() {
   }
 
   const registerPlayersWithCreditDeduction = async () => {
-    console.log("[v0] Registering players WITH credit deduction...")
-
     try {
       const entryFee = showCreditConfirmModal.entryFee || 0
       const playersWithCredit = showCreditConfirmModal.players || []
       const playersWithoutCredit = showCreditConfirmModal.playersWithoutCredit || []
 
-      console.log("[v0] Entry fee:", entryFee)
-      console.log("[v0] Players with credit to process:", playersWithCredit.length)
-      console.log("[v0] Players without credit to process:", playersWithoutCredit.length)
-
       setShowCreditConfirmModal({ open: false })
 
       for (const playerWithCredit of playersWithCredit) {
-        console.log("[v0] Processing player with credit:", playerWithCredit.name)
-
         const player = availablePlayers.find((p) => p.id === playerWithCredit.id)
         if (!player) continue
 
@@ -404,7 +381,7 @@ export default function DKOTournamentRegistration() {
           player_name: player.name,
           paid: true,
           entry_fee: entryFee,
-          deducted_from_credit: true, // Mark as automatically deducted
+          deducted_from_credit: true,
         })
 
         if (registerError) {
@@ -419,9 +396,6 @@ export default function DKOTournamentRegistration() {
           return
         }
 
-        // Deduct credit
-        console.log("[v0] Deducting credit for:", playerWithCredit.name, "New balance:", playerWithCredit.newBalance)
-
         const { error: updateError } = await supabase
           .from("player_credits")
           .update({
@@ -431,7 +405,6 @@ export default function DKOTournamentRegistration() {
           .eq("player_id", playerWithCredit.clubPlayerId)
 
         if (updateError) {
-          console.error("[v0] Credit update error:", updateError)
           throw updateError
         }
 
@@ -442,13 +415,9 @@ export default function DKOTournamentRegistration() {
           transaction_type: "tournament_entry_fee",
           admin_id: user?.id,
         })
-
-        console.log("[v0] Credit deducted successfully!")
       }
 
       for (const playerId of playersWithoutCredit) {
-        console.log("[v0] Processing player without credit:", playerId)
-
         const player = availablePlayers.find((p) => p.id === playerId)
         if (!player) continue
 
@@ -459,6 +428,10 @@ export default function DKOTournamentRegistration() {
           .maybeSingle()
 
         const playerUUID = clubPlayer?.id || null
+
+        if (!playerUUID) {
+          continue
+        }
 
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
           player_id: playerUUID,
@@ -623,7 +596,6 @@ export default function DKOTournamentRegistration() {
               transaction_type: "tournament_refund",
               admin_id: user?.id,
             })
-            console.log("[v0] Credit refunded for:", playerToUnregister.player_name, "New balance:", newBalance)
           }
         }
       }
@@ -742,7 +714,6 @@ export default function DKOTournamentRegistration() {
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        console.log("[v0] MediaDevices API not available")
         setScannerMessage(
           "Kamera-Zugriff nicht verfügbar! Bitte stelle sicher, dass:\n• Die Seite über HTTPS läuft\n• Dein Browser Kamera-Zugriff unterstützt\n• Du die Kamera-Berechtigung erteilt hast",
         )
@@ -753,8 +724,6 @@ export default function DKOTournamentRegistration() {
         return
       }
 
-      console.log("[v0] Requesting camera access...")
-
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "environment",
@@ -763,7 +732,6 @@ export default function DKOTournamentRegistration() {
         },
       })
 
-      console.log("[v0] Camera access granted")
       streamRef.current = stream
 
       const video = videoRef.current
@@ -773,7 +741,6 @@ export default function DKOTournamentRegistration() {
 
       video.srcObject = stream
       await video.play()
-      console.log("[v0] Video playing")
 
       setIsScanning(true)
       setScannerMessage("Bereit zum Scannen...")
@@ -796,7 +763,6 @@ export default function DKOTournamentRegistration() {
           const result = await codeReader.decodeFromCanvas(canvas)
 
           if (result) {
-            console.log("[v0] QR Code detected:", result.getText())
             const decodedText = result.getText()
             setScannerMessage("QR-Code erkannt! Suche Spieler...")
 
@@ -813,7 +779,6 @@ export default function DKOTournamentRegistration() {
                 .single()
 
               if (playerError || !player) {
-                console.log("[v0] Player not found for code:", decodedText)
                 setScannerMessage("Spieler nicht gefunden!")
                 setTimeout(() => {
                   setScannerMessage("Bereit zum Scannen...")
@@ -824,7 +789,6 @@ export default function DKOTournamentRegistration() {
 
               const alreadyRegistered = registeredPlayers.some((rp) => rp.player_id === player.id)
               if (alreadyRegistered) {
-                console.log("[v0] Player already registered:", player.name)
                 setScannerMessage(`${player.name} ist bereits registriert!`)
                 setTimeout(() => {
                   setScannerMessage("Bereit zum Scannen...")
@@ -843,7 +807,6 @@ export default function DKOTournamentRegistration() {
                   .maybeSingle()
 
                 if (clubError || !clubPlayer) {
-                  console.log("[v0] Club player not found:", clubError)
                   setScannerMessage("⚠️ Spieler hat kein Guthaben-Konto!")
                   setTimeout(() => {
                     setScannerMessage("Bereit zum Scannen...")
@@ -859,7 +822,6 @@ export default function DKOTournamentRegistration() {
                   .maybeSingle()
 
                 if (creditError || !creditData) {
-                  console.log("[v0] Credit check error:", creditError)
                   setScannerMessage("⚠️ Spieler hat kein Guthaben-Konto!")
                   setTimeout(() => {
                     setScannerMessage("Bereit zum Scannen...")
@@ -881,7 +843,6 @@ export default function DKOTournamentRegistration() {
                   return
                 }
 
-                console.log("[v0] Showing credit confirmation for scanned player:", player.name)
                 setScannedPlayerForConfirm({
                   id: player.id,
                   name: player.name,
@@ -900,6 +861,15 @@ export default function DKOTournamentRegistration() {
 
                 const playerUUID = clubPlayer?.id || null
 
+                if (!playerUUID) {
+                  setScannerMessage("⚠️ Spieler hat kein Guthaben-Konto!")
+                  setTimeout(() => {
+                    setScannerMessage("Bereit zum Scannen...")
+                    startScanningLoop(codeReader)
+                  }, 2000)
+                  return
+                }
+
                 const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
                   player_id: playerUUID,
                   player_name: player.name,
@@ -909,7 +879,6 @@ export default function DKOTournamentRegistration() {
 
                 if (insertError) throw insertError
 
-                console.log("[v0] Player registered successfully (no fee):", player.name)
                 setScannerMessage(`✓ ${player.name} erfolgreich registriert!`)
                 setScanSuccess(true)
                 await fetchRegisteredPlayers()
@@ -931,7 +900,7 @@ export default function DKOTournamentRegistration() {
             }
           }
         } catch (error) {
-          // Ignore decode errors (no QR code in frame)
+          // Ignore decode errors
         }
       }, 300)
 
@@ -971,8 +940,6 @@ export default function DKOTournamentRegistration() {
   }
 
   const stopScanner = () => {
-    console.log("[v0] Stopping scanner...")
-
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current)
       scanIntervalRef.current = null
@@ -981,7 +948,6 @@ export default function DKOTournamentRegistration() {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => {
         track.stop()
-        console.log("[v0] Camera track stopped")
       })
       streamRef.current = null
     }
@@ -1094,7 +1060,6 @@ export default function DKOTournamentRegistration() {
             <UserPlus className="w-8 h-8" />
           </div>
           <h1 className="text-4xl sm:text-5xl font-black mb-4 tracking-tight">DKO TURNIER REGISTRIERUNG</h1>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto"></p>
         </div>
       </div>
 
@@ -1204,6 +1169,40 @@ export default function DKOTournamentRegistration() {
             <Button
               onClick={() => setShowErrorModal({ open: false })}
               className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg"
+            >
+              Verstanden
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Players Without Account Modal - NEW FIX */}
+      {showPlayersWithoutAccountModal.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
+            <div className="flex items-center justify-center w-14 h-14 bg-orange-100 rounded-full mb-4 mx-auto">
+              <AlertCircle className="w-7 h-7 text-orange-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Spieler nicht registriert</h3>
+            <p className="text-center text-gray-600 mb-4">
+              {showPlayersWithoutAccountModal.players?.length || 0} Spieler konnten nicht registriert werden:
+            </p>
+            <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 mb-6 max-h-48 overflow-y-auto">
+              <ul className="space-y-2">
+                {showPlayersWithoutAccountModal.players?.map((player) => (
+                  <li key={player.id} className="text-gray-700 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                    {player.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <p className="text-sm text-gray-600 mb-6 text-center">
+              Diese Spieler haben kein Guthaben-Konto. Bitte erstelle zunächst für diese Spieler ein Guthaben-Konto.
+            </p>
+            <Button
+              onClick={() => setShowPlayersWithoutAccountModal({ open: false })}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg"
             >
               Verstanden
             </Button>
