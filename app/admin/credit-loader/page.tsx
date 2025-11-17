@@ -2,28 +2,14 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/hooks/use-auth"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Search,
-  QrCode,
-  Plus,
-  AlertCircle,
-  CheckCircle,
-  X,
-  ArrowLeft,
-  Wallet,
-  Camera,
-  History,
-  CreditCard,
-  Minus,
-} from "lucide-react"
-import { BrowserQRCodeReader } from "@zxing/browser"
+import { Search, QrCode, Plus, AlertCircle, CheckCircle, X, ArrowLeft, Wallet, History, CreditCard, Minus } from 'lucide-react'
 
 interface Player {
   id: number
@@ -72,16 +58,14 @@ export default function AdminCreditLoaderPage() {
   const [success, setSuccess] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
 
-  // Scanner states
   const [showScanner, setShowScanner] = useState(false)
   const [scannerMessage, setScannerMessage] = useState("")
   const [isScanning, setIsScanning] = useState(false)
   const [scanSuccess, setScanSuccess] = useState(false)
+  const [scannerInput, setScannerInput] = useState("")
 
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const scannerInputRef = useRef<HTMLInputElement | null>(null)
+  const scanTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -101,17 +85,6 @@ export default function AdminCreditLoaderPage() {
       fetchTransactions()
     }
   }, [activeView, session, isAdmin])
-
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop())
-      }
-      if (scanIntervalRef.current) {
-        clearInterval(scanIntervalRef.current)
-      }
-    }
-  }, [])
 
   const fetchPlayers = async () => {
     try {
@@ -137,7 +110,6 @@ export default function AdminCreditLoaderPage() {
 
       if (fetchError) {
         console.log("[v0] Credits fetch error:", fetchError)
-        // If RLS blocks access, initialize empty map
         setPlayerCredits(new Map())
         return
       }
@@ -188,204 +160,105 @@ export default function AdminCreditLoaderPage() {
 
   const startScanner = async () => {
     setShowScanner(true)
-    setScannerMessage("Kamera wird gestartet...")
+    setScannerMessage("USB-Scanner bereit...")
     setScanSuccess(false)
-
-    try {
-      if (!navigator.mediaDevices) {
-        throw new Error("MediaDevices API nicht verfügbar")
-      }
-
-      if (!navigator.mediaDevices.getUserMedia) {
-        throw new Error("getUserMedia nicht unterstützt")
-      }
-
-      console.log("[v0] Requesting camera access...")
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      })
-
-      console.log("[v0] Camera access granted")
-      streamRef.current = stream
-
-      const video = videoRef.current
-      if (!video) {
-        throw new Error("Video element not found")
-      }
-
-      video.srcObject = stream
-      await video.play()
-      console.log("[v0] Video playing")
-
-      setIsScanning(true)
-      setScannerMessage("Bereit zum Scannen...")
-
-      const codeReader = new BrowserQRCodeReader()
-
-      scanIntervalRef.current = setInterval(async () => {
-        try {
-          const canvas = canvasRef.current
-          const videoElement = videoRef.current
-          if (!canvas || !videoElement || !videoElement.videoWidth) return
-
-          const context = canvas.getContext("2d")
-          if (!context) return
-
-          canvas.width = videoElement.videoWidth
-          canvas.height = videoElement.videoHeight
-          context.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
-
-          try {
-            const result = await codeReader.decodeFromCanvas(canvas)
-
-            if (result) {
-              console.log("[v0] QR Code detected:", result.getText())
-              const decodedText = result.getText()
-              setScannerMessage("QR-Code erkannt! Suche Spieler...")
-
-              if (scanIntervalRef.current) {
-                clearInterval(scanIntervalRef.current)
-                scanIntervalRef.current = null
-              }
-
-              try {
-                const { data: spielerData, error: spielerError } = await supabase
-                  .from("spieldatenbank")
-                  .select("id, name")
-                  .eq("player_code", decodedText)
-                  .single()
-
-                if (spielerError || !spielerData) {
-                  console.log("[v0] Player not found for code:", decodedText)
-                  setScannerMessage("Spieler nicht gefunden!")
-                  setTimeout(() => {
-                    setScannerMessage("Bereit zum Scannen...")
-                    startScanningLoop(codeReader)
-                  }, 2000)
-                  return
-                }
-
-                const { data: clubPlayer, error: clubError } = await supabase
-                  .from("club_players")
-                  .select("id, name, photo_url")
-                  .eq("spieldatenbank_id", spielerData.id)
-                  .single()
-
-                if (clubError || !clubPlayer) {
-                  console.log("[v0] Club player not found for spieldatenbank id:", spielerData.id)
-                  setScannerMessage("Spieler-Profil nicht gefunden!")
-                  setTimeout(() => {
-                    setScannerMessage("Bereit zum Scannen...")
-                    startScanningLoop(codeReader)
-                  }, 2000)
-                  return
-                }
-
-                console.log("[v0] Player found:", clubPlayer.name)
-                setScannerMessage(`✓ ${clubPlayer.name} erkannt!`)
-                setScanSuccess(true)
-                setSelectedPlayer(clubPlayer)
-
-                setTimeout(() => {
-                  stopScanner()
-                }, 1500)
-              } catch (err) {
-                console.error("[v0] Error finding player:", err)
-                setScannerMessage("Fehler beim Suchen!")
-                setTimeout(() => {
-                  setScannerMessage("Bereit zum Scannen...")
-                  startScanningLoop(codeReader)
-                }, 2000)
-              }
-            }
-          } catch (decodeError) {
-            // Ignore QR decode errors (normal when no QR in frame)
-          }
-        } catch (err) {
-          console.error("[v0] Scan loop error:", err)
-        }
-      }, 300)
-
-      const startScanningLoop = (reader: BrowserQRCodeReader) => {
-        if (scanIntervalRef.current) return
-
-        scanIntervalRef.current = setInterval(async () => {
-          try {
-            const canvas = canvasRef.current
-            const videoElement = videoRef.current
-            if (!canvas || !videoElement || !videoElement.videoWidth) return
-
-            const context = canvas.getContext("2d")
-            if (!context) return
-
-            canvas.width = videoElement.videoWidth
-            canvas.height = videoElement.videoHeight
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
-
-            try {
-              const result = await reader.decodeFromCanvas(canvas)
-              if (result) {
-                console.log("[v0] QR detected in loop")
-                // The main interval will handle this
-              }
-            } catch (err) {
-              // Ignore decode errors
-            }
-          } catch (err) {
-            console.error("[v0] Error in scanning loop:", err)
-          }
-        }, 300)
-      }
-    } catch (err: any) {
-      console.error("[v0] Camera error:", err)
-      const errorMessage = err.message || "Unbekannter Fehler"
-
-      if (err.name === "NotAllowedError") {
-        setScannerMessage(
-          "Kamera-Berechtigung verweigert.\n\nBitte erlaube der App Zugriff auf deine Kamera in den Browser-Einstellungen.",
-        )
-      } else if (err.name === "NotFoundError") {
-        setScannerMessage("Keine Kamera gefunden.\n\nBitte stelle sicher, dass ein Kamera-Gerät vorhanden ist.")
-      } else if (err.name === "NotSupportedError") {
-        setScannerMessage(
-          "Kamera-Zugriff wird von deinem Browser nicht unterstützt.\n\nBitte verwende einen modernen Browser mit HTTPS-Verbindung.",
-        )
-      } else {
-        setScannerMessage(`Fehler: ${errorMessage}\n\nBitte versuche es später erneut.`)
-      }
-
-      setTimeout(() => {
-        setShowScanner(false)
-        setScannerMessage("")
-      }, 4000)
-    }
+    setScannerInput("")
+    setTimeout(() => {
+      scannerInputRef.current?.focus()
+    }, 100)
   }
 
   const stopScanner = () => {
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current)
-      scanIntervalRef.current = null
-    }
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => {
-        track.stop()
-      })
-      streamRef.current = null
-    }
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
-
     setIsScanning(false)
     setShowScanner(false)
     setScannerMessage("")
     setScanSuccess(false)
+    setScannerInput("")
+    if (scanTimerRef.current) {
+      clearTimeout(scanTimerRef.current)
+      scanTimerRef.current = null
+    }
+  }
+
+  const handleScannerInput = async (code: string) => {
+    if (!code.trim() || isScanning) return
+
+    setScannerMessage("QR-Code erkannt! Suche Spieler...")
+    setIsScanning(true)
+
+    try {
+      let cleanCode = code.trim().replace(/ß/g, "-")
+
+      // Ensure EMD prefix is uppercase, rest lowercase
+      if (cleanCode.toLowerCase().startsWith("emd")) {
+        cleanCode = "EMD" + cleanCode.slice(3).toLowerCase()
+      }
+
+      console.log("[v0] Original code:", code)
+      console.log("[v0] Cleaned code:", cleanCode)
+
+      const { data: spielData, error: queryError } = await supabase
+        .from("spieldatenbank")
+        .select("id, player_code")
+        .eq("player_code", cleanCode)
+        .single()
+
+      console.log("[v0] Spieldatenbank query error:", queryError)
+      console.log("[v0] Spieldatenbank result:", spielData)
+
+      if (queryError || !spielData) {
+        console.log("[v0] Player code not found in spieldatenbank:", cleanCode)
+        setScannerMessage("Spieler-Code nicht gefunden!")
+        setIsScanning(false)
+        setScannerInput("")
+        setTimeout(() => {
+          setScannerMessage("USB-Scanner bereit...")
+          scannerInputRef.current?.focus()
+        }, 2000)
+        return
+      }
+
+      const { data: clubPlayerData, error: clubPlayerError } = await supabase
+        .from("club_players")
+        .select("id, name, photo_url")
+        .eq("spieldatenbank_id", spielData.id)
+        .single()
+
+      console.log("[v0] Club player query error:", clubPlayerError)
+      console.log("[v0] Club player result:", clubPlayerData)
+
+      if (clubPlayerError || !clubPlayerData) {
+        console.log("[v0] Club player not found for spieldatenbank_id:", spielData.id)
+        setScannerMessage("Spieler nicht zugeordnet!")
+        setIsScanning(false)
+        setScannerInput("")
+        setTimeout(() => {
+          setScannerMessage("USB-Scanner bereit...")
+          scannerInputRef.current?.focus()
+        }, 2000)
+        return
+      }
+
+      console.log("[v0] Player found:", clubPlayerData.name)
+      setScannerMessage(`✓ ${clubPlayerData.name} erkannt!`)
+      setScanSuccess(true)
+      setIsScanning(false)
+      setSelectedPlayer(clubPlayerData)
+      setScannerInput("")
+
+      setTimeout(() => {
+        stopScanner()
+      }, 1500)
+    } catch (err) {
+      console.error("[v0] Error finding player:", err)
+      setScannerMessage("Fehler beim Suchen!")
+      setIsScanning(false)
+      setScannerInput("")
+      setTimeout(() => {
+        setScannerMessage("USB-Scanner bereit...")
+        scannerInputRef.current?.focus()
+      }, 2000)
+    }
   }
 
   const handleAddCredit = async () => {
@@ -522,19 +395,37 @@ export default function AdminCreditLoaderPage() {
               </button>
             </div>
 
-            <div className="relative mb-4">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full rounded-lg border-4 border-orange-500"
-                style={{ minHeight: "300px", maxHeight: "400px" }}
-              />
-              <canvas ref={canvasRef} className="hidden" />
-              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                <div className="w-64 h-64 border-4 border-orange-500 rounded-lg"></div>
+            <div className="mb-4">
+              <div className="relative mb-4 p-6 border-4 border-dashed border-orange-500 rounded-lg bg-orange-50 text-center">
+                <QrCode className="h-12 w-12 text-orange-500 mx-auto mb-2" />
+                <p className="text-sm font-medium text-gray-700">USB-Scanner verbunden</p>
               </div>
+
+              <input
+                ref={scannerInputRef}
+                type="text"
+                value={scannerInput}
+                onChange={(e) => {
+                  const newValue = e.target.value
+                  setScannerInput(newValue)
+
+                  if (scanTimerRef.current) {
+                    clearTimeout(scanTimerRef.current)
+                  }
+
+                  if (newValue.trim().length > 0) {
+                    scanTimerRef.current = setTimeout(() => {
+                      if (!isScanning) {
+                        handleScannerInput(newValue)
+                        setScannerInput("")
+                      }
+                    }, 150)
+                  }
+                }}
+                placeholder="Scanner Eingabe..."
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none text-center text-lg font-semibold"
+                autoFocus
+              />
             </div>
 
             <div
@@ -542,10 +433,12 @@ export default function AdminCreditLoaderPage() {
                 scanSuccess ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
               }`}
             >
-              {scannerMessage || "Bereit zum Scannen..."}
+              {scannerMessage || "USB-Scanner bereit..."}
             </div>
 
-            <p className="text-sm text-gray-600 mt-4 text-center">Halte die Mitgliedskarte vor die Kamera</p>
+            <p className="text-sm text-gray-600 mt-4 text-center">
+              Halte die Mitgliedskarte vor den Scanner - Erkennung erfolgt automatisch
+            </p>
           </div>
         </div>
       )}
@@ -555,7 +448,7 @@ export default function AdminCreditLoaderPage() {
           <Button
             onClick={() => router.push("/admin")}
             variant="outline"
-            className="flex items-center gap-2 mb-6 border-2 border-orange-500 text-orange-500 hover:bg-orange-50"
+            className="flex items-center gap-2 mb-6 border-2 border-orange-500 text-orange-500 hover:bg-orange-50 bg-transparent"
           >
             <ArrowLeft className="w-4 h-4" />
             Zurück zur Admin-Seite
@@ -609,7 +502,6 @@ export default function AdminCreditLoaderPage() {
 
         {activeView === "loader" ? (
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Scanner and Player Selection */}
             <div className="md:col-span-2">
               <Card className="shadow-lg">
                 <CardContent className="p-6">
@@ -619,8 +511,8 @@ export default function AdminCreditLoaderPage() {
                       onClick={startScanner}
                       className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg mb-4"
                     >
-                      <Camera className="w-5 h-5" />
-                      Mitgliedskarte scannen
+                      <QrCode className="w-5 h-5" />
+                      USB-Scanner aktivieren
                     </Button>
                   </div>
 
@@ -632,11 +524,8 @@ export default function AdminCreditLoaderPage() {
                             src={
                               selectedPlayer.photo_url ||
                               "/placeholder.svg?height=64&width=64&query=player avatar" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
                               "/placeholder.svg"
-                            }
+                             || "/placeholder.svg"}
                             alt={selectedPlayer.name}
                           />
                           <AvatarFallback className="bg-orange-500 text-white text-lg">
@@ -700,11 +589,8 @@ export default function AdminCreditLoaderPage() {
                             src={
                               player.photo_url ||
                               "/placeholder.svg?height=40&width=40&query=player avatar" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
                               "/placeholder.svg"
-                            }
+                             || "/placeholder.svg"}
                             alt={player.name}
                           />
                           <AvatarFallback className="bg-orange-500 text-white text-sm">
@@ -726,7 +612,6 @@ export default function AdminCreditLoaderPage() {
               </Card>
             </div>
 
-            {/* Credit Loader Form */}
             <div>
               <Card className="shadow-lg sticky top-6">
                 <CardContent className="p-6">
@@ -885,9 +770,8 @@ export default function AdminCreditLoaderPage() {
                                   src={
                                     transaction.club_players?.photo_url ||
                                     "/placeholder.svg?height=40&width=40&query=player avatar" ||
-                                    "/placeholder.svg" ||
                                     "/placeholder.svg"
-                                  }
+                                   || "/placeholder.svg"}
                                   alt={transaction.club_players?.name}
                                 />
                                 <AvatarFallback className="bg-orange-500 text-white text-sm">

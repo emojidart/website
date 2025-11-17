@@ -1,27 +1,13 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { Header } from "@/components/header"
-import {
-  Search,
-  UserPlus,
-  X,
-  Play,
-  Trophy,
-  ArrowLeft,
-  Euro,
-  AlertCircle,
-  ArrowRight,
-  Star,
-  Camera,
-  Lock,
-} from "lucide-react"
+import { Search, UserPlus, X, Play, Trophy, ArrowLeft, Euro, AlertCircle, ArrowRight, Star, QrCode, Lock } from 'lucide-react'
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BrowserQRCodeReader } from "@zxing/browser"
 
 interface Player {
   id: number
@@ -68,18 +54,13 @@ export default function DKOTournamentRegistration() {
   const [showScanner, setShowScanner] = useState(false)
   const [scannerMessage, setScannerMessage] = useState("")
   const [isScanning, setIsScanning] = useState(false)
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const [scanSuccess, setScanSuccess] = useState(false)
+  const [scannerInput, setScannerInput] = useState("")
+  const scannerInputRef = useRef<HTMLInputElement | null>(null)
+  const scanTimerRef = useRef<NodeJS.Timeout | null>(null)
+
   const [tournamentFormCompleted, setTournamentFormCompleted] = useState(false)
 
-  const [showCreditErrorModal, setShowCreditErrorModal] = useState<{
-    open: boolean
-    playerName?: string
-    message?: string
-  }>({ open: false })
   const [showInsufficientBalanceModal, setShowInsufficientBalanceModal] = useState<{
     open: boolean
     playerName?: string
@@ -109,17 +90,26 @@ export default function DKOTournamentRegistration() {
 
   const [showPaidLockModal, setShowPaidLockModal] = useState<{ open: boolean; playerName?: string }>({ open: false })
 
-  const [showPlayersWithoutAccountModal, setShowPlayersWithoutAccountModal] = useState<{
+  const [showRefundConfirmModal, setShowRefundConfirmModal] = useState<{
     open: boolean
-    players?: Array<{ id: number; name: string }>
+    registrationId?: number
+    playerName?: string
+    refundAmount?: number
   }>({ open: false })
+
+  const [showRefundSuccessModal, setShowRefundSuccessModal] = useState<{
+    open: boolean
+    playerName?: string
+    refundAmount?: number
+  }>({ open: false })
+
 
   const handleScannedPlayerConfirm = async (shouldDeduct: boolean) => {
     if (!scannedPlayerForConfirm) return
 
     try {
       const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-        player_id: scannedPlayerForConfirm.clubPlayerId,
+        player_id: scannedPlayerForConfirm.id.toString(),
         player_name: scannedPlayerForConfirm.name,
         paid: shouldDeduct,
         entry_fee: scannedPlayerForConfirm.entryFee,
@@ -170,7 +160,7 @@ export default function DKOTournamentRegistration() {
       await fetchFrequentPlayers()
 
       setTimeout(() => {
-        setScannerMessage("Bereit zum Scannen...")
+        setScannerMessage("USB-Scanner bereit...")
         setScanSuccess(false)
         setShowScanner(true)
         startScanner()
@@ -179,7 +169,7 @@ export default function DKOTournamentRegistration() {
       console.error("[v0] Error confirming scanned player:", error)
       setScannerMessage("Fehler beim Registrieren!")
       setTimeout(() => {
-        setScannerMessage("Bereit zum Scannen...")
+        setScannerMessage("USB-Scanner bereit...")
         setScannedPlayerForConfirm(null)
         setShowScanner(true)
         startScanner()
@@ -212,49 +202,36 @@ export default function DKOTournamentRegistration() {
         if (!player) continue
 
         if (entryFee > 0) {
-          let clubPlayerId: string | null = null
-          let creditData: { credit_balance: number } | null = null
-
-          const { data: clubPlayer, error: clubError } = await supabase
+          const { data: clubPlayer } = await supabase
             .from("club_players")
             .select("id")
-            .eq("spieldatenbank_id", player.id)
+            .eq("spieldatenbank_id", playerId)
             .maybeSingle()
 
-          if (!clubError && clubPlayer) {
-            clubPlayerId = clubPlayer.id
-
-            const { data: creditDataFromClub, error: creditError } = await supabase
+          if (clubPlayer) {
+            const { data: creditData } = await supabase
               .from("player_credits")
               .select("credit_balance")
-              .eq("player_id", clubPlayerId)
+              .eq("player_id", clubPlayer.id)
               .maybeSingle()
 
-            if (!creditError && creditDataFromClub) {
-              creditData = creditDataFromClub
+            if (creditData) {
+              const currentCredit = creditData.credit_balance
+
+              if (currentCredit >= entryFee) {
+                playersWithCredit.push({
+                  id: player.id,
+                  name: player.name,
+                  currentBalance: currentCredit,
+                  newBalance: currentCredit - entryFee,
+                  clubPlayerId: clubPlayer.id,
+                })
+              } else {
+                playersWithoutCredit.push(playerId)
+              }
+            } else {
+              playersWithoutCredit.push(playerId)
             }
-          }
-
-          if (creditData && clubPlayerId) {
-            const currentCredit = creditData.credit_balance
-
-            if (currentCredit < entryFee) {
-              setShowInsufficientBalanceModal({
-                open: true,
-                playerName: player.name,
-                required: entryFee,
-                available: currentCredit,
-              })
-              return
-            }
-
-            playersWithCredit.push({
-              id: player.id,
-              name: player.name,
-              currentBalance: currentCredit,
-              newBalance: currentCredit - entryFee,
-              clubPlayerId: clubPlayerId,
-            })
           } else {
             playersWithoutCredit.push(playerId)
           }
@@ -284,27 +261,13 @@ export default function DKOTournamentRegistration() {
   const registerPlayersDirectly = async (playerIds: number[], entryFee: number) => {
     try {
       const successfullyRegistered: number[] = []
-      const playersWithoutAccount: Array<{ id: number; name: string }> = []
 
       for (const playerId of playerIds) {
         const player = availablePlayers.find((p) => p.id === playerId)
         if (!player) continue
 
-        const { data: clubPlayer } = await supabase
-          .from("club_players")
-          .select("id")
-          .eq("spieldatenbank_id", playerId)
-          .maybeSingle()
-
-        const playerUUID = clubPlayer?.id || null
-
-        if (!playerUUID) {
-          playersWithoutAccount.push({ id: playerId, name: player.name })
-          continue
-        }
-
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-          player_id: playerUUID,
+          player_id: playerId.toString(),
           player_name: player.name,
           paid: false,
           entry_fee: entryFee,
@@ -319,17 +282,10 @@ export default function DKOTournamentRegistration() {
           } else {
             throw registerError
           }
-          return
+          continue
         }
 
         successfullyRegistered.push(playerId)
-      }
-
-      if (playersWithoutAccount.length > 0) {
-        setShowPlayersWithoutAccountModal({
-          open: true,
-          players: playersWithoutAccount,
-        })
       }
 
       await fetchRegisteredPlayers()
@@ -377,8 +333,8 @@ export default function DKOTournamentRegistration() {
         if (!player) continue
 
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-          player_id: playerWithCredit.clubPlayerId,
-          player_name: player.name,
+          player_id: playerWithCredit.id.toString(),
+          player_name: playerWithCredit.name,
           paid: true,
           entry_fee: entryFee,
           deducted_from_credit: true,
@@ -393,7 +349,7 @@ export default function DKOTournamentRegistration() {
           } else {
             throw registerError
           }
-          return
+          continue
         }
 
         const { error: updateError } = await supabase
@@ -421,20 +377,8 @@ export default function DKOTournamentRegistration() {
         const player = availablePlayers.find((p) => p.id === playerId)
         if (!player) continue
 
-        const { data: clubPlayer } = await supabase
-          .from("club_players")
-          .select("id")
-          .eq("spieldatenbank_id", playerId)
-          .maybeSingle()
-
-        const playerUUID = clubPlayer?.id || null
-
-        if (!playerUUID) {
-          continue
-        }
-
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-          player_id: playerUUID,
+          player_id: playerId.toString(),
           player_name: player.name,
           paid: false,
           entry_fee: entryFee,
@@ -449,7 +393,7 @@ export default function DKOTournamentRegistration() {
           } else {
             throw registerError
           }
-          return
+          continue
         }
       }
 
@@ -542,17 +486,6 @@ export default function DKOTournamentRegistration() {
     setTournamentFormCompleted(isCompleted)
   }, [tournamentName, tournamentEntryFee])
 
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop())
-      }
-      if (scanIntervalRef.current) {
-        clearInterval(scanIntervalRef.current)
-      }
-    }
-  }, [])
-
   const handlePlayerSelect = (playerId: number) => {
     const newSelected = new Set(selectedPlayers)
     if (newSelected.has(playerId)) {
@@ -570,34 +503,17 @@ export default function DKOTournamentRegistration() {
 
       if (!playerToUnregister) return
 
+      console.log("[v0] handleUnregisterPlayer - deducted_from_credit:", playerToUnregister.deducted_from_credit)
+
       if (playerToUnregister.deducted_from_credit && playerToUnregister.player_id) {
-        const { data: currentCredit, error: fetchError } = await supabase
-          .from("player_credits")
-          .select("credit_balance")
-          .eq("player_id", playerToUnregister.player_id)
-          .maybeSingle()
-
-        if (!fetchError && currentCredit) {
-          const newBalance = currentCredit.credit_balance + playerToUnregister.entry_fee
-
-          const { error: updateError } = await supabase
-            .from("player_credits")
-            .update({
-              credit_balance: newBalance,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("player_id", playerToUnregister.player_id)
-
-          if (!updateError) {
-            await supabase.from("credit_transactions").insert({
-              player_id: playerToUnregister.player_id,
-              amount: playerToUnregister.entry_fee,
-              balance_after: newBalance,
-              transaction_type: "tournament_refund",
-              admin_id: user?.id,
-            })
-          }
-        }
+        console.log("[v0] Opening refund modal")
+        setShowRefundConfirmModal({
+          open: true,
+          registrationId,
+          playerName: playerToUnregister.player_name,
+          refundAmount: playerToUnregister.entry_fee,
+        })
+        return
       }
 
       const { error } = await supabase.from("dko_tournament_registration").delete().eq("id", registrationId)
@@ -609,11 +525,105 @@ export default function DKOTournamentRegistration() {
     }
   }
 
+  const confirmRefund = async () => {
+    const registrationId = showRefundConfirmModal.registrationId
+    if (!registrationId) return
+
+    try {
+      const playerToUnregister = registeredPlayers.find((p) => p.id === registrationId)
+
+      if (!playerToUnregister || !playerToUnregister.player_id) {
+        setShowRefundConfirmModal({ open: false })
+        return
+      }
+
+      const spieldatenbankId = playerToUnregister.player_id
+      
+      const { data: clubPlayer, error: clubPlayerError } = await supabase
+        .from("club_players")
+        .select("id")
+        .eq("spieldatenbank_id", spieldatenbankId)
+        .maybeSingle()
+
+      if (clubPlayerError || !clubPlayer) {
+        console.error("[v0] Club player not found:", clubPlayerError)
+        setShowRefundConfirmModal({ open: false })
+        return
+      }
+
+      const { data: currentCredit, error: fetchError } = await supabase
+        .from("player_credits")
+        .select("credit_balance")
+        .eq("player_id", clubPlayer.id)
+        .maybeSingle()
+
+      if (fetchError) {
+        console.error("[v0] Error fetching credit balance:", fetchError)
+        setShowRefundConfirmModal({ open: false })
+        return
+      }
+
+      if (!currentCredit) {
+        console.error("[v0] No credit record found for player")
+        setShowRefundConfirmModal({ open: false })
+        return
+      }
+
+      const newBalance = currentCredit.credit_balance + playerToUnregister.entry_fee
+
+      const { error: updateError } = await supabase
+        .from("player_credits")
+        .update({
+          credit_balance: newBalance,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("player_id", clubPlayer.id)
+
+      if (updateError) {
+        console.error("[v0] Error updating credit balance:", updateError)
+        setShowRefundConfirmModal({ open: false })
+        return
+      }
+
+      await supabase.from("credit_transactions").insert({
+        player_id: clubPlayer.id,
+        amount: playerToUnregister.entry_fee,
+        balance_after: newBalance,
+        transaction_type: "tournament_refund",
+        admin_id: user?.id,
+      })
+
+      const { error: deleteError } = await supabase.from("dko_tournament_registration").delete().eq("id", registrationId)
+
+      if (deleteError) {
+        console.error("[v0] Error deleting registration:", deleteError)
+        setShowRefundConfirmModal({ open: false })
+        return
+      }
+
+      console.log("[v0] Refund successful, showing success modal")
+      setShowRefundConfirmModal({ open: false })
+      setShowRefundSuccessModal({
+        open: true,
+        playerName: playerToUnregister.player_name,
+        refundAmount: playerToUnregister.entry_fee,
+      })
+
+      await fetchRegisteredPlayers()
+    } catch (error) {
+      console.error("[v0] Unhandled error in confirmRefund:", error)
+      setShowRefundConfirmModal({ open: false })
+    }
+  }
+
   const togglePaymentStatus = async (registrationId: number, currentStatus: boolean) => {
     try {
       const playerToToggle = registeredPlayers.find((p) => p.id === registrationId)
 
+      console.log("[v0] togglePaymentStatus - deducted_from_credit:", playerToToggle?.deducted_from_credit, "currentStatus:", currentStatus)
+
       if (playerToToggle?.deducted_from_credit && currentStatus === true) {
+        console.log("[v0] Opening paid lock modal")
         setShowPaidLockModal({ open: true, playerName: playerToToggle.player_name })
         return
       }
@@ -709,257 +719,190 @@ export default function DKOTournamentRegistration() {
     }
 
     setShowScanner(true)
-    setScannerMessage("Kamera wird gestartet...")
+    setScannerMessage("USB-Scanner bereit...")
     setScanSuccess(false)
-
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setScannerMessage(
-          "Kamera-Zugriff nicht verfügbar! Bitte stelle sicher, dass:\n• Die Seite über HTTPS läuft\n• Dein Browser Kamera-Zugriff unterstützt\n• Du die Kamera-Berechtigung erteilt hast",
-        )
-        setTimeout(() => {
-          setShowScanner(false)
-          setScannerMessage("")
-        }, 5000)
-        return
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      })
-
-      streamRef.current = stream
-
-      const video = videoRef.current
-      if (!video) {
-        throw new Error("Video element not found")
-      }
-
-      video.srcObject = stream
-      await video.play()
-
-      setIsScanning(true)
-      setScannerMessage("Bereit zum Scannen...")
-
-      const codeReader = new BrowserQRCodeReader()
-
-      scanIntervalRef.current = setInterval(async () => {
-        try {
-          const canvas = canvasRef.current
-          if (!canvas || !video) return
-
-          const context = canvas.getContext("2d")
-          if (!context) return
-
-          canvas.width = video.videoWidth
-          canvas.height = video.videoHeight
-
-          context.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-          const result = await codeReader.decodeFromCanvas(canvas)
-
-          if (result) {
-            const decodedText = result.getText()
-            setScannerMessage("QR-Code erkannt! Suche Spieler...")
-
-            if (scanIntervalRef.current) {
-              clearInterval(scanIntervalRef.current)
-              scanIntervalRef.current = null
-            }
-
-            try {
-              const { data: player, error: playerError } = await supabase
-                .from("spieldatenbank")
-                .select("id, name")
-                .eq("player_code", decodedText)
-                .single()
-
-              if (playerError || !player) {
-                setScannerMessage("Spieler nicht gefunden!")
-                setTimeout(() => {
-                  setScannerMessage("Bereit zum Scannen...")
-                  startScanningLoop(codeReader)
-                }, 2000)
-                return
-              }
-
-              const alreadyRegistered = registeredPlayers.some((rp) => rp.player_id === player.id)
-              if (alreadyRegistered) {
-                setScannerMessage(`${player.name} ist bereits registriert!`)
-                setTimeout(() => {
-                  setScannerMessage("Bereit zum Scannen...")
-                  startScanningLoop(codeReader)
-                }, 2000)
-                return
-              }
-
-              const entryFee = Number.parseFloat(tournamentEntryFee) || 0
-
-              if (entryFee > 0) {
-                const { data: clubPlayer, error: clubError } = await supabase
-                  .from("club_players")
-                  .select("id")
-                  .eq("spieldatenbank_id", player.id)
-                  .maybeSingle()
-
-                if (clubError || !clubPlayer) {
-                  setScannerMessage("⚠️ Spieler hat kein Guthaben-Konto!")
-                  setTimeout(() => {
-                    setScannerMessage("Bereit zum Scannen...")
-                    startScanningLoop(codeReader)
-                  }, 2000)
-                  return
-                }
-
-                const { data: creditData, error: creditError } = await supabase
-                  .from("player_credits")
-                  .select("credit_balance")
-                  .eq("player_id", clubPlayer.id)
-                  .maybeSingle()
-
-                if (creditError || !creditData) {
-                  setScannerMessage("⚠️ Spieler hat kein Guthaben-Konto!")
-                  setTimeout(() => {
-                    setScannerMessage("Bereit zum Scannen...")
-                    startScanningLoop(codeReader)
-                  }, 2000)
-                  return
-                }
-
-                const currentCredit = creditData.credit_balance
-
-                if (currentCredit < entryFee) {
-                  setScannerMessage(
-                    `⚠️ ${player.name}: Zu wenig Guthaben!\nBenötigt: ${entryFee.toFixed(2)}€\nVerfügbar: ${currentCredit.toFixed(2)}€`,
-                  )
-                  setTimeout(() => {
-                    setScannerMessage("Bereit zum Scannen...")
-                    startScanningLoop(codeReader)
-                  }, 3000)
-                  return
-                }
-
-                setScannedPlayerForConfirm({
-                  id: player.id,
-                  name: player.name,
-                  clubPlayerId: clubPlayer.id,
-                  currentBalance: currentCredit,
-                  entryFee: entryFee,
-                })
-                stopScanner()
-                return
-              } else {
-                const { data: clubPlayer } = await supabase
-                  .from("club_players")
-                  .select("id")
-                  .eq("spieldatenbank_id", player.id)
-                  .maybeSingle()
-
-                const playerUUID = clubPlayer?.id || null
-
-                if (!playerUUID) {
-                  setScannerMessage("⚠️ Spieler hat kein Guthaben-Konto!")
-                  setTimeout(() => {
-                    setScannerMessage("Bereit zum Scannen...")
-                    startScanningLoop(codeReader)
-                  }, 2000)
-                  return
-                }
-
-                const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
-                  player_id: playerUUID,
-                  player_name: player.name,
-                  paid: false,
-                  entry_fee: entryFee,
-                })
-
-                if (insertError) throw insertError
-
-                setScannerMessage(`✓ ${player.name} erfolgreich registriert!`)
-                setScanSuccess(true)
-                await fetchRegisteredPlayers()
-                await fetchFrequentPlayers()
-
-                setTimeout(() => {
-                  setScannerMessage("Bereit zum Scannen...")
-                  setScanSuccess(false)
-                  startScanningLoop(codeReader)
-                }, 2000)
-              }
-            } catch (error) {
-              console.error("[v0] Error registering player:", error)
-              setScannerMessage("Fehler beim Registrieren!")
-              setTimeout(() => {
-                setScannerMessage("Bereit zum Scannen...")
-                startScanningLoop(codeReader)
-              }, 2000)
-            }
-          }
-        } catch (error) {
-          // Ignore decode errors
-        }
-      }, 300)
-
-      const startScanningLoop = (reader: BrowserQRCodeReader) => {
-        if (scanIntervalRef.current) return
-
-        scanIntervalRef.current = setInterval(async () => {
-          try {
-            const canvas = canvasRef.current
-            const video = videoRef.current
-            if (!canvas || !video) return
-
-            const context = canvas.getContext("2d")
-            if (!context) return
-
-            canvas.width = video.videoWidth
-            canvas.height = video.videoHeight
-            context.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-            const result = await reader.decodeFromCanvas(canvas)
-            if (result) {
-              console.log("[v0] QR Code detected in loop:", result.getText())
-            }
-          } catch (error) {
-            // Ignore
-          }
-        }, 300)
-      }
-    } catch (error) {
-      console.error("[v0] Camera error:", error)
-      setScannerMessage("Kamera konnte nicht gestartet werden! Bitte Berechtigungen prüfen.")
-      setTimeout(() => {
-        setShowScanner(false)
-        setScannerMessage("")
-      }, 3000)
-    }
+    setScannerInput("")
+    setTimeout(() => {
+      scannerInputRef.current?.focus()
+    }, 100)
   }
 
   const stopScanner = () => {
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current)
-      scanIntervalRef.current = null
-    }
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => {
-        track.stop()
-      })
-      streamRef.current = null
-    }
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
-
     setIsScanning(false)
     setShowScanner(false)
     setScannerMessage("")
     setScanSuccess(false)
+    setScannerInput("")
+    if (scanTimerRef.current) {
+      clearTimeout(scanTimerRef.current)
+      scanTimerRef.current = null
+    }
+  }
+
+  const handleScannerInput = async (code: string) => {
+    if (!code.trim() || isScanning) return
+
+    setScannerMessage("QR-Code erkannt! Suche Spieler...")
+    setIsScanning(true)
+
+    try {
+      let cleanCode = code.trim().replace(/ß/g, "-")
+
+      if (cleanCode.toLowerCase().startsWith("emd")) {
+        cleanCode = "EMD" + cleanCode.slice(3).toLowerCase()
+      }
+
+      console.log("[v0] Original code:", code)
+      console.log("[v0] Cleaned code:", cleanCode)
+
+      const { data: spielData, error: queryError } = await supabase
+        .from("spieldatenbank")
+        .select("id, name, player_code")
+        .eq("player_code", cleanCode)
+        .single()
+
+      console.log("[v0] Spieldatenbank query error:", queryError)
+      console.log("[v0] Spieldatenbank result:", spielData)
+
+      if (queryError || !spielData) {
+        console.log("[v0] Player code not found in spieldatenbank:", cleanCode)
+        setScannerMessage("Spieler-Code nicht gefunden!")
+        setIsScanning(false)
+        setScannerInput("")
+        setTimeout(() => {
+          setScannerMessage("USB-Scanner bereit...")
+          scannerInputRef.current?.focus()
+        }, 2000)
+        return
+      }
+
+      const alreadyRegistered = registeredPlayers.some((rp) => rp.player_id === spielData.id.toString())
+      if (alreadyRegistered) {
+        console.log("[v0] Player already registered:", spielData.name)
+        setScannerMessage(`${spielData.name} ist bereits registriert!`)
+        setIsScanning(false)
+        setScannerInput("")
+        setTimeout(() => {
+          setScannerMessage("USB-Scanner bereit...")
+          scannerInputRef.current?.focus()
+        }, 2000)
+        return
+      }
+
+      const entryFee = Number.parseFloat(tournamentEntryFee) || 0
+
+      if (entryFee > 0) {
+        const { data: clubPlayer } = await supabase
+          .from("club_players")
+          .select("id")
+          .eq("spieldatenbank_id", spielData.id)
+          .maybeSingle()
+
+        if (clubPlayer) {
+          const { data: creditData } = await supabase
+            .from("player_credits")
+            .select("credit_balance")
+            .eq("player_id", clubPlayer.id)
+            .maybeSingle()
+
+          if (creditData) {
+            const currentCredit = creditData.credit_balance
+
+            if (currentCredit >= entryFee) {
+              console.log("[v0] Player has sufficient credit, showing confirm modal")
+              setScannedPlayerForConfirm({
+                id: spielData.id,
+                name: spielData.name,
+                clubPlayerId: clubPlayer.id,
+                currentBalance: currentCredit,
+                entryFee: entryFee,
+              })
+              stopScanner()
+              return
+            } else {
+              console.log("[v0] Player has insufficient credit, registering without payment")
+              const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
+                player_id: spielData.id.toString(),
+                player_name: spielData.name,
+                paid: false,
+                entry_fee: entryFee,
+              })
+
+              if (insertError) throw insertError
+
+              setScannerMessage(`✓ ${spielData.name} registriert (Zahlung vor Ort)`)
+              setScanSuccess(true)
+              setIsScanning(false)
+              setScannerInput("")
+              await fetchRegisteredPlayers()
+              await fetchFrequentPlayers()
+
+              setTimeout(() => {
+                setScannerMessage("USB-Scanner bereit...")
+                setScanSuccess(false)
+                scannerInputRef.current?.focus()
+              }, 2000)
+              return
+            }
+          }
+        }
+
+        console.log("[v0] No credit account found, registering without payment")
+        const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
+          player_id: spielData.id.toString(),
+          player_name: spielData.name,
+          paid: false,
+          entry_fee: entryFee,
+        })
+
+        if (insertError) throw insertError
+
+        setScannerMessage(`✓ ${spielData.name} registriert (Zahlung vor Ort)`)
+        setScanSuccess(true)
+        setIsScanning(false)
+        setScannerInput("")
+        await fetchRegisteredPlayers()
+        await fetchFrequentPlayers()
+
+        setTimeout(() => {
+          setScannerMessage("USB-Scanner bereit...")
+          setScanSuccess(false)
+          scannerInputRef.current?.focus()
+        }, 2000)
+      } else {
+        console.log("[v0] No entry fee, registering player")
+        const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
+          player_id: spielData.id.toString(),
+          player_name: spielData.name,
+          paid: false,
+          entry_fee: entryFee,
+        })
+
+        if (insertError) throw insertError
+
+        setScannerMessage(`✓ ${spielData.name} erfolgreich registriert!`)
+        setScanSuccess(true)
+        setIsScanning(false)
+        setScannerInput("")
+        await fetchRegisteredPlayers()
+        await fetchFrequentPlayers()
+
+        setTimeout(() => {
+          setScannerMessage("USB-Scanner bereit...")
+          setScanSuccess(false)
+          scannerInputRef.current?.focus()
+        }, 2000)
+      }
+    } catch (error) {
+      console.error("[v0] Error finding player:", error)
+      setScannerMessage("Fehler beim Suchen!")
+      setIsScanning(false)
+      setScannerInput("")
+      setTimeout(() => {
+        setScannerMessage("USB-Scanner bereit...")
+        scannerInputRef.current?.focus()
+      }, 2000)
+    }
   }
 
   const allPlayersPaid = registeredPlayers.every((player) => player.paid)
@@ -1007,11 +950,11 @@ export default function DKOTournamentRegistration() {
   const filteredPlayers = availablePlayers.filter(
     (player) =>
       player.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      !registeredPlayers.some((rp) => rp.player_id === player.id),
+      !registeredPlayers.some((rp) => rp.player_name === player.name),
   )
 
   const availableFrequentPlayers = frequentPlayers.filter(
-    (player) => !registeredPlayers.some((rp) => rp.player_id === player.id),
+    (player) => !registeredPlayers.some((rp) => rp.player_name === player.name),
   )
 
   if (authLoading || adminLoading) {
@@ -1063,27 +1006,6 @@ export default function DKOTournamentRegistration() {
         </div>
       </div>
 
-      {/* Credit Error Modal */}
-      {showCreditErrorModal.open && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
-            <div className="flex items-center justify-center w-14 h-14 bg-red-100 rounded-full mb-4 mx-auto">
-              <AlertCircle className="w-7 h-7 text-red-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Fehler beim Guthaben-Check</h3>
-            <p className="text-center text-gray-600 mb-2">{showCreditErrorModal.playerName}</p>
-            <p className="text-center text-gray-500 mb-6">{showCreditErrorModal.message}</p>
-            <Button
-              onClick={() => setShowCreditErrorModal({ open: false })}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg"
-            >
-              Verstanden
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Insufficient Balance Modal */}
       {showInsufficientBalanceModal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
@@ -1114,7 +1036,6 @@ export default function DKOTournamentRegistration() {
         </div>
       )}
 
-      {/* Already Registered Modal */}
       {showAlreadyRegisteredModal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
@@ -1134,7 +1055,6 @@ export default function DKOTournamentRegistration() {
         </div>
       )}
 
-      {/* Success Modal */}
       {showSuccessModal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
@@ -1155,7 +1075,6 @@ export default function DKOTournamentRegistration() {
         </div>
       )}
 
-      {/* General Error Modal */}
       {showErrorModal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
@@ -1176,35 +1095,190 @@ export default function DKOTournamentRegistration() {
         </div>
       )}
 
-      {/* Players Without Account Modal - NEW FIX */}
-      {showPlayersWithoutAccountModal.open && (
+      {showCreditConfirmModal.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
+            <div className="flex items-center justify-center w-14 h-14 bg-blue-100 rounded-full mb-4 mx-auto">
+              <Euro className="w-7 h-7 text-blue-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-center text-gray-900 mb-4">Guthaben abziehen?</h3>
+            
+            {showCreditConfirmModal.players && showCreditConfirmModal.players.length > 0 && (
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 mb-3 font-semibold">
+                  Folgende Spieler haben genug Guthaben:
+                </p>
+                <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
+                  {showCreditConfirmModal.players.map((p) => (
+                    <div key={p.id} className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                      <p className="font-semibold text-gray-900">{p.name}</p>
+                      <div className="flex justify-between text-sm mt-1">
+                        <span className="text-gray-600">Aktuell: {p.currentBalance.toFixed(2)}€</span>
+                        <span className="text-blue-600 font-semibold">→ {p.newBalance.toFixed(2)}€</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {showCreditConfirmModal.playersWithoutCredit && showCreditConfirmModal.playersWithoutCredit.length > 0 && (
+              <div className="mb-6">
+                <p className="text-sm text-orange-600 font-semibold">
+                  {showCreditConfirmModal.playersWithoutCredit.length} Spieler ohne Guthaben werden ohne Abzug registriert.
+                </p>
+              </div>
+            )}
+
+            <p className="text-center text-gray-600 mb-6">
+              Möchtest du das Startgeld von {showCreditConfirmModal.entryFee?.toFixed(2)}€ vom Guthaben abziehen?
+            </p>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={registerPlayersWithoutCreditDeduction}
+                variant="outline"
+                className="flex-1 border-2"
+              >
+                Nein, ohne Abzug
+              </Button>
+              <Button
+                onClick={registerPlayersWithCreditDeduction}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                Ja, abziehen
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {scannedPlayerForConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
+            <div className="flex items-center justify-center w-14 h-14 bg-green-100 rounded-full mb-4 mx-auto">
+              <Euro className="w-7 h-7 text-green-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Guthaben abziehen?</h3>
+            <p className="text-center text-gray-600 font-semibold mb-6">{scannedPlayerForConfirm.name}</p>
+            
+            <div className="bg-green-50 rounded-lg p-4 mb-6 border-2 border-green-200">
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-700">Aktuelles Guthaben:</span>
+                <span className="font-bold text-gray-900">{scannedPlayerForConfirm.currentBalance.toFixed(2)}€</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-700">Startgeld:</span>
+                <span className="font-bold text-orange-600">-{scannedPlayerForConfirm.entryFee.toFixed(2)}€</span>
+              </div>
+              <div className="border-t-2 border-green-300 pt-2 mt-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-700 font-semibold">Neues Guthaben:</span>
+                  <span className="font-bold text-green-600">
+                    {(scannedPlayerForConfirm.currentBalance - scannedPlayerForConfirm.entryFee).toFixed(2)}€
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => handleScannedPlayerConfirm(false)}
+                variant="outline"
+                className="flex-1 border-2"
+              >
+                Nein, ohne Abzug
+              </Button>
+              <Button
+                onClick={() => handleScannedPlayerConfirm(true)}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                Ja, abziehen
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPaidLockModal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
             <div className="flex items-center justify-center w-14 h-14 bg-orange-100 rounded-full mb-4 mx-auto">
-              <AlertCircle className="w-7 h-7 text-orange-600" />
+              <Lock className="w-7 h-7 text-orange-600" />
             </div>
-            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Spieler nicht registriert</h3>
-            <p className="text-center text-gray-600 mb-4">
-              {showPlayersWithoutAccountModal.players?.length || 0} Spieler konnten nicht registriert werden:
-            </p>
-            <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 mb-6 max-h-48 overflow-y-auto">
-              <ul className="space-y-2">
-                {showPlayersWithoutAccountModal.players?.map((player) => (
-                  <li key={player.id} className="text-gray-700 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                    {player.name}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <p className="text-sm text-gray-600 mb-6 text-center">
-              Diese Spieler haben kein Guthaben-Konto. Bitte erstelle zunächst für diese Spieler ein Guthaben-Konto.
+            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Status gesperrt</h3>
+            <p className="text-center text-gray-600 font-semibold mb-4">{showPaidLockModal.playerName}</p>
+            <p className="text-center text-gray-600 mb-6">
+              Das Startgeld wurde automatisch vom Guthaben abgezogen. Der Bezahlstatus kann nicht geändert werden.
             </p>
             <Button
-              onClick={() => setShowPlayersWithoutAccountModal({ open: false })}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg"
+              onClick={() => setShowPaidLockModal({ open: false })}
+              className="w-full bg-orange-500 hover:bg-orange-600"
             >
               Verstanden
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {showRefundConfirmModal.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
+            <div className="flex items-center justify-center w-14 h-14 bg-blue-100 rounded-full mb-4 mx-auto">
+              <Euro className="w-7 h-7 text-blue-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Guthaben zurückerstatten?</h3>
+            <p className="text-center text-gray-600 font-semibold mb-6">{showRefundConfirmModal.playerName}</p>
+            
+            <div className="bg-blue-50 rounded-lg p-4 mb-6 border-2 border-blue-200">
+              <p className="text-sm text-gray-700 mb-2 text-center">
+                Das Startgeld wurde vom Guthaben abgezogen und wird nun zurückerstattet:
+              </p>
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <span className="text-3xl font-bold text-green-600">+{showRefundConfirmModal.refundAmount?.toFixed(2)}€</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowRefundConfirmModal({ open: false })}
+                variant="outline"
+                className="flex-1 border-2"
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={confirmRefund}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                Ja, zurückerstatten
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRefundSuccessModal.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
+            <div className="flex items-center justify-center w-14 h-14 bg-green-100 rounded-full mb-4 mx-auto animate-bounce">
+              <Star className="w-7 h-7 text-green-600 fill-green-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Guthaben zurückerstattet!</h3>
+            <p className="text-center text-gray-600 font-semibold mb-6">{showRefundSuccessModal.playerName}</p>
+            
+            <div className="bg-green-50 rounded-lg p-4 mb-6 border-2 border-green-200">
+              <p className="text-center text-gray-700 mb-2">Erfolgreich zurückerstattet:</p>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-3xl font-bold text-green-600">+{showRefundSuccessModal.refundAmount?.toFixed(2)}€</span>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => setShowRefundSuccessModal({ open: false })}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg"
+            >
+              Perfekt!
             </Button>
           </div>
         </div>
@@ -1223,19 +1297,37 @@ export default function DKOTournamentRegistration() {
               </button>
             </div>
 
-            <div className="relative mb-4">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full rounded-lg border-4 border-orange-500"
-                style={{ minHeight: "300px", maxHeight: "400px" }}
-              />
-              <canvas ref={canvasRef} className="hidden" />
-              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                <div className="w-64 h-64 border-4 border-orange-500 rounded-lg"></div>
+            <div className="mb-4">
+              <div className="relative mb-4 p-6 border-4 border-dashed border-orange-500 rounded-lg bg-orange-50 text-center">
+                <QrCode className="h-12 w-12 text-orange-500 mx-auto mb-2" />
+                <p className="text-sm font-medium text-gray-700">USB-Scanner verbunden</p>
               </div>
+
+              <input
+                ref={scannerInputRef}
+                type="text"
+                value={scannerInput}
+                onChange={(e) => {
+                  const newValue = e.target.value
+                  setScannerInput(newValue)
+
+                  if (scanTimerRef.current) {
+                    clearTimeout(scanTimerRef.current)
+                  }
+
+                  if (newValue.trim().length > 0) {
+                    scanTimerRef.current = setTimeout(() => {
+                      if (!isScanning) {
+                        handleScannerInput(newValue)
+                        setScannerInput("")
+                      }
+                    }, 150)
+                  }
+                }}
+                placeholder="Scanner Eingabe..."
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none text-center text-lg font-semibold"
+                autoFocus
+              />
             </div>
 
             <div
@@ -1243,11 +1335,11 @@ export default function DKOTournamentRegistration() {
                 scanSuccess ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
               }`}
             >
-              {scannerMessage || "Bereit zum Scannen..."}
+              {scannerMessage || "USB-Scanner bereit..."}
             </div>
 
             <p className="text-sm text-gray-600 mt-4 text-center">
-              Halte die Mitgliedskarte vor die Kamera, um den QR-Code zu scannen
+              Halte die Mitgliedskarte vor den Scanner - Erkennung erfolgt automatisch
             </p>
           </div>
         </div>
@@ -1437,7 +1529,7 @@ export default function DKOTournamentRegistration() {
           <div className="mb-8 bg-orange-50 border-2 border-white rounded-lg p-6 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Turnier bereit zum Starten</h3>
+                <h3 className="text-xl font-bold text-gray-900">Turnier bereit zum Starten</h3>
                 <p className="text-gray-600">
                   {registeredPlayers.length} Spieler registriert → {tournamentSize}er DKO Turnier
                 </p>
@@ -1482,8 +1574,8 @@ export default function DKOTournamentRegistration() {
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
-              <Camera className="w-5 h-5" />
-              Mitgliedskarte scannen
+              <QrCode className="w-5 h-5" />
+              USB-Scanner aktivieren
             </button>
 
             <div className="flex gap-2 mb-4">
@@ -1640,127 +1732,6 @@ export default function DKOTournamentRegistration() {
           </div>
         </div>
       </div>
-
-      {/* Credit Confirm Modal */}
-      {showCreditConfirmModal.open && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 transform transition-all">
-            <div className="flex items-center justify-center w-14 h-14 bg-blue-100 rounded-full mb-4 mx-auto">
-              <Euro className="w-7 h-7 text-blue-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Vom Guthaben abziehen?</h3>
-            <p className="text-center text-gray-600 mb-6">
-              {showCreditConfirmModal.players && showCreditConfirmModal.players.length > 0
-                ? `${showCreditConfirmModal.players.length} Spieler haben Guthaben. Möchtest du das Startgeld automatisch abziehen?`
-                : "Es gibt keine Spieler mit Guthaben-Konten."}
-            </p>
-
-            {showCreditConfirmModal.players && showCreditConfirmModal.players.length > 0 && (
-              <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
-                {showCreditConfirmModal.players.map((player) => (
-                  <div key={player.id} className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                    <p className="font-semibold text-gray-900 mb-2">{player.name}</p>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Aktuell:</span>
-                      <span className="font-bold text-gray-900">{player.currentBalance.toFixed(2)}€</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Nach Abzug:</span>
-                      <span className="font-bold text-blue-600">{player.newBalance.toFixed(2)}€</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex flex-col gap-3">
-              <Button
-                onClick={registerPlayersWithCreditDeduction}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg"
-              >
-                Ja, vom Guthaben abziehen
-              </Button>
-              <Button
-                onClick={registerPlayersWithoutCreditDeduction}
-                variant="outline"
-                className="w-full border-2 border-gray-300 hover:bg-gray-50 font-semibold py-3 rounded-lg bg-transparent"
-              >
-                Nein, ohne Abzug registrieren
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {scannedPlayerForConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
-            <div className="flex items-center justify-center w-14 h-14 bg-blue-100 rounded-full mb-4 mx-auto">
-              <Euro className="w-7 h-7 text-blue-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Guthaben abziehen?</h3>
-            <p className="text-center text-gray-600 mb-6 font-semibold">{scannedPlayerForConfirm.name}</p>
-
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-gray-600">Aktuelles Guthaben:</span>
-                <span className="font-bold text-gray-900">{scannedPlayerForConfirm.currentBalance.toFixed(2)}€</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-gray-600">Startgeld:</span>
-                <span className="font-bold text-red-600">-{scannedPlayerForConfirm.entryFee.toFixed(2)}€</span>
-              </div>
-              <div className="flex items-center justify-between text-sm border-t-2 border-blue-200 pt-2">
-                <span className="text-gray-600">Nach Abzug:</span>
-                <span className="font-bold text-blue-600">
-                  {(scannedPlayerForConfirm.currentBalance - scannedPlayerForConfirm.entryFee).toFixed(2)}€
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <Button
-                onClick={() => handleScannedPlayerConfirm(true)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg"
-              >
-                Ja, abziehen
-              </Button>
-              <Button
-                onClick={() => handleScannedPlayerConfirm(false)}
-                variant="outline"
-                className="w-full border-2 border-gray-300 hover:bg-gray-50 font-semibold py-3 rounded-lg bg-transparent"
-              >
-                Nein, ohne Abzug
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showPaidLockModal.open && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
-            <div className="flex items-center justify-center w-14 h-14 bg-orange-100 rounded-full mb-4 mx-auto">
-              <Lock className="w-7 h-7 text-orange-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Bezahlung gesperrt</h3>
-            <p className="text-center text-gray-600 font-semibold mb-4">{showPaidLockModal.playerName}</p>
-            <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 mb-6">
-              <p className="text-center text-gray-700 text-sm">
-                Dieser Spieler wurde automatisch als <span className="font-bold text-orange-600">bezahlt</span>{" "}
-                markiert, da das Startgeld vom Guthaben abgezogen wurde.
-              </p>
-              <p className="text-center text-gray-600 text-sm mt-2">Du kannst diese Markierung nicht mehr ändern.</p>
-            </div>
-            <Button
-              onClick={() => setShowPaidLockModal({ open: false })}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg"
-            >
-              Verstanden
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

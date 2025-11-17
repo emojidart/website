@@ -1,11 +1,13 @@
 import TournamentBracket from "@/components/tournament-bracket-8er"
 import { Header } from "@/components/header"
-import { Trophy } from "lucide-react"
+import { Trophy } from 'lucide-react'
+import PlayerScannerModal from "@/components/player-scanner-modal"
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
       <Header />
+      <PlayerScannerModal tournamentId="1" tournamentType="8er_dko" />
       <main className="pt-8 pb-20">
         <div className="container mx-auto px-4 md:px-6 py-8">
           <div className="text-center mb-8 sm:mb-12">

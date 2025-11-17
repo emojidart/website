@@ -427,7 +427,7 @@ export default function App() {
 
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
             <div className="text-center mb-6">
-              <p className="text-xl md:text-2xl font-bold mb-2">Samstag, 18. Januar 2026</p>
+              <p className="text-xl md:text-2xl font-bold mb-2">Sonntag, 18. Januar 2026</p>
               <p className="text-orange-100 text-sm md:text-base">
                 Vereinsheim Pfeil-OK e.V. • Linzer Bundesstraße 16 • 5020 Salzburg
               </p>
@@ -449,8 +449,8 @@ export default function App() {
                   <Clock className="h-5 w-5" />
                   <h3 className="text-lg font-bold">JUNIOR</h3>
                 </div>
-                <p className="text-sm mb-2">11-15 Jahre</p>
-                <p className="text-2xl font-extrabold">15:30 - 16:45</p>
+                <p className="text-sm mb-2">11-14 Jahre</p>
+                <p className="text-2xl font-extrabold">15:15 - 16:30</p>
                 <p className="text-xs mt-2 text-blue-100">75 Minuten</p>
               </div>
 
@@ -460,7 +460,7 @@ export default function App() {
                   <h3 className="text-lg font-bold">TEENS</h3>
                 </div>
                 <p className="text-sm mb-2">15-18 Jahre</p>
-                <p className="text-2xl font-extrabold">17:15 - 18:45</p>
+                <p className="text-2xl font-extrabold">16:45 - 18:15</p>
                 <p className="text-xs mt-2 text-purple-100">90 Minuten</p>
               </div>
             </div>
