@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Globe, LogIn, Sparkles } from "lucide-react"
+import { Globe, LogIn, Sparkles, LayoutDashboard } from 'lucide-react'
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -11,11 +11,11 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu"
 import { useAuth } from "@/hooks/use-auth"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import Image from "next/image"
 
 export function Header() {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const router = useRouter()
 
   const handleAuthClick = () => {
@@ -28,6 +28,10 @@ export function Header() {
 
   const handleApplyClick = () => {
     router.push("/player-search")
+  }
+
+  const handleAdminClick = () => {
+    router.push("/admin")
   }
 
   return (
@@ -265,6 +269,18 @@ export function Header() {
             >
               <Globe className="h-5 w-5" />
             </Button>
+
+            {user && isAdmin && (
+              <Button
+                onClick={handleAdminClick}
+                className="hidden lg:flex border-orange-400 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-500 bg-transparent font-semibold transition-all text-orange-600"
+                variant="outline"
+              >
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                ADMIN
+              </Button>
+            )}
+
             <Button
               onClick={handleAuthClick}
               variant="outline"

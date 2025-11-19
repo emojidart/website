@@ -192,7 +192,7 @@ export default function UpcomingTournamentsAppPage() {
     { date: "03. Nov. 2025", time: "19:30 Uhr" },
     { date: "10. Nov. 2025", time: "19:30 Uhr" },
     { date: "17. Nov. 2025", time: "19:30 Uhr" },
-    { date: "25. Nov. 2025", time: "19:30 Uhr" },
+    { date: "28. Nov. 2025", time: "19:30 Uhr" },
     { date: "01. Dez. 2025", time: "19:30 Uhr" },
     { date: "08. Dez. 2025", time: "19:30 Uhr" },
     { date: "15. Dez. 2025", time: "19:30 Uhr" },

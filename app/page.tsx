@@ -486,7 +486,7 @@ if (totalAppearances >= 501) {
           { date: "2025-11-03", time: "19:30", type: "Turnier" },
           { date: "2025-11-10", time: "19:30", type: "Turnier" },
           { date: "2025-11-17", time: "19:30", type: "Turnier" },
-          { date: "2025-11-24", time: "19:30", type: "Turnier" },
+          { date: "2025-11-28", time: "19:30", type: "Turnier" },
           { date: "2025-12-01", time: "19:30", type: "Turnier" },
           { date: "2025-12-08", time: "19:30", type: "Turnier" },
           { date: "2025-12-15", time: "19:30", type: "Turnier" },
