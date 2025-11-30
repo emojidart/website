@@ -195,7 +195,7 @@ export default function AdventPage() {
             ADVENTSKALENDER 2025
           </h2>
           <p className="text-yellow-200 mt-2 text-sm md:text-base font-semibold">
-            ❄️ Wissensquiz über den Emoji's Dartverein! ❄️
+            ❄️ Wissensquiz über den Emoj!'s Dartverein! ❄️
           </p>
           {participant && (
             <p className="text-green-300 mt-2 text-sm md:text-base font-bold">Willkommen, {participant.name}! 👋</p>
@@ -314,7 +314,7 @@ export default function AdventPage() {
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border-l-4 border-green-600">
                 <h3 className="text-lg font-bold text-green-800 mb-2 flex items-center gap-2">🎯 Spielprinzip</h3>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  Bei diesem Adventskalender handelt es sich um ein reines Wissensquiz über den Emoji's Dartverein e.V.
+                  Bei diesem Adventskalender handelt es sich um ein reines Wissensquiz über den Emoj!'s Dartverein e.V.
                   Jeden Tag vom 1. bis 24. Dezember wird ein neues Türchen mit einer Quizfrage über die Geschichte und
                   Erfolge unseres Vereins freigeschaltet.
                 </p>
