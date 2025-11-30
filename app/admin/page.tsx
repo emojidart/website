@@ -80,6 +80,7 @@ export default function AdminPage() {
     | "tournament-management"
     | "events"
     | "advent-quiz"
+    | "campus-registrations" // Campus-Registrierungen View hinzugefügt
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -184,6 +185,13 @@ export default function AdminPage() {
       icon: Calendar,
       color: "bg-orange-500",
       view: "advent-quiz" as const,
+    },
+    {
+      title: "Campus-Registrierungen",
+      description: "EMD-CAMPUS Anmeldungen verwalten und einsehen",
+      icon: Users,
+      color: "bg-pink-500",
+      view: "campus-registrations" as const,
     },
     {
       title: "Lion Cup",
@@ -353,6 +361,7 @@ export default function AdminPage() {
                   {currentView === "tournament-management" && "Turnier verwalten"}
                   {currentView === "events" && "Veranstaltungen"}
                   {currentView === "advent-quiz" && "Adventskalender Auswertung"}
+                  {currentView === "campus-registrations" && "Campus-Registrierungen"}
                 </span>
               </>
             )}
@@ -408,7 +417,9 @@ export default function AdminPage() {
                                                           ? "Veranstaltungen"
                                                           : currentView === "advent-quiz"
                                                             ? "Adventskalender Auswertung"
-                                                            : "Admin-Zugang"}
+                                                            : currentView === "campus-registrations" // Campus-Registrierungen Titel hinzugefügt
+                                                              ? "Campus-Registrierungen"
+                                                              : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
                 {session && currentView === "dashboard"
@@ -806,6 +817,29 @@ export default function AdminPage() {
                       <Button className="w-full">
                         <Calendar className="h-4 w-4 mr-2" />
                         Zur Adventskalender Auswertung
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {currentView === "campus-registrations" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Users className="h-5 w-5" />
+                      <span>Campus-Registrierungen verwalten</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4">
+                      Hier können Sie alle EMD-CAMPUS Anmeldungen einsehen und verwalten.
+                    </p>
+                    <Link href="/admin/campus-registrations">
+                      <Button className="w-full">
+                        <Users className="h-4 w-4 mr-2" />
+                        Zur Campus-Registrierungen Verwaltung
                       </Button>
                     </Link>
                   </CardContent>
