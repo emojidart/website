@@ -466,6 +466,129 @@ export default function App() {
             </div>
           </div>
 
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
+            <div className="text-center mb-6">
+              <p className="text-xl md:text-2xl font-bold mb-2">Sonntag, 15. Februar 2026</p>
+              <p className="text-orange-100 text-sm md:text-base">
+                Vereinsheim Pfeil-OK e.V. • Linzer Bundesstraße 16 • 5020 Salzburg
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="bg-red-500 rounded-xl p-5 text-center shadow-lg">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Clock className="h-5 w-5" />
+                  <h3 className="text-lg font-bold">KIDS</h3>
+                </div>
+                <p className="text-sm mb-2">6-10 Jahre</p>
+                <p className="text-2xl font-extrabold">14:00 - 15:00</p>
+                <p className="text-xs mt-2 text-red-100">60 Minuten</p>
+              </div>
+
+              <div className="bg-blue-500 rounded-xl p-5 text-center shadow-lg">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Clock className="h-5 w-5" />
+                  <h3 className="text-lg font-bold">JUNIOR</h3>
+                </div>
+                <p className="text-sm mb-2">11-14 Jahre</p>
+                <p className="text-2xl font-extrabold">15:15 - 16:30</p>
+                <p className="text-xs mt-2 text-blue-100">75 Minuten</p>
+              </div>
+
+              <div className="bg-purple-500 rounded-xl p-5 text-center shadow-lg">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Clock className="h-5 w-5" />
+                  <h3 className="text-lg font-bold">TEENS</h3>
+                </div>
+                <p className="text-sm mb-2">15-18 Jahre</p>
+                <p className="text-2xl font-extrabold">16:45 - 18:15</p>
+                <p className="text-xs mt-2 text-purple-100">90 Minuten</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
+            <div className="text-center mb-6">
+              <p className="text-xl md:text-2xl font-bold mb-2">Sonntag, 22. März 2026</p>
+              <p className="text-orange-100 text-sm md:text-base">
+                Vereinsheim Pfeil-OK e.V. • Linzer Bundesstraße 16 • 5020 Salzburg
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="bg-red-500 rounded-xl p-5 text-center shadow-lg">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Clock className="h-5 w-5" />
+                  <h3 className="text-lg font-bold">KIDS</h3>
+                </div>
+                <p className="text-sm mb-2">6-10 Jahre</p>
+                <p className="text-2xl font-extrabold">14:00 - 15:00</p>
+                <p className="text-xs mt-2 text-red-100">60 Minuten</p>
+              </div>
+
+              <div className="bg-blue-500 rounded-xl p-5 text-center shadow-lg">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Clock className="h-5 w-5" />
+                  <h3 className="text-lg font-bold">JUNIOR</h3>
+                </div>
+                <p className="text-sm mb-2">11-14 Jahre</p>
+                <p className="text-2xl font-extrabold">15:15 - 16:30</p>
+                <p className="text-xs mt-2 text-blue-100">75 Minuten</p>
+              </div>
+
+              <div className="bg-purple-500 rounded-xl p-5 text-center shadow-lg">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Clock className="h-5 w-5" />
+                  <h3 className="text-lg font-bold">TEENS</h3>
+                </div>
+                <p className="text-sm mb-2">15-18 Jahre</p>
+                <p className="text-2xl font-extrabold">16:45 - 18:15</p>
+                <p className="text-xs mt-2 text-purple-100">90 Minuten</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
+            <div className="text-center mb-6">
+              <p className="text-xl md:text-2xl font-bold mb-2">Sonntag, 19. April 2026</p>
+              <p className="text-orange-100 text-sm md:text-base">
+                Vereinsheim Pfeil-OK e.V. • Linzer Bundesstraße 16 • 5020 Salzburg
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="bg-red-500 rounded-xl p-5 text-center shadow-lg">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Clock className="h-5 w-5" />
+                  <h3 className="text-lg font-bold">KIDS</h3>
+                </div>
+                <p className="text-sm mb-2">6-10 Jahre</p>
+                <p className="text-2xl font-extrabold">14:00 - 15:00</p>
+                <p className="text-xs mt-2 text-red-100">60 Minuten</p>
+              </div>
+
+              <div className="bg-blue-500 rounded-xl p-5 text-center shadow-lg">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Clock className="h-5 w-5" />
+                  <h3 className="text-lg font-bold">JUNIOR</h3>
+                </div>
+                <p className="text-sm mb-2">11-14 Jahre</p>
+                <p className="text-2xl font-extrabold">15:15 - 16:30</p>
+                <p className="text-xs mt-2 text-blue-100">75 Minuten</p>
+              </div>
+
+              <div className="bg-purple-500 rounded-xl p-5 text-center shadow-lg">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Clock className="h-5 w-5" />
+                  <h3 className="text-lg font-bold">TEENS</h3>
+                </div>
+                <p className="text-sm mb-2">15-18 Jahre</p>
+                <p className="text-2xl font-extrabold">16:45 - 18:15</p>
+                <p className="text-xs mt-2 text-purple-100">90 Minuten</p>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center border-2 border-white/30">
             <p className="text-lg md:text-xl font-bold">📅 Weitere Termine folgen in Kürze</p>
           </div>
