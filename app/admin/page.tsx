@@ -20,6 +20,7 @@ import {
   Target,
   HelpCircle,
   PartyPopper,
+  Calendar,
 } from "lucide-react"
 import { useDartData } from "@/hooks/use-dart-data"
 import { AuthSection } from "@/components/auth-section"
@@ -78,6 +79,7 @@ export default function AdminPage() {
     | "lion-cup-registrations"
     | "tournament-management"
     | "events"
+    | "advent-quiz"
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -175,6 +177,13 @@ export default function AdminPage() {
       icon: HelpCircle,
       color: "bg-red-500",
       view: "support-tickets" as const,
+    },
+    {
+      title: "Adventskalender Auswertung",
+      description: "Quiz-Antworten und Rangliste der Teilnehmer einsehen",
+      icon: Calendar,
+      color: "bg-orange-500",
+      view: "advent-quiz" as const,
     },
     {
       title: "Lion Cup",
@@ -343,6 +352,7 @@ export default function AdminPage() {
                   {currentView === "lion-cup-registrations" && "Lion Cup Anmeldungen"}
                   {currentView === "tournament-management" && "Turnier verwalten"}
                   {currentView === "events" && "Veranstaltungen"}
+                  {currentView === "advent-quiz" && "Adventskalender Auswertung"}
                 </span>
               </>
             )}
@@ -396,7 +406,9 @@ export default function AdminPage() {
                                                         ? "Turnier verwalten"
                                                         : currentView === "events"
                                                           ? "Veranstaltungen"
-                                                          : "Admin-Zugang"}
+                                                          : currentView === "advent-quiz"
+                                                            ? "Adventskalender Auswertung"
+                                                            : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
                 {session && currentView === "dashboard"
@@ -771,6 +783,29 @@ export default function AdminPage() {
                       <Button className="w-full">
                         <Settings className="h-4 w-4 mr-2" />
                         Zur Turnierverwaltung
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {currentView === "advent-quiz" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Calendar className="h-5 w-5" />
+                      <span>Adventskalender Auswertung</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4">
+                      Hier können Sie alle Quiz-Antworten der Teilnehmer einsehen und die Rangliste verwalten.
+                    </p>
+                    <Link href="/admin/advent-quiz">
+                      <Button className="w-full">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Zur Adventskalender Auswertung
                       </Button>
                     </Link>
                   </CardContent>
