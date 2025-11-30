@@ -650,7 +650,7 @@ export default function Home() {
                   <span>DEZEMBER 2025</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 mb-2">
-                  EMD XMAS Adventskalender
+                  EMD XMAS Quiz-Adventskalender
                 </h2>
                 <p className="text-base sm:text-lg text-gray-700 mb-4">
                   Kannst du die heutige Vereinsfrage lösen? Sammle Kronen, löse die Tagesaufgabe und sichere dir deinen Platz unter den Top-Fans.

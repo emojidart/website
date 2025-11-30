@@ -192,7 +192,7 @@ export default function AdventPage() {
             className="text-2xl md:text-3xl lg:text-4xl font-black text-yellow-300 drop-shadow-lg"
             style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.5)" }}
           >
-            ADVENTSKALENDER 2025
+            QUIZ-ADVENTSKALENDER 2025
           </h2>
           <p className="text-yellow-200 mt-2 text-sm md:text-base font-semibold">
             ❄️ Wissensquiz über den Emoj!'s Dartverein! ❄️
