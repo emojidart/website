@@ -5,7 +5,7 @@ import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { CampusRegistrationModal } from "@/components/campus-registration-modal"
 import { motion } from "framer-motion"
-import { Target, Users, Trophy, Calendar, MapPin, Clock } from "lucide-react"
+import { Target, Users, Trophy, Calendar, MapPin, Clock, Info } from "lucide-react"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -410,6 +410,96 @@ export default function App() {
                 Der Weg zum Dart-Talent beginnt hier - Willkommen im EMD-CAMPUS Nachwuchsprogramm!
               </p>
             </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="bg-gradient-to-br from-green-500 to-green-700 rounded-2xl shadow-xl border border-green-200 p-6 md:p-8 mb-8 text-white"
+        >
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="bg-white/10 rounded-lg p-2">
+              <Info className="h-8 w-8 text-white" />
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-center">INFOTAG AM SAMSTAG 10.01.2026 UM 14 UHR</h2>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
+            <div className="text-center mb-6">
+              <p className="text-xl md:text-2xl font-bold mb-2">Samstag, 10. Januar 2026</p>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Clock className="h-5 w-5" />
+                <p className="text-lg font-bold">14:00 Uhr</p>
+              </div>
+              <p className="text-green-100 text-sm md:text-base">
+                Vereinsheim Pfeil-OK e.V. • Linzer Bundesstraße 16 • 5020 Salzburg
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
+                <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Themen des Infotags
+                </h3>
+                <ul className="space-y-2 text-sm md:text-base">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-300 font-bold">✓</span>
+                    <span>Besichtigung der Betriebsstätte & Trainingsräume</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-300 font-bold">✓</span>
+                    <span>Vorstellung des 12-Monats Trainingsprogramms</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-300 font-bold">✓</span>
+                    <span>Ablauf & Struktur der Trainingsmodule für alle Altersgruppen</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-300 font-bold">✓</span>
+                    <span>Kennenlernen der Trainer & des Teams</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-300 font-bold">✓</span>
+                    <span>Fragen & Antworten mit Erziehungsberechtigten</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-300 font-bold">✓</span>
+                    <span>Erste Wurfversuche für die Kids, Juniors & Teens</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
+                <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Für wen?
+                </h3>
+                <div className="grid md:grid-cols-3 gap-3">
+                  <div className="bg-red-500/80 rounded-lg p-4 text-center">
+                    <p className="font-bold text-base mb-1">KIDS</p>
+                    <p className="text-sm">6-10 Jahre</p>
+                  </div>
+                  <div className="bg-blue-500/80 rounded-lg p-4 text-center">
+                    <p className="font-bold text-base mb-1">JUNIOR</p>
+                    <p className="text-sm">11-14 Jahre</p>
+                  </div>
+                  <div className="bg-purple-500/80 rounded-lg p-4 text-center">
+                    <p className="font-bold text-base mb-1">TEENS</p>
+                    <p className="text-sm">15-18 Jahre</p>
+                  </div>
+                </div>
+                <p className="text-center text-sm md:text-base mt-4 font-bold text-green-100">
+                  Alle Kinder & Jugendlichen mit Erziehungsberechtigten sind herzlich willkommen!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center border-2 border-white/30">
+            <p className="text-lg md:text-xl font-bold">
+              💡 Nutze die Chance, uns kennenzulernen und alle Fragen zu klären!
+            </p>
           </div>
         </motion.div>
 
