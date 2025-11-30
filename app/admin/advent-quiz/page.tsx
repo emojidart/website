@@ -7,29 +7,29 @@ import { Badge } from "@/components/ui/badge"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
-import { Trophy, CheckCircle, XCircle, Calendar, User, Award, TrendingUp, Gift } from "lucide-react"
+import { Trophy, CheckCircle, XCircle, Calendar, User, Award, TrendingUp, Gift, Mail } from "lucide-react"
 import Link from "next/link"
 
 interface QuizResponse {
   id: string
-  user_id: string
+  participant_id: string
   day: number
   selected_answer: string
   is_correct: boolean
   answered_at: string
 }
 
-interface UserProfile {
-  user_id: string
-  player_id: string
-  club_players: {
-    name: string
-  }
+interface Participant {
+  id: string
+  name: string
+  email: string
+  created_at: string
 }
 
 interface ParticipantStats {
-  user_id: string
-  player_name: string
+  participant_id: string
+  participant_name: string
+  participant_email: string
   total_answers: number
   correct_answers: number
   accuracy_percentage: number
@@ -55,29 +55,24 @@ export default function AdminAdventQuizPage() {
 
       if (responsesError) throw responsesError
 
-      const { data: profiles, error: profilesError } = await supabase.from("user_profiles").select(`
-          user_id,
-          player_id,
-          club_players!inner (
-            name
-          )
-        `)
+      const { data: participantsData, error: participantsError } = await supabase
+        .from("advent_participants")
+        .select("*")
 
-      if (profilesError) throw profilesError
+      if (participantsError) throw participantsError
 
       const participantMap = new Map<string, ParticipantStats>()
 
       responses?.forEach((response) => {
-        const profile = profiles?.find((p) => p.user_id === response.user_id)
+        const participant = participantsData?.find((p) => p.id === response.participant_id)
 
-        if (!profile) return
+        if (!participant) return
 
-        const playerName = profile.club_players?.name || "Unbekannt"
-
-        if (!participantMap.has(response.user_id)) {
-          participantMap.set(response.user_id, {
-            user_id: response.user_id,
-            player_name: playerName,
+        if (!participantMap.has(response.participant_id)) {
+          participantMap.set(response.participant_id, {
+            participant_id: response.participant_id,
+            participant_name: participant.name,
+            participant_email: participant.email,
             total_answers: 0,
             correct_answers: 0,
             accuracy_percentage: 0,
@@ -86,13 +81,13 @@ export default function AdminAdventQuizPage() {
           })
         }
 
-        const participant = participantMap.get(response.user_id)!
-        participant.total_answers++
-        if (response.is_correct) participant.correct_answers++
-        participant.responses.push(response)
+        const participantStats = participantMap.get(response.participant_id)!
+        participantStats.total_answers++
+        if (response.is_correct) participantStats.correct_answers++
+        participantStats.responses.push(response)
 
-        if (new Date(response.answered_at) > new Date(participant.last_answered)) {
-          participant.last_answered = response.answered_at
+        if (new Date(response.answered_at) > new Date(participantStats.last_answered)) {
+          participantStats.last_answered = response.answered_at
         }
       })
 
@@ -288,9 +283,9 @@ export default function AdminAdventQuizPage() {
                   const rank = getRankBadge(index)
                   return (
                     <Card
-                      key={participant.user_id}
+                      key={participant.participant_id}
                       className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                        selectedParticipant?.user_id === participant.user_id ? "ring-2 ring-red-500" : ""
+                        selectedParticipant?.participant_id === participant.participant_id ? "ring-2 ring-red-500" : ""
                       }`}
                       onClick={() => setSelectedParticipant(participant)}
                     >
@@ -301,8 +296,12 @@ export default function AdminAdventQuizPage() {
                               <Badge className={`${rank.color} text-white text-xs`}>{rank.text}</Badge>
                             </div>
                             <CardTitle className="text-base md:text-lg mb-1 truncate">
-                              {participant.player_name}
+                              {participant.participant_name}
                             </CardTitle>
+                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+                              <Mail className="h-3 w-3" />
+                              <span className="truncate">{participant.participant_email}</span>
+                            </div>
 
                             <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 text-xs md:text-sm mt-3">
                               <div className="flex items-center gap-1">
@@ -335,7 +334,13 @@ export default function AdminAdventQuizPage() {
                   <CardHeader className="px-4 md:px-6">
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-base md:text-xl mb-1">{selectedParticipant.player_name}</CardTitle>
+                        <CardTitle className="text-base md:text-xl mb-1">
+                          {selectedParticipant.participant_name}
+                        </CardTitle>
+                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <Mail className="h-4 w-4" />
+                          <span>{selectedParticipant.participant_email}</span>
+                        </div>
                       </div>
                     </div>
                   </CardHeader>

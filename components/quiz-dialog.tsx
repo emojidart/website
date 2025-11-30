@@ -17,10 +17,10 @@ interface QuizDialogProps {
   onClose: () => void
   onQuizSubmitted: () => void
   completedQuizzes: CompletedQuiz[]
-  userId: string
+  participantId: string // participantId statt userId
 }
 
-export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, userId }: QuizDialogProps) {
+export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, participantId }: QuizDialogProps) {
   const submitted = completedQuizzes.some((q) => q.day === day)
   const previousAnswer = completedQuizzes.find((q) => q.day === day)
 
@@ -32,13 +32,13 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, us
 
   useEffect(() => {
     const checkExistingAnswer = async () => {
-      if (!userId || submitted) return
+      if (!participantId || submitted) return
 
       try {
         const { data, error } = await supabase
           .from("advent_quiz_responses")
           .select("day, selected_answer, is_correct")
-          .eq("user_id", userId)
+          .eq("participant_id", participantId)
           .eq("day", day)
           .single()
 
@@ -52,14 +52,14 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, us
     }
 
     checkExistingAnswer()
-  }, [userId, day, submitted])
+  }, [participantId, day, submitted])
 
   if (!quiz) {
     return null
   }
 
   const handleSubmit = async () => {
-    if (!selectedAnswer || !userId) return
+    if (!selectedAnswer || !participantId) return
 
     if (alreadyAnswered) {
       console.log("[v0] Quiz wurde bereits beantwortet")
@@ -71,7 +71,7 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, us
       const isCorrect = selectedAnswer === quiz.correctAnswer
 
       const { error } = await supabase.from("advent_quiz_responses").insert({
-        user_id: userId,
+        participant_id: participantId,
         day,
         selected_answer: selectedAnswer,
         is_correct: isCorrect,
@@ -80,7 +80,7 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, us
 
       if (error) {
         if (error.code === "23505") {
-          alert("Du hast diese Frage bereits auf einem anderen Gerät beantwortet!")
+          alert("Du hast diese Frage bereits beantwortet!")
           onQuizSubmitted()
           onClose()
           return
@@ -176,7 +176,7 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, us
                 disabled={!selectedAnswer || loading}
                 className="flex-1 h-12 md:h-14 text-base md:text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg disabled:opacity-50"
               >
-                {loading ? "Speichert..." : "Senden "}
+                {loading ? "Speichert..." : "Senden 🎯"}
               </Button>
             )}
           </div>
