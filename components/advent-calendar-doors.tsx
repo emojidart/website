@@ -15,30 +15,30 @@ interface AdventCalendarDoorsProps {
 }
 
 const dayIcons: Record<number, string> = {
-  1: "🎁",
-  2: "🎄",
-  3: "🎅",
-  4: "🎯",
-  5: "🔔",
-  6: "⛄",
-  7: "❄️",
-  8: "🕯️",
-  9: "💡",
-  10: "🎿",
-  11: "🧦",
-  12: "🎁",
-  13: "🎄",
-  14: "⚽",
-  15: "🎯",
-  16: "🍫",
-  17: "🔔",
-  18: "🎲",
-  19: "🎄",
-  20: "🎯",
-  21: "⛄",
-  22: "🎅",
-  23: "❄️",
-  24: "⭐",
+  1: "🎁", // Geschenk
+  2: "🎄", // Weihnachtsbaum
+  3: "🎅", // Weihnachtsmann
+  4: "⭐", // Stern statt Dartscheibe
+  5: "🔔", // Glocke
+  6: "⛄", // Schneemann
+  7: "❄️", // Schneeflocke
+  8: "🕯️", // Kerze
+  9: "💡", // Lichterkette
+  10: "🎿", // Ski
+  11: "🧦", // Weihnachtssocke
+  12: "🎁", // Geschenk
+  13: "🎄", // Weihnachtsbaum
+  14: "🍪", // Keks statt Fußball
+  15: "🎀", // Schleife statt Dartscheibe
+  16: "🍫", // Schokolade
+  17: "🔔", // Glocke
+  18: "🦌", // Rentier statt Würfel
+  19: "🎄", // Weihnachtsbaum
+  20: "🧸", // Teddy statt Dartscheibe
+  21: "⛄", // Schneemann
+  22: "🎅", // Weihnachtsmann
+  23: "❄️", // Schneeflocke
+  24: "⭐", // Stern (Heiligabend)
 }
 
 export function AdventCalendarDoors({ selectedDay, onSelectDay, completedQuizzes }: AdventCalendarDoorsProps) {
