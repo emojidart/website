@@ -21,6 +21,7 @@ import {
   HelpCircle,
   PartyPopper,
   Calendar,
+  Zap,
 } from "lucide-react"
 import { useDartData } from "@/hooks/use-dart-data"
 import { AuthSection } from "@/components/auth-section"
@@ -80,7 +81,8 @@ export default function AdminPage() {
     | "tournament-management"
     | "events"
     | "advent-quiz"
-    | "campus-registrations" // Campus-Registrierungen View hinzugefügt
+    | "campus-registrations"
+    | "credit-loader" // Added credit-loader view
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -192,6 +194,13 @@ export default function AdminPage() {
       icon: Users,
       color: "bg-pink-500",
       view: "campus-registrations" as const,
+    },
+    {
+      title: "Credit-Loader",
+      description: "Gutscheine und Credits verwalten",
+      icon: Zap,
+      color: "bg-violet-500",
+      view: "credit-loader" as const,
     },
     {
       title: "Lion Cup",
@@ -362,6 +371,7 @@ export default function AdminPage() {
                   {currentView === "events" && "Veranstaltungen"}
                   {currentView === "advent-quiz" && "Adventskalender Auswertung"}
                   {currentView === "campus-registrations" && "Campus-Registrierungen"}
+                  {currentView === "credit-loader" && "Credit-Loader"}
                 </span>
               </>
             )}
@@ -417,9 +427,11 @@ export default function AdminPage() {
                                                           ? "Veranstaltungen"
                                                           : currentView === "advent-quiz"
                                                             ? "Adventskalender Auswertung"
-                                                            : currentView === "campus-registrations" // Campus-Registrierungen Titel hinzugefügt
+                                                            : currentView === "campus-registrations"
                                                               ? "Campus-Registrierungen"
-                                                              : "Admin-Zugang"}
+                                                              : currentView === "credit-loader"
+                                                                ? "Credit-Loader"
+                                                                : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
                 {session && currentView === "dashboard"
@@ -840,6 +852,27 @@ export default function AdminPage() {
                       <Button className="w-full">
                         <Users className="h-4 w-4 mr-2" />
                         Zur Campus-Registrierungen Verwaltung
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {currentView === "credit-loader" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Zap className="h-5 w-5" />
+                      <span>Credit-Loader verwalten</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4">Hier können Sie Gutscheine und Credits verwalten.</p>
+                    <Link href="/admin/credit-loader">
+                      <Button className="w-full">
+                        <Zap className="h-4 w-4 mr-2" />
+                        Zur Credit-Loader Verwaltung
                       </Button>
                     </Link>
                   </CardContent>

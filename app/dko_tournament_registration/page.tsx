@@ -1,9 +1,22 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
-import { Search, UserPlus, X, Play, Trophy, ArrowLeft, Euro, AlertCircle, ArrowRight, Star, QrCode, Lock } from 'lucide-react'
+import {
+  Search,
+  UserPlus,
+  X,
+  Play,
+  Trophy,
+  ArrowLeft,
+  Euro,
+  AlertCircle,
+  ArrowRight,
+  Star,
+  QrCode,
+  Lock,
+} from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
@@ -26,7 +39,7 @@ interface RegisteredPlayer {
   registered_at: string
   paid: boolean
   entry_fee: number
-  deducted_from_credit?: boolean
+  deducted_from_credit?: boolean | string
 }
 
 export default function DKOTournamentRegistration() {
@@ -102,7 +115,6 @@ export default function DKOTournamentRegistration() {
     playerName?: string
     refundAmount?: number
   }>({ open: false })
-
 
   const handleScannedPlayerConfirm = async (shouldDeduct: boolean) => {
     if (!scannedPlayerForConfirm) return
@@ -271,6 +283,7 @@ export default function DKOTournamentRegistration() {
           player_name: player.name,
           paid: false,
           entry_fee: entryFee,
+          deducted_from_credit: false,
         })
 
         if (registerError) {
@@ -304,16 +317,15 @@ export default function DKOTournamentRegistration() {
   const registerPlayersWithoutCreditDeduction = async () => {
     try {
       const entryFee = showCreditConfirmModal.entryFee || 0
+      const playersWithCredit = showCreditConfirmModal.players || []
       const playersWithoutCredit = showCreditConfirmModal.playersWithoutCredit || []
-
-      if (!playersWithoutCredit || playersWithoutCredit.length === 0) {
-        setShowCreditConfirmModal({ open: false })
-        return
-      }
 
       setShowCreditConfirmModal({ open: false })
 
-      await registerPlayersDirectly(playersWithoutCredit, entryFee)
+      // Register ALL players (both with and without credit) without deduction
+      const allPlayerIds = [...playersWithCredit.map((p) => p.id), ...playersWithoutCredit]
+
+      await registerPlayersDirectly(allPlayerIds, entryFee)
     } catch (error) {
       console.error("[v0] Error in registerPlayersWithoutCreditDeduction:", error)
       setShowErrorModal({ open: true })
@@ -334,7 +346,7 @@ export default function DKOTournamentRegistration() {
 
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
           player_id: playerWithCredit.id.toString(),
-          player_name: playerWithCredit.name,
+          player_name: player.name,
           paid: true,
           entry_fee: entryFee,
           deducted_from_credit: true,
@@ -344,7 +356,7 @@ export default function DKOTournamentRegistration() {
           if (registerError.message.includes("duplicate")) {
             setShowAlreadyRegisteredModal({
               open: true,
-              playerName: playerWithCredit.name,
+              playerName: player.name,
             })
           } else {
             throw registerError
@@ -503,10 +515,10 @@ export default function DKOTournamentRegistration() {
 
       if (!playerToUnregister) return
 
-      console.log("[v0] handleUnregisterPlayer - deducted_from_credit:", playerToUnregister.deducted_from_credit)
+      const deductedFromCredit =
+        playerToUnregister.deducted_from_credit === true || playerToUnregister.deducted_from_credit === "true"
 
-      if (playerToUnregister.deducted_from_credit && playerToUnregister.player_id) {
-        console.log("[v0] Opening refund modal")
+      if (deductedFromCredit && playerToUnregister.player_id) {
         setShowRefundConfirmModal({
           open: true,
           registrationId,
@@ -538,7 +550,7 @@ export default function DKOTournamentRegistration() {
       }
 
       const spieldatenbankId = playerToUnregister.player_id
-      
+
       const { data: clubPlayer, error: clubPlayerError } = await supabase
         .from("club_players")
         .select("id")
@@ -593,7 +605,10 @@ export default function DKOTournamentRegistration() {
         admin_id: user?.id,
       })
 
-      const { error: deleteError } = await supabase.from("dko_tournament_registration").delete().eq("id", registrationId)
+      const { error: deleteError } = await supabase
+        .from("dko_tournament_registration")
+        .delete()
+        .eq("id", registrationId)
 
       if (deleteError) {
         console.error("[v0] Error deleting registration:", deleteError)
@@ -620,9 +635,11 @@ export default function DKOTournamentRegistration() {
     try {
       const playerToToggle = registeredPlayers.find((p) => p.id === registrationId)
 
-      console.log("[v0] togglePaymentStatus - deducted_from_credit:", playerToToggle?.deducted_from_credit, "currentStatus:", currentStatus)
+      // Fixed: Check for both boolean true AND string "true"
+      const deductedFromCredit =
+        playerToToggle?.deducted_from_credit === true || playerToToggle?.deducted_from_credit === "true"
 
-      if (playerToToggle?.deducted_from_credit && currentStatus === true) {
+      if (deductedFromCredit && currentStatus === true) {
         console.log("[v0] Opening paid lock modal")
         setShowPaidLockModal({ open: true, playerName: playerToToggle.player_name })
         return
@@ -1102,12 +1119,10 @@ export default function DKOTournamentRegistration() {
               <Euro className="w-7 h-7 text-blue-600" />
             </div>
             <h3 className="text-2xl font-bold text-center text-gray-900 mb-4">Guthaben abziehen?</h3>
-            
+
             {showCreditConfirmModal.players && showCreditConfirmModal.players.length > 0 && (
               <div className="mb-6">
-                <p className="text-sm text-gray-600 mb-3 font-semibold">
-                  Folgende Spieler haben genug Guthaben:
-                </p>
+                <p className="text-sm text-gray-600 mb-3 font-semibold">Folgende Spieler haben genug Guthaben:</p>
                 <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
                   {showCreditConfirmModal.players.map((p) => (
                     <div key={p.id} className="bg-blue-50 rounded-lg p-3 border border-blue-200">
@@ -1125,7 +1140,8 @@ export default function DKOTournamentRegistration() {
             {showCreditConfirmModal.playersWithoutCredit && showCreditConfirmModal.playersWithoutCredit.length > 0 && (
               <div className="mb-6">
                 <p className="text-sm text-orange-600 font-semibold">
-                  {showCreditConfirmModal.playersWithoutCredit.length} Spieler ohne Guthaben werden ohne Abzug registriert.
+                  {showCreditConfirmModal.playersWithoutCredit.length} Spieler ohne Guthaben werden ohne Abzug
+                  registriert.
                 </p>
               </div>
             )}
@@ -1138,14 +1154,11 @@ export default function DKOTournamentRegistration() {
               <Button
                 onClick={registerPlayersWithoutCreditDeduction}
                 variant="outline"
-                className="flex-1 border-2"
+                className="flex-1 border-2 bg-transparent"
               >
                 Nein, ohne Abzug
               </Button>
-              <Button
-                onClick={registerPlayersWithCreditDeduction}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
+              <Button onClick={registerPlayersWithCreditDeduction} className="flex-1 bg-blue-600 hover:bg-blue-700">
                 Ja, abziehen
               </Button>
             </div>
@@ -1161,7 +1174,7 @@ export default function DKOTournamentRegistration() {
             </div>
             <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Guthaben abziehen?</h3>
             <p className="text-center text-gray-600 font-semibold mb-6">{scannedPlayerForConfirm.name}</p>
-            
+
             <div className="bg-green-50 rounded-lg p-4 mb-6 border-2 border-green-200">
               <div className="flex justify-between mb-2">
                 <span className="text-gray-700">Aktuelles Guthaben:</span>
@@ -1182,11 +1195,7 @@ export default function DKOTournamentRegistration() {
             </div>
 
             <div className="flex gap-3">
-              <Button
-                onClick={() => handleScannedPlayerConfirm(false)}
-                variant="outline"
-                className="flex-1 border-2"
-              >
+              <Button onClick={() => handleScannedPlayerConfirm(false)} variant="outline" className="flex-1 border-2">
                 Nein, ohne Abzug
               </Button>
               <Button
@@ -1229,13 +1238,15 @@ export default function DKOTournamentRegistration() {
             </div>
             <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Guthaben zurückerstatten?</h3>
             <p className="text-center text-gray-600 font-semibold mb-6">{showRefundConfirmModal.playerName}</p>
-            
+
             <div className="bg-blue-50 rounded-lg p-4 mb-6 border-2 border-blue-200">
               <p className="text-sm text-gray-700 mb-2 text-center">
                 Das Startgeld wurde vom Guthaben abgezogen und wird nun zurückerstattet:
               </p>
               <div className="flex items-center justify-center gap-2 mt-3">
-                <span className="text-3xl font-bold text-green-600">+{showRefundConfirmModal.refundAmount?.toFixed(2)}€</span>
+                <span className="text-3xl font-bold text-green-600">
+                  +{showRefundConfirmModal.refundAmount?.toFixed(2)}€
+                </span>
               </div>
             </div>
 
@@ -1247,10 +1258,7 @@ export default function DKOTournamentRegistration() {
               >
                 Abbrechen
               </Button>
-              <Button
-                onClick={confirmRefund}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
+              <Button onClick={confirmRefund} className="flex-1 bg-blue-600 hover:bg-blue-700">
                 Ja, zurückerstatten
               </Button>
             </div>
@@ -1266,11 +1274,13 @@ export default function DKOTournamentRegistration() {
             </div>
             <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Guthaben zurückerstattet!</h3>
             <p className="text-center text-gray-600 font-semibold mb-6">{showRefundSuccessModal.playerName}</p>
-            
+
             <div className="bg-green-50 rounded-lg p-4 mb-6 border-2 border-green-200">
               <p className="text-center text-gray-700 mb-2">Erfolgreich zurückerstattet:</p>
               <div className="flex items-center justify-center gap-2">
-                <span className="text-3xl font-bold text-green-600">+{showRefundSuccessModal.refundAmount?.toFixed(2)}€</span>
+                <span className="text-3xl font-bold text-green-600">
+                  +{showRefundSuccessModal.refundAmount?.toFixed(2)}€
+                </span>
               </div>
             </div>
 
@@ -1559,7 +1569,7 @@ export default function DKOTournamentRegistration() {
         <div className="grid md:grid-cols-2 gap-8">
           <div className="bg-white border-2 border-white rounded-lg p-6 shadow-lg">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Verfügbare Spieler</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Spieler hinzufügen</h2>
               <span className="text-sm text-gray-500">
                 {playerViewMode === "frequent" ? availableFrequentPlayers.length : filteredPlayers.length} Spieler
               </span>
@@ -1707,12 +1717,16 @@ export default function DKOTournamentRegistration() {
                           type="checkbox"
                           checked={player.paid}
                           onChange={() => togglePaymentStatus(player.id, player.paid)}
-                          disabled={player.deducted_from_credit === true}
+                          disabled={player.deducted_from_credit === true || player.deducted_from_credit === "true"}
                           className={`w-5 h-5 border-2 border-white rounded focus:ring-orange-500 accent-orange-500 ${
-                            player.deducted_from_credit === true ? "cursor-not-allowed opacity-50" : ""
+                            player.deducted_from_credit === true || player.deducted_from_credit === "true"
+                              ? "cursor-not-allowed opacity-50"
+                              : ""
                           }`}
                           title={
-                            player.deducted_from_credit ? "Automatisch abgezogen - kann nicht geändert werden" : ""
+                            player.deducted_from_credit === true || player.deducted_from_credit === "true"
+                              ? "Automatisch abgezogen - kann nicht geändert werden"
+                              : ""
                           }
                         />
                         <span className="text-sm text-gray-600">Bezahlt</span>
@@ -1720,7 +1734,11 @@ export default function DKOTournamentRegistration() {
                       <button
                         onClick={() => handleUnregisterPlayer(player.id)}
                         className="p-2 text-orange-500 hover:bg-orange-100 rounded-lg transition-colors"
-                        title={player.deducted_from_credit ? "Guthaben wird rückerstattet" : "Registrierung entfernen"}
+                        title={
+                          player.deducted_from_credit === true || player.deducted_from_credit === "true"
+                            ? "Guthaben wird rückerstattet"
+                            : "Registrierung entfernen"
+                        }
                       >
                         <X className="w-5 h-5" />
                       </button>
