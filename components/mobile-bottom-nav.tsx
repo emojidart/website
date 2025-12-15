@@ -13,6 +13,7 @@ import {
   LogOut,
   MessageCircle,
   Images,
+  LayoutDashboard,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -24,7 +25,7 @@ import { useRouter } from "next/navigation"
 export function MobileBottomNav() {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, loading, isAdmin } = useAuth() // Added isAdmin from useAuth
   const isLoggedIn = !!user
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
 
@@ -98,6 +99,15 @@ export function MobileBottomNav() {
       icon: Images,
       action: null,
     })
+
+    if (isAdmin) {
+      moreMenuItems.splice(3, 0, {
+        name: "Admin",
+        href: "/admin",
+        icon: LayoutDashboard,
+        action: null,
+      })
+    }
 
     moreMenuItems.push({
       name: "Abmelden",

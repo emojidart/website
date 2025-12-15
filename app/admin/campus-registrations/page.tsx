@@ -64,6 +64,36 @@ export default function AdminCampusRegistrationsPage() {
 
       if (error) throw error
 
+      // Wenn Status auf "approved" gesetzt wird, E-Mail versenden
+      if (newStatus === "approved" && selectedRegistration?.email) {
+        try {
+          const response = await fetch("/api/send-campus-email", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: selectedRegistration.email,
+              child_first_name: selectedRegistration.child_first_name,
+              child_last_name: selectedRegistration.child_last_name,
+              parent_first_name: selectedRegistration.parent_first_name,
+            }),
+          })
+
+          const result = await response.json()
+
+          if (!response.ok) {
+            console.error("E-Mail-Versand Fehler:", result.error)
+            alert(`Registrierung bestätigt, aber E-Mail konnte nicht gesendet werden: ${result.error}`)
+          } else {
+            alert(`Registrierung bestätigt! Eine Bestätigungs-E-Mail wurde an ${selectedRegistration.email} gesendet.`)
+          }
+        } catch (emailError) {
+          console.error("E-Mail-Versand fehlgeschlagen:", emailError)
+          alert("Registrierung bestätigt, aber E-Mail-Versand ist fehlgeschlagen.")
+        }
+      }
+
       // Liste aktualisieren
       await fetchRegistrations()
 
