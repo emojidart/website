@@ -1258,7 +1258,7 @@ Bist du bereit?
       <section className="bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-white">
+            <div className="text-white"> 
               {showInstallButton ? (
                 <>
                   <div className="flex items-center gap-3 mb-6">
