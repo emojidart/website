@@ -2058,7 +2058,7 @@ function RankingsTable({
                   >
                     <PlusCircle className="h-4 w-4" />
                   </Button>
-                </div>
+                </div> 
               </TableCell>
               <TableCell>{player.isEliminated ? `Runde ${player.eliminationRound}` : "Nein"}</TableCell>
               <TableCell>
