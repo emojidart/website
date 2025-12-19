@@ -475,17 +475,15 @@ export default function KratzerTournamentPage() {
         return p
       })
 
-      setTournamentState((prev) => ({ ...prev, players: updatedPlayers }))
+      setTournamentState((prev) => ({
+        ...prev,
+        players: updatedPlayers,
+        boards: prev.boards.filter((b) => b.id !== boardId),
+      }))
 
       if (tournamentState.tournamentId) {
         await updateKratzerTournamentPlayersData(tournamentState.tournamentId, updatedPlayers)
       }
-
-      // Filter out the finished board
-      setTournamentState((prev) => ({
-        ...prev,
-        boards: prev.boards.filter((b) => b.id !== boardId),
-      }))
 
       const remainingPlayersOverall = updatedPlayers.filter((p) => !p.isEliminated)
 

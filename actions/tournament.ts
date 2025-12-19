@@ -1,9 +1,9 @@
 "use server"
 
-import { createServerSupabaseClient } from "@/lib/supabase" // Import the server-side client creator
+import { createServerSupabaseClient } from "@/lib/supabase"
 import type { TournamentSettings, KratzerPlayer, Board, SpieldatenbankEntry } from "@/types/tournament"
-import { cookies } from "next/headers" // Import cookies directly in the Server Action
-import { revalidatePath } from "next/cache" // Import revalidatePath
+import { cookies } from "next/headers"
+import { revalidatePath } from "next/cache"
 
 interface ServerActionResponse {
   success: boolean
@@ -11,21 +11,18 @@ interface ServerActionResponse {
   data?: any
 }
 
-// Function to get the current user ID
 async function getCurrentUserId(): Promise<string | null> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const {
     data: { user },
   } = await supabase.auth.getUser()
   return user?.id || null
 }
 
-// Registers selected players from spieldatenbank into kratzer_tournament_registrations
 export async function registerPlayers(playerIds: string[]): Promise<ServerActionResponse> {
   console.log("registerPlayers: Funktion gestartet. Empfangene Player IDs:", playerIds)
 
-  // NEU: Cookies direkt im Server Action loggen
-  const allCookies = cookies().getAll()
+  const allCookies = (await cookies()).getAll()
   console.log("registerPlayers: Empfangene Cookies im Server Action:", allCookies)
 
   const userId = await getCurrentUserId()
@@ -36,9 +33,8 @@ export async function registerPlayers(playerIds: string[]): Promise<ServerAction
     return { success: false, message: "Benutzer nicht authentifiziert." }
   }
 
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   try {
-    // Fetch player details from spieldatenbank
     console.log("registerPlayers: Versuche Spielerdetails aus spieldatenbank zu laden...")
     const { data: playersData, error: playersError } = await supabase
       .from("spieldatenbank")
@@ -56,7 +52,6 @@ export async function registerPlayers(playerIds: string[]): Promise<ServerAction
     }
     console.log("registerPlayers: Spielerdetails erfolgreich geladen:", playersData)
 
-    // Prepare data for insertion into kratzer_tournament_registrations
     const registrationsToInsert = playersData.map((player) => ({
       player_id: player.id,
       player_name: player.name,
@@ -65,7 +60,6 @@ export async function registerPlayers(playerIds: string[]): Promise<ServerAction
     }))
     console.log("registerPlayers: Vorbereitet für Upsert:", registrationsToInsert)
 
-    // Perform upsert to handle existing registrations
     console.log("registerPlayers: Versuche Upsert in kratzer_tournament_registrations...")
     const { error: upsertError } = await supabase
       .from("kratzer_tournament_registrations")
@@ -76,8 +70,6 @@ export async function registerPlayers(playerIds: string[]): Promise<ServerAction
       throw upsertError
     }
     console.log("registerPlayers: Spieler erfolgreich in kratzer_tournament_registrations geschrieben.")
-
-    // No revalidatePath here, as this is for registration, not live tournament state
 
     return {
       success: true,
@@ -92,9 +84,8 @@ export async function registerPlayers(playerIds: string[]): Promise<ServerAction
   }
 }
 
-// Loads registered players from kratzer_tournament_registrations
 export async function loadRegisteredPlayers(): Promise<ServerActionResponse & { data?: SpieldatenbankEntry[] }> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
   if (!userId) {
     return { success: false, message: "Benutzer nicht authentifiziert." }
@@ -108,7 +99,6 @@ export async function loadRegisteredPlayers(): Promise<ServerActionResponse & { 
 
     if (error) throw error
 
-    // Map to SpieldatenbankEntry type for consistency
     const registeredPlayers: SpieldatenbankEntry[] = (data || []).map((reg) => ({
       id: reg.player_id,
       name: reg.player_name,
@@ -126,9 +116,8 @@ export async function loadRegisteredPlayers(): Promise<ServerActionResponse & { 
   }
 }
 
-// Clears all registered players
 export async function clearRegisteredPlayers(): Promise<ServerActionResponse> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
   if (!userId) {
     return { success: false, message: "Benutzer nicht authentifiziert." }
@@ -138,11 +127,9 @@ export async function clearRegisteredPlayers(): Promise<ServerActionResponse> {
     const { error } = await supabase
       .from("kratzer_tournament_registrations")
       .delete()
-      .neq("player_id", "00000000-0000-0000-0000-000000000000") // Delete all entries
+      .neq("player_id", "00000000-0000-0000-0000-000000000000")
 
     if (error) throw error
-
-    // No revalidatePath here, as this is for registration, not live tournament state
 
     return { success: true, message: "Alle registrierten Spieler gelöscht." }
   } catch (error: any) {
@@ -154,9 +141,8 @@ export async function clearRegisteredPlayers(): Promise<ServerActionResponse> {
   }
 }
 
-// Updates the paid status of a registered player
 export async function updatePlayerPaidStatus(playerId: string, paid: boolean): Promise<ServerActionResponse> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
   if (!userId) {
     return { success: false, message: "Benutzer nicht authentifiziert." }
@@ -166,8 +152,6 @@ export async function updatePlayerPaidStatus(playerId: string, paid: boolean): P
     const { error } = await supabase.from("kratzer_tournament_registrations").update({ paid }).eq("player_id", playerId)
 
     if (error) throw error
-
-    // No revalidatePath here, as this is for registration, not live tournament state
 
     return { success: true, message: "Bezahlstatus aktualisiert." }
   } catch (error: any) {
@@ -179,12 +163,11 @@ export async function updatePlayerPaidStatus(playerId: string, paid: boolean): P
   }
 }
 
-// Creates a new tournament entry in Supabase
 export async function createKratzerTournament(
   settings: TournamentSettings,
   initialPlayers: KratzerPlayer[],
 ): Promise<ServerActionResponse & { data?: { tournamentId: string } }> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
   if (!userId) {
     return { success: false, message: "Benutzer nicht authentifiziert." }
@@ -211,7 +194,6 @@ export async function createKratzerTournament(
 
     const tournamentId = tournament.id
 
-    // Insert initial players for this tournament instance
     const playersToInsert = initialPlayers.map((player) => ({
       kratzer_tournament_id: tournamentId,
       player_id: player.id,
@@ -225,7 +207,7 @@ export async function createKratzerTournament(
 
     if (playersInsertError) throw playersInsertError
 
-    revalidatePath("/live") // Revalidate the live page after creating a new tournament
+    revalidatePath("/live")
 
     return {
       success: true,
@@ -238,20 +220,17 @@ export async function createKratzerTournament(
   }
 }
 
-// Updates player data within a running tournament
 export async function updateKratzerTournamentPlayersData(
   tournamentId: string,
   playersToUpdate: KratzerPlayer[],
 ): Promise<ServerActionResponse> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
   if (!userId) {
     return { success: false, message: "Benutzer nicht authentifiziert." }
   }
 
   try {
-    // Filter out players that are not part of this tournament or user
-    // (Additional RLS policies should handle this on Supabase side)
     const updates = playersToUpdate.map((player) =>
       supabase
         .from("kratzer_tournament_players")
@@ -271,7 +250,7 @@ export async function updateKratzerTournamentPlayersData(
       if (result.error) throw result.error
     }
 
-    revalidatePath("/live") // Revalidate the live page after player data changes
+    revalidatePath("/live")
 
     return { success: true, message: "Spielerdaten erfolgreich aktualisiert." }
   } catch (error: any) {
@@ -280,13 +259,12 @@ export async function updateKratzerTournamentPlayersData(
   }
 }
 
-// Inserts a new round's board configuration
 export async function saveKratzerTournamentRound(
   tournamentId: string,
   roundNumber: number,
   boardsData: Board[],
 ): Promise<ServerActionResponse> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
   if (!userId) {
     return { success: false, message: "Benutzer nicht authentifiziert." }
@@ -296,12 +274,12 @@ export async function saveKratzerTournamentRound(
     const { error } = await supabase.from("kratzer_tournament_rounds").insert({
       kratzer_tournament_id: tournamentId,
       round_number: roundNumber,
-      boards_data: JSON.parse(JSON.stringify(boardsData)), // Deep copy to ensure no reactivity issues
+      boards_data: JSON.parse(JSON.stringify(boardsData)),
     })
 
     if (error) throw error
 
-    revalidatePath("/live") // Revalidate the live page after a new round is saved
+    revalidatePath("/live")
 
     return { success: true, message: "Runde erfolgreich gespeichert." }
   } catch (error: any) {
@@ -310,7 +288,6 @@ export async function saveKratzerTournamentRound(
   }
 }
 
-// Completes or cancels a tournament
 export async function updateKratzerTournamentStatus(
   tournamentId: string,
   status: "finished" | "cancelled",
@@ -318,7 +295,7 @@ export async function updateKratzerTournamentStatus(
   winnerName?: string,
   totalRounds?: number,
 ): Promise<ServerActionResponse> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
   if (!userId) {
     return { success: false, message: "Benutzer nicht authentifiziert." }
@@ -344,7 +321,7 @@ export async function updateKratzerTournamentStatus(
 
     if (error) throw error
 
-    revalidatePath("/live") // Revalidate the live page after tournament status changes
+    revalidatePath("/live")
 
     return {
       success: true,
@@ -359,9 +336,8 @@ export async function updateKratzerTournamentStatus(
   }
 }
 
-// Fetches an active tournament
 export async function getActiveKratzerTournament(): Promise<ServerActionResponse & { data?: any }> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
   if (!userId) {
     return { success: false, message: "Benutzer nicht authentifiziert." }
@@ -392,11 +368,10 @@ export async function getActiveKratzerTournament(): Promise<ServerActionResponse
   }
 }
 
-// Fetches the last round data for a given tournament
 export async function getLastKratzerTournamentRound(
   tournamentId: string,
 ): Promise<ServerActionResponse & { data?: any }> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
   if (!userId) {
     return { success: false, message: "Benutzer nicht authentifiziert." }
@@ -426,11 +401,10 @@ export async function getLastKratzerTournamentRound(
   }
 }
 
-// Fetches all players for a specific tournament instance
 export async function getKratzerTournamentPlayers(
   tournamentId: string,
 ): Promise<ServerActionResponse & { data?: KratzerPlayer[] }> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
   if (!userId) {
     return { success: false, message: "Benutzer nicht authentifiziert." }
@@ -474,9 +448,9 @@ export async function addTournamentResult(
   winnerId: string,
   winnerName: string,
   totalRounds: number,
-  playerResults: any[], // Array of player objects with rank, name, lives etc.
+  playerResults: any[],
 ): Promise<ServerActionResponse> {
-  const supabase = createServerSupabaseClient(cookies()) // Pass cookies() to the client creator
+  const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
   if (!userId) {
     return { success: false, message: "Benutzer nicht authentifiziert." }
@@ -488,12 +462,12 @@ export async function addTournamentResult(
       winner_id: winnerId,
       winner_name: winnerName,
       total_rounds: totalRounds,
-      results_data: playerResults, // Store detailed results as JSONB
+      results_data: playerResults,
     })
 
     if (error) throw error
 
-    revalidatePath("/live") // Revalidate the live page after results are added
+    revalidatePath("/live")
 
     return { success: true, message: "Turnierergebnisse erfolgreich gespeichert." }
   } catch (error: any) {
