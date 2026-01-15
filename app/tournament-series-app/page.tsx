@@ -683,6 +683,28 @@ export default function TournamentSeriesPage() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
       <Header />
+
+      <div className="container mx-auto px-4 pt-4 max-w-7xl">
+        <motion.div
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
+          className="mb-6"
+        >
+          <button
+            onClick={() => window.location.href = '/lion_table_halftime'}
+            className="w-full bg-gradient-to-r from-orange-500 via-red-600 to-orange-500 hover:from-orange-600 hover:via-red-700 hover:to-orange-600 text-white font-black text-lg sm:text-2xl py-4 sm:py-6 px-6 rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-orange-500/50 active:scale-95 border-4 border-yellow-400 relative overflow-hidden group"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/0 via-yellow-400/30 to-yellow-400/0 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <div className="relative flex items-center justify-center gap-3">
+              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 animate-pulse" />
+              <span className="drop-shadow-lg">ZUR HALBZEIT PUNKTETEILUNG</span>
+              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 animate-pulse" />
+            </div>
+          </button>
+        </motion.div>
+      </div>
+
       <motion.main
         variants={containerVariants}
         initial="hidden"
