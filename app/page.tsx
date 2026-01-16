@@ -207,7 +207,7 @@ export default function Home() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [showInstallButton, setShowInstallButton] = useState(false)
 
-  const buffaloCupNextDate = new Date("2026-01-07T19:00:00")
+  const buffaloCupNextDate = new Date("2026-01-22T19:00:00")
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -653,8 +653,8 @@ export default function Home() {
                   EMD XMAS Quiz-Adventskalender
                 </h2>
                 <p className="text-base sm:text-lg text-gray-700 mb-4">
-                  Kannst du die heutige Vereinsfrage lösen? Sammle Kronen, löse die Tagesaufgabe und sichere dir deinen Platz unter den Top-Fans.
-Bist du bereit?
+                  Kannst du die heutige Vereinsfrage lösen? Sammle Kronen, löse die Tagesaufgabe und sichere dir deinen
+                  Platz unter den Top-Fans. Bist du bereit?
                 </p>
                 <Button
                   size="lg"
@@ -792,7 +792,7 @@ Bist du bereit?
                   <div className="h-10 mb-1" />
                   <h2 className="text-lg sm:text-xl lg:text-3xl font-bold text-slate-300 mb-2">DART SERIEN CUP</h2>
                   <p className="text-base sm:text-lg lg:text-xl text-slate-200 mb-1">Nächstes Turnier</p>
-                  <p className="text-sm lg:text-base text-slate-300">07. Jänner 2026 • 19:00 Uhr</p>
+                  <p className="text-sm lg:text-base text-slate-300">22. Jänner 2026 • 19:00 Uhr</p>
                 </div>
 
                 <div className="flex justify-center mb-4 sm:mb-6">
@@ -827,9 +827,19 @@ Bist du bereit?
                     size="lg"
                     variant="outline"
                     className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl backdrop-blur-sm w-full sm:w-auto"
+                    onClick={() => (window.location.href = "/buffalo_steel_cup_tabelle")}
+                  >
+                    Wertung
+                    <Trophy className="w-4 h-4 ml-2" />
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl backdrop-blur-sm w-full sm:w-auto"
                     onClick={() => (window.location.href = "/buffalo-steel-cup")}
                   >
-                    Anmeldung folgt
+                    Regelwerk
+                    <Info className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
               </div>
@@ -1258,7 +1268,7 @@ Bist du bereit?
       <section className="bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-white"> 
+            <div className="text-white">
               {showInstallButton ? (
                 <>
                   <div className="flex items-center gap-3 mb-6">
