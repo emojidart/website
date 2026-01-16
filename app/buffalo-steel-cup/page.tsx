@@ -41,9 +41,9 @@ const pulseVariants = {
 export default function BuffaloSteelCupPage() {
   const spieltage = [
     { mittwoch: "Mi. 07. Jän. 2026 - 19:30 Uhr", samstag: "Sa. 10. Jän. 2026 - 19:00 Uhr" },
-    { mittwoch: "Mi. 14. Jän. 2026 - 19:30 Uhr", samstag: "Sa. 17. Jän. 2026 - 19:00 Uhr" },
-    { mittwoch: "Mi. 21. Jän. 2026 - 19:30 Uhr", samstag: "Sa. 24. Jän. 2026 - 19:00 Uhr" },
-    { mittwoch: "Mi. 28. Jän. 2026 - 19:30 Uhr", samstag: "Sa. 31. Jän. 2026 - 19:00 Uhr" },
+    { mittwoch: "Mi. 14. Jän. 2026 - 19:30 Uhr", samstag: "Do. 15. Jän. 2026 - 19:30 Uhr" },
+    { mittwoch: "Mi. 21. Jän. 2026 - 19:30 Uhr", samstag: "Do. 22. Jän. 2026 - 19:30 Uhr" },
+    { mittwoch: "Mi. 28. Jän. 2026 - 19:30 Uhr", samstag: "Do. 29. Jän. 2026 - 19:30 Uhr" },
     { mittwoch: "Mi. 04. Feb. 2026 - 19:30 Uhr", samstag: "Sa. 07. Feb. 2026 - 19:00 Uhr" },
   ]
 
