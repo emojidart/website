@@ -25,12 +25,12 @@ import {
   Zap,
   CheckCircle2,
   Download,
-  Gift,
 } from "lucide-react"
 import Image from "next/image"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { PushNotificationDialog } from "@/components/push-notification-dialog"
+import { Confetti, CarnivalBanner } from "@/components/confetti"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -594,7 +594,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Confetti />
       <Header />
+      <CarnivalBanner />
 
       <PushNotificationDialog />
 
@@ -638,37 +640,6 @@ export default function Home() {
       )}
 
       <section className="container mx-auto px-4 py-8 lg:py-12 overflow-x-hidden">
-        <div className="mb-12 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl border-2 border-emerald-200 shadow-lg overflow-hidden">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                <Gift className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
-              </div>
-              <div className="flex-1">
-                <div className="inline-flex items-center gap-2 bg-emerald-600 text-white px-3 py-1 rounded-full font-bold text-xs mb-2 mb-3">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>DEZEMBER 2025</span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 mb-2">
-                  EMD XMAS Quiz-Adventskalender
-                </h2>
-                <p className="text-base sm:text-lg text-gray-700 mb-4">
-                  Kannst du die heutige Vereinsfrage lösen? Sammle Kronen, löse die Tagesaufgabe und sichere dir deinen
-                  Platz unter den Top-Fans. Bist du bereit?
-                </p>
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold text-sm sm:text-base px-6 sm:px-8 py-4 sm:py-5 shadow-xl hover:shadow-2xl transition-all duration-300 w-full sm:w-auto"
-                  onClick={() => (window.location.href = "/advent")}
-                >
-                  Zum Adventskalender
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white overflow-hidden rounded-2xl shadow-2xl">
             <div className="absolute inset-0 bg-[url('/stadium-crowd-atmosphere.jpg')] bg-cover bg-center opacity-10" />

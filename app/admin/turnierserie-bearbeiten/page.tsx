@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { Trash2, AlertTriangle, Search, ChevronDown, ChevronUp, RefreshCw, ArrowRightLeft } from "lucide-react"
+import { Trash2, AlertTriangle, Search, ChevronDown, ChevronUp, RefreshCw, ArrowRightLeft, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +17,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useAuth } from "@/hooks/use-auth"
+import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 
 interface TournamentEntry {
   id: string
@@ -45,7 +50,11 @@ type ActionTarget = {
   entries?: TournamentEntry[]
 }
 
+const Loading = () => null
+
 export default function AdminTurnierSeriePage() {
+  const { session, isAdmin, adminLoading } = useAuth()
+  const searchParams = useSearchParams()
   const [entries, setEntries] = useState<TournamentEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -60,8 +69,10 @@ export default function AdminTurnierSeriePage() {
   )
 
   useEffect(() => {
-    fetchEntries()
-  }, [])
+    if (session && isAdmin) {
+      fetchEntries()
+    }
+  }, [session, isAdmin])
 
   const fetchEntries = async () => {
     setLoading(true)
@@ -212,6 +223,47 @@ export default function AdminTurnierSeriePage() {
     }
   }
 
+  // Admin Loading State
+  if (adminLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Berechtigungen werden geprüft...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Access Denied - Not logged in or not admin
+  if (!session || !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <Card className="max-w-md w-full">
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <XCircle className="h-8 w-8 text-red-600" />
+                </div>
+                <CardTitle className="text-xl text-gray-900">Zugriff verweigert</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <p className="text-gray-600 mb-6">Sie haben keine Admin-Berechtigung für diesen Bereich.</p>
+                <Link href="/admin">
+                  <Button className="w-full">Zurück zum Admin-Dashboard</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Data Loading State
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 p-4 md:p-8">
@@ -232,6 +284,13 @@ export default function AdminTurnierSeriePage() {
         <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
+              <div className="mb-2">
+                <Link href="/admin">
+                  <Button variant="secondary" size="sm" className="text-gray-700">
+                    ← Zurück zum Admin-Dashboard
+                  </Button>
+                </Link>
+              </div>
               <h1 className="text-2xl md:text-3xl font-bold">Admin: Turnierserie bereinigen</h1>
               <p className="text-red-100 mt-1">Turniere löschen oder zum Buffalo Steel Cup verschieben</p>
             </div>
@@ -451,75 +510,67 @@ export default function AdminTurnierSeriePage() {
       </div>
 
       {/* Action Confirmation Dialog */}
-      <AlertDialog open={!!actionTarget} onOpenChange={() => setActionTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle
-              className={`flex items-center gap-2 ${actionTarget?.action === "move" ? "text-blue-600" : "text-red-600"}`}
-            >
-              {actionTarget?.action === "move" ? (
-                <>
-                  <ArrowRightLeft className="h-5 w-5" />
-                  Turnier verschieben?
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="h-5 w-5" />
-                  {actionTarget?.type === "tournament" ? "Turnier löschen?" : "Eintrag löschen?"}
-                </>
-              )}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {actionTarget?.action === "move" ? (
-                <>
-                  Möchtest du das Turnier <strong>{actionTarget?.name}</strong> mit{" "}
-                  <strong>{actionTarget?.entries?.length} Spielern</strong> zum <strong>Buffalo Steel Cup</strong>{" "}
-                  verschieben? Die Einträge werden aus der Lion Cup Tabelle entfernt und in die Buffalo Steel Cup
-                  Tabelle eingefügt.
-                </>
-              ) : actionTarget?.type === "tournament" ? (
-                <>
-                  Bist du sicher, dass du das komplette Turnier <strong>{actionTarget?.name}</strong> und alle
-                  zugehörigen Spieler-Einträge löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden!
-                </>
-              ) : (
-                <>
-                  Bist du sicher, dass du den Eintrag <strong>{actionTarget?.name}</strong> löschen möchtest? Diese
-                  Aktion kann nicht rückgängig gemacht werden!
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={processing}>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (actionTarget?.action === "move" && actionTarget.entries) {
-                  handleMoveTournament(actionTarget.id, actionTarget.entries)
-                } else if (actionTarget?.action === "delete") {
-                  if (actionTarget.type === "tournament") {
+      <Suspense fallback={<Loading />}>
+        <AlertDialog open={!!actionTarget} onOpenChange={() => setActionTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle
+                className={`flex items-center gap-2 ${actionTarget?.action === "move" ? "text-blue-600" : "text-red-600"}`}
+              >
+                {actionTarget?.action === "move" ? (
+                  <>
+                    <ArrowRightLeft className="h-5 w-5" />
+                    Turnier verschieben?
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="h-5 w-5" />
+                    {actionTarget?.type === "tournament" ? "Turnier löschen?" : "Eintrag löschen?"}
+                  </>
+                )}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {actionTarget?.action === "move" ? (
+                  <>
+                    Möchtest du das Turnier <strong>{actionTarget?.name}</strong> mit{" "}
+                    <strong>{actionTarget?.entries?.length} Spielern</strong> zum <strong>Buffalo Steel Cup</strong>{" "}
+                    verschieben? Die Einträge werden aus der Lion Cup Tabelle entfernt und in die Buffalo Steel Cup
+                    Tabelle eingefügt.
+                  </>
+                ) : actionTarget?.type === "tournament" ? (
+                  <>
+                    Bist du sicher, dass du das komplette Turnier <strong>{actionTarget?.name}</strong> und alle
+                    zugehörigen Spieler-Einträge löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden!
+                  </>
+                ) : (
+                  <>
+                    Bist du sicher, dass du den Eintrag <strong>{actionTarget?.name}</strong> löschen möchtest? Diese
+                    Aktion kann nicht rückgängig gemacht werden!
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={processing}>Abbrechen</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (actionTarget?.action === "move" && actionTarget.entries) {
+                    handleMoveTournament(actionTarget.id, actionTarget.entries)
+                  } else if (actionTarget?.type === "tournament") {
                     handleDeleteTournament(actionTarget.id)
-                  } else {
+                  } else if (actionTarget) {
                     handleDeleteEntry(actionTarget.id)
                   }
-                }
-              }}
-              disabled={processing}
-              className={
-                actionTarget?.action === "move" ? "bg-blue-600 hover:bg-blue-700" : "bg-red-600 hover:bg-red-700"
-              }
-            >
-              {processing
-                ? actionTarget?.action === "move"
-                  ? "Wird verschoben..."
-                  : "Wird gelöscht..."
-                : actionTarget?.action === "move"
-                  ? "Verschieben"
-                  : "Löschen"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                }}
+                disabled={processing}
+                className={actionTarget?.action === "move" ? "bg-blue-600 hover:bg-blue-700" : "bg-red-600 hover:bg-red-700"}
+              >
+                {processing ? "Wird ausgeführt..." : actionTarget?.action === "move" ? "Verschieben" : "Löschen"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </Suspense>
     </div>
   )
 }

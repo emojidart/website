@@ -414,9 +414,9 @@ export default function BuffaloSteelCupPage() {
           legs_won: row.total_legs_won,
           legs_lost: row.total_legs_lost,
           tournaments_played: row.tournaments_played,
-          total_matches_played: row.total_matches_played,
-          total_matches_won: row.total_matches_won,
-          total_matches_lost: row.total_matches_lost,
+          total_matches_played: row.total_matches_played || 0,
+          total_matches_won: row.total_matches_won || 0,
+          total_matches_lost: row.total_matches_lost || 0,
           profile_picture_url: profilePictureMap.get(row.player_name.toLowerCase()) || undefined,
         })) || []
 
@@ -589,12 +589,12 @@ export default function BuffaloSteelCupPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-4 px-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 px-4">
           <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
             <div className="flex items-center gap-3">
               <Users className="w-8 h-8 text-blue-600 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-gray-600 text-xs sm:text-sm">Teilnehmer</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-600 text-xs sm:text-sm truncate">Teilnehmer</p>
                 <p className="text-xl sm:text-2xl font-bold text-gray-900">{standings.length}</p>
               </div>
             </div>
@@ -603,8 +603,8 @@ export default function BuffaloSteelCupPage() {
           <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
             <div className="flex items-center gap-3">
               <Trophy className="w-8 h-8 text-yellow-600 flex-shrink-0" />
-              <div className="min-w-0 overflow-hidden">
-                <p className="text-gray-600 text-xs sm:text-sm">Fuehrender</p>
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <p className="text-gray-600 text-xs sm:text-sm truncate">Führender</p>
                 <p className="text-base sm:text-xl font-bold text-gray-900 truncate">
                   {standings[0]?.player_name || "-"}
                 </p>
@@ -612,11 +612,11 @@ export default function BuffaloSteelCupPage() {
             </div>
           </motion.div>
 
-          <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+          <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3">
               <TrendingUp className="w-8 h-8 text-green-600 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-gray-600 text-xs sm:text-sm">Hoechste Punktzahl</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-600 text-xs sm:text-sm truncate">Höchste Punktzahl</p>
                 <p className="text-xl sm:text-2xl font-bold text-gray-900">
                   {standings[0] ? standings[0].placement_points + standings[0].legs_won : 0}
                 </p>
