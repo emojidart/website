@@ -13,14 +13,12 @@ import Image from "next/image"
 import type { User } from "@supabase/supabase-js"
 
 interface Player {
-  id: string
-  name: string
-  points: number
-  legs: number
-  participations: number
+  player_id: string
+  player_name: string
+  total_points: number
+  bonus_points: number
+  tournaments_played: number
   profile_picture_url?: string
-  user_id: string
-  table_type: 'edart' | 'steeldart'
 }
 
 interface PlayerManagementProps {
@@ -38,7 +36,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
   const [editForm, setEditForm] = useState({
     name: "",
     points: 0,
-    legs: 0,
+    bonusPoints: 0,
     participations: 0
   })
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null)
@@ -51,30 +49,40 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
   const fetchAllPlayers = async () => {
     setLoading(true)
     try {
-      // E-Dart Spieler laden
-      const { data: edartPlayers, error: edartError } = await supabase
-        .from("edart_players")
-        .select("*")
-        .order("name")
+      // 1. Hole alle Spieler mit Punkten aus dem aggregierten View
+      const { data: aggregatedData, error: aggError } = await supabase
+        .from("tournament_series_aggregated")
+        .select("player_name, total_points, bonus_points, tournaments_played")
+        .order("total_points", { ascending: false })
 
-      if (edartError) throw edartError
+      if (aggError) throw aggError
 
-      // Steel Dart Spieler laden
-      const { data: steelPlayers, error: steelError } = await supabase
-        .from("steel_dart_players")
-        .select("*")
-        .order("name")
+      // 2. Hole alle Spieler mit ihren IDs aus der spieldatenbank Tabelle
+      const { data: playersData, error: playersError } = await supabase
+        .from("spieldatenbank")
+        .select("id, name, profile_picture_url")
 
-      if (steelError) throw steelError
+      if (playersError) throw playersError
 
-      // Spieler kombinieren und Typ hinzufügen
-      const allPlayers: Player[] = [
-        ...(edartPlayers || []).map(p => ({ ...p, table_type: 'edart' as const })),
-        ...(steelPlayers || []).map(p => ({ ...p, table_type: 'steeldart' as const }))
-      ]
+      // 3. Kombiniere die Daten
+      const combinedPlayers: Player[] = (aggregatedData || []).map(aggPlayer => {
+        // Finde die player_id und profile_picture_url anhand des Namens
+        const playerRecord = playersData?.find(p =>
+          p.name?.trim().toLowerCase() === aggPlayer.player_name?.trim().toLowerCase()
+        )
 
-      setPlayers(allPlayers)
-      setFilteredPlayers(allPlayers)
+        return {
+          player_id: playerRecord?.id || "",
+          player_name: aggPlayer.player_name,
+          total_points: aggPlayer.total_points || 0,
+          bonus_points: aggPlayer.bonus_points || 0,
+          tournaments_played: aggPlayer.tournaments_played || 0,
+          profile_picture_url: playerRecord?.profile_picture_url || undefined
+        }
+      })
+
+      setPlayers(combinedPlayers)
+      setFilteredPlayers(combinedPlayers)
     } catch (error: any) {
       setMessage(`Fehler beim Laden der Spieler: ${error.message}`)
       setMessageType("error")
@@ -89,7 +97,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
       setFilteredPlayers(players)
     } else {
       const filtered = players.filter(player =>
-        player.name.toLowerCase().includes(searchTerm.toLowerCase())
+        player.player_name.toLowerCase().includes(searchTerm.toLowerCase())
       )
       setFilteredPlayers(filtered)
     }
@@ -106,10 +114,10 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
   const handleEditPlayer = (player: Player) => {
     setEditingPlayer(player)
     setEditForm({
-      name: player.name,
-      points: player.points,
-      legs: player.legs,
-      participations: player.participations
+      name: player.player_name,
+      points: player.total_points,
+      bonusPoints: player.bonus_points,
+      participations: player.tournaments_played
     })
     setProfilePictureFile(null)
     setProfilePicturePreview(player.profile_picture_url || null)
@@ -129,7 +137,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
 
   // Spieler aktualisieren
   const handleUpdatePlayer = async () => {
-    if (!editingPlayer || !user) return
+    if (!editingPlayer || !user || !editingPlayer.player_id) return
 
     setUploadingImage(true)
     setMessage("Spieler wird aktualisiert...")
@@ -158,19 +166,14 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
         profilePictureUrl = publicUrlData.publicUrl
       }
 
-      // Spieler in der entsprechenden Tabelle aktualisieren
-      const tableName = editingPlayer.table_type === 'edart' ? 'edart_players' : 'steel_dart_players'
-      
+      // Spieler in der spieldatenbank Tabelle aktualisieren
       const { error: updateError } = await supabase
-        .from(tableName)
+        .from("spieldatenbank")
         .update({
           name: editForm.name,
-          points: editForm.points,
-          legs: editForm.legs,
-          participations: editForm.participations,
           profile_picture_url: profilePictureUrl
         })
-        .eq("id", editingPlayer.id)
+        .eq("id", editingPlayer.player_id)
 
       if (updateError) throw updateError
 
@@ -189,18 +192,16 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
 
   // Spieler löschen
   const handleDeletePlayer = async (player: Player) => {
-    if (!user) return
+    if (!user || !player.player_id) return
 
     setMessage("Spieler wird gelöscht...")
     setMessageType("info")
 
     try {
-      const tableName = player.table_type === 'edart' ? 'edart_players' : 'steel_dart_players'
-      
       const { error: deleteError } = await supabase
-        .from(tableName)
+        .from("spieldatenbank")
         .delete()
-        .eq("id", player.id)
+        .eq("id", player.player_id)
 
       if (deleteError) throw deleteError
 
@@ -307,7 +308,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
               ) : (
                 filteredPlayers.map((player) => (
                   <div
-                    key={`${player.table_type}-${player.id}`}
+                    key={player.player_id || player.player_name}
                     className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200"
                   >
                     <div className="flex items-center justify-between">
@@ -316,7 +317,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                         <div className="relative w-12 h-12 flex-shrink-0 rounded-full overflow-hidden border border-gray-200">
                           <Image
                             src={player.profile_picture_url || "/placeholder.svg?height=48&width=48&query=player"}
-                            alt={`${player.name} Profilbild`}
+                            alt={`${player.player_name} Profilbild`}
                             fill
                             style={{ objectFit: "cover" }}
                             className="rounded-full"
@@ -326,22 +327,16 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                         {/* Spielerinfo */}
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="font-semibold text-gray-900">{player.name}</h3>
-                            <Badge
-                              variant={player.table_type === 'edart' ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {player.table_type === 'edart' ? (
-                                <><Target className="h-3 w-3 mr-1" />E-Dart</>
-                              ) : (
-                                <><Trophy className="h-3 w-3 mr-1" />Steel Dart</>
-                              )}
+                            <h3 className="font-semibold text-gray-900">{player.player_name}</h3>
+                            <Badge variant="default" className="text-xs">
+                              <Trophy className="h-3 w-3 mr-1" />
+                              Lion Cup
                             </Badge>
                           </div>
                           <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <span>Punkte: <strong>{player.points}</strong></span>
-                            <span>Legs: <strong>{player.legs}</strong></span>
-                            <span>Teilnahmen: <strong>{player.participations}</strong></span>
+                            <span>Punkte: <strong>{player.total_points}</strong></span>
+                            <span>Bonus: <strong>{player.bonus_points}</strong></span>
+                            <span>Antritte: <strong>{player.tournaments_played}</strong></span>
                           </div>
                         </div>
                       </div>
@@ -397,34 +392,42 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                                 </div>
                               </div>
 
-                              {/* Statistiken */}
-                              <div className="grid grid-cols-3 gap-3">
-                                <div className="space-y-2">
-                                  <label className="text-sm font-medium text-gray-700">Punkte</label>
-                                  <Input
-                                    type="number"
-                                    value={editForm.points}
-                                    onChange={(e) => setEditForm({ ...editForm, points: Number(e.target.value) })}
-                                    className="h-10"
-                                  />
+                              {/* Statistiken (read-only) */}
+                              <div className="space-y-3">
+                                <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                  <strong>Hinweis:</strong> Punkte, Bonus und Antritte werden aus Turnierdaten berechnet und können nicht direkt bearbeitet werden.
                                 </div>
-                                <div className="space-y-2">
-                                  <label className="text-sm font-medium text-gray-700">Legs</label>
-                                  <Input
-                                    type="number"
-                                    value={editForm.legs}
-                                    onChange={(e) => setEditForm({ ...editForm, legs: Number(e.target.value) })}
-                                    className="h-10"
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <label className="text-sm font-medium text-gray-700">Teilnahmen</label>
-                                  <Input
-                                    type="number"
-                                    value={editForm.participations}
-                                    onChange={(e) => setEditForm({ ...editForm, participations: Number(e.target.value) })}
-                                    className="h-10"
-                                  />
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-700">Punkte</label>
+                                    <Input
+                                      type="number"
+                                      value={editForm.points}
+                                      readOnly
+                                      disabled
+                                      className="h-10 bg-gray-50"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-700">Bonus</label>
+                                    <Input
+                                      type="number"
+                                      value={editForm.bonusPoints}
+                                      readOnly
+                                      disabled
+                                      className="h-10 bg-gray-50"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-700">Antritte</label>
+                                    <Input
+                                      type="number"
+                                      value={editForm.participations}
+                                      readOnly
+                                      disabled
+                                      className="h-10 bg-gray-50"
+                                    />
+                                  </div>
                                 </div>
                               </div>
 
@@ -474,7 +477,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                             <AlertDialogHeader>
                               <AlertDialogTitle>Spieler löschen</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Sind Sie sicher, dass Sie <strong>{player.name}</strong> löschen möchten? 
+                                Sind Sie sicher, dass Sie <strong>{player.player_name}</strong> löschen möchten?
                                 Diese Aktion kann nicht rückgängig gemacht werden.
                               </AlertDialogDescription>
                             </AlertDialogHeader>

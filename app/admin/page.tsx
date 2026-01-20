@@ -33,6 +33,7 @@ import { PlayerRegistration } from "@/components/player-registration"
 import { PlayerManagement } from "@/components/player-management"
 import { AdminPanel as ResultEntry } from "@/components/admin-panel"
 import { ClubPlayerTeamManagement } from "@/components/club-player-team-management"
+import SeasonSettingsPage from "@/app/admin/season_settings/page"
 import { PlayerRecruitmentForm } from "@/components/player-recruitment-form"
 import { PlayerRecruitmentList } from "@/components/player-recruitment-list"
 import { PlayerApplicationsList } from "@/components/player-applications-list"
@@ -82,7 +83,8 @@ export default function AdminPage() {
     | "events"
     | "advent-quiz"
     | "campus-registrations"
-    | "credit-loader" // Added credit-loader view
+    | "credit-loader"
+    | "lion-cup-settings"
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -372,6 +374,7 @@ export default function AdminPage() {
                   {currentView === "advent-quiz" && "Adventskalender Auswertung"}
                   {currentView === "campus-registrations" && "Campus-Registrierungen"}
                   {currentView === "credit-loader" && "Credit-Loader"}
+                  {currentView === "lion-cup-settings" && "Lion Cup Settings"}
                 </span>
               </>
             )}
@@ -431,7 +434,9 @@ export default function AdminPage() {
                                                               ? "Campus-Registrierungen"
                                                               : currentView === "credit-loader"
                                                                 ? "Credit-Loader"
-                                                                : "Admin-Zugang"}
+                                                                : currentView === "lion-cup-settings"
+                                                                  ? "Lion Cup Settings"
+                                                                  : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
                 {session && currentView === "dashboard"
@@ -774,11 +779,15 @@ export default function AdminPage() {
                         </div>
                       </Button>
 
-                      <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
+                      <Button
+                        onClick={() => setCurrentView("lion-cup-settings")}
+                        variant="outline"
+                        className="w-full justify-start bg-transparent h-auto p-4"
+                      >
                         <div className="flex flex-col items-start space-y-1">
                           <div className="flex items-center space-x-2">
                             <Settings className="h-4 w-4" />
-                            <span className="font-medium">Erweiterte Spielereinstellungen</span>
+                            <span className="font-medium">Lion Cup Settings</span>
                           </div>
                           <span className="text-xs text-gray-500">EMD - LION CUP</span>
                         </div>
@@ -879,6 +888,7 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
+            {currentView === "lion-cup-settings" && <SeasonSettingsPage />}
           </div>
         )}
 

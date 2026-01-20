@@ -37,6 +37,16 @@ interface SeriesStanding {
   total_matches_won: number
   total_matches_lost: number
   profile_picture_url?: string
+  // Original values (before halving)
+  original_placement_points?: number
+  original_bonus_points?: number
+  original_legs_won?: number
+  original_legs_lost?: number
+}
+
+interface SeasonSettings {
+  halving_active: boolean
+  halving_date: string | null
 }
 
 interface NemesisData {
@@ -179,18 +189,24 @@ function MobilePlayerCard({
   player,
   position,
   nemesis,
+  halvingActive = false,
 }: {
   player: SeriesStanding
   position: number
   nemesis?: NemesisData
+  halvingActive?: boolean
 }) {
   const isTopThree = position <= 3
   const calculatedTotalPoints = player.placement_points + player.legs_won + player.bonus_points
+  const originalTotalPoints = (player.original_placement_points || 0) + (player.original_legs_won || 0) + (player.original_bonus_points || 0)
   const winRate =
     player.total_matches_played > 0
       ? ((player.total_matches_won / player.total_matches_played) * 100).toFixed(1)
       : "0.0"
   const legDifference = player.legs_won - player.legs_lost
+  
+  // Check if there's a difference between original and current values (halving applied)
+  const hasHalving = halvingActive && originalTotalPoints !== calculatedTotalPoints
 
   return (
     <motion.div
@@ -236,7 +252,14 @@ function MobilePlayerCard({
         {/* Main Score */}
         <div className="text-right flex-shrink-0">
           <div className="flex items-center gap-1">
-            <span className="text-xl sm:text-2xl font-bold text-yellow-600">{calculatedTotalPoints}</span>
+            {hasHalving ? (
+              <div className="flex flex-col items-end">
+                <span className="text-xs text-gray-400 line-through">{originalTotalPoints}</span>
+                <span className="text-xl sm:text-2xl font-bold text-yellow-600">{calculatedTotalPoints}</span>
+              </div>
+            ) : (
+              <span className="text-xl sm:text-2xl font-bold text-yellow-600">{calculatedTotalPoints}</span>
+            )}
             <Trophy className="h-4 w-4 text-yellow-500" />
           </div>
         </div>
@@ -246,19 +269,47 @@ function MobilePlayerCard({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
         <div className="bg-blue-50 rounded-lg p-2 text-center">
           <div className="text-xs text-blue-600 font-medium">Punkte</div>
-          <div className="text-sm font-bold text-blue-800">{player.placement_points}</div>
+          {hasHalving && player.original_placement_points !== player.placement_points ? (
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-xs text-gray-400 line-through">{player.original_placement_points}</span>
+              <span className="text-sm font-bold text-blue-800">{player.placement_points}</span>
+            </div>
+          ) : (
+            <div className="text-sm font-bold text-blue-800">{player.placement_points}</div>
+          )}
         </div>
         <div className="bg-green-50 rounded-lg p-2 text-center">
           <div className="text-xs text-green-600 font-medium">Legs W</div>
-          <div className="text-sm font-bold text-green-800">{player.legs_won}</div>
+          {hasHalving && player.original_legs_won !== player.legs_won ? (
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-xs text-gray-400 line-through">{player.original_legs_won}</span>
+              <span className="text-sm font-bold text-green-800">{player.legs_won}</span>
+            </div>
+          ) : (
+            <div className="text-sm font-bold text-green-800">{player.legs_won}</div>
+          )}
         </div>
         <div className="bg-red-50 rounded-lg p-2 text-center">
           <div className="text-xs text-red-600 font-medium">Legs L</div>
-          <div className="text-sm font-bold text-red-800">{player.legs_lost}</div>
+          {hasHalving && player.original_legs_lost !== player.legs_lost ? (
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-xs text-gray-400 line-through">{player.original_legs_lost}</span>
+              <span className="text-sm font-bold text-red-800">{player.legs_lost}</span>
+            </div>
+          ) : (
+            <div className="text-sm font-bold text-red-800">{player.legs_lost}</div>
+          )}
         </div>
         <div className="bg-yellow-50 rounded-lg p-2 text-center">
           <div className="text-xs text-yellow-600 font-medium">Bonus</div>
-          <div className="text-sm font-bold text-yellow-800">{player.bonus_points}</div>
+          {hasHalving && player.original_bonus_points !== player.bonus_points ? (
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-xs text-gray-400 line-through">{player.original_bonus_points}</span>
+              <span className="text-sm font-bold text-yellow-800">{player.bonus_points}</span>
+            </div>
+          ) : (
+            <div className="text-sm font-bold text-yellow-800">{player.bonus_points}</div>
+          )}
         </div>
       </div>
 
@@ -401,12 +452,43 @@ export default function TournamentSeriesPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null)
   const [nemesisData, setNemesisData] = useState<Map<string, NemesisData>>(new Map())
+  const [seasonSettings, setSeasonSettings] = useState<SeasonSettings>({
+    halving_active: false,
+    halving_date: null,
+  })
+
+  const fetchSeasonSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("season_settings")
+        .select("halving_active, halving_date")
+        .single()
+
+      if (error) throw error
+
+      if (data) {
+        setSeasonSettings({
+          halving_active: data.halving_active || false,
+          halving_date: data.halving_date || null,
+        })
+      }
+    } catch (error) {
+      console.error("Error fetching season settings:", error)
+      // Keep default settings on error
+    }
+  }
 
   useEffect(() => {
-    fetchStandings()
-    fetchTournaments()
-    fetchNemesisData()
+    fetchSeasonSettings()
   }, [])
+
+  useEffect(() => {
+    if (seasonSettings.halving_active !== undefined) {
+      fetchStandings()
+      fetchTournaments()
+      fetchNemesisData()
+    }
+  }, [seasonSettings])
 
   const fetchNemesisData = async () => {
     try {
@@ -460,13 +542,12 @@ export default function TournamentSeriesPage() {
 
   const fetchStandings = async () => {
     try {
-      const { data, error } = await supabase
-        .from("tournament_series_aggregated")
-        .select(
-          "player_name, placement_points, bonus_points, total_legs_won, total_legs_lost, tournaments_played, total_matches_played, total_matches_won, total_matches_lost",
-        )
+      // Fetch individual tournament entries to calculate halving properly
+      const { data: tournamentEntries, error: entriesError } = await supabase
+        .from("tournament_series_standings")
+        .select("*")
 
-      if (error) throw error
+      if (entriesError) throw entriesError
 
       const { data: profilePictures, error: profileError } = await supabase
         .from("spieldatenbank")
@@ -483,21 +564,77 @@ export default function TournamentSeriesPage() {
         }
       })
 
-      const mappedData =
-        data?.map((row: any) => ({
-          player_name: row.player_name,
-          total_points: row.placement_points + row.total_legs_won + row.bonus_points,
-          placement_points: row.placement_points,
-          legs_points: row.total_legs_won,
-          bonus_points: row.bonus_points,
-          legs_won: row.total_legs_won,
-          legs_lost: row.total_legs_lost,
-          tournaments_played: row.tournaments_played,
-          total_matches_played: row.total_matches_played,
-          total_matches_won: row.total_matches_won,
-          total_matches_lost: row.total_matches_lost,
-          profile_picture_url: profilePictureMap.get(row.player_name.toLowerCase()) || undefined,
-        })) || []
+      // Aggregate player stats with halving logic
+      const playerStats = new Map<string, any>()
+
+      tournamentEntries?.forEach((entry: any) => {
+        const playerName = entry.player_name
+
+        if (!playerStats.has(playerName)) {
+          playerStats.set(playerName, {
+            player_name: playerName,
+            placement_points: 0,
+            bonus_points: 0,
+            legs_won: 0,
+            legs_lost: 0,
+            tournaments_played: 0,
+            total_matches_played: 0,
+            total_matches_won: 0,
+            total_matches_lost: 0,
+            // Original values (before halving)
+            original_placement_points: 0,
+            original_bonus_points: 0,
+            original_legs_won: 0,
+            original_legs_lost: 0,
+          })
+        }
+
+        const stats = playerStats.get(playerName)
+
+        // Check if this tournament is before the halving date
+        const halvingMultiplier =
+          seasonSettings.halving_active &&
+          seasonSettings.halving_date &&
+          new Date(entry.tournament_date).getTime() < new Date(seasonSettings.halving_date).getTime()
+            ? 0.5
+            : 1
+
+        // Add to original values (always full)
+        stats.original_placement_points += entry.placement_points || 0
+        stats.original_bonus_points += entry.bonus_points || 0
+        stats.original_legs_won += entry.legs_won || 0
+        stats.original_legs_lost += entry.legs_lost || 0
+
+        // Add to current values (with halving if applicable)
+        stats.placement_points += (entry.placement_points || 0) * halvingMultiplier
+        stats.bonus_points += (entry.bonus_points || 0) * halvingMultiplier
+        stats.legs_won += (entry.legs_won || 0) * halvingMultiplier
+        stats.legs_lost += (entry.legs_lost || 0) * halvingMultiplier
+        stats.tournaments_played += 1
+        stats.total_matches_played += entry.matches_played || 0
+        stats.total_matches_won += entry.matches_won || 0
+        stats.total_matches_lost += entry.matches_lost || 0
+      })
+
+      const mappedData = Array.from(playerStats.values()).map((stats) => ({
+        player_name: stats.player_name,
+        total_points: stats.placement_points + stats.legs_won + stats.bonus_points,
+        placement_points: stats.placement_points,
+        legs_points: stats.legs_won,
+        bonus_points: stats.bonus_points,
+        legs_won: stats.legs_won,
+        legs_lost: stats.legs_lost,
+        tournaments_played: stats.tournaments_played,
+        total_matches_played: stats.total_matches_played,
+        total_matches_won: stats.total_matches_won,
+        total_matches_lost: stats.total_matches_lost,
+        profile_picture_url: profilePictureMap.get(stats.player_name.toLowerCase()) || undefined,
+        // Original values (before halving)
+        original_placement_points: stats.original_placement_points,
+        original_bonus_points: stats.original_bonus_points,
+        original_legs_won: stats.original_legs_won,
+        original_legs_lost: stats.original_legs_lost,
+      }))
 
       mappedData.sort((a, b) => {
         const totalA = a.placement_points + a.legs_won + a.bonus_points
@@ -683,27 +820,6 @@ export default function TournamentSeriesPage() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
       <Header />
-
-      <div className="container mx-auto px-4 pt-4 max-w-7xl">
-        <motion.div
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-          className="mb-6"
-        >
-          <button
-            onClick={() => window.location.href = '/lion_table_halftime'}
-            className="w-full bg-gradient-to-r from-orange-500 via-red-600 to-orange-500 hover:from-orange-600 hover:via-red-700 hover:to-orange-600 text-white font-black text-lg sm:text-2xl py-4 sm:py-6 px-6 rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-orange-500/50 active:scale-95 border-4 border-yellow-400 relative overflow-hidden group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/0 via-yellow-400/30 to-yellow-400/0 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-            <div className="relative flex items-center justify-center gap-3">
-              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 animate-pulse" />
-              <span className="drop-shadow-lg">ZUR HALBZEIT PUNKTETEILUNG</span>
-              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 animate-pulse" />
-            </div>
-          </button>
-        </motion.div>
-      </div>
 
       <motion.main
         variants={containerVariants}
@@ -1279,6 +1395,17 @@ export default function TournamentSeriesPage() {
                 </div>
               </div>
 
+              {seasonSettings.halving_active && (
+                <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-200 p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 text-orange-800">
+                    <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                    <span className="text-xs sm:text-sm font-medium">
+                      Punkteteilung aktiv! <span className="text-gray-400 line-through">Durchgestrichen</span> = Originalpunkte, <span className="font-bold">Fett</span> = Aktuelle Punkte nach Halbierung.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
                 {filteredPlayers.length > 0 ? (
                   filteredPlayers.map((player, index) => (
@@ -1287,6 +1414,7 @@ export default function TournamentSeriesPage() {
                       player={player}
                       position={standings.findIndex((s) => s.player_name === player.player_name) + 1}
                       nemesis={nemesisData.get(player.player_name)}
+                      halvingActive={seasonSettings.halving_active}
                     />
                   ))
                 ) : (
