@@ -207,7 +207,7 @@ export default function Home() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [showInstallButton, setShowInstallButton] = useState(false)
 
-  const buffaloCupNextDate = new Date("2026-01-22T19:30:00")
+  const buffaloCupNextDate = new Date("2026-01-21T19:30:00")
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -763,7 +763,7 @@ export default function Home() {
                   <div className="h-10 mb-1" />
                   <h2 className="text-lg sm:text-xl lg:text-3xl font-bold text-slate-300 mb-2"></h2>
                   <p className="text-base sm:text-lg lg:text-xl text-slate-200 mb-1">Nächstes Turnier</p>
-                  <p className="text-sm lg:text-base text-slate-300">22. Jänner 2026 • 19:30 Uhr</p>
+                  <p className="text-sm lg:text-base text-slate-300">21. Jänner 2026 • 19:30 Uhr</p>
                 </div>
 
                 <div className="flex justify-center mb-4 sm:mb-6">

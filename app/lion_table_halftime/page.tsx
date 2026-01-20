@@ -23,11 +23,14 @@ interface SeriesStanding {
   total_matches_won: number
   total_matches_lost: number
   profile_picture_url?: string
+  division?: string | null
 }
 
 interface SeasonSettings {
   halving_active: boolean
   halving_date: string | null
+  division_active: boolean
+  division_date: string | null
 }
 
 const QUALIFICATION_REQUIREMENT = 20
@@ -256,6 +259,8 @@ export default function TournamentSeriesPage() {
   const [seasonSettings, setSeasonSettings] = useState<SeasonSettings>({
     halving_active: false,
     halving_date: null,
+    division_active: false,
+    division_date: null,
   })
 
   useEffect(() => {
@@ -276,6 +281,8 @@ export default function TournamentSeriesPage() {
         setSeasonSettings({
           halving_active: data.halving_active,
           halving_date: data.halving_date,
+          division_active: data.division_active,
+          division_date: data.division_date,
         })
       }
     } catch (error) {
@@ -293,16 +300,35 @@ export default function TournamentSeriesPage() {
 
       const { data: profilePictures, error: profileError } = await supabase
         .from("spieldatenbank")
-        .select("name, profile_picture_url")
+        .select("name, profile_picture_url, id")
 
       if (profileError) {
         console.error("Error fetching profile pictures:", profileError)
       }
 
+      const { data: divisionsData, error: divError } = await supabase
+        .from("player_divisions")
+        .select("player_id, division")
+
+      if (divError) {
+        console.error("Error fetching divisions:", divError)
+      }
+
       const profilePictureMap = new Map<string, string>()
+      const playerIdMap = new Map<string, string>()
       profilePictures?.forEach((profile: any) => {
         if (profile.profile_picture_url) {
           profilePictureMap.set(profile.name.toLowerCase(), profile.profile_picture_url)
+        }
+        if (profile.id) {
+          playerIdMap.set(profile.name.toLowerCase(), profile.id)
+        }
+      })
+
+      const divisionMap = new Map<string, string>()
+      divisionsData?.forEach((div: any) => {
+        if (div.division) {
+          divisionMap.set(div.player_id, div.division)
         }
       })
 
@@ -345,6 +371,9 @@ export default function TournamentSeriesPage() {
       })
 
       const mappedData = Array.from(playerStats.values()).map((stats) => {
+        const playerId = playerIdMap.get(stats.player_name.toLowerCase())
+        const division = playerId ? divisionMap.get(playerId) : null
+
         return {
           player_name: stats.player_name,
           total_points: stats.placement_points + stats.legs_won + stats.bonus_points,
@@ -358,6 +387,7 @@ export default function TournamentSeriesPage() {
           total_matches_won: stats.total_matches_won,
           total_matches_lost: stats.total_matches_lost,
           profile_picture_url: profilePictureMap.get(stats.player_name.toLowerCase()) || undefined,
+          division: division || null,
         }
       })
 
@@ -415,14 +445,23 @@ export default function TournamentSeriesPage() {
             <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
           <h1 className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
-            Halbzeit Punkteteilung
+            {seasonSettings.division_active ? "Tabellenteilung A/B" : "Halbzeit Punkteteilung"}
           </h1>
-          <p className="text-base sm:text-lg text-gray-600">Rangliste mit Punktehalbierung</p>
-          {seasonSettings.halving_active && (
-            <Badge variant="secondary" className="mt-3 text-sm px-4 py-1">
-              Punktehalbierung aktiv
-            </Badge>
-          )}
+          <p className="text-base sm:text-lg text-gray-600">
+            {seasonSettings.division_active ? "Meisterrunde & Platzierungsrunde" : "Rangliste mit Punktehalbierung"}
+          </p>
+          <div className="flex flex-wrap justify-center gap-2 mt-3">
+            {seasonSettings.halving_active && (
+              <Badge variant="secondary" className="text-sm px-4 py-1">
+                Punktehalbierung aktiv
+              </Badge>
+            )}
+            {seasonSettings.division_active && (
+              <Badge className="text-sm px-4 py-1 bg-gradient-to-r from-purple-500 to-purple-700">
+                Tabellenteilung aktiv
+              </Badge>
+            )}
+          </div>
         </div>
 
         <div className="mb-6 flex justify-center">
@@ -460,22 +499,86 @@ export default function TournamentSeriesPage() {
           </div>
         </div>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 gap-3 sm:gap-4 mb-6"
-        >
-          {filteredStandings.length === 0 ? (
-            <Card className="shadow-xl border-2">
-              <CardContent className="py-12 text-center text-muted-foreground">Keine Spieler gefunden</CardContent>
-            </Card>
-          ) : (
-            filteredStandings.map((player, index) => (
-              <MobilePlayerCard key={player.player_name} player={player} position={index + 1} />
-            ))
-          )}
-        </motion.div>
+        {seasonSettings.division_active ? (
+          <>
+            {/* Tabelle A - Meisterrunde */}
+            <div className="mb-6">
+              <div className="mb-4 text-center">
+                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-6 py-3 rounded-xl shadow-lg">
+                  <Trophy className="h-6 w-6" />
+                  <h2 className="text-xl sm:text-2xl font-bold">Tabelle A - Meisterrunde</h2>
+                </div>
+              </div>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 gap-3 sm:gap-4"
+              >
+                {filteredStandings.filter((p) => p.division === "A").length === 0 ? (
+                  <Card className="shadow-xl border-2">
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      Keine Spieler in Tabelle A
+                    </CardContent>
+                  </Card>
+                ) : (
+                  filteredStandings
+                    .filter((p) => p.division === "A")
+                    .map((player, index) => (
+                      <MobilePlayerCard key={player.player_name} player={player} position={index + 1} />
+                    ))
+                )}
+              </motion.div>
+            </div>
+
+            {/* Tabelle B - Platzierungsrunde */}
+            <div className="mb-6">
+              <div className="mb-4 text-center">
+                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-gray-500 to-gray-700 text-white px-6 py-3 rounded-xl shadow-lg">
+                  <Award className="h-6 w-6" />
+                  <h2 className="text-xl sm:text-2xl font-bold">Tabelle B - Platzierungsrunde</h2>
+                </div>
+              </div>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 gap-3 sm:gap-4"
+              >
+                {filteredStandings.filter((p) => p.division === "B").length === 0 ? (
+                  <Card className="shadow-xl border-2">
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      Keine Spieler in Tabelle B
+                    </CardContent>
+                  </Card>
+                ) : (
+                  filteredStandings
+                    .filter((p) => p.division === "B")
+                    .map((player, index) => (
+                      <MobilePlayerCard key={player.player_name} player={player} position={index + 1} />
+                    ))
+                )}
+              </motion.div>
+            </div>
+          </>
+        ) : (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 gap-3 sm:gap-4 mb-6"
+          >
+            {filteredStandings.length === 0 ? (
+              <Card className="shadow-xl border-2">
+                <CardContent className="py-12 text-center text-muted-foreground">Keine Spieler gefunden</CardContent>
+              </Card>
+            ) : (
+              filteredStandings.map((player, index) => (
+                <MobilePlayerCard key={player.player_name} player={player} position={index + 1} />
+              ))
+            )}
+          </motion.div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <Card className="shadow-lg hover:shadow-xl transition-shadow border-2">
