@@ -37,6 +37,7 @@ interface SeriesStanding {
   total_matches_won: number
   total_matches_lost: number
   profile_picture_url?: string
+  division?: string | null
   // Original values (before halving)
   original_placement_points?: number
   original_bonus_points?: number
@@ -47,6 +48,8 @@ interface SeriesStanding {
 interface SeasonSettings {
   halving_active: boolean
   halving_date: string | null
+  division_active: boolean
+  division_date: string | null
 }
 
 interface NemesisData {
@@ -452,16 +455,18 @@ export default function TournamentSeriesPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null)
   const [nemesisData, setNemesisData] = useState<Map<string, NemesisData>>(new Map())
-  const [seasonSettings, setSeasonSettings] = useState<SeasonSettings>({
+const [seasonSettings, setSeasonSettings] = useState<SeasonSettings>({
     halving_active: false,
     halving_date: null,
+    division_active: false,
+    division_date: null,
   })
 
-  const fetchSeasonSettings = async () => {
+const fetchSeasonSettings = async () => {
     try {
       const { data, error } = await supabase
         .from("season_settings")
-        .select("halving_active, halving_date")
+        .select("halving_active, halving_date, division_active, division_date")
         .single()
 
       if (error) throw error
@@ -470,6 +475,8 @@ export default function TournamentSeriesPage() {
         setSeasonSettings({
           halving_active: data.halving_active || false,
           halving_date: data.halving_date || null,
+          division_active: data.division_active || false,
+          division_date: data.division_date || null,
         })
       }
     } catch (error) {
@@ -549,18 +556,38 @@ export default function TournamentSeriesPage() {
 
       if (entriesError) throw entriesError
 
-      const { data: profilePictures, error: profileError } = await supabase
+const { data: profilePictures, error: profileError } = await supabase
         .from("spieldatenbank")
-        .select("name, profile_picture_url")
+        .select("name, profile_picture_url, id")
 
       if (profileError) {
         console.error("Error fetching profile pictures:", profileError)
       }
 
+      // Fetch player divisions
+      const { data: divisionsData, error: divError } = await supabase
+        .from("player_divisions")
+        .select("player_id, division")
+
+      if (divError) {
+        console.error("Error fetching divisions:", divError)
+      }
+
       const profilePictureMap = new Map<string, string>()
+      const playerIdMap = new Map<string, string>()
       profilePictures?.forEach((profile: any) => {
         if (profile.profile_picture_url) {
           profilePictureMap.set(profile.name.toLowerCase(), profile.profile_picture_url)
+        }
+        if (profile.id) {
+          playerIdMap.set(profile.name.toLowerCase(), profile.id)
+        }
+      })
+
+      const divisionMap = new Map<string, string>()
+      divisionsData?.forEach((div: any) => {
+        if (div.division) {
+          divisionMap.set(div.player_id, div.division)
         }
       })
 
@@ -616,25 +643,31 @@ export default function TournamentSeriesPage() {
         stats.total_matches_lost += entry.matches_lost || 0
       })
 
-      const mappedData = Array.from(playerStats.values()).map((stats) => ({
-        player_name: stats.player_name,
-        total_points: stats.placement_points + stats.legs_won + stats.bonus_points,
-        placement_points: stats.placement_points,
-        legs_points: stats.legs_won,
-        bonus_points: stats.bonus_points,
-        legs_won: stats.legs_won,
-        legs_lost: stats.legs_lost,
-        tournaments_played: stats.tournaments_played,
-        total_matches_played: stats.total_matches_played,
-        total_matches_won: stats.total_matches_won,
-        total_matches_lost: stats.total_matches_lost,
-        profile_picture_url: profilePictureMap.get(stats.player_name.toLowerCase()) || undefined,
-        // Original values (before halving)
-        original_placement_points: stats.original_placement_points,
-        original_bonus_points: stats.original_bonus_points,
-        original_legs_won: stats.original_legs_won,
-        original_legs_lost: stats.original_legs_lost,
-      }))
+const mappedData = Array.from(playerStats.values()).map((stats) => {
+        const playerId = playerIdMap.get(stats.player_name.toLowerCase())
+        const division = playerId ? divisionMap.get(playerId) : null
+
+        return {
+          player_name: stats.player_name,
+          total_points: stats.placement_points + stats.legs_won + stats.bonus_points,
+          placement_points: stats.placement_points,
+          legs_points: stats.legs_won,
+          bonus_points: stats.bonus_points,
+          legs_won: stats.legs_won,
+          legs_lost: stats.legs_lost,
+          tournaments_played: stats.tournaments_played,
+          total_matches_played: stats.total_matches_played,
+          total_matches_won: stats.total_matches_won,
+          total_matches_lost: stats.total_matches_lost,
+          profile_picture_url: profilePictureMap.get(stats.player_name.toLowerCase()) || undefined,
+          division: division || null,
+          // Original values (before halving)
+          original_placement_points: stats.original_placement_points,
+          original_bonus_points: stats.original_bonus_points,
+          original_legs_won: stats.original_legs_won,
+          original_legs_lost: stats.original_legs_lost,
+        }
+      })
 
       mappedData.sort((a, b) => {
         const totalA = a.placement_points + a.legs_won + a.bonus_points
@@ -1358,6 +1391,138 @@ export default function TournamentSeriesPage() {
                       ? new Date(tournaments[0].tournament_date).toLocaleDateString("de-DE")
                       : "-"}
                   </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : seasonSettings.division_active ? (
+          <div className="px-4 space-y-6">
+            {/* Tabelle A - Meisterrunde */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                    <div>
+                      <h2 className="text-lg sm:text-2xl font-bold text-white">Tabelle A - Meisterrunde</h2>
+                      <p className="text-xs sm:text-sm text-yellow-100 mt-1">Kampf um den Titel</p>
+                    </div>
+                  </div>
+                  <div className="bg-white/20 rounded-lg px-2 sm:px-3 py-1">
+                    <span className="text-white font-semibold text-sm">
+                      {filteredPlayers.filter((p) => p.division === "A").length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border-b border-blue-100 p-3 sm:p-4">
+                <div className="flex items-center space-x-2 text-blue-800">
+                  <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="text-xs sm:text-sm font-medium">
+                    Jeder Teilnehmer benötigt {QUALIFICATION_REQUIREMENT} Antritte für die Qualifikation.
+                  </span>
+                </div>
+              </div>
+
+              {seasonSettings.halving_active && (
+                <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-200 p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 text-orange-800">
+                    <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                    <span className="text-xs sm:text-sm font-medium">
+                      Punkteteilung aktiv! <span className="text-gray-400 line-through">Durchgestrichen</span> = Originalpunkte, <span className="font-bold">Fett</span> = Aktuelle Punkte nach Halbierung.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+                {filteredPlayers.filter((p) => p.division === "A").length > 0 ? (
+                  filteredPlayers
+                    .filter((p) => p.division === "A")
+                    .map((player, index) => (
+                      <MobilePlayerCard
+                        key={player.player_name}
+                        player={player}
+                        position={index + 1}
+                        nemesis={nemesisData.get(player.player_name)}
+                        halvingActive={seasonSettings.halving_active}
+                      />
+                    ))
+                ) : (
+                  <div className="text-center py-12 text-gray-600">Keine Spieler in Tabelle A</div>
+                )}
+              </div>
+
+              <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-0">
+                  <span>Gesamt: {filteredPlayers.filter((p) => p.division === "A").length} Spieler</span>
+                  <span>Meisterrunde</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabelle B - Platzierungsrunde */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="bg-gradient-to-r from-gray-500 to-gray-600 p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Award className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                    <div>
+                      <h2 className="text-lg sm:text-2xl font-bold text-white">Tabelle B - Platzierungsrunde</h2>
+                      <p className="text-xs sm:text-sm text-gray-100 mt-1">Kampf um die beste Platzierung</p>
+                    </div>
+                  </div>
+                  <div className="bg-white/20 rounded-lg px-2 sm:px-3 py-1">
+                    <span className="text-white font-semibold text-sm">
+                      {filteredPlayers.filter((p) => p.division === "B").length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border-b border-blue-100 p-3 sm:p-4">
+                <div className="flex items-center space-x-2 text-blue-800">
+                  <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="text-xs sm:text-sm font-medium">
+                    Jeder Teilnehmer benötigt {QUALIFICATION_REQUIREMENT} Antritte für die Qualifikation.
+                  </span>
+                </div>
+              </div>
+
+              {seasonSettings.halving_active && (
+                <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-200 p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 text-orange-800">
+                    <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                    <span className="text-xs sm:text-sm font-medium">
+                      Punkteteilung aktiv! <span className="text-gray-400 line-through">Durchgestrichen</span> = Originalpunkte, <span className="font-bold">Fett</span> = Aktuelle Punkte nach Halbierung.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+                {filteredPlayers.filter((p) => p.division === "B").length > 0 ? (
+                  filteredPlayers
+                    .filter((p) => p.division === "B")
+                    .map((player, index) => (
+                      <MobilePlayerCard
+                        key={player.player_name}
+                        player={player}
+                        position={index + 1}
+                        nemesis={nemesisData.get(player.player_name)}
+                        halvingActive={seasonSettings.halving_active}
+                      />
+                    ))
+                ) : (
+                  <div className="text-center py-12 text-gray-600">Keine Spieler in Tabelle B</div>
+                )}
+              </div>
+
+              <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-0">
+                  <span>Gesamt: {filteredPlayers.filter((p) => p.division === "B").length} Spieler</span>
+                  <span>Platzierungsrunde</span>
                 </div>
               </div>
             </div>
