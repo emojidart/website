@@ -1220,7 +1220,7 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
 
                       <div className="grid grid-cols-4 gap-2 mt-3">
                         <div className="bg-blue-100 rounded p-2 text-center">
-                          <div className="text-xs text-blue-600">Platzierung</div>
+                          <div className="text-xs text-blue-600">Pl. Punkte</div>
                           <div className="text-sm font-bold text-blue-800">{entry.placement_points}</div>
                         </div>
                         <div className="bg-green-100 rounded p-2 text-center">
