@@ -1145,7 +1145,7 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
                           </div>
                           <div>
                             <div className="text-sm text-gray-600">
-                              {match.tournament_type} - Runde {match.round}
+                              {match.tournament_type}
                             </div>
                             <div className="text-xs text-gray-500">
                               {new Date(match.updated_at).toLocaleDateString('de-DE')}
@@ -1165,7 +1165,7 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
                           <span className="text-sm font-bold text-gray-900">{opponent}</span>
                         </div>
                         <div className="text-xs text-gray-500">
-                          Match #{match.match_number}
+                          Match-ID: {match.id}
                         </div>
                       </div>
                     </div>
