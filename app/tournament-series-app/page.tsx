@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
-import Image from "next/image"
+import Image from "@/components/image"
 import {
   Trophy,
   Users,
@@ -20,6 +20,10 @@ import {
   ChevronDown,
   ChevronUp,
   Skull,
+  Target,
+  Activity,
+  Info,
+  Gift,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -58,6 +62,12 @@ interface NemesisData {
   losses_count: number
 }
 
+interface FreilosStats {
+  freilos_count: number
+  tournaments_played: number
+  average: number
+}
+
 interface TournamentEntry {
   id: string
   tournament_id: string
@@ -81,6 +91,21 @@ interface Tournament {
   tournament_type: string
   tournament_date: string
   rankings?: TournamentEntry[]
+}
+
+interface MatchResult {
+  id: string
+  tournament_id: string
+  tournament_type: string
+  round: number
+  player1: string
+  player2: string
+  score1: number
+  score2: number
+  winner: string
+  loser: string
+  match_number: number
+  updated_at: string
 }
 
 const QUALIFICATION_REQUIREMENT = 20
@@ -193,11 +218,13 @@ function MobilePlayerCard({
   position,
   nemesis,
   halvingActive = false,
+  onClick,
 }: {
   player: SeriesStanding
   position: number
   nemesis?: NemesisData
   halvingActive?: boolean
+  onClick?: () => void
 }) {
   const isTopThree = position <= 3
   const calculatedTotalPoints = player.placement_points + player.legs_won + player.bonus_points
@@ -207,14 +234,15 @@ function MobilePlayerCard({
       ? ((player.total_matches_won / player.total_matches_played) * 100).toFixed(1)
       : "0.0"
   const legDifference = player.legs_won - player.legs_lost
-  
+
   // Check if there's a difference between original and current values (halving applied)
   const hasHalving = halvingActive && originalTotalPoints !== calculatedTotalPoints
 
   return (
     <motion.div
       variants={cardVariants}
-      className={`bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300 ${
+      onClick={onClick}
+      className={`bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300 cursor-pointer ${
         isTopThree ? "ring-2 ring-yellow-200 bg-gradient-to-r from-yellow-50 to-white" : ""
       }`}
     >
@@ -447,6 +475,9 @@ function MobileTournamentRankingCard({ ranking, index }: { ranking: any; index: 
 }
 
 export default function TournamentSeriesPage() {
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
+  const [playerMatches, setPlayerMatches] = useState<MatchResult[]>([])
+  const [playerFreilos, setPlayerFreilos] = useState<FreilosStats | null>(null)
   const [standings, setStandings] = useState<SeriesStanding[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<"alle" | "qualifiziert" | "nicht-qualifiziert" | "turnier-historie">(
@@ -455,7 +486,7 @@ export default function TournamentSeriesPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null)
   const [nemesisData, setNemesisData] = useState<Map<string, NemesisData>>(new Map())
-const [seasonSettings, setSeasonSettings] = useState<SeasonSettings>({
+  const [seasonSettings, setSeasonSettings] = useState<SeasonSettings>({
     halving_active: false,
     halving_date: null,
     division_active: false,
@@ -496,6 +527,108 @@ const fetchSeasonSettings = async () => {
       fetchNemesisData()
     }
   }, [seasonSettings])
+
+  useEffect(() => {
+    if (selectedPlayer) {
+      fetchPlayerMatches(selectedPlayer)
+      fetchPlayerFreilos(selectedPlayer)
+    }
+  }, [selectedPlayer])
+
+  const fetchPlayerMatches = async (playerName: string) => {
+    try {
+      // Erst alle Lion Cup Turnier-IDs holen
+      const { data: seriesTournaments, error: tournamentsError } = await supabase
+        .from("tournament_series_standings")
+        .select("tournament_id")
+
+      if (tournamentsError) throw tournamentsError
+
+      const tournamentIds = seriesTournaments?.map(t => t.tournament_id) || []
+
+      if (tournamentIds.length === 0) {
+        setPlayerMatches([])
+        return
+      }
+
+      // Dann nur Matches aus diesen Turnieren holen
+      const { data, error } = await supabase
+        .from("dko_match_states")
+        .select("*")
+        .in("tournament_id", tournamentIds)
+        .or(`player1.eq.${playerName},player2.eq.${playerName}`)
+        .not("winner", "is", null)
+        .order("updated_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(20)
+
+      if (error) throw error
+
+      setPlayerMatches(data || [])
+    } catch (error) {
+      console.error("Error fetching player matches:", error)
+    }
+  }
+
+  const fetchPlayerFreilos = async (playerName: string) => {
+    try {
+      const { data: seriesTournaments, error: tournamentsError } = await supabase
+        .from("tournament_series_standings")
+        .select("tournament_id")
+
+      if (tournamentsError) throw tournamentsError
+
+      const tournamentIds = [...new Set(seriesTournaments?.map(t => t.tournament_id) || [])]
+
+      if (tournamentIds.length === 0) {
+        setPlayerFreilos({
+          freilos_count: 0,
+          tournaments_played: 0,
+          average: 0,
+        })
+        return
+      }
+
+      const { data: playerMatches, error: matchesError } = await supabase
+        .from("dko_match_states")
+        .select("player1, player2, tournament_id")
+        .in("tournament_id", tournamentIds)
+        .or(`player1.eq.${playerName},player2.eq.${playerName}`)
+
+      if (matchesError) throw matchesError
+
+      let freilosCount = 0
+      playerMatches?.forEach((match) => {
+        const opponent = match.player1 === playerName ? match.player2 : match.player1
+        if (opponent?.toLowerCase().startsWith("freilos")) {
+          freilosCount++
+        }
+      })
+
+      const { data: playerTournaments, error: tournamentsPlayedError } = await supabase
+        .from("tournament_series_standings")
+        .select("tournament_id")
+        .eq("player_name", playerName)
+
+      if (tournamentsPlayedError) throw tournamentsPlayedError
+
+      const tournamentsPlayed = playerTournaments?.length || 0
+      const average = tournamentsPlayed > 0 ? freilosCount / tournamentsPlayed : 0
+
+      setPlayerFreilos({
+        freilos_count: freilosCount,
+        tournaments_played: tournamentsPlayed,
+        average: average,
+      })
+    } catch (error) {
+      console.error("Error fetching player freilos:", error)
+      setPlayerFreilos({
+        freilos_count: 0,
+        tournaments_played: 0,
+        average: 0,
+      })
+    }
+  }
 
   const fetchNemesisData = async () => {
     try {
@@ -827,6 +960,321 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
 
   const predictedTotalPrizePool =
     predictedPrizePoolFromParticipants + predictedPrizePoolFromAppearances + predictedHostSponsoring + finaleFeesTotal
+
+  if (selectedPlayer) {
+    const player = standings.find(p => p.player_name === selectedPlayer)
+    if (!player) return null
+
+    const playerTournaments = tournaments
+      .map(t => ({
+        ...t,
+        playerEntry: t.rankings?.find(r => r.player_name === selectedPlayer)
+      }))
+      .filter(t => t.playerEntry)
+      .sort((a, b) => new Date(b.tournament_date).getTime() - new Date(a.tournament_date).getTime())
+
+    const winRate = player.total_matches_played > 0
+      ? ((player.total_matches_won / player.total_matches_played) * 100).toFixed(1)
+      : '0.0'
+    const legDifference = player.legs_won - player.legs_lost
+    const avgPlacementPoints = player.tournaments_played > 0
+      ? (player.placement_points / player.tournaments_played).toFixed(1)
+      : '0.0'
+
+    return (
+      <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
+        <Header />
+        <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl space-y-6 pb-24">
+          <button
+            onClick={() => setSelectedPlayer(null)}
+            className="flex items-center gap-2 text-red-600 hover:text-red-700 font-semibold transition-colors"
+          >
+            <ChevronDown className="h-5 w-5 rotate-90" />
+            Zurück zur Tabelle
+          </button>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-pink-50 via-red-50 to-pink-50 rounded-2xl shadow-2xl border-2 border-red-200 overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-red-600 to-red-700 p-6 sm:p-8">
+              <div className="flex items-center gap-6">
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
+                  <Image
+                    src={player.profile_picture_url || '/placeholder-user.jpg'}
+                    alt={`Profilbild von ${player.player_name}`}
+                    width={96}
+                    height={96}
+                    className="object-cover"
+                  />
+                </div>
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">{player.player_name}</h1>
+                  <div className="flex items-center gap-2 text-white/90">
+                    <Trophy className="h-5 w-5" />
+                    <span className="text-xl font-bold">{player.total_points} Punkte</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6">
+              <div className="bg-white rounded-lg p-4 shadow-md text-center">
+                <div className="text-xs sm:text-sm text-gray-600 font-medium mb-1">Antritte</div>
+                <div className="text-2xl sm:text-3xl font-bold text-red-600">{player.tournaments_played}</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow-md text-center">
+                <div className="text-xs sm:text-sm text-gray-600 font-medium mb-1">Siegrate</div>
+                <div className="text-2xl sm:text-3xl font-bold text-green-600">{winRate}%</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow-md text-center">
+                <div className="text-xs sm:text-sm text-gray-600 font-medium mb-1">Leg-Diff</div>
+                <div className={`text-2xl sm:text-3xl font-bold ${legDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {legDifference >= 0 ? '+' : ''}{legDifference}
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow-md text-center">
+                <div className="text-xs sm:text-sm text-gray-600 font-medium mb-1">Ø Punkte</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-600">{avgPlacementPoints}</div>
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Target className="h-5 w-5 text-blue-600" />
+                <h3 className="font-bold text-lg">Platzierungspunkte</h3>
+              </div>
+              <div className="text-3xl font-bold text-blue-600">{player.placement_points}</div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="h-5 w-5 text-green-600" />
+                <h3 className="font-bold text-lg">Legs gewonnen</h3>
+              </div>
+              <div className="text-3xl font-bold text-green-600">{player.legs_won}</div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Award className="h-5 w-5 text-yellow-600" />
+                <h3 className="font-bold text-lg">Bonuspunkte</h3>
+              </div>
+              <div className="text-3xl font-bold text-yellow-600">{player.bonus_points}</div>
+            </div>
+          </div>
+
+          {playerFreilos && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gradient-to-br from-red-50 via-pink-50 to-red-50 rounded-2xl shadow-2xl border-2 border-red-200 overflow-hidden"
+            >
+              <div className="bg-gradient-to-r from-red-600 to-red-700 p-4 sm:p-6">
+                <div className="flex items-center gap-3">
+                  <Gift className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  <h2 className="text-lg sm:text-2xl font-bold text-white">Freilos-Statistik</h2>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-6">
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Calendar className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-bold text-lg text-gray-700">Antritte</h3>
+                  </div>
+                  <div className="text-3xl sm:text-4xl font-bold text-blue-600">{player.tournaments_played}</div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Gift className="h-5 w-5 text-red-600" />
+                    <h3 className="font-bold text-lg text-gray-700">Freilose</h3>
+                  </div>
+                  <div className="text-3xl sm:text-4xl font-bold text-red-600">{playerFreilos.freilos_count}</div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                    <h3 className="font-bold text-lg text-gray-700">Ø pro Antritt</h3>
+                  </div>
+                  <div className="text-3xl sm:text-4xl font-bold text-green-600">
+                    {playerFreilos.average.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-700 p-4 sm:p-6">
+              <div className="flex items-center gap-3">
+                <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                <h2 className="text-lg sm:text-2xl font-bold text-white">Letzte 20 Spiele</h2>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {playerMatches.length > 0 ? (
+                playerMatches.map((match) => {
+                  const isPlayer1 = match.player1 === selectedPlayer
+                  const opponent = isPlayer1 ? match.player2 : match.player1
+                  const playerScore = isPlayer1 ? match.score1 : match.score2
+                  const opponentScore = isPlayer1 ? match.score2 : match.score1
+                  const isWinner = match.winner === selectedPlayer
+
+                  return (
+                    <div
+                      key={match.id}
+                      className={`rounded-lg p-4 border-2 transition-colors ${
+                        isWinner
+                          ? 'bg-green-50 border-green-300 hover:border-green-400'
+                          : 'bg-red-50 border-red-300 hover:border-red-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
+                            isWinner ? 'bg-green-600' : 'bg-red-600'
+                          }`}>
+                            {isWinner ? 'S' : 'N'}
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-600">
+                              {match.tournament_type} - Runde {match.round}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(match.updated_at).toLocaleDateString('de-DE')}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-2xl font-bold ${isWinner ? 'text-green-700' : 'text-red-700'}`}>
+                            {playerScore}:{opponentScore}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-700">vs</span>
+                          <span className="text-sm font-bold text-gray-900">{opponent}</span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Match #{match.match_number}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="text-center py-12 text-gray-600">
+                  <Activity className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                  <p>Keine Spiele gefunden</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-red-600 to-red-700 p-4 sm:p-6">
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                <h2 className="text-lg sm:text-2xl font-bold text-white">Turnier Historie</h2>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {playerTournaments.length > 0 ? (
+                playerTournaments.map((tournament) => {
+                  const entry = tournament.playerEntry!
+                  return (
+                    <div
+                      key={tournament.tournament_id}
+                      className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-red-300 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-gray-900 mb-1">{tournament.tournament_name}</h3>
+                          <div className="text-sm text-gray-600">
+                            {new Date(tournament.tournament_date).toLocaleDateString('de-DE')}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-center">
+                            <div className="text-xs text-gray-600">Platz</div>
+                            <div className="text-2xl font-bold text-red-600">{entry.placement}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-600">Punkte</div>
+                            <div className="text-2xl font-bold text-blue-600">
+                              {entry.placement_points + entry.bonus_points + entry.legs_won}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-2 mt-3">
+                        <div className="bg-blue-100 rounded p-2 text-center">
+                          <div className="text-xs text-blue-600">Platzierung</div>
+                          <div className="text-sm font-bold text-blue-800">{entry.placement_points}</div>
+                        </div>
+                        <div className="bg-green-100 rounded p-2 text-center">
+                          <div className="text-xs text-green-600">Legs W</div>
+                          <div className="text-sm font-bold text-green-800">{entry.legs_won}</div>
+                        </div>
+                        <div className="bg-red-100 rounded p-2 text-center">
+                          <div className="text-xs text-red-600">Legs L</div>
+                          <div className="text-sm font-bold text-red-800">{entry.legs_lost}</div>
+                        </div>
+                        {entry.bonus_points > 0 && (
+                          <div className="bg-yellow-100 rounded p-2 text-center">
+                            <div className="text-xs text-yellow-600">Bonus</div>
+                            <div className="text-sm font-bold text-yellow-800">+{entry.bonus_points}</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {entry.form && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <span className="text-xs text-gray-600">Form:</span>
+                          <div className="flex gap-1">
+                            {entry.form.split(',').map((result, idx) => (
+                              <span
+                                key={idx}
+                                className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold ${
+                                  result === 'W' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                                }`}
+                              >
+                                {result}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="text-center py-12 text-gray-600">
+                  <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                  <p>Keine Turnier-Teilnahmen gefunden</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+
+        <footer className="py-4 sm:py-6 bg-gray-200 text-gray-600 text-xs sm:text-sm text-center mt-8 border-t border-gray-300 px-4">
+          <p>&copy; 2025 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>
+        </footer>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -1416,6 +1864,15 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
                 </div>
               </div>
 
+              <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-b border-cyan-200 p-3 sm:p-4">
+                <div className="flex items-center space-x-2 text-cyan-800">
+                  <Info className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-600" />
+                  <span className="text-xs sm:text-sm font-medium">
+                    <span className="font-semibold">Tipp:</span> Klicke auf einen Namen für detaillierte Statistiken und die letzten 20 Spiele!
+                  </span>
+                </div>
+              </div>
+
               <div className="bg-blue-50 border-b border-blue-100 p-3 sm:p-4">
                 <div className="flex items-center space-x-2 text-blue-800">
                   <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -1447,6 +1904,7 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
                         position={index + 1}
                         nemesis={nemesisData.get(player.player_name)}
                         halvingActive={seasonSettings.halving_active}
+                        onClick={() => setSelectedPlayer(player.player_name)}
                       />
                     ))
                 ) : (
@@ -1481,6 +1939,15 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
                 </div>
               </div>
 
+              <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-b border-cyan-200 p-3 sm:p-4">
+                <div className="flex items-center space-x-2 text-cyan-800">
+                  <Info className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-600" />
+                  <span className="text-xs sm:text-sm font-medium">
+                    <span className="font-semibold">Tipp:</span> Klicke auf einen Namen für detaillierte Statistiken und die letzten 20 Spiele!
+                  </span>
+                </div>
+              </div>
+
               <div className="bg-blue-50 border-b border-blue-100 p-3 sm:p-4">
                 <div className="flex items-center space-x-2 text-blue-800">
                   <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -1512,6 +1979,7 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
                         position={index + 1}
                         nemesis={nemesisData.get(player.player_name)}
                         halvingActive={seasonSettings.halving_active}
+                        onClick={() => setSelectedPlayer(player.player_name)}
                       />
                     ))
                 ) : (
@@ -1551,6 +2019,15 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
                 </div>
               </div>
 
+              <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-b border-cyan-200 p-3 sm:p-4">
+                <div className="flex items-center space-x-2 text-cyan-800">
+                  <Info className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-600" />
+                  <span className="text-xs sm:text-sm font-medium">
+                    <span className="font-semibold">Tipp:</span> Klicke auf einen Namen für detaillierte Statistiken und die letzten 20 Spiele!
+                  </span>
+                </div>
+              </div>
+
               <div className="bg-blue-50 border-b border-blue-100 p-3 sm:p-4">
                 <div className="flex items-center space-x-2 text-blue-800">
                   <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -1580,6 +2057,7 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
                       position={standings.findIndex((s) => s.player_name === player.player_name) + 1}
                       nemesis={nemesisData.get(player.player_name)}
                       halvingActive={seasonSettings.halving_active}
+                      onClick={() => setSelectedPlayer(player.player_name)}
                     />
                   ))
                 ) : (
