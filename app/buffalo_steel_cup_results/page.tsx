@@ -350,7 +350,7 @@ export default function BuffaloTournamentsPage() {
                       {isExpanded && (
                         <div className="border-t-2 border-gray-200 p-3 sm:p-6 bg-gray-50">
                           <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">
-                            Spielergebnisse (sortiert nach ID)
+                            Spielergebnisse
                           </h4>
 
                           {isLoadingMatches ? (
