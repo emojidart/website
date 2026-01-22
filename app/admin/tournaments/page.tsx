@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Pencil, Trash2, Plus, Save, X, ChevronDown, ChevronUp, Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Header } from "@/components/header"
@@ -39,10 +40,25 @@ type Tournament = {
   entries: TournamentEntry[]
 }
 
+type TournamentSeries = "tournament_series_standings" | "buffalo_steel_cup_standings"
+
+const SERIES_CONFIG: Record<TournamentSeries, { name: string; exportPrefix: string }> = {
+  tournament_series_standings: {
+    name: "Turnierserie",
+    exportPrefix: "turnierserie",
+  },
+  buffalo_steel_cup_standings: {
+    name: "Buffalo Steel Cup",
+    exportPrefix: "buffalo_steel_cup",
+  },
+}
+
 export default function TournamentManagePage() {
   const { user, isAdmin, loading: authLoading, adminLoading } = useAuth()
   const router = useRouter()
+  const [activeSeries, setActiveSeries] = useState<TournamentSeries>("tournament_series_standings")
   const [tournaments, setTournaments] = useState<Tournament[]>([])
+  const [buffaloTournaments, setBuffaloTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
   const [editingEntry, setEditingEntry] = useState<TournamentEntry | null>(null)
   const [editingTournament, setEditingTournament] = useState<Tournament | null>(null)
@@ -52,25 +68,32 @@ export default function TournamentManagePage() {
   const { toast } = useToast()
 
   useEffect(() => {
-    fetchTournaments()
+    fetchAllTournaments()
   }, [])
 
-  async function fetchTournaments() {
+  async function fetchAllTournaments() {
+    setLoading(true)
+    await Promise.all([
+      fetchTournamentsForSeries("tournament_series_standings"),
+      fetchTournamentsForSeries("buffalo_steel_cup_standings"),
+    ])
+    setLoading(false)
+  }
+
+  async function fetchTournamentsForSeries(series: TournamentSeries) {
     const currentlyExpanded = { ...expandedTournaments }
 
-    setLoading(true)
     const { data, error } = await supabase
-      .from("tournament_series_standings")
+      .from(series)
       .select("*")
       .order("tournament_date", { ascending: false })
 
     if (error) {
       toast({
         title: "Fehler",
-        description: "Turniere konnten nicht geladen werden",
+        description: `${SERIES_CONFIG[series].name} Turniere konnten nicht geladen werden`,
         variant: "destructive",
       })
-      setLoading(false)
       return
     }
 
@@ -93,15 +116,21 @@ export default function TournamentManagePage() {
       tournament.entries.sort((a, b) => a.placement - b.placement)
     })
 
-    setTournaments(grouped)
-
-    if (Object.keys(currentlyExpanded).length === 0 && grouped.length > 0) {
-      setExpandedTournaments({ [grouped[0].tournament_id]: true })
+    if (series === "tournament_series_standings") {
+      setTournaments(grouped)
+      if (Object.keys(currentlyExpanded).length === 0 && grouped.length > 0) {
+        setExpandedTournaments((prev) => ({ ...prev, [grouped[0].tournament_id]: true }))
+      }
     } else {
-      setExpandedTournaments(currentlyExpanded)
+      setBuffaloTournaments(grouped)
+      if (Object.keys(currentlyExpanded).length === 0 && grouped.length > 0) {
+        setExpandedTournaments((prev) => ({ ...prev, [grouped[0].tournament_id]: true }))
+      }
     }
+  }
 
-    setLoading(false)
+  const getCurrentTournaments = () => {
+    return activeSeries === "tournament_series_standings" ? tournaments : buffaloTournaments
   }
 
   const toggleTournament = (tournamentId: string) => {
@@ -113,7 +142,7 @@ export default function TournamentManagePage() {
 
   async function updateEntry(entry: TournamentEntry) {
     const { error } = await supabase
-      .from("tournament_series_standings")
+      .from(activeSeries)
       .update({
         player_name: entry.player_name,
         placement: entry.placement,
@@ -145,13 +174,13 @@ export default function TournamentManagePage() {
     setEditingEntry(null)
     const tournamentId = entry.tournament_id
     setExpandedTournaments((prev) => ({ ...prev, [tournamentId]: true }))
-    fetchTournaments()
+    fetchTournamentsForSeries(activeSeries)
   }
 
   async function deleteEntry(id: string) {
     if (!confirm("Möchtest du diesen Eintrag wirklich löschen?")) return
 
-    const { error } = await supabase.from("tournament_series_standings").delete().eq("id", id)
+    const { error } = await supabase.from(activeSeries).delete().eq("id", id)
 
     if (error) {
       toast({
@@ -166,7 +195,7 @@ export default function TournamentManagePage() {
       title: "Erfolg",
       description: "Eintrag wurde gelöscht",
     })
-    fetchTournaments()
+    fetchTournamentsForSeries(activeSeries)
   }
 
   async function addEntry() {
@@ -179,7 +208,7 @@ export default function TournamentManagePage() {
       return
     }
 
-    const { error } = await supabase.from("tournament_series_standings").insert([
+    const { error } = await supabase.from(activeSeries).insert([
       {
         player_name: newEntry.player_name,
         tournament_id: newEntry.tournament_id,
@@ -213,12 +242,12 @@ export default function TournamentManagePage() {
     })
     setIsAddDialogOpen(false)
     setNewEntry({})
-    fetchTournaments()
+    fetchTournamentsForSeries(activeSeries)
   }
 
   async function updateTournamentInfo(tournament: Tournament) {
     const { error } = await supabase
-      .from("tournament_series_standings")
+      .from(activeSeries)
       .update({
         tournament_name: tournament.tournament_name,
         tournament_date: tournament.tournament_date,
@@ -240,10 +269,11 @@ export default function TournamentManagePage() {
     })
     setEditingTournament(null)
     setExpandedTournaments((prev) => ({ ...prev, [tournament.tournament_id]: true }))
-    fetchTournaments()
+    fetchTournamentsForSeries(activeSeries)
   }
 
   const exportToCSV = () => {
+    const currentTournaments = getCurrentTournaments()
     const csvRows = []
 
     // CSV Header
@@ -267,7 +297,7 @@ export default function TournamentManagePage() {
     )
 
     // Add data rows
-    tournaments.forEach((tournament) => {
+    currentTournaments.forEach((tournament) => {
       tournament.entries.forEach((entry) => {
         csvRows.push(
           [
@@ -296,7 +326,10 @@ export default function TournamentManagePage() {
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
-    link.setAttribute("download", `turnierserie_backup_${new Date().toISOString().split("T")[0]}.csv`)
+    link.setAttribute(
+      "download",
+      `${SERIES_CONFIG[activeSeries].exportPrefix}_backup_${new Date().toISOString().split("T")[0]}.csv`,
+    )
     link.style.visibility = "hidden"
     document.body.appendChild(link)
     link.click()
@@ -309,9 +342,12 @@ export default function TournamentManagePage() {
   }
 
   const exportToJSON = () => {
+    const currentTournaments = getCurrentTournaments()
     const exportData = {
       exportDate: new Date().toISOString(),
-      tournaments: tournaments.map((tournament) => ({
+      series: activeSeries,
+      seriesName: SERIES_CONFIG[activeSeries].name,
+      tournaments: currentTournaments.map((tournament) => ({
         tournament_id: tournament.tournament_id,
         tournament_name: tournament.tournament_name,
         tournament_date: tournament.tournament_date,
@@ -337,7 +373,10 @@ export default function TournamentManagePage() {
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
-    link.setAttribute("download", `turnierserie_backup_${new Date().toISOString().split("T")[0]}.json`)
+    link.setAttribute(
+      "download",
+      `${SERIES_CONFIG[activeSeries].exportPrefix}_backup_${new Date().toISOString().split("T")[0]}.json`,
+    )
     link.style.visibility = "hidden"
     document.body.appendChild(link)
     link.click()
@@ -347,6 +386,12 @@ export default function TournamentManagePage() {
       title: "Export erfolgreich",
       description: "JSON-Datei wurde heruntergeladen",
     })
+  }
+
+  const handleSeriesChange = (value: string) => {
+    setActiveSeries(value as TournamentSeries)
+    setEditingEntry(null)
+    setEditingTournament(null)
   }
 
   if (authLoading || adminLoading) {
@@ -393,6 +438,8 @@ export default function TournamentManagePage() {
     )
   }
 
+  const currentTournaments = getCurrentTournaments()
+
   return (
     <>
       <Header />
@@ -417,7 +464,9 @@ export default function TournamentManagePage() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Neuen Eintrag hinzufügen</DialogTitle>
+                  <DialogTitle>
+                    Neuen Eintrag hinzufügen ({SERIES_CONFIG[activeSeries].name})
+                  </DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
@@ -575,308 +624,387 @@ export default function TournamentManagePage() {
           </div>
         </div>
 
-        <div className="space-y-8">
-          {tournaments.map((tournament) => {
-            const isExpanded = expandedTournaments[tournament.tournament_id]
+        <Tabs value={activeSeries} onValueChange={handleSeriesChange} className="mb-8">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="tournament_series_standings">Turnierserie</TabsTrigger>
+            <TabsTrigger value="buffalo_steel_cup_standings">Buffalo Steel Cup</TabsTrigger>
+          </TabsList>
 
-            return (
-              <Card key={tournament.tournament_id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    {editingTournament?.tournament_id === tournament.tournament_id && editingTournament !== null ? (
-                      <div className="flex-1 flex items-center gap-4">
-                        <div className="flex-1 space-y-2">
-                          <Input
-                            value={editingTournament.tournament_name}
-                            onChange={(e) =>
-                              setEditingTournament({ ...editingTournament, tournament_name: e.target.value })
-                            }
-                            className="text-2xl font-bold"
-                            placeholder="Turniername"
-                          />
-                          <Input
-                            type="date"
-                            value={editingTournament.tournament_date.split("T")[0]}
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                const date = new Date(e.target.value + "T12:00:00")
-                                if (!isNaN(date.getTime())) {
-                                  setEditingTournament({
-                                    ...editingTournament,
-                                    tournament_date: date.toISOString(),
-                                  })
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => updateTournamentInfo(editingTournament)}>
-                            <Save className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setEditingTournament(null)}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleTournament(tournament.tournament_id)}
-                          className="mr-4"
-                        >
-                          {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                        </Button>
-                        <div className="flex-1">
-                          <div className="text-2xl">{tournament.tournament_name}</div>
-                          <div className="text-sm text-muted-foreground font-normal mt-1">
-                            {new Date(tournament.tournament_date).toLocaleDateString("de-DE", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-sm text-muted-foreground font-normal">
-                            {tournament.entries.length} Spieler
-                          </div>
-                          <Button size="sm" variant="outline" onClick={() => setEditingTournament(tournament)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                {isExpanded && (
-                  <CardContent>
-                    <div className="relative overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-12">Platz</TableHead>
-                            <TableHead>Spieler</TableHead>
-                            <TableHead className="text-center">Gesamt</TableHead>
-                            <TableHead className="text-center">Platz-P</TableHead>
-                            <TableHead className="text-center">Legs+</TableHead>
-                            <TableHead className="text-center">Legs-</TableHead>
-                            <TableHead className="text-center">Spiele</TableHead>
-                            <TableHead className="text-center">S</TableHead>
-                            <TableHead className="text-center">N</TableHead>
-                            <TableHead className="text-center">Bonus-P</TableHead>
-                            <TableHead>Form</TableHead>
-                            <TableHead className="text-right sticky right-0 bg-background shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">
-                              Aktionen
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {tournament.entries.map((entry, index) => {
-                            const isEditing = editingEntry?.id === entry.id && editingEntry !== null
-                            const totalPoints = entry.placement_points + entry.legs_won + entry.bonus_points
-
-                            return (
-                              <TableRow key={entry.id}>
-                                {isEditing ? (
-                                  <>
-                                    <TableCell>
-                                      <Input
-                                        type="number"
-                                        value={editingEntry.placement}
-                                        onChange={(e) =>
-                                          setEditingEntry({
-                                            ...editingEntry,
-                                            placement: Number.parseInt(e.target.value),
-                                          })
-                                        }
-                                        className="w-16"
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <Input
-                                        value={editingEntry.player_name}
-                                        onChange={(e) =>
-                                          setEditingEntry({ ...editingEntry, player_name: e.target.value })
-                                        }
-                                      />
-                                    </TableCell>
-                                    <TableCell className="text-center font-bold">
-                                      {editingEntry.placement_points +
-                                        editingEntry.legs_won +
-                                        editingEntry.bonus_points}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Input
-                                        type="number"
-                                        value={editingEntry.placement_points}
-                                        onChange={(e) =>
-                                          setEditingEntry({
-                                            ...editingEntry,
-                                            placement_points: Number.parseInt(e.target.value),
-                                          })
-                                        }
-                                        className="w-16"
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <Input
-                                        type="number"
-                                        value={editingEntry.legs_won}
-                                        onChange={(e) =>
-                                          setEditingEntry({
-                                            ...editingEntry,
-                                            legs_won: Number.parseInt(e.target.value),
-                                          })
-                                        }
-                                        className="w-16"
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <Input
-                                        type="number"
-                                        value={editingEntry.legs_lost}
-                                        onChange={(e) =>
-                                          setEditingEntry({
-                                            ...editingEntry,
-                                            legs_lost: Number.parseInt(e.target.value),
-                                          })
-                                        }
-                                        className="w-16"
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <Input
-                                        type="number"
-                                        value={editingEntry.matches_played}
-                                        onChange={(e) =>
-                                          setEditingEntry({
-                                            ...editingEntry,
-                                            matches_played: Number.parseInt(e.target.value),
-                                          })
-                                        }
-                                        className="w-16"
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <Input
-                                        type="number"
-                                        value={editingEntry.matches_won}
-                                        onChange={(e) =>
-                                          setEditingEntry({
-                                            ...editingEntry,
-                                            matches_won: Number.parseInt(e.target.value),
-                                          })
-                                        }
-                                        className="w-16"
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <Input
-                                        type="number"
-                                        value={editingEntry.matches_lost}
-                                        onChange={(e) =>
-                                          setEditingEntry({
-                                            ...editingEntry,
-                                            matches_lost: Number.parseInt(e.target.value),
-                                          })
-                                        }
-                                        className="w-16"
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <Input
-                                        type="number"
-                                        value={editingEntry.bonus_points}
-                                        onChange={(e) =>
-                                          setEditingEntry({
-                                            ...editingEntry,
-                                            bonus_points: Number.parseInt(e.target.value),
-                                          })
-                                        }
-                                        className="w-16"
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <Input
-                                        value={editingEntry.form}
-                                        onChange={(e) => setEditingEntry({ ...editingEntry, form: e.target.value })}
-                                        className="w-24"
-                                      />
-                                    </TableCell>
-                                    <TableCell className="text-right sticky right-0 bg-background shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">
-                                      <div className="flex justify-end gap-2">
-                                        <Button size="sm" onClick={() => updateEntry(editingEntry)}>
-                                          <Save className="h-4 w-4" />
-                                        </Button>
-                                        <Button size="sm" variant="outline" onClick={() => setEditingEntry(null)}>
-                                          <X className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                    </TableCell>
-                                  </>
-                                ) : (
-                                  <>
-                                    <TableCell className="font-bold">{entry.placement}</TableCell>
-                                    <TableCell className="font-medium">{entry.player_name}</TableCell>
-                                    <TableCell className="text-center font-bold text-lg">{totalPoints}</TableCell>
-                                    <TableCell className="text-center">{entry.placement_points}</TableCell>
-                                    <TableCell className="text-center">{entry.legs_won}</TableCell>
-                                    <TableCell className="text-center">{entry.legs_lost}</TableCell>
-                                    <TableCell className="text-center">{entry.matches_played}</TableCell>
-                                    <TableCell className="text-center">{entry.matches_won}</TableCell>
-                                    <TableCell className="text-center">{entry.matches_lost}</TableCell>
-                                    <TableCell className="text-center">{entry.bonus_points}</TableCell>
-                                    <TableCell>
-                                      <div className="flex gap-0">
-                                        {entry.form
-                                          .replace(/,/g, "")
-                                          .split("")
-                                          .map((result, i) => (
-                                            <span
-                                              key={i}
-                                              className={`w-5 h-5 flex items-center justify-center text-xs font-bold rounded ${
-                                                result === "W" ? "bg-green-500 text-white" : "bg-red-500 text-white"
-                                              }`}
-                                            >
-                                              {result}
-                                            </span>
-                                          ))}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="text-right sticky right-0 bg-background shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">
-                                      <div className="flex justify-end gap-2">
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => {
-                                            setEditingEntry(entry)
-                                          }}
-                                        >
-                                          <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button size="sm" variant="destructive" onClick={() => deleteEntry(entry.id)}>
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                    </TableCell>
-                                  </>
-                                )}
-                              </TableRow>
-                            )
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
+          <TabsContent value="tournament_series_standings" className="mt-6">
+            <div className="space-y-8">
+              {tournaments.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    Keine Turniere in der Turnierserie gefunden.
                   </CardContent>
-                )}
-              </Card>
-            )
-          })}
-        </div>
+                </Card>
+              ) : (
+                tournaments.map((tournament) => (
+                  <TournamentCard
+                    key={tournament.tournament_id}
+                    tournament={tournament}
+                    isExpanded={expandedTournaments[tournament.tournament_id]}
+                    onToggle={() => toggleTournament(tournament.tournament_id)}
+                    editingEntry={editingEntry}
+                    setEditingEntry={setEditingEntry}
+                    editingTournament={editingTournament}
+                    setEditingTournament={setEditingTournament}
+                    onUpdateEntry={updateEntry}
+                    onDeleteEntry={deleteEntry}
+                    onUpdateTournamentInfo={updateTournamentInfo}
+                  />
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="buffalo_steel_cup_standings" className="mt-6">
+            <div className="space-y-8">
+              {buffaloTournaments.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    Keine Turniere im Buffalo Steel Cup gefunden.
+                  </CardContent>
+                </Card>
+              ) : (
+                buffaloTournaments.map((tournament) => (
+                  <TournamentCard
+                    key={tournament.tournament_id}
+                    tournament={tournament}
+                    isExpanded={expandedTournaments[tournament.tournament_id]}
+                    onToggle={() => toggleTournament(tournament.tournament_id)}
+                    editingEntry={editingEntry}
+                    setEditingEntry={setEditingEntry}
+                    editingTournament={editingTournament}
+                    setEditingTournament={setEditingTournament}
+                    onUpdateEntry={updateEntry}
+                    onDeleteEntry={deleteEntry}
+                    onUpdateTournamentInfo={updateTournamentInfo}
+                  />
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </>
+  )
+}
+
+type TournamentCardProps = {
+  tournament: Tournament
+  isExpanded: boolean
+  onToggle: () => void
+  editingEntry: TournamentEntry | null
+  setEditingEntry: (entry: TournamentEntry | null) => void
+  editingTournament: Tournament | null
+  setEditingTournament: (tournament: Tournament | null) => void
+  onUpdateEntry: (entry: TournamentEntry) => void
+  onDeleteEntry: (id: string) => void
+  onUpdateTournamentInfo: (tournament: Tournament) => void
+}
+
+function TournamentCard({
+  tournament,
+  isExpanded,
+  onToggle,
+  editingEntry,
+  setEditingEntry,
+  editingTournament,
+  setEditingTournament,
+  onUpdateEntry,
+  onDeleteEntry,
+  onUpdateTournamentInfo,
+}: TournamentCardProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          {editingTournament?.tournament_id === tournament.tournament_id && editingTournament !== null ? (
+            <div className="flex-1 flex items-center gap-4">
+              <div className="flex-1 space-y-2">
+                <Input
+                  value={editingTournament.tournament_name}
+                  onChange={(e) =>
+                    setEditingTournament({ ...editingTournament, tournament_name: e.target.value })
+                  }
+                  className="text-2xl font-bold"
+                  placeholder="Turniername"
+                />
+                <Input
+                  type="date"
+                  value={editingTournament.tournament_date.split("T")[0]}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const date = new Date(e.target.value + "T12:00:00")
+                      if (!isNaN(date.getTime())) {
+                        setEditingTournament({
+                          ...editingTournament,
+                          tournament_date: date.toISOString(),
+                        })
+                      }
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => onUpdateTournamentInfo(editingTournament)}>
+                  <Save className="h-4 w-4" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditingTournament(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" onClick={onToggle} className="mr-4">
+                {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              </Button>
+              <div className="flex-1">
+                <div className="text-2xl">{tournament.tournament_name}</div>
+                <div className="text-sm text-muted-foreground font-normal mt-1">
+                  {new Date(tournament.tournament_date).toLocaleDateString("de-DE", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-muted-foreground font-normal">
+                  {tournament.entries.length} Spieler
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setEditingTournament(tournament)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
+            </>
+          )}
+        </CardTitle>
+      </CardHeader>
+      {isExpanded && (
+        <CardContent>
+          <div className="relative overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">Platz</TableHead>
+                  <TableHead>Spieler</TableHead>
+                  <TableHead className="text-center">Gesamt</TableHead>
+                  <TableHead className="text-center">Platz-P</TableHead>
+                  <TableHead className="text-center">Legs+</TableHead>
+                  <TableHead className="text-center">Legs-</TableHead>
+                  <TableHead className="text-center">Spiele</TableHead>
+                  <TableHead className="text-center">S</TableHead>
+                  <TableHead className="text-center">N</TableHead>
+                  <TableHead className="text-center">Bonus-P</TableHead>
+                  <TableHead>Form</TableHead>
+                  <TableHead className="text-right sticky right-0 bg-background shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">
+                    Aktionen
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tournament.entries.map((entry) => {
+                  const isEditing = editingEntry?.id === entry.id && editingEntry !== null
+                  const totalPoints = entry.placement_points + entry.legs_won + entry.bonus_points
+
+                  return (
+                    <TableRow key={entry.id}>
+                      {isEditing ? (
+                        <>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={editingEntry.placement}
+                              onChange={(e) =>
+                                setEditingEntry({
+                                  ...editingEntry,
+                                  placement: Number.parseInt(e.target.value),
+                                })
+                              }
+                              className="w-16"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={editingEntry.player_name}
+                              onChange={(e) =>
+                                setEditingEntry({ ...editingEntry, player_name: e.target.value })
+                              }
+                            />
+                          </TableCell>
+                          <TableCell className="text-center font-bold">
+                            {editingEntry.placement_points +
+                              editingEntry.legs_won +
+                              editingEntry.bonus_points}
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={editingEntry.placement_points}
+                              onChange={(e) =>
+                                setEditingEntry({
+                                  ...editingEntry,
+                                  placement_points: Number.parseInt(e.target.value),
+                                })
+                              }
+                              className="w-16"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={editingEntry.legs_won}
+                              onChange={(e) =>
+                                setEditingEntry({
+                                  ...editingEntry,
+                                  legs_won: Number.parseInt(e.target.value),
+                                })
+                              }
+                              className="w-16"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={editingEntry.legs_lost}
+                              onChange={(e) =>
+                                setEditingEntry({
+                                  ...editingEntry,
+                                  legs_lost: Number.parseInt(e.target.value),
+                                })
+                              }
+                              className="w-16"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={editingEntry.matches_played}
+                              onChange={(e) =>
+                                setEditingEntry({
+                                  ...editingEntry,
+                                  matches_played: Number.parseInt(e.target.value),
+                                })
+                              }
+                              className="w-16"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={editingEntry.matches_won}
+                              onChange={(e) =>
+                                setEditingEntry({
+                                  ...editingEntry,
+                                  matches_won: Number.parseInt(e.target.value),
+                                })
+                              }
+                              className="w-16"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={editingEntry.matches_lost}
+                              onChange={(e) =>
+                                setEditingEntry({
+                                  ...editingEntry,
+                                  matches_lost: Number.parseInt(e.target.value),
+                                })
+                              }
+                              className="w-16"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={editingEntry.bonus_points}
+                              onChange={(e) =>
+                                setEditingEntry({
+                                  ...editingEntry,
+                                  bonus_points: Number.parseInt(e.target.value),
+                                })
+                              }
+                              className="w-16"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={editingEntry.form}
+                              onChange={(e) => setEditingEntry({ ...editingEntry, form: e.target.value })}
+                              className="w-24"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right sticky right-0 bg-background shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">
+                            <div className="flex justify-end gap-2">
+                              <Button size="sm" onClick={() => onUpdateEntry(editingEntry)}>
+                                <Save className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditingEntry(null)}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell className="font-bold">{entry.placement}</TableCell>
+                          <TableCell className="font-medium">{entry.player_name}</TableCell>
+                          <TableCell className="text-center font-bold text-lg">{totalPoints}</TableCell>
+                          <TableCell className="text-center">{entry.placement_points}</TableCell>
+                          <TableCell className="text-center">{entry.legs_won}</TableCell>
+                          <TableCell className="text-center">{entry.legs_lost}</TableCell>
+                          <TableCell className="text-center">{entry.matches_played}</TableCell>
+                          <TableCell className="text-center">{entry.matches_won}</TableCell>
+                          <TableCell className="text-center">{entry.matches_lost}</TableCell>
+                          <TableCell className="text-center">{entry.bonus_points}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-0">
+                              {(entry.form || "")
+                                .replace(/,/g, "")
+                                .split("")
+                                .filter((char) => char === "W" || char === "L")
+                                .map((result, i) => (
+                                  <span
+                                    key={i}
+                                    className={`w-5 h-5 flex items-center justify-center text-xs font-bold rounded ${
+                                      result === "W" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                                    }`}
+                                  >
+                                    {result}
+                                  </span>
+                                ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right sticky right-0 bg-background shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingEntry(entry)
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => onDeleteEntry(entry.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </>
+                      )}
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      )}
+    </Card>
   )
 }

@@ -28,6 +28,7 @@ interface SeriesStanding {
   player_name: string
   total_points: number
   placement_points: number
+  bonus_points: number
   legs_points: number
   legs_won: number
   legs_lost: number
@@ -56,6 +57,7 @@ interface TournamentEntry {
   matches_won: number
   matches_lost: number
   placement_points: number
+  bonus_points: number
   form: string
   added_at: string
 }
@@ -151,7 +153,7 @@ function MobilePlayerCard({
   onClick?: () => void
 }) {
   const isTopThree = position <= 3
-  const calculatedTotalPoints = player.placement_points + player.legs_won
+  const calculatedTotalPoints = player.placement_points + player.bonus_points + player.legs_won
   const winRate =
     player.total_matches_played > 0
       ? ((player.total_matches_won / player.total_matches_played) * 100).toFixed(1)
@@ -209,10 +211,14 @@ function MobilePlayerCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
         <div className="bg-blue-50 rounded-lg p-2 text-center">
           <div className="text-xs text-blue-600 font-medium">Punkte</div>
           <div className="text-sm font-bold text-blue-800">{player.placement_points}</div>
+        </div>
+        <div className="bg-purple-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-purple-600 font-medium">Bonus</div>
+          <div className="text-sm font-bold text-purple-800">{player.bonus_points}</div>
         </div>
         <div className="bg-green-50 rounded-lg p-2 text-center">
           <div className="text-xs text-green-600 font-medium">Legs W</div>
@@ -225,18 +231,10 @@ function MobilePlayerCard({
       </div>
 
       {/* Additional Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-        <div className="bg-purple-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-purple-600 font-medium">Matches</div>
-          <div className="text-sm font-bold text-purple-800">{player.total_matches_played}</div>
-        </div>
-        <div className="bg-teal-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-teal-600 font-medium">Siege</div>
-          <div className="text-sm font-bold text-teal-800">{player.total_matches_won}</div>
-        </div>
+      <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="bg-orange-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-orange-600 font-medium">Siegrate</div>
-          <div className="text-sm font-bold text-orange-800">{winRate}%</div>
+          <div className="text-xs text-orange-600 font-medium">Matches</div>
+          <div className="text-sm font-bold text-orange-800">{player.total_matches_played}</div>
         </div>
         <div className="bg-indigo-50 rounded-lg p-2 text-center">
           <div className="text-xs text-indigo-600 font-medium">Leg-Diff</div>
@@ -275,7 +273,7 @@ function MobilePlayerCard({
 
 function MobileTournamentRankingCard({ ranking, index }: { ranking: any; index: number }) {
   const isTopThree = ranking.placement <= 3
-  const totalPoints = ranking.placement_points + ranking.legs_won
+  const totalPoints = ranking.placement_points + ranking.bonus_points + ranking.legs_won
 
   return (
     <div
@@ -295,20 +293,6 @@ function MobileTournamentRankingCard({ ranking, index }: { ranking: any; index: 
             <div className="font-bold text-gray-900 text-sm truncate" title={ranking.player_name}>
               {ranking.player_name}
             </div>
-            {ranking.form && (
-              <div className="flex gap-0.5 mt-1">
-                {ranking.form.split(",").map((result: string, idx: number) => (
-                  <span
-                    key={idx}
-                    className={`inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold ${
-                      result === "W" ? "bg-green-500 text-white" : "bg-red-500 text-white"
-                    }`}
-                  >
-                    {result}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         </div>
         <div className="flex-shrink-0">
@@ -318,10 +302,14 @@ function MobileTournamentRankingCard({ ranking, index }: { ranking: any; index: 
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div className="bg-yellow-50 rounded-lg p-2 text-center">
           <div className="text-xs text-yellow-600 font-medium">Punkte</div>
           <div className="text-base font-bold text-yellow-700">{ranking.placement_points}</div>
+        </div>
+        <div className="bg-purple-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-purple-600 font-medium">Bonus</div>
+          <div className="text-base font-bold text-purple-700">{ranking.bonus_points}</div>
         </div>
         <div className="bg-green-50 rounded-lg p-2 text-center">
           <div className="text-xs text-green-600 font-medium">Legs W</div>
@@ -446,7 +434,7 @@ export default function BuffaloSteelCupPage() {
       const { data, error } = await supabase
         .from("buffalo_steel_cup_aggregated")
         .select(
-          "player_name, placement_points, total_legs_won, total_legs_lost, tournaments_played, total_matches_played, total_matches_won, total_matches_lost",
+          "player_name, placement_points, bonus_points, total_legs_won, total_legs_lost, tournaments_played, total_matches_played, total_matches_won, total_matches_lost",
         )
 
       if (error) throw error
@@ -469,8 +457,9 @@ export default function BuffaloSteelCupPage() {
       const mappedData =
         data?.map((row: any) => ({
           player_name: row.player_name,
-          total_points: row.placement_points + row.total_legs_won,
+          total_points: row.placement_points + row.bonus_points + row.total_legs_won,
           placement_points: row.placement_points,
+          bonus_points: row.bonus_points || 0,
           legs_points: row.total_legs_won,
           legs_won: row.total_legs_won,
           legs_lost: row.total_legs_lost,
@@ -482,8 +471,8 @@ export default function BuffaloSteelCupPage() {
         })) || []
 
       mappedData.sort((a, b) => {
-        const totalA = a.placement_points + a.legs_won
-        const totalB = b.placement_points + b.legs_won
+        const totalA = a.placement_points + a.bonus_points + a.legs_won
+        const totalB = b.placement_points + b.bonus_points + b.legs_won
         if (totalB !== totalA) return totalB - totalA
         if (b.legs_won !== a.legs_won) return b.legs_won - a.legs_won
         if (b.placement_points !== a.placement_points) return b.placement_points - a.placement_points
@@ -534,6 +523,7 @@ export default function BuffaloSteelCupPage() {
                 legs_won: entry.legs_won,
                 legs_lost: entry.legs_lost,
                 placement_points: entry.placement_points,
+                bonus_points: entry.bonus_points || 0,
                 form: entry.form,
               }
             }) || []
@@ -542,8 +532,8 @@ export default function BuffaloSteelCupPage() {
             if (a.placement !== b.placement) {
               return a.placement - b.placement
             }
-            const totalA = a.placement_points + a.legs_won
-            const totalB = b.placement_points + b.legs_won
+            const totalA = a.placement_points + a.bonus_points + a.legs_won
+            const totalB = b.placement_points + b.bonus_points + b.legs_won
             if (totalB !== totalA) {
               return totalB - totalA
             }
@@ -632,7 +622,7 @@ export default function BuffaloSteelCupPage() {
                   <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">{player.player_name}</h1>
                   <div className="flex items-center gap-2 text-white/90">
                     <Trophy className="h-5 w-5" />
-                    <span className="text-xl font-bold">{player.placement_points + player.legs_won} Punkte</span>
+                    <span className="text-xl font-bold">{player.placement_points + player.bonus_points + player.legs_won} Punkte</span>
                   </div>
                 </div>
               </div>
@@ -907,7 +897,7 @@ export default function BuffaloSteelCupPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-gray-600 text-xs sm:text-sm truncate">Höchste Punktzahl</p>
                 <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                  {standings[0] ? standings[0].placement_points + standings[0].legs_won : 0}
+                  {standings[0] ? standings[0].placement_points + standings[0].bonus_points + standings[0].legs_won : 0}
                 </p>
               </div>
             </div>
@@ -1022,11 +1012,11 @@ export default function BuffaloSteelCupPage() {
 
                           {/* Desktop table view - hidden on mobile */}
                           <div className="hidden lg:block bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
-                            <div className="grid grid-cols-[80px_1fr_auto_100px_100px_100px_120px] gap-4 p-4 bg-gray-100 border-b-2 border-gray-200 font-bold text-sm text-gray-700">
+                            <div className="grid grid-cols-[80px_1fr_100px_100px_100px_100px_120px] gap-4 p-4 bg-gray-100 border-b-2 border-gray-200 font-bold text-sm text-gray-700">
                               <div className="text-center">Platz</div>
                               <div>Spieler</div>
-                              <div className="text-center">Form</div>
                               <div className="text-center">Punkte</div>
+                              <div className="text-center">Bonus</div>
                               <div className="text-center">Legs W</div>
                               <div className="text-center">Legs L</div>
                               <div className="text-center">Gesamt</div>
@@ -1035,7 +1025,7 @@ export default function BuffaloSteelCupPage() {
                               {tournament.rankings.map((ranking, rankIndex) => (
                                 <div
                                   key={rankIndex}
-                                  className="grid grid-cols-[80px_1fr_auto_100px_100px_100px_120px] gap-4 p-4 items-center hover:bg-gray-50 transition-colors"
+                                  className="grid grid-cols-[80px_1fr_100px_100px_100px_100px_120px] gap-4 p-4 items-center hover:bg-gray-50 transition-colors"
                                 >
                                   <div className="flex justify-center">
                                     <div
@@ -1045,32 +1035,17 @@ export default function BuffaloSteelCupPage() {
                                     </div>
                                   </div>
                                   <div className="font-medium text-gray-900">{ranking.player_name}</div>
-                                  <div className="text-center font-mono font-bold text-sm">
-                                    {ranking.form ? (
-                                      <div className="flex gap-0.5">
-                                        {ranking.form.split(",").map((result, idx) => (
-                                          <span
-                                            key={idx}
-                                            className={`inline-flex items-center justify-center w-6 h-6 rounded ${
-                                              result === "W" ? "bg-green-500 text-white" : "bg-red-500 text-white"
-                                            }`}
-                                          >
-                                            {result}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <span className="text-gray-400">-</span>
-                                    )}
-                                  </div>
                                   <div className="text-center text-yellow-600 font-bold text-lg">
                                     {ranking.placement_points}
+                                  </div>
+                                  <div className="text-center text-purple-600 font-bold text-lg">
+                                    {ranking.bonus_points}
                                   </div>
                                   <div className="text-center text-green-600 font-bold text-lg">{ranking.legs_won}</div>
                                   <div className="text-center text-red-600 font-bold text-lg">{ranking.legs_lost}</div>
                                   <div className="text-center">
                                     <span className="inline-flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg px-3 py-1 rounded-lg shadow-md">
-                                      {ranking.placement_points + ranking.legs_won}
+                                      {ranking.placement_points + ranking.bonus_points + ranking.legs_won}
                                     </span>
                                   </div>
                                 </div>
