@@ -116,6 +116,15 @@ interface LionCupEvent {
   description: string | null
 }
 
+interface BuffaloCupEvent {
+  id: string
+  name: string
+  event_date: string
+  event_time: string | null
+  matchday: number
+  description: string | null
+}
+
 interface ActiveTournament {
   tournament_id: string
   tournament_name: string
@@ -200,14 +209,14 @@ export default function Home() {
   const [combinedEvents, setCombinedEvents] = useState<CombinedEvent[]>([])
   const [nextEvent, setNextEvent] = useState<LionCupEvent | null>(null)
   const [nextTournamentEvent, setNextTournamentEvent] = useState<LionCupEvent | null>(null)
+  const [nextBuffaloCupEvent, setNextBuffaloCupEvent] = useState<BuffaloCupEvent | null>(null)
   const [lionCupLoading, setLionCupLoading] = useState(true)
+  const [buffaloCupLoading, setBuffaloCupLoading] = useState(true)
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null)
   const [showTournamentModal, setShowTournamentModal] = useState(false)
   const [activeTournament, setActiveTournament] = useState<ActiveTournament | null>(null)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [showInstallButton, setShowInstallButton] = useState(false)
-
-  const buffaloCupNextDate = new Date("2026-01-22T19:30:00")
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -553,6 +562,42 @@ export default function Home() {
     fetchLionCupEvent()
   }, [])
 
+  useEffect(() => {
+    const fetchBuffaloCupEvent = async () => {
+      try {
+        const buffaloCupSchedule = [
+          { date: "2026-01-22", time: "19:30", matchday: 4 },
+          { date: "2026-01-28", time: "19:30", matchday: 5 },
+          { date: "2026-01-29", time: "19:30", matchday: 5 },
+          { date: "2026-02-04", time: "19:30", matchday: 6 },
+          { date: "2026-02-07", time: "19:00", matchday: 6 },
+        ]
+
+        const today = new Date().toISOString().split("T")[0]
+
+        const upcomingEvents = buffaloCupSchedule.filter((event) => event.date >= today)
+
+        if (upcomingEvents.length > 0) {
+          const nextEventData = {
+            id: "buffalo-cup-next",
+            name: "EMD BUFFALO STEEL CUP",
+            event_date: upcomingEvents[0].date,
+            event_time: upcomingEvents[0].time,
+            matchday: upcomingEvents[0].matchday,
+            description: null,
+          }
+          setNextBuffaloCupEvent(nextEventData)
+        }
+      } catch (error) {
+        console.error("Error fetching Buffalo Cup event:", error)
+      } finally {
+        setBuffaloCupLoading(false)
+      }
+    }
+
+    fetchBuffaloCupEvent()
+  }, [])
+
   const getTeamName = (match: Match, isHome: boolean) => {
     if (isHome) {
       return match.home_team?.name || match.home_opponent_team?.name || "Unbekanntes Team"
@@ -575,10 +620,17 @@ export default function Home() {
     return new Date(`${event.event_date}T${time}`)
   }
 
+  const createBuffaloCupEventDate = (event: BuffaloCupEvent | null) => {
+    if (!event) return new Date("2026-01-22T19:30:00")
+    const time = event.event_time || "19:30:00"
+    return new Date(`${event.event_date}T${time}`)
+  }
+
   const lionCupNextDate = createEventDate(nextTournamentEvent)
+  const buffaloCupNextDate = createBuffaloCupEventDate(nextBuffaloCupEvent)
   const isNextEventSpielfrei = nextEvent?.event_type?.toLowerCase() === "spielfrei"
 
-  if (loading || lionCupLoading) {
+  if (loading || lionCupLoading || buffaloCupLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
@@ -760,10 +812,29 @@ export default function Home() {
 
                 <div className="text-center mb-4 sm:mb-6">
                   <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-1">EMD-BUFFALO-STEEL</h1>
-                  <div className="h-10 mb-1" />
+                  <div className="h-10 flex items-center justify-center mb-1">
+                    {nextBuffaloCupEvent && (
+                      <div className="inline-block">
+                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20">
+                          <div className="flex items-center gap-2 text-xs">
+                            <Trophy className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="text-slate-300">Spieltag {nextBuffaloCupEvent.matchday}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <h2 className="text-lg sm:text-xl lg:text-3xl font-bold text-slate-300 mb-2"></h2>
                   <p className="text-base sm:text-lg lg:text-xl text-slate-200 mb-1">Nächstes Turnier</p>
-                  <p className="text-sm lg:text-base text-slate-300">22. Jänner 2026 • 19:30 Uhr</p>
+                  <p className="text-sm lg:text-base text-slate-300">
+                    {nextBuffaloCupEvent
+                      ? `${new Date(buffaloCupNextDate).toLocaleDateString("de-DE", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })} • ${nextBuffaloCupEvent.event_time || "19:30"} Uhr`
+                      : "22. Jänner 2026 • 19:30 Uhr"}
+                  </p>
                 </div>
 
                 <div className="flex justify-center mb-4 sm:mb-6">
