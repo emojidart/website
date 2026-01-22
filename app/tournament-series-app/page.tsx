@@ -1675,6 +1675,28 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
           </div>
         </div>
 
+        <div className="px-4">
+          <a
+            href="/lion_cup_results"
+            className="block bg-gradient-to-r from-red-600 to-red-700 rounded-xl shadow-lg border border-red-500 p-4 hover:shadow-xl transition-all duration-300 group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Target className="h-5 w-5 text-white flex-shrink-0" />
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white">
+                    Alle Turnier-Ergebnisse
+                  </h3>
+                  <p className="text-xs sm:text-sm text-red-100">
+                    Detaillierte Match-Übersicht
+                  </p>
+                </div>
+              </div>
+              <ChevronDown className="h-5 w-5 text-white rotate-[-90deg] group-hover:translate-x-1 transition-transform flex-shrink-0" />
+            </div>
+          </a>
+        </div>
+
         {activeTab === "turnier-historie" ? (
           <div className="px-4">
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
