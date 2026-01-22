@@ -566,11 +566,11 @@ export default function Home() {
     const fetchBuffaloCupEvent = async () => {
       try {
         const buffaloCupSchedule = [
-          { date: "2026-01-22", time: "19:30", matchday: 4 },
-          { date: "2026-01-28", time: "19:30", matchday: 5 },
-          { date: "2026-01-29", time: "19:30", matchday: 5 },
-          { date: "2026-02-04", time: "19:30", matchday: 6 },
-          { date: "2026-02-07", time: "19:00", matchday: 6 },
+          { date: "2026-01-22", time: "19:30", matchday: 6 },
+          { date: "2026-01-28", time: "19:30", matchday: 7 },
+          { date: "2026-01-29", time: "19:30", matchday: 8 },
+          { date: "2026-02-04", time: "19:30", matchday: 9 },
+          { date: "2026-02-07", time: "19:00", matchday: 10 },
         ]
 
         const today = new Date().toISOString().split("T")[0]
