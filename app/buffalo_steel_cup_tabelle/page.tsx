@@ -569,6 +569,14 @@ export default function BuffaloSteelCupPage() {
     return type
   }
 
+  // --- PREISPOOL (Buffalo Steel Cup) ---
+  // Einmalig pro Spieler: €10
+  // Pro Antritt: €5
+  const buffaloTotalParticipants = standings.length
+  const buffaloTotalAppearances = standings.reduce((sum, p) => sum + (p.tournaments_played || 0), 0)
+  const buffaloPrizePool = buffaloTotalParticipants * 10 + buffaloTotalAppearances * 5
+
+
   if (selectedPlayer) {
     const player = standings.find(p => p.player_name === selectedPlayer)
     if (!player) return null
@@ -868,7 +876,7 @@ export default function BuffaloSteelCupPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 px-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-4">
           <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
             <div className="flex items-center gap-3">
               <Users className="w-8 h-8 text-blue-600 flex-shrink-0" />
@@ -878,6 +886,22 @@ export default function BuffaloSteelCupPage() {
               </div>
             </div>
           </motion.div>
+
+
+          <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-3">
+              <Trophy className="w-8 h-8 text-yellow-600 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-600 text-xs sm:text-sm truncate">Preispool</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">€ {buffaloPrizePool.toFixed(2)}</p>
+                <p className="text-[10px] sm:text-xs text-gray-500 mt-1">10€ einmalig + 5€ pro Antritt</p>
+                <p className="text-[10px] sm:text-xs text-gray-600 mt-1">Gesamtantritte: <span className="font-semibold text-gray-900">{buffaloTotalAppearances}</span></p>
+                {/* BUFFALO_TOTAL_APPEARANCES */}
+              </div>
+            </div>
+            {/* BUFFALO_PREISPOOL_CARD */}
+          </motion.div>
+
 
           <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
             <div className="flex items-center gap-3">

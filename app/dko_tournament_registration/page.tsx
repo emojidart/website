@@ -116,6 +116,17 @@ export default function DKOTournamentRegistration() {
     refundAmount?: number
   }>({ open: false })
 
+  // ✅ Realtime: kleine Entprellung, damit bei vielen Events nicht 20x hintereinander geladen wird
+  const realtimeRefreshTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const scheduleRealtimeRefresh = () => {
+    if (realtimeRefreshTimerRef.current) clearTimeout(realtimeRefreshTimerRef.current)
+    realtimeRefreshTimerRef.current = setTimeout(async () => {
+      await fetchRegisteredPlayers()
+      await fetchFrequentPlayers()
+    }, 200)
+  }
+
   const handleScannedPlayerConfirm = async (shouldDeduct: boolean) => {
     if (!scannedPlayerForConfirm) return
 
@@ -322,7 +333,6 @@ export default function DKOTournamentRegistration() {
 
       setShowCreditConfirmModal({ open: false })
 
-      // Register ALL players (both with and without credit) without deduction
       const allPlayerIds = [...playersWithCredit.map((p) => p.id), ...playersWithoutCredit]
 
       await registerPlayersDirectly(allPlayerIds, entryFee)
@@ -493,6 +503,32 @@ export default function DKOTournamentRegistration() {
     fetchFrequentPlayers()
   }, [])
 
+  // ✅ Realtime Subscription: Änderungen in dko_tournament_registration automatisch übernehmen
+  useEffect(() => {
+    // Sicherheits-Check: nur wenn Seite wirklich genutzt wird (Admin), damit es nicht unnötig läuft
+    if (authLoading || adminLoading) return
+    if (!user || !isAdmin) return
+
+    const channel = supabase
+      .channel("dko_tournament_registration_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "dko_tournament_registration" },
+        () => {
+          scheduleRealtimeRefresh()
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+      if (realtimeRefreshTimerRef.current) {
+        clearTimeout(realtimeRefreshTimerRef.current)
+        realtimeRefreshTimerRef.current = null
+      }
+    }
+  }, [authLoading, adminLoading, user, isAdmin])
+
   useEffect(() => {
     const isCompleted = tournamentName.trim() !== "" && tournamentEntryFee.trim() !== ""
     setTournamentFormCompleted(isCompleted)
@@ -605,10 +641,7 @@ export default function DKOTournamentRegistration() {
         admin_id: user?.id,
       })
 
-      const { error: deleteError } = await supabase
-        .from("dko_tournament_registration")
-        .delete()
-        .eq("id", registrationId)
+      const { error: deleteError } = await supabase.from("dko_tournament_registration").delete().eq("id", registrationId)
 
       if (deleteError) {
         console.error("[v0] Error deleting registration:", deleteError)
@@ -635,7 +668,6 @@ export default function DKOTournamentRegistration() {
     try {
       const playerToToggle = registeredPlayers.find((p) => p.id === registrationId)
 
-      // Fixed: Check for both boolean true AND string "true"
       const deductedFromCredit =
         playerToToggle?.deducted_from_credit === true || playerToToggle?.deducted_from_credit === "true"
 
@@ -645,10 +677,7 @@ export default function DKOTournamentRegistration() {
         return
       }
 
-      const { error } = await supabase
-        .from("dko_tournament_registration")
-        .update({ paid: !currentStatus })
-        .eq("id", registrationId)
+      const { error } = await supabase.from("dko_tournament_registration").update({ paid: !currentStatus }).eq("id", registrationId)
 
       if (error) throw error
 

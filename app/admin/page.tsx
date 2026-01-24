@@ -38,7 +38,6 @@ import { PlayerRecruitmentForm } from "@/components/player-recruitment-form"
 import { PlayerRecruitmentList } from "@/components/player-recruitment-list"
 import { PlayerApplicationsList } from "@/components/player-applications-list"
 import { UpcomingTournamentsManagement } from "@/components/admin/upcoming-tournaments-management"
-import { TournamentRegistrationsList } from "@/components/admin/tournament-registrations-list"
 import { EventsManagement } from "@/components/admin/events-management"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
@@ -48,7 +47,6 @@ import Link from "next/link"
 import { UserManagement } from "@/components/user-management"
 import { AttendanceManagement } from "@/components/attendance-management"
 import { LeagueManagement } from "@/components/league-management"
-import { TournamentDaysManagement } from "@/components/tournament-days-management"
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
@@ -71,15 +69,14 @@ export default function AdminPage() {
     | "tournaments"
     | "users"
     | "upcoming-tournaments"
-    | "tournament-registration"
     | "player-database"
     | "dart-competition"
     | "attendance"
     | "leagues"
-    | "tournament-days"
     | "support-tickets"
     | "lion-cup-registrations"
     | "tournament-management"
+    | "tournament-series"
     | "events"
     | "advent-quiz"
     | "campus-registrations"
@@ -115,7 +112,7 @@ export default function AdminPage() {
     if (session) {
       channel = supabase
         .channel("player_applications_changes")
-        .on("postgres_changes", { event: "*", schema: "public", table: "player_applications" }, (payload) => {
+        .on("postgres_changes", { event: "*", schema: "public", table: "player_applications" }, () => {
           fetchUnreadApplicationsCount()
         })
         .subscribe()
@@ -255,13 +252,6 @@ export default function AdminPage() {
       view: "upcoming-tournaments" as const,
     },
     {
-      title: "Turnieranmeldung",
-      description: "Turnieranmeldungen verwalten",
-      icon: PlusCircle,
-      color: "bg-emerald-500",
-      view: "tournament-registration" as const,
-    },
-    {
       title: "Turniere",
       description: "Turnier starten",
       icon: Trophy,
@@ -270,7 +260,7 @@ export default function AdminPage() {
     },
     {
       title: "Turnier verwalten",
-      description: "Turnierdaten und Tabellen verwalten",
+      description: "Serien, Spieltage und Turnierdaten zentral pflegen",
       icon: Settings,
       color: "bg-purple-500",
       view: "tournament-management" as const,
@@ -361,15 +351,14 @@ export default function AdminPage() {
                   {currentView === "tournaments" && "Turniere"}
                   {currentView === "users" && "Benutzerverwaltung"}
                   {currentView === "upcoming-tournaments" && "Bevorstehende Turniere"}
-                  {currentView === "tournament-registration" && "Turnieranmeldung"}
                   {currentView === "player-database" && "Spielerdatenbank"}
                   {currentView === "dart-competition" && "Dart Competition"}
                   {currentView === "attendance" && "Anwesenheitsliste"}
                   {currentView === "leagues" && "Ligaspiele"}
-                  {currentView === "tournament-days" && "Turniertage Cup"}
                   {currentView === "support-tickets" && "Support Tickets"}
                   {currentView === "lion-cup-registrations" && "Lion Cup Anmeldungen"}
                   {currentView === "tournament-management" && "Turnier verwalten"}
+                  {currentView === "tournament-series" && "Turnier-Serien & Spieltage"}
                   {currentView === "events" && "Veranstaltungen"}
                   {currentView === "advent-quiz" && "Adventskalender Auswertung"}
                   {currentView === "campus-registrations" && "Campus-Registrierungen"}
@@ -408,35 +397,33 @@ export default function AdminPage() {
                                     ? "Benutzerverwaltung"
                                     : currentView === "upcoming-tournaments"
                                       ? "Bevorstehende Turniere"
-                                      : currentView === "tournament-registration"
-                                        ? "Turnieranmeldung"
-                                        : currentView === "player-database"
-                                          ? "Spielerdatenbank"
-                                          : currentView === "dart-competition"
-                                            ? "Dart Competition"
-                                            : currentView === "attendance"
-                                              ? "Anwesenheitsliste"
-                                              : currentView === "leagues"
-                                                ? "Ligaspiele"
-                                                : currentView === "tournament-days"
-                                                  ? "Turniertage Cup"
-                                                  : currentView === "support-tickets"
-                                                    ? "Support Tickets"
-                                                    : currentView === "lion-cup-registrations"
-                                                      ? "Lion Cup Anmeldungen"
-                                                      : currentView === "tournament-management"
-                                                        ? "Turnier verwalten"
-                                                        : currentView === "events"
-                                                          ? "Veranstaltungen"
-                                                          : currentView === "advent-quiz"
-                                                            ? "Adventskalender Auswertung"
-                                                            : currentView === "campus-registrations"
-                                                              ? "Campus-Registrierungen"
-                                                              : currentView === "credit-loader"
-                                                                ? "Credit-Loader"
-                                                                : currentView === "lion-cup-settings"
-                                                                  ? "Lion Cup Settings"
-                                                                  : "Admin-Zugang"}
+                                      : currentView === "player-database"
+                                        ? "Spielerdatenbank"
+                                        : currentView === "dart-competition"
+                                          ? "Dart Competition"
+                                          : currentView === "attendance"
+                                            ? "Anwesenheitsliste"
+                                            : currentView === "leagues"
+                                              ? "Ligaspiele"
+                                              : currentView === "support-tickets"
+                                                ? "Support Tickets"
+                                                : currentView === "lion-cup-registrations"
+                                                  ? "Lion Cup Anmeldungen"
+                                                  : currentView === "tournament-management"
+                                                    ? "Turnier verwalten"
+                                                    : currentView === "tournament-series"
+                                                      ? "Turnier-Serien & Spieltage"
+                                                      : currentView === "events"
+                                                        ? "Veranstaltungen"
+                                                        : currentView === "advent-quiz"
+                                                          ? "Adventskalender Auswertung"
+                                                          : currentView === "campus-registrations"
+                                                            ? "Campus-Registrierungen"
+                                                            : currentView === "credit-loader"
+                                                              ? "Credit-Loader"
+                                                              : currentView === "lion-cup-settings"
+                                                                ? "Lion Cup Settings"
+                                                                : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
                 {session && currentView === "dashboard"
@@ -460,7 +447,6 @@ export default function AdminPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Status Message */}
             {authMessage && (
               <div
                 className={`p-4 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -472,6 +458,7 @@ export default function AdminPage() {
                 {authMessage}
               </div>
             )}
+
             {currentView === "dashboard" && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {dashboardCards.map((card) => (
@@ -496,9 +483,9 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
-            {currentView === "players" && (
-              <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />
-            )}
+
+            {currentView === "players" && <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />}
+
             {currentView === "results" && (
               <ResultEntry
                 isVisible={true}
@@ -510,16 +497,17 @@ export default function AdminPage() {
                 isPlayerSelectedViaModal={isPlayerSelectedViaModal}
               />
             )}
+
             {currentView === "history" && <GameHistoryTable />}
-            {currentView === "management" && (
-              <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />
-            )}
+
+            {currentView === "management" && <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />}
+
             {currentView === "photos" && <PlayerPhotoManagement user={user} onDataSaved={handleDataSaved} />}
+
             {currentView === "attendance" && <AttendanceManagement />}
+
             {currentView === "leagues" && <LeagueManagement />}
-            {currentView === "tournament-days" && (
-              <TournamentDaysManagement user={user} onDataSaved={handleDataSaved} />
-            )}
+
             {currentView === "support-tickets" && (
               <div className="space-y-6">
                 <Card>
@@ -545,6 +533,7 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
+
             {currentView === "events" && (
               <div className="space-y-6">
                 <Card>
@@ -560,6 +549,7 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
+
             {currentView === "recruitment" && (
               <div className="space-y-6">
                 <div className="flex space-x-4 border-b border-gray-200">
@@ -614,8 +604,11 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
+
             {currentView === "users" && <UserManagement user={user} onDataSaved={handleDataSaved} />}
+
             {currentView === "club" && <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />}
+
             {currentView === "tournaments" && (
               <div className="space-y-6">
                 <Card>
@@ -641,6 +634,7 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
+
             {currentView === "upcoming-tournaments" && (
               <div className="space-y-6">
                 <Card>
@@ -656,21 +650,7 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
-            {currentView === "tournament-registration" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <PlusCircle className="h-5 w-5" />
-                      <span>Turnieranmeldungen verwalten</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <TournamentRegistrationsList />
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+
             {currentView === "player-database" && (
               <div className="space-y-6">
                 <Card>
@@ -698,6 +678,7 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
+
             {currentView === "dart-competition" && (
               <div className="space-y-6">
                 <Card>
@@ -797,7 +778,10 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
+
             {currentView === "lion-cup-registrations" && <TournamentRegistrations />}
+
+            {/* ✅ Turnier verwalten = Zentrale Sammelstelle */}
             {currentView === "tournament-management" && (
               <div className="space-y-6">
                 <Card>
@@ -808,19 +792,62 @@ export default function AdminPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 mb-4">
-                      Hier können Sie alle Turnierdaten, Tabellen und Spielstände verwalten.
-                    </p>
-                    <Link href="/admin/tournaments">
+                    <p className="text-gray-600 mb-4">Zentrale Verwaltung für Turnier-Struktur, Serien und Spieltage.</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <Link href="/admin/tournaments">
+                        <Button className="w-full justify-start" variant="outline">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Turnierverwaltung
+                        </Button>
+                      </Link>
+
+                      <Link href="/admin/tournament-schedules">
+                        <Button className="w-full justify-start" variant="outline">
+                          <Trophy className="h-4 w-4 mr-2" />
+                          Turnier-Serien & Spieltage
+                        </Button>
+                      </Link>
+
+                      {/* 🆕 NEU */}
+                      <Link href="/admin/turnierserie-bearbeiten">
+                        <Button className="w-full justify-start" variant="outline">
+                          <ChevronRight className="h-4 w-4 mr-2" />
+                          Turnier transferieren
+                        </Button>
+                      </Link>
+                    </div>
+
+                    <div className="mt-4 text-xs text-gray-500">
+                      Tipp: Serien & Spieltage sind die Basis für Startseite/Upcoming — bitte dort zuerst pflegen.
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {currentView === "tournament-series" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Trophy className="h-5 w-5" />
+                      <span>Turnier-Serien & Spieltage</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4">Serien anlegen und Spieltage pflegen (inkl. Verschiebungen).</p>
+                    <Link href="/admin/tournament-series">
                       <Button className="w-full">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Zur Turnierverwaltung
+                        <Trophy className="h-4 w-4 mr-2" />
+                        Öffnen
                       </Button>
                     </Link>
                   </CardContent>
                 </Card>
               </div>
             )}
+
             {currentView === "advent-quiz" && (
               <div className="space-y-6">
                 <Card>
@@ -844,6 +871,7 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
+
             {currentView === "campus-registrations" && (
               <div className="space-y-6">
                 <Card>
@@ -867,6 +895,7 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
+
             {currentView === "credit-loader" && (
               <div className="space-y-6">
                 <Card>
@@ -888,6 +917,7 @@ export default function AdminPage() {
                 </Card>
               </div>
             )}
+
             {currentView === "lion-cup-settings" && <SeasonSettingsPage />}
           </div>
         )}
