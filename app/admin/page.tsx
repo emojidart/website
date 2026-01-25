@@ -85,12 +85,16 @@ export default function AdminPage() {
   >("dashboard")
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
+  const [unreadCampusCount, setUnreadCampusCount] = useState(0)
 
   const fetchUnreadApplicationsCount = useCallback(async () => {
     if (!session) {
       setUnreadApplicationsCount(0)
+      setUnreadCampusCount(0)
       return
     }
+
+    // Spielerbewerbungen (Rekrutierung)
     const { count, error } = await supabase
       .from("player_applications")
       .select("*", { count: "exact", head: true })
@@ -102,6 +106,19 @@ export default function AdminPage() {
     } else {
       setUnreadApplicationsCount(count || 0)
     }
+
+    // Campus Registrierungen
+    const { count: campusCount, error: campusError } = await supabase
+      .from("campus_registrations")
+      .select("*", { count: "exact", head: true })
+      .eq("is_read", false)
+
+    if (campusError) {
+      console.error("Error fetching unread campus registrations count:", campusError)
+      setUnreadCampusCount(0)
+    } else {
+      setUnreadCampusCount(campusCount || 0)
+    }
   }, [session])
 
   useEffect(() => {
@@ -111,8 +128,11 @@ export default function AdminPage() {
 
     if (session) {
       channel = supabase
-        .channel("player_applications_changes")
+        .channel("admin_unread_counts")
         .on("postgres_changes", { event: "*", schema: "public", table: "player_applications" }, () => {
+          fetchUnreadApplicationsCount()
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "campus_registrations" }, () => {
           fetchUnreadApplicationsCount()
         })
         .subscribe()
@@ -190,6 +210,7 @@ export default function AdminPage() {
     {
       title: "Campus-Registrierungen",
       description: "EMD-CAMPUS Anmeldungen verwalten und einsehen",
+      badge: unreadCampusCount > 0 ? unreadCampusCount : undefined,
       icon: Users,
       color: "bg-pink-500",
       view: "campus-registrations" as const,
@@ -472,7 +493,11 @@ export default function AdminPage() {
                         <div className={`p-3 ${card.color} rounded-lg shadow-lg`}>
                           <card.icon className="h-6 w-6 text-white" />
                         </div>
-                        {card.badge && <Badge className="bg-red-500 text-white">{card.badge}</Badge>}
+                        {card.badge && (
+                          <Badge className="bg-orange-500 text-white rounded-full px-2 py-0.5 text-xs">
+                            {card.badge}
+                          </Badge>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -594,7 +619,9 @@ export default function AdminPage() {
                       <Mail className="h-5 w-5" />
                       <span>Spielerbewerbungen</span>
                       {unreadApplicationsCount > 0 && (
-                        <Badge className="bg-red-500 text-white">{unreadApplicationsCount}</Badge>
+                        <Badge className="bg-orange-500 text-white rounded-full px-2 py-0.5 text-xs">
+                          {unreadApplicationsCount}
+                        </Badge>
                       )}
                     </CardTitle>
                   </CardHeader>
@@ -627,6 +654,14 @@ export default function AdminPage() {
                         <Button variant="outline" className="w-full justify-start bg-transparent">
                           <Trophy className="h-4 w-4 mr-2" />
                           DKO Turnier
+                        </Button>
+                      </Link>
+
+                      {/* 🆕 NEU: Turnierserie starten */}
+                      <Link href="/admin/turnier_spieltage_starten">
+                        <Button variant="outline" className="w-full justify-start bg-transparent">
+                          <Trophy className="h-4 w-4 mr-2" />
+                          Turnierserie starten
                         </Button>
                       </Link>
                     </div>

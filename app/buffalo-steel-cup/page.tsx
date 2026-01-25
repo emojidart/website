@@ -1,9 +1,11 @@
 "use client"
 
 import { Header } from "@/components/header"
-import { Calendar, MapPin, Sparkles, Star, Target, Trophy, Euro } from "lucide-react"
+import { Calendar, MapPin, Sparkles, Star, Target, Trophy, Euro, Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { motion } from "framer-motion"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { useEffect, useMemo, useState } from "react"
+import { supabase } from "@/lib/supabase"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -38,14 +40,106 @@ const pulseVariants = {
   },
 }
 
+/* ===================== DB TYPES + HELPERS ===================== */
+
+type DkoSeries = {
+  id: string
+  name: string
+  slug: string
+}
+
+type DkoSeriesEvent = {
+  id: string
+  series_id: string
+  start_at: string
+  is_matchday: boolean
+  is_rescheduled?: boolean | null
+  rescheduled_at?: string | null
+}
+
+type UiEvent = {
+  id: string
+  effectiveDT: Date
+  originalDT: Date
+  isRescheduled: boolean
+}
+
+type UiPair = {
+  left: UiEvent
+  right: UiEvent | null
+}
+
+function formatDateLabel(dt: Date) {
+  return dt.toLocaleDateString("de-AT", { day: "2-digit", month: "short", year: "numeric" })
+}
+
+function formatTimeLabel(dt: Date) {
+  return `${dt.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr`
+}
+
+function formatFullLabel(dt: Date) {
+  // z.B. "Mi. 07. Jän. 2026 - 19:30 Uhr"
+  const weekday = dt.toLocaleDateString("de-AT", { weekday: "short" })
+  return `${weekday} ${formatDateLabel(dt)} - ${formatTimeLabel(dt)}`
+}
+
+function RescheduleInline({
+  ev,
+  accent = "slate",
+}: {
+  ev: UiEvent
+  accent?: "slate" | "blue"
+}) {
+  if (!ev.isRescheduled) return null
+
+  const accentClasses =
+    accent === "blue"
+      ? {
+          chip: "bg-blue-600 text-white border-blue-500/30",
+          ring: "ring-blue-200",
+          dot: "bg-blue-600",
+          label: "text-blue-700",
+        }
+      : {
+          chip: "bg-slate-800 text-white border-slate-700/30",
+          ring: "ring-slate-200",
+          dot: "bg-slate-800",
+          label: "text-slate-700",
+        }
+
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={[
+            "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold shadow-sm",
+            "ring-2",
+            accentClasses.chip,
+            accentClasses.ring,
+          ].join(" ")}
+        >
+          <RefreshCw className="h-3 w-3 opacity-90" />
+          Neuer Termin: {formatDateLabel(ev.effectiveDT)} • {formatTimeLabel(ev.effectiveDT)}
+        </span>
+
+        <span className={`inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide ${accentClasses.label}`}>
+          <span className={`h-2 w-2 rounded-full ${accentClasses.dot}`} />
+          Verschoben
+        </span>
+      </div>
+
+      <div className="text-[11px] text-gray-600">
+        <span className="opacity-70">Original:</span>{" "}
+        <span className="line-through decoration-2 decoration-gray-400">
+          {formatDateLabel(ev.originalDT)} • {formatTimeLabel(ev.originalDT)}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export default function BuffaloSteelCupPage() {
-  const spieltage = [
-    { mittwoch: "Mi. 07. Jän. 2026 - 19:30 Uhr", samstag: "Sa. 10. Jän. 2026 - 19:00 Uhr" },
-    { mittwoch: "Mi. 14. Jän. 2026 - 19:30 Uhr", samstag: "Do. 15. Jän. 2026 - 19:30 Uhr" },
-    { mittwoch: "Mi. 21. Jän. 2026 - 19:30 Uhr", samstag: "Do. 22. Jän. 2026 - 19:30 Uhr" },
-    { mittwoch: "Mi. 28. Jän. 2026 - 19:30 Uhr", samstag: "Do. 29. Jän. 2026 - 19:30 Uhr" },
-    { mittwoch: "Mi. 04. Feb. 2026 - 19:30 Uhr", samstag: "Sa. 07. Feb. 2026 - 19:00 Uhr" },
-  ]
+  // ❌ spieltage hardcode entfernt (war hier) :contentReference[oaicite:1]{index=1}
 
   const sponsors = [
     { name: "Sponsor 1", logo: "/images/sponsoren/sponsor1.png" },
@@ -61,6 +155,76 @@ export default function BuffaloSteelCupPage() {
     { name: "Sponsor 11", logo: "/images/sponsoren/sponsor11.png" },
     { name: "Sponsor 12", logo: "/images/sponsoren/sponsor12.png" },
   ]
+
+  /* ===================== DB STATE (nur für Spieltage) ===================== */
+  const [buffaloSeries, setBuffaloSeries] = useState<DkoSeries | null>(null)
+  const [buffaloEvents, setBuffaloEvents] = useState<UiEvent[]>([])
+  const [dkoLoading, setDkoLoading] = useState(true)
+  const [dkoError, setDkoError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const run = async () => {
+      setDkoLoading(true)
+      setDkoError(null)
+
+      try {
+        const { data: seriesData, error: sErr } = await supabase
+          .from("dko_series")
+          .select("id,name,slug")
+          .eq("slug", "buffalo-steel-cup-2026")
+          .maybeSingle()
+
+        if (sErr) throw sErr
+
+        if (!seriesData?.id) {
+          setBuffaloSeries(null)
+          setBuffaloEvents([])
+          return
+        }
+
+        setBuffaloSeries(seriesData as DkoSeries)
+
+        const { data: evData, error: eErr } = await supabase
+          .from("dko_series_events")
+          .select("id,series_id,start_at,is_matchday,is_rescheduled,rescheduled_at")
+          .eq("series_id", seriesData.id)
+          .order("start_at", { ascending: true })
+
+        if (eErr) throw eErr
+
+        const mapped: UiEvent[] = (evData || [])
+          .filter((e: DkoSeriesEvent) => !!e.is_matchday)
+          .map((ev: DkoSeriesEvent) => {
+            const isRescheduled = !!ev.is_rescheduled && !!ev.rescheduled_at
+            const effectiveIso = isRescheduled && ev.rescheduled_at ? ev.rescheduled_at : ev.start_at
+            return {
+              id: ev.id,
+              effectiveDT: new Date(effectiveIso),
+              originalDT: new Date(ev.start_at),
+              isRescheduled,
+            }
+          })
+
+        setBuffaloEvents(mapped)
+      } catch (e: any) {
+        console.error(e)
+        setDkoError(e?.message ? String(e.message) : "Fehler beim Laden der Buffalo-Spieltage.")
+      } finally {
+        setDkoLoading(false)
+      }
+    }
+
+    run()
+  }, [])
+
+  // Pairing: immer 2 Events -> ein Spieltag (mittwoch/samstag)
+  const pairedSpieltage: UiPair[] = useMemo(() => {
+    const res: UiPair[] = []
+    for (let i = 0; i < buffaloEvents.length; i += 2) {
+      res.push({ left: buffaloEvents[i], right: buffaloEvents[i + 1] ?? null })
+    }
+    return res
+  }, [buffaloEvents])
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
@@ -98,8 +262,6 @@ export default function BuffaloSteelCupPage() {
                   <span className="block text-red-500 text-balance">DART SERIEN CUP</span>
                   <span className="block text-gray-300 text-3xl md:text-4xl lg:text-5xl mt-4">EMD TO PFEIL OK - SINCE 2023</span>
                 </h1>
-
-
 
                 <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 text-base md:text-lg font-bold mb-8">
                   <div className="flex items-center gap-2 bg-white/10 px-6 py-3 rounded-xl border border-white/20 backdrop-blur-sm">
@@ -184,6 +346,7 @@ export default function BuffaloSteelCupPage() {
             </motion.div>
           </motion.div>
 
+          {/* ===================== SPIELTAGE (DB) – NUR DIESER BLOCK IST GEÄNDERT ===================== */}
           <motion.div variants={itemVariants} className="mb-16">
             <motion.div variants={cardVariants} className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
               <div className="text-center mb-8">
@@ -193,36 +356,63 @@ export default function BuffaloSteelCupPage() {
                 <h2 className="text-2xl md:text-3xl font-extrabold uppercase text-gray-900">Spieltage</h2>
               </div>
 
-              <div className="space-y-4">
-                {spieltage.map((tag, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="bg-gradient-to-r from-gray-50 to-red-50 border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300"
-                  >
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="bg-blue-500 text-white font-bold rounded-full w-10 h-10 flex items-center justify-center text-lg">
-                          {index + 1}
+              {dkoLoading ? (
+                <div className="flex items-center justify-center gap-2 py-6 text-gray-700">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Lade Termine…</span>
+                </div>
+              ) : dkoError ? (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
+                  <AlertCircle className="h-5 w-5" />
+                  <span className="font-semibold">Fehler beim Laden: {dkoError}</span>
+                </div>
+              ) : !buffaloSeries ? (
+                <div className="text-sm text-gray-600">Buffalo Steel Cup nicht in der DB gefunden.</div>
+              ) : pairedSpieltage.length === 0 ? (
+                <div className="text-sm text-gray-600">Noch keine Spieltage in der DB.</div>
+              ) : (
+                <div className="space-y-4">
+                  {pairedSpieltage.map((pair, index) => {
+                    const leftLabel = formatFullLabel(pair.left.effectiveDT)
+                    const rightLabel = pair.right ? formatFullLabel(pair.right.effectiveDT) : "—"
+
+                    return (
+                      <motion.div
+                        key={pair.left.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="bg-gradient-to-r from-gray-50 to-red-50 border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300"
+                      >
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="bg-blue-500 text-white font-bold rounded-full w-10 h-10 flex items-center justify-center text-lg">
+                              {index + 1}
+                            </div>
+
+                            <div className="text-left">
+                              <p className="font-bold text-gray-900">{leftLabel}</p>
+                              <RescheduleInline ev={pair.left} accent="blue" />
+                            </div>
+                          </div>
+
+                          <div className="hidden md:block text-gray-400 font-bold text-2xl">/</div>
+
+                          <div className="flex items-center gap-3 flex-1 md:justify-end">
+                            <div className="text-left md:text-right">
+                              <p className="font-bold text-gray-900">{rightLabel}</p>
+                              {pair.right ? <RescheduleInline ev={pair.right} accent="blue" /> : null}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-left">
-                          <p className="font-bold text-gray-900">{tag.mittwoch}</p>
-                        </div>
-                      </div>
-                      <div className="hidden md:block text-gray-400 font-bold text-2xl">/</div>
-                      <div className="flex items-center gap-3 flex-1 md:justify-end">
-                        <div className="text-left md:text-right">
-                          <p className="font-bold text-gray-900">{tag.samstag}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                      </motion.div>
+                    )
+                  })}
+                </div>
+              )}
             </motion.div>
           </motion.div>
+          {/* ===================== ENDE SPIELTAGE (DB) ===================== */}
 
           {/* Location */}
           <motion.div variants={itemVariants} className="mb-16">
@@ -256,9 +446,7 @@ export default function BuffaloSteelCupPage() {
                 <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
                   <Sparkles className="h-8 w-8 text-white mx-auto" />
                 </div>
-                <h2 className="text-2xl md:text-3xl font-extrabold uppercase text-gray-900">
-                  UNSERE PARTNER & SPONSOREN
-                </h2>
+                <h2 className="text-2xl md:text-3xl font-extrabold uppercase text-gray-900">UNSERE PARTNER & SPONSOREN</h2>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">

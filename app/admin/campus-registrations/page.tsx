@@ -12,6 +12,7 @@ import Link from "next/link"
 
 interface CampusRegistration {
   id: string
+  is_read: boolean | null
   child_first_name: string
   child_last_name: string
   birth_date: string
@@ -50,7 +51,7 @@ export default function AdminCampusRegistrationsPage() {
 
       if (error) throw error
 
-      setRegistrations(data || [])
+      setRegistrations((data as CampusRegistration[]) || [])
     } catch (error) {
       console.error("Error fetching registrations:", error)
     } finally {
@@ -58,10 +59,25 @@ export default function AdminCampusRegistrationsPage() {
     }
   }
 
+  const markAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase.from("campus_registrations").update({ is_read: true }).eq("id", id)
+      if (error) throw error
+
+      // Lokal updaten (ohne neu zu laden)
+      setRegistrations((prev) => prev.map((r) => (r.id === id ? { ...r, is_read: true } : r)))
+
+      if (selectedRegistration?.id === id) {
+        setSelectedRegistration({ ...selectedRegistration, is_read: true })
+      }
+    } catch (error) {
+      console.error("Error marking as read:", error)
+    }
+  }
+
   const updateRegistrationStatus = async (id: string, newStatus: "pending" | "approved" | "rejected") => {
     try {
       const { error } = await supabase.from("campus_registrations").update({ status: newStatus }).eq("id", id)
-
       if (error) throw error
 
       // Wenn Status auf "approved" gesetzt wird, E-Mail versenden
@@ -69,9 +85,7 @@ export default function AdminCampusRegistrationsPage() {
         try {
           const response = await fetch("/api/send-campus-email", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: selectedRegistration.email,
               child_first_name: selectedRegistration.child_first_name,
@@ -83,8 +97,8 @@ export default function AdminCampusRegistrationsPage() {
           const result = await response.json()
 
           if (!response.ok) {
-            console.error("E-Mail-Versand Fehler:", result.error)
-            alert(`Registrierung bestätigt, aber E-Mail konnte nicht gesendet werden: ${result.error}`)
+            console.error("E-Mail-Versand Fehler:", result?.error)
+            alert(`Registrierung bestätigt, aber E-Mail konnte nicht gesendet werden: ${result?.error || "Unbekannter Fehler"}`)
           } else {
             alert(`Registrierung bestätigt! Eine Bestätigungs-E-Mail wurde an ${selectedRegistration.email} gesendet.`)
           }
@@ -158,6 +172,8 @@ export default function AdminCampusRegistrationsPage() {
     return ageGroupMatch && statusMatch
   })
 
+  const unreadCount = registrations.filter((r) => !r.is_read).length
+
   const stats = {
     total: registrations.length,
     kids: registrations.filter((r) => r.age_group === "kids").length,
@@ -227,7 +243,12 @@ export default function AdminCampusRegistrationsPage() {
               <UserPlus className="h-4 w-4 md:h-6 md:w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl md:text-3xl font-bold text-gray-900">Campus-Registrierungen</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl md:text-3xl font-bold text-gray-900">Campus-Registrierungen</h1>
+                {unreadCount > 0 && (
+                  <Badge className="bg-orange-500 text-white rounded-full px-2 py-0.5 text-xs">{unreadCount}</Badge>
+                )}
+              </div>
               <p className="text-xs md:text-base text-gray-600">Alle Anmeldungen im Überblick</p>
             </div>
           </div>
@@ -342,13 +363,21 @@ export default function AdminCampusRegistrationsPage() {
                       className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
                         selectedRegistration?.id === registration.id ? "ring-2 ring-orange-500" : ""
                       }`}
-                      onClick={() => setSelectedRegistration(registration)}
+                      onClick={() => {
+                        setSelectedRegistration(registration)
+                        if (!registration.is_read) {
+                          markAsRead(registration.id)
+                        }
+                      }}
                     >
                       <CardHeader className="pb-3 px-4 md:px-6">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2 mb-2">
                               <Badge className={`${statusBadge.color} text-white text-xs`}>{statusBadge.label}</Badge>
+                              {!registration.is_read && (
+                                <Badge className="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5">Neu</Badge>
+                              )}
                               <Badge variant="outline" className="text-xs">
                                 {getAgeGroupLabel(registration.age_group)}
                               </Badge>
@@ -392,9 +421,14 @@ export default function AdminCampusRegistrationsPage() {
                         <CardTitle className="text-base md:text-xl mb-2">
                           {selectedRegistration.child_first_name} {selectedRegistration.child_last_name}
                         </CardTitle>
-                        <Badge className={`${getStatusBadge(selectedRegistration.status).color} text-white`}>
-                          {getStatusBadge(selectedRegistration.status).label}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={`${getStatusBadge(selectedRegistration.status).color} text-white`}>
+                            {getStatusBadge(selectedRegistration.status).label}
+                          </Badge>
+                          {!selectedRegistration.is_read && (
+                            <Badge className="bg-orange-500 text-white rounded-full px-2 py-0.5 text-xs">Neu</Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardHeader>
@@ -491,7 +525,7 @@ export default function AdminCampusRegistrationsPage() {
                     )}
 
                     <div className="text-xs text-gray-500 pt-2 border-t">
-                      Angemeldet am: {new Date(selectedRegistration.created_at).toLocaleDateString("de-DE")}{" "}
+                      Angemeldet am: {new Date(selectedRegistration.created_at).toLocaleDateString("de-DE")} {" "}
                       {new Date(selectedRegistration.created_at).toLocaleTimeString("de-DE")}
                     </div>
 

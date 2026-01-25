@@ -6,6 +6,7 @@ import { Header } from "@/components/header"
 import {
   Search,
   UserPlus,
+  PlusCircle,
   X,
   Play,
   Trophy,
@@ -22,6 +23,7 @@ import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { SpieldatenbankForm } from "@/components/spielerdatenbank-form"
 
 interface Player {
   id: number
@@ -74,6 +76,9 @@ export default function DKOTournamentRegistration() {
   // ✅ Wenn seriesId vorhanden ist, sperren wir Turniername + Startgeld und füllen sie automatisch aus DB.
   const [isSeriesPrefilled, setIsSeriesPrefilled] = useState(false)
 
+
+  const [showAddPlayerModal, setShowAddPlayerModal] = useState(false)
+  const [addPlayerFormKey, setAddPlayerFormKey] = useState(0)
 
   const [showScanner, setShowScanner] = useState(false)
   const [scannerMessage, setScannerMessage] = useState("")
@@ -509,6 +514,25 @@ player_id: playerId.toString(),
       console.error("Fehler beim Laden der häufig gespielten Spieler:", error)
       setFrequentPlayers([])
     }
+  }
+
+
+  const openAddPlayerModal = () => {
+    setAddPlayerFormKey((k) => k + 1) // Form zurücksetzen beim Öffnen
+    setShowAddPlayerModal(true)
+  }
+
+  const closeAddPlayerModal = () => {
+    setShowAddPlayerModal(false)
+  }
+
+  const handleAddPlayerSaved = async () => {
+    // Spieler wurde in der Spieldatenbank gespeichert → Listen hier aktualisieren
+    closeAddPlayerModal()
+    await fetchPlayers()
+    await fetchFrequentPlayers()
+    setPlayerViewMode("all")
+    setSearchTerm("")
   }
 
   
@@ -1206,7 +1230,31 @@ player_id: spielData.id.toString(),
         </div>
       )}
 
-      {showCreditConfirmModal.open && (
+      
+      {showAddPlayerModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 relative">
+            <button
+              onClick={closeAddPlayerModal}
+              className="absolute top-4 right-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition"
+              aria-label="Schließen"
+            >
+              <X className="w-5 h-5 text-gray-700" />
+            </button>
+
+            <div className="mb-4">
+              <h3 className="text-2xl font-bold text-gray-900">Neuen Spieler anlegen</h3>
+              <p className="text-gray-600">Der Spieler wird direkt in der Spieldatenbank gespeichert.</p>
+            </div>
+
+            <div key={addPlayerFormKey}>
+              <SpieldatenbankForm onSaveSuccess={handleAddPlayerSaved} />
+            </div>
+          </div>
+        </div>
+      )}
+
+{showCreditConfirmModal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
             <div className="flex items-center justify-center w-14 h-14 bg-blue-100 rounded-full mb-4 mx-auto">
@@ -1668,9 +1716,20 @@ player_id: spielData.id.toString(),
           <div className="bg-white border-2 border-white rounded-lg p-6 shadow-lg">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Spieler hinzufügen</h2>
-              <span className="text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">
                 {playerViewMode === "frequent" ? availableFrequentPlayers.length : filteredPlayers.length} Spieler
               </span>
+                <Button
+                  type="button"
+                  onClick={openAddPlayerModal}
+                  variant="outline"
+                  className="border-orange-200 hover:bg-orange-50"
+                >
+                  <PlusCircle className="w-4 h-4 mr-2 text-orange-600" />
+                  Neuer Spieler
+                </Button>
+              </div>
             </div>
 
             <button
