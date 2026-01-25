@@ -4,32 +4,27 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import {
-  CheckCircle,
   AlertCircle,
-  Loader2,
-  LogIn,
-  UserPlus,
-  LogOut,
   Calendar,
+  CheckCircle,
   Clock,
-  Lock,
+  Coins,
   Info,
+  Loader2,
+  Lock,
+  LogIn,
+  LogOut,
+  UserPlus,
+  Wallet,
 } from "lucide-react"
 
 type Message = { type: "success" | "error"; text: string } | null
 
 function parseGermanShortDate(dateString: string): Date | null {
-  const months: { [key: string]: number } = {
+  const months: Record<string, number> = {
     "Jan.": 0,
     Jan: 0,
     "Feb.": 1,
@@ -43,19 +38,24 @@ function parseGermanShortDate(dateString: string): Date | null {
     Mai: 4,
     "Jun.": 5,
     Jun: 5,
-    Juli: 6,
+    Juni: 5,
     "Jul.": 6,
     Jul: 6,
+    Juli: 6,
     "Aug.": 7,
     Aug: 7,
     "Sep.": 8,
     Sep: 8,
     "Okt.": 9,
     Okt: 9,
+    "Oct.": 9,
+    Oct: 9,
     "Nov.": 10,
     Nov: 10,
     "Dez.": 11,
     Dez: 11,
+    "Dec.": 11,
+    Dec: 11,
   }
 
   const parts = dateString.trim().split(/\s+/)
@@ -64,36 +64,43 @@ function parseGermanShortDate(dateString: string): Date | null {
   const day = Number.parseInt(parts[0].replace(".", ""), 10)
   const monthKey = parts[1]
   const year = Number.parseInt(parts[2], 10)
-
   const month = months[monthKey]
   if (!Number.isFinite(day) || !Number.isFinite(year) || month === undefined) return null
-
-  const d = new Date(year, month, day)
-  d.setHours(0, 0, 0, 0)
-  return d
+  return new Date(year, month, day, 0, 0, 0, 0)
 }
 
-function parseGermanTime(timeString: string): { hours: number; minutes: number } | null {
-  // erwartet z.B. "19:30 Uhr" oder "19:00 Uhr"
-  const cleaned = timeString.replace("Uhr", "").trim()
-  const m = cleaned.match(/^(\d{1,2}):(\d{2})$/)
-  if (!m) return null
-  const hours = Number.parseInt(m[1], 10)
-  const minutes = Number.parseInt(m[2], 10)
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null
-  return { hours, minutes }
+function formatMoney(n: number) {
+  const v = Number.isFinite(n) ? n : 0
+  return v.toFixed(2)
 }
 
-function getStartDateTime(dateLabel?: string, timeLabel?: string): Date | null {
-  if (!dateLabel || !timeLabel) return null
-  const date = parseGermanShortDate(dateLabel)
-  const t = parseGermanTime(timeLabel)
-  if (!date || !t) return null
-  const dt = new Date(date)
-  dt.setHours(t.hours, t.minutes, 0, 0)
-  return dt
+async function getCreditBalance(creditAccountId: string): Promise<number> {
+  // NICHT .single() -> 406 bei "keine Zeile"
+  const { data, error } = await supabase.from("player_credits").select("credit_balance").eq("player_id", creditAccountId).limit(1)
+  if (error) return 0
+  const row = (data ?? [])[0] as any
+  const bal = Number(row?.credit_balance ?? 0)
+  return Number.isFinite(bal) ? bal : 0
 }
 
+async function tryUpdatePlayerCredits(creditAccountId: string, newBalance: number) {
+  try {
+    await supabase.from("player_credits").update({ credit_balance: newBalance, updated_at: new Date().toISOString() }).eq("player_id", creditAccountId)
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * WICHTIG (nach deinem Screenshot):
+ * dko_tournament_registration.player_id ist UUID (club_players.id)
+ * players.id ist NICHT UUID (spieldatenbank_id / int)
+ *
+ * -> Daher:
+ * - registrationPlayerId = club_players.id (uuid)   (für dko_tournament_registration)
+ * - spieldbId           = club_players.spieldatenbank_id (int) (nur für Name aus players)
+ * - creditAccountId     = club_players.id (uuid)   (für player_credits & credit_transactions)
+ */
 export function DKOSelfRegistrationModal(props: {
   isOpen: boolean
   onClose: () => void
@@ -101,336 +108,585 @@ export function DKOSelfRegistrationModal(props: {
   dateLabel?: string
   timeLabel?: string
   onRegistrationChanged?: (isRegistered: boolean) => void
+
+  seriesId?: string | null
+  startgeld?: number | null
+
+  canUnregister?: boolean
+  unregisterDisabledReason?: string | null
+  transactionLabel?: string | null
 }) {
-  const { isOpen, onClose, title = "Anmeldung", dateLabel, timeLabel, onRegistrationChanged } = props
-
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
-  const { session, loading: authLoading } = useAuth() as any
 
-  const [loading, setLoading] = useState(true)
-  const [actionLoading, setActionLoading] = useState(false)
-
-  const [playerId, setPlayerId] = useState<string | null>(null)
-  const [playerName, setPlayerName] = useState<string>("")
-
-  const [alreadyRegistered, setAlreadyRegistered] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [initLoading, setInitLoading] = useState(false)
   const [message, setMessage] = useState<Message>(null)
 
-  // ✅ 10 Minuten Regel
-  const startDateTime = useMemo(() => getStartDateTime(dateLabel, timeLabel), [dateLabel, timeLabel])
-  const cutoffDateTime = useMemo(() => {
-    if (!startDateTime) return null
-    return new Date(startDateTime.getTime() - 10 * 60 * 1000)
-  }, [startDateTime])
+  const [registrationPlayerId, setRegistrationPlayerId] = useState<string | null>(null) // UUID (club_players.id)
+  const [creditAccountId, setCreditAccountId] = useState<string | null>(null) // UUID (club_players.id)
+  const [spieldbId, setSpieldbId] = useState<string | null>(null) // spieldatenbank.id (uuid)
 
-  const isRegistrationClosed = useMemo(() => {
-    if (!startDateTime || !cutoffDateTime) return false
-    return new Date().getTime() >= cutoffDateTime.getTime()
-  }, [startDateTime, cutoffDateTime])
+  const [playerName, setPlayerName] = useState<string>("")
+  const [spieldbName, setSpieldbName] = useState<string>("")
+  const [resolvedStartgeld, setResolvedStartgeld] = useState<number>(0)
 
-  const canAct = useMemo(() => {
-    return !!session && !!playerId && !!playerName && !actionLoading
-  }, [session, playerId, playerName, actionLoading])
+  const [creditBalance, setCreditBalance] = useState<number>(0)
 
-  const canRegisterNow = useMemo(() => {
-    // Anmelden nur möglich, wenn nicht geschlossen
-    return canAct && !isRegistrationClosed
-  }, [canAct, isRegistrationClosed])
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false)
+  const [latestReg, setLatestReg] = useState<{
+    entry_fee: number
+    paid: boolean
+    deducted_from_credit: boolean
+    payment_method: "on_site" | "credit" | "admin" | null
+  } | null>(null)
 
-  const resetState = () => {
-    setMessage(null)
-    setLoading(true)
-    setActionLoading(false)
-    setPlayerId(null)
-    setPlayerName("")
-    setAlreadyRegistered(false)
-  }
+  const [paymentMode, setPaymentMode] = useState<"on_site" | "credit">("on_site")
 
-  const loadStatus = async () => {
-    setMessage(null)
+  const canUseCredit = useMemo(() => {
+    return Number(creditBalance ?? 0) >= Number(resolvedStartgeld ?? 0) && Number(resolvedStartgeld ?? 0) > 0
+  }, [creditBalance, resolvedStartgeld])
 
-    if (!session?.user) {
-      setLoading(false)
-      setPlayerId(null)
-      setPlayerName("")
-      setAlreadyRegistered(false)
-      return
+  const parsedDate = useMemo(() => {
+    if (!props.dateLabel) return null
+    return parseGermanShortDate(props.dateLabel)
+  }, [props.dateLabel])
+
+  const datePretty = useMemo(() => {
+    if (parsedDate) return parsedDate.toLocaleDateString("de-DE", { weekday: "long", year: "numeric", month: "long", day: "2-digit" })
+    if (props.dateLabel) return props.dateLabel
+    return ""
+  }, [parsedDate, props.dateLabel])
+
+  const timePretty = useMemo(() => props.timeLabel ?? "", [props.timeLabel])
+
+  // Initial load when modal opens
+  useEffect(() => {
+    if (!props.isOpen) return
+    const run = async () => {
+      setMessage(null)
+      setInitLoading(true)
+
+      try {
+        if (!user?.id) {
+          setRegistrationPlayerId(null)
+          setCreditAccountId(null)
+          setSpieldbId(null)
+          setPlayerName("")
+          setCreditBalance(0)
+          setAlreadyRegistered(false)
+          setLatestReg(null)
+          return
+        }
+
+        // user_profiles -> club_players(id uuid, spieldatenbank_id uuid, name text)
+        const { data: profile, error: profErr } = await supabase
+          .from("user_profiles")
+          .select("club_players(id, spieldatenbank_id, name)")
+          .eq("user_id", user.id)
+          .maybeSingle()
+
+        if (profErr) throw profErr
+
+        const clubRel: any = (profile as any)?.club_players ?? null
+
+        // Supabase kann Relationen als Array oder Objekt liefern
+        const club = Array.isArray(clubRel) ? clubRel?.[0] : clubRel
+        const clubId: string | null = club?.id ?? null
+        const sId: string | null = club?.spieldatenbank_id ?? null
+
+        setRegistrationPlayerId(sId ? String(sId) : null)
+        setCreditAccountId(clubId)
+        setSpieldbId(sId ? String(sId) : null)
+
+        // Name: 1) players via spieldatenbank_id (INT) 2) club_players.name 3) metadata/email
+        let finalName = ""
+        if (sId !== null && sId !== undefined) {
+          const { data: p, error: pErr } = await supabase.from("spieldatenbank").select("name").eq("id", sId).maybeSingle()
+          if (!pErr && p) {
+            finalName = String((p as any).name || "").trim()
+          }
+        }
+        setSpieldbName(finalName)
+        if (!finalName) finalName = String(club?.name || "")
+        if (!finalName) {
+          const meta: any = (user as any)?.user_metadata ?? {}
+          finalName =
+            String(meta.full_name || meta.display_name || meta.name || meta.username || "") ||
+            (user?.email ? user.email.split("@")[0] : "")
+        }
+        setPlayerName(finalName)
+
+        // Startgeld
+        const feeFromProp = Number(props.startgeld ?? NaN)
+        if (Number.isFinite(feeFromProp) && feeFromProp >= 0) {
+          setResolvedStartgeld(feeFromProp)
+        } else if (props.seriesId) {
+          const { data: s, error: sErr } = await supabase.from("dko_series").select("startgeld").eq("id", props.seriesId).limit(1)
+          if (sErr) throw sErr
+          const row = (s ?? [])[0] as any
+          const sg = Number(row?.startgeld ?? 0)
+          setResolvedStartgeld(Number.isFinite(sg) ? sg : 0)
+        } else {
+          setResolvedStartgeld(0)
+        }
+
+        // Guthaben (nur wenn clubId da ist)
+        if (sId) {
+          const bal = await getCreditBalance(clubId)
+          setCreditBalance(bal)
+        } else {
+          setCreditBalance(0)
+        }
+
+        // Registration (player_id = spieldatenbank.id UUID)
+        if (sId) {
+          const { data: reg, error: regErr } = await supabase
+            .from("dko_tournament_registration")
+            .select("id, paid, entry_fee, deducted_from_credit, payment_method, created_at")
+            .eq("player_id", String(sId))
+            .order("created_at", { ascending: false })
+            .limit(1)
+          if (regErr) throw regErr
+          const row = (reg ?? [])[0] as any
+          const isReg = !!row
+          setAlreadyRegistered(isReg)
+          setLatestReg(
+            row
+              ? {
+                  entry_fee: Number(row.entry_fee ?? 0),
+                  paid: row.paid === true,
+                  // defensive: in case old rows stored text
+                  deducted_from_credit:
+                    row.deducted_from_credit === true || row.deducted_from_credit === "true" || row.deducted_from_credit === "t" || row.deducted_from_credit === 1 || row.deducted_from_credit === "1",
+                  payment_method: (row.payment_method as any) ?? null,
+                }
+              : null
+          )
+          props.onRegistrationChanged?.(isReg)
+        } else {
+          setAlreadyRegistered(false)
+          setLatestReg(null)
+          props.onRegistrationChanged?.(false)
+        }
+
+        setPaymentMode("on_site")
+      } catch (e: any) {
+        console.error(e)
+        setMessage({ type: "error", text: e?.message ?? "Fehler beim Laden." })
+      } finally {
+        setInitLoading(false)
+      }
     }
 
-    setLoading(true)
+    run()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.isOpen, user?.id, props.seriesId, props.startgeld])
+
+  const doLogin = () => {
+    props.onClose()
+    router.push("/login")
+  }
+
+  const doLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      props.onClose()
+      router.refresh()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const doRegister = async () => {
+    if (!registrationPlayerId) return
+    setBusy(true)
+    setMessage(null)
+
+    // 🔒 Doppel-Anmeldung verhindern (player_id = spieldatenbank.id)
+    try {
+      const { data: existingRegs, error: exErr } = await supabase
+        .from("dko_tournament_registration")
+        .select("id")
+        .eq("player_id", registrationPlayerId)
+        .limit(1)
+
+      if (exErr) throw exErr
+      if ((existingRegs?.length ?? 0) > 0) {
+        setAlreadyRegistered(true)
+        setMessage({ type: "info", text: "Du bist bereits angemeldet." })
+        props.onRegistrationChanged?.(true)
+        return
+      }
+    } catch (e) {
+      console.error("[self-reg] existing registration check failed:", e)
+    }
 
     try {
-      const { data: profile, error: profErr } = await supabase
-        .from("user_profiles")
-        .select("club_players(spieldatenbank_id)")
-        .eq("user_id", session.user.id)
-        .single()
+      const fee = Number(resolvedStartgeld ?? 0)
 
-      if (profErr) throw profErr
+      if (paymentMode === "credit") {
+        if (!creditAccountId) {
+          setMessage({ type: "error", text: "Kein Guthabenkonto gefunden." })
+          return
+        }
 
-      const spieldatenbankId = profile?.club_players?.spieldatenbank_id
-      if (!spieldatenbankId) {
-        setPlayerId(null)
-        setPlayerName("")
-        setAlreadyRegistered(false)
-        setMessage({
-          type: "error",
-          text: "Dein Profil ist nicht mit der Spieldatenbank verknüpft (spieldatenbank_id fehlt).",
+        const currentBalance = await getCreditBalance(creditAccountId)
+        if (!(currentBalance >= fee && fee > 0)) {
+          setMessage({ type: "error", text: "Nicht genügend Guthaben." })
+          return
+        }
+
+        const newBalance = currentBalance - fee
+
+        // ✅ player_id = clubId UUID
+                const baseRegPayload: any = {
+          player_id: registrationPlayerId,
+          player_name: (spieldbName || playerName) || null,
+          paid: true,
+          entry_fee: fee,
+          deducted_from_credit: true,
+          payment_method: "credit",
+        }
+        if (spieldbId !== null && spieldbId !== undefined) baseRegPayload.spieldatenbank_id = spieldbId
+
+        let regInsErr: any = null
+        try {
+          const { error } = await supabase.from("dko_tournament_registration").insert(baseRegPayload)
+          regInsErr = error
+        } catch (e) {
+          regInsErr = e
+        }
+
+        if (regInsErr && String(regInsErr?.message || regInsErr).toLowerCase().includes("spieldatenbank_id")) {
+          delete baseRegPayload.spieldatenbank_id
+          const { error } = await supabase.from("dko_tournament_registration").insert(baseRegPayload)
+          regInsErr = error
+        }
+
+        if (regInsErr) throw regInsErr
+
+        // Guthaben-Buchung
+        const { error: txErr } = await supabase.from("credit_transactions").insert({
+          player_id: creditAccountId,
+          amount: -fee,
+          balance_after: newBalance,
+          transaction_type: "tournament_entry_fee",
+          admin_id: null,
         })
+        if (txErr) throw txErr
+
+        await tryUpdatePlayerCredits(creditAccountId, newBalance)
+        setCreditBalance(newBalance)
+
+        setAlreadyRegistered(true)
+        setLatestReg({ entry_fee: fee, paid: true, deducted_from_credit: true, payment_method: "credit" })
+        props.onRegistrationChanged?.(true)
+        setMessage({ type: "success", text: "Erfolgreich angemeldet." })
+      } else {
+        // Vor Ort
+                const baseRegPayload: any = {
+          player_id: registrationPlayerId,
+          player_name: (spieldbName || playerName) || null,
+          paid: false,
+          entry_fee: fee,
+          deducted_from_credit: false,
+          payment_method: "on_site",
+        }
+        if (spieldbId !== null && spieldbId !== undefined) baseRegPayload.spieldatenbank_id = spieldbId
+
+        let regErr: any = null
+        try {
+          const { error } = await supabase.from("dko_tournament_registration").insert(baseRegPayload)
+          regErr = error
+        } catch (e) {
+          regErr = e
+        }
+
+        if (regErr && String(regErr?.message || regErr).toLowerCase().includes("spieldatenbank_id")) {
+          delete baseRegPayload.spieldatenbank_id
+          const { error } = await supabase.from("dko_tournament_registration").insert(baseRegPayload)
+          regErr = error
+        }
+
+        if (regErr) throw regErr
+
+        setAlreadyRegistered(true)
+        setLatestReg({ entry_fee: fee, paid: false, deducted_from_credit: false, payment_method: "on_site" })
+        props.onRegistrationChanged?.(true)
+        setMessage({ type: "success", text: "Erfolgreich angemeldet." })
+      }
+    } catch (e: any) {
+      // we will never hit placeholder after we patch below
+      console.error(e)
+      setMessage({ type: "error", text: e?.message ?? "Fehler bei der Anmeldung." })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const doUnregister = async () => {
+    if (!registrationPlayerId) return
+    setBusy(true)
+    setMessage(null)
+
+    let refunded = false
+
+    try {
+      const canUnreg = props.canUnregister ?? true
+      if (!canUnreg) {
+        setMessage({ type: "error", text: props.unregisterDisabledReason ?? "Abmeldung ist nicht mehr möglich." })
         return
       }
 
-      const pid = String(spieldatenbankId)
-      setPlayerId(pid)
-
-      const { data: spieler, error: spielErr } = await supabase
-        .from("spieldatenbank")
-        .select("name")
-        .eq("id", spieldatenbankId)
-        .single()
-
-      if (spielErr) throw spielErr
-
-      const name = spieler?.name ?? ""
-      setPlayerName(name)
-
-      const { data: reg, error: regErr } = await supabase
+      // letzte Registrierung holen (für payment_method)
+      const { data: regRows, error: regFetchErr } = await supabase
         .from("dko_tournament_registration")
-        .select("id")
-        .eq("player_id", pid)
+        .select("id, entry_fee, payment_method")
+        .eq("player_id", registrationPlayerId)
+        .order("created_at", { ascending: false })
         .limit(1)
 
-      if (regErr) throw regErr
+      if (regFetchErr) throw regFetchErr
+      const regRow = (regRows ?? [])[0] as any
 
-      const isReg = (reg?.length ?? 0) > 0
-      setAlreadyRegistered(isReg)
-      onRegistrationChanged?.(isReg)
-    } catch (e: any) {
-      console.error(e)
-      setMessage({ type: "error", text: `Fehler beim Laden: ${e.message}` })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!isOpen) return
-    loadStatus()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, session])
-
-  const handleRegister = async () => {
-    if (!playerId || !playerName) return
-    if (isRegistrationClosed) {
-      setMessage({ type: "error", text: "Anmeldung ist geschlossen (max. 10 Minuten vor Beginn möglich)." })
-      return
-    }
-
-    setActionLoading(true)
-    setMessage(null)
-
-    try {
-      const { error } = await supabase.from("dko_tournament_registration").insert({
-        player_id: playerId,
-        player_name: playerName,
-        paid: false,
-        entry_fee: 0,
-        deducted_from_credit: false,
-      })
-
-      if (error) throw error
-
-      setAlreadyRegistered(true)
-      onRegistrationChanged?.(true)
-      setMessage({ type: "success", text: "Du bist jetzt registriert!" })
-    } catch (e: any) {
-      const msg = String(e?.message || "")
-      if (msg.toLowerCase().includes("duplicate")) {
-        setAlreadyRegistered(true)
-        onRegistrationChanged?.(true)
-        setMessage({ type: "success", text: "Du warst bereits registriert." })
-      } else {
-        setMessage({ type: "error", text: `Fehler bei der Anmeldung: ${e.message}` })
+      // 🔒 Wenn Admin vor Ort angemeldet hat (payment_method = 'admin'), darf der Spieler sich NICHT selbst abmelden
+      if (regRow?.payment_method === "admin") {
+        setMessage({ type: "error", text: "Du wurdest vor Ort angemeldet. Bitte wende dich zum Abmelden an die Turnierleitung." })
+        props.onRegistrationChanged?.(true)
+        return
       }
-    } finally {
-      setActionLoading(false)
-    }
-  }
 
-  const handleUnregister = async () => {
-    if (!playerId) return
+      // löschen
+      const { error: delErr } = await supabase.from("dko_tournament_registration").delete().eq("id", regRow.id)
+      if (delErr) throw delErr
 
-    setActionLoading(true)
-    setMessage(null)
-
-    try {
-      const { error } = await supabase.from("dko_tournament_registration").delete().eq("player_id", playerId)
-      if (error) throw error
 
       setAlreadyRegistered(false)
-      onRegistrationChanged?.(false)
-      setMessage({ type: "success", text: "Du wurdest abgemeldet." })
+      props.onRegistrationChanged?.(false)
+
+      // ✅ RÜCKERSTATTUNG NUR wenn payment_method = 'credit'
+      if (regRow?.payment_method === "credit") {
+        if (!creditAccountId) {
+          setMessage({ type: "error", text: "Abmeldung ok, aber kein Guthabenkonto gefunden für Rückerstattung." })
+        } else {
+          const fee = Number(regRow?.entry_fee ?? 0)
+          if (fee > 0) {
+            const currentBalance = await getCreditBalance(creditAccountId)
+            const newBalance = currentBalance + fee
+
+            const { error: txErr } = await supabase.from("credit_transactions").insert({
+              player_id: creditAccountId,
+              amount: fee,
+              balance_after: newBalance,
+              transaction_type: "tournament_refund",
+              admin_id: null,
+            })
+            if (txErr) throw txErr
+
+            await tryUpdatePlayerCredits(creditAccountId, newBalance)
+            setCreditBalance(newBalance)
+            refunded = true
+          }
+        }
+      }
+
+      setAlreadyRegistered(false)
+      setLatestReg(null)
+      props.onRegistrationChanged?.(false)
+      setMessage({
+        type: "success",
+        text: refunded
+          ? `Abmeldung erfolgreich. ${formatMoney(Number(regRow?.entry_fee ?? 0))} € wurden deinem Guthaben gutgeschrieben.`
+          : "Abmeldung erfolgreich.",
+      })
     } catch (e: any) {
-      setMessage({ type: "error", text: `Fehler beim Abmelden: ${e.message}` })
+      console.error(e)
+      setMessage({ type: "error", text: e?.message ?? "Fehler bei der Abmeldung." })
     } finally {
-      setActionLoading(false)
+      setBusy(false)
     }
   }
 
-  const handleClose = () => {
-    onClose()
-    resetState()
-  }
-
-  const cutoffText = cutoffDateTime
-    ? `Anmeldung möglich bis ${cutoffDateTime.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr (10 Minuten vor Beginn).`
-    : "Anmeldung ist bis spätestens 10 Minuten vor Turnierbeginn möglich."
+  const refundAmount = useMemo(() => {
+    if (latestReg?.payment_method !== "credit") return 0
+    const v = Number(latestReg?.entry_fee ?? resolvedStartgeld ?? 0)
+    return Number.isFinite(v) ? v : 0
+  }, [latestReg, resolvedStartgeld])
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[460px] p-6 bg-white rounded-lg shadow-xl">
-        <DialogHeader className="pb-4 border-b border-gray-100">
-          <DialogTitle className="text-2xl font-bold text-gray-900">{title}</DialogTitle>
-          <DialogDescription className="text-gray-600">
-            <span className="block">{cutoffText}</span>
+    <Dialog open={props.isOpen} onOpenChange={(open) => !open && props.onClose()}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            {props.title ?? "Anmeldung"}
+          </DialogTitle>
+
+          <DialogDescription asChild>
+            <div className="space-y-1">
+              {(datePretty || timePretty) && (
+                <div className="flex flex-col gap-1">
+                  {datePretty && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-600" />
+                      <span>{datePretty}</span>
+                    </div>
+                  )}
+                  {timePretty && (
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-600" />
+                      <span>{timePretty}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4 space-y-4">
-          {(dateLabel || timeLabel) && (
-            <div className="p-3 rounded-md border bg-gray-50">
-              {dateLabel && (
-                <div className="flex items-center gap-2 text-sm text-gray-800">
-                  <Calendar className="h-4 w-4 text-orange-600" />
-                  <span className="font-semibold">{dateLabel}</span>
-                </div>
-              )}
-              {timeLabel && (
-                <div className="flex items-center gap-2 text-sm text-gray-700 mt-1">
-                  <Clock className="h-4 w-4 text-orange-600" />
-                  <span>{timeLabel}</span>
-                </div>
-              )}
-              {cutoffDateTime && (
-                <div className="flex items-center gap-2 text-xs text-gray-600 mt-2">
-                  <Info className="h-3 w-3" />
-                  <span>
-                    Anmeldung bis{" "}
-                    {cutoffDateTime.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {authLoading || loading ? (
-            <div className="flex items-center justify-center gap-2 text-gray-700">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Lade…</span>
-            </div>
-          ) : !session ? (
-            <div className="space-y-3">
-              <div className="p-3 rounded-md text-sm bg-yellow-50 text-yellow-800 border border-yellow-100">
-                Bitte einloggen, um dich zu registrieren.
+        {authLoading || initLoading ? (
+          <div className="py-10 flex items-center justify-center gap-3 text-gray-700">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Lade…</span>
+          </div>
+        ) : !user ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900 flex items-start gap-3">
+              <Lock className="h-5 w-5 mt-0.5" />
+              <div>
+                <div className="font-semibold">Bitte einloggen</div>
+                <div>Du musst eingeloggt sein, um dich anzumelden.</div>
               </div>
-              <Button
-                onClick={() => router.push("/member-login")}
-                className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold"
-              >
-                <div className="flex items-center gap-2">
-                  <LogIn className="w-4 h-4" />
-                  <span>Einloggen</span>
-                </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={props.onClose}>
+                Schließen
               </Button>
-            </div>
-          ) : !playerId || !playerName ? (
-            <div className="p-3 rounded-md text-sm bg-red-50 text-red-700 border border-red-100">
-              Dein Account ist nicht mit der Spieldatenbank verknüpft. Bitte Admin kontaktieren.
-            </div>
-          ) : (
-            <>
-              <div className="p-3 rounded-md text-sm bg-white border">
-                <div className="font-semibold text-gray-900">Angemeldet als:</div>
-                <div className="mt-1 text-gray-700">
-                  <span className="font-medium">Name:</span> {playerName}
+              <Button onClick={doLogin}>
+                <LogIn className="h-4 w-4 mr-2" />
+                Login
+              </Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-xl border bg-white p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-semibold">
+                  <Wallet className="h-4 w-4" />
+                  Startgeld
                 </div>
-
-                {alreadyRegistered && (
-                  <div className="mt-2 text-xs text-green-700 bg-green-50 border border-green-100 rounded-md p-2 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Du bist bereits registriert.
-                  </div>
-                )}
+                <div className="font-bold">{formatMoney(resolvedStartgeld)} €</div>
               </div>
 
-              {!alreadyRegistered && isRegistrationClosed && (
-                <div className="p-3 rounded-md text-sm bg-gray-50 text-gray-800 border border-gray-200 flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  <span>Anmeldung ist geschlossen (10 Minuten vor Beginn).</span>
+              <div className="mt-3 flex items-center justify-between">
+                <div className="flex items-center gap-2 font-semibold">
+                  <Coins className="h-4 w-4" />
+                  Guthaben
                 </div>
-              )}
+                <div className="font-bold">{formatMoney(creditBalance)} €</div>
+              </div>
+            </div>
 
-              {message && (
-                <div
-                  className={`p-3 rounded-md text-sm font-medium flex items-center gap-2 ${
-                    message.type === "error"
-                      ? "bg-red-50 text-red-700 border border-red-100"
-                      : "bg-green-50 text-green-700 border border-green-100"
-                  }`}
+            {!alreadyRegistered ? (
+              <div className="rounded-xl border bg-white p-4 space-y-3">
+                <div className="font-semibold">Bezahlung</div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode("on_site")}
+                    className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${
+                      paymentMode === "on_site" ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">Vor Ort bezahlen</span>
+                      {paymentMode === "on_site" && <CheckCircle className="h-4 w-4" />}
+                    </div>
+                    <div className="text-gray-600 mt-1">Du zahlst beim Turnierabend.</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode("credit")}
+                    disabled={!canUseCredit}
+                    className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${
+                      paymentMode === "credit" ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:bg-gray-50"
+                    } ${!canUseCredit ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">Vom Guthaben abziehen</span>
+                      {paymentMode === "credit" && <CheckCircle className="h-4 w-4" />}
+                    </div>
+                    <div className="text-gray-600 mt-1">Startgeld wird sofort abgezogen.</div>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 flex items-start gap-3">
+                <Info className="h-5 w-5 mt-0.5" />
+                <div>
+                  <div className="font-semibold">Abmeldung</div>
+                  {latestReg?.payment_method === "credit" ? (
+                    <>
+                      <div>Bei Abmeldung wird das abgezogene Startgeld automatisch rückerstattet.</div>
+                      <div className="mt-1 font-semibold">Rückerstattung: {formatMoney(refundAmount)} €</div>
+                    </>
+                  ) : latestReg?.payment_method === "admin" ? (
+                    <div>Du wurdest vor Ort angemeldet. Abmeldung ist nur vor Ort bei der Turnierleitung möglich.</div>
+                  ) : (
+                    <div>Du hast „Vor Ort bezahlen“ gewählt. Bei Abmeldung wird nichts abgebucht und es gibt keine Rückerstattung.</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {message && (
+              <div
+                className={`rounded-xl border p-4 text-sm flex items-start gap-3 ${
+                  message.type === "success"
+                    ? "border-green-200 bg-green-50 text-green-900"
+                    : "border-red-200 bg-red-50 text-red-900"
+                }`}
+              >
+                {message.type === "success" ? (
+                  <CheckCircle className="h-5 w-5 mt-0.5" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 mt-0.5" />
+                )}
+                <div className="font-semibold">{message.text}</div>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={doLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+
+              <Button variant="outline" onClick={props.onClose} disabled={busy}>
+                Schließen
+              </Button>
+
+              {alreadyRegistered ? (
+                <Button variant="destructive" onClick={doUnregister} disabled={busy || props.canUnregister === false || latestReg?.payment_method === "admin"}>
+                  {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                  Abmelden
+                </Button>
+              ) : (
+                <Button
+                  onClick={doRegister}
+                  disabled={busy}
                 >
-                  {message.type === "error" ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-                  <span>{message.text}</span>
-                </div>
+                  {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                  Anmelden
+                </Button>
               )}
-            </>
-          )}
-        </div>
-
-        <DialogFooter className="pt-2">
-          {!session || authLoading || loading ? (
-            <Button type="button" disabled className="w-full opacity-60">
-              Bitte warten…
-            </Button>
-          ) : alreadyRegistered ? (
-            <Button
-              type="button"
-              onClick={handleUnregister}
-              disabled={!canAct}
-              className="w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold disabled:opacity-60"
-            >
-              {actionLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Abmelden…</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <LogOut className="w-4 h-4" />
-                  <span>Abmelden</span>
-                </div>
-              )}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              onClick={handleRegister}
-              disabled={!canRegisterNow}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold disabled:opacity-60"
-            >
-              {actionLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Anmelden…</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <UserPlus className="w-4 h-4" />
-                  <span>Anmelden</span>
-                </div>
-              )}
-            </Button>
-          )}
-        </DialogFooter>
+            </DialogFooter>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )

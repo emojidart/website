@@ -1,33 +1,36 @@
 "use client"
 
 import { Header } from "@/components/header"
-import { PublicUpcomingTournamentRegistrationModal } from "@/components/public-upcoming-tournament-registration-modal"
-import { TournamentRegistrationModal } from "@/components/tournament-registration-modal"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { DKOSelfRegistrationModal } from "@/components/dko-self-registration-modal"
 import {
   Calendar,
   Clock,
   MapPin,
-  Trophy,
-  Target,
-  Users,
-  Star,
-  Sparkles,
   UserPlus,
   Euro,
-  Swords,
   Info,
   Loader2,
   AlertCircle,
   Crown,
   BookOpen,
+  ChevronDown,
+  ChevronUp,
+  X,
+  LogOut,
+  Lock,
+  ShieldAlert,
+  Timer,
+  Trophy,
+  RefreshCw,
 } from "lucide-react"
 import { motion } from "framer-motion"
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
 import Image from "next/image"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import Link from "next/link"
+import { useAuth } from "@/hooks/use-auth"
 
 interface Tournament {
   id: string
@@ -41,70 +44,296 @@ interface Tournament {
   photo_url: string | null
 }
 
+type DkoSeries = {
+  id: string
+  name: string
+  slug: string
+  is_active: boolean
+  startgeld: number | null
+}
+
+type DkoSeriesEvent = {
+  id: string
+  series_id: string
+  title: string | null
+  start_at: string
+  is_matchday: boolean
+  registration_cutoff_minutes: number | null
+  is_rescheduled?: boolean | null
+  rescheduled_at?: string | null
+}
+
+type UiEvent = {
+  id: string
+  series_id: string
+  is_matchday: boolean
+  cutoffMinutes: number
+  effectiveIso: string
+  effectiveDT: Date
+  originalIso: string
+  originalDT: Date
+  isRescheduled: boolean
+  dateLabel: string
+  timeLabel: string
+}
+
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
-  },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
 }
-
 const itemVariants = {
-  hidden: { opacity: 0, y: 50 },
+  hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 12 } },
 }
-
 const cardVariants = {
-  hidden: { opacity: 0, scale: 0.9, y: 30 },
+  hidden: { opacity: 0, scale: 0.95, y: 20 },
   visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 90, damping: 10 } },
 }
 
-const sponsorVariants = {
-  hidden: { opacity: 0, scale: 0.8 },
-  visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 100, damping: 12 } },
+/** ---------- Date/Time Helpers ---------- **/
+function formatMMSS(totalSeconds: number) {
+  const s = Math.max(0, Math.floor(totalSeconds))
+  const mm = String(Math.floor(s / 60)).padStart(2, "0")
+  const ss = String(s % 60).padStart(2, "0")
+  return `${mm}:${ss}`
 }
 
-export default function UpcomingTournamentsPage() {
+function startOfDay(d: Date) {
+  const x = new Date(d)
+  x.setHours(0, 0, 0, 0)
+  return x
+}
+
+function isDateInPastDT(d: Date) {
+  return startOfDay(d).getTime() < startOfDay(new Date()).getTime()
+}
+
+function isDateTodayDT(d: Date) {
+  return startOfDay(d).getTime() === startOfDay(new Date()).getTime()
+}
+
+function formatDateLabel(dt: Date) {
+  return dt.toLocaleDateString("de-AT", { day: "2-digit", month: "short", year: "numeric" })
+}
+
+function formatTimeLabel(dt: Date) {
+  return `${dt.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr`
+}
+
+function computeCutoffFromStart(startDT: Date, cutoffMinutes: number, nowMs: number) {
+  const cutoffDT = new Date(startDT.getTime() - cutoffMinutes * 60 * 1000)
+  const secondsLeft = Math.ceil((cutoffDT.getTime() - nowMs) / 1000)
+  const closed = secondsLeft <= 0
+  return { cutoffDT, secondsLeft, closed }
+}
+
+/** ---------- Modern "Verschoben" UI ---------- **/
+function RescheduleBadge({
+  isRescheduled,
+  effectiveDT,
+  originalDT,
+  accent = "orange",
+}: {
+  isRescheduled: boolean
+  effectiveDT: Date
+  originalDT: Date
+  accent?: "orange" | "slate"
+}) {
+  if (!isRescheduled) return null
+
+  const newDate = formatDateLabel(effectiveDT)
+  const newTime = formatTimeLabel(effectiveDT)
+  const oldDate = formatDateLabel(originalDT)
+  const oldTime = formatTimeLabel(originalDT)
+
+  const accentClasses =
+    accent === "orange"
+      ? {
+          chip: "bg-orange-600 text-white border-orange-500/30",
+          ring: "ring-orange-200",
+          label: "text-orange-700",
+          dot: "bg-orange-600",
+        }
+      : {
+          chip: "bg-slate-800 text-white border-slate-700/30",
+          ring: "ring-slate-200",
+          label: "text-slate-700",
+          dot: "bg-slate-800",
+        }
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={[
+            "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold shadow-sm",
+            "ring-2",
+            accentClasses.chip,
+            accentClasses.ring,
+          ].join(" ")}
+        >
+          <RefreshCw className="h-3 w-3 opacity-90" />
+          Neuer Termin: {newDate} • {newTime}
+        </span>
+
+        <span className={`inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide ${accentClasses.label}`}>
+          <span className={`h-2 w-2 rounded-full ${accentClasses.dot}`} />
+          Verschoben
+        </span>
+      </div>
+
+      <div className="text-[11px] text-gray-600">
+        <span className="opacity-70">Original:</span>{" "}
+        <span className="line-through decoration-2 decoration-gray-400">
+          {oldDate} • {oldTime}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * ✅ FIX:
+ * Modal-State muss seriesId/startgeld enthalten, sonst kann das Modal startgeld nicht laden.
+ */
+type DkoModalState = { isOpen: boolean; date: string; time: string; title: string; seriesId: string | null; startgeld: number | null }
+
+export default function UpcomingTournamentsAppPage() {
+  const { session } = useAuth() as any
+
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
-  const [summerSpecialModal, setSummerSpecialModal] = useState<{
-    isOpen: boolean
-    date: string
-    time: string
-    type: "edart" | "steeldart" | "lioncup"
-  }>({
+  // ✅ Shared Self-Registration modal for ALL (Lion, Buffalo, Weitere Turniere)
+  const [dkoModal, setDkoModal] = useState<DkoModalState>({
     isOpen: false,
     date: "",
     time: "",
-    type: "steeldart",
+    title: "Anmeldung",
+    seriesId: null,
+    startgeld: null,
   })
 
-  const [registrationModal, setRegistrationModal] = useState<{
-    isOpen: boolean
-    tournamentId: string | null
-    tournamentName: string | null
-    tournamentDate: string | null
-    tournamentTime: string | null
-    tournamentLocation: string | null
-    tournamentMode: string | null
-    tournamentEntryFee: number | null
-  }>({
-    isOpen: false,
-    tournamentId: null,
-    tournamentName: null,
-    tournamentDate: null,
-    tournamentTime: null,
-    tournamentLocation: null,
-    tournamentMode: null,
-    tournamentEntryFee: null,
-  })
+  // ✅ Prevent auto-close on initial modal sync
+  const modalOpenedAtRef = useRef<number>(0)
 
+  // ✅ Toast
+  const [toast, setToast] = useState<{ show: boolean; text: string }>({ show: false, text: "" })
+  const showToast = (text: string) => {
+    setToast({ show: true, text })
+    window.setTimeout(() => setToast({ show: false, text: "" }), 2500)
+  }
+
+  // ✅ registration state
+  const [regLoading, setRegLoading] = useState(false)
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false)
+
+  const [showAllLionCup, setShowAllLionCup] = useState(false)
+  const [showAllBuffalo, setShowAllBuffalo] = useState(false)
+
+  // ✅ tick for countdowns
+  const [nowTick, setNowTick] = useState<number>(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  /** ---------- Load DKO series + events from DB ---------- **/
+  const [lionSeries, setLionSeries] = useState<DkoSeries | null>(null)
+  const [buffaloSeries, setBuffaloSeries] = useState<DkoSeries | null>(null)
+  const [seriesById, setSeriesById] = useState<Record<string, DkoSeries>>({})
+  const [lionEvents, setLionEvents] = useState<UiEvent[]>([])
+  const [buffaloEvents, setBuffaloEvents] = useState<UiEvent[]>([])
+  const [dkoLoading, setDkoLoading] = useState(true)
+  const [dkoError, setDkoError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const run = async () => {
+      setDkoLoading(true)
+      setDkoError(null)
+
+      try {
+        // ✅ startgeld mitladen!
+        const { data: seriesData, error: sErr } = await supabase
+          .from("dko_series")
+          .select("id,name,slug,is_active,startgeld")
+          .in("slug", ["lion-cup-2025-26", "buffalo-steel-cup-2026"])
+
+        if (sErr) throw sErr
+
+        const list = (seriesData || []) as DkoSeries[]
+        const lion = list.find((x) => x.slug === "lion-cup-2025-26") ?? null
+        const buff = list.find((x) => x.slug === "buffalo-steel-cup-2026") ?? null
+
+        setLionSeries(lion)
+        setBuffaloSeries(buff)
+
+        const mapById: Record<string, DkoSeries> = {}
+        for (const s of list) mapById[s.id] = s
+        setSeriesById(mapById)
+
+        const fetchEventsFor = async (seriesId: string) => {
+          const { data, error } = await supabase
+            .from("dko_series_events")
+            .select("id,series_id,title,start_at,is_matchday,registration_cutoff_minutes,is_rescheduled,rescheduled_at")
+            .eq("series_id", seriesId)
+            .order("start_at", { ascending: true })
+          if (error) throw error
+          return (data || []) as DkoSeriesEvent[]
+        }
+
+        const [lionRaw, buffRaw] = await Promise.all([
+          lion?.id ? fetchEventsFor(lion.id) : Promise.resolve([] as DkoSeriesEvent[]),
+          buff?.id ? fetchEventsFor(buff.id) : Promise.resolve([] as DkoSeriesEvent[]),
+        ])
+
+        const mapToUi = (ev: DkoSeriesEvent): UiEvent => {
+          const isRescheduled = !!ev.is_rescheduled && !!ev.rescheduled_at
+          const effectiveIso = isRescheduled && ev.rescheduled_at ? ev.rescheduled_at : ev.start_at
+          const effectiveDT = new Date(effectiveIso)
+          const originalDT = new Date(ev.start_at)
+          const cutoffMinutes = Number(ev.registration_cutoff_minutes ?? 10) || 10
+
+          return {
+            id: ev.id,
+            series_id: ev.series_id,
+            is_matchday: !!ev.is_matchday,
+            cutoffMinutes,
+            effectiveIso,
+            effectiveDT,
+            originalIso: ev.start_at,
+            originalDT,
+            isRescheduled,
+            dateLabel: formatDateLabel(effectiveDT),
+            timeLabel: formatTimeLabel(effectiveDT),
+          }
+        }
+
+        setLionEvents(lionRaw.map(mapToUi))
+        setBuffaloEvents(buffRaw.map(mapToUi))
+      } catch (e: any) {
+        console.error(e)
+        setDkoError(e?.message ? String(e.message) : "Fehler beim Laden der DKO Serien/Termine.")
+      } finally {
+        setDkoLoading(false)
+      }
+    }
+
+    run()
+  }, [])
+
+  const actualLionTournamentDays = useMemo(() => lionEvents.filter((e) => e.is_matchday).length, [lionEvents])
+
+  const lionRange = useMemo(() => {
+    if (lionEvents.length === 0) return null
+    const first = lionEvents[0].effectiveDT
+    const last = lionEvents[lionEvents.length - 1].effectiveDT
+    return { from: formatDateLabel(first), to: formatDateLabel(last) }
+  }, [lionEvents])
+
+  /** ---------- Load other tournaments (tournaments table) ---------- **/
   useEffect(() => {
     const fetchTournaments = async () => {
       setLoading(true)
@@ -118,7 +347,7 @@ export default function UpcomingTournamentsPage() {
 
       if (error) {
         console.error("Error fetching tournaments:", error)
-        setError("Fehler beim Laden der Turniere. Bitte versuchen Sie es später erneut.")
+        setError("Fehler beim Laden der Turniere.")
       } else {
         setTournaments(data || [])
       }
@@ -128,706 +357,675 @@ export default function UpcomingTournamentsPage() {
     fetchTournaments()
   }, [])
 
-  const isDateInPast = (dateString: string): boolean => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+  /** ---------- Registration status for current user ---------- **/
+  useEffect(() => {
+    const run = async () => {
+      setRegLoading(true)
+      setAlreadyRegistered(false)
 
-    const months: { [key: string]: number } = {
-      "Jan.": 0,
-      "Feb.": 1,
-      "Mär.": 2,
-      "Apr.": 3,
-      Mai: 4,
-      "Jun.": 5,
-      Juli: 6,
-      "Aug.": 7,
-      "Sep.": 8,
-      "Okt.": 9,
-      "Nov.": 10,
-      "Dez.": 11,
-    }
+      try {
+        if (!session?.user) return
 
-    const parts = dateString.split(" ")
-    if (parts.length >= 3) {
-      const day = Number.parseInt(parts[0].replace(".", ""))
-      const month = months[parts[1]]
-      const year = Number.parseInt(parts[2])
+        const { data: profile, error: profErr } = await supabase
+          .from("user_profiles")
+          .select("club_players(spieldatenbank_id)")
+          .eq("user_id", session.user.id)
+          .single()
 
-      if (!isNaN(day) && month !== undefined && !isNaN(year)) {
-        const eventDate = new Date(year, month, day)
-        return eventDate < today
+        if (profErr) throw profErr
+
+        const clubPlayersRel: any = (profile as any)?.club_players
+        const spieldatenbankId = Array.isArray(clubPlayersRel) ? clubPlayersRel?.[0]?.spieldatenbank_id : clubPlayersRel?.spieldatenbank_id
+        if (!spieldatenbankId) return
+
+        const pid = String(spieldatenbankId)
+
+        const { data: reg, error: regErr } = await supabase.from("dko_tournament_registration").select("id").eq("player_id", pid).limit(1)
+
+        if (regErr) throw regErr
+
+        setAlreadyRegistered((reg?.length ?? 0) > 0)
+      } catch (e) {
+        console.error("Registration status error:", e)
+      } finally {
+        setRegLoading(false)
       }
     }
 
-    return false
-  }
+    run()
+  }, [session])
 
-  const steeldartDates = [
-    { date: "02. Juli 2025", time: "19:00 Uhr" },
-    { date: "08. Juli 2025", time: "19:00 Uhr" },
-    { date: "21. Juli 2025", time: "19:00 Uhr" },
-    { date: "30. Juli 2025", time: "19:00 Uhr" },
-    { date: "05. Aug. 2025", time: "19:00 Uhr" },
-    { date: "13. Aug. 2025", time: "19:00 Uhr" },
-    { date: "20. Aug. 2025", time: "19:00 Uhr" },
-    { date: "27. Aug. 2025", time: "19:00 Uhr" },
-  ]
+  /** ---------- Open self-reg modal (only today + before cutoff) ---------- **/
+  const openSelfRegModalIfAllowed = (title: string, startDT: Date, cutoffMinutes: number) => {
+    const today = isDateTodayDT(startDT)
+    if (!today) return
+    const { closed } = computeCutoffFromStart(startDT, cutoffMinutes, nowTick)
+    if (closed) return
 
-  const edartDates = [
-    { date: "04. Juli 2025", time: "19:30 Uhr" },
-    { date: "11. Juli 2025", time: "19:30 Uhr" },
-    { date: "23. Juli 2025", time: "19:00 Uhr" },
-    { date: "01 Aug. 2025", time: "19:30 Uhr" },
-    { date: "08 Aug. 2025", time: "19:30 Uhr" },
-    { date: "15. Aug. 2025", time: "19:30 Uhr" },
-    { date: "22. Aug. 2025", time: "19:30 Uhr" },
-    { date: "29. Aug. 2025", time: "19:30 Uhr" },
-  ]
-
-  const lioncupDates = [
-    { date: "01. Sep. 2025", time: "19:30 Uhr" },
-    { date: "08. Sep. 2025", time: "19:30 Uhr" },
-    { date: "15. Sep. 2025", time: "19:30 Uhr" },
-    { date: "22. Sep. 2025", time: "19:30 Uhr" },
-    { date: "29. Sep. 2025", time: "19:30 Uhr" },
-    { date: "06. Okt. 2025", time: "19:30 Uhr" },
-    { date: "13. Okt. 2025", time: "19:30 Uhr" },
-    { date: "20. Okt. 2025", time: "19:30 Uhr" },
-    { date: "27. Okt. 2025", time: "19:30 Uhr", spielfrei: true },
-    { date: "03. Nov. 2025", time: "19:30 Uhr" },
-    { date: "10. Nov. 2025", time: "19:30 Uhr" },
-    { date: "17. Nov. 2025", time: "19:30 Uhr" },
-    { date: "24. Nov. 2025", time: "19:30 Uhr" },
-    { date: "01. Dez. 2025", time: "19:30 Uhr" },
-    { date: "08. Dez. 2025", time: "19:30 Uhr" },
-    { date: "15. Dez. 2025", time: "19:30 Uhr" },
-    { date: "22. Dez. 2025", time: "19:30 Uhr", spielfrei: true },
-    { date: "29. Dez. 2025", time: "19:30 Uhr", spielfrei: true },
-    { date: "05. Jan. 2026", time: "19:30 Uhr", spielfrei: true },
-    { date: "12. Jan. 2026", time: "19:30 Uhr" },
-    { date: "19. Jan. 2026", time: "19:30 Uhr" },
-    { date: "26. Jan. 2026", time: "19:30 Uhr" },
-    { date: "02. Feb. 2026", time: "19:30 Uhr" },
-    { date: "09. Feb. 2026", time: "19:30 Uhr" },
-    { date: "16. Feb. 2026", time: "19:30 Uhr" },
-    { date: "23. Feb. 2026", time: "19:30 Uhr" },
-    { date: "02. Mär. 2026", time: "19:30 Uhr" },
-    { date: "09. Mär. 2026", time: "19:30 Uhr" },
-    { date: "16. Mär. 2026", time: "19:30 Uhr" },
-    { date: "23. Mär. 2026", time: "19:30 Uhr" },
-    { date: "30. Mär. 2026", time: "19:30 Uhr" },
-    { date: "06. Apr. 2026", time: "19:30 Uhr" },
-    { date: "13. Apr. 2026", time: "19:30 Uhr" },
-    { date: "20. Apr. 2026", time: "19:30 Uhr" },
-    { date: "27. Apr. 2026", time: "19:30 Uhr" },
-    { date: "04. Mai 2026", time: "19:30 Uhr" },
-    { date: "11. Mai 2026", time: "19:30 Uhr", spielfrei: true },
-    { date: "18. Mai 2026", time: "19:30 Uhr" },
-    { date: "25. Mai 2026", time: "19:30 Uhr" },
-  ]
-
-  const actualTournamentDays = lioncupDates.filter((date) => !date.spielfrei).length
-
-  const handleSummerSpecialRegistration = (date: string, time: string, type: "edart" | "steeldart" | "lioncup") => {
-    if (isDateInPast(date)) {
-      return
-    }
-
-    setSummerSpecialModal({
+    modalOpenedAtRef.current = Date.now()
+    setDkoModal({
       isOpen: true,
-      date,
-      time,
-      type,
+      title,
+      date: formatDateLabel(startDT),
+      time: formatTimeLabel(startDT),
+      seriesId: null,
+      startgeld: null,
     })
   }
 
-  const handleRegistration = (tournament: Tournament) => {
-    setRegistrationModal({
+  /**
+   * ✅ FIX: hier MUSS seriesId gesetzt werden, sonst kann das Modal startgeld nicht laden.
+   * Optional geben wir startgeld schon direkt mit (aus seriesById), dann klappt es sofort ohne extra Query.
+   */
+  const openDkoModalIfAllowed = (title: string, ev: UiEvent, isToday: boolean) => {
+    if (!isToday) return
+    if (!ev.is_matchday) return
+    const { closed } = computeCutoffFromStart(ev.effectiveDT, ev.cutoffMinutes, nowTick)
+    if (closed) return
+
+    const s = seriesById[ev.series_id]
+    modalOpenedAtRef.current = Date.now()
+    setDkoModal({
       isOpen: true,
-      tournamentId: tournament.id,
-      tournamentName: tournament.name,
-      tournamentDate: tournament.date,
-      tournamentTime: tournament.time,
-      tournamentLocation: tournament.location,
-      tournamentMode: tournament.mode,
-      tournamentEntryFee: tournament.entry_fee,
+      date: ev.dateLabel,
+      time: ev.timeLabel,
+      title,
+      seriesId: ev.series_id,                // ✅ wichtig
+      startgeld: Number(s?.startgeld ?? 0),  // ✅ optional direkt mitgeben
     })
   }
 
-  const handleImageClick = (imageUrl: string) => {
-    setSelectedImage(imageUrl)
-  }
-
-  const sponsors = [
-    { name: "Sponsor 1", logo: "/images/sponsoren/sponsor1.png" },
-    { name: "Sponsor 2", logo: "/images/sponsoren/sponsor2.png" },
-    { name: "Sponsor 3", logo: "/images/sponsoren/sponsor3.png" },
-    { name: "Sponsor 4", logo: "/images/sponsoren/sponsor4.png" },
-    { name: "Sponsor 5", logo: "/images/sponsoren/sponsor5.png" },
-    { name: "Sponsor 6", logo: "/images/sponsoren/sponsor6.png" },
-    { name: "Sponsor 7", logo: "/images/sponsoren/sponsor7.png" },
-    { name: "Sponsor 8", logo: "/images/sponsoren/sponsor8.png" },
-    { name: "Sponsor 9", logo: "/images/sponsoren/sponsor9.png" },
-    { name: "Sponsor 10", logo: "/images/sponsoren/sponsor10.png" },
-    { name: "Sponsor 11", logo: "/images/sponsoren/sponsor11.png" },
-    { name: "Sponsor 12", logo: "/images/sponsoren/sponsor12.png" },
-  ]
+  const handleImageClick = (url: string) => setSelectedImage(url)
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       <Header />
-      <main className="pt-8 pb-20">
-        <motion.div
-          className="container mx-auto px-4 md:px-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={itemVariants} className="text-center mb-16">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 md:p-12 mb-8">
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-none tracking-tighter mb-6">
-                <span className="block text-red-600">SUMMER SPECIAL</span>
-                <span className="block text-gray-900">DART COMPETITION</span>
-                <span className="block text-yellow-600">2025</span>
+
+      <main className="pt-6 pb-24">
+        <motion.div className="container mx-auto px-4" variants={containerVariants} initial="hidden" animate="visible">
+          {/* ===== Lion Cup Header ===== */}
+          <motion.div variants={itemVariants} className="text-center mb-8">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl shadow-lg p-6 text-white">
+              <div className="bg-white/10 rounded-full p-3 w-16 h-16 mx-auto mb-4">
+                <Crown className="h-10 w-10 text-white mx-auto" />
+              </div>
+
+              <h1 className="text-2xl md:text-4xl font-extrabold uppercase leading-tight mb-3">
+                <span className="block">EMD - LION CUP</span>
+                <span className="block text-orange-200 text-xl md:text-3xl">2025/2026</span>
               </h1>
-              <p className="text-lg md:text-xl font-bold uppercase text-gray-600 mb-8">
-                WITH SOFTDART & STEELDART COMP.
-              </p>
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-base font-bold">
-                <div className="flex items-center gap-2 bg-red-50 px-4 py-2 rounded-lg border border-red-100">
-                  <Calendar className="h-5 w-5 text-red-600" />
-                  <span>02. JULI - 29. AUG. 2025</span>
+
+              <div className="bg-white/15 border border-white/20 rounded-lg p-3 text-xs font-semibold">
+                <div className="flex items-center justify-center gap-2">
+                  <ShieldAlert className="h-4 w-4" />
+                  <span>Anmeldung nur bis spätestens 10 Minuten vor Turnierbeginn möglich.</span>
                 </div>
-                <div className="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-lg border border-yellow-100">
-                  <MapPin className="h-5 w-5 text-yellow-600" />
-                  <span>PFEIL-OK SALZBURG</span>
+              </div>
+
+              <p className="text-sm md:text-base font-bold text-orange-100 mt-4">
+                {actualLionTournamentDays} TURNIERTAGE + 1 FINALTAG
+              </p>
+
+              <div className="flex flex-col gap-2 text-xs font-bold mt-3">
+                <div className="flex items-center justify-center gap-2 bg-white/20 px-3 py-2 rounded-lg">
+                  <Calendar className="h-4 w-4" />
+                  <span>{lionRange ? `${lionRange.from} - ${lionRange.to}` : "—"}</span>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="text-center mb-16">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 mb-8 text-white">
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
-                <Crown className="h-12 w-12 text-white mx-auto" />
+          {/* ===== Lion Cup Schedule (DB) ===== */}
+          <motion.div variants={itemVariants} className="space-y-6 mb-8">
+            <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-orange-600 to-orange-700 p-4">
+                <div className="flex items-center gap-2">
+                  <Crown className="h-5 w-5 text-white" />
+                  <h2 className="text-lg font-bold text-white uppercase">EMD - Lion Cup Spieltage</h2>
+                </div>
               </div>
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-none tracking-tighter mb-6">
-                <span className="block text-white">EMD - LION CUP</span>
-                <span className="block text-orange-200">2025/2026</span>
-              </h1>
-              <p className="text-lg md:text-xl font-bold uppercase text-orange-100 mb-8">
-                {actualTournamentDays} TURNIERTAGE + 1 FINALTAG
-              </p>
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-base font-bold">
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 backdrop-blur-sm">
-                  <Calendar className="h-5 w-5 text-white" />
-                  <span>01. SEP. 2025 - 01. JUN. 2026</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 backdrop-blur-sm">
-                  <Clock className="h-5 w-5 text-white" />
-                  <span>JEDEN MONTAG 19:30 UHR</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 backdrop-blur-sm">
+
+              <div className="p-4">
+                {dkoLoading ? (
+                  <div className="flex items-center justify-center gap-2 text-gray-700 py-4">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Lade Termine…</span>
+                  </div>
+                ) : dkoError ? (
+                  <div className="p-3 rounded-lg border bg-red-50 text-red-700 text-sm">Fehler beim Laden: {dkoError}</div>
+                ) : lionSeries && lionEvents.length === 0 ? (
+                  <div className="text-sm text-gray-600">Noch keine Termine in der DB.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {(showAllLionCup ? lionEvents : lionEvents.slice(0, 3)).map((ev, index) => {
+                      const past = isDateInPastDT(ev.effectiveDT)
+                      const today = isDateTodayDT(ev.effectiveDT)
+                      const spielfrei = !ev.is_matchday
+
+                      let cutoffDT: Date | null = null
+                      let secondsLeft: number | null = null
+                      let closed = false
+
+                      if (today && !spielfrei) {
+                        const r = computeCutoffFromStart(ev.effectiveDT, ev.cutoffMinutes, nowTick)
+                        cutoffDT = r.cutoffDT
+                        secondsLeft = r.secondsLeft
+                        closed = r.closed
+                      }
+
+                      const canClick = today && !past && !spielfrei && !closed
+
+                      const countdownLine =
+                        today && !spielfrei
+                          ? closed
+                            ? "Anmeldung geschlossen (10 Min vorher)"
+                            : secondsLeft !== null
+                              ? `Anmeldung noch: ${formatMMSS(secondsLeft)}`
+                              : null
+                          : null
+
+                      return (
+                        <div
+                          key={ev.id ?? index}
+                          className={[
+                            "flex justify-between items-center py-3 px-3 rounded-lg border transition-all",
+                            spielfrei
+                              ? "bg-yellow-50 border-yellow-200"
+                              : past
+                                ? "bg-gray-100 border-gray-200 opacity-60"
+                                : today
+                                  ? "bg-orange-50 border-orange-200"
+                                  : "bg-gray-50 border-gray-100",
+                            ev.isRescheduled ? "shadow-md border-orange-200 bg-gradient-to-r from-orange-50 to-white" : "",
+                          ].join(" ")}
+                        >
+                          <div className="flex-1">
+                            <span
+                              className={`font-bold text-sm block ${
+                                spielfrei ? "text-yellow-700" : past ? "text-gray-500" : "text-gray-900"
+                              }`}
+                            >
+                              {ev.dateLabel} {today && !spielfrei ? <span className="text-orange-700">• Heute</span> : null}
+                            </span>
+
+                            <div
+                              className={`flex items-center gap-1 mt-1 ${
+                                spielfrei ? "text-yellow-600" : past ? "text-gray-400" : "text-orange-600"
+                              }`}
+                            >
+                              <Clock className="h-3 w-3" />
+                              <span className="text-xs font-bold">{ev.timeLabel}</span>
+                            </div>
+
+                            <RescheduleBadge isRescheduled={ev.isRescheduled} effectiveDT={ev.effectiveDT} originalDT={ev.originalDT} accent="orange" />
+
+                            {countdownLine && (
+                              <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-800">
+                                <Timer className="h-3 w-3 text-orange-600" />
+                                <span className="font-semibold">{countdownLine}</span>
+                              </div>
+                            )}
+
+                            {today && !spielfrei && cutoffDT && (
+                              <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-600">
+                                <Info className="h-3 w-3" />
+                                <span>
+                                  Cutoff: {cutoffDT.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {spielfrei ? (
+                            <div className="bg-yellow-200 text-yellow-800 font-bold px-3 py-1 rounded-lg text-xs">Spielfrei</div>
+                          ) : past ? (
+                            <Button size="sm" disabled className="text-xs px-3 py-1 bg-gray-400 text-gray-600">
+                              Vorbei
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => openDkoModalIfAllowed("Lion Cup Anmeldung", ev, today)}
+                              size="sm"
+                              disabled={!canClick}
+                              title={
+                                !today && !past
+                                  ? "Anmeldung ist erst am Turniertag möglich."
+                                  : today && closed
+                                    ? "Anmeldung ist 10 Minuten vor Beginn geschlossen."
+                                    : undefined
+                              }
+                              className={`text-xs px-3 py-1 ${
+                                canClick
+                                  ? alreadyRegistered
+                                    ? "bg-gray-700 hover:bg-gray-800 text-white"
+                                    : "bg-orange-600 hover:bg-orange-700 text-white"
+                                  : "bg-gray-300 text-gray-700"
+                              }`}
+                            >
+                              {regLoading ? (
+                                <span className="flex items-center gap-2">
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  ...
+                                </span>
+                              ) : today ? (
+                                alreadyRegistered ? (
+                                  <span className="flex items-center gap-2">
+                                    <LogOut className="h-3 w-3" />
+                                    Abmelden
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-2">
+                                    <UserPlus className="h-3 w-3" />
+                                    Anmelden
+                                  </span>
+                                )
+                              ) : (
+                                <span className="flex items-center gap-2">
+                                  <Lock className="h-3 w-3" />
+                                  Am Turniertag
+                                </span>
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {!dkoLoading && !dkoError && lionEvents.length > 0 && (
+                  <>
+                    {!showAllLionCup ? (
+                      <div className="mt-3 text-center">
+                        <Button onClick={() => setShowAllLionCup(true)} variant="outline" size="sm" className="text-xs border-orange-200 text-orange-700 hover:bg-orange-50">
+                          <ChevronDown className="h-3 w-3 mr-1" />
+                          Alle {lionEvents.length} Termine anzeigen
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="mt-3 text-center">
+                        <Button onClick={() => setShowAllLionCup(false)} variant="outline" size="sm" className="text-xs border-orange-200 text-orange-700 hover:bg-orange-50">
+                          <ChevronUp className="h-3 w-3 mr-1" />
+                          Weniger anzeigen
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="bg-gray-50 px-4 py-3 border-t border-gray-100">
+                <Link href="/regelwerk-app">
+                  <Button size="sm" variant="outline" className="w-full border-orange-200 text-orange-700 hover:bg-orange-50 text-xs bg-transparent">
+                    <BookOpen className="h-3 w-3 mr-2" />
+                    Regelwerk
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* ===== Buffalo Steel Cup (DB) ===== */}
+          <motion.div variants={itemVariants} className="space-y-6 mb-8">
+            <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-4">
+                <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-white" />
-                  <span>20 ANTRITTE FÜR FINALE</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-            {/* Steeldart Schedule */}
-            <motion.div
-              variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
-            >
-              <div className="bg-gradient-to-r from-red-600 to-red-700 p-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 rounded-lg p-2">
-                    <Target className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white uppercase">Steeldart</h2>
-                    <p className="text-red-100 text-sm">Game Days</p>
-                  </div>
+                  <h2 className="text-lg font-bold text-white uppercase">Buffalo Steel Cup</h2>
                 </div>
               </div>
 
-              <div className="p-6">
-                <div className="space-y-3">
-                  {steeldartDates.map((item, index) => {
-                    const isPast = isDateInPast(item.date)
-                    return (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className={`flex justify-between items-center py-4 px-4 rounded-xl border transition-all duration-200 group ${
-                          isPast
-                            ? "bg-gray-100 border-gray-200 opacity-60"
-                            : "bg-gray-50 border-gray-100 hover:border-red-200 hover:bg-red-50"
-                        }`}
-                      >
-                        <div className="flex-1">
-                          <span
-                            className={`font-bold block ${isPast ? "text-gray-500" : "text-gray-900 group-hover:text-red-700"}`}
-                          >
-                            {item.date}
-                          </span>
-                          <div className={`flex items-center gap-2 mt-1 ${isPast ? "text-gray-400" : "text-red-600"}`}>
-                            <Clock className="h-4 w-4" />
-                            <span className="font-bold text-sm">{item.time}</span>
-                          </div>
-                        </div>
-                        <Button
-                          onClick={() => handleSummerSpecialRegistration(item.date, item.time, "steeldart")}
-                          size="sm"
-                          disabled={isPast}
-                          className={`font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md ${
-                            isPast
-                              ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                              : "bg-red-600 hover:bg-red-700 text-white hover:scale-105"
-                          }`}
+              <div className="p-4">
+                <div className="text-xs text-gray-700 bg-slate-50 border border-slate-100 rounded-lg p-3 mb-4">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <ShieldAlert className="h-4 w-4 text-slate-700" />
+                    <span>Anmeldung nur am Turniertag – bis spätestens 10 Minuten vor Beginn.</span>
+                  </div>
+                </div>
+
+                {dkoLoading ? (
+                  <div className="flex items-center justify-center gap-2 text-gray-700 py-4">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Lade Termine…</span>
+                  </div>
+                ) : dkoError ? (
+                  <div className="p-3 rounded-lg border bg-red-50 text-red-700 text-sm">Fehler beim Laden: {dkoError}</div>
+                ) : buffaloSeries && buffaloEvents.length === 0 ? (
+                  <div className="text-sm text-gray-600">Noch keine Termine in der DB.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {(showAllBuffalo ? buffaloEvents : buffaloEvents.slice(0, 4)).map((ev) => {
+                      const past = isDateInPastDT(ev.effectiveDT)
+                      const today = isDateTodayDT(ev.effectiveDT)
+
+                      const r = today ? computeCutoffFromStart(ev.effectiveDT, ev.cutoffMinutes, nowTick) : { cutoffDT: null as any, secondsLeft: null as any, closed: false }
+                      const closed = today ? r.closed : false
+                      const cutoffDT = today ? r.cutoffDT : null
+                      const secondsLeft = today ? r.secondsLeft : null
+
+                      const canClick = today && !past && !closed
+
+                      const countdownLine = today
+                        ? closed
+                          ? "Anmeldung geschlossen (10 Min vorher)"
+                          : secondsLeft !== null
+                            ? `Anmeldung noch: ${formatMMSS(secondsLeft)}`
+                            : null
+                        : null
+
+                      return (
+                        <div
+                          key={ev.id}
+                          className={[
+                            "flex justify-between items-center py-3 px-3 rounded-lg border transition-all",
+                            past ? "bg-gray-100 border-gray-200 opacity-60" : today ? "bg-slate-50 border-slate-200" : "bg-gray-50 border-gray-100",
+                            ev.isRescheduled ? "shadow-md border-slate-200 bg-gradient-to-r from-slate-50 to-white" : "",
+                          ].join(" ")}
                         >
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          {isPast ? "Vergangen" : "Anmelden"}
-                        </Button>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              </div>
+                          <div className="flex-1">
+                            <div className="font-bold text-sm text-gray-900">
+                              {ev.dateLabel} {today ? <span className="text-slate-700">• Heute</span> : null}
+                            </div>
 
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
-                <div className="flex items-center justify-center text-sm text-gray-600">
-                  <Star className="h-4 w-4 mr-2 text-red-500" />
-                  <span className="font-medium">{steeldartDates.length} Spieltage geplant</span>
-                </div>
-              </div>
-            </motion.div>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-700 font-semibold">
+                              <Clock className="h-3 w-3" />
+                              <span>{ev.timeLabel}</span>
+                            </div>
 
-            {/* E-Dart Schedule */}
-            <motion.div
-              variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
-            >
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 rounded-lg p-2">
-                    <Users className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white uppercase">E-Dart</h2>
-                    <p className="text-blue-100 text-sm">Game Days</p>
-                  </div>
-                </div>
-              </div>
+                            <RescheduleBadge isRescheduled={ev.isRescheduled} effectiveDT={ev.effectiveDT} originalDT={ev.originalDT} accent="slate" />
 
-              <div className="p-6">
-                <div className="space-y-3">
-                  {edartDates.map((item, index) => {
-                    const isPast = isDateInPast(item.date)
-                    return (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className={`flex justify-between items-center py-4 px-4 rounded-xl border transition-all duration-200 group ${
-                          isPast
-                            ? "bg-gray-100 border-gray-200 opacity-60"
-                            : "bg-gray-50 border-gray-100 hover:border-blue-200 hover:bg-blue-50"
-                        }`}
-                      >
-                        <div className="flex-1">
-                          <span
-                            className={`font-bold block ${isPast ? "text-gray-500" : "text-gray-900 group-hover:text-blue-700"}`}
-                          >
-                            {item.date}
-                          </span>
-                          <div className={`flex items-center gap-2 mt-1 ${isPast ? "text-gray-400" : "text-blue-600"}`}>
-                            <Clock className="h-4 w-4" />
-                            <span className="font-bold text-sm">{item.time}</span>
+                            {countdownLine && (
+                              <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-800">
+                                <Timer className="h-3 w-3 text-slate-700" />
+                                <span className="font-semibold">{countdownLine}</span>
+                              </div>
+                            )}
+
+                            {today && cutoffDT && (
+                              <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-600">
+                                <Info className="h-3 w-3" />
+                                <span>
+                                  Cutoff: {cutoffDT.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr
+                                </span>
+                              </div>
+                            )}
                           </div>
+
+                          {past ? (
+                            <Button size="sm" disabled className="text-xs px-3 py-1 bg-gray-400 text-gray-600">
+                              Vorbei
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => openDkoModalIfAllowed("Buffalo Steel Cup Anmeldung", ev, today)}
+                              size="sm"
+                              disabled={!canClick}
+                              title={
+                                !today && !past
+                                  ? "Anmeldung ist erst am Turniertag möglich."
+                                  : today && closed
+                                    ? "Anmeldung ist 10 Minuten vor Beginn geschlossen."
+                                    : undefined
+                              }
+                              className={`text-xs px-3 py-1 ${
+                                canClick ? (alreadyRegistered ? "bg-gray-700 hover:bg-gray-800 text-white" : "bg-slate-800 hover:bg-slate-900 text-white") : "bg-gray-300 text-gray-700"
+                              }`}
+                            >
+                              {regLoading ? (
+                                <span className="flex items-center gap-2">
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  ...
+                                </span>
+                              ) : today ? (
+                                alreadyRegistered ? (
+                                  <span className="flex items-center gap-2">
+                                    <LogOut className="h-3 w-3" />
+                                    Abmelden
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-2">
+                                    <UserPlus className="h-3 w-3" />
+                                    Anmelden
+                                  </span>
+                                )
+                              ) : (
+                                <span className="flex items-center gap-2">
+                                  <Lock className="h-3 w-3" />
+                                  Am Turniertag
+                                </span>
+                              )}
+                            </Button>
+                          )}
                         </div>
-                        <Button
-                          onClick={() => handleSummerSpecialRegistration(item.date, item.time, "edart")}
-                          size="sm"
-                          disabled={isPast}
-                          className={`font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md ${
-                            isPast
-                              ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                              : "bg-blue-600 hover:bg-blue-700 text-white hover:scale-105"
-                          }`}
-                        >
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          {isPast ? "Vergangen" : "Anmelden"}
+                      )
+                    })}
+                  </div>
+                )}
+
+                {!dkoLoading && !dkoError && buffaloEvents.length > 0 && (
+                  <>
+                    {!showAllBuffalo ? (
+                      <div className="mt-4 text-center">
+                        <Button onClick={() => setShowAllBuffalo(true)} variant="outline" size="sm" className="text-xs border-slate-200 text-slate-800 hover:bg-slate-50">
+                          <ChevronDown className="h-3 w-3 mr-1" />
+                          Alle Termine anzeigen
                         </Button>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
-                <div className="flex items-center justify-center text-sm text-gray-600">
-                  <Star className="h-4 w-4 mr-2 text-blue-500" />
-                  <span className="font-medium">{edartDates.length} Spieltage geplant</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Lioncup Schedule */}
-            <motion.div
-              variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
-            >
-              <div className="bg-gradient-to-r from-orange-600 to-orange-700 p-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 rounded-lg p-2">
-                    <Crown className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white uppercase">EMD - Lion Cup</h2>
-                    <p className="text-orange-100 text-sm">Montags 19:30</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6">
-                <div className="space-y-3">
-                  {lioncupDates.map((item, index) => {
-                    const isPast = isDateInPast(item.date)
-                    const isSpielFrei = item.spielfrei
-                    return (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className={`flex justify-between items-center py-4 px-4 rounded-xl border transition-all duration-200 group ${
-                          isSpielFrei
-                            ? "bg-yellow-50 border-yellow-200"
-                            : isPast
-                              ? "bg-gray-100 border-gray-200 opacity-60"
-                              : "bg-gray-50 border-gray-100 hover:border-orange-200 hover:bg-orange-50"
-                        }`}
-                      >
-                        <div className="flex-1">
-                          <span
-                            className={`font-bold block ${
-                              isSpielFrei
-                                ? "text-yellow-700"
-                                : isPast
-                                  ? "text-gray-500"
-                                  : "text-gray-900 group-hover:text-orange-700"
-                            }`}
-                          >
-                            {item.date}
-                          </span>
-                          <div
-                            className={`flex items-center gap-2 mt-1 ${
-                              isSpielFrei ? "text-yellow-600" : isPast ? "text-gray-400" : "text-orange-600"
-                            }`}
-                          >
-                            <Clock className="h-4 w-4" />
-                            <span className="font-bold text-sm">{item.time}</span>
-                          </div>
-                        </div>
-                        {isSpielFrei ? (
-                          <div className="bg-yellow-200 text-yellow-800 font-bold px-4 py-2 rounded-lg text-sm">
-                            Spielfrei
-                          </div>
-                        ) : (
-                          <Button
-                            onClick={() => handleSummerSpecialRegistration(item.date, item.time, "lioncup")}
-                            size="sm"
-                            disabled={isPast}
-                            className={`font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md ${
-                              isPast
-                                ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                                : "bg-orange-600 hover:bg-orange-700 text-white hover:scale-105"
-                            }`}
-                          >
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            {isPast ? "Vergangen" : "Anmelden"}
-                          </Button>
-                        )}
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Crown className="h-4 w-4 mr-2 text-orange-500" />
-                    <span className="font-medium">{actualTournamentDays} Turniertage + Finale</span>
-                  </div>
-                  <Link href="/regelwerk">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300 font-semibold bg-transparent"
-                    >
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      Regelwerk
-                    </Button>
-                  </Link>
-                </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 text-center">
+                        <Button onClick={() => setShowAllBuffalo(false)} variant="outline" size="sm" className="text-xs border-slate-200 text-slate-800 hover:bg-slate-50">
+                          <ChevronUp className="h-3 w-3 mr-1" />
+                          Weniger anzeigen
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </motion.div>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-            {/* Summer Special Final */}
-            <motion.div
-              variants={cardVariants}
-              className="bg-gradient-to-r from-red-600 to-red-800 rounded-2xl shadow-2xl p-8 text-center border border-red-200 hover:shadow-3xl transition-shadow duration-300"
-            >
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
-                <Trophy className="h-12 w-12 text-white mx-auto" />
-              </div>
-              <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-4 text-white">SUMMER SPECIAL FINALE</h2>
-              <div className="text-xl md:text-2xl font-bold text-white mb-4">SAMSTAG: 30. AUG. 2025 - 19:00 UHR</div>
-              <div className="flex items-center justify-center text-white/90">
-                <Trophy className="h-5 w-5 mr-2" />
-                <span className="text-sm font-medium uppercase tracking-wide">Das große Finale</span>
-                <Trophy className="h-5 w-5 ml-2" />
-              </div>
-            </motion.div>
-
-            {/* Lioncup Final */}
-            <motion.div
-              variants={cardVariants}
-              className="bg-gradient-to-r from-orange-600 to-orange-800 rounded-2xl shadow-2xl p-8 text-center border border-orange-200 hover:shadow-3xl transition-shadow duration-300"
-            >
-              <div className="bg-white/10 rounded-full p-4 w-16 h-16 mx-auto mb-6 shadow-lg">
-                <Crown className="h-8 w-8 text-white mx-auto" />
-              </div>
-              <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-4 text-white">EMD - LION CUP FINALE</h2>
-              <div className="text-xl md:text-2xl font-bold text-white mb-4">01. JUNI 2026</div>
-              <div className="flex items-center justify-center text-white/90">
-                <Crown className="h-5 w-5 mr-2" />
-                <span className="text-sm font-medium uppercase tracking-wide">Die Krönung des Champions</span>
-                <Crown className="h-5 w-5 ml-2" />
-              </div>
+          {/* ===== Lion Cup Finale ===== */}
+          <motion.div variants={itemVariants} className="mb-8">
+            <motion.div variants={cardVariants} className="bg-gradient-to-r from-orange-600 to-orange-800 rounded-xl shadow-lg p-6 text-center text-white">
+              <Crown className="h-10 w-10 mx-auto mb-3" />
+              <h2 className="text-xl font-extrabold uppercase mb-2">EMD - LION CUP FINALE</h2>
+              <div className="text-lg font-bold">01. JUNI 2026</div>
             </motion.div>
           </motion.div>
 
-          {/* Dynamic Tournament Schedule from Database */}
-          <motion.div variants={itemVariants} className="mb-16">
-            <h2 className="text-3xl md:text-4xl font-extrabold uppercase text-center mb-10 text-gray-900">
-              Weitere Turniere
-            </h2>
+          {/* ===== Weitere Turniere (tournaments table) — uses SAME self-register modal ===== */}
+          <motion.div variants={itemVariants} className="mb-8">
+            <h2 className="text-2xl font-extrabold uppercase text-center mb-6 text-gray-900">Weitere Turniere</h2>
+
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-10 w-10 animate-spin text-red-600" />
-                <span className="ml-4 text-lg text-gray-700">Turniere werden geladen...</span>
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-red-600" />
               </div>
             ) : error ? (
-              <div className="text-center py-12 text-red-600">
-                <AlertCircle className="h-12 w-12 mx-auto mb-4" />
-                <p className="text-xl font-semibold">{error}</p>
+              <div className="text-center py-8 text-red-600">
+                <AlertCircle className="h-10 w-10 mx-auto mb-3" />
+                <p className="text-sm">{error}</p>
               </div>
             ) : tournaments.length === 0 ? (
-              <div className="text-center py-12 text-gray-600">
-                <Info className="h-12 w-12 mx-auto mb-4" />
-                <p className="text-xl font-semibold">Derzeit sind keine weiteren Turniere geplant.</p>
-                <p className="mt-2">Schau bald wieder vorbei!</p>
+              <div className="text-center py-8 text-gray-600">
+                <Info className="h-10 w-10 mx-auto mb-3" />
+                <p className="text-sm">Derzeit keine weiteren Turniere geplant.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {tournaments.map((tournament, index) => (
-                  <motion.div
-                    key={tournament.id}
-                    variants={cardVariants}
-                    className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300 flex flex-col"
-                  >
-                    {tournament.photo_url && (
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <div
-                            className="relative w-full h-48 bg-gray-100 cursor-pointer"
-                            onClick={() => handleImageClick(tournament.photo_url!)}
-                          >
-                            <Image
-                              src={tournament.photo_url || "/placeholder.svg"}
-                              alt={tournament.name}
-                              fill
-                              style={{ objectFit: "cover" }}
-                              className="object-center"
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            />
+              <div className="space-y-4">
+                {tournaments.map((tournament) => {
+                  const startDT = new Date(`${tournament.date}T${tournament.time}:00`)
+                  const today = isDateTodayDT(startDT)
+                  const past = isDateInPastDT(startDT)
+
+                  const r = today ? computeCutoffFromStart(startDT, 10, nowTick) : { cutoffDT: null as any, secondsLeft: null as any, closed: false }
+                  const cutoffDT = today ? r.cutoffDT : null
+                  const secondsLeft = today ? r.secondsLeft : null
+                  const closed = today ? r.closed : false
+
+                  const canOpen = today && !past && !closed
+
+                  const buttonLabel = past
+                    ? "Vorbei"
+                    : today
+                      ? closed
+                        ? "Anmeldung geschlossen"
+                        : alreadyRegistered
+                          ? "Abmelden"
+                          : "Anmelden"
+                      : "Am Turniertag"
+
+                  const countdownLine =
+                    today
+                      ? closed
+                        ? "Anmeldung geschlossen (10 Min vorher)"
+                        : secondsLeft !== null
+                          ? `Anmeldung noch: ${formatMMSS(secondsLeft)}`
+                          : null
+                      : null
+
+                  return (
+                    <motion.div key={tournament.id} variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                      {tournament.photo_url && (
+                        <div className="relative w-full h-40 bg-gray-100 cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setSelectedImage(tournament.photo_url!)}>
+                          <Image src={tournament.photo_url || "/placeholder.svg"} alt={tournament.name} fill style={{ objectFit: "cover" }} sizes="100vw" />
+                        </div>
+                      )}
+
+                      <div className="p-4">
+                        <h3 className="text-lg font-bold text-gray-900 mb-3">{tournament.name}</h3>
+
+                        <div className="space-y-2 text-xs text-gray-700 mb-4">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3 w-3 text-red-600" />
+                            <span>{new Date(tournament.date).toLocaleDateString("de-DE")}</span>
                           </div>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl p-0 overflow-hidden">
-                          {selectedImage && (
-                            <Image
-                              src={selectedImage || "/placeholder.svg"}
-                              alt={tournament.name}
-                              width={1000}
-                              height={1000}
-                              style={{ objectFit: "contain", width: "100%", height: "auto" }}
-                              className="max-h-[90vh]"
-                            />
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-3 w-3 text-blue-600" />
+                            <span>{tournament.time} Uhr</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3 w-3 text-green-600" />
+                            <span>{tournament.location}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Euro className="h-3 w-3 text-yellow-600" />
+                            <span>Startgeld: {tournament.entry_fee.toFixed(2)} €</span>
+                          </div>
+
+                          {countdownLine && (
+                            <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-800">
+                              <Timer className="h-3 w-3 text-red-600" />
+                              <span className="font-semibold">{countdownLine}</span>
+                            </div>
                           )}
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                    <div className="p-6 flex-grow flex flex-col">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-3">{tournament.name}</h3>
-                      <div className="space-y-2 text-gray-700 text-sm flex-grow">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-red-600" />
-                          <span>{new Date(tournament.date).toLocaleDateString("de-DE")}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-blue-600" />
-                          <span>{tournament.time} Uhr</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-green-600" />
-                          <span>{tournament.location}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {tournament.mode === "edart" ? (
-                            <Target className="h-4 w-4 text-blue-600" />
-                          ) : tournament.mode === "steeldart" ? (
-                            <Swords className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <Users className="h-4 w-4 text-purple-600" />
+
+                          {today && cutoffDT && (
+                            <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-600">
+                              <Info className="h-3 w-3" />
+                              <span>
+                                Cutoff: {cutoffDT.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr
+                              </span>
+                            </div>
                           )}
-                          <span>
-                            Modus:{" "}
-                            {tournament.mode === "edart"
-                              ? "E-Dart"
-                              : tournament.mode === "steeldart"
-                                ? "Steel Dart"
-                                : "Beide"}
+
+                          {!today && !past && (
+                            <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-600">
+                              <ShieldAlert className="h-3 w-3 text-gray-700" />
+                              <span>Anmeldung nur am Turniertag (bis 10 Minuten vor Beginn).</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <Button
+                          onClick={() => {
+                            if (!canOpen) return
+                            openSelfRegModalIfAllowed(`Anmeldung • ${tournament.name}`, startDT, 10)
+                          }}
+                          size="sm"
+                          disabled={!canOpen}
+                          title={
+                            past
+                              ? "Dieses Turnier ist vorbei."
+                              : !today
+                                ? "Anmeldung ist erst am Turniertag möglich."
+                                : closed
+                                  ? "Anmeldung ist 10 Minuten vor Beginn geschlossen."
+                                  : undefined
+                          }
+                          className={`w-full text-xs ${canOpen ? "bg-red-600 hover:bg-red-700 text-white" : "bg-gray-300 text-gray-700"}`}
+                        >
+                          <span className="flex items-center justify-center gap-2">
+                            {past || !today || closed ? <Lock className="h-3 w-3" /> : <UserPlus className="h-3 w-3" />}
+                            {buttonLabel}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Euro className="h-4 w-4 text-yellow-600" />
-                          <span>Startgeld: {tournament.entry_fee.toFixed(2)} €</span>
-                        </div>
-                        {tournament.details && <p className="text-gray-600 text-sm mt-3">{tournament.details}</p>}
+                        </Button>
                       </div>
-                      <Button
-                        onClick={() => handleRegistration(tournament)}
-                        size="lg"
-                        className="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:scale-105 shadow-md"
-                      >
-                        <UserPlus className="h-5 w-5 mr-2" />
-                        Jetzt anmelden
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  )
+                })}
               </div>
             )}
           </motion.div>
 
-          {/* Location & Contact */}
-          <motion.div variants={itemVariants} className="mb-16">
-            <motion.div
-              variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center hover:shadow-2xl transition-shadow duration-300"
-            >
-              <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-full p-4 w-16 h-16 mx-auto mb-6 shadow-lg">
-                <MapPin className="h-8 w-8 text-white mx-auto" />
-              </div>
-              <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-6 text-gray-900">VERANSTALTUNGSORT</h2>
-              <div className="space-y-4 text-lg">
-                <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-                  <div className="font-bold text-red-700 text-xl mb-2">Dart & Freizeit Vereinsheim "Pfeil-OK" e.V.</div>
-                  <div className="flex items-center justify-center gap-2 text-gray-700">
-                    <MapPin className="h-5 w-5 text-red-500" />
-                    <span className="font-semibold">Linzer Bundesstrasse 16, 5020 Salzburg</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* Sponsors Section */}
+          {/* ===== Location ===== */}
           <motion.div variants={itemVariants}>
-            <motion.div
-              variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 hover:shadow-2xl transition-shadow duration-300"
-            >
-              <div className="text-center mb-8">
-                <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
-                  <Sparkles className="h-8 w-8 text-white mx-auto" />
-                </div>
-                <h2 className="text-2xl md:text-3xl font-extrabold uppercase text-gray-900">
-                  UNSERE PARTNER & SPONSOREN
-                </h2>
-                <p className="text-gray-600 mt-2"></p>
-              </div>
-
-              <motion.div
-                className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {sponsors.map((sponsor, index) => (
-                  <motion.div
-                    key={index}
-                    variants={sponsorVariants}
-                    className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-center hover:border-red-300 hover:bg-red-50 transition-all duration-300 group cursor-pointer hover:shadow-lg"
-                  >
-                    <img
-                      src={sponsor.logo || "/placeholder.svg"}
-                      alt={`${sponsor.name} Logo`}
-                      style={{ objectFit: "contain" }}
-                      className="max-w-full max-h-16 object-contain transition-all duration-300 group-hover:scale-110"
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg?height=80&width=120&text=" + sponsor.name
-                      }}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                <p className="text-gray-700 font-bold text-center flex items-center justify-center">
-                  <Star className="h-5 w-5 mr-2 text-yellow-500" />
-                  VIELEN DANK AN ALLE UNSERE PARTNER UND UNTERSTÜTZER!
-                  <Star className="h-5 w-5 ml-2 text-yellow-500" />
-                </p>
+            <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 text-center">
+              <MapPin className="h-8 w-8 text-red-600 mx-auto mb-3" />
+              <h2 className="text-xl font-extrabold uppercase mb-4 text-gray-900">VERANSTALTUNGSORT</h2>
+              <div className="bg-red-50 border border-red-100 rounded-lg p-4">
+                <div className="font-bold text-red-700 mb-2">Pfeil-OK e.V.</div>
+                <div className="text-sm text-gray-700">Linzer Bundesstrasse 16, 5020 Salzburg</div>
               </div>
             </motion.div>
           </motion.div>
         </motion.div>
       </main>
 
-      <TournamentRegistrationModal
-        isOpen={summerSpecialModal.isOpen}
-        onClose={() => setSummerSpecialModal({ ...summerSpecialModal, isOpen: false })}
-        tournamentDate={summerSpecialModal.date}
-        tournamentTime={summerSpecialModal.time}
-        tournamentType={summerSpecialModal.type}
+      <MobileBottomNav />
+
+      {/* Fullscreen Image */}
+      {selectedImage && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setSelectedImage(null)}>
+          <button onClick={() => setSelectedImage(null)} className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors">
+            <X className="h-8 w-8" />
+          </button>
+          <div className="relative w-full h-full max-w-4xl max-h-[90vh]">
+            <Image src={selectedImage || "/placeholder.svg"} alt="Tournament" fill style={{ objectFit: "contain" }} sizes="100vw" />
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Self-registration modal for EVERYTHING + auto close + toast (but NOT on initial sync) */}
+      <DKOSelfRegistrationModal
+        isOpen={dkoModal.isOpen}
+        onClose={() => setDkoModal({ ...dkoModal, isOpen: false })}
+        title={dkoModal.title}
+        dateLabel={dkoModal.date}
+        timeLabel={dkoModal.time}
+        seriesId={dkoModal.seriesId}       // ✅ FIX
+        startgeld={dkoModal.startgeld}     // ✅ FIX
+        onRegistrationChanged={(isReg: boolean) => {
+          // Status immer übernehmen
+          setAlreadyRegistered(isReg)
+
+          // Wenn Callback zu schnell nach Öffnen kommt => Initial Sync => NICHT schließen
+          const delta = Date.now() - (modalOpenedAtRef.current || 0)
+          if (delta < 900) return
+
+          // Echte Aktion => Toast + schließen
+          setDkoModal((prev) => ({ ...prev, isOpen: false }))
+          showToast(isReg ? "✅ Erfolgreich angemeldet!" : "✅ Erfolgreich abgemeldet!")
+        }}
       />
 
-      <PublicUpcomingTournamentRegistrationModal
-        isOpen={registrationModal.isOpen}
-        onClose={() => setRegistrationModal({ ...registrationModal, isOpen: false })}
-        tournamentId={registrationModal.tournamentId}
-        tournamentName={registrationModal.tournamentName}
-        tournamentDate={registrationModal.tournamentDate}
-        tournamentTime={registrationModal.tournamentTime}
-        tournamentLocation={registrationModal.tournamentLocation}
-        tournamentMode={registrationModal.tournamentMode}
-        tournamentEntryFee={registrationModal.tournamentEntryFee}
-      />
-
-      <footer className="py-6 bg-gray-200 text-gray-600 text-sm text-center border-t border-gray-300">
-        <p>&copy; 2025 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>
-      </footer>
+      {/* ✅ Toast */}
+      {toast.show && (
+        <div className="fixed left-1/2 top-4 z-[9999] -translate-x-1/2">
+          <div className="rounded-full bg-black/85 text-white px-4 py-2 text-sm font-semibold shadow-lg">{toast.text}</div>
+        </div>
+      )}
     </div>
   )
 }

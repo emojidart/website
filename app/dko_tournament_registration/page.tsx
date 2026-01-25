@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import {
   Search,
@@ -16,6 +16,7 @@ import {
   Star,
   QrCode,
   Lock,
+  Info,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
@@ -40,6 +41,7 @@ interface RegisteredPlayer {
   paid: boolean
   entry_fee: number
   deducted_from_credit?: boolean | string
+  payment_method?: string | null
 }
 
 export default function DKOTournamentRegistration() {
@@ -63,6 +65,15 @@ export default function DKOTournamentRegistration() {
   } | null>(null)
   const [showCancelActiveTournamentDialog, setShowCancelActiveTournamentDialog] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // ✅ Wenn du von der Turnier-Startseite kommst, wird die Series-ID als Query-Param übergeben:
+  // /dko_tournament_registration?seriesId=XYZ
+  const seriesId = searchParams.get("seriesId")
+
+  // ✅ Wenn seriesId vorhanden ist, sperren wir Turniername + Startgeld und füllen sie automatisch aus DB.
+  const [isSeriesPrefilled, setIsSeriesPrefilled] = useState(false)
+
 
   const [showScanner, setShowScanner] = useState(false)
   const [scannerMessage, setScannerMessage] = useState("")
@@ -132,12 +143,13 @@ export default function DKOTournamentRegistration() {
 
     try {
       const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-        player_id: scannedPlayerForConfirm.id.toString(),
+player_id: scannedPlayerForConfirm.id.toString(),
         player_name: scannedPlayerForConfirm.name,
         paid: shouldDeduct,
         entry_fee: scannedPlayerForConfirm.entryFee,
         deducted_from_credit: shouldDeduct,
-      })
+          payment_method: "admin",
+        })
 
       if (registerError) {
         if (registerError.message.includes("duplicate")) {
@@ -290,11 +302,12 @@ export default function DKOTournamentRegistration() {
         if (!player) continue
 
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-          player_id: playerId.toString(),
+player_id: playerId.toString(),
           player_name: player.name,
           paid: false,
           entry_fee: entryFee,
           deducted_from_credit: false,
+          payment_method: "admin",
         })
 
         if (registerError) {
@@ -355,11 +368,12 @@ export default function DKOTournamentRegistration() {
         if (!player) continue
 
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-          player_id: playerWithCredit.id.toString(),
+player_id: playerWithCredit.id.toString(),
           player_name: player.name,
           paid: true,
           entry_fee: entryFee,
           deducted_from_credit: true,
+          payment_method: "admin",
         })
 
         if (registerError) {
@@ -400,10 +414,11 @@ export default function DKOTournamentRegistration() {
         if (!player) continue
 
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-          player_id: playerId.toString(),
+player_id: playerId.toString(),
           player_name: player.name,
           paid: false,
           entry_fee: entryFee,
+          payment_method: "admin",
         })
 
         if (registerError) {
@@ -496,7 +511,51 @@ export default function DKOTournamentRegistration() {
     }
   }
 
+  
+  // ✅ Turnierdaten automatisch aus dko_series laden (Name + Startgeld) und Inputs sperren
   useEffect(() => {
+    const prefillFromSeries = async () => {
+      if (!seriesId) {
+        setIsSeriesPrefilled(false)
+        return
+      }
+
+      try {
+        // ⚠️ Passe Tabellen-/Spaltennamen ggf. an deine DB an:
+        // Erwartet: Tabelle "dko_series" mit Spalten: id, name, startgeld (oder entry_fee)
+        const { data, error } = await supabase
+          .from("dko_series")
+          .select("id, name, startgeld")
+          .eq("id", seriesId)
+          .maybeSingle()
+
+        if (error) throw error
+        if (!data) {
+          console.warn("[DKO] Keine Series gefunden für seriesId:", seriesId)
+          setIsSeriesPrefilled(false)
+          return
+        }
+
+        const nameFromDb = (data as any).name ?? ""
+        const feeFromDbRaw = (data as any).startgeld ?? ""
+
+        // Inputs setzen (als Strings, weil deine State-Types strings sind)
+        if (nameFromDb) setTournamentName(String(nameFromDb))
+        if (feeFromDbRaw !== null && feeFromDbRaw !== undefined) setTournamentEntryFee(String(feeFromDbRaw))
+
+        setIsSeriesPrefilled(true)
+      } catch (e) {
+        console.error("[DKO] Fehler beim Prefill aus Series:", e)
+        setIsSeriesPrefilled(false)
+      }
+    }
+
+    prefillFromSeries()
+    // seriesId kommt aus URL -> bei Wechsel neu laden
+  }, [seriesId])
+
+
+useEffect(() => {
     fetchPlayers()
     fetchRegisteredPlayers()
     checkForActiveTournament()
@@ -868,11 +927,12 @@ export default function DKOTournamentRegistration() {
             } else {
               console.log("[v0] Player has insufficient credit, registering without payment")
               const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
-                player_id: spielData.id.toString(),
+player_id: spielData.id.toString(),
                 player_name: spielData.name,
                 paid: false,
                 entry_fee: entryFee,
-              })
+          payment_method: "admin",
+        })
 
               if (insertError) throw insertError
 
@@ -895,10 +955,11 @@ export default function DKOTournamentRegistration() {
 
         console.log("[v0] No credit account found, registering without payment")
         const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
-          player_id: spielData.id.toString(),
+player_id: spielData.id.toString(),
           player_name: spielData.name,
           paid: false,
           entry_fee: entryFee,
+          payment_method: "admin",
         })
 
         if (insertError) throw insertError
@@ -918,10 +979,11 @@ export default function DKOTournamentRegistration() {
       } else {
         console.log("[v0] No entry fee, registering player")
         const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
-          player_id: spielData.id.toString(),
+player_id: spielData.id.toString(),
           player_name: spielData.name,
           paid: false,
           entry_fee: entryFee,
+          payment_method: "admin",
         })
 
         if (insertError) throw insertError
@@ -954,6 +1016,9 @@ export default function DKOTournamentRegistration() {
   const allPlayersPaid = registeredPlayers.every((player) => player.paid)
   const paidCount = registeredPlayers.filter((player) => player.paid).length
   const unpaidPlayers = registeredPlayers.filter((player) => !player.paid)
+
+  const isPreRegistered = (p: RegisteredPlayer) =>
+    p?.payment_method === "credit" || p?.payment_method === "on_site"
 
   const getTournamentSize = (playerCount: number): number => {
     if (playerCount <= 8) return 8
@@ -1513,7 +1578,7 @@ export default function DKOTournamentRegistration() {
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <Trophy className="w-6 h-6 text-orange-600" />
-                <h3 className="text-xl font-bold text-gray-900">Turniername</h3>
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">Turniername {isSeriesPrefilled && <Lock className="w-4 h-4 text-orange-600" />}</h3>
                 <span className="text-red-500 font-bold">*</span>
               </div>
               <input
@@ -1521,6 +1586,8 @@ export default function DKOTournamentRegistration() {
                 placeholder="z.B. Herbst Turnier 2025, Lion Cup, ..."
                 value={tournamentName}
                 onChange={(e) => setTournamentName(e.target.value)}
+                disabled={isSeriesPrefilled}
+                title={isSeriesPrefilled ? "Wird automatisch aus der Turnierserie geladen" : ""}
                 className="w-full px-4 py-3 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none text-lg font-medium bg-white shadow-md"
                 maxLength={100}
               />
@@ -1530,7 +1597,7 @@ export default function DKOTournamentRegistration() {
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <Euro className="w-6 h-6 text-orange-600" />
-                <h3 className="text-xl font-bold text-gray-900">Startgeld</h3>
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">Startgeld {isSeriesPrefilled && <Lock className="w-4 h-4 text-orange-600" />}</h3>
                 <span className="text-red-500 font-bold">*</span>
               </div>
               <div className="flex items-center gap-2">
@@ -1541,6 +1608,8 @@ export default function DKOTournamentRegistration() {
                   placeholder="z.B. 10.00"
                   value={tournamentEntryFee}
                   onChange={(e) => setTournamentEntryFee(e.target.value)}
+                  disabled={isSeriesPrefilled}
+                  title={isSeriesPrefilled ? "Wird automatisch aus der Turnierserie geladen" : ""}
                   className="flex-grow px-4 py-3 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none text-lg font-medium bg-white shadow-md"
                 />
                 <span className="text-lg font-bold text-gray-600">€</span>
@@ -1735,7 +1804,14 @@ export default function DKOTournamentRegistration() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="flex items-center justify-center w-8 h-8 bg-orange-500 text-white font-bold rounded-full text-sm">
+                      
+                      {isPreRegistered(player) && (
+                        <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] text-blue-700 shadow-sm">
+                          <Info className="h-4 w-4" />
+                          <span className="font-semibold">Voranmeldung</span>
+                        </div>
+                      )}
+<span className="flex items-center justify-center w-8 h-8 bg-orange-500 text-white font-bold rounded-full text-sm">
                         {index + 1}
                       </span>
                       <span className="font-medium text-gray-900">{player.player_name}</span>

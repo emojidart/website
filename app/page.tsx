@@ -323,7 +323,9 @@ const [dkoModal, setDkoModal] = useState<{ isOpen: boolean; title: string; dateL
   dateLabel: "",
   timeLabel: "",
 })
-const [dkoRegistered, setDkoRegistered] = useState(false)
+const [liveInfoOpen, setLiveInfoOpen] = useState(false)
+
+  const [dkoRegistered, setDkoRegistered] = useState(false)
 const [dkoRegLoading, setDkoRegLoading] = useState(false)
 
 // ✅ Modal Auto-Close Guard + Success Toast
@@ -1008,47 +1010,72 @@ useEffect(() => {
   const liveDateLabel = liveSelfRegEvent ? formatGermanShortDateFromISO(liveSelfRegEvent.isoDate) : ""
   const liveTimeLabel = liveSelfRegEvent ? ensureUhr(liveSelfRegEvent.time) : ""
 
+  
+  const fetchDkoRegStatus = async () => {
+    setDkoRegLoading(true)
+    setDkoRegistered(false)
+
+    try {
+      if (!liveSelfRegEvent) return
+      if (!authUserId) return
+
+      const { data: profile, error: profErr } = await supabase
+        .from("user_profiles")
+        .select("club_players(spieldatenbank_id)")
+        .eq("user_id", authUserId)
+        .single()
+
+      if (profErr) throw profErr
+
+      // club_players kann als Array oder Objekt kommen
+      const clubPlayersRel: any = (profile as any)?.club_players
+      const spieldatenbankId = Array.isArray(clubPlayersRel) ? clubPlayersRel?.[0]?.spieldatenbank_id : clubPlayersRel?.spieldatenbank_id
+      if (!spieldatenbankId) return
+
+      const pid = String(spieldatenbankId)
+
+      const { data: reg, error: regErr } = await supabase
+        .from("dko_tournament_registration")
+        .select("id")
+        .eq("player_id", pid)
+        .limit(1)
+
+      if (regErr) throw regErr
+
+      setDkoRegistered((reg?.length ?? 0) > 0)
+    } catch (e) {
+      console.error("DKO registration status error:", e)
+    } finally {
+      setDkoRegLoading(false)
+    }
+  }
+
   // DKO: Status ob User bereits in dko_tournament_registration ist (für grüne Box)
   useEffect(() => {
-    const run = async () => {
-      setDkoRegLoading(true)
-      setDkoRegistered(false)
-
-      try {
-        if (!liveSelfRegEvent) return
-        if (!authUserId) return
-
-        const { data: profile, error: profErr } = await supabase
-          .from("user_profiles")
-          .select("club_players(spieldatenbank_id)")
-          .eq("user_id", authUserId)
-          .single()
-
-        if (profErr) throw profErr
-
-        const spieldatenbankId = profile?.club_players?.spieldatenbank_id
-        if (!spieldatenbankId) return
-
-        const pid = String(spieldatenbankId)
-
-        const { data: reg, error: regErr } = await supabase
-          .from("dko_tournament_registration")
-          .select("id")
-          .eq("player_id", pid)
-          .limit(1)
-
-        if (regErr) throw regErr
-
-        setDkoRegistered((reg?.length ?? 0) > 0)
-      } catch (e) {
-        console.error("DKO registration status error:", e)
-      } finally {
-        setDkoRegLoading(false)
-      }
-    }
-
-    run()
+    fetchDkoRegStatus()
   }, [authUserId, liveSelfRegEvent])
+
+  // ✅ Realtime: wenn sich jemand an-/abmeldet, Status live aktualisieren (ohne Refresh)
+  useEffect(() => {
+    if (!authUserId || !liveSelfRegEvent) return
+
+    const channel = supabase
+      .channel("dko-registration-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "dko_tournament_registration" },
+        () => {
+          // einfache, robuste Variante: Status neu laden
+          fetchDkoRegStatus()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [authUserId, liveSelfRegEvent])
+
 
   if (loading || lionCupLoading || buffaloCupLoading) {
     return (
@@ -1179,6 +1206,20 @@ useEffect(() => {
                 <span className="font-semibold">Anmeldung geschlossen (10 Minuten vor Start)</span>
               )}
             </div>
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => setLiveInfoOpen(true)}
+                className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-white/90 underline underline-offset-4 hover:text-white"
+              >
+                <Info className="w-3.5 h-3.5" />
+                Infos zu Abmeldung & Rückerstattung
+              </button>
+            </div>
+
+
+            
+
           </div>
         </div>
 
@@ -2213,6 +2254,18 @@ useEffect(() => {
           </div>
         </div>
       )}
+
+      <Dialog open={liveInfoOpen} onOpenChange={setLiveInfoOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Hinweis</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-gray-700 leading-relaxed">
+            Abmeldungen sind jederzeit bis 10 Minuten vor Turnierbeginn möglich, solange die Anmeldung offen ist. Wenn du bis Turnierbeginn nicht anwesend bist, wird deine Anmeldung storniert und der Betrag bei vorab bezahlter Startgebühr rückerstattet.
+          </div>
+        </DialogContent>
+      </Dialog>
+
 <DKOSelfRegistrationModal
   isOpen={dkoModal.isOpen}
   onClose={() => setDkoModal((prev) => ({ ...prev, isOpen: false }))}

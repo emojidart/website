@@ -1,4 +1,5 @@
 "use client"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,10 +8,21 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { Crown, ShieldCheck, Users, Target, Hand, ArrowLeft } from "lucide-react"
+import { Crown, ShieldCheck, Users, Target, Hand, ArrowLeft, Trash2 } from "lucide-react"
 import { CaptainPlayerManagement } from "@/components/captain-player-management"
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface UserProfile {
   id: string
@@ -55,11 +67,23 @@ interface TeamMember {
 export default function MeineTeamsAppPage() {
   const { session, loading: authLoading } = useAuth()
   const router = useRouter()
+
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Remove modal state
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null)
+  const [removeTarget, setRemoveTarget] = useState<{
+    memberRowId: string
+    teamId: string
+    targetPlayerId: string
+    playerName: string
+    teamName: string
+  } | null>(null)
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -71,6 +95,7 @@ export default function MeineTeamsAppPage() {
     if (session?.user) {
       fetchTeamData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
   const fetchTeamData = async () => {
@@ -87,10 +112,7 @@ export default function MeineTeamsAppPage() {
         .eq("user_id", session.user.id)
         .single()
 
-      if (profileError) {
-        throw profileError
-      }
-
+      if (profileError) throw profileError
       setProfile(profileData)
 
       // Fetch team memberships
@@ -100,9 +122,7 @@ export default function MeineTeamsAppPage() {
           .select(`id, team_id, role, teams (id, name, logo_url)`)
           .eq("player_id", profileData.player_id)
 
-        if (teamError) {
-          throw teamError
-        }
+        if (teamError) throw teamError
 
         setTeamMemberships(teamData || [])
 
@@ -115,11 +135,10 @@ export default function MeineTeamsAppPage() {
             .in("team_id", teamIds)
             .order("role", { ascending: false })
 
-          if (membersError) {
-            throw membersError
-          }
-
+          if (membersError) throw membersError
           setTeamMembers(membersData || [])
+        } else {
+          setTeamMembers([])
         }
       }
     } catch (err: any) {
@@ -160,6 +179,72 @@ export default function MeineTeamsAppPage() {
         return "border-blue-500 text-blue-700 bg-blue-50"
       default:
         return "border-orange-500 text-orange-700 bg-orange-50"
+    }
+  }
+
+  // Team -> meine Rolle
+  const myRoleByTeamId = useMemo(() => {
+    const map = new Map<string, string | null>()
+    for (const m of teamMemberships) map.set(m.team_id, m.role)
+    return map
+  }, [teamMemberships])
+
+  const canManageTeam = (teamId: string) => {
+    const role = myRoleByTeamId.get(teamId)
+    return role === "Captain" || role === "Co-Captain"
+  }
+
+  const openRemoveDialog = (args: {
+    memberRowId: string
+    teamId: string
+    targetPlayerId: string
+    playerName: string
+    teamName: string
+  }) => {
+    if (!profile?.player_id) return
+
+    // OPTIONAL: sich selbst nicht entfernen
+    if (args.targetPlayerId === profile.player_id) return
+
+    if (!canManageTeam(args.teamId)) {
+      setError("Du hast keine Berechtigung, Spieler aus diesem Team zu entfernen.")
+      return
+    }
+
+    setError(null)
+    setRemoveTarget(args)
+    setRemoveDialogOpen(true)
+  }
+
+  const confirmRemoveMember = async () => {
+    if (!removeTarget) return
+
+    try {
+      setRemovingMemberId(removeTarget.memberRowId)
+      setError(null)
+
+      if (!canManageTeam(removeTarget.teamId)) {
+        setError("Du hast keine Berechtigung, Spieler aus diesem Team zu entfernen.")
+        return
+      }
+
+      // ✅ WICHTIG: NUR die Zuordnung löschen (nicht club_players!)
+      const { error: delError } = await supabase
+        .from("team_members")
+        .delete()
+        .eq("player_id", removeTarget.targetPlayerId)
+        .eq("team_id", removeTarget.teamId)
+
+      if (delError) throw delError
+
+      setRemoveDialogOpen(false)
+      setRemoveTarget(null)
+      await fetchTeamData()
+    } catch (err: any) {
+      console.error("Error removing member:", err)
+      setError("Fehler beim Entfernen des Spielers")
+    } finally {
+      setRemovingMemberId(null)
     }
   }
 
@@ -293,6 +378,7 @@ export default function MeineTeamsAppPage() {
               <div className="space-y-4 sm:space-y-6">
                 {teamMemberships.map((membership) => {
                   const teamMembersForThisTeam = teamMembers.filter((member) => member.team_id === membership.team_id)
+                  const canManage = canManageTeam(membership.team_id)
 
                   return (
                     <div key={membership.id} className="border-2 border-gray-200 rounded-xl p-3 sm:p-4">
@@ -318,51 +404,73 @@ export default function MeineTeamsAppPage() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                        {teamMembersForThisTeam.map((member) => (
-                          <div
-                            key={member.id}
-                            className={`p-2 sm:p-3 rounded-lg border-2 transition-colors ${
-                              member.player_id === profile?.player_id
-                                ? "border-orange-300 bg-orange-50"
-                                : "border-gray-200 bg-gray-50"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 mb-1 sm:mb-2">
-                              <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
-                                <AvatarImage
-                                  src={
-                                    member.club_players?.photo_url ||
-                                    "/placeholder.svg?height=32&width=32&query=darts-player" ||
-                                    "/placeholder.svg"
-                                  }
-                                />
-                                <AvatarFallback className="text-xs bg-orange-100 text-orange-700">
-                                  {member.club_players?.name?.charAt(0) || "?"}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium text-xs sm:text-sm text-gray-900 truncate">
-                                  {member.club_players?.name || "Unbekannt"}
-                                  {member.player_id === profile?.player_id && (
-                                    <span className="text-orange-600 ml-1">(Du)</span>
-                                  )}
+                        {teamMembersForThisTeam.map((member) => {
+                          const isMe = member.player_id === profile?.player_id
+                          const showRemove = canManage && !isMe
+
+                          return (
+                            <div
+                              key={member.id}
+                              className={`p-2 sm:p-3 rounded-lg border-2 transition-colors ${
+                                isMe ? "border-orange-300 bg-orange-50" : "border-gray-200 bg-gray-50"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                                <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
+                                  <AvatarImage
+                                    src={
+                                      member.club_players?.photo_url ||
+                                      "/placeholder.svg?height=32&width=32&query=darts-player" ||
+                                      "/placeholder.svg"
+                                    }
+                                  />
+                                  <AvatarFallback className="text-xs bg-orange-100 text-orange-700">
+                                    {member.club_players?.name?.charAt(0) || "?"}
+                                  </AvatarFallback>
+                                </Avatar>
+
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-xs sm:text-sm text-gray-900 truncate">
+                                    {member.club_players?.name || "Unbekannt"}
+                                    {isMe && <span className="text-orange-600 ml-1">(Du)</span>}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    {getRoleIcon(member.role)}
+                                    <span className="text-[10px] sm:text-xs text-gray-600">{getRoleText(member.role)}</span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  {getRoleIcon(member.role)}
-                                  <span className="text-[10px] sm:text-xs text-gray-600">
-                                    {getRoleText(member.role)}
-                                  </span>
-                                </div>
+
+                                {showRemove && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-2"
+                                    disabled={!!removingMemberId}
+                                    onClick={() =>
+                                      openRemoveDialog({
+                                        memberRowId: member.id,
+                                        teamId: member.team_id,
+                                        targetPlayerId: member.player_id,
+                                        playerName: member.club_players?.name || "Unbekannt",
+                                        teamName: membership.teams?.name || "Unbekanntes Team",
+                                      })
+                                    }
+                                    title="Aus Team entfernen"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-orange-600" />
+                                  </Button>
+                                )}
                               </div>
+
+                              {member.club_players?.throwing_hand && (
+                                <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
+                                  <Hand className="h-3 w-3" />
+                                  {member.club_players.throwing_hand}
+                                </div>
+                              )}
                             </div>
-                            {member.club_players?.throwing_hand && (
-                              <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
-                                <Hand className="h-3 w-3" />
-                                {member.club_players.throwing_hand}
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   )
@@ -371,6 +479,58 @@ export default function MeineTeamsAppPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Confirm Remove Modal */}
+        <AlertDialog
+          open={removeDialogOpen}
+          onOpenChange={(open) => {
+            if (removingMemberId) return // während delete nicht schließen
+            setRemoveDialogOpen(open)
+            if (!open) setRemoveTarget(null)
+          }}
+        >
+          <AlertDialogContent className="sm:max-w-[450px]">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Spieler wirklich aus der Mannschaft entfernen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {removeTarget ? (
+                  <>
+                    Du entfernst <span className="font-semibold">{removeTarget.playerName}</span> aus{" "}
+                    <span className="font-semibold">{removeTarget.teamName}</span>.
+                    <br />
+                    <span className="text-red-600 font-medium">
+                      
+                    </span>
+                  </>
+                ) : (
+                  ""
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogCancel disabled={!!removingMemberId}>Abbrechen</AlertDialogCancel>
+
+              <AlertDialogAction
+                disabled={!removeTarget || !!removingMemberId}
+                className="bg-red-600 hover:bg-red-700"
+                onClick={(e) => {
+                  e.preventDefault() // sonst schließt shadcn direkt
+                  confirmRemoveMember()
+                }}
+              >
+                {removingMemberId ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/80 border-t-transparent rounded-full animate-spin" />
+                    Entferne...
+                  </span>
+                ) : (
+                  "Ja, entfernen"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
 
       <MobileBottomNav />

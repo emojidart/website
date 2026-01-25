@@ -49,6 +49,7 @@ type DkoSeries = {
   name: string
   slug: string
   is_active: boolean
+  startgeld: number | null
 }
 
 type DkoSeriesEvent = {
@@ -90,11 +91,35 @@ const cardVariants = {
 }
 
 /** ---------- Date/Time Helpers ---------- **/
-function formatMMSS(totalSeconds: number) {
+function formatHMS(totalSeconds: number) {
   const s = Math.max(0, Math.floor(totalSeconds))
-  const mm = String(Math.floor(s / 60)).padStart(2, "0")
+  const hh = String(Math.floor(s / 3600)).padStart(2, "0")
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0")
   const ss = String(s % 60).padStart(2, "0")
-  return `${mm}:${ss}`
+  return `${hh}:${mm}:${ss}`
+}
+
+function formatDHMS(totalSeconds: number) {
+  const s = Math.max(0, Math.floor(totalSeconds))
+
+  const days = Math.floor(s / 86400)
+  const rest = s % 86400
+
+  const hours = Math.floor(rest / 3600)
+  const minutes = Math.floor((rest % 3600) / 60)
+  const seconds = rest % 60
+
+  const hms = [
+    String(hours).padStart(2, "0"),
+    String(minutes).padStart(2, "0"),
+    String(seconds).padStart(2, "0"),
+  ].join(":")
+
+  if (days > 0) {
+    return `${days} Tage ${hms}`
+  }
+
+  return hms
 }
 
 function startOfDay(d: Date) {
@@ -119,6 +144,13 @@ function formatTimeLabel(dt: Date) {
   return `${dt.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr`
 }
 
+function computeOpenFromStart(startDT: Date, nowMs: number) {
+  const openDT = startOfDay(startDT) // Anmeldung ab Turniertag 00:00
+  const secondsLeft = Math.ceil((openDT.getTime() - nowMs) / 1000)
+  const open = secondsLeft <= 0
+  return { openDT, secondsLeft, open }
+}
+
 function computeCutoffFromStart(startDT: Date, cutoffMinutes: number, nowMs: number) {
   const cutoffDT = new Date(startDT.getTime() - cutoffMinutes * 60 * 1000)
   const secondsLeft = Math.ceil((cutoffDT.getTime() - nowMs) / 1000)
@@ -126,7 +158,7 @@ function computeCutoffFromStart(startDT: Date, cutoffMinutes: number, nowMs: num
   return { cutoffDT, secondsLeft, closed }
 }
 
-/** ---------- Modern "Verschoben" UI ---------- **/
+
 function RescheduleBadge({
   isRescheduled,
   effectiveDT,
@@ -191,7 +223,11 @@ function RescheduleBadge({
   )
 }
 
-type DkoModalState = { isOpen: boolean; date: string; time: string; title: string }
+/**
+ * ✅ FIX:
+ * Modal-State muss seriesId/startgeld enthalten, sonst kann das Modal startgeld nicht laden.
+ */
+type DkoModalState = { isOpen: boolean; date: string; time: string; title: string; seriesId: string | null; startgeld: number | null }
 
 export default function UpcomingTournamentsAppPage() {
   const { session } = useAuth() as any
@@ -207,6 +243,8 @@ export default function UpcomingTournamentsAppPage() {
     date: "",
     time: "",
     title: "Anmeldung",
+    seriesId: null,
+    startgeld: null,
   })
 
   // ✅ Prevent auto-close on initial modal sync
@@ -219,9 +257,11 @@ export default function UpcomingTournamentsAppPage() {
     window.setTimeout(() => setToast({ show: false, text: "" }), 2500)
   }
 
-  // ✅ registration state (as you already had)
+  // ✅ registration state
   const [regLoading, setRegLoading] = useState(false)
   const [alreadyRegistered, setAlreadyRegistered] = useState(false)
+  const [canUnregister, setCanUnregister] = useState(true)
+  const [unregisterDisabledReason, setUnregisterDisabledReason] = useState<string | null>(null)
 
   const [showAllLionCup, setShowAllLionCup] = useState(false)
   const [showAllBuffalo, setShowAllBuffalo] = useState(false)
@@ -236,6 +276,7 @@ export default function UpcomingTournamentsAppPage() {
   /** ---------- Load DKO series + events from DB ---------- **/
   const [lionSeries, setLionSeries] = useState<DkoSeries | null>(null)
   const [buffaloSeries, setBuffaloSeries] = useState<DkoSeries | null>(null)
+  const [seriesById, setSeriesById] = useState<Record<string, DkoSeries>>({})
   const [lionEvents, setLionEvents] = useState<UiEvent[]>([])
   const [buffaloEvents, setBuffaloEvents] = useState<UiEvent[]>([])
   const [dkoLoading, setDkoLoading] = useState(true)
@@ -247,9 +288,10 @@ export default function UpcomingTournamentsAppPage() {
       setDkoError(null)
 
       try {
+        // ✅ startgeld mitladen!
         const { data: seriesData, error: sErr } = await supabase
           .from("dko_series")
-          .select("id,name,slug,is_active")
+          .select("id,name,slug,is_active,startgeld")
           .in("slug", ["lion-cup-2025-26", "buffalo-steel-cup-2026"])
 
         if (sErr) throw sErr
@@ -260,6 +302,10 @@ export default function UpcomingTournamentsAppPage() {
 
         setLionSeries(lion)
         setBuffaloSeries(buff)
+
+        const mapById: Record<string, DkoSeries> = {}
+        for (const s of list) mapById[s.id] = s
+        setSeriesById(mapById)
 
         const fetchEventsFor = async (seriesId: string) => {
           const { data, error } = await supabase
@@ -344,45 +390,81 @@ export default function UpcomingTournamentsAppPage() {
     fetchTournaments()
   }, [])
 
+  
+  const fetchRegStatus = async () => {
+    setRegLoading(true)
+    setAlreadyRegistered(false)
+    setCanUnregister(true)
+    setUnregisterDisabledReason(null)
+
+    try {
+      if (!session?.user) return
+
+      const { data: profile, error: profErr } = await supabase
+        .from("user_profiles")
+        .select("club_players(spieldatenbank_id)")
+        .eq("user_id", session.user.id)
+        .single()
+
+      if (profErr) throw profErr
+
+      const clubPlayersRel: any = (profile as any)?.club_players
+      const spieldatenbankId = Array.isArray(clubPlayersRel) ? clubPlayersRel?.[0]?.spieldatenbank_id : clubPlayersRel?.spieldatenbank_id
+
+      if (!spieldatenbankId) return
+
+      const pid = String(spieldatenbankId)
+
+      const { data: reg, error: regErr } = await supabase
+        .from("dko_tournament_registration")
+        .select("id,payment_method")
+        .eq("player_id", pid)
+        .limit(1)
+
+      if (regErr) throw regErr
+
+      const isReg = (reg?.length ?? 0) > 0
+      setAlreadyRegistered(isReg)
+
+      // Wenn Spieler vor Ort (Admin) angemeldet wurde, darf er sich NICHT selbst abmelden.
+      const pm = (reg as any)?.[0]?.payment_method ?? null
+      if (isReg && pm === "admin") {
+        setCanUnregister(false)
+        setUnregisterDisabledReason("Du wurdest vor Ort angemeldet. Abmeldung ist nur vor Ort bei der Turnierleitung möglich.")
+      } else {
+        setCanUnregister(true)
+        setUnregisterDisabledReason(null)
+      }
+    } catch (e) {
+      console.error("Registration status error:", e)
+    } finally {
+      setRegLoading(false)
+    }
+  }
+
   /** ---------- Registration status for current user ---------- **/
   useEffect(() => {
-    const run = async () => {
-      setRegLoading(true)
-      setAlreadyRegistered(false)
+    fetchRegStatus()
+  }, [session])
 
-      try {
-        if (!session?.user) return
+  // ✅ Realtime: wenn sich jemand an-/abmeldet, Status live aktualisieren (ohne Refresh)
+  useEffect(() => {
+    if (!session?.user) return
 
-        const { data: profile, error: profErr } = await supabase
-          .from("user_profiles")
-          .select("club_players(spieldatenbank_id)")
-          .eq("user_id", session.user.id)
-          .single()
+    const channel = supabase
+      .channel("dko-registration-realtime-upcoming")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "dko_tournament_registration" },
+        () => {
+          fetchRegStatus()
+        }
+      )
+      .subscribe()
 
-        if (profErr) throw profErr
-
-        const spieldatenbankId = profile?.club_players?.spieldatenbank_id
-        if (!spieldatenbankId) return
-
-        const pid = String(spieldatenbankId)
-
-        const { data: reg, error: regErr } = await supabase
-          .from("dko_tournament_registration")
-          .select("id")
-          .eq("player_id", pid)
-          .limit(1)
-
-        if (regErr) throw regErr
-
-        setAlreadyRegistered((reg?.length ?? 0) > 0)
-      } catch (e) {
-        console.error("Registration status error:", e)
-      } finally {
-        setRegLoading(false)
-      }
+    return () => {
+      supabase.removeChannel(channel)
     }
-
-    run()
   }, [session])
 
   /** ---------- Open self-reg modal (only today + before cutoff) ---------- **/
@@ -398,17 +480,31 @@ export default function UpcomingTournamentsAppPage() {
       title,
       date: formatDateLabel(startDT),
       time: formatTimeLabel(startDT),
+      seriesId: null,
+      startgeld: null,
     })
   }
 
+  /**
+   * ✅ FIX: hier MUSS seriesId gesetzt werden, sonst kann das Modal startgeld nicht laden.
+   * Optional geben wir startgeld schon direkt mit (aus seriesById), dann klappt es sofort ohne extra Query.
+   */
   const openDkoModalIfAllowed = (title: string, ev: UiEvent, isToday: boolean) => {
     if (!isToday) return
     if (!ev.is_matchday) return
     const { closed } = computeCutoffFromStart(ev.effectiveDT, ev.cutoffMinutes, nowTick)
     if (closed) return
 
+    const s = seriesById[ev.series_id]
     modalOpenedAtRef.current = Date.now()
-    setDkoModal({ isOpen: true, date: ev.dateLabel, time: ev.timeLabel, title })
+    setDkoModal({
+      isOpen: true,
+      date: ev.dateLabel,
+      time: ev.timeLabel,
+      title,
+      seriesId: ev.series_id,                
+      startgeld: Number(s?.startgeld ?? 0),  
+    })
   }
 
   const handleImageClick = (url: string) => setSelectedImage(url)
@@ -430,7 +526,7 @@ export default function UpcomingTournamentsAppPage() {
                 <span className="block">EMD - LION CUP</span>
                 <span className="block text-orange-200 text-xl md:text-3xl">2025/2026</span>
               </h1>
-
+        
               <div className="bg-white/15 border border-white/20 rounded-lg p-3 text-xs font-semibold">
                 <div className="flex items-center justify-center gap-2">
                   <ShieldAlert className="h-4 w-4" />
@@ -496,9 +592,14 @@ export default function UpcomingTournamentsAppPage() {
                           ? closed
                             ? "Anmeldung geschlossen (10 Min vorher)"
                             : secondsLeft !== null
-                              ? `Anmeldung noch: ${formatMMSS(secondsLeft)}`
+                              ? `Anmeldung noch: ${formatDHMS(secondsLeft)}`
                               : null
-                          : null
+                          : !past && !spielfrei
+                            ? (() => {
+                                const o = computeOpenFromStart(ev.effectiveDT, nowTick)
+                                return o.open ? null : `Anmeldung öffnet in: ${formatDHMS(o.secondsLeft)}`
+                              })()
+                            : null
 
                       return (
                         <div
@@ -533,12 +634,7 @@ export default function UpcomingTournamentsAppPage() {
                               <span className="text-xs font-bold">{ev.timeLabel}</span>
                             </div>
 
-                            <RescheduleBadge
-                              isRescheduled={ev.isRescheduled}
-                              effectiveDT={ev.effectiveDT}
-                              originalDT={ev.originalDT}
-                              accent="orange"
-                            />
+                            <RescheduleBadge isRescheduled={ev.isRescheduled} effectiveDT={ev.effectiveDT} originalDT={ev.originalDT} accent="orange" />
 
                             {countdownLine && (
                               <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-800">
@@ -551,7 +647,17 @@ export default function UpcomingTournamentsAppPage() {
                               <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-600">
                                 <Info className="h-3 w-3" />
                                 <span>
-                                  Cutoff: {cutoffDT.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr
+                                  Anmeldeschluss: {cutoffDT.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}
+
+                            {/* Info: Regeln zur Abmeldung & Rückerstattung */}
+                            <div className="mt-3 flex justify-center">
+                              <div className="w-full sm:w-auto max-w-[720px] rounded-lg border border-orange-200 bg-white/70 backdrop-blur px-3 py-2 shadow-sm">
+                                <div className="flex items-start gap-2 text-[11px] leading-snug text-gray-700">
+                                  <Info className="h-4 w-4 mt-0.5 text-orange-600 shrink-0" />
+                                  <span>Abmeldungen sind jederzeit bis 10 Minuten vor Turnierbeginn möglich, solange die Anmeldung offen ist. Wenn du bis Turnierbeginn nicht anwesend bist, wird deine Anmeldung storniert und der Betrag bei vorab bezahlter Startgebühr rückerstattet.</span>
+                                </div>
+                              </div>
+                            </div>
                                 </span>
                               </div>
                             )}
@@ -618,24 +724,14 @@ export default function UpcomingTournamentsAppPage() {
                   <>
                     {!showAllLionCup ? (
                       <div className="mt-3 text-center">
-                        <Button
-                          onClick={() => setShowAllLionCup(true)}
-                          variant="outline"
-                          size="sm"
-                          className="text-xs border-orange-200 text-orange-700 hover:bg-orange-50"
-                        >
+                        <Button onClick={() => setShowAllLionCup(true)} variant="outline" size="sm" className="text-xs border-orange-200 text-orange-700 hover:bg-orange-50">
                           <ChevronDown className="h-3 w-3 mr-1" />
                           Alle {lionEvents.length} Termine anzeigen
                         </Button>
                       </div>
                     ) : (
                       <div className="mt-3 text-center">
-                        <Button
-                          onClick={() => setShowAllLionCup(false)}
-                          variant="outline"
-                          size="sm"
-                          className="text-xs border-orange-200 text-orange-700 hover:bg-orange-50"
-                        >
+                        <Button onClick={() => setShowAllLionCup(false)} variant="outline" size="sm" className="text-xs border-orange-200 text-orange-700 hover:bg-orange-50">
                           <ChevronUp className="h-3 w-3 mr-1" />
                           Weniger anzeigen
                         </Button>
@@ -647,11 +743,7 @@ export default function UpcomingTournamentsAppPage() {
 
               <div className="bg-gray-50 px-4 py-3 border-t border-gray-100">
                 <Link href="/regelwerk-app">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full border-orange-200 text-orange-700 hover:bg-orange-50 text-xs bg-transparent"
-                  >
+                  <Button size="sm" variant="outline" className="w-full border-orange-200 text-orange-700 hover:bg-orange-50 text-xs bg-transparent">
                     <BookOpen className="h-3 w-3 mr-2" />
                     Regelwerk
                   </Button>
@@ -693,9 +785,7 @@ export default function UpcomingTournamentsAppPage() {
                       const past = isDateInPastDT(ev.effectiveDT)
                       const today = isDateTodayDT(ev.effectiveDT)
 
-                      const r = today
-                        ? computeCutoffFromStart(ev.effectiveDT, ev.cutoffMinutes, nowTick)
-                        : { cutoffDT: null as any, secondsLeft: null as any, closed: false }
+                      const r = today ? computeCutoffFromStart(ev.effectiveDT, ev.cutoffMinutes, nowTick) : { cutoffDT: null as any, secondsLeft: null as any, closed: false }
                       const closed = today ? r.closed : false
                       const cutoffDT = today ? r.cutoffDT : null
                       const secondsLeft = today ? r.secondsLeft : null
@@ -706,20 +796,21 @@ export default function UpcomingTournamentsAppPage() {
                         ? closed
                           ? "Anmeldung geschlossen (10 Min vorher)"
                           : secondsLeft !== null
-                            ? `Anmeldung noch: ${formatMMSS(secondsLeft)}`
+                            ? `Anmeldung noch: ${formatDHMS(secondsLeft)}`
                             : null
-                        : null
+                        : !past
+                          ? (() => {
+                              const o = computeOpenFromStart(ev.effectiveDT, nowTick)
+                              return o.open ? null : `Anmeldung öffnet in: ${formatDHMS(o.secondsLeft)}`
+                            })()
+                          : null
 
                       return (
                         <div
                           key={ev.id}
                           className={[
                             "flex justify-between items-center py-3 px-3 rounded-lg border transition-all",
-                            past
-                              ? "bg-gray-100 border-gray-200 opacity-60"
-                              : today
-                                ? "bg-slate-50 border-slate-200"
-                                : "bg-gray-50 border-gray-100",
+                            past ? "bg-gray-100 border-gray-200 opacity-60" : today ? "bg-slate-50 border-slate-200" : "bg-gray-50 border-gray-100",
                             ev.isRescheduled ? "shadow-md border-slate-200 bg-gradient-to-r from-slate-50 to-white" : "",
                           ].join(" ")}
                         >
@@ -733,12 +824,7 @@ export default function UpcomingTournamentsAppPage() {
                               <span>{ev.timeLabel}</span>
                             </div>
 
-                            <RescheduleBadge
-                              isRescheduled={ev.isRescheduled}
-                              effectiveDT={ev.effectiveDT}
-                              originalDT={ev.originalDT}
-                              accent="slate"
-                            />
+                            <RescheduleBadge isRescheduled={ev.isRescheduled} effectiveDT={ev.effectiveDT} originalDT={ev.originalDT} accent="slate" />
 
                             {countdownLine && (
                               <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-800">
@@ -774,11 +860,7 @@ export default function UpcomingTournamentsAppPage() {
                                     : undefined
                               }
                               className={`text-xs px-3 py-1 ${
-                                canClick
-                                  ? alreadyRegistered
-                                    ? "bg-gray-700 hover:bg-gray-800 text-white"
-                                    : "bg-slate-800 hover:bg-slate-900 text-white"
-                                  : "bg-gray-300 text-gray-700"
+                                canClick ? (alreadyRegistered ? "bg-gray-700 hover:bg-gray-800 text-white" : "bg-slate-800 hover:bg-slate-900 text-white") : "bg-gray-300 text-gray-700"
                               }`}
                             >
                               {regLoading ? (
@@ -816,24 +898,14 @@ export default function UpcomingTournamentsAppPage() {
                   <>
                     {!showAllBuffalo ? (
                       <div className="mt-4 text-center">
-                        <Button
-                          onClick={() => setShowAllBuffalo(true)}
-                          variant="outline"
-                          size="sm"
-                          className="text-xs border-slate-200 text-slate-800 hover:bg-slate-50"
-                        >
+                        <Button onClick={() => setShowAllBuffalo(true)} variant="outline" size="sm" className="text-xs border-slate-200 text-slate-800 hover:bg-slate-50">
                           <ChevronDown className="h-3 w-3 mr-1" />
                           Alle Termine anzeigen
                         </Button>
                       </div>
                     ) : (
                       <div className="mt-4 text-center">
-                        <Button
-                          onClick={() => setShowAllBuffalo(false)}
-                          variant="outline"
-                          size="sm"
-                          className="text-xs border-slate-200 text-slate-800 hover:bg-slate-50"
-                        >
+                        <Button onClick={() => setShowAllBuffalo(false)} variant="outline" size="sm" className="text-xs border-slate-200 text-slate-800 hover:bg-slate-50">
                           <ChevronUp className="h-3 w-3 mr-1" />
                           Weniger anzeigen
                         </Button>
@@ -879,9 +951,7 @@ export default function UpcomingTournamentsAppPage() {
                   const today = isDateTodayDT(startDT)
                   const past = isDateInPastDT(startDT)
 
-                  const r = today
-                    ? computeCutoffFromStart(startDT, 10, nowTick)
-                    : { cutoffDT: null as any, secondsLeft: null as any, closed: false }
+                  const r = today ? computeCutoffFromStart(startDT, 10, nowTick) : { cutoffDT: null as any, secondsLeft: null as any, closed: false }
                   const cutoffDT = today ? r.cutoffDT : null
                   const secondsLeft = today ? r.secondsLeft : null
                   const closed = today ? r.closed : false
@@ -903,28 +973,20 @@ export default function UpcomingTournamentsAppPage() {
                       ? closed
                         ? "Anmeldung geschlossen (10 Min vorher)"
                         : secondsLeft !== null
-                          ? `Anmeldung noch: ${formatMMSS(secondsLeft)}`
+                          ? `Anmeldung noch: ${formatDHMS(secondsLeft)}`
                           : null
-                      : null
+                      : !past
+                        ? (() => {
+                            const o = computeOpenFromStart(startDT, nowTick)
+                            return o.open ? null : `Anmeldung öffnet in: ${formatDHMS(o.secondsLeft)}`
+                          })()
+                        : null
 
                   return (
-                    <motion.div
-                      key={tournament.id}
-                      variants={cardVariants}
-                      className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
-                    >
+                    <motion.div key={tournament.id} variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                       {tournament.photo_url && (
-                        <div
-                          className="relative w-full h-40 bg-gray-100 cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => setSelectedImage(tournament.photo_url!)}
-                        >
-                          <Image
-                            src={tournament.photo_url || "/placeholder.svg"}
-                            alt={tournament.name}
-                            fill
-                            style={{ objectFit: "cover" }}
-                            sizes="100vw"
-                          />
+                        <div className="relative w-full h-40 bg-gray-100 cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setSelectedImage(tournament.photo_url!)}>
+                          <Image src={tournament.photo_url || "/placeholder.svg"} alt={tournament.name} fill style={{ objectFit: "cover" }} sizes="100vw" />
                         </div>
                       )}
 
@@ -960,7 +1022,7 @@ export default function UpcomingTournamentsAppPage() {
                             <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-600">
                               <Info className="h-3 w-3" />
                               <span>
-                                Cutoff: {cutoffDT.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr
+                                Anmeldeschluss: {cutoffDT.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr
                               </span>
                             </div>
                           )}
@@ -989,9 +1051,7 @@ export default function UpcomingTournamentsAppPage() {
                                   ? "Anmeldung ist 10 Minuten vor Beginn geschlossen."
                                   : undefined
                           }
-                          className={`w-full text-xs ${
-                            canOpen ? "bg-red-600 hover:bg-red-700 text-white" : "bg-gray-300 text-gray-700"
-                          }`}
+                          className={`w-full text-xs ${canOpen ? "bg-red-600 hover:bg-red-700 text-white" : "bg-gray-300 text-gray-700"}`}
                         >
                           <span className="flex items-center justify-center gap-2">
                             {past || !today || closed ? <Lock className="h-3 w-3" /> : <UserPlus className="h-3 w-3" />}
@@ -1036,11 +1096,15 @@ export default function UpcomingTournamentsAppPage() {
 
       {/* ✅ Self-registration modal for EVERYTHING + auto close + toast (but NOT on initial sync) */}
       <DKOSelfRegistrationModal
+        canUnregister={canUnregister}
+        unregisterDisabledReason={unregisterDisabledReason}
         isOpen={dkoModal.isOpen}
         onClose={() => setDkoModal({ ...dkoModal, isOpen: false })}
         title={dkoModal.title}
         dateLabel={dkoModal.date}
         timeLabel={dkoModal.time}
+        seriesId={dkoModal.seriesId}       // ✅ FIX
+        startgeld={dkoModal.startgeld}     // ✅ FIX
         onRegistrationChanged={(isReg: boolean) => {
           // Status immer übernehmen
           setAlreadyRegistered(isReg)
