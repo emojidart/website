@@ -71,6 +71,7 @@ export default function MeineTeamsAppPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [showFormerMembers, setShowFormerMembers] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -96,7 +97,7 @@ export default function MeineTeamsAppPage() {
       fetchTeamData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session])
+  }, [session, showFormerMembers])
 
   const fetchTeamData = async () => {
     if (!session?.user) return
@@ -117,11 +118,16 @@ export default function MeineTeamsAppPage() {
 
       // Fetch team memberships
       if (profileData?.player_id) {
-        const { data: teamData, error: teamError } = await supabase
+        let membershipQuery = supabase
           .from("team_members")
-          .select(`id, team_id, role, teams (id, name, logo_url)`)
+          .select(`id, team_id, role, joined_at, left_at, teams (id, name, logo_url)`) 
           .eq("player_id", profileData.player_id)
 
+        if (!showFormerMembers) {
+          membershipQuery = membershipQuery.is("left_at", null)
+        }
+
+        const { data: teamData, error: teamError } = await membershipQuery
         if (teamError) throw teamError
 
         setTeamMemberships(teamData || [])
@@ -129,12 +135,17 @@ export default function MeineTeamsAppPage() {
         if (teamData && teamData.length > 0) {
           const teamIds = teamData.map((team) => team.team_id)
 
-          const { data: membersData, error: membersError } = await supabase
+          let membersQuery = supabase
             .from("team_members")
-            .select(`id, team_id, player_id, role, club_players (id, name, photo_url, throwing_hand, age, origin)`)
+            .select(`id, team_id, player_id, role, joined_at, left_at, club_players (id, name, photo_url, throwing_hand, age, origin)`) 
             .in("team_id", teamIds)
             .order("role", { ascending: false })
 
+          if (!showFormerMembers) {
+            membersQuery = membersQuery.is("left_at", null)
+          }
+
+          const { data: membersData, error: membersError } = await membersQuery
           if (membersError) throw membersError
           setTeamMembers(membersData || [])
         } else {
@@ -228,14 +239,34 @@ export default function MeineTeamsAppPage() {
         return
       }
 
-      // ✅ WICHTIG: NUR die Zuordnung löschen (nicht club_players!)
-      const { error: delError } = await supabase
+      // Guard: falls Spieler bereits entfernt ist (left_at gesetzt), nichts tun
+      const { data: alreadyData, error: alreadyErr } = await supabase
         .from("team_members")
-        .delete()
+        .select("id, left_at")
         .eq("player_id", removeTarget.targetPlayerId)
         .eq("team_id", removeTarget.teamId)
+        .order("created_at", { ascending: false })
+        .limit(1)
 
-      if (delError) throw delError
+      if (alreadyErr) throw alreadyErr
+
+      const existing = alreadyData?.[0]
+      if (existing?.left_at) {
+        setError("Spieler ist bereits als ehemalig markiert.")
+        setRemoveDialogOpen(false)
+        setRemoveTarget(null)
+        return
+      }
+
+      // ✅ Saison-korrekt: NICHT löschen, sondern "left_at" setzen (Soft-Remove)
+      const { error: updError } = await supabase
+        .from("team_members")
+        .update({ left_at: new Date().toISOString() })
+        .eq("player_id", removeTarget.targetPlayerId)
+        .eq("team_id", removeTarget.teamId)
+        .is("left_at", null) // nur aktive Mitgliedschaft "beenden"
+
+      if (updError) throw updError
 
       setRemoveDialogOpen(false)
       setRemoveTarget(null)
@@ -247,6 +278,7 @@ export default function MeineTeamsAppPage() {
       setRemovingMemberId(null)
     }
   }
+
 
   if (authLoading || loading) {
     return (
@@ -326,7 +358,7 @@ export default function MeineTeamsAppPage() {
                 {teamMemberships.map((membership) => (
                   <div
                     key={membership.id}
-                    className="border-2 border-gray-200 rounded-xl p-3 sm:p-4 hover:border-orange-300 transition-colors"
+                    className={`border-2 border-gray-200 rounded-xl p-3 sm:p-4 hover:border-orange-300 transition-colors ${membership.left_at ? "opacity-60 bg-gray-50" : ""}` }
                   >
                     <div className="flex items-center gap-2 sm:gap-3">
                       {membership.teams?.logo_url ? (
@@ -350,6 +382,11 @@ export default function MeineTeamsAppPage() {
                           <Badge className={`text-xs border ${getRoleBadgeColor(membership.role)}`}>
                             {getRoleText(membership.role)}
                           </Badge>
+                          {membership.left_at && (
+                            <Badge variant="outline" className="text-[10px] sm:text-xs border-gray-300 text-gray-600">
+                              Ehemalig seit {membership.left_at ? new Date(membership.left_at).toLocaleDateString("de-DE") : ""}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -367,6 +404,21 @@ export default function MeineTeamsAppPage() {
               <Users className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
               Meine Teammitglieder
             </CardTitle>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant={showFormerMembers ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowFormerMembers((v) => !v)}
+                className="rounded-xl"
+              >
+                {showFormerMembers ? "Ehemalige: AN" : "Ehemalige: AUS"}
+              </Button>
+              <span className="text-xs text-gray-500">
+                {showFormerMembers ? "Zeigt aktive + entfernte Spieler (Historie)" : "Zeigt nur aktive Spieler"}
+              </span>
+            </div>
+
           </CardHeader>
           <CardContent>
             {teamMembers.length === 0 ? (
@@ -412,8 +464,13 @@ export default function MeineTeamsAppPage() {
                             <div
                               key={member.id}
                               className={`p-2 sm:p-3 rounded-lg border-2 transition-colors ${
-                                isMe ? "border-orange-300 bg-orange-50" : "border-gray-200 bg-gray-50"
+                                member.left_at
+                                  ? "border-gray-200 bg-gray-50 opacity-60"
+                                  : isMe
+                                    ? "border-orange-300 bg-orange-50"
+                                    : "border-gray-200 bg-gray-50"
                               }`}
+
                             >
                               <div className="flex items-center gap-2 mb-1 sm:mb-2">
                                 <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
@@ -433,6 +490,11 @@ export default function MeineTeamsAppPage() {
                                   <div className="font-medium text-xs sm:text-sm text-gray-900 truncate">
                                     {member.club_players?.name || "Unbekannt"}
                                     {isMe && <span className="text-orange-600 ml-1">(Du)</span>}
+                                    {member.left_at && (
+  <span className="ml-2 inline-flex items-center rounded-full bg-gray-100 border border-gray-300 px-2 py-0.5 text-[11px] font-bold text-gray-700">
+    Ehemalig seit {new Date(member.left_at).toLocaleDateString("de-DE")}
+  </span>
+)}
                                   </div>
                                   <div className="flex items-center gap-1">
                                     {getRoleIcon(member.role)}

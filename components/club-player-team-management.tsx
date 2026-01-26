@@ -212,6 +212,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
     const { data, error } = await supabase
       .from("team_members")
       .select(`id, team_id, player_id, role, club_players(name)`) // NEW: Fetch role
+      .is("left_at", null)
     if (error) {
       console.error("Error fetching team members:", error)
       setAssignmentMessage("Fehler beim Laden der Mannschaftsmitglieder.")
@@ -580,7 +581,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
     try {
       const { data: existingAssignment, error: checkError } = await supabase
         .from("team_members")
-        .select("id, role")
+        .select("id, role, left_at")
         .eq("player_id", selectedPlayerId)
         .eq("team_id", selectedTeamId)
         .single()
@@ -590,6 +591,45 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
       }
 
       if (existingAssignment) {
+        // ✅ Wenn Spieler früher im Team war (left_at gesetzt), dann reaktivieren statt neue Zeile
+        if (existingAssignment.left_at) {
+          const { error: reactivateError } = await supabase
+            .from("team_members")
+            .update({
+              left_at: null,
+              role: selectedRole,
+              joined_at: new Date().toISOString(),
+            })
+            .eq("id", existingAssignment.id)
+
+          if (reactivateError) {
+            throw reactivateError
+          }
+
+          const { error: movementError } = await supabase.from("player_movements").insert([
+            {
+              player_id: selectedPlayerId,
+              team_id: selectedTeamId,
+              from_team_id: null,
+              movement_type: "reactivation",
+              user_id: user.id,
+            },
+          ])
+          if (movementError) {
+            console.error("Fehler beim Protokollieren der Reaktivierung:", movementError)
+          }
+
+          setAssignmentMessage("Spieler wurde wieder aktiviert und zugewiesen!")
+          setAssignmentMessageType("success")
+          setSelectedPlayerId("")
+          setSelectedTeamId("")
+          setSelectedRole("Player")
+          fetchTeamMembers()
+          setAssignmentLoading(false)
+          onDataSaved()
+          return
+        }
+
         if (existingAssignment.role === selectedRole) {
           setAssignmentMessage("Dieser Spieler ist bereits in dieser Mannschaft mit dieser Rolle.")
           setAssignmentMessageType("error")
@@ -664,7 +704,12 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
     }
 
     try {
-      const { error } = await supabase.from("team_members").delete().eq("player_id", playerId).eq("team_id", teamId)
+      const { error } = await supabase
+        .from("team_members")
+        .update({ left_at: new Date().toISOString() })
+        .eq("player_id", playerId)
+        .eq("team_id", teamId)
+        .is("left_at", null)
 
       if (error) {
         throw error
@@ -703,7 +748,11 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
     setAssignmentMessageType("info")
 
     try {
-      const { error } = await supabase.from("team_members").delete().eq("id", memberId)
+      const { error } = await supabase
+        .from("team_members")
+        .update({ left_at: new Date().toISOString() })
+        .eq("id", memberId)
+        .is("left_at", null)
 
       if (error) {
         throw error
