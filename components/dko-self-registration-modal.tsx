@@ -285,7 +285,7 @@ export function DKOSelfRegistrationModal(props: {
 
   const doLogin = () => {
     props.onClose()
-    router.push("/login")
+    router.push("/member-login")
   }
 
   const doLogout = async () => {

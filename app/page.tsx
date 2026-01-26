@@ -317,12 +317,41 @@ export default function Home() {
 
 // --- DKO Self Registration (Turniertag-Box) ---
 const [authUserId, setAuthUserId] = useState<string | null>(null)
-const [dkoModal, setDkoModal] = useState<{ isOpen: boolean; title: string; dateLabel: string; timeLabel: string }>({
+const [seriesStartgeldById, setSeriesStartgeldById] = useState<Record<string, number>>({})
+
+const ensureStartgeldForSeriesId = async (seriesId: string): Promise<number> => {
+  const cached = seriesStartgeldById[seriesId]
+  if (typeof cached === "number") return cached
+
+  const { data, error } = await supabase.from("dko_series").select("startgeld").eq("id", seriesId).limit(1).single()
+  if (error) {
+    console.warn("ensureStartgeldForSeriesId error:", error)
+    return 0
+  }
+
+  const sg = Number((data as any)?.startgeld ?? 0)
+  setSeriesStartgeldById((prev) => ({ ...prev, [seriesId]: sg }))
+  return sg
+}
+
+type DkoModalState = {
+  isOpen: boolean
+  title: string
+  dateLabel: string
+  timeLabel: string
+  seriesId: string | null
+  startgeld: number | null
+}
+
+const [dkoModal, setDkoModal] = useState<DkoModalState>({
   isOpen: false,
   title: "",
   dateLabel: "",
   timeLabel: "",
+  seriesId: null,
+  startgeld: null,
 })
+
 const [liveInfoOpen, setLiveInfoOpen] = useState(false)
 
   const [dkoRegistered, setDkoRegistered] = useState(false)
@@ -813,6 +842,20 @@ useEffect(() => {
       const LION_SERIES_ID = "bae7b8fe-7013-4160-8a85-f46ac765e003"
       const BUFFALO_SERIES_ID = "747ec150-ea0d-44ba-bcb1-f323f532f122"
 
+// ✅ Startgeld je Serie laden (wichtig für Guthaben-Zahlung im Modal)
+const { data: seriesRows, error: seriesErr } = await supabase
+  .from("dko_series")
+  .select("id,startgeld")
+  .in("id", [LION_SERIES_ID, BUFFALO_SERIES_ID])
+
+if (!seriesErr && seriesRows) {
+  const map: Record<string, number> = {}
+  for (const r of seriesRows as any[]) {
+    map[String((r as any).id)] = Number((r as any).startgeld ?? 0)
+  }
+  setSeriesStartgeldById(map)
+}
+
       const fetchEvents = async (seriesId: string) => {
         const { data, error } = await supabase
           .from("dko_series_events")
@@ -1237,15 +1280,25 @@ const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0"
                   ? "bg-orange-200 text-orange-950 hover:bg-orange-100"
                   : "bg-slate-200 text-slate-950 hover:bg-slate-100"
             }`}
-            onClick={() => {
-              modalOpenedAtRef.current = Date.now()
-              setDkoModal({
-                isOpen: true,
-                title: liveSelfRegEvent.cup === "lion" ? "LION CUP • Anmeldung" : "BUFFALO STEEL CUP • Anmeldung",
-                dateLabel: liveDateLabel,
-                timeLabel: liveTimeLabel,
-              })
-            }}
+            onClick={async () => {
+              
+modalOpenedAtRef.current = Date.now()
+
+const seriesId =
+  liveSelfRegEvent.cup === "lion"
+    ? "bae7b8fe-7013-4160-8a85-f46ac765e003"
+    : "747ec150-ea0d-44ba-bcb1-f323f532f122"
+
+const startgeld = await ensureStartgeldForSeriesId(seriesId)
+
+setDkoModal({
+  isOpen: true,
+  title: liveSelfRegEvent.cup === "lion" ? "LION CUP • Anmeldung" : "BUFFALO STEEL CUP • Anmeldung",
+  dateLabel: liveDateLabel,
+  timeLabel: liveTimeLabel,
+  seriesId,
+  startgeld,
+})}}
           >
             {dkoRegLoading ? (
               <span className="flex items-center justify-center gap-2">
@@ -1273,15 +1326,25 @@ const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0"
                 ? "bg-orange-200 text-orange-950 hover:bg-orange-100"
                 : "bg-slate-200 text-slate-950 hover:bg-slate-100"
           }` }
-          onClick={() => {
-            modalOpenedAtRef.current = Date.now()
-            setDkoModal({
-              isOpen: true,
-              title: liveSelfRegEvent.cup === "lion" ? "LION CUP • Anmeldung" : "BUFFALO STEEL CUP • Anmeldung",
-              dateLabel: liveDateLabel,
-              timeLabel: liveTimeLabel,
-            })
-          }}
+          onClick={async () => {
+            
+modalOpenedAtRef.current = Date.now()
+
+const seriesId =
+  liveSelfRegEvent.cup === "lion"
+    ? "bae7b8fe-7013-4160-8a85-f46ac765e003"
+    : "747ec150-ea0d-44ba-bcb1-f323f532f122"
+
+const startgeld = await ensureStartgeldForSeriesId(seriesId)
+
+setDkoModal({
+  isOpen: true,
+  title: liveSelfRegEvent.cup === "lion" ? "LION CUP • Anmeldung" : "BUFFALO STEEL CUP • Anmeldung",
+  dateLabel: liveDateLabel,
+  timeLabel: liveTimeLabel,
+  seriesId,
+  startgeld,
+})}}
         >
           {dkoRegLoading ? (
             <span className="flex items-center gap-2">
@@ -2274,6 +2337,8 @@ const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0"
   title={dkoModal.title}
   dateLabel={dkoModal.dateLabel}
   timeLabel={dkoModal.timeLabel}
+  seriesId={dkoModal.seriesId}
+  startgeld={dkoModal.startgeld}
   onRegistrationChanged={(isReg: boolean) => {
     // Status immer übernehmen
     setDkoRegistered(isReg)
