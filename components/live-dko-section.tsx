@@ -689,7 +689,7 @@ export default function LiveDKOSection() {
                           </Button>
 
                           <p className="text-[11px] text-gray-500">
-                            Tipp: Auf Handy kannst du mit +/− schnell zählen oder mit den Quick-Buttons setzen.
+                            
                           </p>
                         </div>
                       </div>
