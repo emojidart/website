@@ -2,14 +2,26 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/hooks/use-auth"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, QrCode, Plus, AlertCircle, CheckCircle, X, ArrowLeft, Wallet, History, CreditCard, Minus } from 'lucide-react'
+import {
+  Search,
+  QrCode,
+  Plus,
+  AlertCircle,
+  CheckCircle,
+  X,
+  ArrowLeft,
+  Wallet,
+  History,
+  CreditCard,
+  Minus,
+} from "lucide-react"
 
 interface Player {
   id: number
@@ -17,25 +29,30 @@ interface Player {
   photo_url: string | null
 }
 
-interface PlayerCredit {
-  player_id: number
-  player_name: string
-  photo_url: string | null
-  credit_balance: number
-}
-
-interface Transaction {
+interface TransactionBase {
   id: string
   player_id: string
   amount: number
   balance_after: number
   transaction_type: string
-  admin_id: string
+  // IMPORTANT: admin_id in credit_transactions is the auth user id (same as user_profiles.user_id AND club_players.user_id)
+  admin_id: string | null
   created_at: string
   club_players: {
     name: string
     photo_url: string | null
-  }
+  } | null
+}
+
+interface AdminProfile {
+  user_id: string // auth uid
+  name: string | null
+  photo_url: string | null
+  source: "club_players" | "players_via_user_profiles" | "unknown"
+}
+
+interface Transaction extends TransactionBase {
+  admin_profile?: AdminProfile | null
 }
 
 export default function AdminCreditLoaderPage() {
@@ -67,6 +84,9 @@ export default function AdminCreditLoaderPage() {
   const scannerInputRef = useRef<HTMLInputElement | null>(null)
   const scanTimerRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Cache: key = auth user_id
+  const [adminCache, setAdminCache] = useState<Map<string, AdminProfile>>(new Map())
+
   useEffect(() => {
     if (!authLoading && !session) {
       router.push("/member-login")
@@ -86,6 +106,17 @@ export default function AdminCreditLoaderPage() {
     }
   }, [activeView, session, isAdmin])
 
+  const getAvatarFallback = (name?: string | null) => {
+    if (!name) return "?"
+    return name
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase()
+  }
+
   const fetchPlayers = async () => {
     try {
       const { data, error: fetchError } = await supabase
@@ -95,7 +126,6 @@ export default function AdminCreditLoaderPage() {
 
       if (fetchError) throw fetchError
       setPlayers(data || [])
-      console.log("[v0] Players fetched:", data?.length)
     } catch (err: any) {
       console.error("Error fetching players:", err)
       setError("Fehler beim Laden der Spieler: " + (err.message || "Unbekannter Fehler"))
@@ -107,23 +137,105 @@ export default function AdminCreditLoaderPage() {
   const fetchAllCredits = async () => {
     try {
       const { data, error: fetchError } = await supabase.from("player_credits").select("player_id, credit_balance")
-
       if (fetchError) {
-        console.log("[v0] Credits fetch error:", fetchError)
         setPlayerCredits(new Map())
         return
       }
 
       const creditsMap = new Map<number, number>()
-      data?.forEach((record) => {
-        creditsMap.set(record.player_id, record.credit_balance)
-      })
+      data?.forEach((record) => creditsMap.set(record.player_id, record.credit_balance))
       setPlayerCredits(creditsMap)
-      console.log("[v0] Credits fetched:", creditsMap.size)
     } catch (err) {
       console.error("Error fetching credits:", err)
       setPlayerCredits(new Map())
     }
+  }
+
+  /**
+   * Resolve admin by priority:
+   * 1) club_players.user_id -> club_players.name/photo_url (what you asked for)
+   * 2) user_profiles.user_id -> user_profiles.player_id -> players.name/photo_url (fallback)
+   */
+  const fetchAdminProfiles = async (authUserIds: string[]) => {
+    const unique = Array.from(new Set(authUserIds.filter(Boolean)))
+    if (!unique.length) return
+
+    const missing = unique.filter((uid) => !adminCache.has(uid))
+    if (!missing.length) return
+
+    const newCache = new Map(adminCache)
+
+    // ---- 1) Try club_players by user_id (BEST, because name is exactly what you want)
+    {
+      const { data: cps, error: cpErr } = await supabase
+        .from("club_players")
+        .select("user_id, name, photo_url")
+        .in("user_id", missing)
+
+      if (!cpErr && cps) {
+        cps.forEach((row: any) => {
+          if (!row?.user_id) return
+          newCache.set(row.user_id, {
+            user_id: row.user_id,
+            name: row.name ?? null,
+            photo_url: row.photo_url ?? null,
+            source: "club_players",
+          })
+        })
+      } else {
+        if (cpErr) console.warn("club_players admin lookup failed:", cpErr)
+      }
+    }
+
+    // Determine still missing after club_players
+    const stillMissing = missing.filter((uid) => !newCache.has(uid))
+    if (stillMissing.length) {
+      // ---- 2) Fallback via user_profiles -> players
+      const { data: profiles, error: profErr } = await supabase
+        .from("user_profiles")
+        .select("user_id, player_id")
+        .in("user_id", stillMissing)
+
+      if (!profErr && profiles) {
+        const playerIds = profiles.map((p: any) => p.player_id).filter(Boolean) as string[]
+        const playerIdUnique = Array.from(new Set(playerIds))
+
+        let playersById = new Map<string, { name: string | null; photo_url: string | null }>()
+        if (playerIdUnique.length) {
+          const { data: pl, error: plErr } = await supabase
+            .from("players")
+            .select("id, name, photo_url")
+            .in("id", playerIdUnique)
+
+          if (!plErr && pl) {
+            pl.forEach((x: any) => playersById.set(x.id, { name: x.name ?? null, photo_url: x.photo_url ?? null }))
+          } else {
+            if (plErr) console.warn("players fallback lookup failed:", plErr)
+          }
+        }
+
+        profiles.forEach((p: any) => {
+          const pl = p.player_id ? playersById.get(p.player_id) : null
+          newCache.set(p.user_id, {
+            user_id: p.user_id,
+            name: pl?.name ?? null,
+            photo_url: pl?.photo_url ?? null,
+            source: "players_via_user_profiles",
+          })
+        })
+      } else {
+        if (profErr) console.warn("user_profiles fallback lookup failed:", profErr)
+      }
+    }
+
+    // Mark unknowns
+    missing.forEach((uid) => {
+      if (!newCache.has(uid)) {
+        newCache.set(uid, { user_id: uid, name: null, photo_url: null, source: "unknown" })
+      }
+    })
+
+    setAdminCache(newCache)
   }
 
   const fetchTransactions = async () => {
@@ -131,7 +243,8 @@ export default function AdminCreditLoaderPage() {
     try {
       const { data, error: fetchError } = await supabase
         .from("credit_transactions")
-        .select(`
+        .select(
+          `
           id,
           player_id,
           amount,
@@ -143,13 +256,24 @@ export default function AdminCreditLoaderPage() {
             name,
             photo_url
           )
-        `)
+        `,
+        )
         .order("created_at", { ascending: false })
-        .limit(100)
+        .limit(200)
 
       if (fetchError) throw fetchError
-      setTransactions(data || [])
-      console.log("[v0] Transactions fetched:", data?.length)
+
+      const baseTx: TransactionBase[] = (data || []) as any
+
+      const adminIds = baseTx.map((t) => t.admin_id).filter(Boolean) as string[]
+      await fetchAdminProfiles(adminIds)
+
+      setTransactions(
+        baseTx.map((t) => ({
+          ...t,
+          admin_profile: t.admin_id ? adminCache.get(t.admin_id) ?? null : null,
+        })),
+      )
     } catch (err: any) {
       console.error("Error fetching transactions:", err)
       setError("Fehler beim Laden der Transaktionen: " + (err.message || "Unbekannter Fehler"))
@@ -158,14 +282,24 @@ export default function AdminCreditLoaderPage() {
     }
   }
 
+  // Remap when cache updates so names appear immediately
+  useEffect(() => {
+    if (!transactions.length) return
+    setTransactions((prev) =>
+      prev.map((t) => ({
+        ...t,
+        admin_profile: t.admin_id ? adminCache.get(t.admin_id) ?? null : null,
+      })),
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminCache])
+
   const startScanner = async () => {
     setShowScanner(true)
     setScannerMessage("USB-Scanner bereit...")
     setScanSuccess(false)
     setScannerInput("")
-    setTimeout(() => {
-      scannerInputRef.current?.focus()
-    }, 100)
+    setTimeout(() => scannerInputRef.current?.focus(), 100)
   }
 
   const stopScanner = () => {
@@ -188,14 +322,9 @@ export default function AdminCreditLoaderPage() {
 
     try {
       let cleanCode = code.trim().replace(/ß/g, "-")
-
-      // Ensure EMD prefix is uppercase, rest lowercase
       if (cleanCode.toLowerCase().startsWith("emd")) {
         cleanCode = "EMD" + cleanCode.slice(3).toLowerCase()
       }
-
-      console.log("[v0] Original code:", code)
-      console.log("[v0] Cleaned code:", cleanCode)
 
       const { data: spielData, error: queryError } = await supabase
         .from("spieldatenbank")
@@ -203,11 +332,7 @@ export default function AdminCreditLoaderPage() {
         .eq("player_code", cleanCode)
         .single()
 
-      console.log("[v0] Spieldatenbank query error:", queryError)
-      console.log("[v0] Spieldatenbank result:", spielData)
-
       if (queryError || !spielData) {
-        console.log("[v0] Player code not found in spieldatenbank:", cleanCode)
         setScannerMessage("Spieler-Code nicht gefunden!")
         setIsScanning(false)
         setScannerInput("")
@@ -224,11 +349,7 @@ export default function AdminCreditLoaderPage() {
         .eq("spieldatenbank_id", spielData.id)
         .single()
 
-      console.log("[v0] Club player query error:", clubPlayerError)
-      console.log("[v0] Club player result:", clubPlayerData)
-
       if (clubPlayerError || !clubPlayerData) {
-        console.log("[v0] Club player not found for spieldatenbank_id:", spielData.id)
         setScannerMessage("Spieler nicht zugeordnet!")
         setIsScanning(false)
         setScannerInput("")
@@ -239,16 +360,13 @@ export default function AdminCreditLoaderPage() {
         return
       }
 
-      console.log("[v0] Player found:", clubPlayerData.name)
       setScannerMessage(`✓ ${clubPlayerData.name} erkannt!`)
       setScanSuccess(true)
       setIsScanning(false)
       setSelectedPlayer(clubPlayerData)
       setScannerInput("")
 
-      setTimeout(() => {
-        stopScanner()
-      }, 1500)
+      setTimeout(() => stopScanner(), 1500)
     } catch (err) {
       console.error("[v0] Error finding player:", err)
       setScannerMessage("Fehler beim Suchen!")
@@ -296,17 +414,18 @@ export default function AdminCreditLoaderPage() {
 
       if (upsertError) throw upsertError
 
+      // ✅ store auth user id in credit_transactions.admin_id
+      const adminIdToStore = session?.user?.id ?? null
+
       const { error: transactionError } = await supabase.from("credit_transactions").insert({
         player_id: selectedPlayer.id,
         amount: adjustedAmount,
         balance_after: newCredit,
         transaction_type: transactionType === "credit" ? "credit_added" : "credit_withdrawn",
-        admin_id: session?.user?.id,
+        admin_id: adminIdToStore,
       })
 
-      if (transactionError) {
-        console.error("Error creating transaction:", transactionError)
-      }
+      if (transactionError) console.error("Error creating transaction:", transactionError)
 
       setPlayerCredits(new Map(playerCredits).set(selectedPlayer.id, newCredit))
 
@@ -334,6 +453,21 @@ export default function AdminCreditLoaderPage() {
       hour: "2-digit",
       minute: "2-digit",
     }).format(date)
+  }
+
+  const formatTransactionType = (t: string) => {
+    switch (t) {
+      case "credit_added":
+        return "Aufgeladen"
+      case "credit_withdrawn":
+        return "Ausgezahlt"
+      case "tournament_entry_fee":
+        return "Turnier Startgeld"
+      case "tournament_refund":
+        return "Turnier Rückerstattung"
+      default:
+        return t.replaceAll("_", " ")
+    }
   }
 
   const filteredPlayers = players.filter((player) => player.name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -387,10 +521,7 @@ export default function AdminCreditLoaderPage() {
           <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-900">Mitgliedskarte scannen</h3>
-              <button
-                onClick={stopScanner}
-                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
-              >
+              <button onClick={stopScanner} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -409,9 +540,7 @@ export default function AdminCreditLoaderPage() {
                   const newValue = e.target.value
                   setScannerInput(newValue)
 
-                  if (scanTimerRef.current) {
-                    clearTimeout(scanTimerRef.current)
-                  }
+                  if (scanTimerRef.current) clearTimeout(scanTimerRef.current)
 
                   if (newValue.trim().length > 0) {
                     scanTimerRef.current = setTimeout(() => {
@@ -428,17 +557,11 @@ export default function AdminCreditLoaderPage() {
               />
             </div>
 
-            <div
-              className={`text-center p-3 rounded-lg font-semibold ${
-                scanSuccess ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
-              }`}
-            >
+            <div className={`text-center p-3 rounded-lg font-semibold ${scanSuccess ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
               {scannerMessage || "USB-Scanner bereit..."}
             </div>
 
-            <p className="text-sm text-gray-600 mt-4 text-center">
-              Halte die Mitgliedskarte vor den Scanner - Erkennung erfolgt automatisch
-            </p>
+            <p className="text-sm text-gray-600 mt-4 text-center">Halte die Mitgliedskarte vor den Scanner - Erkennung erfolgt automatisch</p>
           </div>
         </div>
       )}
@@ -520,32 +643,14 @@ export default function AdminCreditLoaderPage() {
                     <div className="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-lg p-6 mb-6">
                       <div className="flex items-start gap-4">
                         <Avatar className="w-16 h-16 border-2 border-white">
-                          <AvatarImage
-                            src={
-                              selectedPlayer.photo_url ||
-                              "/placeholder.svg?height=64&width=64&query=player avatar" ||
-                              "/placeholder.svg"
-                             || "/placeholder.svg"}
-                            alt={selectedPlayer.name}
-                          />
-                          <AvatarFallback className="bg-orange-500 text-white text-lg">
-                            {selectedPlayer.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()}
-                          </AvatarFallback>
+                          <AvatarImage src={selectedPlayer.photo_url || "/placeholder.svg?height=64&width=64&query=player avatar"} alt={selectedPlayer.name} />
+                          <AvatarFallback className="bg-orange-500 text-white text-lg">{getAvatarFallback(selectedPlayer.name)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-grow">
                           <h3 className="text-xl font-bold text-gray-900">{selectedPlayer.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            Aktuelle Guthaben: {(playerCredits.get(selectedPlayer.id) || 0).toFixed(2)}€
-                          </p>
+                          <p className="text-sm text-gray-600">Aktuelle Guthaben: {(playerCredits.get(selectedPlayer.id) || 0).toFixed(2)}€</p>
                         </div>
-                        <button
-                          onClick={() => setSelectedPlayer(null)}
-                          className="p-2 text-orange-600 hover:bg-orange-200 rounded-lg transition-colors"
-                        >
+                        <button onClick={() => setSelectedPlayer(null)} className="p-2 text-orange-600 hover:bg-orange-200 rounded-lg transition-colors">
                           <X className="w-5 h-5" />
                         </button>
                       </div>
@@ -553,9 +658,7 @@ export default function AdminCreditLoaderPage() {
                   ) : (
                     <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6">
                       <QrCode className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600">
-                        Scannen Sie eine Mitgliedskarte oder wählen Sie einen Spieler aus der Liste
-                      </p>
+                      <p className="text-gray-600">Scannen Sie eine Mitgliedskarte oder wählen Sie einen Spieler aus der Liste</p>
                     </div>
                   )}
 
@@ -579,27 +682,12 @@ export default function AdminCreditLoaderPage() {
                         key={player.id}
                         onClick={() => setSelectedPlayer(player)}
                         className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-colors text-left ${
-                          selectedPlayer?.id === player.id
-                            ? "bg-orange-100 border-orange-500"
-                            : "bg-white border-gray-200 hover:border-orange-300"
+                          selectedPlayer?.id === player.id ? "bg-orange-100 border-orange-500" : "bg-white border-gray-200 hover:border-orange-300"
                         }`}
                       >
                         <Avatar className="w-10 h-10">
-                          <AvatarImage
-                            src={
-                              player.photo_url ||
-                              "/placeholder.svg?height=40&width=40&query=player avatar" ||
-                              "/placeholder.svg"
-                             || "/placeholder.svg"}
-                            alt={player.name}
-                          />
-                          <AvatarFallback className="bg-orange-500 text-white text-sm">
-                            {player.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()}
-                          </AvatarFallback>
+                          <AvatarImage src={player.photo_url || "/placeholder.svg?height=40&width=40&query=player avatar"} alt={player.name} />
+                          <AvatarFallback className="bg-orange-500 text-white text-sm">{getAvatarFallback(player.name)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-grow">
                           <p className="font-medium text-gray-900">{player.name}</p>
@@ -649,15 +737,7 @@ export default function AdminCreditLoaderPage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">Betrag (€)</label>
                       <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="z.B. 20.00"
-                          value={creditAmount}
-                          onChange={(e) => setCreditAmount(e.target.value)}
-                          className="flex-grow"
-                        />
+                        <Input type="number" step="0.01" min="0" placeholder="z.B. 20.00" value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} className="flex-grow" />
                         <span className="text-lg font-bold text-gray-600">€</span>
                       </div>
                     </div>
@@ -709,9 +789,7 @@ export default function AdminCreditLoaderPage() {
                         <p className="font-bold text-gray-900">{selectedPlayer.name}</p>
                         <div className="mt-3 pt-3 border-t border-orange-200">
                           <p className="text-xs text-gray-600">Aktuelles Guthaben</p>
-                          <p className="text-2xl font-bold text-orange-600">
-                            {(playerCredits.get(selectedPlayer.id) || 0).toFixed(2)}€
-                          </p>
+                          <p className="text-2xl font-bold text-orange-600">{(playerCredits.get(selectedPlayer.id) || 0).toFixed(2)}€</p>
                         </div>
                       </div>
                     </div>
@@ -725,11 +803,7 @@ export default function AdminCreditLoaderPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Transaktions-Historie</h2>
-                <Button
-                  onClick={fetchTransactions}
-                  variant="outline"
-                  className="border-2 border-orange-500 text-orange-500 hover:bg-orange-50 bg-transparent"
-                >
+                <Button onClick={fetchTransactions} variant="outline" className="border-2 border-orange-500 text-orange-500 hover:bg-orange-50 bg-transparent">
                   Aktualisieren
                 </Button>
               </div>
@@ -742,9 +816,6 @@ export default function AdminCreditLoaderPage() {
                 <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
                   <History className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 text-lg font-medium">Keine Transaktionen vorhanden</p>
-                  <p className="text-gray-500 text-sm mt-2">
-                    Transaktionen werden hier angezeigt, sobald Guthaben aufgeladen wurde.
-                  </p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -752,57 +823,68 @@ export default function AdminCreditLoaderPage() {
                     <thead>
                       <tr className="border-b-2 border-gray-200">
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Spieler</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Typ</th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Betrag</th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Saldo danach</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Admin</th>
                         <th className="text-left py-3 px-4 font-semibold text-gray-700">Datum</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {transactions.map((transaction) => (
-                        <tr
-                          key={transaction.id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="py-4 px-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="w-10 h-10">
-                                <AvatarImage
-                                  src={
-                                    transaction.club_players?.photo_url ||
-                                    "/placeholder.svg?height=40&width=40&query=player avatar" ||
-                                    "/placeholder.svg"
-                                   || "/placeholder.svg"}
-                                  alt={transaction.club_players?.name}
-                                />
-                                <AvatarFallback className="bg-orange-500 text-white text-sm">
-                                  {transaction.club_players?.name
-                                    ?.split(" ")
-                                    .map((n) => n[0])
-                                    .join("")
-                                    .toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="font-medium text-gray-900">{transaction.club_players?.name}</span>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-                                transaction.amount >= 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                              }`}
-                            >
-                              {transaction.amount >= 0 ? "+" : ""}
-                              {transaction.amount.toFixed(2)}€
-                            </span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="font-semibold text-gray-900">{transaction.balance_after.toFixed(2)}€</span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="text-sm text-gray-600">{formatDate(transaction.created_at)}</span>
-                          </td>
-                        </tr>
-                      ))}
+                      {transactions.map((t) => {
+                        const adminName = t.admin_id ? (t.admin_profile?.name || "Admin") : "System"
+                        return (
+                          <tr key={t.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                            <td className="py-4 px-4">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="w-10 h-10">
+                                  <AvatarImage src={t.club_players?.photo_url || "/placeholder.svg?height=40&width=40&query=player avatar"} alt={t.club_players?.name || "Spieler"} />
+                                  <AvatarFallback className="bg-orange-500 text-white text-sm">{getAvatarFallback(t.club_players?.name)}</AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium text-gray-900">{t.club_players?.name || "-"}</span>
+                              </div>
+                            </td>
+
+                            <td className="py-4 px-4">
+                              <span className="text-sm font-semibold text-gray-800">{formatTransactionType(t.transaction_type)}</span>
+                            </td>
+
+                            <td className="py-4 px-4">
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${t.amount >= 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                                {t.amount >= 0 ? "+" : ""}
+                                {t.amount.toFixed(2)}€
+                              </span>
+                            </td>
+
+                            <td className="py-4 px-4">
+                              <span className="font-semibold text-gray-900">{t.balance_after.toFixed(2)}€</span>
+                            </td>
+
+                            <td className="py-4 px-4">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="w-9 h-9">
+                                  <AvatarImage src={t.admin_profile?.photo_url || "/placeholder.svg?height=36&width=36&query=admin avatar"} alt={adminName} />
+                                  <AvatarFallback className="bg-gray-700 text-white text-xs">{getAvatarFallback(adminName)}</AvatarFallback>
+                                </Avatar>
+                                <div className="leading-tight">
+                                  <div className="text-sm font-medium text-gray-900">{adminName}</div>
+                                  {t.admin_id ? (
+                                    <div className="text-xs text-gray-500">
+                                      {t.admin_profile?.source === "club_players" ? "Admin (Club)" : "Admin"}
+                                    </div>
+                                  ) : (
+                                    <div className="text-xs text-gray-500">Automatisch</div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="py-4 px-4">
+                              <span className="text-sm text-gray-600">{formatDate(t.created_at)}</span>
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>

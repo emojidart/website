@@ -11,6 +11,7 @@ import { RotateCcw, Check } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSpeechAnnouncer, SpeechAnnouncerSettings } from "@/components/speech-announcer"
+import { VsIntroOverlay } from "@/components/vs-intro-overlay"
 
 interface Match {
   id: number
@@ -43,15 +44,29 @@ const saveMatchStatesToDatabase = async (
   matches: Record<number, Match>,
   tournamentType: string,
   tournamentId: string,
+  playerIdMap: Record<string, string>,
 ) => {
+
+const getId = (name: string) => {
+  const key = (name ?? "").toLowerCase().trim()
+  if (!key || key.startsWith("freilos")) return null
+  return playerIdMap[key] ?? null
+}
+
+
   try {
     const matchStates = Object.values(matches).map((match) => ({
       tournament_type: tournamentType,
       tournament_id: tournamentId,
       match_id: match.id,
       player1: match.player1,
-      player2: match.player2,
-      score1: match.score1,
+player2: match.player2,
+
+player1_id: getId(match.player1),
+player2_id: getId(match.player2),
+
+score1: match.score1,
+
       score2: match.score2,
       winner: match.winner || null,
       loser: match.loser || null,
@@ -473,6 +488,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
   const initializingRef = useRef(false)
   const autoResolveRanRef = useRef(false)
 
+  const isRemoteUpdateRef = useRef(false)
   const [tournamentId, setTournamentId] = useState<string>("")
   const [tournamentName, setTournamentName] = useState<string>("")
   const [totalMachines, setTotalMachines] = useState<number>(10)
@@ -487,9 +503,45 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
   const [successDialogOpen, setSuccessDialogOpen] = useState(false)
   const [speechEnabled, setSpeechEnabled] = useState(false)
   const [profilePictures, setProfilePictures] = useState<Record<string, string>>({})
+  const [playerIdMap, setPlayerIdMap] = useState<Record<string, string>>({})
+
+  const [vsIntro, setVsIntro] = useState<{ open: boolean; player1: string; player2: string; machineNumber?: number }>(() => ({
+    open: false,
+    player1: "",
+    player2: "",
+    machineNumber: undefined,
+  }))
+
   const { announce } = useSpeechAnnouncer({ enabled: speechEnabled })
   const router = useRouter()
   const searchParams = useSearchParams()
+
+
+  // Playername -> spieldatenbank.id (für player1_id / player2_id in dko_match_states)
+  useEffect(() => {
+    const fetchPlayerIds = async () => {
+      try {
+        const { data, error } = await supabase.from("spieldatenbank").select("id, name")
+
+        if (error) {
+          console.error("Error fetching player ids:", error)
+          return
+        }
+
+        const idMap: Record<string, string> = {}
+        ;(data ?? []).forEach((p: any) => {
+          if (p?.name && p?.id) idMap[String(p.name).toLowerCase().trim()] = String(p.id)
+        })
+
+        setPlayerIdMap(idMap)
+        console.log("[v0] Player IDs loaded:", Object.keys(idMap).length)
+      } catch (err) {
+        console.error("Error fetching player ids:", err)
+      }
+    }
+
+    fetchPlayerIds()
+  }, [])
 
   const [matches, setMatches] = useState<Record<number, Match>>(() => {
     const initialMatches: Record<number, Match> = {
@@ -511,46 +563,120 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
     }
     return initialMatches
   })
-
   useEffect(() => {
-    const fetchProfilePictures = async () => {
-      try {
-        const { data, error } = await supabase.from("spieldatenbank").select("name, profile_picture_url")
-
-        if (error) {
-          console.error("Error fetching profile pictures:", error)
-          return
-        }
-
-        if (data) {
-          const picturesMap: Record<string, string> = {}
-          data.forEach((player) => {
-            if (player.name && player.profile_picture_url) {
-              picturesMap[player.name.toLowerCase()] = player.profile_picture_url
-            }
-          })
-          setProfilePictures(picturesMap)
-          console.log("[v0] Profile pictures loaded:", Object.keys(picturesMap).length)
-        }
-      } catch (error) {
-        console.error("Error fetching profile pictures:", error)
-      }
+    // Prevent feedback-loop: when we receive a realtime update we don't immediately upsert it back
+    if (isRemoteUpdateRef.current) {
+      isRemoteUpdateRef.current = false
+      return
     }
 
-    fetchProfilePictures()
-  }, [])
-
-  useEffect(() => {
     if (!loading && tournamentId) {
       const timeoutId = setTimeout(() => {
-        saveMatchStatesToDatabase(matches, tournamentType, tournamentId)
+        saveMatchStatesToDatabase(matches, tournamentType, tournamentId, playerIdMap)
       }, 1000)
 
       return () => clearTimeout(timeoutId)
     }
-  }, [matches, tournamentType, tournamentId, loading])
+  }, [matches, tournamentType, tournamentId, loading, playerIdMap])
 
   useEffect(() => {
+    if (loading || !tournamentId) return
+
+    const channel = supabase
+      .channel(`dko_match_states_${tournamentType}_${tournamentId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "dko_match_states",
+          filter: `tournament_id=eq.${tournamentId}`,
+        },
+        (payload) => {
+          const record: any = payload.new
+          if (!record) return
+          if (record.tournament_type !== tournamentType) return
+
+          isRemoteUpdateRef.current = true
+
+                    // If a player saves the result in the public LIVE view, we still need to progress the bracket here (admin view),
+          // otherwise the winner/loser are stored but nobody moves to the next match.
+          let progressedMatches: Record<number, Match> | null = null
+          let didProgress = false
+
+          setMatches((prev) => {
+            const next = { ...prev }
+            const prevMatch = next[record.match_id] || {
+              id: record.match_id,
+              player1: "",
+              player2: "",
+              score1: 0,
+              score2: 0,
+            }
+
+            const wasFinished = Boolean(prevMatch.winner)
+            const isFinishedNow = Boolean(record.winner)
+
+            next[record.match_id] = {
+              ...prevMatch,
+              id: record.match_id,
+              player1: record.player1 || "",
+              player2: record.player2 || "",
+              score1: record.score1 || 0,
+              score2: record.score2 || 0,
+              winner: record.winner || undefined,
+              loser: record.loser || undefined,
+              machineNumber: record.machine_number || undefined,
+            }
+
+            // Only auto-progress once: when a match transitions from "no winner" -> "has winner"
+            if (!wasFinished && isFinishedNow && record.winner && record.loser) {
+              // Clear machine/call info locally (we'll persist it with the derived save below)
+              next[record.match_id] = {
+                ...next[record.match_id],
+                machineNumber: undefined,
+                callCount: undefined,
+              }
+
+              // Apply the same progression rules as confirmMatch()
+              if (record.match_id === 14) {
+                if (record.winner === next[14].player1) {
+                  saveFinalRankings(record.winner, record.loser, tournamentType, tournamentId, tournamentName)
+                } else {
+                  next[15].player1 = next[14].player1
+                  next[15].player2 = next[14].player2
+                }
+              } else if (record.match_id === 15) {
+                saveFinalRankings(record.winner, record.loser, tournamentType, tournamentId, tournamentName)
+              } else {
+                progressPlayers(next, record.match_id, record.winner, record.loser)
+                trackPlayerElimination(next, record.loser, tournamentType, tournamentId, tournamentName, bracketSize)
+              }
+
+              didProgress = true
+              progressedMatches = next
+            }
+
+            return next
+          })
+
+          if (didProgress && progressedMatches) {
+            // Persist derived progression (next matches) without relying on the normal save effect (which is skipped for remote updates)
+            saveMatchStatesToDatabase(progressedMatches, tournamentType, tournamentId, playerIdMap)
+          }
+
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [loading, tournamentId, tournamentType])
+
+
+
+useEffect(() => {
     if (loading || !tournamentId || autoResolveRanRef.current) return
 
     autoResolveRanRef.current = true
@@ -980,6 +1106,14 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
 
     if (match.player1 && match.player2) {
       announce(match.player1, match.player2, machineNumber, 1)
+
+      // VS-Intro Overlay (3 Sekunden)
+      setVsIntro({
+        open: true,
+        player1: match.player1,
+        player2: match.player2,
+        machineNumber,
+      })
     }
 
     setMachineDialogOpen(false)
@@ -1294,6 +1428,9 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
 
       if (oldWinner || oldLoser) {
         clearSubsequentMatches(newMatches, matchId, oldWinner, oldLoser)
+        // Also purge the affected players from any later matches (cascade reset)
+        purgePlayerFromFutureMatches(newMatches, matchId, oldWinner)
+        purgePlayerFromFutureMatches(newMatches, matchId, oldLoser)
       }
 
       return newMatches
@@ -1353,7 +1490,49 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
     }
   }
 
-  const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: number) => {
+  
+  // When a match is reset, we must also remove the affected players from ALL later matches.
+  // Otherwise the database can keep "stale" players in lower rounds (because they had already progressed further).
+  const purgePlayerFromFutureMatches = (allMatches: Record<number, Match>, fromMatchId: number, player?: string) => {
+    if (!player) return
+    if (isFreilos(player)) return
+
+    Object.values(allMatches).forEach((m) => {
+      if (!m) return
+      // only touch matches AFTER the reset match
+      if (m.id <= fromMatchId) return
+
+      let changed = false
+
+      if (m.player1 === player) {
+        m.player1 = ""
+        m.score1 = 0
+        changed = true
+      }
+      if (m.player2 === player) {
+        m.player2 = ""
+        m.score2 = 0
+        changed = true
+      }
+
+      if (m.winner === player) {
+        m.winner = undefined
+        changed = true
+      }
+      if (m.loser === player) {
+        m.loser = undefined
+        changed = true
+      }
+
+      if (changed) {
+        // If we removed somebody, also clear machine assignment so it doesn't show as "live"
+        m.machineNumber = undefined
+        m.callCount = undefined
+      }
+    })
+  }
+
+const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: number) => {
     const match = allMatches[matchId]
 
     if (match.winner) return
@@ -1708,6 +1887,15 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
           )}
         </div>
       </div>
+
+      <VsIntroOverlay
+        open={vsIntro.open}
+        player1={vsIntro.player1}
+        player2={vsIntro.player2}
+        machineNumber={vsIntro.machineNumber}
+        durationMs={3000}
+        onDone={() => setVsIntro((p) => ({ ...p, open: false }))}
+      />
 
       <Dialog open={machineDialogOpen} onOpenChange={setMachineDialogOpen}>
         <DialogContent>
