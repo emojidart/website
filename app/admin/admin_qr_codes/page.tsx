@@ -67,7 +67,7 @@ function formatDateTime(d: string) {
  *   npm i jspdf qrcode
  *
  * QR Code contains:
- *   https://emojisdartverein.com/member-account-request?code=<CODE>
+ *   https://emojisdartverein.com/member-account-request
  */
 async function buildModernPdf(opts: {
   title: string
@@ -78,20 +78,23 @@ async function buildModernPdf(opts: {
 
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true })
 
-  const pageW = doc.internal.pageSize.getWidth()
+  
+  // Prevent weird letter spacing in some PDF viewers
+  // @ts-ignore
+  if (typeof doc.setCharSpace === "function") doc.setCharSpace(0)
+const pageW = doc.internal.pageSize.getWidth()
   const pageH = doc.internal.pageSize.getHeight()
 
-  // Layout: 2 columns x 4 rows of cards per page (8 cards)
-  const margin = 12
-  const gap = 6
-  const cols = 2
-  const rows = 4
+  // Layout: 1 card per page (clean, centered)
+const margin = 16
+const gap = 0
+const cols = 1
+const rows = 1
 
-  const cardW = (pageW - margin * 2 - gap * (cols - 1)) / cols
-  const headerH = 18
-  const footerH = 10
-  const usableH = pageH - margin * 2 - headerH - footerH - gap * (rows - 1)
-  const cardH = usableH / rows
+const cardW = pageW - margin * 2
+const headerH = 18
+const footerH = 10
+const cardH = pageH - margin * 2 - headerH - footerH
 
   const drawHeader = (pageNumber: number) => {
     doc.setFont("helvetica", "bold")
@@ -113,74 +116,120 @@ async function buildModernPdf(opts: {
     doc.setTextColor(0)
   }
 
-  const drawCard = async (x: number, y: number, item: { name: string; code: string; teamLabel: string }) => {
-    // Card background
-    doc.setDrawColor(230)
-    doc.setFillColor(250, 250, 250)
-    doc.roundedRect(x, y, cardW, cardH, 3, 3, "FD")
+const drawCard = async (x: number, y: number, item: { name: string; code: string; teamLabel: string }) => {
+  // Prevent weird letter spacing in some PDF viewers
+  // @ts-ignore
+  if (typeof doc.setCharSpace === "function") doc.setCharSpace(0)
 
-    // Accent bar
-    doc.setFillColor(30, 41, 59) // slate-ish
-    doc.roundedRect(x, y, cardW, 6, 3, 3, "F")
+  const pad = 10
 
-    // Team label
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(10)
-    doc.setTextColor(255)
-    const team = (item.teamLabel || "Ohne Team").trim()
-    doc.text(team.length > 30 ? team.slice(0, 30) + "…" : team, x + 4, y + 4.2)
+  // Big clean card
+  doc.setDrawColor(230)
+  doc.setFillColor(255, 255, 255)
+  doc.roundedRect(x, y, cardW, cardH, 6, 6, "FD")
 
-    // QR area
-    const qrSize = 28
-    const qrX = x + cardW - qrSize - 6
-    const qrY = y + 10
+  // Top bar (team)
+  doc.setFillColor(30, 41, 59)
+  doc.roundedRect(x, y, cardW, 14, 6, 6, "F")
 
-    // Name + code area width (leave space for QR)
-    const textMaxW = cardW - (qrSize + 6 + 8) // QR + right padding + left padding
-    const tx = x + 4
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(13)
+  doc.setTextColor(255)
+  const team = (item.teamLabel || "Ohne Team").trim()
+  doc.text(team.length > 50 ? team.slice(0, 50) + "…" : team, x + pad, y + 9.5)
 
-    // Name (more breathing room)
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(13)
-    doc.setTextColor(20)
+  // Content area
+  const top = y + 20
 
-    const nameLines = doc.splitTextToSize(item.name, textMaxW)
-    // Start a bit lower than before
-    const nameY = y + 16
-    doc.text(nameLines, tx, nameY, { lineHeightFactor: 1.15 })
+  // Name (centered)
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(22)
+  doc.setTextColor(20)
 
-    // compute end of name block
-    const nameBlockH = Math.max(1, nameLines.length) * 13 * 0.3528 * 1.15  // px->mm approx, safe spacing
-    const afterNameY = nameY + Math.min(10, nameLines.length * 4.8) + 2.5
+  const nameMaxW = cardW - pad * 2
+  const nameLines = doc.splitTextToSize(item.name, nameMaxW).slice(0, 2)
+  const nameY = top + 10
+  doc.text(nameLines, x + cardW / 2, nameY, { align: "center", lineHeightFactor: 1.15 })
 
-    // Code (moved down + separated)
-    doc.setFont("courier", "bold")
-    doc.setFontSize(12)
-    doc.setTextColor(40)
-    const codeY = Math.max(afterNameY + 4, y + 28)
-    doc.text(item.code || "—", tx, codeY)
+  // QR (big, centered)
+  const qrSize = 70
+  const qrX = x + (cardW - qrSize) / 2
+  const qrY = nameY + nameLines.length * 11 + 10
 
-    // Label under code
-    doc.setFont("helvetica", "normal")
-    doc.setFontSize(9)
-    doc.setTextColor(120)
-    doc.text("Mitglieder‑Code", tx, codeY + 5)
+  // QR background
+  doc.setDrawColor(230)
+  doc.setFillColor(255, 255, 255)
+  doc.roundedRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 6, 6, "FD")
 
-    // QR background
-    doc.setDrawColor(230)
-    doc.setFillColor(255, 255, 255)
-    doc.roundedRect(qrX - 1.5, qrY - 1.5, qrSize + 3, qrSize + 3, 2, 2, "FD")
-
-    // QR content: URL with code param
-    if (item.code) {
-      const url = QR_TARGET_BASE_URL
-
-      const dataUrl = await QRCode.toDataURL(url, { margin: 1, scale: 6, errorCorrectionLevel: "M" })
-      doc.addImage(dataUrl, "PNG", qrX, qrY, qrSize, qrSize)
-    }
-
-    doc.setTextColor(0)
+  if (item.code) {
+    const url = `${QR_TARGET_BASE_URL}?code=${encodeURIComponent(item.code)}`
+    const dataUrl = await QRCode.toDataURL(url, { margin: 1, scale: 8, errorCorrectionLevel: "M" })
+    doc.addImage(dataUrl, "PNG", qrX, qrY, qrSize, qrSize)
   }
+
+  // Code + Label (perfectly centered under QR)
+const codeText = item.code || "—"
+
+// spacing under QR box
+const labelY = qrY + qrSize + 14
+const badgeCenterY = labelY + 14
+
+// Label
+doc.setFont("helvetica", "normal")
+doc.setFontSize(12)
+doc.setTextColor(90)
+doc.text("Mitglieder-Code", x + cardW / 2, labelY, { align: "center" })
+
+// Badge
+doc.setFont("helvetica", "bold")
+doc.setFontSize(18)
+doc.setTextColor(30)
+
+const badgePadding = 18
+const badgeH = 18
+const badgeW = Math.min(cardW - pad * 2, doc.getTextWidth(codeText) + badgePadding * 2)
+const badgeX = x + (cardW - badgeW) / 2
+const badgeY = badgeCenterY - badgeH / 2
+
+doc.setFillColor(238, 242, 255)
+doc.setDrawColor(220)
+doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 7, 7, "FD")
+
+// vertically centered text in badge (baseline tweak)
+doc.text(codeText, x + cardW / 2, badgeCenterY + 5, { align: "center" })
+
+// Instructions block (bottom)
+  const instrTop = y + cardH - 64
+  doc.setDrawColor(235)
+  doc.line(x + pad, instrTop - 10, x + cardW - pad, instrTop - 10)
+
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(12)
+  doc.setTextColor(40)
+  doc.text("Anleitung", x + pad, instrTop)
+
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(11)
+  doc.setTextColor(60)
+
+  const instrW = cardW - pad * 2
+  const lines = [
+  "1) QR-Code scannen oder Link öffnen:",
+  "   emojisdartverein.com/member-account-request",
+  "2) Code eingeben (Einmalcode) – Prüfung, ob du das bist.",
+  "3) E-Mail-Adresse eingeben und Passwort vergeben.",
+  "   (Dein Name wird automatisch gesetzt.)",
+  "4) Bestätigungs-Mail öffnen (auch Spam/Junk prüfen) und bestätigen.",
+  "5) Danach sofort einloggen.",
+]
+
+
+  const wrapped: string[] = []
+  for (const l of lines) wrapped.push(...doc.splitTextToSize(l, instrW))
+  doc.text(wrapped, x + pad, instrTop + 9, { lineHeightFactor: 1.25 })
+
+  doc.setTextColor(0)
+}
 
   let page = 1
   drawHeader(page)
@@ -191,8 +240,8 @@ async function buildModernPdf(opts: {
     const col = local % cols
     const row = Math.floor(local / cols)
 
-    const x = margin + col * (cardW + gap)
-    const y = margin + headerH + row * (cardH + gap)
+    const x = margin
+    const y = margin + headerH
 
     await drawCard(x, y, item)
 
@@ -403,7 +452,11 @@ export default function AdminQrCodesPage() {
     setError("")
     const chosen = baseList.filter((p) => selected.has(p.id))
     if (chosen.length === 0) {
-      setError("Bitte zuerst mindestens einen Spieler markieren.")
+      setError("Bitte zuerst einen Spieler markieren.")
+      return
+    }
+    if (chosen.length !== 1) {
+      setError("Bitte genau EINEN Spieler markieren (pro PDF immer nur ein Code).")
       return
     }
 
@@ -420,10 +473,9 @@ export default function AdminQrCodesPage() {
         }
       })
 
-      const title = `${view === "noAccount" ? "Spieler ohne Konto" : "Spieler mit Konto"} – ${teamTitle}`
-      const filename = `codes_${view}_${teamFilter === "ALL" ? "alle" : teamFilter === "NO_TEAM" ? "ohne_team" : teamTitle}.pdf`
-        .replaceAll(" ", "_")
-        .replaceAll("/", "_")
+      const title = `${chosen[0].name} – ${teamTitle}`
+      const safeName = chosen[0].name.replaceAll(" ", "_").replaceAll("/", "_")
+      const filename = `code_${safeName}.pdf`
 
       await buildModernPdf({ title, items, filename })
     } catch (e: any) {
@@ -539,7 +591,7 @@ export default function AdminQrCodesPage() {
               <div className="flex-1">
                 <h1 className="text-2xl font-black leading-tight">QR Codes generieren</h1>
                 <p className="text-sm text-white/90 mt-1">
-                  PDF: Name + Team + Code + QR (öffnet {QR_TARGET_BASE_URL}).
+                  PDF: Name + Team + Code + QR (öffnet {QR_TARGET_BASE_URL}) + Anleitung für die Spieler.
                 </p>
               </div>
               <Button onClick={fetchData} variant="secondary" className="gap-2">

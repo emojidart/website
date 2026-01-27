@@ -745,7 +745,7 @@ export default function MemberProfileAppPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl mb-4 sm:mb-6 shadow-xl">
             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Willkommen zurück!</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Willkommen!</h1>
           <p className="text-lg sm:text-xl text-gray-600 px-4">
             Schön dich zu sehen, {profile.club_players?.name || "Vereinsmitglied"}
           </p>

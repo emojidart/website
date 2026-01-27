@@ -5,13 +5,15 @@ import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Loader2, Shield, UserPlus, KeyRound, Search } from "lucide-react"
+import { CheckCircle2, Loader2, Shield, UserPlus, KeyRound, Search, Lock, Eye, EyeOff } from "lucide-react"
 
 type FormState = {
   code: string
   firstName: string
   lastName: string
   email: string
+  password: string
+  password2: string
 }
 
 function isValidEmail(email: string) {
@@ -39,10 +41,18 @@ function normalizeCode(v: string) {
 }
 
 export default function MemberAccountRequestPage() {
-  const [form, setForm] = useState<FormState>({ code: "", firstName: "", lastName: "", email: "" })
+  const [form, setForm] = useState<FormState>({
+    code: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    password2: "",
+  })
   const [submitting, setSubmitting] = useState(false)
   const [lookingUp, setLookingUp] = useState(false)
   const [lockedName, setLockedName] = useState(false)
+  const [showPw, setShowPw] = useState(false)
 
   const [status, setStatus] = useState<{ type: "success" | "error" | "info" | null; message: string }>({
     type: null,
@@ -53,10 +63,14 @@ export default function MemberAccountRequestPage() {
     const codeOk = normalizeCode(form.code).length >= 8
     const firstOk = form.firstName.trim().length >= 2
     const emailOk = isValidEmail(form.email)
-    // If name was locked from code lookup, allow empty last name (for rare single-token names in DB)
+    // If name was locked from code lookup, allow empty last name (rare single-token names in DB)
     const lastOk = lockedName ? form.lastName.trim().length === 0 || form.lastName.trim().length >= 2 : form.lastName.trim().length >= 2
-    return codeOk && firstOk && lastOk && emailOk && !submitting
-  }, [form.code, form.firstName, form.lastName, form.email, lockedName, submitting])
+
+    const pwOk = form.password.length >= 8
+    const pwMatch = form.password === form.password2
+
+    return codeOk && firstOk && lastOk && emailOk && pwOk && pwMatch && !submitting
+  }, [form, lockedName, submitting])
 
   const lookupByCode = async () => {
     setStatus({ type: null, message: "" })
@@ -81,7 +95,6 @@ export default function MemberAccountRequestPage() {
       let last = ""
 
       if (parts.length <= 1) {
-        // edge-case: single token name
         first = parts[0] || fullName
         last = ""
       } else {
@@ -91,7 +104,7 @@ export default function MemberAccountRequestPage() {
 
       setForm((p) => ({ ...p, code, firstName: first, lastName: last }))
       setLockedName(true)
-      setStatus({ type: "info", message: `Code gefunden: ${fullName}. Bitte nur noch E‑Mail eintragen.` })
+      setStatus({ type: "info", message: `Code gefunden: ${fullName}. Bitte E‑Mail & Passwort eintragen.` })
     } catch (e: any) {
       setLockedName(false)
       setStatus({ type: "error", message: `Code ungültig: ${e?.message || "Unbekannter Fehler"}` })
@@ -107,18 +120,23 @@ export default function MemberAccountRequestPage() {
     const firstName = form.firstName.trim()
     const lastName = form.lastName.trim()
     const email = form.email.trim().toLowerCase()
+    const password = form.password
+    const password2 = form.password2
 
     if (code.length < 8) return setStatus({ type: "error", message: "Bitte gib deinen Mitglieder‑Code korrekt an." })
     if (firstName.length < 2) return setStatus({ type: "error", message: "Vorname ungültig." })
     if (!lockedName && lastName.length < 2) return setStatus({ type: "error", message: "Nachname ungültig." })
     if (!isValidEmail(email)) return setStatus({ type: "error", message: "E‑Mail ungültig." })
 
+    if (password.length < 8) return setStatus({ type: "error", message: "Passwort muss mindestens 8 Zeichen haben." })
+    if (password !== password2) return setStatus({ type: "error", message: "Passwörter stimmen nicht überein." })
+
     setSubmitting(true)
     try {
       const res = await fetch("/api/member-account-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, firstName, lastName, email }),
+        body: JSON.stringify({ code, firstName, lastName, email, password }),
       })
       const data = (await res.json().catch(() => null)) as any
       if (!res.ok) throw new Error(data?.error || "Unbekannter Fehler")
@@ -126,10 +144,12 @@ export default function MemberAccountRequestPage() {
       setStatus({
         type: "success",
         message:
-          "Danke! Deine Anfrage wurde gespeichert. Wir prüfen sie und erstellen anschließend dein Konto. Du bekommst eine E‑Mail (Spam/Junk prüfen).",
+          "Fast fertig! Wir haben dir eine Bestätigungs‑E‑Mail gesendet. Bitte bestätige die E‑Mail – danach kannst du dich mit deinem Passwort einloggen. Falls du keine Nachricht siehst, überprüfe bitte auch deinen Spam- oder Junk-Ordner.",
       })
-      setForm({ code: "", firstName: "", lastName: "", email: "" })
+
+      setForm({ code: "", firstName: "", lastName: "", email: "", password: "", password2: "" })
       setLockedName(false)
+      setShowPw(false)
     } catch (e: any) {
       setStatus({ type: "error", message: `Senden fehlgeschlagen: ${e?.message || "Unbekannter Fehler"}` })
     } finally {
@@ -151,7 +171,7 @@ export default function MemberAccountRequestPage() {
               <div className="flex-1">
                 <h1 className="text-2xl font-black leading-tight">Mitglieder‑Konto anfordern</h1>
                 <p className="text-sm text-white/90 mt-1">
-                  Aus Sicherheitsgründen brauchst du deinen Mitglieder‑Code. Danach kannst du dein Vereins‑Konto anfordern.
+                  Code prüfen, dann E‑Mail + Passwort festlegen. Du bekommst eine Bestätigungs‑E‑Mail.
                 </p>
               </div>
             </div>
@@ -237,6 +257,47 @@ export default function MemberAccountRequestPage() {
                     inputMode="email"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-900">Passwort</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type={showPw ? "text" : "password"}
+                      value={form.password}
+                      onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+                      className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
+                      placeholder="mind. 8 Zeichen"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                      aria-label={showPw ? "Passwort verstecken" : "Passwort anzeigen"}
+                    >
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className={`text-xs ${form.password.length >= 8 ? "text-green-700" : "text-gray-500"}`}>Mindestens 8 Zeichen</p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-900">Passwort wiederholen</label>
+                  <input
+                    type={showPw ? "text" : "password"}
+                    value={form.password2}
+                    onChange={(e) => setForm((p) => ({ ...p, password2: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
+                    placeholder="nochmal eingeben"
+                    autoComplete="new-password"
+                  />
+                  {form.password2 ? (
+                    <p className={`text-xs ${form.password === form.password2 ? "text-green-700" : "text-red-600"}`}>
+                      {form.password === form.password2 ? "✓ stimmt überein" : "Passwörter sind nicht gleich"}
+                    </p>
+                  ) : null}
+                </div>
               </div>
 
               {status.type ? (
@@ -263,7 +324,7 @@ export default function MemberAccountRequestPage() {
                     Senden...
                   </span>
                 ) : (
-                  "Anfrage senden"
+                  "Konto anfordern"
                 )}
               </Button>
             </CardContent>
