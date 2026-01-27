@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
 import { Card, CardContent } from "@/components/ui/card"
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
+  ArrowLeft,
   Copy,
   KeyRound,
   Loader2,
@@ -78,23 +80,22 @@ async function buildModernPdf(opts: {
 
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true })
 
-  
   // Prevent weird letter spacing in some PDF viewers
   // @ts-ignore
   if (typeof doc.setCharSpace === "function") doc.setCharSpace(0)
-const pageW = doc.internal.pageSize.getWidth()
+  const pageW = doc.internal.pageSize.getWidth()
   const pageH = doc.internal.pageSize.getHeight()
 
   // Layout: 1 card per page (clean, centered)
-const margin = 16
-const gap = 0
-const cols = 1
-const rows = 1
+  const margin = 16
+  const gap = 0
+  const cols = 1
+  const rows = 1
 
-const cardW = pageW - margin * 2
-const headerH = 18
-const footerH = 10
-const cardH = pageH - margin * 2 - headerH - footerH
+  const cardW = pageW - margin * 2
+  const headerH = 18
+  const footerH = 10
+  const cardH = pageH - margin * 2 - headerH - footerH
 
   const drawHeader = (pageNumber: number) => {
     doc.setFont("helvetica", "bold")
@@ -116,120 +117,119 @@ const cardH = pageH - margin * 2 - headerH - footerH
     doc.setTextColor(0)
   }
 
-const drawCard = async (x: number, y: number, item: { name: string; code: string; teamLabel: string }) => {
-  // Prevent weird letter spacing in some PDF viewers
-  // @ts-ignore
-  if (typeof doc.setCharSpace === "function") doc.setCharSpace(0)
+  const drawCard = async (x: number, y: number, item: { name: string; code: string; teamLabel: string }) => {
+    // Prevent weird letter spacing in some PDF viewers
+    // @ts-ignore
+    if (typeof doc.setCharSpace === "function") doc.setCharSpace(0)
 
-  const pad = 10
+    const pad = 10
 
-  // Big clean card
-  doc.setDrawColor(230)
-  doc.setFillColor(255, 255, 255)
-  doc.roundedRect(x, y, cardW, cardH, 6, 6, "FD")
+    // Big clean card
+    doc.setDrawColor(230)
+    doc.setFillColor(255, 255, 255)
+    doc.roundedRect(x, y, cardW, cardH, 6, 6, "FD")
 
-  // Top bar (team)
-  doc.setFillColor(30, 41, 59)
-  doc.roundedRect(x, y, cardW, 14, 6, 6, "F")
+    // Top bar (team)
+    doc.setFillColor(30, 41, 59)
+    doc.roundedRect(x, y, cardW, 14, 6, 6, "F")
 
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(13)
-  doc.setTextColor(255)
-  const team = (item.teamLabel || "Ohne Team").trim()
-  doc.text(team.length > 50 ? team.slice(0, 50) + "…" : team, x + pad, y + 9.5)
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(13)
+    doc.setTextColor(255)
+    const team = (item.teamLabel || "Ohne Team").trim()
+    doc.text(team.length > 50 ? team.slice(0, 50) + "…" : team, x + pad, y + 9.5)
 
-  // Content area
-  const top = y + 20
+    // Content area
+    const top = y + 20
 
-  // Name (centered)
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(22)
-  doc.setTextColor(20)
+    // Name (centered)
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(22)
+    doc.setTextColor(20)
 
-  const nameMaxW = cardW - pad * 2
-  const nameLines = doc.splitTextToSize(item.name, nameMaxW).slice(0, 2)
-  const nameY = top + 10
-  doc.text(nameLines, x + cardW / 2, nameY, { align: "center", lineHeightFactor: 1.15 })
+    const nameMaxW = cardW - pad * 2
+    const nameLines = doc.splitTextToSize(item.name, nameMaxW).slice(0, 2)
+    const nameY = top + 10
+    doc.text(nameLines, x + cardW / 2, nameY, { align: "center", lineHeightFactor: 1.15 })
 
-  // QR (big, centered)
-  const qrSize = 70
-  const qrX = x + (cardW - qrSize) / 2
-  const qrY = nameY + nameLines.length * 11 + 10
+    // QR (big, centered)
+    const qrSize = 70
+    const qrX = x + (cardW - qrSize) / 2
+    const qrY = nameY + nameLines.length * 11 + 10
 
-  // QR background
-  doc.setDrawColor(230)
-  doc.setFillColor(255, 255, 255)
-  doc.roundedRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 6, 6, "FD")
+    // QR background
+    doc.setDrawColor(230)
+    doc.setFillColor(255, 255, 255)
+    doc.roundedRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 6, 6, "FD")
 
-  if (item.code) {
-    const url = `${QR_TARGET_BASE_URL}?code=${encodeURIComponent(item.code)}`
-    const dataUrl = await QRCode.toDataURL(url, { margin: 1, scale: 8, errorCorrectionLevel: "M" })
-    doc.addImage(dataUrl, "PNG", qrX, qrY, qrSize, qrSize)
+    if (item.code) {
+      const url = `${QR_TARGET_BASE_URL}?code=${encodeURIComponent(item.code)}`
+      const dataUrl = await QRCode.toDataURL(url, { margin: 1, scale: 8, errorCorrectionLevel: "M" })
+      doc.addImage(dataUrl, "PNG", qrX, qrY, qrSize, qrSize)
+    }
+
+    // Code + Label (perfectly centered under QR)
+    const codeText = item.code || "—"
+
+    // spacing under QR box
+    const labelY = qrY + qrSize + 14
+    const badgeCenterY = labelY + 14
+
+    // Label
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(12)
+    doc.setTextColor(90)
+    doc.text("Mitglieder-Code", x + cardW / 2, labelY, { align: "center" })
+
+    // Badge
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(18)
+    doc.setTextColor(30)
+
+    const badgePadding = 18
+    const badgeH = 18
+    const badgeW = Math.min(cardW - pad * 2, doc.getTextWidth(codeText) + badgePadding * 2)
+    const badgeX = x + (cardW - badgeW) / 2
+    const badgeY = badgeCenterY - badgeH / 2
+
+    doc.setFillColor(238, 242, 255)
+    doc.setDrawColor(220)
+    doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 7, 7, "FD")
+
+    // vertically centered text in badge (baseline tweak)
+    doc.text(codeText, x + cardW / 2, badgeCenterY + 5, { align: "center" })
+
+    // Instructions block (bottom)
+    const instrTop = y + cardH - 64
+    doc.setDrawColor(235)
+    doc.line(x + pad, instrTop - 10, x + cardW - pad, instrTop - 10)
+
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.setTextColor(40)
+    doc.text("Anleitung", x + pad, instrTop)
+
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(11)
+    doc.setTextColor(60)
+
+    const instrW = cardW - pad * 2
+    const lines = [
+      "1) QR-Code scannen oder Link öffnen:",
+      "   emojisdartverein.com/member-account-request",
+      "2) Code eingeben (Einmalcode) – Prüfung, ob du das bist.",
+      "3) E-Mail-Adresse eingeben und Passwort vergeben.",
+      "   (Dein Name wird automatisch gesetzt.)",
+      "4) Bestätigungs-Mail öffnen (auch Spam/Junk prüfen) und bestätigen.",
+      "5) Danach sofort einloggen.",
+    ]
+
+    const wrapped: string[] = []
+    for (const l of lines) wrapped.push(...doc.splitTextToSize(l, instrW))
+    doc.text(wrapped, x + pad, instrTop + 9, { lineHeightFactor: 1.25 })
+
+    doc.setTextColor(0)
   }
-
-  // Code + Label (perfectly centered under QR)
-const codeText = item.code || "—"
-
-// spacing under QR box
-const labelY = qrY + qrSize + 14
-const badgeCenterY = labelY + 14
-
-// Label
-doc.setFont("helvetica", "normal")
-doc.setFontSize(12)
-doc.setTextColor(90)
-doc.text("Mitglieder-Code", x + cardW / 2, labelY, { align: "center" })
-
-// Badge
-doc.setFont("helvetica", "bold")
-doc.setFontSize(18)
-doc.setTextColor(30)
-
-const badgePadding = 18
-const badgeH = 18
-const badgeW = Math.min(cardW - pad * 2, doc.getTextWidth(codeText) + badgePadding * 2)
-const badgeX = x + (cardW - badgeW) / 2
-const badgeY = badgeCenterY - badgeH / 2
-
-doc.setFillColor(238, 242, 255)
-doc.setDrawColor(220)
-doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 7, 7, "FD")
-
-// vertically centered text in badge (baseline tweak)
-doc.text(codeText, x + cardW / 2, badgeCenterY + 5, { align: "center" })
-
-// Instructions block (bottom)
-  const instrTop = y + cardH - 64
-  doc.setDrawColor(235)
-  doc.line(x + pad, instrTop - 10, x + cardW - pad, instrTop - 10)
-
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(12)
-  doc.setTextColor(40)
-  doc.text("Anleitung", x + pad, instrTop)
-
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(11)
-  doc.setTextColor(60)
-
-  const instrW = cardW - pad * 2
-  const lines = [
-  "1) QR-Code scannen oder Link öffnen:",
-  "   emojisdartverein.com/member-account-request",
-  "2) Code eingeben (Einmalcode) – Prüfung, ob du das bist.",
-  "3) E-Mail-Adresse eingeben und Passwort vergeben.",
-  "   (Dein Name wird automatisch gesetzt.)",
-  "4) Bestätigungs-Mail öffnen (auch Spam/Junk prüfen) und bestätigen.",
-  "5) Danach sofort einloggen.",
-]
-
-
-  const wrapped: string[] = []
-  for (const l of lines) wrapped.push(...doc.splitTextToSize(l, instrW))
-  doc.text(wrapped, x + pad, instrTop + 9, { lineHeightFactor: 1.25 })
-
-  doc.setTextColor(0)
-}
 
   let page = 1
   drawHeader(page)
@@ -257,6 +257,7 @@ doc.text(codeText, x + cardW / 2, badgeCenterY + 5, { align: "center" })
 }
 
 export default function AdminQrCodesPage() {
+  const router = useRouter()
   const [view, setView] = useState<ViewMode>("noAccount")
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("ALL")
 
@@ -367,8 +368,7 @@ export default function AdminQrCodesPage() {
   const listWithoutTeam = useMemo(() => baseList.filter((p) => !(playerTeams.get(p.id)?.length)), [baseList, playerTeams])
   const listWithTeam = useMemo(() => baseList.filter((p) => (playerTeams.get(p.id)?.length)), [baseList, playerTeams])
 
-  const teamTitle =
-    teamFilter === "ALL" ? "Alle Teams" : teamFilter === "NO_TEAM" ? "Ohne Team" : (teamById.get(teamFilter) || "Team")
+  const teamTitle = teamFilter === "ALL" ? "Alle Teams" : teamFilter === "NO_TEAM" ? "Ohne Team" : teamById.get(teamFilter) || "Team"
 
   const copy = async (txt: string) => {
     try {
@@ -407,7 +407,10 @@ export default function AdminQrCodesPage() {
       if (playersWithAccount.has(p.id)) throw new Error("Dieser Spieler hat inzwischen schon ein Konto.")
       const existing = activeCodes.get(p.id)
       if (existing) {
-        const { error: upErr } = await supabase.from("qr_code_generated").update({ used_at: new Date().toISOString(), note: "replaced by new code" }).eq("id", existing.id)
+        const { error: upErr } = await supabase
+          .from("qr_code_generated")
+          .update({ used_at: new Date().toISOString(), note: "replaced by new code" })
+          .eq("id", existing.id)
         if (upErr) throw upErr
       }
 
@@ -438,7 +441,10 @@ export default function AdminQrCodesPage() {
     try {
       const active = activeCodes.get(playerId)
       if (!active) return
-      const { error: upErr } = await supabase.from("qr_code_generated").update({ used_at: new Date().toISOString(), note: "manually marked used" }).eq("id", active.id)
+      const { error: upErr } = await supabase
+        .from("qr_code_generated")
+        .update({ used_at: new Date().toISOString(), note: "manually marked used" })
+        .eq("id", active.id)
       if (upErr) throw upErr
       await fetchData()
     } catch (e: any) {
@@ -594,10 +600,16 @@ export default function AdminQrCodesPage() {
                   PDF: Name + Team + Code + QR (öffnet {QR_TARGET_BASE_URL}) + Anleitung für die Spieler.
                 </p>
               </div>
-              <Button onClick={fetchData} variant="secondary" className="gap-2">
-                <RefreshCw className="w-4 h-4" />
-                Aktualisieren
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button onClick={() => router.push("/admin")} variant="secondary" className="gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Zurück
+                </Button>
+                <Button onClick={fetchData} variant="secondary" className="gap-2">
+                  <RefreshCw className="w-4 h-4" />
+                  Aktualisieren
+                </Button>
+              </div>
             </div>
 
             <div className="mt-4 flex flex-col sm:flex-row gap-2">
@@ -681,39 +693,39 @@ export default function AdminQrCodesPage() {
                 <div className="flex items-center gap-2">
                   <Button variant="outline" className="gap-2 rounded-xl" onClick={toggleSelectAllFiltered}>
                     {allFilteredSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                    Alle markieren
+                    {allFilteredSelected ? "Alles abwählen" : "Alle markieren"}
                   </Button>
 
-                  <Button className="gap-2 rounded-xl bg-slate-800 hover:bg-slate-900" onClick={downloadModernPdf} disabled={downloading}>
+                  <Button
+                    onClick={downloadModernPdf}
+                    disabled={downloading}
+                    className="gap-2 rounded-xl bg-slate-800 hover:bg-slate-900"
+                  >
                     {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-                    PDF herunterladen
+                    PDF (1 Spieler)
                   </Button>
                 </div>
               </div>
 
-              {teamFilter === "ALL" && view === "noAccount" ? (
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900 mb-2">Ohne Team</div>
-                    <div className="space-y-2">
-                      {listWithoutTeam.length ? listWithoutTeam.map(renderRow) : <div className="text-sm text-gray-600">Keine Spieler ohne Team.</div>}
-                    </div>
+              <div className="space-y-3">
+                {listWithoutTeam.length ? (
+                  <div className="pt-2">
+                    <div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Ohne Team</div>
+                    <div className="space-y-2">{listWithoutTeam.map((p) => renderRow(p))}</div>
                   </div>
+                ) : null}
 
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900 mb-2">Mit Team</div>
-                    <div className="space-y-2">
-                      {listWithTeam.length ? listWithTeam.map(renderRow) : <div className="text-sm text-gray-600">Keine Spieler mit Team.</div>}
-                    </div>
+                {listWithTeam.length ? (
+                  <div className="pt-2">
+                    <div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Mit Team</div>
+                    <div className="space-y-2">{listWithTeam.map((p) => renderRow(p))}</div>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {baseList.length ? baseList.map(renderRow) : <div className="text-sm text-gray-600">Keine passenden Spieler gefunden.</div>}
-                </div>
-              )}
+                ) : null}
 
-             
+                {baseList.length === 0 ? (
+                  <div className="text-sm text-gray-500 py-8 text-center">Keine Spieler gefunden.</div>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
         </div>
