@@ -118,8 +118,8 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
   const [managementForm, setManagementForm] = useState<AccountManagementForm>({
     playerId: "",
     playerName: "",
-    currentEmail: "",
-    newEmail: "",
+    currentEmail: player.email || "",
+      newEmail: "",
     newPassword: "",
     confirmNewPassword: "",
   })
@@ -184,6 +184,24 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
 
       const authUsers = authUsersResult.users || []
 
+
+      // Map Supabase Auth users by our custom player_id (stored in user_metadata)
+      const authUserByPlayerId = new Map<
+        string,
+        { user_id: string; email?: string; email_confirmed: boolean }
+      >()
+
+      authUsers.forEach((u: any) => {
+        const pid = u?.user_metadata?.player_id
+        if (pid) {
+          authUserByPlayerId.set(pid, {
+            user_id: u.id,
+            email: u.email,
+            email_confirmed: !!u.email_confirmed_at,
+          })
+        }
+      })
+
       const playersWithAccounts = new Set(userProfiles?.filter((p) => p.user_id !== null).map((p) => p.player_id) || [])
       const adminStatusMap = new Map(
         userProfiles?.map((p) => [
@@ -196,6 +214,43 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
         ]) || [],
       )
 
+
+      // Keep user_profiles.email_confirmed in sync with Supabase Auth (auth.users.email_confirmed_at)
+      // This is optional for UI (we already read the real status from Auth), but helps keep the DB consistent.
+      try {
+        const profileIdsToConfirm: string[] = []
+
+        userProfiles?.forEach((p: any) => {
+          if (!p?.user_id) return
+          const isAuthConfirmed = !!authUsers.find((u: any) => u.id === p.user_id)?.email_confirmed_at
+          if (isAuthConfirmed && !p.email_confirmed) {
+            profileIdsToConfirm.push(p.id)
+          }
+        })
+
+        if (profileIdsToConfirm.length > 0) {
+          const { error: syncError } = await supabase
+            .from("user_profiles")
+            .update({ email_confirmed: true })
+            .in("id", profileIdsToConfirm)
+
+          if (syncError) {
+            console.error("[v0] Failed to sync email_confirmed flags:", syncError)
+          } else {
+            // Update local map so UI reflects immediately without another fetch
+            profileIdsToConfirm.forEach((pid) => {
+              const entry = Array.from(adminStatusMap.entries()).find(([, v]) => v.profile_id === pid)
+              if (entry) {
+                const [playerId, v] = entry
+                adminStatusMap.set(playerId, { ...v, email_confirmed: true })
+              }
+            })
+          }
+        }
+      } catch (syncErr) {
+        console.error("[v0] email_confirmed sync error:", syncErr)
+      }
+
       const allPlayers: PlayerData[] = []
       const unassigned: PlayerData[] = []
 
@@ -203,7 +258,7 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
         clubPlayers.forEach((player) => {
           const playerTeamMemberships = teamMembers?.filter((tm) => tm.player_id === player.id) || []
           const adminInfo = adminStatusMap.get(player.id)
-          const hasAccount = playersWithAccounts.has(player.id)
+          const hasAccount = playersWithAccounts.has(player.id) || authUserByPlayerId.has(player.id)
 
           if (playerTeamMemberships.length === 0) {
             const playerData: PlayerData = {
@@ -220,7 +275,9 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
               has_account: hasAccount,
               is_admin: adminInfo?.is_admin || false,
               user_profile_id: adminInfo?.profile_id,
-              email_confirmed: adminInfo?.email_confirmed || false,
+              email: authUserByPlayerId.get(player.id)?.email,
+              email_confirmed:
+                authUserByPlayerId.get(player.id)?.email_confirmed ?? adminInfo?.email_confirmed ?? false,
               spieldatenbank_id: player.spieldatenbank_id,
               spieldatenbank_linked: !!player.spieldatenbank_id,
             }
@@ -248,7 +305,9 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
                 has_account: hasAccount,
                 is_admin: adminInfo?.is_admin || false,
                 user_profile_id: adminInfo?.profile_id,
-                email_confirmed: adminInfo?.email_confirmed || false,
+                email: authUserByPlayerId.get(player.id)?.email,
+                email_confirmed:
+                  authUserByPlayerId.get(player.id)?.email_confirmed ?? adminInfo?.email_confirmed ?? false,
                 spieldatenbank_id: player.spieldatenbank_id,
                 spieldatenbank_linked: !!player.spieldatenbank_id,
               }
@@ -578,8 +637,8 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
       setManagementForm({
         playerId: "",
         playerName: "",
-        currentEmail: "",
-        newEmail: "",
+        currentEmail: player.email || "",
+      newEmail: "",
         newPassword: "",
         confirmNewPassword: "",
       })
@@ -713,7 +772,19 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
       }
 
       console.log("[v0] Email confirmed successfully, refreshing data...")
-      await fetchAllUsers()
+      
+
+      // Also persist the flag in our user_profiles table
+      const { error: profileConfirmError } = await supabase
+        .from("user_profiles")
+        .update({ email_confirmed: true })
+        .eq("user_id", authUser.id)
+
+      if (profileConfirmError) {
+        console.error("[v0] Failed to update user_profiles.email_confirmed:", profileConfirmError)
+      }
+
+await fetchAllUsers()
       onDataSaved()
 
       setError("")
