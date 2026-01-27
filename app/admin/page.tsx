@@ -1,4 +1,7 @@
 "use client"
+
+export const dynamic = "force-dynamic"
+
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useCallback } from "react"
@@ -47,6 +50,8 @@ import Link from "next/link"
 import { UserManagement } from "@/components/user-management"
 import { AttendanceManagement } from "@/components/attendance-management"
 import { LeagueManagement } from "@/components/league-management"
+
+
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
