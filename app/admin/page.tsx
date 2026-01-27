@@ -25,6 +25,8 @@ import {
   PartyPopper,
   Calendar,
   Zap,
+  UserCheck,
+  Activity,
 } from "lucide-react"
 import { useDartData } from "@/hooks/use-dart-data"
 import { AuthSection } from "@/components/auth-section"
@@ -51,8 +53,6 @@ import { UserManagement } from "@/components/user-management"
 import { AttendanceManagement } from "@/components/attendance-management"
 import { LeagueManagement } from "@/components/league-management"
 
-
-
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
   const { fetchAndRenderAllTables, fetchPlayers } = useDartData()
@@ -73,6 +73,7 @@ export default function AdminPage() {
     | "club"
     | "tournaments"
     | "users"
+    | "user-management-internal" // ✅ NEU: alte UserManagement Komponente als Unterseite
     | "upcoming-tournaments"
     | "player-database"
     | "dart-competition"
@@ -376,6 +377,7 @@ export default function AdminPage() {
                   {currentView === "club" && "Vereinsverwaltung"}
                   {currentView === "tournaments" && "Turniere"}
                   {currentView === "users" && "Benutzerverwaltung"}
+                  {currentView === "user-management-internal" && "Benutzer bearbeiten"}
                   {currentView === "upcoming-tournaments" && "Bevorstehende Turniere"}
                   {currentView === "player-database" && "Spielerdatenbank"}
                   {currentView === "dart-competition" && "Dart Competition"}
@@ -421,35 +423,37 @@ export default function AdminPage() {
                                   ? "Turniere"
                                   : currentView === "users"
                                     ? "Benutzerverwaltung"
-                                    : currentView === "upcoming-tournaments"
-                                      ? "Bevorstehende Turniere"
-                                      : currentView === "player-database"
-                                        ? "Spielerdatenbank"
-                                        : currentView === "dart-competition"
-                                          ? "Dart Competition"
-                                          : currentView === "attendance"
-                                            ? "Anwesenheitsliste"
-                                            : currentView === "leagues"
-                                              ? "Ligaspiele"
-                                              : currentView === "support-tickets"
-                                                ? "Support Tickets"
-                                                : currentView === "lion-cup-registrations"
-                                                  ? "Lion Cup Anmeldungen"
-                                                  : currentView === "tournament-management"
-                                                    ? "Turnier verwalten"
-                                                    : currentView === "tournament-series"
-                                                      ? "Turnier-Serien & Spieltage"
-                                                      : currentView === "events"
-                                                        ? "Veranstaltungen"
-                                                        : currentView === "advent-quiz"
-                                                          ? "Adventskalender Auswertung"
-                                                          : currentView === "campus-registrations"
-                                                            ? "Campus-Registrierungen"
-                                                            : currentView === "credit-loader"
-                                                              ? "Credit-Loader"
-                                                              : currentView === "lion-cup-settings"
-                                                                ? "Lion Cup Settings"
-                                                                : "Admin-Zugang"}
+                                    : currentView === "user-management-internal"
+                                      ? "Benutzer bearbeiten"
+                                      : currentView === "upcoming-tournaments"
+                                        ? "Bevorstehende Turniere"
+                                        : currentView === "player-database"
+                                          ? "Spielerdatenbank"
+                                          : currentView === "dart-competition"
+                                            ? "Dart Competition"
+                                            : currentView === "attendance"
+                                              ? "Anwesenheitsliste"
+                                              : currentView === "leagues"
+                                                ? "Ligaspiele"
+                                                : currentView === "support-tickets"
+                                                  ? "Support Tickets"
+                                                  : currentView === "lion-cup-registrations"
+                                                    ? "Lion Cup Anmeldungen"
+                                                    : currentView === "tournament-management"
+                                                      ? "Turnier verwalten"
+                                                      : currentView === "tournament-series"
+                                                        ? "Turnier-Serien & Spieltage"
+                                                        : currentView === "events"
+                                                          ? "Veranstaltungen"
+                                                          : currentView === "advent-quiz"
+                                                            ? "Adventskalender Auswertung"
+                                                            : currentView === "campus-registrations"
+                                                              ? "Campus-Registrierungen"
+                                                              : currentView === "credit-loader"
+                                                                ? "Credit-Loader"
+                                                                : currentView === "lion-cup-settings"
+                                                                  ? "Lion Cup Settings"
+                                                                  : "Admin-Zugang"}
               </h1>
               <p className="text-gray-600">
                 {session && currentView === "dashboard"
@@ -637,7 +641,90 @@ export default function AdminPage() {
               </div>
             )}
 
-            {currentView === "users" && <UserManagement user={user} onDataSaved={handleDataSaved} />}
+            {/* ✅ Benutzerverwaltung HUB */}
+            {currentView === "users" && (
+              <div className="space-y-6">
+                <Card className="border-0 shadow-md">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Users className="h-5 w-5" />
+                      <span>Benutzerverwaltung</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4">
+                      Konten, Registrierungen und Aktivität der Mitglieder verwalten.
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* 1) bestehende interne Komponente */}
+                      <Button
+                        onClick={() => setCurrentView("user-management-internal")}
+                        variant="outline"
+                        className="w-full justify-start bg-transparent h-auto p-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-blue-50">
+                            <Users className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div className="flex flex-col items-start">
+                            <span className="font-semibold">Benutzer bearbeiten</span>
+                            <span className="text-xs text-gray-500">Rollen, Zuordnung, Spieler</span>
+                          </div>
+                        </div>
+                      </Button>
+
+                      {/* 2) admin_qr_codes */}
+                      <Link href="/admin/admin_qr_codes">
+                        <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-amber-50">
+                              <UserCheck className="h-5 w-5 text-amber-600" />
+                            </div>
+                            <div className="flex flex-col items-start">
+                              <span className="font-semibold">Account Anfragen</span>
+                              <span className="text-xs text-gray-500">QR Codes & Registrierung</span>
+                            </div>
+                          </div>
+                        </Button>
+                      </Link>
+
+                      {/* 3) neue admin/users Seite */}
+                      <Link href="/admin/users">
+                        <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-green-50">
+                              <Activity className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div className="flex flex-col items-start">
+                              <span className="font-semibold">Online Übersicht</span>
+                              <span className="text-xs text-gray-500">Zuletzt online & registriert</span>
+                            </div>
+                          </div>
+                        </Button>
+                      </Link>
+                    </div>
+
+                    <div className="mt-4 text-xs text-gray-500">
+                      
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* ✅ interne Unterseite: deine alte UserManagement */}
+            {currentView === "user-management-internal" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" className="bg-transparent" onClick={() => setCurrentView("users")}>
+                    Zurück
+                  </Button>
+                </div>
+
+                <UserManagement user={user} onDataSaved={handleDataSaved} />
+              </div>
+            )}
 
             {currentView === "club" && <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />}
 
@@ -662,7 +749,6 @@ export default function AdminPage() {
                         </Button>
                       </Link>
 
-                      {/* 🆕 NEU: Turnierserie starten */}
                       <Link href="/admin/turnier_spieltage_starten">
                         <Button variant="outline" className="w-full justify-start bg-transparent">
                           <Trophy className="h-4 w-4 mr-2" />
@@ -821,7 +907,6 @@ export default function AdminPage() {
 
             {currentView === "lion-cup-registrations" && <TournamentRegistrations />}
 
-            {/* ✅ Turnier verwalten = Zentrale Sammelstelle */}
             {currentView === "tournament-management" && (
               <div className="space-y-6">
                 <Card>
@@ -849,7 +934,6 @@ export default function AdminPage() {
                         </Button>
                       </Link>
 
-                      {/* 🆕 NEU */}
                       <Link href="/admin/turnierserie-bearbeiten">
                         <Button className="w-full justify-start" variant="outline">
                           <ChevronRight className="h-4 w-4 mr-2" />

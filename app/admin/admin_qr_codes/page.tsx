@@ -713,9 +713,7 @@ export default function AdminQrCodesPage() {
                 </div>
               )}
 
-              <div className="text-xs text-gray-500">
-                QR führt zu: <span className="font-mono">{QR_TARGET_BASE_URL}?code=...</span> • Install: <span className="font-mono">npm i jspdf qrcode</span>
-              </div>
+             
             </CardContent>
           </Card>
         </div>
