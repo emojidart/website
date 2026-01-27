@@ -6,12 +6,11 @@ import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Mail, Lock, ArrowRight, Users, Crown, ShieldCheck } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
-import { useEffect } from "react"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 export default function MemberLoginPage() {
@@ -22,8 +21,53 @@ export default function MemberLoginPage() {
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
 
-  // Redirect if already logged in
+  // ✅ Handle invite/confirmation links that land on /member-login with tokens in URL hash
+  // Example:
+  // /member-login#access_token=...&refresh_token=...&type=invite
   useEffect(() => {
+    const run = async () => {
+      try {
+        if (typeof window === "undefined") return
+        const hash = window.location.hash || ""
+        if (!hash || hash.length < 2) return
+
+        const params = new URLSearchParams(hash.replace(/^#/, ""))
+        const type = params.get("type")
+        const access_token = params.get("access_token")
+        const refresh_token = params.get("refresh_token")
+
+        if (type === "invite" && access_token && refresh_token) {
+          setLoading(true)
+          setMessage("Einladung bestätigt – bitte Passwort festlegen...")
+
+          const { error } = await supabase.auth.setSession({ access_token, refresh_token })
+          if (error) {
+            setMessage(`Aktivierung fehlgeschlagen: ${error.message}`)
+            setLoading(false)
+            return
+          }
+
+          // Remove tokens from the URL (security/cleanliness)
+          window.history.replaceState({}, document.title, window.location.pathname)
+
+          // Go to password setup page (your app uses /member-set-password)
+          router.replace("/member-set-password")
+        }
+      } catch (e: any) {
+        setMessage(`Aktivierung fehlgeschlagen: ${e?.message || "Unbekannter Fehler"}`)
+        setLoading(false)
+      }
+    }
+
+    run()
+  }, [router])
+
+  // Redirect if already logged in (but NOT if we're in the invite-hash flow)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash || ""
+      if (hash.includes("type=invite")) return
+    }
     if (!authLoading && session) {
       router.push("/member-profile")
     }
@@ -40,9 +84,7 @@ export default function MemberLoginPage() {
         password,
       })
 
-      if (error) {
-        throw error
-      }
+      if (error) throw error
 
       if (data.user) {
         setMessage("Anmeldung erfolgreich!")
@@ -77,7 +119,7 @@ export default function MemberLoginPage() {
               <Users className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-3">Member-Zugang</h1>
-            <p className="text-gray-600 text-lg">Willkommen bei Emoj!'s Dartverein</p>
+            <p className="text-gray-600 text-lg">Willkommen bei Emoj!&apos;s Dartverein</p>
           </div>
 
           <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
@@ -112,8 +154,8 @@ export default function MemberLoginPage() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="deine@email.at"
-                      className="pl-12 h-14 border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50 transition-all duration-200 text-lg rounded-xl"
+                      placeholder="deine.email@example.com"
+                      className="pl-12 h-12 border-2 border-gray-200 focus:border-orange-500 rounded-xl"
                       required
                     />
                   </div>
@@ -132,54 +174,46 @@ export default function MemberLoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Dein Passwort"
-                      className="pl-12 h-14 border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50 transition-all duration-200 text-lg rounded-xl"
+                      className="pl-12 h-12 border-2 border-gray-200 focus:border-orange-500 rounded-xl"
                       required
                     />
                   </div>
                 </div>
 
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-14 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-bold text-lg rounded-xl transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 uppercase tracking-wide"
-                >
-                  {loading ? (
-                    <div className="flex items-center space-x-3">
-                      <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Anmeldung läuft...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-3">
-                      <span>Anmelden</span>
-                      <ArrowRight className="h-5 w-5" />
-                    </div>
-                  )}
-                </Button>
-
-                {/* Status Message */}
+                {/* Message */}
                 {message && (
                   <div
-                    className={`p-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                      message.includes("fehlgeschlagen") || message.includes("error")
-                        ? "bg-red-50 text-red-700 border-2 border-red-200"
-                        : "bg-green-50 text-green-700 border-2 border-green-200"
+                    className={`text-center p-4 rounded-xl text-sm font-medium ${
+                      message.includes("erfolgreich") || message.includes("Einladung bestätigt")
+                        ? "bg-green-50 text-green-700 border border-green-200"
+                        : "bg-red-50 text-red-700 border border-red-200"
                     }`}
                   >
                     {message}
                   </div>
                 )}
+
+                {/* Login Button */}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Wird geladen...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      Anmelden
+                      <ArrowRight className="h-5 w-5" />
+                    </div>
+                  )}
+                </Button>
               </form>
             </CardContent>
           </Card>
-
-          {/* Footer */}
-          <div className="text-center mt-8">
-            <p className="text-sm text-gray-500 mb-2">
-              Noch kein Account? Wende dich an deinen Kapitän oder Co-Kapitän.
-            </p>
-            <p className="text-xs text-gray-400">Zugang nur für Vereinsmitglieder</p>
-          </div>
         </div>
       </main>
       <MobileBottomNav />
