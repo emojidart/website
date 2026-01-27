@@ -114,15 +114,15 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
     message: string
   }>({ type: null, message: "" })
 
-  const [isManagingAccount, setIsManagingAccount] = useState(false)
-  const [managementForm, setManagementForm] = useState<AccountManagementForm>({
-    playerId: "",
-    playerName: "",
-    currentEmail: player.email || "",
-      newEmail: "",
-    newPassword: "",
-    confirmNewPassword: "",
-  })
+const [managementForm, setManagementForm] = useState<AccountManagementForm>({
+  playerId: "",
+  playerName: "",
+  currentEmail: "",
+  newEmail: "",
+  newPassword: "",
+  confirmNewPassword: "",
+})
+
   const [managementStatus, setManagementStatus] = useState<{
     type: "success" | "error" | null
     message: string
