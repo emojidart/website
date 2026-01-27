@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
       errorCode,
       errorDescription,
     })
-    return NextResponse.redirect(`${origin}/admin?error=${encodeURIComponent(errorDescription || error)}`)
+    return NextResponse.redirect(`${origin}/member-login?error=${encodeURIComponent(errorDescription || error)}`)
   }
 
   const code = searchParams.get("code")
-  const next = searchParams.get("next") ?? "/admin"
+  const next = searchParams.get("next") ?? "/member-login"
 
   console.log("[v0] Code from URL:", code)
   console.log("[v0] Next redirect:", next)
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     if (exchangeError) {
       console.error("[v0] Error exchanging code:", exchangeError)
-      return NextResponse.redirect(`${origin}/admin?error=${encodeURIComponent(exchangeError.message)}`)
+      return NextResponse.redirect(`${origin}/member-login?error=${encodeURIComponent(exchangeError.message)}`)
     }
 
     console.log("[v0] Code exchange successful, user:", data.user?.id)
@@ -95,5 +95,5 @@ export async function GET(request: NextRequest) {
   }
 
   console.log("[v0] No code found in URL, redirecting to admin")
-  return NextResponse.redirect(`${origin}/admin?error=no_code`)
+  return NextResponse.redirect(`${origin}/member-login?error=no_code`)
 }
