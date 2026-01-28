@@ -1,13 +1,15 @@
 "use client"
+
 import { BonusSection } from "@/components/bonus-section"
+import { Header } from "@/components/header"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useAuth } from "@/hooks/use-auth"
+import { supabase } from "@/lib/supabase"
 import { ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/hooks/use-auth"
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 interface BonusConfig {
   under26: number
@@ -18,8 +20,10 @@ interface BonusConfig {
 export default function MemberBonusPage() {
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
+
   const [legStatistics, setLegStatistics] = useState<any[]>([])
   const [legStatsLoading, setLegStatsLoading] = useState(true)
+
   const [bonusConfig, setBonusConfig] = useState<BonusConfig>({
     under26: 0.5,
     under30: 0.5,
@@ -31,6 +35,7 @@ export default function MemberBonusPage() {
     under30: 0.5,
     semperit: 0.5,
   })
+
   const [profile, setProfile] = useState<any>(null)
   const [teamMemberships, setTeamMemberships] = useState<any[]>([])
   const [teamMembers, setTeamMembers] = useState<any[]>([])
@@ -46,6 +51,7 @@ export default function MemberBonusPage() {
     if (session?.user) {
       fetchUserData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
   useEffect(() => {
@@ -61,12 +67,11 @@ export default function MemberBonusPage() {
     if (!session?.user) return
 
     try {
-      console.log("[v0] Fetching user profile for user:", session.user.id)
-
       // Fetch user profile
       const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
-        .select(`
+        .select(
+          `
           id,
           user_id,
           player_id,
@@ -78,30 +83,25 @@ export default function MemberBonusPage() {
             age,
             origin
           )
-        `)
+        `
+        )
         .eq("user_id", session.user.id)
         .single()
 
-      if (profileError) {
-        console.error("[v0] Profile fetch error:", profileError)
-        throw profileError
-      }
+      if (profileError) throw profileError
 
       if (profileData) {
-        console.log("[v0] Profile data:", profileData)
         setProfile(profileData)
 
         if (!profileData.player_id) {
-          console.error("[v0] No player_id found in profile")
           setLegStatsLoading(false)
           return
         }
 
-        console.log("[v0] Fetching team memberships for player_id:", profileData.player_id)
-
         const { data: teamData, error: teamError } = await supabase
           .from("team_members")
-          .select(`
+          .select(
+            `
             id,
             team_id,
             role,
@@ -110,17 +110,16 @@ export default function MemberBonusPage() {
               name,
               logo_url
             )
-          `)
+          `
+          )
           .eq("player_id", profileData.player_id)
 
         if (teamError) {
-          console.error("[v0] Team memberships fetch error:", teamError)
           setTeamMemberships([])
           setLegStatsLoading(false)
           return
         }
 
-        console.log("[v0] Team memberships:", teamData)
         setTeamMemberships(teamData || [])
 
         if (teamData && teamData.length > 0) {
@@ -128,7 +127,8 @@ export default function MemberBonusPage() {
 
           const { data: membersData, error: membersError } = await supabase
             .from("team_members")
-            .select(`
+            .select(
+              `
               id,
               team_id,
               player_id,
@@ -141,28 +141,25 @@ export default function MemberBonusPage() {
                 age,
                 origin
               )
-            `)
+            `
+            )
             .in("team_id", teamIds)
             .order("role", { ascending: false })
 
           if (membersError) {
-            console.error("[v0] Team members fetch error:", membersError)
             setLegStatsLoading(false)
             return
           }
 
           setTeamMembers(membersData || [])
-
-          console.log("[v0] Loading statistics for all team members")
           await fetchAllTeamStatistics(teamIds, membersData || [])
         } else {
-          console.log("[v0] No team memberships found")
           setLegStatistics([])
           setLegStatsLoading(false)
         }
       }
     } catch (error) {
-      console.error("[v0] Error fetching user data:", error)
+      console.error("[bonus] Error fetching user data:", error)
       setLegStatsLoading(false)
     }
   }
@@ -170,18 +167,15 @@ export default function MemberBonusPage() {
   const fetchAllTeamStatistics = async (teamIds: string[], members: any[]) => {
     setLegStatsLoading(true)
     try {
-      console.log("[v0] Fetching statistics only for matches involving team IDs:", teamIds)
-
       if (teamIds.length === 0) {
-        console.log("[v0] No teams found")
         setLegStatistics([])
         return
       }
 
-      // Fetch statistics from matches where one of the user's teams was home OR away
       const { data, error } = await supabase
         .from("leg_statistics")
-        .select(`
+        .select(
+          `
           *,
           player:club_players!leg_statistics_player_id_fkey(
             name,
@@ -204,63 +198,40 @@ export default function MemberBonusPage() {
             home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
             away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name)
           )
-        `)
+        `
+        )
         .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`, {
           foreignTable: "matches",
         })
         .order("matches(match_date)", { ascending: false })
         .order("leg_number", { ascending: false })
 
-      if (error) {
-        console.error("[v0] Error fetching team leg statistics:", error)
-        throw error
-      }
+      if (error) throw error
 
       const filteredData = (data || []).filter((stat) => {
         const match = stat.matches
         if (!match) return false
 
-        // Check if the player was a member of the home team
         const playerHomeTeamMembership = members.find(
-          (member) => member.player_id === stat.player_id && member.team_id === match.home_team_id,
+          (member) => member.player_id === stat.player_id && member.team_id === match.home_team_id
         )
-
-        // Check if the player was a member of the away team
         const playerAwayTeamMembership = members.find(
-          (member) => member.player_id === stat.player_id && member.team_id === match.away_team_id,
+          (member) => member.player_id === stat.player_id && member.team_id === match.away_team_id
         )
 
-        // Determine which team the player was playing for
-        let playerTeamInMatch = null
+        let playerTeamInMatch: string | null = null
         if (playerHomeTeamMembership && teamIds.includes(match.home_team_id)) {
           playerTeamInMatch = match.home_team_id
         } else if (playerAwayTeamMembership && teamIds.includes(match.away_team_id)) {
           playerTeamInMatch = match.away_team_id
         }
 
-        // Only include this stat if the player was playing for one of the user's teams
         return playerTeamInMatch !== null
       })
 
-      console.log(
-        "[v0] Team leg statistics loaded:",
-        filteredData.length,
-        "records (filtered from",
-        data?.length || 0,
-        ")",
-      )
-      if (filteredData.length > 0) {
-        console.log("[v0] Sample bonus data:", {
-          player: filteredData[0].player?.name,
-          throws_under_26: filteredData[0].throws_under_26,
-          throws_under_30: filteredData[0].throws_under_30,
-          semperit_outs: filteredData[0].semperit_outs,
-        })
-      }
-
       setLegStatistics(filteredData)
-    } catch (err: any) {
-      console.error("Error fetching team leg statistics:", err)
+    } catch (err) {
+      console.error("[bonus] Error fetching team leg statistics:", err)
     } finally {
       setLegStatsLoading(false)
     }
@@ -273,33 +244,23 @@ export default function MemberBonusPage() {
   }
 
   const getFilteredStatisticsByTeam = () => {
-    if (selectedTeamId === "all") {
-      return legStatistics
-    }
+    if (selectedTeamId === "all") return legStatistics
 
     return legStatistics.filter((stat) => {
       const match = stat.matches
       if (!match) return false
 
-      // Determine which team the player was playing for in this match
-      // by checking if the player is a member of the home or away team
       const playerHomeTeamMembership = teamMembers.find(
-        (member) => member.player_id === stat.player_id && member.team_id === match.home_team_id,
+        (member) => member.player_id === stat.player_id && member.team_id === match.home_team_id
       )
-
       const playerAwayTeamMembership = teamMembers.find(
-        (member) => member.player_id === stat.player_id && member.team_id === match.away_team_id,
+        (member) => member.player_id === stat.player_id && member.team_id === match.away_team_id
       )
 
-      // Determine which team the player was actually playing for
-      let playerTeamInMatch = null
-      if (playerHomeTeamMembership) {
-        playerTeamInMatch = match.home_team_id
-      } else if (playerAwayTeamMembership) {
-        playerTeamInMatch = match.away_team_id
-      }
+      let playerTeamInMatch: string | null = null
+      if (playerHomeTeamMembership) playerTeamInMatch = match.home_team_id
+      else if (playerAwayTeamMembership) playerTeamInMatch = match.away_team_id
 
-      // Only show this stat if the player was playing for the selected team
       return playerTeamInMatch === selectedTeamId
     })
   }
@@ -307,53 +268,62 @@ export default function MemberBonusPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+        <Header />
+
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
         </main>
+
         <MobileBottomNav />
       </div>
     )
   }
 
+  if (!session) return null
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+      <Header />
+
       <main className="flex-grow container mx-auto px-4 py-4 max-w-7xl">
-        <div className="mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/member-profile-app")}
-            className="flex items-center gap-2 mb-3"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Zurück zum Profil
-          </Button>
-          <div className="flex flex-col gap-3">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Bonusgeld</h1>
-              <p className="text-sm text-gray-600 mt-1">Ihre Bonuspunkte und Belohnungen</p>
-            </div>
-            {teamMemberships.length > 1 && (
-              <div className="flex items-center gap-2">
-                <label htmlFor="team-filter" className="text-sm font-medium whitespace-nowrap">
-                  Team filtern:
-                </label>
-                <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                  <SelectTrigger id="team-filter" className="w-full">
-                    <SelectValue placeholder="Team auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Teams</SelectItem>
-                    {teamMemberships.map((membership) => (
-                      <SelectItem key={membership.team_id} value={membership.team_id}>
-                        {membership.teams?.name || "Unbekanntes Team"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+        {/* Back Button LINKS wie Lobby */}
+        <Button
+          variant="outline"
+          onClick={() => router.push("/member-profile-app")}
+          className="mb-4 flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-200"
+          size="sm"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Zurück zum Profil
+        </Button>
+
+        <div className="mb-4 flex flex-col gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Bonusgeld</h1>
+            <p className="text-sm text-gray-600 mt-1">Ihre Bonuspunkte und Belohnungen</p>
           </div>
+
+          {teamMemberships.length > 1 && (
+            <div className="flex items-center gap-2">
+              <label htmlFor="team-filter" className="text-sm font-medium whitespace-nowrap">
+                Team filtern:
+              </label>
+
+              <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                <SelectTrigger id="team-filter" className="w-full">
+                  <SelectValue placeholder="Team auswählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle Teams</SelectItem>
+                  {teamMemberships.map((membership) => (
+                    <SelectItem key={membership.team_id} value={membership.team_id}>
+                      {membership.teams?.name || "Unbekanntes Team"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <BonusSection
@@ -367,6 +337,7 @@ export default function MemberBonusPage() {
           saveBonusConfig={saveBonusConfig}
         />
       </main>
+
       <MobileBottomNav />
     </div>
   )

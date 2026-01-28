@@ -151,7 +151,7 @@ export default function StatisticsPage() {
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Fehler</h1>
             <p className="text-gray-600 mb-4">{error || "Daten nicht gefunden"}</p>
-            <Button onClick={() => router.push("/member-dashboard")} className="bg-orange-600 hover:bg-orange-700">
+            <Button onClick={() => router.push("/member-dashboard-app")} className="bg-orange-600 hover:bg-orange-700">
               Zurück zum Dashboard
             </Button>
           </div>
@@ -168,7 +168,7 @@ export default function StatisticsPage() {
         {/* Back Button */}
         <div className="mb-8">
           <Button
-            onClick={() => router.push("/member-dashboard")}
+            onClick={() => router.push("/member-dashboard-app")}
             variant="outline"
             className="flex items-center gap-2"
           >

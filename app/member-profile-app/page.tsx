@@ -13,6 +13,8 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import {
   Calendar,
+  Clock,
+  MapPin,
   MessageCircle,
   BarChart3,
   Users,
@@ -21,8 +23,7 @@ import {
   Target,
   Trophy,
   ArrowRight,
-  Settings,
-  LogOut,
+    LogOut,
   Camera,
   Upload,
   Euro,
@@ -36,10 +37,57 @@ import {
 } from "lucide-react"
 import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
 
+type UserProfileWithLastSeen = UserProfile & { last_seen_at?: string | null }
+
+const formatDate = (date: string | Date) => {
+  if (!date) return ""
+  const d = new Date(date)
+  return d.toLocaleDateString("de-DE", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+}
+
+const formatTime = (time: string) => {
+  if (!time) return ""
+  const [h, m] = time.split(":")
+  if (!h || !m) return time
+  return `${h}:${m}`
+}
+
+const getMatchStartDateTime = (match: any): Date | null => {
+  const dateStr = match?.match_date
+  if (!dateStr) return null
+  const timeStr = match?.match_time
+
+  // If match_time includes seconds, Date can still parse it.
+  if (timeStr) return new Date(`${dateStr}T${timeStr}`)
+  return new Date(`${dateStr}T00:00:00`)
+}
+
+const formatCountdown = (target: Date) => {
+  const diffMs = target.getTime() - Date.now()
+  if (diffMs <= 0) return "Startet jetzt"
+
+  const totalSeconds = Math.floor(diffMs / 1000)
+  const days = Math.floor(totalSeconds / 86400)
+  const hours = Math.floor((totalSeconds % 86400) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  const hh = String(hours).padStart(2, "0")
+  const mm = String(minutes).padStart(2, "0")
+  const ss = String(seconds).padStart(2, "0")
+
+  return days > 0 ? `${days}T ${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss}`
+}
+
 export default function MemberProfileAppPage() {
   const { session, loading: authLoading } = useAuth()
   const router = useRouter()
-  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [profile, setProfile] = useState<UserProfileWithLastSeen | null>(null)
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -57,6 +105,36 @@ export default function MemberProfileAppPage() {
   })
   const [pendingMatches, setPendingMatches] = useState<Match[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [nextMatchSummary, setNextMatchSummary] = useState<null | {
+    match: Match
+    teamId: string
+    counts: { yes: number; maybe: number; no: number; none: number }
+    myStatus: "none" | "yes" | "maybe" | "no"
+    myLineup: "none" | "starter" | "substitute"
+  }>(null)
+  const [countdown, setCountdown] = useState<string>("")
+
+  // Ungelesene Team-Chat Nachrichten (Badge/Box)
+  const [chatRooms, setChatRooms] = useState<Array<{ id: string; name: string }>>([])
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
+
+
+
+  // Countdown for the next match (updates every second)
+  useEffect(() => {
+    const target = nextMatchSummary ? getMatchStartDateTime(nextMatchSummary.match as any) : null
+    if (!target) {
+      setCountdown("")
+      return
+    }
+
+
+    const updateCountdown = () => setCountdown(formatCountdown(target))
+    updateCountdown()
+    const id = window.setInterval(updateCountdown, 1000)
+    return () => window.clearInterval(id)
+  }, [nextMatchSummary])
+
 
   // PWA installation state
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
@@ -82,7 +160,7 @@ export default function MemberProfileAppPage() {
       setShowInstallButton(false)
     }
 
-    return () => {
+      return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
       window.removeEventListener("appinstalled", handleAppInstalled)
     }
@@ -114,6 +192,48 @@ export default function MemberProfileAppPage() {
       fetchProfile()
     }
   }, [session])
+
+  // Team-Räume aus deinen Team-Mitgliedschaften ableiten (Team-ID = Room-ID)
+  useEffect(() => {
+    const rooms =
+      (teamMemberships || [])
+        .map((m) => ({ id: m.team_id, name: m.teams?.name || "Team-Chat" }))
+        .filter((r) => !!r.id)
+
+    setChatRooms(rooms)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamMemberships?.length])
+
+  // Ungelesene Nachrichten laden (sobald Profil + Rooms da sind)
+  useEffect(() => {
+    if (!profile?.id) return
+    if (chatRooms.length === 0) return
+    fetchUnreadCounts(chatRooms)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, chatRooms?.length])
+
+  useEffect(() => {
+    if (!profile?.id) return
+
+    const channel = supabase
+      .channel("realtime-chat-unread")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+        },
+        () => {
+          fetchUnreadCounts(chatRooms)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [profile?.id, chatRooms])
 
   const fetchNotifications = async (playerId: string) => {
     try {
@@ -180,6 +300,148 @@ export default function MemberProfileAppPage() {
     }
   }
 
+  const fetchUnreadCounts = async (roomsOverride?: Array<{ id: string; name: string }>) => {
+    const rooms = roomsOverride ?? chatRooms
+    if (!profile?.id || rooms.length === 0) return
+
+    try {
+      const counts: Record<string, number> = {}
+
+      for (const room of rooms) {
+        const { data: visitData, error: visitError } = await supabase
+          .from("user_room_visits")
+          .select("last_visit_at")
+          .eq("user_id", profile.id)
+          .eq("room_id", room.id)
+          .maybeSingle()
+
+        // Tabelle evtl. noch nicht vorhanden -> dann einfach 0 anzeigen
+        if (visitError && (visitError as any).code === "42P01") {
+          counts[room.id] = 0
+          continue
+        }
+
+        const lastVisit = (visitData as any)?.last_visit_at || "1970-01-01T00:00:00Z"
+
+        const { count, error: countError } = await supabase
+          .from("chat_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("room_id", room.id)
+          .gt("created_at", lastVisit)
+          .neq("user_id", profile.id)
+
+        if (countError) counts[room.id] = 0
+        else counts[room.id] = count || 0
+      }
+
+      setUnreadCounts(counts)
+    } catch (error) {
+      console.error("Error fetching unread counts:", error)
+    }
+  }
+
+  const totalUnread = Object.values(unreadCounts).reduce((sum, n) => sum + (n || 0), 0)
+
+  type AvailabilityStatus = "yes" | "maybe" | "no"
+  const statusLabel = (s: "none" | AvailabilityStatus) => {
+    if (s === "yes") return "Ja"
+    if (s === "maybe") return "Nur wenn Not am Mann"
+    if (s === "no") return "Nein"
+      return "Keine Antwort"
+  }
+  const statusBadge = (s: "none" | AvailabilityStatus) => {
+    if (s === "yes") return <Badge className="bg-green-600 text-white">Ja</Badge>
+    if (s === "maybe") return <Badge className="bg-yellow-600 text-white">Nur wenn Not am Mann</Badge>
+    if (s === "no") return <Badge className="bg-red-600 text-white">Nein</Badge>
+      return <Badge variant="outline">Keine Antwort</Badge>
+  }
+  const getAvailabilityNudge = (status: "none" | AvailabilityStatus, lineup: "none" | "starter" | "substitute") => {
+    const lineupHint =
+      lineup === "starter"
+        ? " Du bist aktuell in der Aufstellung."
+        : lineup === "substitute"
+          ? " Du bist als Ersatz vorgesehen."
+          : ""
+
+    if (status === "yes") return `Super, danke für deine Zusage!${lineupHint}`
+    if (status === "maybe")
+      return `Danke! Wenn Not am Mann ist, melden wir uns – wenn möglich, halte dir den Termin frei.${lineupHint}`
+    if (status === "no") return `Schade – vielleicht hast du beim nächsten Spiel Zeit.${lineupHint}`
+      return `Bitte gib kurz Bescheid, ob du kannst – das hilft bei der Planung.${lineupHint}`
+  }
+
+
+  const fetchNextMatchSummary = async (playerId: string, memberships: TeamMembership[]) => {
+    try {
+      const teamIds = memberships.map((t) => t.team_id).filter(Boolean)
+      if (!playerId || teamIds.length === 0) {
+        setNextMatchSummary(null)
+        return
+      }
+
+      const today = new Date().toISOString().split("T")[0]
+      const { data: matchesData, error: matchesError } = await supabase
+        .from("matches")
+        .select(`*,
+          home_team:teams!matches_home_team_id_fkey(id, name),
+          away_team:teams!matches_away_team_id_fkey(id, name),
+          home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
+          away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name),
+          season:seasons(id, name, type)
+        `)
+        .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
+        .gte("match_date", today)
+        .neq("status", "completed")
+        .order("match_date", { ascending: true })
+        .limit(1)
+
+      if (matchesError) throw matchesError
+      const next = (matchesData as any[] | null)?.[0] as Match | undefined
+      if (!next) {
+        setNextMatchSummary(null)
+        return
+      }
+
+      const teamId = teamIds.includes((next as any).home_team_id) ? (next as any).home_team_id : (next as any).away_team_id
+
+      const [{ data: av }, { data: lu }] = await Promise.all([
+        supabase.from("match_availability").select("player_id,status").eq("match_id", (next as any).id).eq("team_id", teamId),
+        supabase.from("match_lineups").select("player_id,is_substitute,position").eq("match_id", (next as any).id).eq("team_id", teamId),
+      ])
+
+      const rows = (av as any[] | null) ?? []
+      const counts = { yes: 0, maybe: 0, no: 0, none: 0 }
+      for (const r of rows) {
+        if (r.status === "yes") counts.yes += 1
+        else if (r.status === "maybe") counts.maybe += 1
+        else if (r.status === "no") counts.no += 1
+      }
+
+      // none = all team members - answered; best effort using team_members count
+      const { count: teamMemberCount } = await supabase
+        .from("team_members")
+        .select("id", { count: "exact", head: true })
+        .eq("team_id", teamId)
+        .is("left_at", null)
+
+      const total = teamMemberCount ?? rows.length
+      const answered = counts.yes + counts.maybe + counts.no
+      counts.none = Math.max(0, total - answered)
+
+      const myRow = rows.find((r) => r.player_id === playerId)
+      const myStatus = (myRow?.status as AvailabilityStatus | undefined) ?? "none"
+
+      const lineupRows = (lu as any[] | null) ?? []
+      const myLu = lineupRows.find((r) => r.player_id === playerId)
+      const myLineup: "none" | "starter" | "substitute" = myLu ? (myLu.is_substitute ? "substitute" : "starter") : "none"
+
+      setNextMatchSummary({ match: next, teamId, counts, myStatus, myLineup })
+    } catch (e) {
+      console.error("fetchNextMatchSummary error", e)
+      setNextMatchSummary(null)
+    }
+  }
+
   const fetchProfile = async () => {
     if (!session?.user) return
 
@@ -189,7 +451,7 @@ export default function MemberProfileAppPage() {
 
       const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
-        .select(`id, user_id, player_id, club_players (id, name, photo_url, throwing_hand, age, origin)`)
+        .select(`id, user_id, player_id, last_seen_at, club_players (id, name, photo_url, throwing_hand, age, origin)`)
         .eq("user_id", session.user.id)
         .single()
 
@@ -212,6 +474,10 @@ export default function MemberProfileAppPage() {
         }
 
         setTeamMemberships(teamData || [])
+
+        // Next upcoming match summary (for profile card)
+        await fetchNextMatchSummary(profileData.player_id, teamData || [])
+
 
         if (teamData && teamData.length > 0) {
           const teamIds = teamData.map((t) => t.team_id)
@@ -413,6 +679,14 @@ export default function MemberProfileAppPage() {
       href: "/member-dashboard-app",
       color: "from-blue-500 to-blue-600",
     },
+	{
+  title: "Zusagen & Aufstellung",
+  description: "Spieler zusagen verwalten und Teamaufstellung erstellen",
+  icon: CheckCircle,
+  href: "/member-availability",
+  color: "from-green-500 to-emerald-600",
+},
+
     {
       title: "Meine Teams",
       description: "Teams und Teammitglieder verwalten",
@@ -497,7 +771,19 @@ export default function MemberProfileAppPage() {
     const day = String(date.getDate()).padStart(2, "0")
     const month = String(date.getMonth() + 1).padStart(2, "0")
     const year = date.getFullYear()
-    return `${day}.${month}.${year}`
+      return `${day}.${month}.${year}`
+  }
+
+
+  const formatLastSeen = (timestamp?: string | null) => {
+    if (!timestamp) return ""
+    const date = new Date(timestamp)
+    const day = String(date.getDate()).padStart(2, "0")
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const year = date.getFullYear()
+    const hours = String(date.getHours()).padStart(2, "0")
+    const minutes = String(date.getMinutes()).padStart(2, "0")
+      return `${day}.${month}.${year} ${hours}:${minutes}`
   }
 
   const getTeamDisplayName = (match: Match, isHome: boolean) => {
@@ -517,15 +803,15 @@ export default function MemberProfileAppPage() {
       }
     }
 
-    return "Unbekannt"
+      return "Unbekannt"
   }
 
   const isLeadershipRole = () => {
-    return teamMemberships.some((membership) => membership.role === "Captain" || membership.role === "Co-Captain")
+      return teamMemberships.some((membership) => membership.role === "Captain" || membership.role === "Co-Captain")
   }
 
   if (authLoading || loading) {
-    return (
+      return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
@@ -536,7 +822,7 @@ export default function MemberProfileAppPage() {
   }
 
   if (error || !profile) {
-    return (
+      return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
@@ -552,7 +838,7 @@ export default function MemberProfileAppPage() {
   const primaryTeam = teamMemberships[0]
   const hasMultipleTeams = teamMemberships.length > 1
 
-  return (
+    return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
 
@@ -741,6 +1027,57 @@ export default function MemberProfileAppPage() {
           </Card>
         )}
 
+        {totalUnread > 0 && (
+          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-purple-50 to-indigo-50 border-l-4 border-l-purple-500">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex-shrink-0">
+                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl shadow-lg">
+                    <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  </div>
+                </div>
+
+                <div className="flex-grow w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900">Neue Team-Chat Nachrichten</h3>
+                    <Badge className="bg-purple-600 text-white w-fit">{totalUnread}</Badge>
+                  </div>
+
+                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                    Du hast neue Nachrichten in deinen Team-Chats. Tippe auf ein Team, um den Chat zu öffnen.
+                  </p>
+
+                  <div className="space-y-2">
+                    {chatRooms
+                      .filter((r) => (unreadCounts[r.id] || 0) > 0)
+                      .slice(0, 5)
+                      .map((room) => (
+                        <div
+                          key={room.id}
+                          className="flex items-center justify-between bg-white/70 rounded-lg p-3 border border-purple-200 cursor-pointer hover:bg-white transition-colors"
+                          onClick={() => router.push("/chat-app")}
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-gray-900 truncate">{room.name}</div>
+                            <div className="text-xs text-gray-600">Tippen zum Öffnen</div>
+                          </div>
+
+                          <Badge className="bg-red-500 text-white">{unreadCounts[room.id] || 0}</Badge>
+                        </div>
+                      ))}
+                  </div>
+
+                  {chatRooms.filter((r) => (unreadCounts[r.id] || 0) > 0).length > 5 && (
+                    <div className="text-xs text-gray-600 text-center mt-2">
+                      ... und weitere Chats mit neuen Nachrichten
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl mb-4 sm:mb-6 shadow-xl">
             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
@@ -801,6 +1138,12 @@ export default function MemberProfileAppPage() {
                     </Badge>
                   )}
                 </div>
+                {(profile as any)?.last_seen_at && (
+                  <p className="text-sm sm:text-base text-gray-600 mb-2">
+                    Zuletzt online: {formatLastSeen((profile as any).last_seen_at)}
+                  </p>
+                )}
+
                 {hasMultipleTeams && (
                   <div className="mb-2">
                     <p className="text-xs sm:text-sm text-gray-600 mb-1">Alle Teams:</p>
@@ -813,25 +1156,9 @@ export default function MemberProfileAppPage() {
                     </div>
                   </div>
                 )}
-                {profile.club_players?.origin && (
-                  <p className="text-sm sm:text-base text-gray-600 mb-2">Herkunft: {profile.club_players.origin}</p>
-                )}
-                {profile.club_players?.throwing_hand && (
-                  <p className="text-sm sm:text-base text-gray-600">
-                    Wurfhand: {profile.club_players.throwing_hand === "right" ? "Rechts" : "Links"}
-                  </p>
-                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 bg-transparent text-xs sm:text-sm"
-                >
-                  <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Einstellungen
-                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -840,6 +1167,93 @@ export default function MemberProfileAppPage() {
                 >
                   <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
                   Abmelden
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Eigene Box unterhalb des Profil-Headers: nur kommendes Spiel */}
+        <Card className="border shadow-sm bg-white mb-6 sm:mb-8">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-gray-900">Kommendes Spiel</div>
+                {!nextMatchSummary ? (
+                  <div className="text-sm text-muted-foreground mt-1">Kein kommendes Spiel gefunden.</div>
+                ) : (
+                  <>
+                    <div className="font-semibold text-base sm:text-lg truncate mt-1">
+                      {getTeamDisplayName(nextMatchSummary.match, true)} vs {getTeamDisplayName(nextMatchSummary.match, false)}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="h-4 w-4 text-orange-600" />
+                        {formatDate((nextMatchSummary.match as any).match_date)}
+                        {(nextMatchSummary.match as any).match_time ? ` • ${formatTime((nextMatchSummary.match as any).match_time)}` : ""}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="h-4 w-4 text-orange-600" />
+                        {(nextMatchSummary.match as any).venue || "—"}
+                      </span>
+                      {countdown && (
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-4 w-4 text-orange-600" />
+                          <span className="font-mono">{countdown}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Badge className="bg-green-600 text-white">Zusagen: {nextMatchSummary.counts.yes}</Badge>
+                      <Badge className="bg-yellow-600 text-white">Vielleicht: {nextMatchSummary.counts.maybe}</Badge>
+                      <Badge className="bg-red-600 text-white">Absagen: {nextMatchSummary.counts.no}</Badge>
+                      <Badge variant="outline">Offen: {nextMatchSummary.counts.none}</Badge>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <div className="text-xs text-gray-500">Meine Antwort:</div>
+                      {statusBadge(nextMatchSummary.myStatus)}
+                      <div className="text-xs text-gray-500 ml-0 sm:ml-3">Aufstellung:</div>
+                      {nextMatchSummary.myLineup === "starter" ? (
+                        <Badge className="bg-orange-600 text-white">Stamm</Badge>
+                      ) : nextMatchSummary.myLineup === "substitute" ? (
+                        <Badge variant="secondary">Ersatz</Badge>
+                      ) : (
+                        <Badge variant="outline">Nicht gesetzt</Badge>
+                      )}
+                    <div className="mt-3 rounded-lg border bg-gray-50 p-3 text-sm text-gray-700 flex items-start gap-2">
+                      {nextMatchSummary.myStatus === "yes" ? (
+                        <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                      ) : nextMatchSummary.myStatus === "no" ? (
+                        <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
+                      ) : nextMatchSummary.myStatus === "maybe" ? (
+                        <HelpCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                      ) : (
+                        <Bell className="h-4 w-4 text-gray-500 mt-0.5" />
+                      )}
+                      <span className="leading-snug">
+                        {getAvailabilityNudge(nextMatchSummary.myStatus, nextMatchSummary.myLineup)}
+                      </span>
+                    </div>
+
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="flex-shrink-0">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (!nextMatchSummary) return
+                    router.push(`/member-availability?matchId=${nextMatchSummary.match.id}`)
+                  }}
+                  className="bg-white hover:bg-gray-50 border-gray-200"
+                  disabled={!nextMatchSummary}
+                >
+                  Öffnen
                 </Button>
               </div>
             </div>

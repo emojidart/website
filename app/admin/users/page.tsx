@@ -20,6 +20,9 @@ import {
   MailCheck,
   User,
   Building2,
+  Sparkles,
+  SlidersHorizontal,
+
 } from "lucide-react"
 
 type ClubPlayer = { id: string; name: string }
@@ -90,6 +93,65 @@ function relTime(iso: string) {
   if (h < 24) return `vor ${h} Std`
   const d = Math.floor(h / 24)
   return `vor ${d} Tg`
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  const a = parts[0]?.[0] ?? "?"
+  const b = parts.length > 1 ? parts[parts.length - 1]?.[0] : ""
+  return (a + b).toUpperCase()
+}
+
+function cn(...xs: Array<string | false | null | undefined>) {
+  return xs.filter(Boolean).join(" ")
+}
+
+function StatCard(props: { label: string; value: number | string; hint?: string; icon: React.ReactNode }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_10px_30px_-18px_rgba(0,0,0,.6)] backdrop-blur">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-xs text-white/70">{props.label}</div>
+          <div className="mt-1 text-2xl font-black tracking-tight text-white">{props.value}</div>
+          {props.hint ? <div className="mt-1 text-xs text-white/70">{props.hint}</div> : null}
+        </div>
+        <div className="rounded-2xl bg-white/10 p-2 text-white">{props.icon}</div>
+      </div>
+      <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+    </div>
+  )
+}
+
+function SegButton(props: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={props.onClick}
+      className={cn(
+        "rounded-xl px-3 py-2 text-sm font-semibold transition",
+        props.active
+          ? "bg-gray-900 text-white shadow-sm"
+          : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200",
+      )}
+      type="button"
+    >
+      {props.children}
+    </button>
+  )
+}
+
+function SkeletonRow() {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="h-11 w-11 rounded-2xl bg-gray-100 animate-pulse" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-48 bg-gray-100 rounded animate-pulse" />
+          <div className="h-3 w-72 bg-gray-100 rounded animate-pulse" />
+        </div>
+        <div className="h-9 w-24 bg-gray-100 rounded-xl animate-pulse" />
+      </div>
+    </div>
+  )
 }
 
 export default function AdminUsersOverviewPage() {
@@ -170,7 +232,7 @@ export default function AdminUsersOverviewPage() {
       return {
         playerId: pl.id,
         playerName: pl.name,
-        hasAccount: !!(prof?.user_id),
+        hasAccount: !!prof?.user_id,
         userId: prof?.user_id ?? null,
         createdAt: prof?.created_at ?? null,
         lastSeenAt: prof?.last_seen_at ?? null,
@@ -198,9 +260,6 @@ export default function AdminUsersOverviewPage() {
           if (r.teamNames.length !== 0) return false
         } else if (teamFilter !== "ALL") {
           const teamName = teamById.get(teamFilter)
-          // teamFilter ist team_id -> wir prüfen über teamIds indirekt über Names nicht 100%,
-          // deshalb: lieber über playerTeams Map direkt
-          // (aber hier haben wir nur Names in Row – daher einfache Lösung:)
           if (!teamName) return false
           if (!r.teamNames.includes(teamName)) return false
         }
@@ -252,74 +311,65 @@ export default function AdminUsersOverviewPage() {
     return (
       <div
         key={r.playerId}
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4"
+        className="group rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md hover:-translate-y-[1px]"
       >
-        <div className="min-w-0 space-y-1">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="font-semibold text-gray-900 truncate">{r.playerName}</div>
-            {r.hasAccount ? (
-              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Konto</Badge>
-            ) : (
-              <Badge className="bg-zinc-100 text-zinc-700 border-zinc-200">kein Konto</Badge>
-            )}
-            {online ? <Badge className="bg-green-100 text-green-800 border-green-200">online</Badge> : null}
-            {isNew ? <Badge className="bg-blue-100 text-blue-800 border-blue-200">neu</Badge> : null}
-            {r.isAdmin ? (
-              <Badge className="bg-amber-100 text-amber-800 border-amber-200 inline-flex items-center gap-1">
-                <Crown className="w-3.5 h-3.5" /> admin
-              </Badge>
-            ) : null}
-            {r.isGuest ? <Badge className="bg-purple-100 text-purple-800 border-purple-200">gast</Badge> : null}
-            {r.emailConfirmed ? (
-              <Badge className="bg-sky-100 text-sky-800 border-sky-200 inline-flex items-center gap-1">
-                <MailCheck className="w-3.5 h-3.5" /> mail ok
-              </Badge>
-            ) : null}
-          </div>
-
-          <div className="text-xs text-gray-500 flex flex-wrap gap-x-3 gap-y-1">
-            <span className="inline-flex items-center gap-1">
-              <Building2 className="w-3.5 h-3.5" />
-              {r.teamNames.length ? r.teamNames.join(", ") : "Ohne Team"}
-            </span>
-
-            <span className="inline-flex items-center gap-1">
-              <CalendarDays className="w-3.5 h-3.5" />
-              Registriert: {r.createdAt ? formatDateTime(r.createdAt) : "—"}
-            </span>
-
-            <span className="inline-flex items-center gap-1">
-              <Clock3 className="w-3.5 h-3.5" />
-              Zuletzt online: {r.lastSeenAt ? `${formatDateTime(r.lastSeenAt)} (${relTime(r.lastSeenAt)})` : "—"}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          {r.userId ? (
-            <Button
-              variant="outline"
-              className="rounded-xl gap-2"
-              onClick={() => navigator.clipboard.writeText(r.userId || "")}
-              title="User-ID kopieren"
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div
+              className={cn(
+                "h-11 w-11 shrink-0 rounded-2xl grid place-items-center font-extrabold",
+                online ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-700",
+              )}
+              title={online ? "Online" : "Offline"}
             >
-              <User className="w-4 h-4" />
-              User-ID
-            </Button>
-          ) : null}
-        </div>
-      </div>
-    )
-  }
+              {initials(r.playerName)}
+            </div>
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-10">
-          <div className="flex items-center justify-center gap-2 text-gray-600">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Lade...
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                <div className="font-semibold text-gray-900 truncate">{r.playerName}</div>
+
+                {r.hasAccount ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Konto</Badge>
+                ) : (
+                  <Badge className="bg-zinc-100 text-zinc-700 border-zinc-200">kein Konto</Badge>
+                )}
+
+                {online ? <Badge className="bg-green-100 text-green-800 border-green-200">online</Badge> : null}
+                {isNew ? <Badge className="bg-blue-100 text-blue-800 border-blue-200">neu</Badge> : null}
+
+                {r.isAdmin ? (
+                  <Badge className="bg-amber-100 text-amber-800 border-amber-200 inline-flex items-center gap-1">
+                    <Crown className="w-3.5 h-3.5" /> admin
+                  </Badge>
+                ) : null}
+
+                {r.isGuest ? <Badge className="bg-purple-100 text-purple-800 border-purple-200">gast</Badge> : null}
+
+               
+              </div>
+
+              <div className="mt-2 text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
+                <span className="inline-flex items-center gap-1">
+                  <Building2 className="w-3.5 h-3.5" />
+                  {r.teamNames.length ? r.teamNames.join(", ") : "Ohne Team"}
+                </span>
+
+                <span className="inline-flex items-center gap-1">
+                  <CalendarDays className="w-3.5 h-3.5" />
+                  Registriert: {r.createdAt ? formatDateTime(r.createdAt) : "—"}
+                </span>
+
+                <span className="inline-flex items-center gap-1">
+                  <Clock3 className="w-3.5 h-3.5" />
+                  Zuletzt online: {r.lastSeenAt ? `${relTime(r.lastSeenAt)}` : "—"}
+                  {r.lastSeenAt ? <span className="text-gray-400">• {formatDateTime(r.lastSeenAt)}</span> : null}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 justify-end flex-wrap">
           </div>
         </div>
       </div>
@@ -330,58 +380,83 @@ export default function AdminUsersOverviewPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <section className="container mx-auto px-4 pt-6 pb-10">
-        <div className="max-w-5xl mx-auto space-y-4">
-          <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-700 text-white p-5 shadow-xl">
-            <div className="flex items-start gap-3">
-              <div className="rounded-xl bg-white/10 p-2">
-                <UserCheck className="w-6 h-6" />
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(15,23,42,.95),rgba(2,6,23,1))]" />
+        <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,.35),transparent_55%),radial-gradient(circle_at_80%_30%,rgba(234,179,8,.35),transparent_55%),radial-gradient(circle_at_30%_90%,rgba(168,85,247,.28),transparent_55%)]" />
+        <div className="relative container mx-auto px-4 pt-7 pb-7">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="rounded-2xl bg-white/10 p-3 text-white shadow-sm backdrop-blur">
+                  <UserCheck className="w-6 h-6" />
+                </div>
+                <div className="text-white">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Admin • User & Accounts
+                  </div>
+                  <h1 className="mt-2 text-3xl sm:text-4xl font-black tracking-tight">User Übersicht</h1>
+                  <p className="mt-1 text-sm text-white/80">
+                    Registriert, zuletzt online, Status & Teams – alles in einer modernen Übersicht.
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h1 className="text-2xl font-black leading-tight">User / Accounts</h1>
-                <p className="text-sm text-white/90 mt-1">
-                  Überblick: Registriert • Zuletzt online • Online-Status • Filter & Sortierung.
-                </p>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={fetchData}
+                  variant="secondary"
+                  className="gap-2 rounded-xl shadow-sm"
+                  disabled={loading}
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  Aktualisieren
+                </Button>
               </div>
-              <Button onClick={fetchData} variant="secondary" className="gap-2">
-                <RefreshCw className="w-4 h-4" />
-                Aktualisieren
-              </Button>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2">
-              <div className="rounded-xl bg-white/10 p-3">
-                <div className="text-xs text-white/80">Spieler</div>
-                <div className="text-xl font-black">{kpis.totalPlayers}</div>
-              </div>
-              <div className="rounded-xl bg-white/10 p-3">
-                <div className="text-xs text-white/80">Konten</div>
-                <div className="text-xl font-black">{kpis.accounts}</div>
-              </div>
-              <div className="rounded-xl bg-white/10 p-3">
-                <div className="text-xs text-white/80">Online</div>
-                <div className="text-xl font-black">{kpis.online}</div>
-              </div>
-              <div className="rounded-xl bg-white/10 p-3">
-                <div className="text-xs text-white/80">Neu (≤ {NEW_DAYS} Tg)</div>
-                <div className="text-xl font-black">{kpis.new}</div>
-              </div>
-              <div className="rounded-xl bg-white/10 p-3">
-                <div className="text-xs text-white/80">Inaktiv (≥ {INACTIVE_DAYS} Tg)</div>
-                <div className="text-xl font-black">{kpis.inactive}</div>
-              </div>
+            <div className="mt-5 grid grid-cols-2 md:grid-cols-5 gap-3">
+              <StatCard label="Spieler" value={kpis.totalPlayers} icon={<Users className="w-5 h-5" />} />
+              <StatCard label="Konten" value={kpis.accounts} icon={<User className="w-5 h-5" />} />
+              <StatCard
+                label="Online"
+                value={kpis.online}
+                hint={`≤ ${ONLINE_MINUTES} Min`}
+                icon={<Clock3 className="w-5 h-5" />}
+              />
+              <StatCard label="Neu" value={kpis.new} hint={`≤ ${NEW_DAYS} Tage`} icon={<CalendarDays className="w-5 h-5" />} />
+              <StatCard
+                label="Inaktiv"
+                value={kpis.inactive}
+                hint={`≥ ${INACTIVE_DAYS} Tage`}
+                icon={<ShieldAlert className="w-5 h-5" />}
+              />
             </div>
           </div>
+        </div>
+      </section>
 
+      <section className="container mx-auto px-4 pb-10">
+        <div className="max-w-6xl mx-auto mt-6 space-y-4">
+
+
+          {/* Error */}
           {error ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 p-4 flex gap-2 items-start">
+            <div className="rounded-2xl border border-red-200 bg-red-50 text-red-700 p-4 flex gap-2 items-start shadow-sm">
               <ShieldAlert className="w-4 h-4 mt-0.5" />
               <div className="text-sm">{error}</div>
             </div>
           ) : null}
 
-          <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
-            <CardContent className="p-5 sm:p-6 space-y-4">
+          {/* Filters */}
+          <Card className="border border-gray-200 shadow-sm rounded-2xl overflow-hidden">
+            <CardContent className="p-4 sm:p-5 space-y-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                <SlidersHorizontal className="w-4 h-4" />
+                Filter & Suche
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
                 <div className="relative lg:col-span-5">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -389,7 +464,7 @@ export default function AdminUsersOverviewPage() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Suchen: Name / Team …"
-                    className="pl-10 h-11"
+                    className="pl-10 h-11 rounded-xl"
                   />
                 </div>
 
@@ -397,7 +472,7 @@ export default function AdminUsersOverviewPage() {
                   <select
                     value={teamFilter}
                     onChange={(e) => setTeamFilter(e.target.value as TeamFilter)}
-                    className="w-full h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm shadow-sm"
+                    className="w-full h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10"
                   >
                     <option value="ALL">Alle Teams</option>
                     <option value="NO_TEAM">Ohne Team</option>
@@ -411,48 +486,63 @@ export default function AdminUsersOverviewPage() {
 
                 <div className="lg:col-span-2">
                   <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                    className="w-full h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm shadow-sm"
-                  >
-                    <option value="ALL">Alle</option>
-                    <option value="ONLINE">Online</option>
-                    <option value="NEW">Neu</option>
-                    <option value="INACTIVE">Inaktiv</option>
-                  </select>
-                </div>
-
-                <div className="lg:col-span-2">
-                  <select
                     value={sortKey}
                     onChange={(e) => setSortKey(e.target.value as SortKey)}
-                    className="w-full h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm shadow-sm"
+                    className="w-full h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10"
                   >
                     <option value="LAST_SEEN">Sort: zuletzt online</option>
                     <option value="REGISTERED">Sort: registriert</option>
                     <option value="NAME">Sort: Name</option>
                   </select>
                 </div>
+
+                <div className="lg:col-span-2 flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 h-11 shadow-sm">
+                  <span className="text-xs text-gray-500">Treffer</span>
+                  <span className="text-sm font-bold text-gray-900 tabular-nums">{filtered.length}</span>
+                </div>
               </div>
 
-              <div className="text-sm text-gray-600 flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Treffer: <b>{filtered.length}</b>
-              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
 
-              <div className="space-y-2">
-                {filtered.length ? (
-                  filtered.map(renderRow)
-                ) : (
-                  <div className="text-sm text-gray-600">Keine passenden Einträge gefunden.</div>
-                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <SegButton active={statusFilter === "ALL"} onClick={() => setStatusFilter("ALL")}>
+                    Alle
+                  </SegButton>
+                  <SegButton active={statusFilter === "ONLINE"} onClick={() => setStatusFilter("ONLINE")}>
+                    Online
+                  </SegButton>
+                  <SegButton active={statusFilter === "NEW"} onClick={() => setStatusFilter("NEW")}>
+                    Neu
+                  </SegButton>
+                  <SegButton active={statusFilter === "INACTIVE"} onClick={() => setStatusFilter("INACTIVE")}>
+                    Inaktiv
+                  </SegButton>
+                </div>
               </div>
 
               <div className="text-xs text-gray-500">
-                Online-Definition: letzte Aktivität ≤ {ONLINE_MINUTES} Minuten • Neu: ≤ {NEW_DAYS} Tage
+                Online-Definition: letzte Aktivität ≤ {ONLINE_MINUTES} Minuten • Neu: ≤ {NEW_DAYS} Tage • Inaktiv: ≥{" "}
+                {INACTIVE_DAYS} Tage
               </div>
             </CardContent>
           </Card>
+
+          {/* List */}
+          <div className="space-y-2">
+            {loading ? (
+              <div className="space-y-2">
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+              </div>
+            ) : filtered.length ? (
+              filtered.map(renderRow)
+            ) : (
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-600 shadow-sm">
+                Keine passenden Einträge gefunden.
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </div>

@@ -1,4 +1,6 @@
 "use client"
+
+import { Header } from "@/components/header"
 import { LeagueSection } from "@/components/league-section"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
@@ -20,29 +22,42 @@ export default function MemberLeaguePage() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+        <Header />
+
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
         </main>
+
         <MobileBottomNav />
       </div>
     )
   }
 
+  if (!session) return null
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+      <Header />
+
       <main className="flex-grow container mx-auto px-4 py-4 max-w-7xl">
+
+        {/* Back Button LINKS wie Lobby */}
+        <Button
+          variant="outline"
+          onClick={() => router.push("/member-profile-app")}
+          className="mb-4 flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-200"
+          size="sm"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Zurück zum Profil
+        </Button>
+
+        {/* Page Header */}
         <div className="mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/member-profile-app")}
-            className="flex items-center gap-2 mb-3"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Zurück zum Profil
-          </Button>
           <h1 className="text-2xl font-bold text-gray-900">Liga Tabellen</h1>
-          <p className="text-gray-600 mt-1 text-sm">Aktuelle Ligastände und Ergebnisse</p>
+          <p className="text-gray-600 mt-1 text-sm">
+            Aktuelle Ligastände und Ergebnisse
+          </p>
         </div>
 
         <LeagueSection />
