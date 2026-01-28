@@ -1,5 +1,6 @@
+// layout.tsx
 import type React from "react"
-import type { Metadata, Viewport } from "next"
+import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { SplashScreen } from "@/components/splash-screen"
 import { PresenceTracker } from "@/components/presence-tracker"
@@ -22,13 +23,6 @@ export const metadata: Metadata = {
   },
 }
 
-export const viewport: Viewport = {
-  themeColor: "#d97706",
-  width: "device-width",
-  initialScale: 1,
-  
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -36,6 +30,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#d97706" />
+      </head>
       <body className={`${inter.className} antialiased`}>
         <SplashScreen />
         <PresenceTracker />

@@ -38,6 +38,66 @@ import { DKOSelfRegistrationModal } from "@/components/dko-self-registration-mod
 import { PushNotificationDialog } from "@/components/push-notification-dialog"
 import { Confetti, CarnivalBanner } from "@/components/confetti"
 
+function DebugViewportOverlay() {
+  const [info, setInfo] = useState(() => ({
+    innerWidth: "-",
+    innerHeight: "-",
+    clientWidth: "-",
+    clientHeight: "-",
+    devicePixelRatio: "-",
+    visualScale: "-",
+    userAgent: "-",
+    viewportMeta: "-",
+  }))
+
+  useEffect(() => {
+    const read = () => {
+      const docEl = document.documentElement
+      const vv = window.visualViewport
+      const meta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null
+      setInfo({
+        innerWidth: String(window.innerWidth),
+        innerHeight: String(window.innerHeight),
+        clientWidth: String(docEl?.clientWidth ?? "-"),
+        clientHeight: String(docEl?.clientHeight ?? "-"),
+        devicePixelRatio: String(window.devicePixelRatio ?? "-"),
+        visualScale: vv ? String(vv.scale) : "-",
+        userAgent: navigator.userAgent,
+        viewportMeta: meta?.content ?? "(kein meta viewport gefunden)",
+      })
+    }
+
+    read()
+    window.addEventListener("resize", read)
+    window.visualViewport?.addEventListener("resize", read)
+    window.visualViewport?.addEventListener("scroll", read)
+
+    return () => {
+      window.removeEventListener("resize", read)
+      window.visualViewport?.removeEventListener("resize", read)
+      window.visualViewport?.removeEventListener("scroll", read)
+    }
+  }, [])
+
+  return (
+    <div
+      className="fixed bottom-2 left-2 z-[99999] max-w-[92vw] rounded-lg bg-black/80 text-white px-3 py-2 text-[11px] leading-snug shadow-lg"
+      style={{ backdropFilter: "blur(6px)" }}
+    >
+      <div className="font-bold mb-1">Debug (Viewport)</div>
+      <div>innerWidth/Height: {info.innerWidth} × {info.innerHeight}</div>
+      <div>clientWidth/Height: {info.clientWidth} × {info.clientHeight}</div>
+      <div>dpr: {info.devicePixelRatio} · visualViewport.scale: {info.visualScale}</div>
+      <div className="mt-1 break-words opacity-90">
+        <span className="font-semibold">meta viewport:</span> {info.viewportMeta}
+      </div>
+      <div className="mt-1 break-words opacity-80">
+        <span className="font-semibold">UA:</span> {info.userAgent}
+      </div>
+    </div>
+  )
+}
+
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 interface Match {
@@ -1141,6 +1201,7 @@ const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0"
       <Confetti />
       <Header />
       <CarnivalBanner />
+      <DebugViewportOverlay />
 
       {/*  */}
       <div className="h-3 sm:h-4" aria-hidden="true" />

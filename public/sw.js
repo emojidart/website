@@ -1,17 +1,18 @@
+// sw.js
 // Service Worker for Push Notifications
 self.addEventListener("install", (event) => {
-  console.log("[v0] Service Worker installing...")
+  console.log("[v1] Service Worker installing...")
   self.skipWaiting()
 })
 
 self.addEventListener("activate", (event) => {
-  console.log("[v0] Service Worker activated")
+  console.log("[v1] Service Worker activated")
   event.waitUntil(clients.claim())
 })
 
 // Handle push notifications
 self.addEventListener("push", (event) => {
-  console.log("[v0] Push notification received:", event)
+  console.log("[v1] Push notification received:", event)
 
   let notificationData = {
     title: "EMD Vereinsapp",
@@ -35,7 +36,7 @@ self.addEventListener("push", (event) => {
         data: data.data || {},
       }
     } catch (e) {
-      console.error("[v0] Error parsing push data:", e)
+      console.error("[v1] Error parsing push data:", e)
     }
   }
 
@@ -57,7 +58,7 @@ self.addEventListener("push", (event) => {
 
 // Handle notification clicks
 self.addEventListener("notificationclick", (event) => {
-  console.log("[v0] Notification clicked:", event)
+  console.log("[v1] Notification clicked:", event)
   event.notification.close()
 
   const link = event.notification.data?.link || "/veranstaltungen"
