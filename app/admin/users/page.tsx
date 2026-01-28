@@ -22,7 +22,13 @@ import {
   Building2,
   Sparkles,
   SlidersHorizontal,
-
+  BarChart3,
+  Flame,
+  Eye,
+  TrendingUp,
+  LineChart,
+  Calendar,
+  CalendarRange,
 } from "lucide-react"
 
 type ClubPlayer = { id: string; name: string }
@@ -167,6 +173,14 @@ export default function AdminUsersOverviewPage() {
   const [teams, setTeams] = useState<Team[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
 
+// ✅ Seitenaufrufe (Counter aus page_view_counts)
+const [pvLoading, setPvLoading] = useState(true)
+const [pvTotal, setPvTotal] = useState<number>(0)
+const [pvTop, setPvTop] = useState<Array<{ path: string; total: number }>>([])
+  const [pvToday, setPvToday] = useState<number>(0)
+  const [pvLast7, setPvLast7] = useState<number>(0)
+  const [pvSeries7, setPvSeries7] = useState<Array<{ date: string; total: number }>>([])
+
   const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t.name])), [teams])
 
   const playerTeams = useMemo(() => {
@@ -213,9 +227,71 @@ export default function AdminUsersOverviewPage() {
       setLoading(false)
     }
   }
+const fetchPageViews = async () => {
+  setPvLoading(true)
+  try {
+    // 1) Gesamt-Counter
+    const { data, error } = await supabase
+      .from("page_view_counts")
+      .select("path,total,updated_at")
+
+    if (error) throw error
+
+    const rows = (data || []) as Array<{ path: string; total: number; updated_at?: string }>
+    const total = rows.reduce((sum, r) => sum + Number(r.total || 0), 0)
+
+    const top = rows
+      .map((r) => ({ path: String(r.path || "/"), total: Number(r.total || 0) }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 8)
+
+    setPvTotal(total)
+    setPvTop(top)
+
+    // 2) Tages-Counter (letzte 7 Tage)
+    const dates = lastNDates(7)
+    const dateIsos = dates.map((d) => d.iso)
+
+    const { data: daily, error: dErr } = await supabase
+      .from("page_view_daily_counts")
+      .select("day,path,total")
+      .in("day", dateIsos)
+
+    if (dErr) throw dErr
+
+    const dailyRows = (daily || []) as Array<{ day: string; path: string; total: number }>
+
+    const byDay = new Map<string, number>()
+    for (const dr of dailyRows) {
+      byDay.set(dr.day, (byDay.get(dr.day) || 0) + Number(dr.total || 0))
+    }
+
+    const series = dates.map((d) => ({ date: d.label, total: byDay.get(d.iso) || 0 }))
+    setPvSeries7(series)
+
+    const todayIso = dates[dates.length - 1]?.iso
+    const todayTotal = todayIso ? (byDay.get(todayIso) || 0) : 0
+    setPvToday(todayTotal)
+
+    const last7Total = series.reduce((s, x) => s + x.total, 0)
+    setPvLast7(last7Total)
+  } catch (e) {
+    console.warn("fetchPageViews failed:", e)
+    setPvTotal(0)
+    setPvTop([])
+    setPvToday(0)
+    setPvLast7(0)
+    setPvSeries7([])
+  } finally {
+    setPvLoading(false)
+  }
+}
+
+
 
   useEffect(() => {
     fetchData()
+    fetchPageViews()
   }, [])
 
   const rows: Row[] = useMemo(() => {
@@ -398,7 +474,7 @@ export default function AdminUsersOverviewPage() {
                   </div>
                   <h1 className="mt-2 text-3xl sm:text-4xl font-black tracking-tight">User Übersicht</h1>
                   <p className="mt-1 text-sm text-white/80">
-                    Registriert, zuletzt online, Status & Teams – alles in einer modernen Übersicht.
+                    Registriert, zuletzt online, Status & Teams, Seitenaufrufe.
                   </p>
                 </div>
               </div>
@@ -433,7 +509,36 @@ export default function AdminUsersOverviewPage() {
                 icon={<ShieldAlert className="w-5 h-5" />}
               />
             </div>
-          </div>
+          
+<div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+  <StatCard
+    label="Heute"
+    value={pvLoading ? "…" : pvToday}
+    hint="Seitenaufrufe heute"
+    icon={<Calendar className="w-5 h-5" />}
+  />
+  <StatCard
+    label="Letzte 7 Tage"
+    value={pvLoading ? "…" : pvLast7}
+    hint="Summe 7 Tage"
+    icon={<CalendarRange className="w-5 h-5" />}
+  />
+  <StatCard
+    label="Gesamt"
+    value={pvLoading ? "…" : pvTotal}
+    hint="Alle Seiten"
+    icon={<BarChart3 className="w-5 h-5" />}
+  />
+  <StatCard
+    label="Top-Seite"
+    value={pvLoading ? "…" : (pvTop[0]?.path ?? "—")}
+    hint={pvLoading ? "" : `${pvTop[0]?.total ?? 0} Aufrufe`}
+    icon={<Flame className="w-5 h-5" />}
+  />
+</div>
+
+
+</div>
         </div>
       </section>
 
@@ -449,6 +554,101 @@ export default function AdminUsersOverviewPage() {
             </div>
           ) : null}
 
+
+{/* Pageviews */}
+<Card className="border border-gray-200 shadow-sm rounded-2xl overflow-hidden">
+  <CardContent className="p-4 sm:p-5">
+    <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+        <BarChart3 className="w-4 h-4" />
+        Seitenaufrufe
+      </div>
+
+      <Button onClick={fetchPageViews} variant="secondary" className="gap-2 rounded-xl shadow-sm" disabled={pvLoading}>
+        {pvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+        Aktualisieren
+      </Button>
+    </div>
+
+    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="text-xs text-gray-500">Gesamt</div>
+        <div className="mt-1 text-3xl font-black tracking-tight text-gray-900 tabular-nums">
+          {pvLoading ? "…" : pvTotal}
+        </div>
+        <div className="mt-1 text-xs text-gray-500">Alle Seiten kumuliert</div>
+      </div>
+
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="text-xs text-gray-500">Top-Seiten</div>
+
+        {pvLoading ? (
+          <div className="mt-2 text-sm text-gray-600 flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Lade …
+          </div>
+        ) : pvTop.length ? (
+          <div className="mt-3 space-y-2">
+            {pvTop.map((p, idx) => (
+              <div
+                key={`${p.path}-${idx}`}
+                className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-gray-900 truncate">{p.path}</div>
+                  <div className="text-xs text-gray-500">Rank #{idx + 1}</div>
+                </div>
+                <div className="text-sm font-black tabular-nums text-gray-900">{p.total}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-2 text-sm text-gray-600">Noch keine Daten vorhanden.</div>
+        )}
+      </div>
+
+<div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:col-span-2">
+  <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="text-xs text-gray-500 inline-flex items-center gap-2">
+      <LineChart className="w-4 h-4" />
+      Trend (letzte 7 Tage)
+    </div>
+    <div className="text-xs text-gray-500">Summe: {pvLoading ? "…" : pvLast7}</div>
+  </div>
+
+  {pvLoading ? (
+    <div className="mt-3 text-sm text-gray-600 flex items-center gap-2">
+      <Loader2 className="w-4 h-4 animate-spin" />
+      Lade …
+    </div>
+  ) : (
+    <div className="mt-3 space-y-2">
+      {(() => {
+        const max = Math.max(1, ...pvSeries7.map((x) => x.total))
+        return pvSeries7.map((x, idx) => (
+          <div key={`${x.date}-${idx}`} className="flex items-center gap-3">
+            <div className="w-12 text-xs text-gray-500 tabular-nums">{x.date}</div>
+            <div className="flex-1">
+              <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                <div
+                  className="h-2 rounded-full bg-gray-900"
+                                  style={{ width: `${Math.round((x.total / max) * 100)}%` }}
+                />
+              </div>
+            </div>
+            <div className="w-12 text-right text-xs font-semibold text-gray-700 tabular-nums">{x.total}</div>
+          </div>
+        ))
+      })()}
+    </div>
+  )}
+</div>
+
+            </div>
+
+    
+  </CardContent>
+</Card>
           {/* Filters */}
           <Card className="border border-gray-200 shadow-sm rounded-2xl overflow-hidden">
             <CardContent className="p-4 sm:p-5 space-y-4">
@@ -547,4 +747,24 @@ export default function AdminUsersOverviewPage() {
       </section>
     </div>
   )
+}
+
+function isoDate(d: Date) {
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, "0")
+  const dd = String(d.getDate()).padStart(2, "0")
+  return `${yyyy}-${mm}-${dd}`
+}
+
+function lastNDates(n: number) {
+  const out: Array<{ iso: string; label: string }> = []
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() - i)
+    const iso = isoDate(d)
+    const label = d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
+    out.push({ iso, label })
+  }
+  return out
 }

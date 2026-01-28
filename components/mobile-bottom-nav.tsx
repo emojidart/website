@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Home,
   Trophy,
@@ -14,157 +14,187 @@ import {
   MessageCircle,
   Images,
   LayoutDashboard,
+  History,
+  Radio,
+  CreditCard,
+  X,
+  Building2,
 } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
-import { useRouter } from "next/navigation"
+
+type NavItem = {
+  name: string
+  href: string
+  icon: any
+}
 
 export function MobileBottomNav() {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, loading, isAdmin } = useAuth() // Added isAdmin from useAuth
+  const { user, loading, isAdmin } = useAuth()
   const isLoggedIn = !!user
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
 
+  const closeMore = () => setIsMoreMenuOpen(false)
+
+  useEffect(() => {
+    if (!isMoreMenuOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeMore()
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [isMoreMenuOpen])
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    setIsMoreMenuOpen(false)
+    closeMore()
     router.push("/")
   }
 
-  const staticNavItems = [
-    {
-      name: "Home",
-      href: "/",
-      icon: Home,
-    },
-    {
-      name: "Turniere",
-      href: "/veranstaltungen",
-      icon: Trophy,
-    },
-    {
-      name: "Liga",
-      href: "/liga-statistiken-app",
-      icon: Table,
-    },
-    {
-      name: "Verein",
-      href: "/new-club",
-      icon: Users,
-    },
-  ]
+  /* ===== MAIN BAR ===== */
+  const staticNavItems: NavItem[] = useMemo(
+    () => [
+      { name: "Home", href: "/", icon: Home },
+      { name: "Turniere", href: "/veranstaltungen", icon: Trophy },
+      { name: "Liga", href: "/liga-statistiken-app", icon: Table },
+      { name: "Verein", href: "/new-club", icon: Users },
+    ],
+    [],
+  )
 
-  const moreMenuItems = [
-    {
-      name: isLoggedIn ? "Profil" : "Login",
-      href: isLoggedIn ? "/member-profile-app" : "/member-login",
-      icon: isLoggedIn ? UserCircle : LogIn,
-      action: null,
-    },
-    {
-      name: "FAQ",
-      href: "/faq",
-      icon: MessageCircle,
-      action: null,
-    },
-    {
-      name: "Über uns",
-      href: "/uber-uns",
-      icon: HelpCircle,
-      action: null,
-    },
-    {
-      name: "Kontakt",
-      href: "/kontakt",
-      icon: MessageCircle,
-      action: null,
-    },
-  ]
+  /* ===== QUICK BAR ===== */
+  const quickItems: NavItem[] = useMemo(
+    () => [
+      { name: "Lion Cup", href: "/tournament-series-app", icon: Trophy },
+      { name: "Buffalo Cup", href: "/buffalo_steel_cup_tabelle", icon: Trophy },
+      { name: "History", href: "/tournament-history", icon: History },
+      {
+        name: isLoggedIn ? "Profil" : "Login",
+        href: isLoggedIn ? "/member-profile-app" : "/member-login",
+        icon: isLoggedIn ? UserCircle : LogIn,
+      },
+    ],
+    [isLoggedIn],
+  )
 
-  if (isLoggedIn) {
-    moreMenuItems.splice(1, 0, {
-      name: "Mitgliedskarte",
-      href: "/member-card",
-      icon: UserCircle,
-      action: null,
-    })
+  /* ===== MORE MENU ===== */
+  const moreMenuItems = useMemo(() => {
+    const items: any[] = [
+      {
+        name: isLoggedIn ? "Profil" : "Login",
+        href: isLoggedIn ? "/member-profile-app" : "/member-login",
+        icon: isLoggedIn ? UserCircle : LogIn,
+        action: null,
+      },
+      {
+        name: "Mitgliedskarte",
+        href: "/member-card",
+        icon: CreditCard,
+        action: null,
+        requiresLogin: true,
+      },
+      { name: "Liveticker", href: "/live-all-app", icon: Radio, action: null },
+      { name: "Livestream", href: "/livestream", icon: Radio, action: null },
+      // anderes Icon für EMD Campus:
+      { name: "EMD Campus", href: "/emd-campus", icon: Building2, action: null },
+      { name: "Match Galerie", href: "/match-galerie", icon: Images, action: null, requiresLogin: true },
+      { name: "FAQ", href: "/faq", icon: MessageCircle, action: null },
+      { name: "Über uns", href: "/uber-uns", icon: HelpCircle, action: null },
+      { name: "Kontakt", href: "/kontakt", icon: MessageCircle, action: null },
+    ]
 
-    moreMenuItems.splice(2, 0, {
-      name: "Match Galerie",
-      href: "/match-galerie",
-      icon: Images,
-      action: null,
-    })
+    let filtered = items.filter((it) => !(it.requiresLogin && !isLoggedIn))
 
     if (isAdmin) {
-      moreMenuItems.splice(3, 0, {
-        name: "Admin",
-        href: "/admin",
-        icon: LayoutDashboard,
-        action: null,
-      })
+      filtered.splice(5, 0, { name: "Admin", href: "/admin", icon: LayoutDashboard, action: null })
     }
 
-    moreMenuItems.push({
-      name: "Abmelden",
-      href: "#",
-      icon: LogOut,
-      action: handleLogout,
-    })
-  }
+    if (isLoggedIn) {
+      filtered.push({ name: "Abmelden", href: "#", icon: LogOut, action: handleLogout, danger: true })
+    }
 
-  if (loading) {
+    return filtered
+  }, [isLoggedIn, isAdmin])
+
+  /* ===== HELPERS ===== */
+  const QuickLink = ({ href, name, icon }: NavItem) => {
+    const active = pathname === href
+    const Icon = icon
     return (
-      <>
-        <div className="h-20 md:hidden" />
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg md:hidden">
-          <div className="grid grid-cols-5 h-16">
-            {staticNavItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <div key={item.href} className="flex flex-col items-center justify-center gap-1 text-gray-400">
-                  <Icon className="h-6 w-6" />
-                  <span className="text-xs font-medium">{item.name}</span>
-                </div>
-              )
-            })}
-            <div className="flex flex-col items-center justify-center gap-1 text-gray-400">
-              <MoreHorizontal className="h-6 w-6" />
-              <span className="text-xs font-medium">Mehr</span>
-            </div>
-          </div>
-        </nav>
-      </>
+      <Link
+        href={href}
+        className={cn(
+          "flex items-center justify-center gap-1 text-xs font-semibold px-2",
+          active ? "text-orange-600" : "text-gray-700 hover:text-gray-900",
+        )}
+        onClick={closeMore}
+      >
+        <Icon className="h-4 w-4" strokeWidth={active ? 2.5 : 2.3} />
+        <span className="truncate">{name}</span>
+      </Link>
     )
   }
 
+  if (loading) return <div className="h-28 md:hidden" />
+
   return (
     <>
-      <div className="h-20 md:hidden" />
+      <div className="h-28 md:hidden" />
 
+      {/* ===== MORE OVERLAY ===== */}
       {isMoreMenuOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 z-40 md:hidden" onClick={() => setIsMoreMenuOpen(false)}>
-          <div className="absolute bottom-16 right-0 left-0 bg-white rounded-t-2xl shadow-2xl">
-            <div className="p-4">
-              <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Mehr Optionen</h3>
-              <div className="space-y-2">
+        <div className="fixed inset-0 z-[60] md:hidden">
+          {/* Backdrop - klick schließt */}
+          <button
+            aria-label="Schließen"
+            className="absolute inset-0 bg-black/30"
+            onClick={closeMore}
+          />
+
+          {/* Bottom Sheet */}
+          <div className="absolute left-0 right-0 bottom-0 pb-28">
+            <div className="mx-3 rounded-t-2xl bg-white shadow-2xl border overflow-hidden">
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-12 h-1 bg-gray-300 rounded-full" />
+                  <h3 className="text-lg font-semibold ml-2">Mehr Optionen</h3>
+                </div>
+                <button
+                  aria-label="Schließen"
+                  onClick={closeMore}
+                  className="p-2 rounded-lg hover:bg-gray-100 text-gray-700"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="max-h-[55vh] overflow-y-auto px-4 pb-4 space-y-2">
                 {moreMenuItems.map((item) => {
                   const Icon = item.icon
+                  const danger = item.danger
 
                   if (item.action) {
                     return (
                       <button
                         key={item.name}
                         onClick={item.action}
-                        className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100 transition-colors duration-200 w-full text-left"
+                        className={cn(
+                          "flex items-center gap-4 p-3 rounded-lg w-full text-left transition-colors",
+                          danger
+                            ? "text-red-600 font-semibold hover:bg-red-50"
+                            : "hover:bg-gray-100 text-gray-900",
+                        )}
                       >
-                        <Icon className="h-6 w-6 text-gray-600" />
-                        <span className="text-base font-medium text-gray-900">{item.name}</span>
+                        <Icon
+                          className={cn("h-6 w-6", danger ? "text-red-600" : "text-gray-800")}
+                          strokeWidth={2.3}
+                        />
+                        <span>{item.name}</span>
                       </button>
                     )
                   }
@@ -173,11 +203,11 @@ export function MobileBottomNav() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                      onClick={() => setIsMoreMenuOpen(false)}
+                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100 text-gray-900"
+                      onClick={closeMore}
                     >
-                      <Icon className="h-6 w-6 text-gray-600" />
-                      <span className="text-base font-medium text-gray-900">{item.name}</span>
+                      <Icon className="h-6 w-6 text-gray-800" strokeWidth={2.3} />
+                      <span>{item.name}</span>
                     </Link>
                   )
                 })}
@@ -187,33 +217,50 @@ export function MobileBottomNav() {
         </div>
       )}
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 md:hidden safe-area-inset-bottom">
-        <div className="grid grid-cols-5 h-16">
-          {staticNavItems.map((item) => {
-            const isActive = pathname === item.href
-            const Icon = item.icon
+      {/* ===== NAV ===== */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-area-inset-bottom">
+        {/* Quickbar */}
+        <div className="mx-3 mb-2 rounded-2xl bg-white/90 backdrop-blur border shadow-lg">
+          <div className="grid grid-cols-4 h-10">
+            {quickItems.map((q) => (
+              <QuickLink key={q.href} {...q} />
+            ))}
+          </div>
+        </div>
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex flex-col items-center justify-center gap-1 transition-colors duration-200",
-                  isActive ? "text-orange-600" : "text-gray-500 hover:text-gray-700",
-                )}
-              >
-                <Icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2} />
-                <span className={cn("text-[10px] font-medium", isActive && "font-semibold")}>{item.name}</span>
-              </Link>
-            )
-          })}
-          <button
-            onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-            className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-gray-700 transition-colors duration-200"
-          >
-            <MoreHorizontal className="h-6 w-6" strokeWidth={2} />
-            <span className="text-[10px] font-medium">Mehr</span>
-          </button>
+        {/* Main Bar */}
+        <div className="bg-white border-t shadow-lg">
+          <div className="grid grid-cols-5 h-16">
+            {staticNavItems.map((item) => {
+              const isActive = pathname === item.href
+              const Icon = item.icon
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-1",
+                    isActive ? "text-orange-600" : "text-gray-600 hover:text-gray-900",
+                  )}
+                >
+                  <Icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2.3} />
+                  <span className="text-[10px] font-medium">{item.name}</span>
+                </Link>
+              )
+            })}
+
+            <button
+              onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+              className={cn(
+                "flex flex-col items-center justify-center gap-1",
+                isMoreMenuOpen ? "text-orange-600" : "text-gray-600 hover:text-gray-900",
+              )}
+            >
+              <MoreHorizontal className="h-6 w-6" />
+              <span className="text-[10px] font-medium">Mehr</span>
+            </button>
+          </div>
         </div>
       </nav>
     </>

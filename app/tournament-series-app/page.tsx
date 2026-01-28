@@ -110,16 +110,6 @@ interface MatchResult {
 
 const QUALIFICATION_REQUIREMENT = 20
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-}
-
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 100, damping: 12 } },
@@ -1302,10 +1292,7 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
       <Header />
 
-      <motion.main
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+      <main
         className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl space-y-6 sm:space-y-8 pb-24"
       >
         <div className="px-4">
@@ -2098,7 +2085,7 @@ const mappedData = Array.from(playerStats.values()).map((stats) => {
             </div>
           </div>
         )}
-      </motion.main>
+      </main>
 
       <footer className="py-4 sm:py-6 bg-gray-200 text-gray-600 text-xs sm:text-sm text-center mt-8 border-t border-gray-300 px-4">
         <p>&copy; 2025 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>

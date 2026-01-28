@@ -126,7 +126,7 @@ export function Header() {
 
                   <NavigationMenuItem>
                     <NavigationMenuTrigger className="h-11 bg-transparent hover:bg-orange-50 hover:text-orange-600 font-semibold">
-                      EVENTS
+                      TURNIERE
                     </NavigationMenuTrigger>
                     <NavigationMenuContent>
                       <ul className="grid w-[420px] gap-2 p-4">
@@ -143,6 +143,20 @@ export function Header() {
                             </a>
                           </NavigationMenuLink>
                         </li>
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <a
+                              href="/tournament-history"
+                              className="block select-none space-y-1 rounded-lg p-4 leading-none no-underline outline-none transition-all hover:bg-orange-50 hover:shadow-md border border-transparent hover:border-orange-100"
+                            >
+                              <div className="text-sm font-semibold leading-none text-orange-600">Turnier Historie</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1.5">
+                                Alle gespielten Turniere & Ergebnisse
+                              </p>
+                            </a>
+                          </NavigationMenuLink>
+                        </li>
+
                         <li>
                           <NavigationMenuLink asChild>
                             <a
