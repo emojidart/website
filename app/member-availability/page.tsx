@@ -73,6 +73,7 @@ type AvailabilityRow = {
   status: AvailabilityStatus
   note: string | null
   updated_at: string
+  club_players?: { id: string; name: string; photo_url: string | null } | null
 }
 
 type TeamPlayer = {
@@ -86,6 +87,7 @@ type LineupRow = {
   player_id: string
   position: number
   is_substitute: boolean
+  club_players?: { id: string; name: string; photo_url: string | null } | null
 }
 
 type ChatMessage = {
@@ -174,6 +176,7 @@ export default function MemberAvailabilityPage() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
+  const [hasAdminAccess, setHasAdminAccess] = useState(false)
   const [matches, setMatches] = useState<Match[]>([])
   const [opponentTeams, setOpponentTeams] = useState<OpponentTeam[]>([])
 
@@ -214,7 +217,7 @@ export default function MemberAvailabilityPage() {
     if (!session?.user) return
     ;(async () => {
       setLoading(true)
-      await fetchUserProfile()
+      await Promise.all([fetchUserProfile(), fetchAdminAccess()])
       setLoading(false)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -227,6 +230,34 @@ export default function MemberAvailabilityPage() {
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, teamMemberships])
+
+  async function fetchAdminAccess() {
+    if (!session?.user) return
+    // Vereinsbereich Admin / Verwaltung:
+    // Zeige Verwaltungs-Boxen nur, wenn der Benutzer in dieser Tabelle existiert
+    // UND mindestens ein Feld, das mit "allowed" beginnt, auf true steht.
+    // (Wenn alle allowed* Felder false sind -> nichts anzeigen)
+    //
+    // Falls eure Tabelle anders heißt, hier den Namen anpassen:
+    const { data, error } = await supabase
+      .from("club_admins")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .maybeSingle()
+
+    if (error || !data) {
+      setHasAdminAccess(false)
+      return
+    }
+
+    const anyAllowed = Object.entries(data as Record<string, any>).some(([key, value]) => {
+      if (!key.toLowerCase().startsWith("allowed")) return false
+      return value === true
+    })
+
+    setHasAdminAccess(anyAllowed)
+  }
+
 
   async function fetchUserProfile() {
     const { data: profileData, error: profileError } = await supabase
@@ -480,7 +511,7 @@ async function loadMatchData(matchId: string, teamId: string) {
     // Availability
     const { data: av } = await supabase
       .from("match_availability")
-      .select("player_id,status,note,updated_at")
+      .select("player_id,status,note,updated_at, club_players:club_players(id,name,photo_url)")
       .eq("match_id", matchId)
       .eq("team_id", teamId)
 
@@ -499,7 +530,7 @@ async function loadMatchData(matchId: string, teamId: string) {
     // Lineup
     const { data: lu } = await supabase
       .from("match_lineups")
-      .select("id,player_id,position,is_substitute")
+      .select("id,player_id,position,is_substitute, club_players:club_players(id,name,photo_url)")
       .eq("match_id", matchId)
       .eq("team_id", teamId)
       .order("position", { ascending: true })
@@ -510,14 +541,34 @@ async function loadMatchData(matchId: string, teamId: string) {
   const isCaptainOrCoForTeam = useMemo(() => {
     if (!selectedTeamId) return false
     const m = teamMemberships.find((t) => t.team_id === selectedTeamId)
-    return m?.role === "Captain" || m?.role === "Co-Captain"
-  }, [selectedTeamId, teamMemberships])
+    return (m?.role === "Captain" || m?.role === "Co-Captain" || hasAdminAccess)
+
+  }, [selectedTeamId, teamMemberships, hasAdminAccess])
 
   const availabilityByPlayer = useMemo(() => {
     const m = new Map<string, AvailabilityRow>()
     for (const a of availability) m.set(a.player_id, a)
     return m
   }, [availability])
+
+
+  const displayPlayers = useMemo(() => {
+    if (teamPlayers.length > 0) return teamPlayers
+
+    const m = new Map<string, TeamPlayer>()
+
+    for (const a of availability) {
+      const cp = a.club_players
+      if (cp?.id) m.set(cp.id, { id: cp.id, name: cp.name, photo_url: cp.photo_url })
+    }
+
+    for (const lp of lineupPlayers) {
+      const cp = lp.club_players
+      if (cp?.id) m.set(cp.id, { id: cp.id, name: cp.name, photo_url: cp.photo_url })
+    }
+
+    return Array.from(m.values())
+  }, [teamPlayers, availability, lineupPlayers])
 
   async function setAvailabilityStatus(status: AvailabilityStatus) {
     if (!dialogMatch || !selectedTeamId || !profile?.player_id) return
@@ -908,10 +959,10 @@ async function loadMatchData(matchId: string, teamId: string) {
                       <CardTitle className="text-base">Team-Zusagen</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      {teamPlayers.length === 0 ? (
+                      {displayPlayers.length === 0 ? (
                         <div className="text-sm text-muted-foreground">Keine Teamspieler gefunden.</div>
                       ) : (
-                        teamPlayers.map((p) => {
+                        displayPlayers.map((p) => {
                           const a = availabilityByPlayer.get(p.id)
                           const s = a?.status ?? "none"
                           const entry = lineupPlayers.find((x) => x.player_id === p.id)
@@ -978,11 +1029,11 @@ async function loadMatchData(matchId: string, teamId: string) {
                       ) : (
                         <div className="grid gap-2">
                           {starters.map((lp) => {
-                            const p = teamPlayers.find((x) => x.id === lp.player_id)
+                            const p = displayPlayers.find((x) => x.id === lp.player_id)
                             return (
                               <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3">
                                 <div className="font-medium">
-                                  {p?.name ?? lp.player_id}
+                                  {p?.name ?? lp.club_players?.name ?? lp.player_id}
                                 </div>
                               </div>
                             )
@@ -995,10 +1046,10 @@ async function loadMatchData(matchId: string, teamId: string) {
                           <div className="text-xs text-gray-500 mt-3">Ersatzspieler</div>
                           <div className="grid gap-2">
                             {substitutes.map((lp) => {
-                              const p = teamPlayers.find((x) => x.id === lp.player_id)
+                              const p = displayPlayers.find((x) => x.id === lp.player_id)
                               return (
                                 <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 opacity-80">
-                                  <div className="font-medium">{p?.name ?? lp.player_id}</div>
+                                  <div className="font-medium">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
                                   <Badge variant="outline">Ersatz</Badge>
                                 </div>
                               )
@@ -1008,7 +1059,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                       )}
 
                       {!isCaptainOrCoForTeam ? (
-                        <div className="text-xs text-gray-500">Nur Captain/Co-Captain kann die Aufstellung ändern.</div>
+                        <div className="text-xs text-gray-500">Nur Captain/Co-Captain oder Vereins-Admin kann die Aufstellung ändern.</div>
                       ) : null}
                     </CardContent>
                   </Card>
