@@ -122,12 +122,24 @@ export default function MemberStatisticsPage() {
           const teamIds = teamData.map((team) => team.team_id)
 
           const { data: membersData, error: membersError } = await supabase
-            .from("team_members")
-            .select(
-              `id, team_id, player_id, role, club_players (id, name, photo_url, throwing_hand, age, origin)`
-            )
-            .in("team_id", teamIds)
-            .order("role", { ascending: false })
+  .from("team_members")
+  .select(`
+    id,
+    team_id,
+    player_id,
+    role,
+    club_players:club_players!team_members_player_id_fkey (
+      id,
+      name,
+      photo_url,
+      throwing_hand,
+      age,
+      origin
+    )
+  `)
+  .in("team_id", teamIds)
+  .order("role", { ascending: false })
+
 
           if (membersError) throw membersError
 

@@ -52,9 +52,10 @@ import Link from "next/link"
 import { UserManagement } from "@/components/user-management"
 import { AttendanceManagement } from "@/components/attendance-management"
 import { LeagueManagement } from "@/components/league-management"
+import { RolePermissionsManager } from "@/components/role-permissions-manager"
 
 export default function AdminPage() {
-  const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
+  const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading, clubRoles } = useAuth()
   const { fetchAndRenderAllTables, fetchPlayers } = useDartData()
 
   const [isPlayerListModalOpen, setIsPlayerListModalOpen] = useState(false)
@@ -88,9 +89,75 @@ export default function AdminPage() {
     | "campus-registrations"
     | "credit-loader"
     | "lion-cup-settings"
+    | "role-permissions"
   >("dashboard")
 
-  const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
+  
+  const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
+  const [roleLoading, setRoleLoading] = useState(false)
+
+// ✅ Lädt User-Seiten-Rechte (user_page_permissions) und filtert die Dashboard-Kacheln.
+useEffect(() => {
+  const run = async () => {
+    if (!user) {
+      setAllowedViews(null)
+      return
+    }
+
+    // Admins: alles sichtbar
+    if (isAdmin) {
+      setAllowedViews(new Set(["*"]))
+      return
+    }
+
+    setRoleLoading(true)
+
+    try {
+      // 1) player_id für den eingeloggten Auth-User holen
+      //    ⚠️ NICHT über club_players.user_id (das ist bei dir der Admin/Ersteller)
+      const { data: profile, error: profileErr } = await supabase
+        .from("user_profiles")
+        .select("player_id")
+        .eq("user_id", user.id) // <- Auth User ID
+        .maybeSingle()
+
+      if (profileErr) throw profileErr
+
+      const playerId = profile?.player_id as string | undefined
+      if (!playerId) {
+        // kein Mapping vorhanden -> keine Rechte
+        setAllowedViews(new Set())
+        return
+      }
+
+      // 2) Rechte für diesen Player laden
+      const { data: permRows, error: permErr } = await supabase
+        .from("user_page_permissions")
+        .select("page_key, allowed")
+        .eq("player_id", playerId)
+
+      if (permErr) throw permErr
+
+      const allowed = new Set<string>()
+      ;(permRows || []).forEach((row: any) => {
+        if (row.allowed) allowed.add(row.page_key)
+      })
+
+      setAllowedViews(allowed)
+    } catch (e) {
+      console.error("Permission load error:", e)
+      setAllowedViews(new Set())
+    } finally {
+      setRoleLoading(false)
+    }
+  }
+
+  run()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [user?.id, isAdmin])
+
+
+const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
   const [unreadCampusCount, setUnreadCampusCount] = useState(0)
 
   const fetchUnreadApplicationsCount = useCallback(async () => {
@@ -301,11 +368,25 @@ export default function AdminPage() {
     },
   ]
 
+
+  const visibleDashboardCards = dashboardCards.filter((card) => {
+    // Admins: alles
+    if (allowedViews?.has("*")) return true
+
+    // Falls Rollen/Permissions noch laden: nichts flickern lassen -> zeig nur "Dashboard" (es gibt aber keine Dashboard-Kachel),
+    // also erstmal gar nichts, bis allowedViews da ist.
+    if (allowedViews === null) return false
+
+    // Rechteverwaltung nur für Admins (oder wenn explizit freigegeben)
+    if (card.view === "role-permissions") return false
+
+    return allowedViews.has(card.view)
+  })
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <main className="max-w-7xl mx-auto p-4 md:p-8">
+        <main className="w-full p-4 md:p-8">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -317,11 +398,11 @@ export default function AdminPage() {
     )
   }
 
-  if (session && !isAdmin) {
+  if (session && !isAdmin && clubRoles.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <main className="max-w-7xl mx-auto p-4 md:p-8">
+        <main className="w-full p-4 md:p-8">
           <div className="flex items-center justify-center py-12">
             <Card className="max-w-md w-full">
               <CardHeader className="text-center">
@@ -331,7 +412,7 @@ export default function AdminPage() {
                 <CardTitle className="text-xl text-gray-900">Zugriff verweigert</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
-                <p className="text-gray-600 mb-6">Sie haben keine Admin-Berechtigung für diesen Bereich.</p>
+                <p className="text-gray-600 mb-6">Sie haben keine Berechtigung für diesen Bereich.</p>
                 <div className="space-y-3">
                   <Link href="/member-dashboard">
                     <Button className="w-full">Zum Member-Dashboard</Button>
@@ -352,7 +433,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <main className="max-w-7xl mx-auto p-4 md:p-8">
+      <main className="w-full p-4 md:p-8">
         <div className="mb-8">
           <div className="flex items-center space-x-2 mb-4">
             <Button
@@ -376,7 +457,8 @@ export default function AdminPage() {
                   {currentView === "recruitment" && "Rekrutierung"}
                   {currentView === "club" && "Vereinsverwaltung"}
                   {currentView === "tournaments" && "Turniere"}
-                  {currentView === "users" && "Benutzerverwaltung"}
+
+           {currentView === "users" && "Benutzerverwaltung"}
                   {currentView === "user-management-internal" && "Benutzer bearbeiten"}
                   {currentView === "upcoming-tournaments" && "Bevorstehende Turniere"}
                   {currentView === "player-database" && "Spielerdatenbank"}
@@ -491,7 +573,7 @@ export default function AdminPage() {
 
             {currentView === "dashboard" && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {dashboardCards.map((card) => (
+                {visibleDashboardCards.map((card) => (
                   <Card
                     key={card.view}
                     className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 shadow-md hover:scale-105"
@@ -641,6 +723,19 @@ export default function AdminPage() {
               </div>
             )}
 
+
+            {currentView === "role-permissions" && (
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-2xl font-bold">Rechteverwaltung</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Lege den Seitenzugriff fest. (z.B. Supervisor).
+                  </p>
+                </div>
+                <RolePermissionsManager />
+              </div>
+            )}
+
             {/* ✅ Benutzerverwaltung HUB */}
             {currentView === "users" && (
               <div className="space-y-6">
@@ -656,7 +751,7 @@ export default function AdminPage() {
                       Konten, Registrierungen und Aktivität der Mitglieder verwalten.
                     </p>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {/* 1) bestehende interne Komponente */}
                       <Button
                         onClick={() => setCurrentView("user-management-internal")}
@@ -703,10 +798,24 @@ export default function AdminPage() {
                           </div>
                         </Button>
                       </Link>
-                    </div>
+                      {isAdmin && (
+                        <Button
+                          onClick={() => setCurrentView("role-permissions")}
+                          variant="outline"
+                          className="w-full justify-start bg-transparent h-auto p-4"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-red-50">
+                              <Shield className="h-5 w-5 text-red-600" />
+                            </div>
+                            <div className="flex flex-col items-start">
+                              <span className="font-semibold">Rechteverwaltung</span>
+                              <span className="text-xs text-gray-500">Rollen-Rechte festlegen</span>
+                            </div>
+                          </div>
+                        </Button>
+                      )}
 
-                    <div className="mt-4 text-xs text-gray-500">
-                      
                     </div>
                   </CardContent>
                 </Card>
@@ -735,7 +844,7 @@ export default function AdminPage() {
                     <CardTitle>Turnier-Tools</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <Link href="/kratzer-tournament">
                         <Button variant="outline" className="w-full justify-start bg-transparent">
                           <Trophy className="h-4 w-4 mr-2" />

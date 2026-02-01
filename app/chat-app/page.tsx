@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { MessageCircle, Send, Clock, Hash, Menu, X, ArrowLeft } from "lucide-react"
+import { MessageCircle, Send, Clock, Hash, Menu, X, ArrowLeft, Shield, Users, Info, Coffee } from "lucide-react"
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
@@ -15,11 +15,27 @@ import { useToast } from "@/hooks/use-toast"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { useRouter } from "next/navigation"
 
+type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand"
+
+// GLOBAL room ids (müssen zum SQL passen)
+const CLUB_ROOM_ID = "11111111-1111-1111-1111-111111111111"
+const FREIZEIT_ROOM_ID = "22222222-2222-2222-2222-222222222222"
+const VORSTAND_ROOM_ID = "33333333-3333-3333-3333-333333333333"
+
+// Rollen-Tabelle (falls du sie anders benannt hast, hier anpassen)
+const ROLE_TABLE = "club_roles"
+const ROLE_COL = "role"
+const ROLE_PROFILE_COL = "user_id"
+
+// Wer darf in den Vorstand-Chat?
+const BOARD_ROLES = ["Vorstand", "Kassier", "Schriftführer"]
+
 type ChatMessage = {
   id: string
   user_id: string // FK -> user_profiles.id (NOT auth.uid)
   message: string
-  room_id: string
+  room_id: string // uuid as string
+  scope: ChatScope
   created_at: string
   sender?: { name: string; photo_url: string | null } | null
 }
@@ -30,13 +46,27 @@ type TeamRoom = {
   description: string | null
   created_at?: string
   logo_url?: string | null
-  role?: string | null
+  role?: string | null // Player | Captain | Co-Captain
 }
 
 type UserProfileLite = {
   id: string
   user_id: string
   player_id: string | null
+}
+
+type TeamMember = {
+  player_id: string
+  name: string
+  photo_url: string | null
+  role: string | null
+}
+
+type VorstandMember = {
+  player_id: string
+  name: string
+  photo_url: string | null
+  role: string | null
 }
 
 export default function TeamChatPage() {
@@ -55,9 +85,28 @@ export default function TeamChatPage() {
 
   const [chatRooms, setChatRooms] = useState<TeamRoom[]>([])
   const [selectedRoom, setSelectedRoom] = useState<TeamRoom | null>(null)
+
+  // selectedScope determines which chat is shown
+  const [selectedScope, setSelectedScope] = useState<ChatScope>("team")
+
   const [roomsLoading, setRoomsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // unreadCounts key: `${roomId}:${scope}`
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
+
+  // Team members (selected team) for Team-Chat header
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [membersLoading, setMembersLoading] = useState(false)
+
+  // GLOBAL captains/co-captains across all teams
+  const [globalCaptains, setGlobalCaptains] = useState<TeamMember[]>([])
+  const [globalCaptainsLoading, setGlobalCaptainsLoading] = useState(false)
+
+  // Vorstand access + members list
+  const [canSeeVorstandChat, setCanSeeVorstandChat] = useState(false)
+  const [vorstandMembers, setVorstandMembers] = useState<VorstandMember[]>([])
+  const [vorstandMembersLoading, setVorstandMembersLoading] = useState(false)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -84,17 +133,63 @@ export default function TeamChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, profile?.player_id])
 
+  // Load global captains once profile exists
   useEffect(() => {
-    if (selectedRoom) {
-      fetchMessages()
-      markRoomAsVisited(selectedRoom.id)
-      const unsubscribe = subscribeToMessages()
-      return () => unsubscribe()
-    }
+    if (!profile?.id) return
+    fetchAllCaptains()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRoom?.id])
+  }, [profile?.id])
 
-  const selectedRoomName = useMemo(() => selectedRoom?.name ?? "Team-Chat", [selectedRoom])
+  // Load board access + board members once profile exists
+  useEffect(() => {
+    if (!profile?.id) return
+    fetchVorstandAccess()
+    fetchVorstandMembers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id])
+
+  // If user switches team, and they are not captain/co, force scope away from "captains"
+  useEffect(() => {
+    if (!selectedRoom) return
+    const isCaptain = selectedRoom.role === "Captain" || selectedRoom.role === "Co-Captain"
+    if (!isCaptain && selectedScope === "captains") setSelectedScope("team")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRoom?.id, selectedRoom?.role])
+
+  // Load messages whenever target changes
+  useEffect(() => {
+    fetchMessages()
+    markCurrentAsVisited()
+
+    if (selectedScope === "team" && selectedRoom?.id) fetchTeamMembers(selectedRoom.id)
+    if (selectedScope !== "team") setTeamMembers([])
+
+    const unsubscribe = subscribeToMessages()
+    return () => unsubscribe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRoom?.id, selectedScope, canSeeVorstandChat])
+
+  const canSeeCaptainChat = useMemo(() => {
+    const r = selectedRoom?.role
+    return r === "Captain" || r === "Co-Captain"
+  }, [selectedRoom?.role])
+
+  const currentRoomId = useMemo(() => {
+    if (selectedScope === "club") return CLUB_ROOM_ID
+    if (selectedScope === "freizeit") return FREIZEIT_ROOM_ID
+    if (selectedScope === "vorstand") return VORSTAND_ROOM_ID
+    return selectedRoom?.id ?? null
+  }, [selectedScope, selectedRoom?.id])
+
+  const selectedRoomName = useMemo(() => {
+    if (selectedScope === "club") return "Vereinsinfo"
+    if (selectedScope === "freizeit") return "Freizeit"
+    if (selectedScope === "vorstand") return "Vorstand"
+    if (!selectedRoom) return "Team-Chat"
+    return selectedScope === "captains" ? `${selectedRoom.name} · Captain-Chat` : selectedRoom.name
+  }, [selectedRoom, selectedScope])
+
+  const unreadKey = (roomId: string, scope: ChatScope) => `${roomId}:${scope}`
 
   const loadMyProfile = async () => {
     try {
@@ -106,7 +201,6 @@ export default function TeamChatPage() {
         .maybeSingle()
 
       if (error) throw error
-
       setProfile((data as any) ?? null)
     } catch (e) {
       console.error("loadMyProfile error", e)
@@ -116,10 +210,6 @@ export default function TeamChatPage() {
     }
   }
 
-  /**
-   * Nur Teams, wo der eingeloggte User Mitglied ist.
-   * Mitgliedschaft läuft bei dir über team_members.player_id.
-   */
   const fetchMyTeamRooms = async (playerId: string) => {
     try {
       setRoomsLoading(true)
@@ -152,15 +242,15 @@ export default function TeamChatPage() {
 
       setChatRooms(rooms)
 
-      if (!selectedRoom && rooms.length > 0) {
-        setSelectedRoom(rooms[0])
-        setTimeout(() => fetchUnreadCounts(rooms), 150)
-      } else if (selectedRoom && !rooms.find((r) => r.id === selectedRoom.id)) {
-        setSelectedRoom(rooms[0] ?? null)
-        setTimeout(() => fetchUnreadCounts(rooms), 150)
-      } else {
-        setTimeout(() => fetchUnreadCounts(rooms), 150)
+      // Keep selection only if not in global chats
+      if (!["club", "freizeit", "vorstand"].includes(selectedScope)) {
+        let nextSelected = selectedRoom
+        if (!nextSelected && rooms.length > 0) nextSelected = rooms[0]
+        if (nextSelected && !rooms.find((r) => r.id === nextSelected!.id)) nextSelected = rooms[0] ?? null
+        setSelectedRoom(nextSelected ?? null)
       }
+
+      setTimeout(() => fetchUnreadCounts(rooms), 150)
     } catch (error) {
       console.error("Error fetching my team rooms:", error)
       toast({
@@ -173,16 +263,262 @@ export default function TeamChatPage() {
     }
   }
 
+  const fetchTeamMembers = async (teamId: string) => {
+    try {
+      setMembersLoading(true)
+
+      const { data: mems, error: memErr } = await supabase
+        .from("team_members")
+        .select("player_id, role")
+        .eq("team_id", teamId)
+        .is("left_at", null)
+
+      if (memErr) throw memErr
+
+      const rows = (mems as any[] | null) ?? []
+      const playerIds = Array.from(new Set(rows.map((r) => r.player_id).filter(Boolean)))
+
+      if (playerIds.length === 0) {
+        setTeamMembers([])
+        return
+      }
+
+      const { data: players, error: pErr } = await supabase
+        .from("club_players")
+        .select("id, name, photo_url")
+        .in("id", playerIds)
+
+      if (pErr) throw pErr
+
+      const pMap = new Map<string, { name: string; photo_url: string | null }>()
+      ;(players as any[] | null)?.forEach((p) => {
+        if (p?.id) pMap.set(p.id, { name: p.name, photo_url: p.photo_url ?? null })
+      })
+
+      const full: TeamMember[] = rows
+        .map((r) => {
+          const p = pMap.get(r.player_id)
+          if (!p) return null
+          return {
+            player_id: r.player_id,
+            name: p.name,
+            photo_url: p.photo_url ?? null,
+            role: r.role ?? null,
+          } as TeamMember
+        })
+        .filter(Boolean) as any
+
+      const roleRank = (role: string | null) => {
+        if (role === "Captain") return 0
+        if (role === "Co-Captain") return 1
+        return 2
+      }
+
+      full.sort((a, b) => {
+        const rr = roleRank(a.role) - roleRank(b.role)
+        if (rr !== 0) return rr
+        return (a.name || "").localeCompare(b.name || "")
+      })
+
+      setTeamMembers(full)
+    } catch (e) {
+      console.error("fetchTeamMembers error", e)
+      setTeamMembers([])
+    } finally {
+      setMembersLoading(false)
+    }
+  }
+
+  const fetchAllCaptains = async () => {
+    try {
+      setGlobalCaptainsLoading(true)
+
+      const { data: mems, error: memErr } = await supabase
+        .from("team_members")
+        .select("player_id, role")
+        .in("role", ["Captain", "Co-Captain"])
+        .is("left_at", null)
+
+      if (memErr) throw memErr
+
+      const rows = (mems as any[] | null) ?? []
+      const playerIds = Array.from(new Set(rows.map((r) => r.player_id).filter(Boolean)))
+
+      if (playerIds.length === 0) {
+        setGlobalCaptains([])
+        return
+      }
+
+      const { data: players, error: pErr } = await supabase
+        .from("club_players")
+        .select("id, name, photo_url")
+        .in("id", playerIds)
+
+      if (pErr) throw pErr
+
+      const pMap = new Map<string, { name: string; photo_url: string | null }>()
+      ;(players as any[] | null)?.forEach((p) => {
+        if (p?.id) pMap.set(p.id, { name: p.name, photo_url: p.photo_url ?? null })
+      })
+
+      const unique: TeamMember[] = playerIds
+        .map((pid) => {
+          const p = pMap.get(pid)
+          if (!p) return null
+          const roles = rows.filter((r) => r.player_id === pid).map((r) => r.role)
+          const role = roles.includes("Captain") ? "Captain" : "Co-Captain"
+          return { player_id: pid, name: p.name, photo_url: p.photo_url, role }
+        })
+        .filter(Boolean) as any
+
+      unique.sort((a, b) => {
+        const rank = (r: string | null) => (r === "Captain" ? 0 : 1)
+        const rr = rank(a.role) - rank(b.role)
+        if (rr !== 0) return rr
+        return (a.name || "").localeCompare(b.name || "")
+      })
+
+      setGlobalCaptains(unique)
+    } catch (e) {
+      console.error("fetchAllCaptains error", e)
+      setGlobalCaptains([])
+    } finally {
+      setGlobalCaptainsLoading(false)
+    }
+  }
+
+  const fetchVorstandAccess = async () => {
+    if (!session?.user?.id) return
+    try {
+      const { data, error } = await supabase
+        .from(ROLE_TABLE)
+        .select(`${ROLE_COL}`)
+        .eq(ROLE_PROFILE_COL, session!.user.id)
+        .in(ROLE_COL, BOARD_ROLES)
+
+      if (error) throw error
+      setCanSeeVorstandChat(((data as any[]) ?? []).length > 0)
+    } catch (e) {
+      console.error("fetchVorstandAccess error", e)
+      setCanSeeVorstandChat(false)
+    }
+  }
+
+  
+  const fetchVorstandMembers = async () => {
+    try {
+      setVorstandMembersLoading(true)
+
+      // club_roles: user_id = auth.uid, role = text (Vorstand, Kassier, Schriftführer, ...)
+      const { data: roles, error: rolesError } = await supabase
+        .from(ROLE_TABLE)
+        .select(`${ROLE_PROFILE_COL}, role`)
+        .in("role", BOARD_ROLES)
+
+      if (rolesError) throw rolesError
+
+      const authUserIds = Array.from(new Set(((roles as any[]) || []).map((r) => r?.[ROLE_PROFILE_COL]).filter(Boolean)))
+
+      if (authUserIds.length === 0) {
+        setVorstandMembers([])
+        return
+      }
+
+      const roleByAuthUserId = new Map<string, string>()
+      ;((roles as any[]) || []).forEach((r) => {
+        const uid = r?.[ROLE_PROFILE_COL]
+        if (uid) roleByAuthUserId.set(uid, r.role)
+      })
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from("user_profiles")
+        .select("id, user_id, player_id")
+        .in("user_id", authUserIds)
+
+      if (profilesError) throw profilesError
+
+      const playerIds = Array.from(new Set(((profiles as any[]) || []).map((p) => p.player_id).filter(Boolean)))
+
+      if (playerIds.length === 0) {
+        setVorstandMembers([])
+        return
+      }
+
+      const { data: players, error: playersError } = await supabase
+        .from("club_players")
+        .select("id, name, photo_url")
+        .in("id", playerIds)
+
+      if (playersError) throw playersError
+
+      const playerMap = new Map<string, { name: string; photo_url: string | null }>()
+      ;((players as any[]) || []).forEach((p) => {
+        if (p?.id) playerMap.set(p.id, { name: p.name, photo_url: p.photo_url ?? null })
+      })
+
+      const members: TeamMember[] = ((profiles as any[]) || [])
+        .map((p) => {
+          const info = playerMap.get(p.player_id)
+          if (!info) return null
+          const role = roleByAuthUserId.get(p.user_id) ?? "Vorstand"
+          return { player_id: p.player_id, name: info.name, photo_url: info.photo_url, role }
+        })
+        .filter(Boolean) as any
+
+      const roleRank = (role: string | null) => {
+        if (role === "Vorstand") return 0
+        if (role === "Kassier") return 1
+        if (role === "Schriftführer") return 2
+        return 9
+      }
+
+      members.sort((a, b) => {
+        const rr = roleRank(a.role) - roleRank(b.role)
+        if (rr !== 0) return rr
+        return (a.name || "").localeCompare(b.name || "")
+      })
+
+      setVorstandMembers(members)
+    } catch (e) {
+      console.error("fetchVorstandMembers error", e)
+      setVorstandMembers([])
+    } finally {
+      setVorstandMembersLoading(false)
+    }
+  }
+
+
   const fetchMessages = async () => {
-    if (!selectedRoom) return
+    if (selectedScope === "team" || selectedScope === "captains") {
+      if (!selectedRoom) {
+        setMessages([])
+        return
+      }
+      if (selectedScope === "captains" && !canSeeCaptainChat) {
+        setMessages([])
+        return
+      }
+    }
+
+    if (selectedScope === "vorstand" && !canSeeVorstandChat) {
+      setMessages([])
+      return
+    }
+
+    const roomId = currentRoomId
+    if (!roomId) {
+      setMessages([])
+      return
+    }
 
     try {
       setLoading(true)
 
       const { data: messagesData, error: messagesError } = await supabase
         .from("chat_messages")
-        .select("id,user_id,message,room_id,created_at")
-        .eq("room_id", selectedRoom.id)
+        .select("id,user_id,message,room_id,scope,created_at")
+        .eq("room_id", roomId)
+        .eq("scope", selectedScope)
         .order("created_at", { ascending: true })
         .limit(200)
 
@@ -194,25 +530,20 @@ export default function TeamChatPage() {
         return
       }
 
-      // IMPORTANT: chat_messages.user_id -> user_profiles.id
       const profileIds = Array.from(new Set(rows.map((r) => r.user_id)))
 
-      const { data: profiles } = await supabase
-        .from("user_profiles")
-        .select("id,player_id")
-        .in("id", profileIds)
+      const { data: profiles } = await supabase.from("user_profiles").select("id,player_id").in("id", profileIds)
 
       const profileToPlayer = new Map<string, string>()
       ;(profiles as any[] | null)?.forEach((p) => {
         if (p?.id && p?.player_id) profileToPlayer.set(p.id, p.player_id)
       })
 
-      const playerIds = Array.from(new Set((profiles as any[] | null)?.map((p) => p.player_id).filter(Boolean) ?? []))
+      const playerIds = Array.from(
+        new Set((profiles as any[] | null)?.map((p) => p.player_id).filter(Boolean) ?? []),
+      )
 
-      const { data: players } = await supabase
-        .from("club_players")
-        .select("id,name,photo_url")
-        .in("id", playerIds)
+      const { data: players } = await supabase.from("club_players").select("id,name,photo_url").in("id", playerIds)
 
       const playerMap = new Map<string, { name: string; photo_url: string | null }>()
       ;(players as any[] | null)?.forEach((p) => {
@@ -239,22 +570,23 @@ export default function TeamChatPage() {
   }
 
   const subscribeToMessages = () => {
-    if (!selectedRoom) return () => {}
+    const roomId = currentRoomId
+    if (!roomId) return () => {}
 
     const channel = supabase
-      .channel(`chat_messages_${selectedRoom.id}`)
+      .channel(`chat_messages_${roomId}_${selectedScope}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "chat_messages",
-          filter: `room_id=eq.${selectedRoom.id}`,
+          filter: `room_id=eq.${roomId}`,
         },
         async (payload) => {
           const incoming = payload.new as any
+          if ((incoming.scope as ChatScope) !== selectedScope) return
 
-          // Best effort sender info (incoming.user_id = user_profiles.id)
           const { data: prof } = await supabase
             .from("user_profiles")
             .select("player_id")
@@ -274,7 +606,6 @@ export default function TeamChatPage() {
 
           setMessages((prev) => [...prev, { ...incoming, sender }])
 
-          // unread count for other users (compare against my profile.id)
           if (incoming.user_id !== profile?.id) {
             fetchUnreadCounts(chatRooms)
           }
@@ -288,9 +619,20 @@ export default function TeamChatPage() {
   }
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending || !selectedRoom) return
+    if (!newMessage.trim() || sending) return
 
-    // IMPORTANT: must write user_profiles.id into chat_messages.user_id
+    if (selectedScope === "captains" && !canSeeCaptainChat) {
+      toast({ title: "Kein Zugriff", description: "Du bist nicht Captain/Co-Captain.", variant: "destructive" })
+      return
+    }
+
+    if (selectedScope === "vorstand" && !canSeeVorstandChat) {
+      toast({ title: "Kein Zugriff", description: "Du bist nicht im Vorstand.", variant: "destructive" })
+      return
+    }
+
+    if ((selectedScope === "team" || selectedScope === "captains") && !selectedRoom) return
+
     if (!profile?.id) {
       toast({
         title: "Profil fehlt",
@@ -300,18 +642,23 @@ export default function TeamChatPage() {
       return
     }
 
+    const roomId = currentRoomId
+    if (!roomId) return
+
     try {
       setSending(true)
 
       const { error } = await supabase.from("chat_messages").insert({
         user_id: profile.id,
         message: newMessage.trim(),
-        room_id: selectedRoom.id,
+        room_id: roomId,
+        scope: selectedScope,
       })
 
       if (error) throw error
 
       setNewMessage("")
+      markCurrentAsVisited()
     } catch (error) {
       console.error("Error sending message:", error)
       toast({
@@ -324,44 +671,73 @@ export default function TeamChatPage() {
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
-  }
-
   const fetchUnreadCounts = async (roomsOverride?: TeamRoom[]) => {
     const rooms = roomsOverride ?? chatRooms
-    if (!profile?.id || rooms.length === 0) return
+    if (!profile?.id) return
 
     try {
       const counts: Record<string, number> = {}
 
-      for (const room of rooms) {
-        const { data: visitData, error: visitError } = await supabase
+      const computeGlobalUnread = async (roomId: string, scope: ChatScope) => {
+        const { data: visitData } = await supabase
           .from("user_room_visits")
           .select("last_visit_at")
           .eq("user_id", profile.id)
-          .eq("room_id", room.id)
+          .eq("room_id", roomId)
+          .eq("scope", scope)
           .maybeSingle()
 
-        if (visitError && (visitError as any).code === "42P01") {
-          counts[room.id] = 0
-          continue
-        }
+        const lastVisit = (visitData as any)?.last_visit_at || "1970-01-01T00:00:00Z"
 
-        const lastVisit = visitData?.last_visit_at || "1970-01-01T00:00:00Z"
-
-        const { count, error: countError } = await supabase
+        const { count } = await supabase
           .from("chat_messages")
           .select("*", { count: "exact", head: true })
-          .eq("room_id", room.id)
+          .eq("room_id", roomId)
+          .eq("scope", scope)
           .gt("created_at", lastVisit)
           .neq("user_id", profile.id)
 
-        if (countError) counts[room.id] = 0
-        else counts[room.id] = count || 0
+        counts[unreadKey(roomId, scope)] = count || 0
+      }
+
+      await computeGlobalUnread(CLUB_ROOM_ID, "club")
+      await computeGlobalUnread(FREIZEIT_ROOM_ID, "freizeit")
+
+      if (canSeeVorstandChat) {
+        await computeGlobalUnread(VORSTAND_ROOM_ID, "vorstand")
+      } else {
+        counts[unreadKey(VORSTAND_ROOM_ID, "vorstand")] = 0
+      }
+
+      for (const room of rooms) {
+        const scopesToCheck: ChatScope[] = ["team"]
+        if (room.role === "Captain" || room.role === "Co-Captain") scopesToCheck.push("captains")
+
+        for (const scope of scopesToCheck) {
+          const { data: visitData } = await supabase
+            .from("user_room_visits")
+            .select("last_visit_at")
+            .eq("user_id", profile.id)
+            .eq("room_id", room.id)
+            .eq("scope", scope)
+            .maybeSingle()
+
+          const lastVisit = (visitData as any)?.last_visit_at || "1970-01-01T00:00:00Z"
+
+          const { count } = await supabase
+            .from("chat_messages")
+            .select("*", { count: "exact", head: true })
+            .eq("room_id", room.id)
+            .eq("scope", scope)
+            .gt("created_at", lastVisit)
+            .neq("user_id", profile.id)
+
+          counts[unreadKey(room.id, scope)] = count || 0
+        }
+
+        if (!(room.role === "Captain" || room.role === "Co-Captain")) {
+          counts[unreadKey(room.id, "captains")] = 0
+        }
       }
 
       setUnreadCounts(counts)
@@ -370,27 +746,30 @@ export default function TeamChatPage() {
     }
   }
 
-  const markRoomAsVisited = async (roomId: string) => {
+  const markRoomAsVisited = async (roomId: string, scope: ChatScope) => {
     if (!profile?.id) return
 
     try {
-      const { error } = await supabase.from("user_room_visits").upsert(
+      await supabase.from("user_room_visits").upsert(
         {
           user_id: profile.id,
           room_id: roomId,
+          scope,
           last_visit_at: new Date().toISOString(),
         },
-        { onConflict: "user_id,room_id" },
+        { onConflict: "user_id,room_id,scope" },
       )
 
-      if (error && (error as any).code !== "42P01") {
-        console.error("Error marking room as visited:", error)
-      }
-
-      setUnreadCounts((prev) => ({ ...prev, [roomId]: 0 }))
+      setUnreadCounts((prev) => ({ ...prev, [unreadKey(roomId, scope)]: 0 }))
     } catch (error) {
       console.error("Error marking room as visited:", error)
     }
+  }
+
+  const markCurrentAsVisited = async () => {
+    const roomId = currentRoomId
+    if (!roomId) return
+    await markRoomAsVisited(roomId, selectedScope)
   }
 
   if (!session) {
@@ -401,7 +780,7 @@ export default function TeamChatPage() {
             <CardContent className="p-6 text-center">
               <MessageCircle className="h-12 w-12 text-primary mx-auto mb-4" />
               <h2 className="text-xl font-bold mb-2">Anmeldung erforderlich</h2>
-              <p className="text-muted-foreground mb-4">Bitte melden Sie sich an, um den Team-Chat zu verwenden.</p>
+              <p className="text-muted-foreground mb-4">Bitte melden Sie sich an, um den Chat zu verwenden.</p>
               <Button onClick={() => router.push("/member-login")}>Zur Anmeldung</Button>
             </CardContent>
           </Card>
@@ -412,6 +791,10 @@ export default function TeamChatPage() {
   }
 
   const showNoProfile = !profileLoading && !profile
+
+  const clubUnread = unreadCounts[unreadKey(CLUB_ROOM_ID, "club")] || 0
+  const freizeitUnread = unreadCounts[unreadKey(FREIZEIT_ROOM_ID, "freizeit")] || 0
+  const vorstandUnread = unreadCounts[unreadKey(VORSTAND_ROOM_ID, "vorstand")] || 0
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-20">
@@ -457,18 +840,114 @@ export default function TeamChatPage() {
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2 text-base">
                         <Hash className="h-5 w-5 text-primary" />
-                        Meine Teams
+                        Chats
                       </CardTitle>
                       <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                   </CardHeader>
+
                   <CardContent className="p-0">
                     <ScrollArea className="h-[calc(100vh-280px)]">
+                      {/* Vereinsinfo + Freizeit + Vorstand */}
+                      <div className="p-2 border-b border-border">
+                        <Button
+                          variant={selectedScope === "club" ? "default" : "ghost"}
+                          className="w-full justify-start h-auto p-3 text-left"
+                          onClick={() => {
+                            setSelectedScope("club")
+                            setSidebarOpen(false)
+                            setTimeout(() => markRoomAsVisited(CLUB_ROOM_ID, "club"), 50)
+                          }}
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <Info className="h-4 w-4 text-primary" />
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate text-sm">Vereinsinfo</div>
+                              <p className="text-xs text-muted-foreground mt-1 truncate">Für alle Mitglieder</p>
+                            </div>
+
+                            {clubUnread > 0 && (
+                              <Badge
+                                variant="destructive"
+                                className="ml-2 px-2 py-1 text-xs font-bold min-w-[24px] h-6 flex items-center justify-center bg-red-500 text-white border-0 shadow-lg"
+                              >
+                                {clubUnread > 99 ? "99+" : clubUnread}
+                              </Badge>
+                            )}
+                          </div>
+                        </Button>
+
+                        <Button
+                          variant={selectedScope === "freizeit" ? "default" : "ghost"}
+                          className="w-full justify-start h-auto p-3 text-left mt-1"
+                          onClick={() => {
+                            setSelectedScope("freizeit")
+                            setSidebarOpen(false)
+                            setTimeout(() => markRoomAsVisited(FREIZEIT_ROOM_ID, "freizeit"), 50)
+                          }}
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <Coffee className="h-4 w-4 text-primary" />
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate text-sm">Freizeit</div>
+                              <p className="text-xs text-muted-foreground mt-1 truncate">Für alle Mitglieder</p>
+                            </div>
+
+                            {freizeitUnread > 0 && (
+                              <Badge
+                                variant="destructive"
+                                className="ml-2 px-2 py-1 text-xs font-bold min-w-[24px] h-6 flex items-center justify-center bg-red-500 text-white border-0 shadow-lg"
+                              >
+                                {freizeitUnread > 99 ? "99+" : freizeitUnread}
+                              </Badge>
+                            )}
+                          </div>
+                        </Button>
+
+                        {canSeeVorstandChat && (
+                          <Button
+                            variant={selectedScope === "vorstand" ? "default" : "ghost"}
+                            className="w-full justify-start h-auto p-3 text-left mt-1"
+                            onClick={() => {
+                              setSelectedScope("vorstand")
+                              setSidebarOpen(false)
+                              setTimeout(() => markRoomAsVisited(VORSTAND_ROOM_ID, "vorstand"), 50)
+                            }}
+                          >
+                            <div className="flex items-center gap-3 w-full">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Shield className="h-4 w-4 text-primary" />
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate text-sm">Vorstand</div>
+                                <p className="text-xs text-muted-foreground mt-1 truncate">Nur Vorstand-Rollen</p>
+                              </div>
+
+                              {vorstandUnread > 0 && (
+                                <Badge
+                                  variant="destructive"
+                                  className="ml-2 px-2 py-1 text-xs font-bold min-w-[24px] h-6 flex items-center justify-center bg-red-500 text-white border-0 shadow-lg"
+                                >
+                                  {vorstandUnread > 99 ? "99+" : vorstandUnread}
+                                </Badge>
+                              )}
+                            </div>
+                          </Button>
+                        )}
+                      </div>
+
                       {roomsLoading ? (
                         <div className="p-4 text-center">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto" />
                           <p className="mt-2 text-sm text-muted-foreground">Lade Teams...</p>
                         </div>
                       ) : !profile?.player_id ? (
@@ -483,50 +962,96 @@ export default function TeamChatPage() {
                         </div>
                       ) : (
                         <div className="p-2">
-                          {chatRooms.map((room) => (
-                            <Button
-                              key={room.id}
-                              variant={selectedRoom?.id === room.id ? "default" : "ghost"}
-                              className="w-full justify-start mb-1 h-auto p-3 text-left"
-                              onClick={() => {
-                                setSelectedRoom(room)
-                                setSidebarOpen(false)
-                              }}
-                            >
-                              <div className="flex items-center gap-3 w-full">
-                                {room.logo_url ? (
-                                  <Avatar className="w-8 h-8 flex-shrink-0">
-                                    <AvatarImage src={room.logo_url || "/placeholder.svg"} alt={room.name} />
-                                    <AvatarFallback className="bg-primary/10 text-primary">
-                                      {room.name.charAt(0).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                ) : (
-                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                    <Hash className="h-4 w-4 text-primary" />
+                          {chatRooms.map((room) => {
+                            const teamUnread = unreadCounts[unreadKey(room.id, "team")] || 0
+                            const captUnread = unreadCounts[unreadKey(room.id, "captains")] || 0
+                            const isCaptain = room.role === "Captain" || room.role === "Co-Captain"
+
+                            return (
+                              <div key={room.id} className="mb-2">
+                                <Button
+                                  variant={selectedScope === "team" && selectedRoom?.id === room.id ? "default" : "ghost"}
+                                  className="w-full justify-start h-auto p-3 text-left"
+                                  onClick={() => {
+                                    setSelectedRoom(room)
+                                    setSelectedScope("team")
+                                    setSidebarOpen(false)
+                                    setTimeout(() => markRoomAsVisited(room.id, "team"), 50)
+                                  }}
+                                >
+                                  <div className="flex items-center gap-3 w-full">
+                                    {room.logo_url ? (
+                                      <Avatar className="w-8 h-8 flex-shrink-0">
+                                        <AvatarImage src={room.logo_url || "/placeholder.svg"} alt={room.name} />
+                                        <AvatarFallback className="bg-primary/10 text-primary">
+                                          {room.name.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                    ) : (
+                                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                        <Hash className="h-4 w-4 text-primary" />
+                                      </div>
+                                    )}
+
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium truncate text-sm">{room.name}</div>
+                                      {room.role ? (
+                                        <p className="text-xs text-muted-foreground mt-1 truncate">Rolle: {room.role}</p>
+                                      ) : room.description ? (
+                                        <p className="text-xs text-muted-foreground mt-1 truncate">{room.description}</p>
+                                      ) : null}
+                                    </div>
+
+                                    {teamUnread > 0 && (
+                                      <Badge
+                                        variant="destructive"
+                                        className="ml-2 px-2 py-1 text-xs font-bold min-w-[24px] h-6 flex items-center justify-center bg-red-500 text-white border-0 shadow-lg"
+                                      >
+                                        {teamUnread > 99 ? "99+" : teamUnread}
+                                      </Badge>
+                                    )}
                                   </div>
-                                )}
+                                </Button>
 
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium truncate text-sm">{room.name}</div>
-                                  {room.role ? (
-                                    <p className="text-xs text-muted-foreground mt-1 truncate">Rolle: {room.role}</p>
-                                  ) : room.description ? (
-                                    <p className="text-xs text-muted-foreground mt-1 truncate">{room.description}</p>
-                                  ) : null}
-                                </div>
-
-                                {unreadCounts[room.id] > 0 && (
-                                  <Badge
-                                    variant="destructive"
-                                    className="ml-2 px-2 py-1 text-xs font-bold min-w-[24px] h-6 flex items-center justify-center bg-red-500 text-white border-0 shadow-lg"
+                                {isCaptain && (
+                                  <Button
+                                    variant={
+                                      selectedScope === "captains" && selectedRoom?.id === room.id ? "default" : "ghost"
+                                    }
+                                    className="w-full justify-start h-auto p-3 text-left mt-1"
+                                    onClick={() => {
+                                      setSelectedRoom(room)
+                                      setSelectedScope("captains")
+                                      setSidebarOpen(false)
+                                      setTimeout(() => markRoomAsVisited(room.id, "captains"), 50)
+                                    }}
                                   >
-                                    {unreadCounts[room.id] > 99 ? "99+" : unreadCounts[room.id]}
-                                  </Badge>
+                                    <div className="flex items-center gap-3 w-full">
+                                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                        <Shield className="h-4 w-4 text-primary" />
+                                      </div>
+
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium truncate text-sm">Captain-Chat</div>
+                                        <p className="text-xs text-muted-foreground mt-1 truncate">
+                                          Nur Captain &amp; Co-Captain
+                                        </p>
+                                      </div>
+
+                                      {captUnread > 0 && (
+                                        <Badge
+                                          variant="destructive"
+                                          className="ml-2 px-2 py-1 text-xs font-bold min-w-[24px] h-6 flex items-center justify-center bg-red-500 text-white border-0 shadow-lg"
+                                        >
+                                          {captUnread > 99 ? "99+" : captUnread}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </Button>
                                 )}
                               </div>
-                            </Button>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
                     </ScrollArea>
@@ -543,28 +1068,101 @@ export default function TeamChatPage() {
                         <Menu className="h-4 w-4" />
                       </Button>
 
-                      {selectedRoom?.logo_url ? (
-                        <Avatar className="w-6 h-6">
-                          <AvatarImage src={selectedRoom.logo_url || "/placeholder.svg"} alt={selectedRoom.name} />
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                            {selectedRoom.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                        {selectedScope === "club" ? (
+                          <Info className="h-3 w-3 text-primary" />
+                        ) : selectedScope === "freizeit" ? (
+                          <Coffee className="h-3 w-3 text-primary" />
+                        ) : selectedScope === "vorstand" ? (
+                          <Shield className="h-3 w-3 text-primary" />
+                        ) : selectedScope === "captains" ? (
+                          <Shield className="h-3 w-3 text-primary" />
+                        ) : (
                           <Hash className="h-3 w-3 text-primary" />
-                        </div>
-                      )}
+                        )}
+                      </div>
 
                       <div className="flex-1 min-w-0">
                         <CardTitle className="text-base truncate">{selectedRoomName}</CardTitle>
-                        <p className="text-xs text-muted-foreground truncate">Nur Mitglieder dieses Teams sehen diesen Chat.</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {selectedScope === "club"
+                            ? "Vereinsweite Infos – alle haben Zugriff."
+                            : selectedScope === "freizeit"
+                              ? "Freizeit & Community – alle haben Zugriff."
+                              : selectedScope === "vorstand"
+                                ? "Nur Vorstand-Rollen sehen diesen Chat."
+                                : selectedScope === "captains"
+                                  ? "Nur Captain & Co-Captain sehen diesen Chat."
+                                  : "Nur Mitglieder dieses Teams sehen diesen Chat."}
+                        </p>
+
+                        {selectedScope === "team" && selectedRoom?.id && (
+                          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                            <Users className="h-3.5 w-3.5" />
+                            <span className="truncate">
+                              Team:{" "}
+                              {membersLoading
+                                ? "Lade..."
+                                : teamMembers.length === 0
+                                  ? "—"
+                                  : teamMembers.map((m) => m.name).join(", ")}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedScope === "captains" && (
+                          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                            <Users className="h-3.5 w-3.5" />
+                            <span className="truncate">
+                              Captain/Co-Captain (alle Teams):{" "}
+                              {globalCaptainsLoading
+                                ? "Lade..."
+                                : globalCaptains.length === 0
+                                  ? "—"
+                                  : globalCaptains.map((m) => m.name).join(", ")}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedScope === "vorstand" && (
+                          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                            <Users className="h-3.5 w-3.5" />
+                            <span className="truncate">
+                              Vorstand:{" "}
+                              {vorstandMembersLoading
+                                ? "Lade..."
+                                : vorstandMembers.length === 0
+                                  ? "—"
+                                  : vorstandMembers.map((m) => m.name).join(", ")}
+                            </span>
+                          </div>
+                        )}
                       </div>
+
+                      {selectedScope !== "club" &&
+                        selectedScope !== "freizeit" &&
+                        selectedScope !== "vorstand" &&
+                        selectedRoom && (
+                          <div className="hidden sm:flex gap-2">
+                            <Button size="sm" variant={selectedScope === "team" ? "default" : "outline"} onClick={() => setSelectedScope("team")}>
+                              Team
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={selectedScope === "captains" ? "default" : "outline"}
+                              onClick={() => setSelectedScope("captains")}
+                              disabled={!canSeeCaptainChat}
+                              title={!canSeeCaptainChat ? "Nur Captain/Co-Captain" : undefined}
+                            >
+                              Captain
+                            </Button>
+                          </div>
+                        )}
                     </div>
                   </CardHeader>
 
                   <CardContent className="p-0 flex flex-col h-[calc(100%-70px)]">
-                    {!selectedRoom ? (
+                    {selectedScope === "team" && !selectedRoom ? (
                       <div className="flex-1 flex items-center justify-center text-muted-foreground">
                         <div className="text-center">
                           <Hash className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -576,8 +1174,22 @@ export default function TeamChatPage() {
                             onClick={() => setSidebarOpen(true)}
                           >
                             <Menu className="h-4 w-4 mr-2" />
-                            Teams anzeigen
+                            Chats anzeigen
                           </Button>
+                        </div>
+                      </div>
+                    ) : selectedScope === "captains" && !canSeeCaptainChat ? (
+                      <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                        <div className="text-center">
+                          <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                          <p className="text-sm">Kein Zugriff auf den Captain-Chat.</p>
+                        </div>
+                      </div>
+                    ) : selectedScope === "vorstand" && !canSeeVorstandChat ? (
+                      <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                        <div className="text-center">
+                          <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                          <p className="text-sm">Kein Zugriff auf den Vorstand-Chat.</p>
                         </div>
                       </div>
                     ) : (
@@ -585,13 +1197,13 @@ export default function TeamChatPage() {
                         <ScrollArea className="flex-1 p-4">
                           {loading ? (
                             <div className="text-center py-8">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
                               <p className="mt-2 text-muted-foreground text-sm">Lade Chat...</p>
                             </div>
                           ) : messages.length === 0 ? (
                             <div className="text-center py-8 text-muted-foreground">
                               <MessageCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                              <p className="text-sm">Noch keine Nachrichten in diesem Team-Chat.</p>
+                              <p className="text-sm">Noch keine Nachrichten.</p>
                               <p className="text-xs mt-2">Sei der Erste, der eine Nachricht schreibt!</p>
                             </div>
                           ) : (
@@ -651,7 +1263,12 @@ export default function TeamChatPage() {
                               placeholder="Nachricht eingeben..."
                               value={newMessage}
                               onChange={(e) => setNewMessage(e.target.value)}
-                              onKeyPress={handleKeyPress}
+                              onKeyPress={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault()
+                                  sendMessage()
+                                }
+                              }}
                               disabled={sending || !profile?.id}
                               className="flex-1 bg-background text-sm"
                             />
@@ -662,7 +1279,7 @@ export default function TeamChatPage() {
                               className="px-3"
                             >
                               {sending ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
                               ) : (
                                 <Send className="h-4 w-4" />
                               )}

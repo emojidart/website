@@ -39,6 +39,8 @@ import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
 
 type UserProfileWithLastSeen = UserProfile & { last_seen_at?: string | null }
 
+type ClubRole = "Vorstand" | "Kassier" | "Schriftführer" | "Supervisor"
+
 const formatDate = (date: string | Date) => {
   if (!date) return ""
   const d = new Date(date)
@@ -85,12 +87,15 @@ const formatCountdown = (target: Date) => {
 }
 
 export default function MemberProfileAppPage() {
+const CHAT_SCOPE: "team" | "captains" | "club" = "team"
+
   const { session, loading: authLoading } = useAuth()
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfileWithLastSeen | null>(null)
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [clubRoles, setClubRoles] = useState<ClubRole[]>([])
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
@@ -309,11 +314,13 @@ export default function MemberProfileAppPage() {
 
       for (const room of rooms) {
         const { data: visitData, error: visitError } = await supabase
-          .from("user_room_visits")
-          .select("last_visit_at")
-          .eq("user_id", profile.id)
-          .eq("room_id", room.id)
-          .maybeSingle()
+  .from("user_room_visits")
+  .select("last_visit_at")
+  .eq("user_id", profile.id)
+  .eq("room_id", room.id)
+  .eq("scope", CHAT_SCOPE)
+  .maybeSingle()
+
 
         // Tabelle evtl. noch nicht vorhanden -> dann einfach 0 anzeigen
         if (visitError && (visitError as any).code === "42P01") {
@@ -460,6 +467,15 @@ export default function MemberProfileAppPage() {
       }
 
       setProfile(profileData)
+
+      // Vereinsrollen laden (z.B. Vorstand/Kassier/Schriftführer/Supervisor)
+      const { data: clubRolesRows, error: clubRolesErr } = await supabase
+        .from("club_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+
+      if (clubRolesErr) throw clubRolesErr
+      setClubRoles((clubRolesRows ?? []).map((r: any) => r.role).filter(Boolean))
 
       if (profileData?.player_id) {
         await fetchNotifications(profileData.player_id)
@@ -670,6 +686,8 @@ export default function MemberProfileAppPage() {
         return "Spieler"
     }
   }
+  const hasClubRole = clubRoles.length > 0
+
 
   const navigationItems = [
     {
@@ -1049,22 +1067,23 @@ export default function MemberProfileAppPage() {
 
                   <div className="space-y-2">
                     {chatRooms
-                      .filter((r) => (unreadCounts[r.id] || 0) > 0)
-                      .slice(0, 5)
-                      .map((room) => (
-                        <div
-                          key={room.id}
-                          className="flex items-center justify-between bg-white/70 rounded-lg p-3 border border-purple-200 cursor-pointer hover:bg-white transition-colors"
-                          onClick={() => router.push("/chat-app")}
-                        >
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold text-gray-900 truncate">{room.name}</div>
-                            <div className="text-xs text-gray-600">Tippen zum Öffnen</div>
-                          </div>
+  .filter((r) => (unreadCounts[r.id] || 0) > 0)
+  .slice(0, 5)
+  .map((room) => (
+    <div
+      key={room.id}
+      className="flex items-center justify-between bg-white/70 rounded-lg p-3 border border-purple-200 cursor-pointer hover:bg-white transition-colors"
+      onClick={() => router.push(`/chat-app?roomId=${room.id}&scope=${CHAT_SCOPE}`)}
+    >
+      <div className="min-w-0">
+        <div className="text-sm font-semibold text-gray-900 truncate">{room.name}</div>
+        <div className="text-xs text-gray-600">Tippen zum Öffnen</div>
+      </div>
 
-                          <Badge className="bg-red-500 text-white">{unreadCounts[room.id] || 0}</Badge>
-                        </div>
-                      ))}
+      <Badge className="bg-red-500 text-white">{unreadCounts[room.id] || 0}</Badge>
+    </div>
+  ))}
+
                   </div>
 
                   {chatRooms.filter((r) => (unreadCounts[r.id] || 0) > 0).length > 5 && (
@@ -1259,6 +1278,33 @@ export default function MemberProfileAppPage() {
             </div>
           </CardContent>
         </Card>
+
+        {hasClubRole && (
+          <Card
+            className="mb-6 border-0 shadow-2xl cursor-pointer overflow-hidden bg-gradient-to-r from-orange-500 to-orange-600 text-white ring-2 ring-orange-300 hover:ring-4 transition-all hover:shadow-[0_0_25px_rgba(251,146,60,0.8)]"
+
+
+            onClick={() => router.push("/admin")}
+          >
+            <CardContent className="p-5 sm:p-6 flex items-center justify-between">
+              <div className="min-w-0">
+                <div className="text-sm opacity-90">Vereinsbereich</div>
+                <div className="text-xl font-extrabold truncate">Admin / Verwaltung</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {clubRoles.map((r) => (
+                    <Badge key={r} className="bg-white/20 text-white border-white/30">
+                      {r}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="font-semibold">Öffnen</span>
+                <ArrowRight className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {navigationItems.map((item, index) => (

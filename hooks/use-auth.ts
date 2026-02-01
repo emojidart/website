@@ -13,6 +13,7 @@ interface AuthState {
   // <CHANGE> Added admin status
   isAdmin: boolean
   adminLoading: boolean
+  clubRoles: string[]
 }
 
 export function useAuth(): AuthState {
@@ -23,21 +24,57 @@ export function useAuth(): AuthState {
   // <CHANGE> Added admin state
   const [isAdmin, setIsAdmin] = useState(false)
   const [adminLoading, setAdminLoading] = useState(true)
+  const [clubRoles, setClubRoles] = useState<string[]>([])
 
-  // <CHANGE> Function to check admin status
+  // <CHANGE> Function to check admin status + club roles
   const checkAdminStatus = async (userId: string) => {
     try {
-      const { data, error } = await supabase.from("user_profiles").select("is_admin").eq("user_id", userId).single()
+      // Admin-Flag kann je nach Schema entweder über user_id ODER über id = auth.uid() gespeichert sein.
+      // Wir probieren zuerst user_id, dann fallback auf id.
+      let isAdminValue = false
 
-      if (error) {
-        console.error("Error checking admin status:", error)
-        setIsAdmin(false)
+      const { data: byUserId, error: errUserId } = await supabase
+        .from("user_profiles")
+        .select("is_admin")
+        .eq("user_id", userId)
+        .maybeSingle()
+
+      if (errUserId) {
+        console.error("Error checking admin status (user_id):", errUserId)
+      }
+      if (byUserId?.is_admin) {
+        isAdminValue = true
       } else {
-        setIsAdmin(data?.is_admin || false)
+        const { data: byId, error: errId } = await supabase
+          .from("user_profiles")
+          .select("is_admin")
+          .eq("id", userId)
+          .maybeSingle()
+
+        if (errId) {
+          console.error("Error checking admin status (id):", errId)
+        }
+        if (byId?.is_admin) isAdminValue = true
+      }
+
+      setIsAdmin(!!isAdminValue)
+
+      // Club-Rollen laden (Supervisor/Kassier/...)
+      const { data: rolesData, error: rolesError } = await supabase
+        .from("club_roles")
+        .select("role")
+        .eq("user_id", userId)
+
+      if (rolesError) {
+        console.error("Error loading club roles:", rolesError)
+        setClubRoles([])
+      } else {
+        setClubRoles((rolesData || []).map((r: any) => r.role).filter(Boolean))
       }
     } catch (error) {
-      console.error("Error checking admin status:", error)
+      console.error("Error checking admin/roles:", error)
       setIsAdmin(false)
+      setClubRoles([])
     } finally {
       setAdminLoading(false)
     }
@@ -56,6 +93,7 @@ export function useAuth(): AuthState {
         checkAdminStatus(session.user.id)
       } else {
         setIsAdmin(false)
+        setClubRoles([])
         setAdminLoading(false)
       }
     })
@@ -70,6 +108,7 @@ export function useAuth(): AuthState {
         checkAdminStatus(session.user.id)
       } else {
         setIsAdmin(false)
+        setClubRoles([])
         setAdminLoading(false)
       }
     })
@@ -79,5 +118,5 @@ export function useAuth(): AuthState {
     }
   }, [])
 
-  return { session, user, loading, authMessage, setAuthMessage, isAdmin, adminLoading }
+  return { session, user, loading, authMessage, setAuthMessage, isAdmin, adminLoading, clubRoles }
 }

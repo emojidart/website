@@ -4,7 +4,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,10 +42,18 @@ interface ClubPlayer {
   id: string
   name: string
   photo_url: string | null
-  throwing_hand: string | null
-  age: number | null
-  origin: string | null
+  street: string | null
+  house_number: string | null
+  postal_code: string | null
+  city: string | null
+  birthdate: string | null
+  player_number: number | null
+  jersey_size: string | null
+  email: string | null
+  phone: string | null
+  iban: string | null
 }
+
 
 interface Team {
   id: string
@@ -86,13 +94,66 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   const [playerName, setPlayerName] = useState("")
   const [playerPhotoFile, setPlayerPhotoFile] = useState<File | null>(null)
   const [playerPhotoPreview, setPlayerPhotoPreview] = useState<string | null>(null)
-  const [playerThrowingHand, setPlayerThrowingHand] = useState<string>("")
-  const [playerAge, setPlayerAge] = useState<number | string>("")
-  const [playerOrigin, setPlayerOrigin] = useState("")
+  const [playerStreet, setPlayerStreet] = useState("")
+  const [playerHouseNumber, setPlayerHouseNumber] = useState("")
+  const [playerPostalCode, setPlayerPostalCode] = useState("")
+  const [playerCity, setPlayerCity] = useState("")
+  const [playerBirthdate, setPlayerBirthdate] = useState("")
+  const [playerNumber, setPlayerNumber] = useState<number | string>("")
+  const [playerJerseySize, setPlayerJerseySize] = useState("")
+  const [playerEmail, setPlayerEmail] = useState("")
+  const [playerPhone, setPlayerPhone] = useState("")
+  const [playerIban, setPlayerIban] = useState("")
   const [playerLoading, setPlayerLoading] = useState(false)
   const [playerMessage, setPlayerMessage] = useState("")
   const [playerMessageType, setPlayerMessageType] = useState<"success" | "error" | "info">("info")
   const [clubPlayers, setClubPlayers] = useState<ClubPlayer[]>([])
+  const [playerSearch, setPlayerSearch] = useState("")
+  const [playerSortKey, setPlayerSortKey] = useState<"name" | "number" | "birthdate" | "city">("name")
+  const [playerSortDir, setPlayerSortDir] = useState<"asc" | "desc">("asc")
+
+  const visiblePlayers = useMemo(() => {
+    const q = playerSearch.trim().toLowerCase()
+    const filtered = q
+      ? clubPlayers.filter((p) => {
+          const hay = [
+            p.name,
+            p.email ?? "",
+            p.phone ?? "",
+            p.city ?? "",
+            p.street ?? "",
+            String(p.player_number ?? ""),
+          ]
+            .join(" ")
+            .toLowerCase()
+          return hay.includes(q)
+        })
+      : clubPlayers
+
+    const dir = playerSortDir === "asc" ? 1 : -1
+
+    const getVal = (p: ClubPlayer) => {
+      switch (playerSortKey) {
+        case "number":
+          return p.player_number ?? 999999
+        case "birthdate":
+          return p.birthdate ?? ""
+        case "city":
+          return (p.city ?? "").toLowerCase()
+        case "name":
+        default:
+          return (p.name ?? "").toLowerCase()
+      }
+    }
+
+    return [...filtered].sort((a, b) => {
+      const av = getVal(a)
+      const bv = getVal(b)
+      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir
+      return String(av).localeCompare(String(bv)) * dir
+    })
+  }, [clubPlayers, playerSearch, playerSortKey, playerSortDir])
+
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null)
 
   // Team State
@@ -116,29 +177,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   const [currentSelectedPlayerTeam, setCurrentSelectedPlayerTeam] = useState<Team | null>(null)
   const [currentSelectedPlayerRole, setCurrentSelectedPlayerRole] = useState<string | null>(null) // NEW
 
-  // Liga Statistics State (Removed)
-  // const [ligaStats, setLigaStats] = useState<LigaStatistic[]>([])
-  // const [statsPlayerId, setStatsPlayerId] = useState<string>("")
-  // const [gameDate, setGameDate] = useState<string>(new Date().toISOString().split("T")[0])
-  // const [throws180, setThrows180] = useState<number>(0)
-  // const [throws171, setThrows171] = useState<number>(0)
-  // const [throws154, setThrows154] = useState<number>(0)
-  // const [throwsUnder26, setThrowsUnder26] = useState<number>(0)
-  // const [semperitOuts, setSemperitOuts] = useState<number>(0)
-  // const [throws15, setThrows15] = useState<number>(0)
-  // const [throws16, setThrows16] = useState<number>(0)
-  // const [throws17, setThrows17] = useState<number>(0)
-  // const [throws18, setThrows18] = useState<number>(0)
-  // const [throws19, setThrows19] = useState<number>(0)
-  // const [throws20, setThrows20] = useState<number>(0)
-  // const [throwsBull, setThrowsBull] = useState<number>(0)
-  // const [statsNotes, setStatsNotes] = useState<string>("")
-  // const [statsLoading, setStatsLoading] = useState(false)
-  // const [statsMessage, setStatsMessage] = useState("")
-  // const [statsMessageType, setStatsMessageType] = useState<"success" | "error" | "info">("info")
-
-  // const [selectedPlayerStats, setSelectedPlayerStats] = useState<LigaStatistic | null>(null)
-  // const [showDetailedStats, setShowDetailedStats] = useState(false)
+  
 
   // Changed activeSection type to remove liga-statistics and view-statistics
   const [activeSection, setActiveSection] = useState<
@@ -305,9 +344,16 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           .update({
             name: playerName,
             photo_url: photoUrl,
-            throwing_hand: playerThrowingHand || null,
-            age: playerAge ? Number(playerAge) : null,
-            origin: playerOrigin || null,
+            street: playerStreet || null,
+            house_number: playerHouseNumber || null,
+            postal_code: playerPostalCode || null,
+            city: playerCity || null,
+            birthdate: playerBirthdate || null,
+            player_number: playerNumber ? Number(playerNumber) : null,
+            jersey_size: playerJerseySize || null,
+            email: playerEmail || null,
+            phone: playerPhone || null,
+            iban: playerIban || null,
             user_id: user.id,
           })
           .eq("id", editingPlayerId)
@@ -321,9 +367,16 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           {
             name: playerName,
             photo_url: photoUrl,
-            throwing_hand: playerThrowingHand || null,
-            age: playerAge ? Number(playerAge) : null,
-            origin: playerOrigin || null,
+            street: playerStreet || null,
+            house_number: playerHouseNumber || null,
+            postal_code: playerPostalCode || null,
+            city: playerCity || null,
+            birthdate: playerBirthdate || null,
+            player_number: playerNumber ? Number(playerNumber) : null,
+            jersey_size: playerJerseySize || null,
+            email: playerEmail || null,
+            phone: playerPhone || null,
+            iban: playerIban || null,
             user_id: user.id,
           },
         ])
@@ -338,10 +391,17 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
       setPlayerName("")
       setPlayerPhotoFile(null)
       setPlayerPhotoPreview(null)
-      setPlayerThrowingHand("")
-      setPlayerAge("")
-      setPlayerOrigin("")
+      setPlayerStreet("")
+      setPlayerHouseNumber("")
+      setPlayerPostalCode("")
+      setPlayerCity("")
+      setPlayerBirthdate("")
+      setPlayerNumber("")
       setEditingPlayerId(null)
+      setPlayerJerseySize("")
+      setPlayerEmail("")
+      setPlayerPhone("")
+      setPlayerIban("")
       fetchClubPlayers()
       onDataSaved()
     } catch (error: any) {
@@ -357,9 +417,16 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
     setPlayerName(player.name)
     setPlayerPhotoPreview(player.photo_url)
     setPlayerPhotoFile(null)
-    setPlayerThrowingHand(player.throwing_hand || "")
-    setPlayerAge(player.age || "")
-    setPlayerOrigin(player.origin || "")
+    setPlayerStreet(player.street || "")
+    setPlayerHouseNumber(player.house_number || "")
+    setPlayerPostalCode(player.postal_code || "")
+    setPlayerCity(player.city || "")
+    setPlayerJerseySize(player.jersey_size || "")
+    setPlayerEmail(player.email || "")
+    setPlayerPhone(player.phone || "")
+    setPlayerIban(player.iban || "")
+    setPlayerBirthdate(player.birthdate || "")
+    setPlayerNumber(player.player_number ?? "")
     setPlayerMessage("")
     setPlayerMessageType("info")
     setActiveSection("add-player")
@@ -370,9 +437,16 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
     setPlayerName("")
     setPlayerPhotoFile(null)
     setPlayerPhotoPreview(null)
-    setPlayerThrowingHand("")
-    setPlayerAge("")
-    setPlayerOrigin("")
+    setPlayerStreet("")
+    setPlayerHouseNumber("")
+    setPlayerPostalCode("")
+    setPlayerCity("")
+    setPlayerBirthdate("")
+    setPlayerNumber("")
+    setPlayerJerseySize("")
+    setPlayerEmail("")
+    setPlayerPhone("")
+    setPlayerIban("")
     setPlayerMessage("")
     setPlayerMessageType("info")
   }
@@ -775,7 +849,9 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full max-w-none space-y-6 px-4 sm:px-6 lg:px-12">
+
+
       <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
         <CardHeader className="border-b border-gray-100 pb-6">
           <div className="flex items-center space-x-3">
@@ -872,54 +948,127 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="playerThrowingHand">Wurfhand</Label>
-                  <Select value={playerThrowingHand} onValueChange={setPlayerThrowingHand}>
-                    <SelectTrigger className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50">
-                      <SelectValue placeholder="Wurfhand auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Left">
-                        <div className="flex items-center space-x-2">
-                          <Hand className="h-4 w-4" />
-                          <span>Links</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Right">
-                        <div className="flex items-center space-x-2">
-                          <Hand className="h-4 w-4" />
-                          <span>Rechts</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Both">
-                        <div className="flex items-center space-x-2">
-                          <Hand className="h-4 w-4" />
-                          <span>Beide</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="playerAge">Alter</Label>
+                  <Label htmlFor="playerBirthdate">Geburtsdatum</Label>
                   <Input
-                    id="playerAge"
-                    type="number"
-                    min="0"
-                    value={playerAge}
-                    onChange={(e) => setPlayerAge(e.target.value)}
-                    placeholder="Alter"
+                    id="playerBirthdate"
+                    type="date"
+                    value={playerBirthdate}
+                    onChange={(e) => setPlayerBirthdate(e.target.value)}
                     className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="playerOrigin">Herkunft</Label>
+                  <Label htmlFor="playerNumber">Spielernummer (Sportdarts)</Label>
                   <Input
-                    id="playerOrigin"
+                    id="playerNumber"
+                    type="number"
+                    min="0"
+                    value={playerNumber}
+                    onChange={(e) => setPlayerNumber(e.target.value)}
+                    placeholder="z.B. 12345"
+                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="playerStreet">Straße</Label>
+                  <Input
+                    id="playerStreet"
                     type="text"
-                    value={playerOrigin}
-                    onChange={(e) => setPlayerOrigin(e.target.value)}
-                    placeholder="Herkunft (z.B. Stadt, Land)"
+                    value={playerStreet}
+                    onChange={(e) => setPlayerStreet(e.target.value)}
+                    placeholder="Straße"
+                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="playerHouseNumber">Nr.</Label>
+                  <Input
+                    id="playerHouseNumber"
+                    type="text"
+                    value={playerHouseNumber}
+                    onChange={(e) => setPlayerHouseNumber(e.target.value)}
+                    placeholder="Hausnummer"
+                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="playerPostalCode">PLZ</Label>
+                  <Input
+                    id="playerPostalCode"
+                    type="text"
+                    value={playerPostalCode}
+                    onChange={(e) => setPlayerPostalCode(e.target.value)}
+                    placeholder="PLZ"
+                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="playerCity">Ort</Label>
+                  <Input
+                    id="playerCity"
+                    type="text"
+                    value={playerCity}
+                    onChange={(e) => setPlayerCity(e.target.value)}
+                    placeholder="Ort"
+                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                  />
+                </div>
+
+              </div>
+
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="playerJerseySize">Trikotgröße</Label>
+                  <Input
+                    id="playerJerseySize"
+                    type="text"
+                    value={playerJerseySize}
+                    onChange={(e) => setPlayerJerseySize(e.target.value)}
+                    placeholder="z.B. S, M, L"
+                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="playerEmail">E-Mail</Label>
+                  <Input
+                    id="playerEmail"
+                    type="email"
+                    value={playerEmail}
+                    onChange={(e) => setPlayerEmail(e.target.value)}
+                    placeholder="name@domain.de"
+                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="playerPhone">Telefon</Label>
+                  <Input
+                    id="playerPhone"
+                    type="tel"
+                    value={playerPhone}
+                    onChange={(e) => setPlayerPhone(e.target.value)}
+                    placeholder="z.B. +49 170 1234567"
+                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="playerIban">IBAN</Label>
+                  <Input
+                    id="playerIban"
+                    type="text"
+                    value={playerIban}
+                    onChange={(e) => setPlayerIban(e.target.value)}
+                    placeholder="DE00 0000 0000 0000 0000 00"
                     className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
                   />
                 </div>
@@ -1021,49 +1170,122 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           {activeSection === "manage-players" && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-800">Bestehende Spieler verwalten</h3>
-              {clubPlayers.length === 0 ? (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div className="w-full sm:max-w-md">
+                  <Label htmlFor="playerSearch" className="text-xs text-gray-500">
+                    Suche
+                  </Label>
+                  <Input
+                    id="playerSearch"
+                    value={playerSearch}
+                    onChange={(e) => setPlayerSearch(e.target.value)}
+                    placeholder="Name, Nr., Ort, E-Mail, Telefon …"
+                    className="mt-1 h-10"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div className="w-full sm:w-44">
+                    <Label className="text-xs text-gray-500">Sortieren nach</Label>
+                    <Select value={playerSortKey} onValueChange={(v) => setPlayerSortKey(v as any)}>
+                      <SelectTrigger className="mt-1 h-10">
+                        <SelectValue placeholder="Sortieren nach" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="name">Name</SelectItem>
+                        <SelectItem value="number">Nummer</SelectItem>
+                        <SelectItem value="birthdate">Geburtsdatum</SelectItem>
+                        <SelectItem value="city">Ort</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="w-full sm:w-36">
+                    <Label className="text-xs text-gray-500">Richtung</Label>
+                    <Select value={playerSortDir} onValueChange={(v) => setPlayerSortDir(v as any)}>
+                      <SelectTrigger className="mt-1 h-10">
+                        <SelectValue placeholder="Richtung" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="asc">Aufsteigend</SelectItem>
+                        <SelectItem value="desc">Absteigend</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+              {visiblePlayers.length === 0 ? (
                 <p className="text-sm text-gray-500">Noch keine Spieler vorhanden.</p>
               ) : (
-                <ul className="space-y-2">
-                  {clubPlayers.map((player) => (
-                    <li
-                      key={player.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-md"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={player.photo_url || "/placeholder.svg?height=32&width=32&query=player-avatar"}
-                          />
-                          <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium text-gray-800">{player.name}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditPlayerClick(player)}
-                          disabled={playerLoading}
-                          className="h-8 px-3 text-blue-600 hover:bg-blue-50 hover:text-blue-700 border-blue-200"
-                        >
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only">Bearbeiten</span>
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeletePlayer(player.id, player.photo_url)}
-                          disabled={playerLoading}
-                          className="h-8 px-3"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Löschen</span>
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                  <table className="w-full min-w-[1400px] text-sm">
+                    <thead className="bg-gray-50 sticky top-0 z-10">
+                      <tr className="text-left">
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Spieler</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Nr.</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Geburtsdatum</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Straße</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Nr.</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">PLZ</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Ort</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Trikot</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">E-Mail</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Telefon</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">IBAN</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700 text-right">Aktionen</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visiblePlayers.map((player, idx) => (
+                        <tr key={player.id} className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={player.photo_url || "/placeholder.svg?height=32&width=32&query=player-avatar"} />
+                                <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium text-gray-800">{player.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.player_number ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.birthdate ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.street ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.house_number ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.postal_code ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.city ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.jersey_size ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.email ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.phone ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.iban ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditPlayerClick(player)}
+                                disabled={playerLoading}
+                                className="h-8 px-3 text-blue-600 hover:bg-blue-50 hover:text-blue-700 border-blue-200"
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Bearbeiten</span>
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeletePlayer(player.id, player.photo_url)}
+                                disabled={playerLoading}
+                                className="h-8 px-3"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Löschen</span>
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}
@@ -1182,56 +1404,68 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                 {teams.length === 0 ? (
                   <p className="text-sm text-gray-500">Noch keine Mannschaften vorhanden.</p>
                 ) : (
-                  <ul className="space-y-2">
-                    {teams.map((team) => (
-                      <li
-                        key={team.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-md"
-                      >
-                        <div className="flex items-center gap-3">
-                          {team.logo_url ? (
-                            <div className="relative w-8 h-8 flex-shrink-0 rounded-full overflow-hidden border border-gray-200">
-                              <Image
-                                src={team.logo_url || "/placeholder.svg"}
-                                alt={`${team.name} Logo`}
-                                fill
-                                style={{ objectFit: "cover" }}
-                                className="rounded-full"
-                              />
+                <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                  <table className="w-full min-w-[900px] text-sm">
+                    <thead className="bg-gray-50 sticky top-0 z-10">
+                      <tr className="text-left">
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Spieler</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Nr.</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Geburtsdatum</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Straße</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Nr.</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">PLZ</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Ort</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700 text-right">Aktionen</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visiblePlayers.map((player, idx) => (
+                        <tr key={player.id} className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={player.photo_url || "/placeholder.svg?height=32&width=32&query=player-avatar"} />
+                                <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium text-gray-800">{player.name}</span>
                             </div>
-                          ) : (
-                            <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                              <ImageIconLucide className="h-4 w-4" />
+                          </td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.player_number ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.birthdate ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.street ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.house_number ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.postal_code ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.city ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditPlayerClick(player)}
+                                disabled={playerLoading}
+                                className="h-8 px-3 text-blue-600 hover:bg-blue-50 hover:text-blue-700 border-blue-200"
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Bearbeiten</span>
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeletePlayer(player.id, player.photo_url)}
+                                disabled={playerLoading}
+                                className="h-8 px-3"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Löschen</span>
+                              </Button>
                             </div>
-                          )}
-                          <span className="font-medium text-gray-800">{team.name}</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditTeamClick(team)}
-                            disabled={teamLoading}
-                            className="h-8 px-3 text-blue-600 hover:bg-blue-50 hover:text-blue-700 border-blue-200"
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Bearbeiten</span>
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteTeam(team.id)}
-                            disabled={teamLoading}
-                            className="h-8 px-3"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Löschen</span>
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               </div>
             </div>
           )}

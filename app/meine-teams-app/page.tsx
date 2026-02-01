@@ -136,8 +136,9 @@ export default function MeineTeamsAppPage() {
           const teamIds = teamData.map((team) => team.team_id)
 
           let membersQuery = supabase
-            .from("team_members")
-            .select(`id, team_id, player_id, role, joined_at, left_at, club_players (id, name, photo_url, throwing_hand, age, origin)`) 
+  .from("team_members")
+  .select(`id, team_id, player_id, role, joined_at, left_at, club_players:club_players!team_members_player_id_fkey (id, name, photo_url, throwing_hand, age, origin)`) 
+
             .in("team_id", teamIds)
             .order("role", { ascending: false })
 

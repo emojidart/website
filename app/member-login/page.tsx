@@ -69,7 +69,7 @@ export default function MemberLoginPage() {
       if (hash.includes("type=invite")) return
     }
     if (!authLoading && session) {
-      router.push("/member-profile")
+      router.push("/member-profile-app")
     }
   }, [session, authLoading, router])
 
@@ -88,7 +88,7 @@ export default function MemberLoginPage() {
 
       if (data.user) {
         setMessage("Anmeldung erfolgreich!")
-        router.push("/member-profile")
+        router.push("/member-profile-app")
       }
     } catch (error: any) {
       setMessage(`Anmeldung fehlgeschlagen: ${error.message}`)
