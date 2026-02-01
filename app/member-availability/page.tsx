@@ -176,7 +176,6 @@ export default function MemberAvailabilityPage() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
-  const [hasAdminAccess, setHasAdminAccess] = useState(false)
   const [matches, setMatches] = useState<Match[]>([])
   const [opponentTeams, setOpponentTeams] = useState<OpponentTeam[]>([])
 
@@ -217,8 +216,9 @@ export default function MemberAvailabilityPage() {
     if (!session?.user) return
     ;(async () => {
       setLoading(true)
-      await Promise.all([fetchUserProfile(), fetchAdminAccess()])
-      setLoading(false)
+      await fetchUserProfile()
+setLoading(false)
+
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
@@ -230,34 +230,6 @@ export default function MemberAvailabilityPage() {
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, teamMemberships])
-
-  async function fetchAdminAccess() {
-    if (!session?.user) return
-    // Vereinsbereich Admin / Verwaltung:
-    // Zeige Verwaltungs-Boxen nur, wenn der Benutzer in dieser Tabelle existiert
-    // UND mindestens ein Feld, das mit "allowed" beginnt, auf true steht.
-    // (Wenn alle allowed* Felder false sind -> nichts anzeigen)
-    //
-    // Falls eure Tabelle anders heißt, hier den Namen anpassen:
-    const { data, error } = await supabase
-      .from("club_admins")
-      .select("*")
-      .eq("user_id", session.user.id)
-      .maybeSingle()
-
-    if (error || !data) {
-      setHasAdminAccess(false)
-      return
-    }
-
-    const anyAllowed = Object.entries(data as Record<string, any>).some(([key, value]) => {
-      if (!key.toLowerCase().startsWith("allowed")) return false
-      return value === true
-    })
-
-    setHasAdminAccess(anyAllowed)
-  }
-
 
   async function fetchUserProfile() {
     const { data: profileData, error: profileError } = await supabase
@@ -541,9 +513,9 @@ async function loadMatchData(matchId: string, teamId: string) {
   const isCaptainOrCoForTeam = useMemo(() => {
     if (!selectedTeamId) return false
     const m = teamMemberships.find((t) => t.team_id === selectedTeamId)
-    return (m?.role === "Captain" || m?.role === "Co-Captain" || hasAdminAccess)
+    return (m?.role === "Captain" || m?.role === "Co-Captain" )
 
-  }, [selectedTeamId, teamMemberships, hasAdminAccess])
+  }, [selectedTeamId, teamMemberships])
 
   const availabilityByPlayer = useMemo(() => {
     const m = new Map<string, AvailabilityRow>()
