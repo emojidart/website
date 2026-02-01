@@ -110,7 +110,7 @@ export default function DartLeaguePage() {
           .from("team_members")
           .select(`
             team_id,
-            club_players (
+            club_players!team_members_player_id_fkey (
               id,
               name,
               photo_url
