@@ -137,7 +137,7 @@ function InfoCallout() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm sm:text-base font-semibold text-gray-900">Kurz erklärt</h2>
-            <Badge variant="outline" className="bg-white/70">Schnell • Mobil • Klar</Badge>
+            
           </div>
 
           <p className="mt-1 text-sm text-gray-600">
@@ -946,7 +946,7 @@ async function loadMatchData(matchId: string, teamId: string) {
 
                       <div className="space-y-2">
                         <div className="text-xs text-gray-500">Notiz (optional)</div>
-                        <Textarea value={myNote} onChange={(e) => setMyNote(e.target.value)} placeholder="z.B. komme 20 min später" />
+                        <Textarea value={myNote} onChange={(e) => setMyNote(e.target.value)} placeholder="z.B. komme 5 min später" />
                         <Button variant="secondary" onClick={saveNote}>
                           Notiz speichern
                         </Button>
