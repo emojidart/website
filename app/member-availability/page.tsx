@@ -160,7 +160,7 @@ function InfoCallout() {
           </div>
 
           <div className="mt-3 rounded-xl bg-white/70 p-3 ring-1 ring-black/5 text-sm text-gray-700">
-            <span className="font-medium">Captain/Co-Captain</span> stellt daraus die <span className="font-medium">Stamm- und Ersatzspieler</span> zusammen.
+            <span className="font-medium">Captain/Co-Captain</span> stellt daraus die <span className="font-medium">Fix- und Ersatzspieler</span> zusammen.
           </div>
         </div>
       </div>
@@ -955,7 +955,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                                     {!inLineup ? (
                                       <>
                                         <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "starter")}>
-                                          Stamm
+                                          Fix
                                         </Button>
                                         <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "substitute")}>
                                           Ersatz
@@ -968,7 +968,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                                         </Button>
                                         {entry?.is_substitute ? (
                                           <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "starter")}>
-                                            Als Stamm
+                                            Als Fix
                                           </Button>
                                         ) : (
                                           <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "substitute")}>
@@ -997,7 +997,7 @@ async function loadMatchData(matchId: string, teamId: string) {
 
                     <CardContent className="space-y-3">
                       {starters.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">Noch keine Stammspieler ausgewählt.</div>
+                        <div className="text-sm text-muted-foreground">Noch keine Spieler ausgewählt.</div>
                       ) : (
                         <div className="grid gap-2">
                           {starters.map((lp) => {
@@ -1031,7 +1031,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                       )}
 
                       {!isCaptainOrCoForTeam ? (
-                        <div className="text-xs text-gray-500">Nur Captain/Co-Captain oder Vereins-Admin kann die Aufstellung ändern.</div>
+                        <div className="text-xs text-gray-500">Nur Captain/Co-Captain kann die Aufstellung ändern.</div>
                       ) : null}
                     </CardContent>
                   </Card>
