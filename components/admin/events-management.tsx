@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -71,16 +71,30 @@ export function EventsManagement({ user }: EventsManagementProps) {
     photo_file: null,
   })
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [formMessage, setFormMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const createdObjectUrlRef = useRef<string | null>(null)
+
+  const isBusy = useMemo(() => isFetching || isSaving, [isFetching, isSaving])
 
   useEffect(() => {
     fetchEvents()
   }, [])
 
+  // Cleanup object URLs created for local preview images
+  useEffect(() => {
+    return () => {
+      if (createdObjectUrlRef.current) {
+        URL.revokeObjectURL(createdObjectUrlRef.current)
+        createdObjectUrlRef.current = null
+      }
+    }
+  }, [])
+
   const fetchEvents = async () => {
-    setLoading(true)
+    setIsFetching(true)
     const { data, error } = await supabase.from("events").select("*").order("event_date", { ascending: true })
 
     if (error) {
@@ -89,7 +103,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
     } else {
       setEvents(data || [])
     }
-    setLoading(false)
+    setIsFetching(false)
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -105,7 +119,14 @@ export function EventsManagement({ user }: EventsManagementProps) {
     const file = e.target.files?.[0]
     if (file) {
       setForm((prev) => ({ ...prev, photo_file: file }))
-      setPhotoPreview(URL.createObjectURL(file))
+      // Revoke the previous object URL (if any) before creating a new one
+      if (createdObjectUrlRef.current) {
+        URL.revokeObjectURL(createdObjectUrlRef.current)
+        createdObjectUrlRef.current = null
+      }
+      const objectUrl = URL.createObjectURL(file)
+      createdObjectUrlRef.current = objectUrl
+      setPhotoPreview(objectUrl)
     } else {
       setForm((prev) => ({ ...prev, photo_file: null }))
       setPhotoPreview(null)
@@ -133,12 +154,12 @@ export function EventsManagement({ user }: EventsManagementProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setIsSaving(true)
     setFormMessage(null)
 
     if (!user) {
       setFormMessage({ type: "error", text: "Fehler: Nicht authentifiziert." })
-      setLoading(false)
+      setIsSaving(false)
       return
     }
 
@@ -196,7 +217,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
       console.error("Error saving event:", error)
       setFormMessage({ type: "error", text: `Fehler beim Speichern der Veranstaltung: ${error.message}` })
     } finally {
-      setLoading(false)
+      setIsSaving(false)
     }
   }
 
@@ -219,7 +240,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
   }
 
   const handleDelete = async (id: string) => {
-    setLoading(true)
+    setIsSaving(true)
     setFormMessage(null)
     const { error } = await supabase.from("events").delete().eq("id", id)
 
@@ -230,7 +251,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
       setFormMessage({ type: "success", text: "Veranstaltung erfolgreich gelöscht!" })
       fetchEvents()
     }
-    setLoading(false)
+    setIsSaving(false)
   }
 
   const resetForm = () => {
@@ -247,6 +268,11 @@ export function EventsManagement({ user }: EventsManagementProps) {
       photo_url: null,
       photo_file: null,
     })
+    // If we had a locally created preview, revoke it
+    if (createdObjectUrlRef.current) {
+      URL.revokeObjectURL(createdObjectUrlRef.current)
+      createdObjectUrlRef.current = null
+    }
     setPhotoPreview(null)
   }
 
@@ -277,20 +303,16 @@ export function EventsManagement({ user }: EventsManagementProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-        <CardHeader className="border-b border-gray-100 pb-6">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg">
-              <PlusCircle className="h-5 w-5 text-white" />
+    <div className="w-full max-w-none space-y-8">
+      <Card className="border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70">
+        <CardHeader className="space-y-2">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background">
+              <PlusCircle className="h-4 w-4" />
             </div>
             <div>
-              <CardTitle className="text-xl font-semibold text-gray-900">
-                {editingEventId ? "Veranstaltung bearbeiten" : "Neue Veranstaltung anlegen"}
-              </CardTitle>
-              <CardDescription className="text-sm text-gray-500 mt-1">
-                Details für Partys, Spielabende und andere Veranstaltungen eingeben.
-              </CardDescription>
+              <CardTitle className="text-lg">{editingEventId ? "Veranstaltung bearbeiten" : "Neue Veranstaltung anlegen"}</CardTitle>
+              <CardDescription>Details für Partys, Spielabende und andere Veranstaltungen eingeben.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -309,7 +331,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   onChange={handleInputChange}
                   placeholder="Z.B. Weihnachtsfeier 2025"
                   required
-                  className="h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-gray-50/50"
+                  className="h-11"
                 />
               </div>
               <div className="space-y-2">
@@ -317,7 +339,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   Veranstaltungstyp
                 </label>
                 <Select value={form.event_type} onValueChange={(value) => handleSelectChange("event_type", value)}>
-                  <SelectTrigger className="h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-gray-50/50">
+                  <SelectTrigger className="h-11">
                     <SelectValue placeholder="Wähle einen Typ" />
                   </SelectTrigger>
                   <SelectContent>
@@ -362,7 +384,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   value={form.event_date}
                   onChange={handleInputChange}
                   required
-                  className="h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-gray-50/50"
+                  className="h-11"
                 />
               </div>
               <div className="space-y-2">
@@ -377,7 +399,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   onChange={handleInputChange}
                   placeholder="19:00"
                   required
-                  className="h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-gray-50/50"
+                  className="h-11"
                 />
               </div>
             </div>
@@ -395,7 +417,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   onChange={handleInputChange}
                   placeholder="Z.B. Vereinsheim"
                   required
-                  className="h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-gray-50/50"
+                  className="h-11"
                 />
               </div>
               <div className="space-y-2">
@@ -411,7 +433,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   onChange={handleInputChange}
                   placeholder="Z.B. 5.00"
                   required
-                  className="h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-gray-50/50"
+                  className="h-11"
                 />
               </div>
             </div>
@@ -427,7 +449,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                 value={form.max_participants || ""}
                 onChange={handleInputChange}
                 placeholder="Z.B. 50"
-                className="h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-gray-50/50"
+              className="h-11"
               />
             </div>
 
@@ -442,7 +464,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                 onChange={handleInputChange}
                 placeholder="Zusätzliche Informationen zur Veranstaltung..."
                 rows={4}
-                className="border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-gray-50/50"
+                className="min-h-[110px]"
               />
             </div>
 
@@ -457,7 +479,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
-                  className="flex-1 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-gray-50/50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                  className="flex-1 h-11"
                 />
                 {photoPreview && (
                   <div className="relative w-16 h-12 flex-shrink-0 rounded-md overflow-hidden border border-gray-200">
@@ -476,10 +498,10 @@ export function EventsManagement({ user }: EventsManagementProps) {
             <div className="flex gap-4">
               <Button
                 type="submit"
-                disabled={loading}
-                className="flex-1 h-12 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                disabled={isBusy}
+                className="flex-1 h-11"
               >
-                {loading ? (
+                {isSaving ? (
                   <div className="flex items-center space-x-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Speichern...</span>
@@ -496,7 +518,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   type="button"
                   onClick={resetForm}
                   variant="outline"
-                  className="h-12 px-4 border-gray-200 hover:bg-gray-50 hover:border-gray-300 bg-transparent text-gray-700"
+                  className="h-11 px-4"
                 >
                   <XCircle className="h-4 w-4 mr-2" />
                   Abbrechen
@@ -528,22 +550,20 @@ export function EventsManagement({ user }: EventsManagementProps) {
         </CardContent>
       </Card>
 
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-        <CardHeader className="border-b border-gray-100 pb-6">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg">
-              <Calendar className="h-5 w-5 text-white" />
+      <Card className="border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70">
+        <CardHeader className="space-y-2">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background">
+              <Calendar className="h-4 w-4" />
             </div>
             <div>
-              <CardTitle className="text-xl font-semibold text-gray-900">Bevorstehende Veranstaltungen</CardTitle>
-              <CardDescription className="text-sm text-gray-500 mt-1">
-                Übersicht und Verwaltung aller geplanten Veranstaltungen.
-              </CardDescription>
+              <CardTitle className="text-lg">Bevorstehende Veranstaltungen</CardTitle>
+              <CardDescription>Übersicht und Verwaltung aller geplanten Veranstaltungen.</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
-          {loading && events.length === 0 ? (
+          {isFetching && events.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
               <span className="ml-3 text-gray-600">Veranstaltungen werden geladen...</span>
@@ -584,7 +604,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                             variant="outline"
                             size="sm"
                             onClick={() => handleEdit(event)}
-                            className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                            className="h-9 w-9 p-0"
                           >
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Bearbeiten</span>
@@ -594,7 +614,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 bg-transparent"
+                                className="h-9 w-9 p-0"
                               >
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Löschen</span>

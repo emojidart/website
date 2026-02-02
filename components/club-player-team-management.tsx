@@ -54,7 +54,6 @@ interface ClubPlayer {
   iban: string | null
 }
 
-
 interface Team {
   id: string
   name: string
@@ -177,24 +176,10 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   const [currentSelectedPlayerTeam, setCurrentSelectedPlayerTeam] = useState<Team | null>(null)
   const [currentSelectedPlayerRole, setCurrentSelectedPlayerRole] = useState<string | null>(null) // NEW
 
-  
-
   // Changed activeSection type to remove liga-statistics and view-statistics
   const [activeSection, setActiveSection] = useState<
     "add-player" | "manage-players" | "manage-teams" | "assign-player"
   >("add-player")
-
-  useEffect(() => {
-    fetchClubPlayers()
-    fetchTeams()
-    fetchTeamMembers()
-  }, [])
-
-  // Removed fetchLigaStatistics function
-  // const fetchLigaStatistics = async () => { ... }
-
-  // Removed handleSaveLigaStatistics function
-  // const handleSaveLigaStatistics = async (e: React.FormEvent) => { ... }
 
   useEffect(() => {
     fetchClubPlayers()
@@ -250,8 +235,9 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   const fetchTeamMembers = async () => {
     const { data, error } = await supabase
       .from("team_members")
-      .select(`id, team_id, player_id, role, club_players(name)`) // NEW: Fetch role
+      .select(`id, team_id, player_id, role, club_players!team_members_player_id_fkey(name)`)
       .is("left_at", null)
+
     if (error) {
       console.error("Error fetching team members:", error)
       setAssignmentMessage("Fehler beim Laden der Mannschaftsmitglieder.")
@@ -432,7 +418,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
     setActiveSection("add-player")
   }
 
-  const handleCancelPlayerEdit = () => {
+  const handleCancelEditPlayer = () => {
     setEditingPlayerId(null)
     setPlayerName("")
     setPlayerPhotoFile(null)
@@ -452,35 +438,32 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   }
 
   const handleDeletePlayer = async (playerId: string, photoUrl: string | null) => {
-    if (
-      !confirm(
-        "Sind Sie sicher, dass Sie diesen Spieler löschen möchten? Dies entfernt ihn auch aus allen Mannschaften.",
-      )
-    )
-      return
+    if (!confirm("Sind Sie sicher, dass Sie diesen Spieler löschen möchten?")) return
 
     setPlayerLoading(true)
     setPlayerMessage("Spieler wird gelöscht...")
     setPlayerMessageType("info")
 
     try {
+      // First delete from team_members to avoid foreign key constraints
       const { error: deleteMembersError } = await supabase.from("team_members").delete().eq("player_id", playerId)
+
       if (deleteMembersError) {
         throw deleteMembersError
       }
 
-      const { error: deletePlayerError } = await supabase.from("club_players").delete().eq("id", playerId)
-      if (deletePlayerError) {
-        throw deletePlayerError
+      // Then delete the player
+      const { error } = await supabase.from("club_players").delete().eq("id", playerId)
+
+      if (error) {
+        throw error
       }
 
+      // Optionally delete the photo from storage
       if (photoUrl) {
-        const filePath = photoUrl.split("player-avatars/")[1]
-        if (filePath) {
-          const { error: deletePhotoError } = await supabase.storage.from("player-avatars").remove([filePath])
-          if (deletePhotoError) {
-            console.warn("Fehler beim Löschen des Spielerfotos aus dem Storage:", deletePhotoError.message)
-          }
+        const fileName = photoUrl.split("/").pop()
+        if (fileName) {
+          await supabase.storage.from("player-avatars").remove([`club-player-avatars/${fileName}`])
         }
       }
 
@@ -556,9 +539,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
         }
         setTeamMessage("Mannschaft erfolgreich aktualisiert!")
       } else {
-        const { error } = await supabase
-          .from("teams")
-          .insert([{ name: newTeamName, logo_url: logoUrl, user_id: user.id }])
+        const { error } = await supabase.from("teams").insert([{ name: newTeamName, logo_url: logoUrl, user_id: user.id }])
 
         if (error) {
           throw error
@@ -669,175 +650,90 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
         if (existingAssignment.left_at) {
           const { error: reactivateError } = await supabase
             .from("team_members")
-            .update({
-              left_at: null,
-              role: selectedRole,
-              joined_at: new Date().toISOString(),
-            })
+            .update({ left_at: null, role: selectedRole })
             .eq("id", existingAssignment.id)
 
-          if (reactivateError) {
-            throw reactivateError
-          }
+          if (reactivateError) throw reactivateError
 
-          const { error: movementError } = await supabase.from("player_movements").insert([
-            {
-              player_id: selectedPlayerId,
-              team_id: selectedTeamId,
-              from_team_id: null,
-              movement_type: "reactivation",
-              user_id: user.id,
-            },
-          ])
-          if (movementError) {
-            console.error("Fehler beim Protokollieren der Reaktivierung:", movementError)
-          }
-
-          setAssignmentMessage("Spieler wurde wieder aktiviert und zugewiesen!")
-          setAssignmentMessageType("success")
-          setSelectedPlayerId("")
-          setSelectedTeamId("")
-          setSelectedRole("Player")
-          fetchTeamMembers()
-          setAssignmentLoading(false)
-          onDataSaved()
-          return
-        }
-
-        if (existingAssignment.role === selectedRole) {
-          setAssignmentMessage("Dieser Spieler ist bereits in dieser Mannschaft mit dieser Rolle.")
-          setAssignmentMessageType("error")
-          setAssignmentLoading(false)
-          return
+          setAssignmentMessage("Spieler wurde wieder ins Team aufgenommen!")
         } else {
+          // ✅ Spieler ist schon im Team -> Rolle aktualisieren
           const { error: updateRoleError } = await supabase
             .from("team_members")
             .update({ role: selectedRole })
             .eq("id", existingAssignment.id)
 
-          if (updateRoleError) {
-            throw updateRoleError
-          }
+          if (updateRoleError) throw updateRoleError
 
-          setAssignmentMessage("Spielerrolle erfolgreich aktualisiert!")
-          setAssignmentMessageType("success")
-          setSelectedPlayerId("")
-          setSelectedTeamId("")
-          setSelectedRole("Player")
-          fetchTeamMembers()
-          setAssignmentLoading(false)
-          return
+          setAssignmentMessage("Rolle wurde aktualisiert!")
         }
+      } else {
+        // ✅ Prüfen ob Spieler aktuell in einem anderen Team ist
+        const { data: currentMembership, error: currentMembershipError } = await supabase
+          .from("team_members")
+          .select("id, team_id")
+          .eq("player_id", selectedPlayerId)
+          .is("left_at", null)
+          .maybeSingle()
+
+        if (currentMembershipError) throw currentMembershipError
+
+        // ✅ Spieler ist in einem anderen Team -> left_at setzen
+        if (currentMembership) {
+          const { error: leaveOldTeamError } = await supabase
+            .from("team_members")
+            .update({ left_at: new Date().toISOString() })
+            .eq("id", currentMembership.id)
+
+          if (leaveOldTeamError) throw leaveOldTeamError
+        }
+
+        // ✅ Neue Teamzuweisung einfügen
+        const { error: insertError } = await supabase.from("team_members").insert([
+          {
+            team_id: selectedTeamId,
+            player_id: selectedPlayerId,
+            role: selectedRole,
+            user_id: user.id,
+            joined_at: new Date().toISOString(),
+            left_at: null,
+          },
+        ])
+
+        if (insertError) throw insertError
+
+        setAssignmentMessage("Spieler erfolgreich zugewiesen!")
       }
 
-      const { error: insertError } = await supabase.from("team_members").insert([
-        {
-          player_id: selectedPlayerId,
-          team_id: selectedTeamId,
-          role: selectedRole,
-        },
-      ])
-
-      if (insertError) {
-        throw insertError
-      }
-
-      const { error: movementError } = await supabase.from("player_movements").insert([
-        {
-          player_id: selectedPlayerId,
-          team_id: selectedTeamId,
-          from_team_id: null, // No transfer, just addition
-          movement_type: "new_addition",
-          user_id: user.id,
-        },
-      ])
-
-      if (movementError) {
-        console.error("Fehler beim Protokollieren der Spielerbewegung:", movementError)
-      }
-
-      setAssignmentMessage("Spieler erfolgreich zu weiterem Team hinzugefügt!")
       setAssignmentMessageType("success")
-      setSelectedPlayerId("")
-      setSelectedTeamId("")
-      setSelectedRole("Player")
       fetchTeamMembers()
-
       onDataSaved()
     } catch (error: any) {
-      setAssignmentMessage(`Fehler bei der Zuweisung/dem Transfer: ${error.message}`)
+      setAssignmentMessage(`Fehler: ${error.message}`)
       setAssignmentMessageType("error")
     } finally {
       setAssignmentLoading(false)
     }
   }
 
-  const handleRemovePlayerFromTeam = async (playerId: string, teamId: string, playerName: string, teamName: string) => {
-    if (!confirm(`Möchten Sie ${playerName} wirklich aus dem Team "${teamName}" entfernen?`)) {
-      return
-    }
-
-    try {
-      const { error } = await supabase
-        .from("team_members")
-        .update({ left_at: new Date().toISOString() })
-        .eq("player_id", playerId)
-        .eq("team_id", teamId)
-        .is("left_at", null)
-
-      if (error) {
-        throw error
-      }
-
-      // Log the removal
-      const { error: movementError } = await supabase.from("player_movements").insert([
-        {
-          player_id: playerId,
-          team_id: null,
-          from_team_id: teamId,
-          movement_type: "removal",
-          user_id: user?.id,
-        },
-      ])
-
-      if (movementError) {
-        console.error("Fehler beim Protokollieren der Spielerentfernung:", movementError)
-      }
-
-      fetchTeamMembers()
-      setAssignmentMessage(`${playerName} wurde aus "${teamName}" entfernt.`)
-      setAssignmentMessageType("success")
-    } catch (error) {
-      console.error("Fehler beim Entfernen des Spielers:", error)
-      setAssignmentMessage("Fehler beim Entfernen des Spielers.")
-      setAssignmentMessageType("error")
-    }
-  }
-
-  const handleDeleteTeamMember = async (memberId: string) => {
-    if (!confirm("Sind Sie sicher, dass Sie diesen Spieler aus der Mannschaft entfernen möchten?")) return
+  const handleDeleteTeamMember = async (teamMemberId: string) => {
+    if (!confirm("Spieler wirklich aus der Mannschaft entfernen?")) return
 
     setAssignmentLoading(true)
-    setAssignmentMessage("Mitglied wird entfernt...")
+    setAssignmentMessage("Spieler wird entfernt...")
     setAssignmentMessageType("info")
 
     try {
-      const { error } = await supabase
-        .from("team_members")
-        .update({ left_at: new Date().toISOString() })
-        .eq("id", memberId)
-        .is("left_at", null)
+      const { error } = await supabase.from("team_members").update({ left_at: new Date().toISOString() }).eq("id", teamMemberId)
 
-      if (error) {
-        throw error
-      }
+      if (error) throw error
 
-      setAssignmentMessage("Mitglied erfolgreich entfernt!")
+      setAssignmentMessage("Spieler erfolgreich entfernt!")
       setAssignmentMessageType("success")
       fetchTeamMembers()
       onDataSaved()
     } catch (error: any) {
-      setAssignmentMessage(`Fehler beim Entfernen des Mitglieds: ${error.message}`)
+      setAssignmentMessage(`Fehler beim Entfernen: ${error.message}`)
       setAssignmentMessageType("error")
     } finally {
       setAssignmentLoading(false)
@@ -849,299 +745,285 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   }
 
   return (
-    <div className="w-full max-w-none space-y-6 px-4 sm:px-6 lg:px-12">
+    <div className="w-full mx-auto space-y-6">
 
 
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-        <CardHeader className="border-b border-gray-100 pb-6">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg">
-              <Users className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-semibold text-gray-900">Verein - Spielerverwaltung</CardTitle>
-              <CardDescription className="text-sm text-gray-500 mt-1">
-                Verwalte deine Vereinsspieler, Mannschaften und Ligastatistiken.
-              </CardDescription>
-            </div>
-          </div>
+      <Card className="border-gray-200 shadow-md rounded-xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-5">
+          <CardTitle className="text-xl font-bold flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Vereinsverwaltung: Spieler & Mannschaften
+          </CardTitle>
+          <CardDescription className="text-orange-100">
+            Spieler anlegen, bearbeiten, Mannschaften verwalten und Spieler zuweisen.
+          </CardDescription>
         </CardHeader>
 
-        <CardContent className="pt-6">
-          {/* Section Navigation */}
-          <div className="mb-6">
-            <div className="flex space-x-2 overflow-x-auto pb-2">
-              <Button
-                onClick={() => {
-                  setActiveSection("add-player")
-                  handleCancelPlayerEdit()
-                }}
-                className={cn(
-                  "px-4 py-2 rounded-lg font-semibold transition-all duration-200 text-sm whitespace-nowrap",
-                  activeSection === "add-player"
-                    ? "bg-orange-600 text-white shadow-md"
-                    : "bg-transparent text-gray-600 hover:bg-gray-100",
-                )}
-              >
-                <UserRoundPlus className="h-4 w-4 mr-2" />
-                Spieler hinzufügen
-              </Button>
-              <Button
-                onClick={() => setActiveSection("manage-players")}
-                className={cn(
-                  "px-4 py-2 rounded-lg font-semibold transition-all duration-200 text-sm whitespace-nowrap",
-                  activeSection === "manage-players"
-                    ? "bg-orange-600 text-white shadow-md"
-                    : "bg-transparent text-gray-600 hover:bg-gray-100",
-                )}
-              >
-                <UserRoundCog className="h-4 w-4 mr-2" />
-                Spieler verwalten
-              </Button>
-              <Button
-                onClick={() => {
-                  setActiveSection("manage-teams")
-                  handleCancelEditTeam()
-                }}
-                className={cn(
-                  "px-4 py-2 rounded-lg font-semibold transition-all duration-200 text-sm whitespace-nowrap",
-                  activeSection === "manage-teams"
-                    ? "bg-orange-600 text-white shadow-md"
-                    : "bg-transparent text-gray-600 hover:bg-gray-100",
-                )}
-              >
-                <ClipboardList className="h-4 w-4 mr-2" />
-                Mannschaften verwalten
-              </Button>
-              <Button
-                onClick={() => setActiveSection("assign-player")}
-                className={cn(
-                  "px-4 py-2 rounded-lg font-semibold transition-all duration-200 text-sm whitespace-nowrap",
-                  activeSection === "assign-player"
-                    ? "bg-orange-600 text-white shadow-md"
-                    : "bg-transparent text-gray-600 hover:bg-gray-100",
-                )}
-              >
-                <UserRoundCog className="h-4 w-4 mr-2" />
-                Spieler zuweisen
-              </Button>
-              {/* Removed Liga-statistics and View-statistics buttons */}
-            </div>
+        <CardContent className="p-5 space-y-6">
+          {/* Navigation Buttons */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Button
+              variant={activeSection === "add-player" ? "default" : "outline"}
+              onClick={() => setActiveSection("add-player")}
+              className={cn(
+                "h-10 rounded-lg font-medium shadow-sm transition",
+                activeSection === "add-player"
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
+              )}
+            >
+              <UserRoundPlus className="h-4 w-4 mr-2" />
+              Spieler hinzufügen
+            </Button>
+
+            <Button
+              variant={activeSection === "manage-players" ? "default" : "outline"}
+              onClick={() => setActiveSection("manage-players")}
+              className={cn(
+                "h-10 rounded-lg font-medium shadow-sm transition",
+                activeSection === "manage-players"
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
+              )}
+            >
+              <ClipboardList className="h-4 w-4 mr-2" />
+              Spieler verwalten
+            </Button>
+
+            <Button
+              variant={activeSection === "manage-teams" ? "default" : "outline"}
+              onClick={() => setActiveSection("manage-teams")}
+              className={cn(
+                "h-10 rounded-lg font-medium shadow-sm transition",
+                activeSection === "manage-teams"
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
+              )}
+            >
+              <Hand className="h-4 w-4 mr-2" />
+              Mannschaften verwalten
+            </Button>
+
+            <Button
+              variant={activeSection === "assign-player" ? "default" : "outline"}
+              onClick={() => setActiveSection("assign-player")}
+              className={cn(
+                "h-10 rounded-lg font-medium shadow-sm transition",
+                activeSection === "assign-player"
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
+              )}
+            >
+              <UserRoundCog className="h-4 w-4 mr-2" />
+              Spieler zuweisen
+            </Button>
           </div>
 
-          {/* Add/Edit Player Section */}
+          {/* Add / Edit Player Section */}
           {activeSection === "add-player" && (
-            <form onSubmit={handleSubmitPlayerForm} className="space-y-6">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-800">
                 {editingPlayerId ? "Spieler bearbeiten" : "Neuen Spieler hinzufügen"}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleSubmitPlayerForm} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="playerName">Name</Label>
+                  <Label htmlFor="playerName">Spielername</Label>
                   <Input
                     id="playerName"
                     type="text"
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
-                    placeholder="Spielername"
+                    placeholder="Name des Spielers"
                     className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="playerBirthdate">Geburtsdatum</Label>
-                  <Input
-                    id="playerBirthdate"
-                    type="date"
-                    value={playerBirthdate}
-                    onChange={(e) => setPlayerBirthdate(e.target.value)}
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                  />
+                  <Label htmlFor="playerPhoto">Foto (optional)</Label>
+                  <div className="flex items-center space-x-3">
+                    <Input
+                      id="playerPhoto"
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePlayerPhotoChange}
+                      className="flex-1 h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                    />
+                    {playerPhotoPreview && (
+                      <div className="relative w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border border-gray-200">
+                        <Image
+                          src={playerPhotoPreview || "/placeholder.svg"}
+                          alt="Vorschau Spielerfoto"
+                          fill
+                          style={{ objectFit: "cover" }}
+                          className="rounded-full"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white hover:bg-red-600"
+                          onClick={() => {
+                            setPlayerPhotoPreview(null)
+                            setPlayerPhotoFile(null)
+                          }}
+                        >
+                          <XCircle className="h-3 w-3" />
+                          <span className="sr-only">Bild entfernen</span>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="playerNumber">Spielernummer (Sportdarts)</Label>
-                  <Input
-                    id="playerNumber"
-                    type="number"
-                    min="0"
-                    value={playerNumber}
-                    onChange={(e) => setPlayerNumber(e.target.value)}
-                    placeholder="z.B. 12345"
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="playerStreet">Straße</Label>
+                    <Input
+                      id="playerStreet"
+                      type="text"
+                      value={playerStreet}
+                      onChange={(e) => setPlayerStreet(e.target.value)}
+                      placeholder="Straße"
+                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playerHouseNumber">Hausnummer</Label>
+                    <Input
+                      id="playerHouseNumber"
+                      type="text"
+                      value={playerHouseNumber}
+                      onChange={(e) => setPlayerHouseNumber(e.target.value)}
+                      placeholder="Hausnummer"
+                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playerPostalCode">PLZ</Label>
+                    <Input
+                      id="playerPostalCode"
+                      type="text"
+                      value={playerPostalCode}
+                      onChange={(e) => setPlayerPostalCode(e.target.value)}
+                      placeholder="PLZ"
+                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playerCity">Ort</Label>
+                    <Input
+                      id="playerCity"
+                      type="text"
+                      value={playerCity}
+                      onChange={(e) => setPlayerCity(e.target.value)}
+                      placeholder="Ort"
+                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playerBirthdate">Geburtsdatum</Label>
+                    <Input
+                      id="playerBirthdate"
+                      type="date"
+                      value={playerBirthdate}
+                      onChange={(e) => setPlayerBirthdate(e.target.value)}
+                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playerNumber">Spielernummer</Label>
+                    <Input
+                      id="playerNumber"
+                      type="number"
+                      value={playerNumber}
+                      onChange={(e) => setPlayerNumber(e.target.value)}
+                      placeholder="Nr."
+                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="playerStreet">Straße</Label>
-                  <Input
-                    id="playerStreet"
-                    type="text"
-                    value={playerStreet}
-                    onChange={(e) => setPlayerStreet(e.target.value)}
-                    placeholder="Straße"
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="playerJerseySize">Trikotgröße</Label>
+                    <Input
+                      id="playerJerseySize"
+                      type="text"
+                      value={playerJerseySize}
+                      onChange={(e) => setPlayerJerseySize(e.target.value)}
+                      placeholder="z.B. M, L, XL"
+                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playerEmail">E-Mail</Label>
+                    <Input
+                      id="playerEmail"
+                      type="email"
+                      value={playerEmail}
+                      onChange={(e) => setPlayerEmail(e.target.value)}
+                      placeholder="E-Mail"
+                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playerPhone">Telefon</Label>
+                    <Input
+                      id="playerPhone"
+                      type="text"
+                      value={playerPhone}
+                      onChange={(e) => setPlayerPhone(e.target.value)}
+                      placeholder="Telefon"
+                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playerIban">IBAN</Label>
+                    <Input
+                      id="playerIban"
+                      type="text"
+                      value={playerIban}
+                      onChange={(e) => setPlayerIban(e.target.value)}
+                      placeholder="IBAN"
+                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="playerHouseNumber">Nr.</Label>
-                  <Input
-                    id="playerHouseNumber"
-                    type="text"
-                    value={playerHouseNumber}
-                    onChange={(e) => setPlayerHouseNumber(e.target.value)}
-                    placeholder="Hausnummer"
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="playerPostalCode">PLZ</Label>
-                  <Input
-                    id="playerPostalCode"
-                    type="text"
-                    value={playerPostalCode}
-                    onChange={(e) => setPlayerPostalCode(e.target.value)}
-                    placeholder="PLZ"
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="playerCity">Ort</Label>
-                  <Input
-                    id="playerCity"
-                    type="text"
-                    value={playerCity}
-                    onChange={(e) => setPlayerCity(e.target.value)}
-                    placeholder="Ort"
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                  />
-                </div>
-
-              </div>
-
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                <div className="space-y-2">
-                  <Label htmlFor="playerJerseySize">Trikotgröße</Label>
-                  <Input
-                    id="playerJerseySize"
-                    type="text"
-                    value={playerJerseySize}
-                    onChange={(e) => setPlayerJerseySize(e.target.value)}
-                    placeholder="z.B. S, M, L"
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="playerEmail">E-Mail</Label>
-                  <Input
-                    id="playerEmail"
-                    type="email"
-                    value={playerEmail}
-                    onChange={(e) => setPlayerEmail(e.target.value)}
-                    placeholder="name@domain.de"
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="playerPhone">Telefon</Label>
-                  <Input
-                    id="playerPhone"
-                    type="tel"
-                    value={playerPhone}
-                    onChange={(e) => setPlayerPhone(e.target.value)}
-                    placeholder="z.B. +49 170 1234567"
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="playerIban">IBAN</Label>
-                  <Input
-                    id="playerIban"
-                    type="text"
-                    value={playerIban}
-                    onChange={(e) => setPlayerIban(e.target.value)}
-                    placeholder="DE00 0000 0000 0000 0000 00"
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="playerPhoto">Profilbild (optional)</Label>
-                <div className="flex items-center space-x-3">
-                  <Input
-                    id="playerPhoto"
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePlayerPhotoChange}
-                    className="flex-1 h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-                  />
-                  {playerPhotoPreview && (
-                    <div className="relative w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border border-gray-200">
-                      <Image
-                        src={playerPhotoPreview || "/placeholder.svg"}
-                        alt="Vorschau Profilbild"
-                        fill
-                        style={{ objectFit: "cover" }}
-                        className="rounded-full"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white hover:bg-red-600"
-                        onClick={() => {
-                          setPlayerPhotoPreview(null)
-                          setPlayerPhotoFile(null)
-                        }}
-                      >
-                        <XCircle className="h-3 w-3" />
-                        <span className="sr-only">Foto entfernen</span>
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  type="submit"
-                  disabled={playerLoading}
-                  className="flex-1 h-10 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-md"
-                >
-                  {playerLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>{editingPlayerId ? "Wird aktualisiert..." : "Wird hinzugefügt..."}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      {editingPlayerId ? <Edit className="h-4 w-4" /> : <UserRoundPlus className="h-4 w-4" />}
-                      <span>{editingPlayerId ? "Änderungen speichern" : "Spieler hinzufügen"}</span>
-                    </div>
-                  )}
-                </Button>
-                {editingPlayerId && (
+                <div className="flex gap-2">
                   <Button
-                    type="button"
-                    onClick={handleCancelPlayerEdit}
-                    variant="outline"
+                    type="submit"
                     disabled={playerLoading}
-                    className="h-10 border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800 font-medium rounded-lg shadow-md bg-transparent"
+                    className="flex-1 h-10 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-md"
                   >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Abbrechen
+                    {playerLoading ? (
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>{editingPlayerId ? "Wird aktualisiert..." : "Wird hinzugefügt..."}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <ImageIconLucide className="h-4 w-4" />
+                        <span>{editingPlayerId ? "Änderungen speichern" : "Spieler hinzufügen"}</span>
+                      </div>
+                    )}
                   </Button>
-                )}
-              </div>
+                  {editingPlayerId && (
+                    <Button
+                      type="button"
+                      onClick={handleCancelEditPlayer}
+                      variant="outline"
+                      disabled={playerLoading}
+                      className="h-10 border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800 font-medium rounded-lg shadow-md bg-transparent"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Abbrechen
+                    </Button>
+                  )}
+                </div>
+              </form>
+
               {playerMessage && (
                 <div
                   className={cn(
@@ -1163,32 +1045,31 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   <span>{playerMessage}</span>
                 </div>
               )}
-            </form>
+            </div>
           )}
 
           {/* Manage Players Section */}
           {activeSection === "manage-players" && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-800">Bestehende Spieler verwalten</h3>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div className="w-full sm:max-w-md">
-                  <Label htmlFor="playerSearch" className="text-xs text-gray-500">
-                    Suche
-                  </Label>
+              <h3 className="text-lg font-semibold text-gray-800">Spieler verwalten</h3>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <div className="lg:col-span-2">
+                  <Label htmlFor="playerSearch">Suchen</Label>
                   <Input
                     id="playerSearch"
+                    type="text"
                     value={playerSearch}
                     onChange={(e) => setPlayerSearch(e.target.value)}
-                    placeholder="Name, Nr., Ort, E-Mail, Telefon …"
-                    className="mt-1 h-10"
+                    placeholder="Name, Ort, E-Mail, Nummer ..."
+                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 mt-2"
                   />
                 </div>
-
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                  <div className="w-full sm:w-44">
-                    <Label className="text-xs text-gray-500">Sortieren nach</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Sortierung</Label>
                     <Select value={playerSortKey} onValueChange={(v) => setPlayerSortKey(v as any)}>
-                      <SelectTrigger className="mt-1 h-10">
+                      <SelectTrigger className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 mt-2">
                         <SelectValue placeholder="Sortieren nach" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1199,11 +1080,10 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                       </SelectContent>
                     </Select>
                   </div>
-
-                  <div className="w-full sm:w-36">
-                    <Label className="text-xs text-gray-500">Richtung</Label>
+                  <div>
+                    <Label>Richtung</Label>
                     <Select value={playerSortDir} onValueChange={(v) => setPlayerSortDir(v as any)}>
-                      <SelectTrigger className="mt-1 h-10">
+                      <SelectTrigger className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 mt-2">
                         <SelectValue placeholder="Richtung" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1214,11 +1094,12 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   </div>
                 </div>
               </div>
-              {visiblePlayers.length === 0 ? (
+
+              {clubPlayers.length === 0 ? (
                 <p className="text-sm text-gray-500">Noch keine Spieler vorhanden.</p>
               ) : (
                 <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                  <table className="w-full min-w-[1400px] text-sm">
+                  <table className="w-full min-w-[900px] text-sm">
                     <thead className="bg-gray-50 sticky top-0 z-10">
                       <tr className="text-left">
                         <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Spieler</th>
@@ -1228,16 +1109,15 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                         <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Nr.</th>
                         <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">PLZ</th>
                         <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Ort</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Trikot</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">E-Mail</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Telefon</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">IBAN</th>
                         <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700 text-right">Aktionen</th>
                       </tr>
                     </thead>
                     <tbody>
                       {visiblePlayers.map((player, idx) => (
-                        <tr key={player.id} className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}>
+                        <tr
+                          key={player.id}
+                          className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}
+                        >
                           <td className="px-3 py-2 lg:px-4 lg:py-3">
                             <div className="flex items-center gap-3">
                               <Avatar className="h-8 w-8">
@@ -1253,10 +1133,6 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                           <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.house_number ?? "—"}</td>
                           <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.postal_code ?? "—"}</td>
                           <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.city ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.jersey_size ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.email ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.phone ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.iban ?? "—"}</td>
                           <td className="px-3 py-2 lg:px-4 lg:py-3">
                             <div className="flex justify-end gap-2">
                               <Button
@@ -1404,68 +1280,67 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                 {teams.length === 0 ? (
                   <p className="text-sm text-gray-500">Noch keine Mannschaften vorhanden.</p>
                 ) : (
-                <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                  <table className="w-full min-w-[900px] text-sm">
-                    <thead className="bg-gray-50 sticky top-0 z-10">
-                      <tr className="text-left">
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Spieler</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Nr.</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Geburtsdatum</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Straße</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Nr.</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">PLZ</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Ort</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700 text-right">Aktionen</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visiblePlayers.map((player, idx) => (
-                        <tr key={player.id} className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={player.photo_url || "/placeholder.svg?height=32&width=32&query=player-avatar"} />
-                                <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <span className="font-medium text-gray-800">{player.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.player_number ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.birthdate ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.street ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.house_number ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.postal_code ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.city ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditPlayerClick(player)}
-                                disabled={playerLoading}
-                                className="h-8 px-3 text-blue-600 hover:bg-blue-50 hover:text-blue-700 border-blue-200"
-                              >
-                                <Edit className="h-4 w-4" />
-                                <span className="sr-only">Bearbeiten</span>
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDeletePlayer(player.id, player.photo_url)}
-                                disabled={playerLoading}
-                                className="h-8 px-3"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Löschen</span>
-                              </Button>
-                            </div>
-                          </td>
+                  <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                    <table className="w-full min-w-[720px] text-sm">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        <tr className="text-left">
+                          <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Mannschaft</th>
+                          <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Mitglieder</th>
+                          <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700 text-right">Aktionen</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      </thead>
+                      <tbody>
+                        {teams.map((team, idx) => {
+                          const memberCount = teamMembers.filter((m) => m.team_id === team.id).length
+                          return (
+                            <tr
+                              key={team.id}
+                              className={cn(
+                                "border-t border-gray-200 hover:bg-gray-50/60",
+                                idx % 2 === 1 && "bg-gray-50/30",
+                              )}
+                            >
+                              <td className="px-3 py-2 lg:px-4 lg:py-3">
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={team.logo_url || "/placeholder.svg?height=32&width=32&query=team-logo"} />
+                                    <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                  <span className="font-medium text-gray-800">{team.name}</span>
+                                </div>
+                              </td>
+                              <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{memberCount}</td>
+                              <td className="px-3 py-2 lg:px-4 lg:py-3">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditTeamClick(team)}
+                                    disabled={teamLoading}
+                                    className="h-8 px-3 text-blue-600 hover:bg-blue-50 hover:text-blue-700 border-blue-200"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                    <span className="sr-only">Bearbeiten</span>
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteTeam(team.id)}
+                                    disabled={teamLoading}
+                                    className="h-8 px-3"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="sr-only">Löschen</span>
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1489,9 +1364,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                         <SelectItem key={player.id} value={player.id}>
                           <div className="flex items-center space-x-2">
                             <Avatar className="h-6 w-6">
-                              <AvatarImage
-                                src={player.photo_url || "/placeholder.svg?height=24&width=24&query=player-avatar"}
-                              />
+                              <AvatarImage src={player.photo_url || "/placeholder.svg?height=24&width=24&query=player-avatar"} />
                               <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <span>{player.name}</span>
@@ -1506,9 +1379,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                       {currentSelectedPlayerTeam ? (
                         <span className="font-medium text-gray-700">
                           {currentSelectedPlayerTeam.name}{" "}
-                          {currentSelectedPlayerRole && (
-                            <span className="text-xs text-gray-500">({currentSelectedPlayerRole})</span>
-                          )}
+                          {currentSelectedPlayerRole && <span className="text-xs text-gray-500">({currentSelectedPlayerRole})</span>}
                         </span>
                       ) : (
                         <span className="italic">Keinem Team zugewiesen</span>
@@ -1567,9 +1438,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                     <div className="flex items-center space-x-2">
                       <UserRoundCog className="h-4 w-4" />
                       <span>
-                        {selectedPlayerId &&
-                        currentSelectedPlayerTeam &&
-                        currentSelectedPlayerTeam.id === selectedTeamId
+                        {selectedPlayerId && currentSelectedPlayerTeam && currentSelectedPlayerTeam.id === selectedTeamId
                           ? "Rolle aktualisieren"
                           : selectedPlayerId && currentSelectedPlayerTeam
                             ? "Spieler transferieren"
@@ -1620,15 +1489,11 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                                 <li key={member.id} className="flex items-center justify-between text-sm text-gray-700">
                                   <span className="flex items-center gap-1">
                                     {member.player_name}
-                                    {member.role === "Captain" && (
-                                      <Crown className="h-3 w-3 text-yellow-600" title="Kapitän" />
-                                    )}
+                                    {member.role === "Captain" && <Crown className="h-3 w-3 text-yellow-600" title="Kapitän" />}
                                     {member.role === "Co-Captain" && (
                                       <ShieldCheck className="h-3 w-3 text-blue-600" title="Co-Kapitän" />
                                     )}
-                                    {member.role && member.role !== "Player" && (
-                                      <span className="text-xs text-gray-500">({member.role})</span>
-                                    )}
+                                    {member.role && member.role !== "Player" && <span className="text-xs text-gray-500">({member.role})</span>}
                                   </span>
                                   <Button
                                     variant="ghost"

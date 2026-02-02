@@ -61,6 +61,8 @@ export default function AdminPage() {
   const [isPlayerListModalOpen, setIsPlayerListModalOpen] = useState(false)
   const [selectedPlayerName, setSelectedPlayerName] = useState<string | null>(null)
   const [isPlayerSelectedViaModal, setIsPlayerSelectedViaModal] = useState(false)
+  const [navQuery, setNavQuery] = useState("")
+
   const [loggingOut, setLoggingOut] = useState(false)
 
   const [currentView, setCurrentView] = useState<
@@ -261,113 +263,127 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
   const dashboardCards = [
     {
       title: "Benutzerverwaltung",
-      description: "Alle Kapitäne, Co-Kapitäne und Spieler verwalten",
+      description: "Konten, Rollen und Registrierungen verwalten",
       icon: Users,
       color: "bg-blue-500",
       view: "users" as const,
+      category: "verein" as const,
+    },
+    {
+      title: "Rekrutierung",
+      description: "Spielerbewerbungen & Bedarf verwalten",
+      icon: Mail,
+      color: "bg-indigo-500",
+      view: "recruitment" as const,
+      category: "verein" as const,
+      badge: unreadApplicationsCount > 0 ? unreadApplicationsCount : undefined,
+    },
+    {
+      title: "Anwesenheitsliste",
+      description: "Anwesenheit bei Events & Versammlungen",
+      icon: CalendarCheck,
+      color: "bg-slate-700",
+      view: "attendance" as const,
+      category: "verein" as const,
+    },
+    {
+      title: "Veranstaltungen",
+      description: "Partys, Spielabende & Events verwalten",
+      icon: PartyPopper,
+      color: "bg-purple-500",
+      view: "events" as const,
+      category: "verein" as const,
+    },
+    {
+      title: "Vereinsverwaltung",
+      description: "Teams, Spieler & Vereinsdaten pflegen",
+      icon: Users,
+      color: "bg-teal-500",
+      view: "club" as const,
+      category: "verein" as const,
     },
     {
       title: "Support Tickets",
-      description: "Support-Anfragen von Vereinsmitgliedern bearbeiten",
+      description: "Support-Anfragen bearbeiten",
       icon: HelpCircle,
       color: "bg-red-500",
       view: "support-tickets" as const,
-    },
-    {
-      title: "Adventskalender Auswertung",
-      description: "Quiz-Antworten und Rangliste der Teilnehmer einsehen",
-      icon: Calendar,
-      color: "bg-orange-500",
-      view: "advent-quiz" as const,
+      category: "verein" as const,
     },
     {
       title: "Campus-Registrierungen",
-      description: "EMD-CAMPUS Anmeldungen verwalten und einsehen",
+      description: "EMD-CAMPUS Anmeldungen einsehen",
       badge: unreadCampusCount > 0 ? unreadCampusCount : undefined,
       icon: Users,
       color: "bg-pink-500",
       view: "campus-registrations" as const,
+      category: "verein" as const,
     },
     {
       title: "Credit-Loader",
-      description: "Gutscheine und Credits verwalten",
+      description: "Gutscheine & Credits verwalten",
       icon: Zap,
       color: "bg-violet-500",
       view: "credit-loader" as const,
-    },
-    {
-      title: "Lion Cup",
-      description: "Alle EMD - LION CUP Funktionen verwalten",
-      icon: Trophy,
-      color: "bg-yellow-500",
-      view: "dart-competition" as const,
-    },
-    {
-      title: "Anwesenheitsliste",
-      description: "Anwesenheit bei Veranstaltungen und Versammlungen verwalten",
-      icon: CalendarCheck,
-      color: "bg-indigo-500",
-      view: "attendance" as const,
+      category: "verein" as const,
     },
     {
       title: "Ligaspiele",
-      description: "Liga-Spiele und Saisons verwalten (Frühjahrs-/Herbstmeisterschaft, Cups)",
+      description: "Saisons, Spieltage & Liga-Spiele verwalten",
       icon: Target,
-      color: "bg-green-500",
+      color: "bg-green-600",
       view: "leagues" as const,
-    },
-    {
-      title: "Veranstaltungen",
-      description: "Partys, Spielabende und andere Events verwalten",
-      icon: PartyPopper,
-      color: "bg-purple-500",
-      view: "events" as const,
-    },
-    {
-      title: "Rekrutierung",
-      description: "Spielerbewerbungen und Rekrutierung",
-      icon: Mail,
-      color: "bg-indigo-500",
-      view: "recruitment" as const,
-      badge: unreadApplicationsCount > 0 ? unreadApplicationsCount : undefined,
-    },
-    {
-      title: "Vereinsverwaltung",
-      description: "Vereinsangelegenheiten verwalten",
-      icon: Users,
-      color: "bg-teal-500",
-      view: "club" as const,
+      category: "sport" as const,
     },
     {
       title: "Bevorstehende Turniere",
-      description: "Kommende Turniere verwalten und planen",
+      description: "Kommende Turniere planen & pflegen",
       icon: CalendarCheck,
-      color: "bg-cyan-500",
+      color: "bg-cyan-600",
       view: "upcoming-tournaments" as const,
+      category: "sport" as const,
     },
     {
-      title: "Turniere",
-      description: "Turnier starten",
+      title: "Turniere starten",
+      description: "Turnier-Tools & Startseiten",
       icon: Trophy,
       color: "bg-amber-500",
       view: "tournaments" as const,
+      category: "sport" as const,
     },
     {
       title: "Turnier verwalten",
-      description: "Serien, Spieltage und Turnierdaten zentral pflegen",
+      description: "Serien, Spieltage & Stammdaten zentral pflegen",
       icon: Settings,
-      color: "bg-purple-500",
+      color: "bg-purple-600",
       view: "tournament-management" as const,
+      category: "sport" as const,
+    },
+    {
+      title: "Lion Cup",
+      description: "Ergebnisse, Historie & Verwaltung",
+      icon: Trophy,
+      color: "bg-yellow-500",
+      view: "dart-competition" as const,
+      category: "sport" as const,
     },
     {
       title: "Spielerdatenbank",
-      description: "Alle Spielerdaten verwalten und einsehen",
+      description: "Spielerdaten einsehen & verwalten",
       icon: List,
       color: "bg-slate-500",
       view: "player-database" as const,
+      category: "system" as const,
+    },
+    {
+      title: "Adventskalender Auswertung",
+      description: "Quiz-Antworten & Rangliste ansehen",
+      icon: Calendar,
+      color: "bg-orange-500",
+      view: "advent-quiz" as const,
+      category: "system" as const,
     },
   ]
-
 
   const visibleDashboardCards = dashboardCards.filter((card) => {
     // Admins: alles
@@ -382,6 +398,73 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
 
     return allowedViews.has(card.view)
   })
+
+  const canSeeView = (viewKey: string) => {
+    if (viewKey === "dashboard") return true
+    if (allowedViews?.has("*")) return true
+    if (allowedViews === null) return false
+    // Ergebnis-/Historie-Ansicht hängt an Lion Cup
+    if ((viewKey === "results" || viewKey === "history") && allowedViews.has("dart-competition")) return true
+    return allowedViews.has(viewKey)
+  }
+
+  const navSections = [
+    {
+      label: "Übersicht",
+      items: [{ key: "dashboard", label: "Dashboard", icon: Home }],
+    },
+    {
+      label: "Sportbetrieb",
+      items: [
+        { key: "leagues", label: "Ligaspiele", icon: Target },
+        { key: "upcoming-tournaments", label: "Bevorstehende Turniere", icon: CalendarCheck },
+        { key: "tournaments", label: "Turniere", icon: Trophy },
+        { key: "tournament-management", label: "Turnier verwalten", icon: Settings },
+        { key: "dart-competition", label: "Lion Cup", icon: Trophy },
+        { key: "results", label: "Ergebnisse", icon: Trophy },
+        { key: "history", label: "Historie", icon: History },
+      ],
+    },
+    {
+      label: "Verein",
+      items: [
+        { key: "users", label: "Benutzerverwaltung", icon: Users },
+        {
+          key: "recruitment",
+          label: "Rekrutierung",
+          icon: Mail,
+          badge: unreadApplicationsCount > 0 ? unreadApplicationsCount : undefined,
+        },
+        { key: "attendance", label: "Anwesenheit", icon: CalendarCheck },
+        { key: "events", label: "Veranstaltungen", icon: PartyPopper },
+        { key: "club", label: "Vereinsverwaltung", icon: Users },
+        { key: "support-tickets", label: "Support Tickets", icon: HelpCircle },
+        {
+          key: "campus-registrations",
+          label: "Campus-Registrierungen",
+          icon: Users,
+          badge: unreadCampusCount > 0 ? unreadCampusCount : undefined,
+        },
+        { key: "credit-loader", label: "Credit-Loader", icon: Zap },
+        { key: "player-database", label: "Spielerdatenbank", icon: List },
+        { key: "advent-quiz", label: "Adventskalender", icon: Calendar },
+      ],
+    },
+  ] as const
+
+  const filteredNavSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((it) => {
+        const matches = !navQuery || it.label.toLowerCase().includes(navQuery.toLowerCase())
+        return matches && canSeeView(it.key)
+      }),
+    }))
+    .filter((section) => section.items.length > 0)
+
+  const dashboardSportCards = visibleDashboardCards.filter((c) => c.category === "sport")
+  const dashboardVereinCards = visibleDashboardCards.filter((c) => c.category === "verein")
+  const dashboardSystemCards = visibleDashboardCards.filter((c) => c.category === "system")
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -434,119 +517,15 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
       <Header />
 
       <main className="w-full p-4 md:p-8">
-        <div className="mb-8">
-          <div className="flex items-center space-x-2 mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCurrentView("dashboard")}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <Home className="h-4 w-4 mr-1" />
-              Dashboard
-            </Button>
-            {currentView !== "dashboard" && (
-              <>
-                <ChevronRight className="h-4 w-4 text-gray-400" />
-                <span className="text-sm font-medium text-gray-700 capitalize">
-                  {currentView === "players" && "Spieler verwalten"}
-                  {currentView === "results" && "Ergebnisse eingeben"}
-                  {currentView === "history" && "Spiele Historie"}
-                  {currentView === "management" && "Spielerverwaltung"}
-                  {currentView === "photos" && "Spielerfotos"}
-                  {currentView === "recruitment" && "Rekrutierung"}
-                  {currentView === "club" && "Vereinsverwaltung"}
-                  {currentView === "tournaments" && "Turniere"}
+        {/*
+          Header/Breadcrumb oben ausblenden:
+          - "Dashboard" (Breadcrumb)
+          - "Admin-Verwaltung" (Titel)
+          - Beschreibung (Untertitel)
 
-           {currentView === "users" && "Benutzerverwaltung"}
-                  {currentView === "user-management-internal" && "Benutzer bearbeiten"}
-                  {currentView === "upcoming-tournaments" && "Bevorstehende Turniere"}
-                  {currentView === "player-database" && "Spielerdatenbank"}
-                  {currentView === "dart-competition" && "Dart Competition"}
-                  {currentView === "attendance" && "Anwesenheitsliste"}
-                  {currentView === "leagues" && "Ligaspiele"}
-                  {currentView === "support-tickets" && "Support Tickets"}
-                  {currentView === "lion-cup-registrations" && "Lion Cup Anmeldungen"}
-                  {currentView === "tournament-management" && "Turnier verwalten"}
-                  {currentView === "tournament-series" && "Turnier-Serien & Spieltage"}
-                  {currentView === "events" && "Veranstaltungen"}
-                  {currentView === "advent-quiz" && "Adventskalender Auswertung"}
-                  {currentView === "campus-registrations" && "Campus-Registrierungen"}
-                  {currentView === "credit-loader" && "Credit-Loader"}
-                  {currentView === "lion-cup-settings" && "Lion Cup Settings"}
-                </span>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
-              <Shield className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {currentView === "dashboard"
-                  ? "Admin-Verwaltung"
-                  : currentView === "players"
-                    ? "Spieler verwalten"
-                    : currentView === "results"
-                      ? "Ergebnisse eingeben"
-                      : currentView === "history"
-                        ? "Spiele Historie"
-                        : currentView === "management"
-                          ? "Spielerverwaltung"
-                          : currentView === "photos"
-                            ? "Spielerfotos"
-                            : currentView === "recruitment"
-                              ? "Rekrutierung"
-                              : currentView === "club"
-                                ? "Vereinsverwaltung"
-                                : currentView === "tournaments"
-                                  ? "Turniere"
-                                  : currentView === "users"
-                                    ? "Benutzerverwaltung"
-                                    : currentView === "user-management-internal"
-                                      ? "Benutzer bearbeiten"
-                                      : currentView === "upcoming-tournaments"
-                                        ? "Bevorstehende Turniere"
-                                        : currentView === "player-database"
-                                          ? "Spielerdatenbank"
-                                          : currentView === "dart-competition"
-                                            ? "Dart Competition"
-                                            : currentView === "attendance"
-                                              ? "Anwesenheitsliste"
-                                              : currentView === "leagues"
-                                                ? "Ligaspiele"
-                                                : currentView === "support-tickets"
-                                                  ? "Support Tickets"
-                                                  : currentView === "lion-cup-registrations"
-                                                    ? "Lion Cup Anmeldungen"
-                                                    : currentView === "tournament-management"
-                                                      ? "Turnier verwalten"
-                                                      : currentView === "tournament-series"
-                                                        ? "Turnier-Serien & Spieltage"
-                                                        : currentView === "events"
-                                                          ? "Veranstaltungen"
-                                                          : currentView === "advent-quiz"
-                                                            ? "Adventskalender Auswertung"
-                                                            : currentView === "campus-registrations"
-                                                              ? "Campus-Registrierungen"
-                                                              : currentView === "credit-loader"
-                                                                ? "Credit-Loader"
-                                                                : currentView === "lion-cup-settings"
-                                                                  ? "Lion Cup Settings"
-                                                                  : "Admin-Zugang"}
-              </h1>
-              <p className="text-gray-600">
-                {session && currentView === "dashboard"
-                  ? "Vereinsverwaltung, Turnierdaten und Spielerstatistiken verwalten"
-                  : session && currentView !== "dashboard"
-                    ? "Wählen Sie eine Aktion aus dem Dashboard"
-                    : "Bitte melden Sie sich an, um auf den Admin-Bereich zuzugreifen"}
-              </p>
-            </div>
-          </div>
-        </div>
+          Falls du später wieder einen Seitentitel willst,
+          kannst du hier eine kleinere Variante einsetzen.
+        */}
 
         {!session ? (
           <div className="max-w-md mx-auto">
@@ -558,7 +537,146 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
             />
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Sidebar */}
+            <aside className="hidden lg:block w-72 shrink-0">
+              <div className="sticky top-6">
+                <div className="bg-white rounded-xl shadow-md border border-gray-100">
+                  <div className="p-4 border-b border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-semibold text-gray-900">Navigation</div>
+                      <Badge className="bg-gray-100 text-gray-700">Admin</Badge>
+                    </div>
+                    <div className="mt-3">
+                      <input
+                        value={navQuery}
+                        onChange={(e) => setNavQuery(e.target.value)}
+                        placeholder="Suchen..."
+                        className="w-full h-9 rounded-md border border-gray-200 bg-gray-50 px-3 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-red-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-2">
+                    {filteredNavSections.map((section) => (
+                      <div key={section.label} className="mb-2">
+                        <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          {section.label}
+                        </div>
+                        <div className="space-y-1">
+                          {section.items.map((item) => (
+                            <Button
+                              key={item.key}
+                              variant="ghost"
+                              className={
+                                "w-full justify-between px-3 " +
+                                (currentView === (item.key as any)
+                                  ? "bg-red-50 text-red-700 hover:bg-red-50"
+                                  : "text-gray-700 hover:bg-gray-50")
+                              }
+                              onClick={() => setCurrentView(item.key as any)}
+                            >
+                              <span className="flex items-center gap-2">
+                                <item.icon className="h-4 w-4" />
+                                <span className="text-sm">{item.label}</span>
+                              </span>
+                              {item.badge ? (
+                                <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
+                                  {item.badge}
+                                </span>
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-gray-300" />
+                              )}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-3 border-t border-gray-100">
+                    <Button
+                      variant="outline"
+                      className="w-full bg-transparent"
+                      onClick={handleLogout}
+                      disabled={loggingOut}
+                    >
+                      {loggingOut ? "Abmelden..." : "Abmelden"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            {/* Main content */}
+            <section className="flex-1 space-y-6">
+              {/* Mobile navigation */}
+              <div className="lg:hidden">
+                <details className="bg-white rounded-xl shadow-md border border-gray-100">
+                  <summary className="cursor-pointer select-none p-4 flex items-center justify-between">
+                    <span className="font-semibold text-gray-900">Menü</span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </summary>
+                  <div className="px-4 pb-4">
+                    <div className="mb-3">
+                      <input
+                        value={navQuery}
+                        onChange={(e) => setNavQuery(e.target.value)}
+                        placeholder="Suchen..."
+                        className="w-full h-10 rounded-md border border-gray-200 bg-gray-50 px-3 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-red-200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      {filteredNavSections.map((section) => (
+                        <div key={section.label}>
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider py-2">
+                            {section.label}
+                          </div>
+                          <div className="space-y-1">
+                            {section.items.map((item) => (
+                              <Button
+                                key={item.key}
+                                variant="ghost"
+                                className={
+                                  "w-full justify-between px-3 " +
+                                  (currentView === (item.key as any)
+                                    ? "bg-red-50 text-red-700 hover:bg-red-50"
+                                    : "text-gray-700 hover:bg-gray-50")
+                                }
+                                onClick={() => setCurrentView(item.key as any)}
+                              >
+                                <span className="flex items-center gap-2">
+                                  <item.icon className="h-4 w-4" />
+                                  <span className="text-sm">{item.label}</span>
+                                </span>
+                                {item.badge ? (
+                                  <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
+                                    {item.badge}
+                                  </span>
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 text-gray-300" />
+                                )}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4">
+                      <Button
+                        variant="outline"
+                        className="w-full bg-transparent"
+                        onClick={handleLogout}
+                        disabled={loggingOut}
+                      >
+                        {loggingOut ? "Abmelden..." : "Abmelden"}
+                      </Button>
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <div className="space-y-6">
             {authMessage && (
               <div
                 className={`p-4 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -572,31 +690,156 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
             )}
 
             {currentView === "dashboard" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {visibleDashboardCards.map((card) => (
-                  <Card
-                    key={card.view}
-                    className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 shadow-md hover:scale-105"
-                    onClick={() => setCurrentView(card.view)}
-                  >
-                    <CardHeader className="pb-3">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="border-0 shadow-md">
+                    <CardContent className="p-4">
                       <div className="flex items-center justify-between">
-                        <div className={`p-3 ${card.color} rounded-lg shadow-lg`}>
-                          <card.icon className="h-6 w-6 text-white" />
+                        <div>
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ungelesen</div>
+                          <div className="text-2xl font-bold text-gray-900">{unreadApplicationsCount}</div>
+                          <div className="text-sm text-gray-600">Spielerbewerbungen</div>
                         </div>
-                        {card.badge && (
-                          <Badge className="bg-orange-500 text-white rounded-full px-2 py-0.5 text-xs">
-                            {card.badge}
-                          </Badge>
-                        )}
+                        <div className="p-3 bg-indigo-50 rounded-xl">
+                          <Mail className="h-5 w-5 text-indigo-600" />
+                        </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <CardTitle className="text-lg mb-2">{card.title}</CardTitle>
-                      <p className="text-sm text-gray-600">{card.description}</p>
                     </CardContent>
                   </Card>
-                ))}
+
+                  <Card className="border-0 shadow-md">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ungelesen</div>
+                          <div className="text-2xl font-bold text-gray-900">{unreadCampusCount}</div>
+                          <div className="text-sm text-gray-600">Campus-Registrierungen</div>
+                        </div>
+                        <div className="p-3 bg-pink-50 rounded-xl">
+                          <Users className="h-5 w-5 text-pink-600" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-0 shadow-md">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Zugriff</div>
+                          <div className="text-2xl font-bold text-gray-900">{allowedViews?.has("*") ? "Alle" : allowedViews?.size ?? 0}</div>
+                          <div className="text-sm text-gray-600">Freigeschaltete(r) Bereich(e)</div>
+                        </div>
+                        <div className="p-3 bg-gray-100 rounded-xl">
+                          <Eye className="h-5 w-5 text-gray-700" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="border-0 shadow-md">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Trophy className="h-5 w-5" />
+                        <span>Sportbetrieb</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {dashboardSportCards.map((card) => (
+                          <button
+                            key={card.view}
+                            onClick={() => setCurrentView(card.view)}
+                            className="text-left group rounded-xl border border-gray-100 bg-white hover:shadow-lg transition-all duration-200 p-4"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className={`p-3 ${card.color} rounded-xl shadow-sm`}>
+                                <card.icon className="h-5 w-5 text-white" />
+                              </div>
+                              {card.badge ? (
+                                <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
+                                  {card.badge}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="mt-3 font-semibold text-gray-900 group-hover:text-gray-950">{card.title}</div>
+                            <div className="mt-1 text-sm text-gray-600">{card.description}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-0 shadow-md">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Users className="h-5 w-5" />
+                        <span>Vereinsverwaltung</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {dashboardVereinCards.map((card) => (
+                          <button
+                            key={card.view}
+                            onClick={() => setCurrentView(card.view)}
+                            className="text-left group rounded-xl border border-gray-100 bg-white hover:shadow-lg transition-all duration-200 p-4"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className={`p-3 ${card.color} rounded-xl shadow-sm`}>
+                                <card.icon className="h-5 w-5 text-white" />
+                              </div>
+                              {card.badge ? (
+                                <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
+                                  {card.badge}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="mt-3 font-semibold text-gray-900 group-hover:text-gray-950">{card.title}</div>
+                            <div className="mt-1 text-sm text-gray-600">{card.description}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {dashboardSystemCards.length > 0 && (
+                  <Card className="border-0 shadow-md">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Settings className="h-5 w-5" />
+                        <span>Tools & Auswertungen</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {dashboardSystemCards.map((card) => (
+                          <button
+                            key={card.view}
+                            onClick={() => setCurrentView(card.view)}
+                            className="text-left group rounded-xl border border-gray-100 bg-white hover:shadow-lg transition-all duration-200 p-4"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className={`p-3 ${card.color} rounded-xl shadow-sm`}>
+                                <card.icon className="h-5 w-5 text-white" />
+                              </div>
+                              {card.badge ? (
+                                <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
+                                  {card.badge}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="mt-3 font-semibold text-gray-900 group-hover:text-gray-950">{card.title}</div>
+                            <div className="mt-1 text-sm text-gray-600">{card.description}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
 
@@ -1152,6 +1395,8 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
             )}
 
             {currentView === "lion-cup-settings" && <SeasonSettingsPage />}
+              </div>
+            </section>
           </div>
         )}
 

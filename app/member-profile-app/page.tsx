@@ -8,8 +8,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/hooks/use-auth"
+import { useDues } from "@/hooks/vereinsverwaltung/useDues"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import {
   Calendar,
@@ -39,7 +40,7 @@ import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
 
 type UserProfileWithLastSeen = UserProfile & { last_seen_at?: string | null }
 
-type ClubRole = "Vorstand" | "Kassier" | "Schriftführer" | "Supervisor"
+type UserPagePermission = { page_key: string; allowed: boolean }
 
 const formatDate = (date: string | Date) => {
   if (!date) return ""
@@ -95,7 +96,7 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [clubRoles, setClubRoles] = useState<ClubRole[]>([])
+  const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermission[]>([])
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
@@ -108,6 +109,20 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
     total180s: 0,
     totalEvents: 0,
   })
+
+  const clubPlayersForDues = useMemo(() => {
+    if (!profile?.club_players) return []
+    return [profile.club_players as any]
+  }, [profile])
+
+  const { summaryRows: duesSummaryRows } = useDues(session?.user ?? null, clubPlayersForDues as any, () => {})
+
+  const myDues = useMemo(() => {
+    const pid = profile?.club_players?.id
+    if (!pid) return null
+    return duesSummaryRows.find((r) => r.player_id === pid) ?? null
+  }, [duesSummaryRows, profile])
+
   const [pendingMatches, setPendingMatches] = useState<Match[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [nextMatchSummary, setNextMatchSummary] = useState<null | {
@@ -458,7 +473,7 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
 
       const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
-        .select(`id, user_id, player_id, last_seen_at, club_players (id, name, photo_url, throwing_hand, age, origin)`)
+        .select(`id, user_id, player_id, last_seen_at, club_players (id, name, photo_url, throwing_hand, age, origin, club_joined_at, club_left_at)`)
         .eq("user_id", session.user.id)
         .single()
 
@@ -468,14 +483,19 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
 
       setProfile(profileData)
 
-      // Vereinsrollen laden (z.B. Vorstand/Kassier/Schriftführer/Supervisor)
-      const { data: clubRolesRows, error: clubRolesErr } = await supabase
-        .from("club_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
+      // Admin/Verwaltung Berechtigungen laden (aus user_page_permissions)
+      // Box wird nur angezeigt, wenn der Benutzer in dieser Tabelle mindestens eine Berechtigung mit allowed=true hat.
+      if (profileData?.player_id) {
+        const { data: permissionRows, error: permissionErr } = await supabase
+          .from("user_page_permissions")
+          .select("page_key, allowed")
+          .eq("player_id", profileData.player_id)
 
-      if (clubRolesErr) throw clubRolesErr
-      setClubRoles((clubRolesRows ?? []).map((r: any) => r.role).filter(Boolean))
+        if (permissionErr) throw permissionErr
+        setUserPagePermissions((permissionRows ?? []) as UserPagePermission[])
+      } else {
+        setUserPagePermissions([])
+      }
 
       if (profileData?.player_id) {
         await fetchNotifications(profileData.player_id)
@@ -686,7 +706,7 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
         return "Spieler"
     }
   }
-  const hasClubRole = clubRoles.length > 0
+  const hasClubRole = userPagePermissions.some((p) => p.allowed)
 
 
   const navigationItems = [
@@ -861,6 +881,31 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
       <Header />
 
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8 max-w-6xl">
+
+        {myDues?.summary_tone === "overdue" && (
+          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-500">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                <div className="flex-shrink-0">
+                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl shadow-lg">
+                    <svg className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex-grow w-full">
+                  <h3 className="text-base sm:text-lg font-bold text-red-700 mb-2">
+                    Beitrag überfällig
+                  </h3>
+                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                    Dein Vereinsbeitrag ist aktuell überfällig. Bitte begleiche ihn so schnell wie möglich.
+                  </p>
+                  <Badge className="bg-red-600 text-white">Überfällig</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {showInstallButton && (
           <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-l-blue-500">
             <CardContent className="p-4 sm:p-6">
@@ -1102,9 +1147,21 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Willkommen!</h1>
-          <p className="text-lg sm:text-xl text-gray-600 px-4">
+          <div className="text-lg sm:text-xl text-gray-600 px-4">
             Schön dich zu sehen, {profile.club_players?.name || "Vereinsmitglied"}
-          </p>
+            {myDues?.summary_tone === "overdue" && (
+              <Badge variant="destructive" className="ml-2 inline-flex items-center gap-1 align-middle">
+                <AlertTriangle className="h-3 w-3" />
+                Beitrag überfällig
+              </Badge>
+            )}
+            {myDues?.summary_tone === "due" && (
+              <Badge className="ml-2 inline-flex items-center gap-1 align-middle">
+                <Bell className="h-3 w-3" />
+                Beitrag fällig
+              </Badge>
+            )}
+          </div>
         </div>
 
         <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
@@ -1290,13 +1347,6 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
               <div className="min-w-0">
                 <div className="text-sm opacity-90">Vereinsbereich</div>
                 <div className="text-xl font-extrabold truncate">Admin / Verwaltung</div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {clubRoles.map((r) => (
-                    <Badge key={r} className="bg-white/20 text-white border-white/30">
-                      {r}
-                    </Badge>
-                  ))}
-                </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="font-semibold">Öffnen</span>

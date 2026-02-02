@@ -284,7 +284,8 @@ const todaysRegistrations = useMemo(() => {
     return (
       <div className="min-h-screen flex flex-col bg-gray-100">
         <Header />
-        <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow">
+        <main className="w-full p-4 md:p-6 flex flex-col items-center justify-center flex-grow">
+
           <Card className="w-full max-w-md p-6 shadow-lg">
             <CardContent className="text-center">
               <p className="text-gray-700">Lade...</p>
@@ -319,7 +320,8 @@ const todaysRegistrations = useMemo(() => {
       <Header />
 
       <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
+
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
             <Layers className="w-8 h-8" />
           </div>
@@ -330,7 +332,8 @@ const todaysRegistrations = useMemo(() => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
+
         <div className="mb-6 flex items-center justify-between gap-3">
           <Button
             onClick={() => router.push("/admin")}
