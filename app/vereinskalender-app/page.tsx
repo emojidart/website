@@ -879,7 +879,7 @@ export default function CalendarPage() {
                         <SelectItem value="Events" className="text-sm">
                           <div className="flex items-center gap-2">
                             <CalendarDays className="h-4 w-4 text-green-600" />
-                            Nur Events
+                            Nur Events & Spielfrei
                           </div>
                         </SelectItem>
 
@@ -1440,42 +1440,6 @@ export default function CalendarPage() {
                       Team Details
                     </Button>
                   </div>
-
-                  {selectedEvent.event_type === "Urlaub" && selectedEvent.vacation_id && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setIsEventDialogOpen(false)
-                          setEditingVacationId(selectedEvent.vacation_id || null)
-                          setVacationStart(selectedEvent.start_date || "")
-                          setVacationEnd(selectedEvent.end_date || "")
-                          setVacationNote((selectedEvent.note || selectedEvent.description || "") as string)
-                          // Name bleibt auto-filled; falls leer, versuchen wir aus dem Titel zu ziehen
-                          if (!vacationName.trim()) {
-                            const inferred = (selectedEvent.name || "").replace("🏖️ Urlaub:", "").trim()
-                            if (inferred) setVacationName(inferred)
-                          }
-                          setIsVacationDialogOpen(true)
-                        }}
-                        className="w-full"
-                      >
-                        Bearbeiten
-                      </Button>
-
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          setConfirmDeleteVacationId(selectedEvent.vacation_id!)
-                          setIsConfirmDeleteOpen(true)
-                        }}
-                        disabled={savingVacation}
-                        className="w-full"
-                      >
-                        Löschen
-                      </Button>
-                    </div>
-                  )}
                 </div>
               )}
             </DialogContent>
@@ -1547,7 +1511,7 @@ export default function CalendarPage() {
                     </div>
                   </div>
 
-                  {selectedEvent.event_type === "Urlaub" && selectedEvent.vacation_id && (
+                  {selectedEvent && selectedEvent.event_type === "Urlaub" && selectedEvent.vacation_id && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Button
                         variant="outline"
@@ -1705,7 +1669,7 @@ export default function CalendarPage() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Dein Name</Label>
-                  
+                 
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
