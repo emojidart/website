@@ -668,25 +668,51 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           setAssignmentMessage("Rolle wurde aktualisiert!")
         }
       } else {
-        // ✅ Prüfen ob Spieler aktuell in einem anderen Team ist
-        const { data: currentMembership, error: currentMembershipError } = await supabase
-          .from("team_members")
-          .select("id, team_id")
-          .eq("player_id", selectedPlayerId)
-          .is("left_at", null)
-          .maybeSingle()
+		
+		// 1) Gibt es diese Team+Player Kombination schon (egal ob left_at gesetzt oder nicht)?
+const { data: existingRow, error: existingRowError } = await supabase
+  .from("team_members")
+  .select("id, left_at")
+  .eq("player_id", selectedPlayerId)
+  .eq("team_id", selectedTeamId)
+  .maybeSingle()
 
-        if (currentMembershipError) throw currentMembershipError
+if (existingRowError) throw existingRowError
 
-        // ✅ Spieler ist in einem anderen Team -> left_at setzen
-        if (currentMembership) {
-          const { error: leaveOldTeamError } = await supabase
-            .from("team_members")
-            .update({ left_at: new Date().toISOString() })
-            .eq("id", currentMembership.id)
+if (existingRow) {
+  // ✅ existiert schon -> reaktivieren + Rolle setzen
+  const { error: updateError } = await supabase
+    .from("team_members")
+    .update({
+      left_at: null,
+      role: selectedRole,
+      joined_at: new Date().toISOString(), // optional, nur wenn du joined_at updaten willst
+    })
+    .eq("id", existingRow.id)
 
-          if (leaveOldTeamError) throw leaveOldTeamError
-        }
+  if (updateError) throw updateError
+
+  setAssignmentMessage("Spieler ist bereits im Team vorhanden – Eintrag wurde aktualisiert!")
+} else {
+  // ✅ existiert noch nicht -> insert
+  const { error: insertError } = await supabase.from("team_members").insert([
+    {
+      team_id: selectedTeamId,
+      player_id: selectedPlayerId,
+      role: selectedRole,
+      joined_at: new Date().toISOString(),
+      left_at: null,
+    },
+  ])
+
+  if (insertError) throw insertError
+
+  setAssignmentMessage("Spieler erfolgreich zugewiesen!")
+}
+
+		
+		
+
 
         // ✅ Neue Teamzuweisung einfügen
         const { error: insertError } = await supabase.from("team_members").insert([
@@ -694,7 +720,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
             team_id: selectedTeamId,
             player_id: selectedPlayerId,
             role: selectedRole,
-            user_id: user.id,
+           
             joined_at: new Date().toISOString(),
             left_at: null,
           },
