@@ -3,7 +3,16 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, UserRoundPlus, ClipboardList, Hand, UserRoundCog, CalendarPlus, CreditCard } from "lucide-react"
+import {
+  Users,
+  UserRoundPlus,
+  ClipboardList,
+  Hand,
+  UserRoundCog,
+  CalendarPlus,
+  CreditCard,
+  FolderOpen,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import type { ClubPlayerManagementProps } from "@/components/vereinsverwaltung/types"
@@ -19,10 +28,11 @@ import { ManageTeamsTab } from "@/components/vereinsverwaltung/tabs/ManageTeamsT
 import { AssignPlayerTab } from "@/components/vereinsverwaltung/tabs/AssignPlayerTab"
 import { MembershipTab } from "@/components/vereinsverwaltung/tabs/MembershipTab"
 import { DuesTab } from "@/components/vereinsverwaltung/tabs/DuesTab"
+import { DocumentsTab } from "@/components/vereinsverwaltung/tabs/DocumentsTab"
 
 export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManagementProps) {
   const [activeSection, setActiveSection] = useState<
-    "add-player" | "manage-players" | "manage-teams" | "assign-player" | "membership" | "dues"
+    "add-player" | "manage-players" | "manage-teams" | "assign-player" | "membership" | "dues" | "documents"
   >("add-player")
 
   const players = useClubPlayers(user, onDataSaved)
@@ -52,7 +62,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
 
         <CardContent className="p-5 space-y-6">
           {/* Navigation Buttons */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
             <Button
               variant={activeSection === "add-player" ? "default" : "outline"}
               onClick={() => setActiveSection("add-player")}
@@ -136,6 +146,21 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
             >
               <CreditCard className="h-4 w-4 mr-2" />
               Beiträge
+            </Button>
+
+            {/* ✅ NEU: Dokumente */}
+            <Button
+              variant={activeSection === "documents" ? "default" : "outline"}
+              onClick={() => setActiveSection("documents")}
+              className={cn(
+                "h-10 rounded-lg font-medium shadow-sm transition",
+                activeSection === "documents"
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
+              )}
+            >
+              <FolderOpen className="h-4 w-4 mr-2" />
+              Dokumente
             </Button>
           </div>
 
@@ -263,17 +288,19 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           {/* ✅ NEU: Beiträge */}
           {activeSection === "dues" && (
             <DuesTab
-  summaryRows={dues.summaryRows}
-  periodsByPlayer={dues.periodsByPlayer}
-  loading={dues.loading}
-  message={dues.message}
-  messageType={dues.messageType}
-  onSaveSetting={dues.upsertSetting}
-  onMarkPaid={dues.markPaid}
-  onResetPaid={dues.resetPaid}
-/>
-
+              summaryRows={dues.summaryRows}
+              periodsByPlayer={dues.periodsByPlayer}
+              loading={dues.loading}
+              message={dues.message}
+              messageType={dues.messageType}
+              onSaveSetting={dues.upsertSetting}
+              onMarkPaid={dues.markPaid}
+              onResetPaid={dues.resetPaid}
+            />
           )}
+
+          {/* ✅ NEU: Dokumente */}
+          {activeSection === "documents" && <DocumentsTab user={user} />}
         </CardContent>
       </Card>
     </div>
