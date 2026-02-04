@@ -21,6 +21,7 @@ type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand"
 const CLUB_ROOM_ID = "11111111-1111-1111-1111-111111111111"
 const FREIZEIT_ROOM_ID = "22222222-2222-2222-2222-222222222222"
 const VORSTAND_ROOM_ID = "33333333-3333-3333-3333-333333333333"
+const CAPTAINS_ROOM_ID = "44444444-4444-4444-4444-444444444444"
 
 // Rollen-Tabelle (falls du sie anders benannt hast, hier anpassen)
 const ROLE_TABLE = "club_roles"
@@ -148,15 +149,8 @@ export default function TeamChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id])
 
-  // If user switches team, and they are not captain/co, force scope away from "captains"
-  useEffect(() => {
-    if (!selectedRoom) return
-    const isCaptain = selectedRoom.role === "Captain" || selectedRoom.role === "Co-Captain"
-    if (!isCaptain && selectedScope === "captains") setSelectedScope("team")
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRoom?.id, selectedRoom?.role])
-
-  // Load messages whenever target changes
+  // Wenn man im Captain-Chat ist, aber in keinem Team Captain/Co-Captain ist, zurück zum Team-Chat
+    // Load messages whenever target changes
   useEffect(() => {
     fetchMessages()
     markCurrentAsVisited()
@@ -170,14 +164,20 @@ export default function TeamChatPage() {
   }, [selectedRoom?.id, selectedScope, canSeeVorstandChat])
 
   const canSeeCaptainChat = useMemo(() => {
-    const r = selectedRoom?.role
-    return r === "Captain" || r === "Co-Captain"
-  }, [selectedRoom?.role])
+    // Zugriff auf globalen Captain-Chat, wenn du in irgendeinem Team Captain/Co-Captain bist
+    return chatRooms.some((r) => r.role === "Captain" || r.role === "Co-Captain")
+  }, [chatRooms])
+useEffect(() => {
+    if (selectedScope === "captains" && !canSeeCaptainChat) setSelectedScope("team")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedScope, canSeeCaptainChat])
+
 
   const currentRoomId = useMemo(() => {
     if (selectedScope === "club") return CLUB_ROOM_ID
     if (selectedScope === "freizeit") return FREIZEIT_ROOM_ID
     if (selectedScope === "vorstand") return VORSTAND_ROOM_ID
+    if (selectedScope === "captains") return CAPTAINS_ROOM_ID
     return selectedRoom?.id ?? null
   }, [selectedScope, selectedRoom?.id])
 
@@ -186,7 +186,7 @@ export default function TeamChatPage() {
     if (selectedScope === "freizeit") return "Freizeit"
     if (selectedScope === "vorstand") return "Vorstand"
     if (!selectedRoom) return "Team-Chat"
-    return selectedScope === "captains" ? `${selectedRoom.name} · Captain-Chat` : selectedRoom.name
+    return selectedScope === "captains" ? "Captain-Chat" : selectedRoom.name
   }, [selectedRoom, selectedScope])
 
   const unreadKey = (roomId: string, scope: ChatScope) => `${roomId}:${scope}`
@@ -489,15 +489,16 @@ export default function TeamChatPage() {
 
 
   const fetchMessages = async () => {
-    if (selectedScope === "team" || selectedScope === "captains") {
+    if (selectedScope === "team") {
       if (!selectedRoom) {
         setMessages([])
         return
       }
-      if (selectedScope === "captains" && !canSeeCaptainChat) {
-        setMessages([])
-        return
-      }
+    }
+
+    if (selectedScope === "captains" && !canSeeCaptainChat) {
+      setMessages([])
+      return
     }
 
     if (selectedScope === "vorstand" && !canSeeVorstandChat) {
@@ -631,7 +632,7 @@ export default function TeamChatPage() {
       return
     }
 
-    if ((selectedScope === "team" || selectedScope === "captains") && !selectedRoom) return
+    if (selectedScope === "team" && !selectedRoom) return
 
     if (!profile?.id) {
       toast({
@@ -709,38 +710,38 @@ export default function TeamChatPage() {
         counts[unreadKey(VORSTAND_ROOM_ID, "vorstand")] = 0
       }
 
-      for (const room of rooms) {
-        const scopesToCheck: ChatScope[] = ["team"]
-        if (room.role === "Captain" || room.role === "Co-Captain") scopesToCheck.push("captains")
-
-        for (const scope of scopesToCheck) {
-          const { data: visitData } = await supabase
-            .from("user_room_visits")
-            .select("last_visit_at")
-            .eq("user_id", profile.id)
-            .eq("room_id", room.id)
-            .eq("scope", scope)
-            .maybeSingle()
-
-          const lastVisit = (visitData as any)?.last_visit_at || "1970-01-01T00:00:00Z"
-
-          const { count } = await supabase
-            .from("chat_messages")
-            .select("*", { count: "exact", head: true })
-            .eq("room_id", room.id)
-            .eq("scope", scope)
-            .gt("created_at", lastVisit)
-            .neq("user_id", profile.id)
-
-          counts[unreadKey(room.id, scope)] = count || 0
-        }
-
-        if (!(room.role === "Captain" || room.role === "Co-Captain")) {
-          counts[unreadKey(room.id, "captains")] = 0
-        }
+      // Globaler Captain-Chat (einmal für alle Teams)
+      if (canSeeCaptainChat) {
+        await computeGlobalUnread(CAPTAINS_ROOM_ID, "captains")
+      } else {
+        counts[unreadKey(CAPTAINS_ROOM_ID, "captains")] = 0
       }
 
-      setUnreadCounts(counts)
+      for (const room of rooms) {
+        const scope: ChatScope = "team"
+
+        const { data: visitData } = await supabase
+          .from("user_room_visits")
+          .select("last_visit_at")
+          .eq("user_id", profile.id)
+          .eq("room_id", room.id)
+          .eq("scope", scope)
+          .maybeSingle()
+
+        const lastVisit = (visitData as any)?.last_visit_at || "1970-01-01T00:00:00Z"
+
+        const { count } = await supabase
+          .from("chat_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("room_id", room.id)
+          .eq("scope", scope)
+          .gt("created_at", lastVisit)
+          .neq("user_id", profile.id)
+
+        counts[unreadKey(room.id, scope)] = count || 0
+      }
+
+setUnreadCounts(counts)
     } catch (error) {
       console.error("Error fetching unread counts:", error)
     }
@@ -795,6 +796,7 @@ export default function TeamChatPage() {
   const clubUnread = unreadCounts[unreadKey(CLUB_ROOM_ID, "club")] || 0
   const freizeitUnread = unreadCounts[unreadKey(FREIZEIT_ROOM_ID, "freizeit")] || 0
   const vorstandUnread = unreadCounts[unreadKey(VORSTAND_ROOM_ID, "vorstand")] || 0
+  const captainsUnread = unreadCounts[unreadKey(CAPTAINS_ROOM_ID, "captains")] || 0
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-20">
@@ -912,6 +914,38 @@ export default function TeamChatPage() {
                           </div>
                         </Button>
 
+                        {canSeeCaptainChat && (
+                          <Button
+                            variant={selectedScope === "captains" ? "default" : "ghost"}
+                            className="w-full justify-start h-auto p-3 text-left mt-1"
+                            onClick={() => {
+                              setSelectedScope("captains")
+                              setSidebarOpen(false)
+                              setTimeout(() => markRoomAsVisited(CAPTAINS_ROOM_ID, "captains"), 50)
+                            }}
+                          >
+                            <div className="flex items-center gap-3 w-full">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Users className="h-4 w-4 text-primary" />
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate text-sm">Captain-Chat</div>
+                                <p className="text-xs text-muted-foreground mt-1 truncate">Alle Captain &amp; Co-Captain</p>
+                              </div>
+
+                              {captainsUnread > 0 && (
+                                <Badge
+                                  variant="destructive"
+                                  className="ml-2 px-2 py-1 text-xs font-bold min-w-[24px] h-6 flex items-center justify-center bg-red-500 text-white border-0 shadow-lg"
+                                >
+                                  {captainsUnread > 99 ? "99+" : captainsUnread}
+                                </Badge>
+                              )}
+                            </div>
+                          </Button>
+                        )}
+
                         {canSeeVorstandChat && (
                           <Button
                             variant={selectedScope === "vorstand" ? "default" : "ghost"}
@@ -964,8 +998,6 @@ export default function TeamChatPage() {
                         <div className="p-2">
                           {chatRooms.map((room) => {
                             const teamUnread = unreadCounts[unreadKey(room.id, "team")] || 0
-                            const captUnread = unreadCounts[unreadKey(room.id, "captains")] || 0
-                            const isCaptain = room.role === "Captain" || room.role === "Co-Captain"
 
                             return (
                               <div key={room.id} className="mb-2">
@@ -1012,43 +1044,6 @@ export default function TeamChatPage() {
                                     )}
                                   </div>
                                 </Button>
-
-                                {isCaptain && (
-                                  <Button
-                                    variant={
-                                      selectedScope === "captains" && selectedRoom?.id === room.id ? "default" : "ghost"
-                                    }
-                                    className="w-full justify-start h-auto p-3 text-left mt-1"
-                                    onClick={() => {
-                                      setSelectedRoom(room)
-                                      setSelectedScope("captains")
-                                      setSidebarOpen(false)
-                                      setTimeout(() => markRoomAsVisited(room.id, "captains"), 50)
-                                    }}
-                                  >
-                                    <div className="flex items-center gap-3 w-full">
-                                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                        <Shield className="h-4 w-4 text-primary" />
-                                      </div>
-
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-medium truncate text-sm">Captain-Chat</div>
-                                        <p className="text-xs text-muted-foreground mt-1 truncate">
-                                          Nur Captain &amp; Co-Captain
-                                        </p>
-                                      </div>
-
-                                      {captUnread > 0 && (
-                                        <Badge
-                                          variant="destructive"
-                                          className="ml-2 px-2 py-1 text-xs font-bold min-w-[24px] h-6 flex items-center justify-center bg-red-500 text-white border-0 shadow-lg"
-                                        >
-                                          {captUnread > 99 ? "99+" : captUnread}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </Button>
-                                )}
                               </div>
                             )
                           })}
