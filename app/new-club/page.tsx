@@ -45,7 +45,8 @@ export default async function ClubPage() {
 
   const { data: teamMembersData, error: teamMembersError } = await supabase
     .from("team_members")
-    .select(`id, team_id, player_id, role, club_players(id, name, photo_url, throwing_hand, age, origin)`)
+    .select(`id, team_id, player_id, role, club_players!team_members_player_id_fkey(id, name, photo_url, throwing_hand, age, origin)`)
+
 
   if (teamsError || teamMembersError) {
     return (
