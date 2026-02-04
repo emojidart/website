@@ -73,13 +73,22 @@ interface Match {
 }
 
 interface Event {
-  type?: string
+  vacation_user_id?: string | null;
+  type?: string // "event" | "dko" | "birthday" | "vacation"
   id: string
   name: string
   event_date: string
   event_type: string
   description?: string
   start_time?: string
+
+  // Zusätzliche Felder (events Tabelle)
+  location?: string | null
+  entry_fee?: number | null
+  max_participants?: number | null
+  details?: string | null
+  photo_url?: string | null
+
   // Urlaub (optional)
   vacation_id?: string
   start_date?: string
@@ -97,18 +106,69 @@ interface BirthdayPlayer {
 
 interface Vacation {
   id: string
+  user_id?: string | null
   user_name: string
+  player_name?: string | null
   start_date: string
   end_date: string
   note?: string | null
   created_at?: string
 }
 
+
+const DKO_TIMEZONE = "Europe/Berlin"
+
+// Format a timestamptz string (UTC in DB) into local date/time strings for the calendar.
+function toDateAndTimeInTZ(iso: string, timeZone: string = DKO_TIMEZONE) {
+  const d = new Date(iso)
+  const dateParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d) // YYYY-MM-DD
+
+  const timeParts = new Intl.DateTimeFormat("de-DE", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(d) // HH:MM
+
+  return { event_date: dateParts, start_time: timeParts }
+}
+
+function sanitizeVacationNote(note?: string | null) {
+  if (!note) return ""
+  // Remove birthday references from vacation notes (birthdays are handled separately).
+  const cleaned = note
+    .replace(/🎂/g, "")
+    .replace(/\bgeburtstag\b/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+  return cleaned
+}
+
+
 export default function CalendarPage() {
   const router = useRouter()
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  // Aktuellen eingeloggten User für Owner-Checks (UI) laden
+  useEffect(() => {
+    let isMounted = true
+    supabase.auth.getUser().then(({ data }) => {
+      if (!isMounted) return
+      setCurrentUserId(data.user?.id ?? null)
+    })
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [isMatchDialogOpen, setIsMatchDialogOpen] = useState(false)
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false)
@@ -169,11 +229,71 @@ export default function CalendarPage() {
         if (eventsResponse.error) {
           console.error("Error fetching events:", eventsResponse.error)
         } else {
-          enrichedEvents = eventsResponse.data || []
+          const rows = (eventsResponse.data || []) as any[]
+          enrichedEvents = rows.map((r) => ({
+            type: "event",
+            id: `event_${r.id}`,
+            name: r.name || "Event",
+            event_date: r.event_date,
+            event_type: r.event_type || "Event",
+            start_time: (r.event_time || "").toString().substring(0, 5) || undefined,
+            description: r.details || undefined,
+            details: r.details ?? null,
+            location: r.location ?? null,
+            entry_fee: r.entry_fee ?? null,
+            max_participants: r.max_participants ?? null,
+            photo_url: r.photo_url ?? null,
+          })) as Event[]
         }
       } catch (eventError) {
         console.error("Events table might not exist or no permissions:", eventError)
       }
+
+
+// ✅ Turniere/Spieltage aus dko_series_events (Name/Startgeld aus dko_series)
+try {
+  const tournamentsResponse = await supabase
+    .from("dko_series_events")
+    .select(
+      `id, title, start_at, location, is_matchday, series_id,
+       series:dko_series (id, name, slug, startgeld)`
+    )
+    .order("start_at", { ascending: true })
+
+  if (tournamentsResponse.error) {
+    console.error("Error fetching dko series events:", tournamentsResponse.error)
+  } else {
+    const tournamentRows = (tournamentsResponse.data || []) as any[]
+    const tournamentEvents: Event[] = tournamentRows
+      .filter((r) => r?.start_at && r?.series)
+      .map((r) => {
+        const { event_date, start_time } = toDateAndTimeInTZ(r.start_at)
+
+        const seriesName = r.series?.name || "Turnier"
+        const titlePart = r.title ? ` – ${r.title}` : ""
+        const dayLabel = r.is_matchday ? "Spieltag" : "Spielfrei"
+        const startgeld = r.series?.startgeld != null ? `${r.series.startgeld} € Startgeld` : null
+        const location = r.location || null
+
+        const details = [dayLabel, startgeld, location].filter(Boolean).join(" • ")
+
+        return {
+          type: "dko",
+          id: `dko_${r.id}`,
+          name: `${seriesName}${titlePart}`,
+          event_date,
+          event_type: "Turnier",
+          start_time,
+          description: details || undefined,
+        }
+      })
+
+    // Events aus "events" + Turniertermine zusammenführen
+    enrichedEvents = [...enrichedEvents, ...tournamentEvents]
+  }
+} catch (tournamentError) {
+  console.error("dko_series_events table might not exist or no permissions:", tournamentError)
+}
 
       const enrichedMatches = matchesResponse.data || []
 
@@ -206,24 +326,70 @@ export default function CalendarPage() {
 
       setBirthdayPlayers(fetchedBirthdayPlayers)
 
-      // ✅ Urlaube aus vacations (einfach, ohne FK)
+      // ✅ Urlaube aus vacations (mit user_id -> user_profiles.player_id -> club_players.name)
       let fetchedVacations: Vacation[] = []
       try {
         const vacationResponse = await supabase
           .from("vacations")
-          .select("id, user_name, start_date, end_date, note, created_at")
+          .select("id, user_id, user_name, start_date, end_date, note, created_at")
           .order("start_date", { ascending: true })
 
         if (vacationResponse.error) {
           console.error("Error fetching vacations:", vacationResponse.error)
         } else {
           fetchedVacations = (vacationResponse.data || []) as Vacation[]
+
+          // Enrich with player name via user_profiles -> club_players
+          const userIds = Array.from(
+            new Set(
+              fetchedVacations
+                .map((v) => v.user_id)
+                .filter((x): x is string => typeof x === "string" && x.length > 0),
+            ),
+          )
+
+          if (userIds.length) {
+            const { data: profiles, error: profErr } = await supabase
+              .from("user_profiles")
+              .select("user_id, player_id")
+              .in("user_id", userIds)
+
+            if (!profErr && profiles?.length) {
+              const playerIds = Array.from(
+                new Set(
+                  (profiles as any[])
+                    .map((p) => p.player_id)
+                    .filter((x): x is string => typeof x === "string" && x.length > 0),
+                ),
+              )
+
+              let playerNameById = new Map<string, string>()
+              if (playerIds.length) {
+                const { data: playersRows, error: playersErr } = await supabase
+                  .from("club_players")
+                  .select("id, name")
+                  .in("id", playerIds)
+
+                if (!playersErr && playersRows?.length) {
+                  playerNameById = new Map((playersRows as any[]).map((r) => [r.id, r.name]))
+                }
+              }
+
+              const playerIdByUserId = new Map((profiles as any[]).map((p) => [p.user_id, p.player_id]))
+              fetchedVacations = fetchedVacations.map((v) => {
+                const pid = v.user_id ? playerIdByUserId.get(v.user_id) : null
+                const pname = pid ? playerNameById.get(pid) : null
+                return { ...v, player_name: pname ?? null }
+              })
+            }
+          }
         }
       } catch (vacErr) {
         console.error("vacations table might not exist or no permissions:", vacErr)
       }
 
       setVacations(fetchedVacations)
+
 
       const uniqueLeagues = new Set<string>(["Alle Ligen"])
       const uniqueTeams = new Set<string>(["Alle Teams"])
@@ -321,8 +487,14 @@ export default function CalendarPage() {
   const filteredEvents = events.filter((event) => {
     if (selectedItemType === "Geburtstage" || selectedItemType === "Urlaube") return false
     if (selectedItemType === "Spiele") return false
-    if (selectedItemType === "Events" && !["Versammlung", "Spielfrei"].includes(event.event_type)) return false
-    if (selectedItemType === "Turniere" && !["Turnier", "Cup"].includes(event.event_type)) return false
+
+    // ✅ Sauber nach Quelle filtern:
+    // - "event"  => normale Vereins-/Party-Events aus public.events
+    // - "dko"    => Turniere/Spieltage aus dko_series_events
+    if (selectedItemType === "Events") return event.type === "event"
+    if (selectedItemType === "Turniere") return event.type === "dko"
+
+    // "Alle" oder andere Kombinationen -> alles drin lassen
     return true
   })
 
@@ -375,19 +547,22 @@ export default function CalendarPage() {
       selectedItemType !== "Spiele" && selectedItemType !== "Turniere" && selectedItemType !== "Geburtstage"
         ? vacations
             .filter((v) => isDateInRange(dateStr, v.start_date, v.end_date))
-            .map((v) => ({
-              id: `vacation-${v.id}-${dateStr}`,
-              vacation_id: v.id,
-              start_date: v.start_date,
-              end_date: v.end_date,
-              note: v.note,
-              name: `🏖️ Urlaub: ${v.user_name}`,
-              event_date: dateStr,
-              event_type: "Urlaub",
-              description: v.note || undefined,
-              start_time: "00:00:00",
-              type: "vacation",
-            } as Event))
+            .map((v) => {
+              const cleanedNote = sanitizeVacationNote(v.note)
+              return {
+                id: `vacation-${v.id}-${dateStr}`,
+                vacation_id: v.id,
+                start_date: v.start_date,
+                end_date: v.end_date,
+                note: cleanedNote || null,
+                name: `🏖️ Urlaub: ${v.player_name || v.user_name}`,
+                event_date: dateStr,
+                event_type: "Urlaub",
+                description: cleanedNote || undefined,
+                start_time: "00:00:00",
+                type: "vacation",
+              } as Event
+            })
         : []
 
     return [...matchesForDate, ...eventsForDate, ...birthdaysForDate, ...vacationsForDate]
@@ -456,7 +631,10 @@ export default function CalendarPage() {
           return
         }
       } else {
+        const { data: authData } = await supabase.auth.getUser()
+        const uid = authData?.user?.id
         const { error } = await supabase.from("vacations").insert({
+          user_id: uid ?? null,
           user_name: vacationName.trim(),
           start_date: vacationStart,
           end_date: vacationEnd,
@@ -575,10 +753,11 @@ export default function CalendarPage() {
     .map((v) => ({
       id: `today-vacation-${v.id}-${todayStr}`,
       vacation_id: v.id,
+      vacation_user_id: (v as any).user_id ?? null,
       start_date: v.start_date,
       end_date: v.end_date,
       note: v.note,
-      name: `🏖️ Urlaub: ${v.user_name}`,
+      name: `🏖️ Urlaub: ${v.player_name || v.user_name}`,
       event_date: todayStr,
       event_type: "Urlaub",
       description: v.note || undefined,
@@ -672,13 +851,14 @@ export default function CalendarPage() {
       ? vacations.map((v) => ({
           id: `vacation-list-${v.id}-${v.start_date}`,
           vacation_id: v.id,
+            vacation_user_id: (v as any).user_id ?? null,
           start_date: v.start_date,
           end_date: v.end_date,
-          note: v.note,
-          name: `🏖️ Urlaub: ${v.user_name}`,
+          note: sanitizeVacationNote(v.note),
+          name: `🏖️ Urlaub: ${v.player_name || v.user_name}`,
           event_date: v.start_date,
           event_type: "Urlaub",
-          description: `${v.start_date} bis ${v.end_date}${v.note ? ` • ${v.note}` : ""}`,
+          description: `${v.start_date} bis ${v.end_date}${sanitizeVacationNote(v.note) ? ` • ${sanitizeVacationNote(v.note)}` : ""}`,
           start_time: "00:00:00",
           type: "vacation",
         }))
@@ -1148,11 +1328,13 @@ export default function CalendarPage() {
                 const listItems: CalendarItem[] =
                   selectedItemType === "Spiele"
                     ? [...filteredMatches]
-                    : selectedItemType === "Geburtstage"
-                      ? [...birthdayEventsForList]
-                      : selectedItemType === "Urlaube"
-                        ? [...vacationEventsForList]
-                        : [...filteredMatches, ...filteredEvents, ...birthdayEventsForList, ...vacationEventsForList]
+                    : selectedItemType === "Turniere" || selectedItemType === "Events"
+                      ? [...filteredEvents]
+                      : selectedItemType === "Geburtstage"
+                        ? [...birthdayEventsForList]
+                        : selectedItemType === "Urlaube"
+                          ? [...vacationEventsForList]
+                          : [...filteredMatches, ...filteredEvents, ...birthdayEventsForList, ...vacationEventsForList]
 
                 if (listItems.length === 0) {
                   return (
@@ -1181,6 +1363,16 @@ export default function CalendarPage() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex flex-col gap-2 mb-2">
                                   <div className="flex items-center gap-2">{getEventTypeBadge(item.event_type)}</div>
+                                {item.photo_url && (
+                                  <div className="mt-3">
+                                    <img
+                                      src={item.photo_url}
+                                      alt={item.name}
+                                      className="w-full h-36 object-cover rounded-xl border"
+                                    />
+                                  </div>
+                                )}
+
                                 </div>
 
                                 <div className="mb-2 min-w-0">
@@ -1198,6 +1390,12 @@ export default function CalendarPage() {
                                       year: "numeric",
                                     })}
                                   </div>
+                                  {item.start_time && (
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <Clock className="h-4 w-4 shrink-0" />
+                                      {formatTimeWithoutSeconds(item.start_time)} Uhr
+                                    </div>
+                                  )}
                                   <div className="flex items-center gap-2 min-w-0">
                                     {item.event_type === "Turnier" ? (
                                       <>
@@ -1405,6 +1603,29 @@ export default function CalendarPage() {
                         })}
                       </span>
                     </div>
+                    {selectedEvent.start_time && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <Clock className="h-5 w-5 text-gray-600 shrink-0" />
+                        <span>{formatTimeWithoutSeconds(selectedEvent.start_time)}</span>
+                      </div>
+                    )}
+                    {selectedEvent.location && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <MapPin className="h-5 w-5 text-gray-600 shrink-0" />
+                        <span>{selectedEvent.location}</span>
+                      </div>
+                    )}
+                    {(selectedEvent.entry_fee != null || selectedEvent.max_participants != null) && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <Users className="h-5 w-5 text-gray-600 shrink-0" />
+                        <span>
+                          {selectedEvent.entry_fee != null ? `${selectedEvent.entry_fee} €` : ""}
+                          {selectedEvent.entry_fee != null && selectedEvent.max_participants != null ? " • " : ""}
+                          {selectedEvent.max_participants != null ? `Max. ${selectedEvent.max_participants}` : ""}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-3 text-sm">
                       <Clock className="h-5 w-5 text-gray-600 shrink-0" />
                       <span>{formatTimeWithoutSeconds(selectedMatch.match_time)} Uhr</span>
@@ -1457,6 +1678,15 @@ export default function CalendarPage() {
                   <div className="flex justify-center">{getEventTypeBadge(selectedEvent.event_type)}</div>
 
                   <div className="text-center">
+                    {selectedEvent.photo_url && (
+                      <div className="mb-4">
+                        <img
+                          src={selectedEvent.photo_url}
+                          alt={selectedEvent.name}
+                          className="w-full h-44 object-cover rounded-xl border"
+                        />
+                      </div>
+                    )}
                     <div className="mb-4">
                       <div className="h-16 w-16 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center">
                         {selectedEvent.event_type === "Turnier" ? (
@@ -1511,41 +1741,44 @@ export default function CalendarPage() {
                     </div>
                   </div>
 
-                  {selectedEvent && selectedEvent.event_type === "Urlaub" && selectedEvent.vacation_id && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setIsEventDialogOpen(false)
-                          setEditingVacationId(selectedEvent.vacation_id || null)
-                          setVacationStart(selectedEvent.start_date || "")
-                          setVacationEnd(selectedEvent.end_date || "")
-                          setVacationNote((selectedEvent.note || selectedEvent.description || "") as string)
-                          // Name bleibt auto-filled; falls leer, versuchen wir aus dem Titel zu ziehen
-                          if (!vacationName.trim()) {
-                            const inferred = (selectedEvent.name || "").replace("🏖️ Urlaub:", "").trim()
-                            if (inferred) setVacationName(inferred)
-                          }
-                          setIsVacationDialogOpen(true)
-                        }}
-                        className="w-full"
-                      >
-                        Bearbeiten
-                      </Button>
+                  {selectedEvent?.event_type === "Urlaub" &&
+  selectedEvent.vacation_id &&
+  currentUserId &&
+  selectedEvent.vacation_user_id === currentUserId && (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <Button
+        variant="outline"
+        onClick={() => {
+          setIsEventDialogOpen(false)
+          setEditingVacationId(selectedEvent.vacation_id || null)
+          setVacationStart(selectedEvent.start_date || "")
+          setVacationEnd(selectedEvent.end_date || "")
+          setVacationNote((selectedEvent.note || selectedEvent.description || "") as string)
+          // Name bleibt auto-filled; falls leer, versuchen wir aus dem Titel zu ziehen
+          if (!vacationName.trim()) {
+            const inferred = (selectedEvent.name || "").replace("🏖️ Urlaub:", "").trim()
+            if (inferred) setVacationName(inferred)
+          }
+          setIsVacationDialogOpen(true)
+        }}
+        className="w-full"
+      >
+        Bearbeiten
+      </Button>
 
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          setConfirmDeleteVacationId(selectedEvent.vacation_id!)
-                          setIsConfirmDeleteOpen(true)
-                        }}
-                        disabled={savingVacation}
-                        className="w-full"
-                      >
-                        Löschen
-                      </Button>
-                    </div>
-                  )}
+      <Button
+        variant="destructive"
+        onClick={() => {
+          setConfirmDeleteVacationId(selectedEvent.vacation_id!)
+          setIsConfirmDeleteOpen(true)
+        }}
+        disabled={savingVacation}
+        className="w-full"
+      >
+        Löschen
+      </Button>
+    </div>
+)}
                 </div>
               )}
             </DialogContent>
