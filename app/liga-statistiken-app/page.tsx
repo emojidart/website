@@ -31,6 +31,16 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
+type Season = {
+  id: string
+  name: string | null
+  type: string | null
+  year: number | null
+  start_date?: string | null
+  end_date?: string | null
+  is_active?: boolean | null
+}
+
 export default function DartLeaguePage() {
   const [matches, setMatches] = useState([])
   const [teams, setTeams] = useState([])
@@ -42,9 +52,32 @@ export default function DartLeaguePage() {
   const [playersPerPage, setPlayersPerPage] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
 
+  // ✅ Saison-Auswahl
+  const [seasons, setSeasons] = useState<Season[]>([])
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("")
+
   useEffect(() => {
     const loadData = async () => {
       try {
+        // ✅ Seasons laden (für Dropdown)
+        const { data: seasonsData, error: seasonsError } = await supabase
+          .from("seasons")
+          .select("id, name, type, year, start_date, end_date, is_active")
+          .order("start_date", { ascending: false })
+
+        if (seasonsError) {
+          console.error("Error fetching seasons:", seasonsError)
+        } else {
+          const seasonList = (seasonsData || []) as Season[]
+          setSeasons(seasonList)
+
+          // Default: aktive Saison, sonst die erste (neueste)
+          if (!selectedSeasonId) {
+            const active = seasonList.find((s) => s.is_active) || seasonList[0]
+            if (active?.id) setSelectedSeasonId(active.id)
+          }
+        }
+
         const { data: ownTeamsData, error: teamsError } = await supabase
           .from("teams")
           .select("*")
@@ -74,12 +107,17 @@ export default function DartLeaguePage() {
             *,
             home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
             away_team:teams!matches_away_team_id_fkey(id, name, logo_url),
-            season:seasons(id, name, type)
+            season:seasons(id, name, type, year)
           `)
           .order("match_date", { ascending: true })
 
         if (dartTypeFilter !== "gesamt") {
           matchQuery = matchQuery.eq("dart_type", dartTypeFilter)
+        }
+
+        // ✅ Saison-Filter (matches.season_id -> seasons.id)
+        if (selectedSeasonId) {
+          matchQuery = matchQuery.eq("season_id", selectedSeasonId)
         }
 
         const { data: matchesData, error: matchesError } = await matchQuery
@@ -141,11 +179,19 @@ export default function DartLeaguePage() {
 
         let legStatsQuery = supabase.from("leg_statistics").select(`
             *,
-            player:club_players!leg_statistics_player_id_fkey(name, photo_url)
+            player:club_players!leg_statistics_player_id_fkey(name, photo_url),
+            match:matches!inner(season_id)
           `)
 
         if (dartTypeFilter !== "gesamt") {
           legStatsQuery = legStatsQuery.eq("dart_type", dartTypeFilter)
+        }
+
+        // ✅ Saison-Filter für Statistiken:
+        // leg_statistics hat (laut Screenshot) KEINE season_id-Spalte, aber hat match_id.
+        // Daher filtern wir über den Join auf matches.season_id.
+        if (selectedSeasonId) {
+          legStatsQuery = legStatsQuery.eq("match.season_id", selectedSeasonId)
         }
 
         const { data: legStatsData, error: legStatsError } = await legStatsQuery
@@ -163,7 +209,16 @@ export default function DartLeaguePage() {
     }
 
     loadData()
-  }, [dartTypeFilter])
+  }, [dartTypeFilter, selectedSeasonId])
+
+  const selectedSeasonLabel = useMemo(() => {
+    const s = seasons.find((x) => x.id === selectedSeasonId)
+    if (!s) return "Saison"
+    // z.B. "Herbstsaison 2025" oder "Wintercup 2026"
+    const year = s.year ? ` ${s.year}` : ""
+    const name = s.name || s.type || "Saison"
+    return `${name}${year}`
+  }, [seasons, selectedSeasonId])
 
   const calculateStandings = () => {
     const standings = {}
@@ -447,7 +502,7 @@ export default function DartLeaguePage() {
               </div>
               <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
                 <span className="block text-white">EMOJ!'S DARTVEREIN</span>
-                <span className="block text-orange-200">Herbstsaison 2025</span>
+                <span className="block text-orange-200">{selectedSeasonLabel}</span>
               </h1>
               <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-2 sm:mb-4">
                 Aktuelle Tabellen, Spielergebnisse und Statistiken
@@ -455,29 +510,50 @@ export default function DartLeaguePage() {
             </div>
           </motion.div>
 
+          {/* ✅ Saison + DartType Filter oben */}
           <motion.div variants={itemVariants} className="mb-6">
-            <div className="flex justify-center gap-2">
-              <Button
-                variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
-                onClick={() => setDartTypeFilter("gesamt")}
-                className="flex items-center gap-2"
-              >
-                Gesamt
-              </Button>
-              <Button
-                variant={dartTypeFilter === "edart" ? "default" : "outline"}
-                onClick={() => setDartTypeFilter("edart")}
-                className="flex items-center gap-2"
-              >
-                E-Dart
-              </Button>
-              <Button
-                variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
-                onClick={() => setDartTypeFilter("steeldart")}
-                className="flex items-center gap-2"
-              >
-                Steeldart
-              </Button>
+            <div className="flex flex-col gap-3 items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-700">Saison:</span>
+                <select
+                  value={selectedSeasonId}
+                  onChange={(e) => {
+                    setSelectedSeasonId(e.target.value)
+                    setCurrentPage(1)
+                  }}
+                  className="bg-white text-gray-900 rounded px-3 py-2 text-sm border border-gray-200 shadow-sm"
+                >
+                  {seasons.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-center gap-2">
+                <Button
+                  variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
+                  onClick={() => setDartTypeFilter("gesamt")}
+                  className="flex items-center gap-2"
+                >
+                  Gesamt
+                </Button>
+                <Button
+                  variant={dartTypeFilter === "edart" ? "default" : "outline"}
+                  onClick={() => setDartTypeFilter("edart")}
+                  className="flex items-center gap-2"
+                >
+                  E-Dart
+                </Button>
+                <Button
+                  variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
+                  onClick={() => setDartTypeFilter("steeldart")}
+                  className="flex items-center gap-2"
+                >
+                  Steeldart
+                </Button>
+              </div>
             </div>
           </motion.div>
 

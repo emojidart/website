@@ -50,6 +50,14 @@ interface TeamMember {
   } | null
 }
 
+interface Season {
+  id: string
+  name: string | null
+  type: string | null
+  year: number | null
+  is_active: boolean | null
+}
+
 export default function MemberStatisticsPage() {
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
@@ -61,6 +69,8 @@ export default function MemberStatisticsPage() {
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [dartTypeFilter, setDartTypeFilter] = useState<"gesamt" | "edart" | "steeldart">("gesamt")
+  const [seasons, setSeasons] = useState<Season[]>([])
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("")
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -78,7 +88,7 @@ export default function MemberStatisticsPage() {
     if (profile?.player_id && teamMembers.length > 0) {
       fetchLegStatistics()
     }
-  }, [profile, teamMembers, dartTypeFilter])
+  }, [profile, teamMembers, dartTypeFilter, selectedSeasonId])
 
   const isLeadershipRole = () => {
     return teamMemberships.some(
@@ -97,6 +107,23 @@ export default function MemberStatisticsPage() {
 
     try {
       setLegStatsLoading(true)
+
+      // ✅ Seasons laden (für Dropdown)
+      const { data: seasonsData, error: seasonsError } = await supabase
+        .from("seasons")
+        .select("id, name, type, year, is_active")
+        .order("start_date", { ascending: false })
+
+      if (seasonsError) {
+        console.error("Error fetching seasons:", seasonsError)
+      } else {
+        const list = (seasonsData || []) as Season[]
+        setSeasons(list)
+        if (!selectedSeasonId) {
+          const active = list.find((s) => s.is_active) || list[0]
+          if (active?.id) setSelectedSeasonId(active.id)
+        }
+      }
 
       const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
@@ -165,13 +192,14 @@ export default function MemberStatisticsPage() {
           *,
           player:club_players!leg_statistics_player_id_fkey(name, photo_url),
           leg_winner:club_players!leg_statistics_leg_winner_id_fkey(name, photo_url),
-          matches (
+          matches!inner (
             id,
             match_date,
             match_time,
             venue,
             home_team_id,
             away_team_id,
+            season_id,
             home_team:teams!matches_home_team_id_fkey(id, name),
             away_team:teams!matches_away_team_id_fkey(id, name)
           )
@@ -195,6 +223,11 @@ export default function MemberStatisticsPage() {
 
       if (dartTypeFilter !== "gesamt") {
         query = query.eq("dart_type", dartTypeFilter)
+      }
+
+      // ✅ Saison-Filter (über Join: leg_statistics -> matches.season_id)
+      if (selectedSeasonId) {
+        query = query.eq("matches.season_id", selectedSeasonId)
       }
 
       const { data, error } = await query
@@ -260,7 +293,22 @@ export default function MemberStatisticsPage() {
           </p>
         </div>
 
-        <div className="mb-4 flex gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <select
+            value={selectedSeasonId}
+            onChange={(e) => setSelectedSeasonId(e.target.value)}
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+          >
+            {seasons.length === 0 ? (
+              <option value="">Saison…</option>
+            ) : (
+              seasons.map((s) => (
+              <option key={s.id} value={s.id}>
+                {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
+              </option>
+              ))
+            )}
+          </select>
           <Button
             variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
             size="sm"

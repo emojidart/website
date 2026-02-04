@@ -24,6 +24,14 @@ type ClubPlayer = {
   origin: string | null
 }
 
+type Season = {
+  id: string
+  name: string | null
+  type: string | null
+  year: number | null
+  is_active: boolean | null
+}
+
 export default function MemberBonusPage() {
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
@@ -48,6 +56,10 @@ export default function MemberBonusPage() {
   const [teamMembers, setTeamMembers] = useState<any[]>([])
   const [selectedTeamId, setSelectedTeamId] = useState<string>("all")
 
+  // ✅ Saison Filter
+  const [seasons, setSeasons] = useState<Season[]>([])
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("all")
+
   useEffect(() => {
     if (!authLoading && !session) {
       router.push("/member-login")
@@ -70,6 +82,15 @@ export default function MemberBonusPage() {
     }
   }, [])
 
+  // ✅ Wenn Saison geändert wird: Stats neu laden (sonst nichts)
+  useEffect(() => {
+    if (teamMemberships.length > 0 && teamMembers.length > 0) {
+      const teamIds = teamMemberships.map((t: any) => t.team_id)
+      fetchAllTeamStatistics(teamIds, teamMembers)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSeasonId])
+
   const fetchUserData = async () => {
     if (!session?.user) return
 
@@ -77,6 +98,24 @@ export default function MemberBonusPage() {
 
     try {
       console.log("[v0] Fetching user profile for user:", session.user.id)
+
+      // ✅ Seasons laden (für Dropdown)
+      const { data: seasonsData, error: seasonsError } = await supabase
+        .from("seasons")
+        .select("id, name, type, year, is_active")
+        .order("start_date", { ascending: false })
+
+      if (seasonsError) {
+        console.error("[v0] Seasons fetch error:", seasonsError)
+      } else {
+        const list = (seasonsData || []) as Season[]
+        setSeasons(list)
+
+        if (selectedSeasonId === "all") {
+          const active = list.find((s) => s.is_active) || list[0]
+          if (active?.id) setSelectedSeasonId(active.id)
+        }
+      }
 
       const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
@@ -218,7 +257,7 @@ export default function MemberBonusPage() {
         return
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("leg_statistics")
         .select(`
           *,
@@ -238,6 +277,7 @@ export default function MemberBonusPage() {
             dart_type,
             home_team_id,
             away_team_id,
+            season_id,
             home_team:teams!matches_home_team_id_fkey(id, name),
             away_team:teams!matches_away_team_id_fkey(id, name),
             home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
@@ -249,6 +289,13 @@ export default function MemberBonusPage() {
         })
         .order("matches(match_date)", { ascending: false })
         .order("leg_number", { ascending: false })
+
+      // ✅ Saison-Filter (nur wenn gewählt)
+      if (selectedSeasonId !== "all" && selectedSeasonId) {
+        query = query.eq("matches.season_id", selectedSeasonId)
+      }
+
+      const { data, error } = await query
 
       if (error) {
         console.error("[v0] Error fetching team leg statistics:", error)
@@ -345,6 +392,26 @@ export default function MemberBonusPage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Bonusgeld</h1>
               <p className="text-sm text-gray-600 mt-1">Ihre Bonuspunkte und Belohnungen</p>
+            </div>
+
+            {/* ✅ Saison Filter (sonst nichts geändert) */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="season-filter" className="text-sm font-medium whitespace-nowrap">
+                Saison:
+              </label>
+              <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
+                <SelectTrigger id="season-filter" className="w-full">
+                  <SelectValue placeholder="Saison auswählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle Saisons</SelectItem>
+                  {seasons.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {teamMemberships.length > 1 && (

@@ -1390,10 +1390,10 @@ try {
                                       year: "numeric",
                                     })}
                                   </div>
-                                  {item.start_time && (
+                                  {item?.start_time && (
                                     <div className="flex items-center gap-2 min-w-0">
                                       <Clock className="h-4 w-4 shrink-0" />
-                                      {formatTimeWithoutSeconds(item.start_time)} Uhr
+                                      {formatTimeWithoutSeconds(item?.start_time)} Uhr
                                     </div>
                                   )}
                                   <div className="flex items-center gap-2 min-w-0">
@@ -1603,25 +1603,26 @@ try {
                         })}
                       </span>
                     </div>
-                    {selectedEvent.start_time && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <Clock className="h-5 w-5 text-gray-600 shrink-0" />
-                        <span>{formatTimeWithoutSeconds(selectedEvent.start_time)}</span>
-                      </div>
-                    )}
-                    {selectedEvent.location && (
+                    {selectedEvent?.start_time && (
+  <div className="flex items-center gap-3 text-sm">
+    <Clock className="h-5 w-5 text-gray-600 shrink-0" />
+    <span>{formatTimeWithoutSeconds(selectedEvent.start_time)}</span>
+  </div>
+)}
+
+                    {selectedEvent?.location && (
                       <div className="flex items-center gap-3 text-sm">
                         <MapPin className="h-5 w-5 text-gray-600 shrink-0" />
-                        <span>{selectedEvent.location}</span>
+                        <span>{selectedEvent?.location}</span>
                       </div>
                     )}
-                    {(selectedEvent.entry_fee != null || selectedEvent.max_participants != null) && (
+                    {(selectedEvent?.entry_fee != null || selectedEvent?.max_participants != null) && (
                       <div className="flex items-center gap-3 text-sm">
                         <Users className="h-5 w-5 text-gray-600 shrink-0" />
                         <span>
-                          {selectedEvent.entry_fee != null ? `${selectedEvent.entry_fee} €` : ""}
-                          {selectedEvent.entry_fee != null && selectedEvent.max_participants != null ? " • " : ""}
-                          {selectedEvent.max_participants != null ? `Max. ${selectedEvent.max_participants}` : ""}
+                          {selectedEvent?.entry_fee != null ? `${selectedEvent?.entry_fee} €` : ""}
+                          {selectedEvent?.entry_fee != null && selectedEvent?.max_participants != null ? " • " : ""}
+                          {selectedEvent?.max_participants != null ? `Max. ${selectedEvent?.max_participants}` : ""}
                         </span>
                       </div>
                     )}
@@ -1901,7 +1902,7 @@ try {
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Dein Name</Label>
+                  <Label></Label>
                  
                 </div>
 
@@ -2017,8 +2018,8 @@ try {
                                       ? `${item.start_date} bis ${item.end_date}`
                                       : item.event_type === "Geburtstag"
                                         ? ""
-                                        : item.start_time
-                                          ? `${format(new Date(`2000-01-01T${item.start_time}`), "HH:mm")} Uhr`
+                                        : item?.start_time
+                                          ? `${format(new Date(`2000-01-01T${item?.start_time}`), "HH:mm")} Uhr`
                                           : ""}
                                   </div>
                                 </div>
