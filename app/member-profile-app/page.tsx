@@ -444,7 +444,9 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
         .from("team_members")
         .select("id", { count: "exact", head: true })
         .eq("team_id", teamId)
-        .is("left_at", null)
+        .eq("player_id", profileData.player_id)
+		.is("left_at", null)
+
 
       const total = teamMemberCount ?? rows.length
       const answered = counts.yes + counts.maybe + counts.no
@@ -501,9 +503,11 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
         await fetchNotifications(profileData.player_id)
 
         const { data: teamData, error: teamError } = await supabase
-          .from("team_members")
-          .select(`id, team_id, role, teams (id, name, logo_url)`)
-          .eq("player_id", profileData.player_id)
+  .from("team_members")
+  .select(`id, team_id, role, teams (id, name, logo_url)`)
+  .eq("player_id", profileData.player_id)
+  .is("left_at", null)
+
 
         if (teamError) {
           throw teamError

@@ -243,10 +243,12 @@ setLoading(false)
     setProfile(profileData as any)
 
     if (profileData?.player_id) {
-      const { data: teamData } = await supabase
-        .from("team_members")
-        .select(`id, team_id, role, teams (id, name, logo_url)`)
-        .eq("player_id", profileData.player_id)
+     const { data: teamData } = await supabase
+  .from("team_members")
+  .select(`id, team_id, role, teams (id, name, logo_url)`)
+  .eq("player_id", profileData.player_id)
+  .is("left_at", null)   // ✅ nur aktive Mitgliedschaften
+
 
       setTeamMemberships((teamData as any) || [])
     }
