@@ -552,35 +552,33 @@ export function LeagueManagement() {
     : matches
 
   const groupMatchesByOwnTeam = (matches: Match[]) => {
-    const grouped: { [teamId: string]: { team: Team; matches: Match[] } } = {}
-    const otherMatches: Match[] = []
+  const grouped: { [teamId: string]: { team: Team; matches: Match[] } } = {}
+  const otherMatches: Match[] = []
 
-    matches.forEach((match) => {
-      let ownTeam: Team | null = null
-      let isOwnTeamHome = false
-
-      if (match.home_team_type === "own" && match.home_team) {
-        ownTeam = match.home_team
-        isOwnTeamHome = true
-      } else if (match.away_team_type === "own" && match.away_team) {
-        ownTeam = match.away_team
-        isOwnTeamHome = false
-      }
-
-      if (ownTeam) {
-        if (!grouped[ownTeam.id]) {
-          grouped[ownTeam.id] = { team: ownTeam, matches: [] }
-        }
-        grouped[ownTeam.id].matches.push({ ...match, isOwnTeamHome })
-      } else {
-        otherMatches.push(match)
-      }
-    })
-
-    return { grouped, otherMatches }
+  const addToGroup = (team: Team, match: Match, isOwnTeamHome: boolean) => {
+    if (!grouped[team.id]) grouped[team.id] = { team, matches: [] }
+    grouped[team.id].matches.push({ ...match, isOwnTeamHome })
   }
 
-  const toggleTeamCollapse = (teamId: string) => {
+  matches.forEach((match) => {
+    const homeIsOwn = match.home_team_type === "own" && match.home_team
+    const awayIsOwn = match.away_team_type === "own" && match.away_team
+
+    if (homeIsOwn) addToGroup(match.home_team!, match, true)
+
+    // Wichtig: Bei Vereins-internen Spielen auch fürs Auswärtsteam eintragen
+    if (awayIsOwn && (!homeIsOwn || match.away_team!.id !== match.home_team!.id)) {
+      addToGroup(match.away_team!, match, false)
+    }
+
+    if (!homeIsOwn && !awayIsOwn) {
+      otherMatches.push(match)
+    }
+  })
+
+  return { grouped, otherMatches }
+}
+const toggleTeamCollapse = (teamId: string) => {
     const newCollapsed = new Set(collapsedTeams)
     if (newCollapsed.has(teamId)) {
       newCollapsed.delete(teamId)
