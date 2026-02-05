@@ -441,11 +441,11 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
 
       // none = all team members - answered; best effort using team_members count
       const { count: teamMemberCount } = await supabase
-        .from("team_members")
-        .select("id", { count: "exact", head: true })
-        .eq("team_id", teamId)
-        .eq("player_id", profileData.player_id)
-		.is("left_at", null)
+  .from("team_members")
+  .select("id", { count: "exact", head: true })
+  .eq("team_id", teamId)
+  .is("left_at", null)
+
 
 
       const total = teamMemberCount ?? rows.length

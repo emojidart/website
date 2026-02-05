@@ -388,19 +388,21 @@ export default function DashboardPage() {
 
       // Fetch team memberships
       if (profileData?.player_id) {
-        const { data: teamData, error: teamError } = await supabase
-          .from("team_members")
-          .select(`
-            id,
-            team_id,
-            role,
-            teams (
-              id,
-              name,
-              logo_url
-            )
-          `)
-          .eq("player_id", profileData.player_id)
+       const { data: teamData, error: teamError } = await supabase
+  .from("team_members")
+  .select(`
+    id,
+    team_id,
+    role,
+    teams (
+      id,
+      name,
+      logo_url
+    )
+  `)
+  .eq("player_id", profileData.player_id)
+  .is("left_at", null) // ✅ NUR aktive Teams
+
 
         if (teamError) {
           throw teamError
@@ -747,18 +749,21 @@ export default function DashboardPage() {
       // Fetch team memberships
       if (profileData?.player_id) {
         const { data: teamData, error: teamError } = await supabase
-          .from("team_members")
-          .select(`
-            id,
-            team_id,
-            role,
-            teams (
-              id,
-              name,
-              logo_url
-            )
-          `)
-          .eq("player_id", profileData.player_id)
+  .from("team_members")
+  .select(`
+    id,
+    team_id,
+    role,
+    teams (
+      id,
+      name,
+      logo_url
+    )
+  `)
+  .eq("player_id", profileData.player_id)
+.is("left_at", null)
+
+
 
         if (teamError) {
           throw teamError
@@ -1008,6 +1013,7 @@ export default function DashboardPage() {
 
     try {
       const teamIds = teamMemberships.map((tm) => tm.team_id)
+	 
 
       const [matchesResponse, opponentTeamsResponse] = await Promise.all([
         supabase
