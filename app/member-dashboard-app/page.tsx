@@ -2568,7 +2568,7 @@ export default function DashboardPage() {
               <Input
                 id="reason"
                 type="text"
-                placeholder="z.B. Spieler krank, Halle nicht verfügbar..."
+                placeholder="z.B. Zu wenig Spieler..."
                 value={postponeData.reason}
                 onChange={(e) => setPostponeData({ ...postponeData, reason: e.target.value })}
               />
