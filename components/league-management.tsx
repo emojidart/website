@@ -113,6 +113,13 @@ export function LeagueManagement() {
   const [newOpponentTeamVenueName, setNewOpponentTeamVenueName] = useState("")
   const [newOpponentTeamVenue, setNewOpponentTeamVenue] = useState("")
   const [newOpponentTeamCaptainPhone, setNewOpponentTeamCaptainPhone] = useState("")
+
+  // Lokale-Übersicht (Option A): rein aus Gegnerteams generiert (keine DB-Änderung)
+  const [venueSearch, setVenueSearch] = useState("")
+  const [isVenueAssignDialogOpen, setIsVenueAssignDialogOpen] = useState(false)
+  const [venueToAssign, setVenueToAssign] = useState<{ name: string; address: string } | null>(null)
+  const [venueAssignTeamId, setVenueAssignTeamId] = useState("")
+  const [venueAssignTeamSearch, setVenueAssignTeamSearch] = useState("")
   const [editingOpponentTeam, setEditingOpponentTeam] = useState<string | null>(null)
   const [editOpponentTeamName, setEditOpponentTeamName] = useState("")
   const [editOpponentTeamVenueName, setEditOpponentTeamVenueName] = useState("")
@@ -151,6 +158,53 @@ export function LeagueManagement() {
     })
     return pastGames
   }, [matches])
+
+  const normalizeVenuePart = (value?: string) => (value || "").trim().toLowerCase().replace(/\s+/g, " ")
+
+  const venues = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        key: string
+        name: string
+        address: string
+        teams: OpponentTeam[]
+      }
+    >()
+
+    for (const t of opponentTeams) {
+      const name = (t.venue_name || "").trim()
+      const address = (t.venue || "").trim()
+      if (!name && !address) continue
+
+      const key = `${normalizeVenuePart(name)}|${normalizeVenuePart(address)}`
+      if (!map.has(key)) {
+        map.set(key, { key, name, address, teams: [] })
+      }
+      map.get(key)!.teams.push(t)
+    }
+
+    return Array.from(map.values()).sort((a, b) => {
+      const an = a.name || a.address
+      const bn = b.name || b.address
+      return an.localeCompare(bn)
+    })
+  }, [opponentTeams])
+
+  const filteredVenues = useMemo(() => {
+    const q = venueSearch.trim().toLowerCase()
+    if (!q) return venues
+    return venues.filter((v) => {
+      const hay = [v.name, v.address, ...v.teams.map((t) => t.name)].filter(Boolean).join(" ").toLowerCase()
+      return hay.includes(q)
+    })
+  }, [venues, venueSearch])
+
+  const filteredOpponentTeamsForVenueAssign = useMemo(() => {
+    const q = venueAssignTeamSearch.trim().toLowerCase()
+    if (!q) return opponentTeams
+    return opponentTeams.filter((t) => t.name.toLowerCase().includes(q))
+  }, [opponentTeams, venueAssignTeamSearch])
 
   useEffect(() => {
     console.log("[v0] Component mounted, starting data fetch")
@@ -521,6 +575,26 @@ export function LeagueManagement() {
     }
   }
 
+  const applyVenueToOpponentTeam = async (teamId: string, venue: { name: string; address: string }) => {
+    try {
+      const { error } = await supabase
+        .from("opponent_teams")
+        .update({
+          venue_name: venue.name.trim() || null,
+          venue: venue.address.trim() || null,
+        })
+        .eq("id", teamId)
+
+      if (error) throw error
+
+      setShowSuccessMessage(`Lokal wurde gespeichert.`)
+      setTimeout(() => setShowSuccessMessage(""), 2500)
+      fetchData()
+    } catch (error) {
+      console.error("Error applying venue to opponent team:", error)
+    }
+  }
+
   const deleteMatch = async (matchId: string) => {
     if (
       !window.confirm(
@@ -757,6 +831,7 @@ const toggleTeamCollapse = (teamId: string) => {
           <TabsTrigger value="overview">Übersicht</TabsTrigger>
           <TabsTrigger value="matches">Spiele</TabsTrigger>
           <TabsTrigger value="teams">Mannschaften</TabsTrigger>
+          <TabsTrigger value="venues">Lokale</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -1803,6 +1878,175 @@ const toggleTeamCollapse = (teamId: string) => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="venues" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Lokale (aus Gegnerteams)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Suchen (Lokal, Adresse, Mannschaft)..."
+                      value={venueSearch}
+                      onChange={(e) => setVenueSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {filteredVenues.length} {filteredVenues.length === 1 ? "Lokal" : "Lokale"}
+                  </div>
+                </div>
+
+                {filteredVenues.length === 0 ? (
+                  <div className="text-muted-foreground text-center py-8">
+                    Keine Lokale gefunden.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredVenues.map((v) => (
+                      <Collapsible key={v.key}>
+                        <div className="flex items-start justify-between gap-3 p-3 border rounded-lg">
+                          <div className="flex items-start gap-3 min-w-0">
+                            <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                            <div className="min-w-0">
+                              <div className="font-medium truncate">
+                                {v.name ? v.name : "(Ohne Lokalname)"}
+                              </div>
+                              {v.address ? (
+                                <div className="text-sm text-muted-foreground truncate">{v.address}</div>
+                              ) : (
+                                <div className="text-sm text-muted-foreground">(Ohne Adresse)</div>
+                              )}
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Wird genutzt von {v.teams.length} {v.teams.length === 1 ? "Mannschaft" : "Mannschaften"}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge variant="secondary">{v.teams.length}</Badge>
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setVenueToAssign({ name: v.name, address: v.address })
+                                setVenueAssignTeamId("")
+                                setVenueAssignTeamSearch("")
+                                setIsVenueAssignDialogOpen(true)
+                              }}
+                            >
+                              Zum Team hinzufügen
+                            </Button>
+                            <CollapsibleTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </CollapsibleTrigger>
+                          </div>
+                        </div>
+
+                        <CollapsibleContent>
+                          <div className="px-3 pb-3">
+                            <div className="rounded-lg border bg-muted/30 p-3">
+                              <div className="text-sm font-medium mb-2">Mannschaften</div>
+                              <div className="flex flex-wrap gap-2">
+                                {v.teams
+                                  .slice()
+                                  .sort((a, b) => a.name.localeCompare(b.name))
+                                  .map((t) => (
+                                    <Badge key={t.id} variant="outline">
+                                      {t.name}
+                                    </Badge>
+                                  ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Dialog open={isVenueAssignDialogOpen} onOpenChange={setIsVenueAssignDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Lokal zu Gegnerteam hinzufügen</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="rounded-lg border p-3">
+                  <div className="text-sm font-medium">Ausgewähltes Lokal</div>
+                  <div className="mt-1">
+                    <div className="font-semibold">
+                      {venueToAssign?.name ? venueToAssign.name : "(Ohne Lokalname)"}
+                    </div>
+                    {venueToAssign?.address ? (
+                      <div className="text-sm text-muted-foreground">{venueToAssign.address}</div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">(Ohne Adresse)</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Gegnerteam auswählen</Label>
+                  <Input
+                    placeholder="Team suchen..."
+                    value={venueAssignTeamSearch}
+                    onChange={(e) => setVenueAssignTeamSearch(e.target.value)}
+                  />
+
+                  <Select value={venueAssignTeamId} onValueChange={setVenueAssignTeamId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Gegnerteam auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredOpponentTeamsForVenueAssign.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsVenueAssignDialogOpen(false)
+                      setVenueToAssign(null)
+                      setVenueAssignTeamId("")
+                      setVenueAssignTeamSearch("")
+                    }}
+                  >
+                    Abbrechen
+                  </Button>
+                  <Button
+                    disabled={!venueToAssign || !venueAssignTeamId}
+                    onClick={async () => {
+                      if (!venueToAssign || !venueAssignTeamId) return
+                      await applyVenueToOpponentTeam(venueAssignTeamId, venueToAssign)
+                      setIsVenueAssignDialogOpen(false)
+                      setVenueToAssign(null)
+                      setVenueAssignTeamId("")
+                      setVenueAssignTeamSearch("")
+                    }}
+                  >
+                    Speichern
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
 
