@@ -43,14 +43,28 @@ type Season = {
 }
 
 /** =========================
- *  Prediction Helpers (REAL DATA from your Supabase matches)
+ *  Prediction Helpers
  *  ========================= */
 type TeamKey = string
 
 function toTeamKey(match: any, side: "home" | "away"): TeamKey | null {
-  const team = side === "home" ? match.home_team : match.away_team
-  const opp = side === "home" ? match.home_opponent_team : match.away_opponent_team
-  return (team?.id || opp?.id || null) as TeamKey | null
+  // ✅ robust: falls join-object fehlt, auf *_id zurückfallen
+  if (side === "home") {
+    return (
+      match.home_team?.id ||
+      match.home_opponent_team?.id ||
+      match.home_team_id ||
+      match.home_opponent_team_id ||
+      null
+    ) as TeamKey | null
+  }
+  return (
+    match.away_team?.id ||
+    match.away_opponent_team?.id ||
+    match.away_team_id ||
+    match.away_opponent_team_id ||
+    null
+  ) as TeamKey | null
 }
 
 function toTeamName(match: any, side: "home" | "away"): string {
@@ -145,17 +159,7 @@ function calcFormStats(finishedMatches: any[], teamKey: TeamKey, lastN = 6): For
   const legsDiff = legsFor - legsAgainst
   const pointsPerGame = played > 0 ? points / played : 0
 
-  return {
-    played,
-    points,
-    wins,
-    draws,
-    losses,
-    legsFor,
-    legsAgainst,
-    legsDiff,
-    pointsPerGame,
-  }
+  return { played, points, wins, draws, losses, legsFor, legsAgainst, legsDiff, pointsPerGame }
 }
 
 type H2HStats = {
@@ -263,7 +267,7 @@ function calcPrediction(args: {
   const raw = formSignal * 0.75 + legsSignal * 0.35 + h2hSignal * 0.25 + homeBonus
 
   const closeness = 1 - clamp(Math.abs(raw) / 1.8, 0, 1)
-  const draw = 0.18 + 0.20 * closeness
+  const draw = 0.18 + 0.2 * closeness
 
   const rest = 1 - draw
   const homeShare = 1 / (1 + Math.exp(-raw * 2.1))
@@ -282,29 +286,21 @@ function calcPrediction(args: {
 
   const reasonsPretty: string[] = []
   reasonsPretty.push(
-    `Form (${formN} Spiele): ${homeForm.wins}S / ${homeForm.draws}U / ${homeForm.losses}N → ${round1(
-      homeForm.pointsPerGame
-    )} P/Spiel  |  ${awayForm.wins}S / ${awayForm.draws}U / ${awayForm.losses}N → ${round1(awayForm.pointsPerGame)} P/Spiel`
+    `Form (${formN} Spiele): ${homeForm.wins}S / ${homeForm.draws}U / ${homeForm.losses}N → ${round1(homeForm.pointsPerGame)} P/Spiel  |  ${awayForm.wins}S / ${awayForm.draws}U / ${awayForm.losses}N → ${round1(
+      awayForm.pointsPerGame
+    )} P/Spiel`
   )
-
   reasonsPretty.push(
-    `Legs: ${homeForm.legsFor}:${homeForm.legsAgainst} → ${round1(homeLD)} pro Spiel  |  ${awayForm.legsFor}:${awayForm.legsAgainst} → ${round1(
-      awayLD
-    )} pro Spiel`
+    `Legs: ${homeForm.legsFor}:${homeForm.legsAgainst} → ${round1(homeLD)} pro Spiel  |  ${awayForm.legsFor}:${awayForm.legsAgainst} → ${round1(awayLD)} pro Spiel`
   )
-
   if (h2h.played > 0) reasonsPretty.push(`H2H: ${h2h.winsA}:${h2h.draws}:${h2h.lossesA} (W:D:L)`)
   else reasonsPretty.push("H2H: keine Daten")
-
   if (homeBonus > 0) reasonsPretty.push("Heimvorteil berücksichtigt")
 
   let lastDuelText = "Letztes Duell: keine Daten"
   if (h2h.lastMatch && isCompletedForPred(h2h.lastMatch)) {
     const lm = h2h.lastMatch
-    lastDuelText = `Letztes Duell: ${fmtDateDE(lm.match_date)} – ${toTeamName(lm, "home")} ${lm.home_score}:${lm.away_score} ${toTeamName(
-      lm,
-      "away"
-    )}`
+    lastDuelText = `Letztes Duell: ${fmtDateDE(lm.match_date)} – ${toTeamName(lm, "home")} ${lm.home_score}:${lm.away_score} ${toTeamName(lm, "away")}`
   }
 
   return {
@@ -339,41 +335,57 @@ export default function DartLeaguePage() {
   const [seasons, setSeasons] = useState<Season[]>([])
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>("")
 
+  /** ✅ Seasons EINMAL laden -> Season setzen -> danach lädt Data-Effect */
   useEffect(() => {
+    let cancelled = false
+
+    const loadSeasons = async () => {
+      const { data, error } = await supabase
+        .from("seasons")
+        .select("id, name, type, year, start_date, end_date, is_active")
+        .order("start_date", { ascending: false })
+
+      if (error) {
+        console.error("Error fetching seasons:", error)
+        return
+      }
+
+      const seasonList = (data || []) as Season[]
+      if (cancelled) return
+
+      setSeasons(seasonList)
+
+      const active = seasonList.find((s) => s.is_active) || seasonList[0]
+      if (active?.id) setSelectedSeasonId((prev) => prev || active.id)
+    }
+
+    loadSeasons()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  /** ✅ Daten laden NUR wenn Season vorhanden */
+  useEffect(() => {
+    let cancelled = false
+
     const loadData = async () => {
+      if (!selectedSeasonId) return
       setLoading(true)
+
       try {
-        const { data: seasonsData, error: seasonsError } = await supabase
-          .from("seasons")
-          .select("id, name, type, year, start_date, end_date, is_active")
-          .order("start_date", { ascending: false })
-
-        if (seasonsError) {
-          console.error("Error fetching seasons:", seasonsError)
-        } else {
-          const seasonList = (seasonsData || []) as Season[]
-          setSeasons(seasonList)
-
-          // Default nur beim ersten Mal setzen
-          if (!selectedSeasonId) {
-            const active = seasonList.find((s) => s.is_active) || seasonList[0]
-            if (active?.id) setSelectedSeasonId(active.id)
-          }
-        }
-
-        const { data: ownTeamsData, error: teamsError } = await supabase
-          .from("teams")
-          .select("*")
-          .not("user_id", "is", null)
-          .order("name")
-
-        const { data: opponentTeamsData, error: opponentError } = await supabase.from("opponent_teams").select("*").order("name")
+        const [{ data: ownTeamsData, error: teamsError }, { data: opponentTeamsData, error: opponentError }] =
+          await Promise.all([
+            supabase.from("teams").select("*").not("user_id", "is", null).order("name"),
+            supabase.from("opponent_teams").select("*").order("name"),
+          ])
 
         if (teamsError) console.error("Error fetching teams:", teamsError)
-        else setTeams(ownTeamsData || [])
-
         if (opponentError) console.error("Error fetching opponent teams:", opponentError)
-        else setOpponentTeams(opponentTeamsData || [])
+
+        if (cancelled) return
+        setTeams(ownTeamsData || [])
+        setOpponentTeams(opponentTeamsData || [])
 
         let matchQuery = supabase
           .from("matches")
@@ -386,32 +398,26 @@ export default function DartLeaguePage() {
           `
           )
           .order("match_date", { ascending: true })
+          .eq("season_id", selectedSeasonId)
 
         if (dartTypeFilter !== "gesamt") matchQuery = matchQuery.eq("dart_type", dartTypeFilter)
-        if (selectedSeasonId) matchQuery = matchQuery.eq("season_id", selectedSeasonId)
 
         const { data: matchesData, error: matchesError } = await matchQuery
+        if (matchesError) console.error("Error fetching matches:", matchesError)
 
-        if (matchesError) {
-          console.error("Error fetching matches:", matchesError)
-        } else {
-          const enrichedMatches =
-            matchesData?.map((match: any) => {
-              const homeOpponentTeam = match.home_opponent_team_id
-                ? opponentTeamsData?.find((team: any) => team.id === match.home_opponent_team_id)
-                : null
-              const awayOpponentTeam = match.away_opponent_team_id
-                ? opponentTeamsData?.find((team: any) => team.id === match.away_opponent_team_id)
-                : null
+        const enrichedMatches =
+          matchesData?.map((match: any) => {
+            const homeOpponentTeam = match.home_opponent_team_id
+              ? opponentTeamsData?.find((t: any) => t.id === match.home_opponent_team_id)
+              : null
+            const awayOpponentTeam = match.away_opponent_team_id
+              ? opponentTeamsData?.find((t: any) => t.id === match.away_opponent_team_id)
+              : null
 
-              return {
-                ...match,
-                home_opponent_team: homeOpponentTeam,
-                away_opponent_team: awayOpponentTeam,
-              }
-            }) || []
-          setMatches(enrichedMatches)
-        }
+            return { ...match, home_opponent_team: homeOpponentTeam, away_opponent_team: awayOpponentTeam }
+          }) || []
+
+        if (!cancelled) setMatches(enrichedMatches)
 
         const { data: playersData, error: playersError } = await supabase
           .from("team_members")
@@ -431,44 +437,45 @@ export default function DartLeaguePage() {
           )
           .order("club_players(name)")
 
-        if (playersError) {
-          console.error("Error fetching players:", playersError)
-        } else {
-          const transformedPlayers =
-            playersData
-              ?.map((member: any) => ({
-                id: member.club_players?.id,
-                name: member.club_players?.name,
-                photo_url: member.club_players?.photo_url,
-                team_id: member.team_id,
-                team_name: member.teams?.name,
-              }))
-              .filter((player: any) => player.id) || []
-          setPlayers(transformedPlayers)
-        }
+        if (playersError) console.error("Error fetching players:", playersError)
+
+        const transformedPlayers =
+          playersData
+            ?.map((member: any) => ({
+              id: member.club_players?.id,
+              name: member.club_players?.name,
+              photo_url: member.club_players?.photo_url,
+              team_id: member.team_id,
+              team_name: member.teams?.name,
+            }))
+            .filter((player: any) => player.id) || []
+
+        if (!cancelled) setPlayers(transformedPlayers)
 
         let legStatsQuery = supabase.from("leg_statistics").select(`
-            *,
-            player:club_players!leg_statistics_player_id_fkey(name, photo_url),
-            match:matches!inner(season_id)
-          `)
+          *,
+          player:club_players!leg_statistics_player_id_fkey(name, photo_url),
+          match:matches!inner(season_id)
+        `)
 
+        legStatsQuery = legStatsQuery.eq("match.season_id", selectedSeasonId)
         if (dartTypeFilter !== "gesamt") legStatsQuery = legStatsQuery.eq("dart_type", dartTypeFilter)
-        if (selectedSeasonId) legStatsQuery = legStatsQuery.eq("match.season_id", selectedSeasonId)
 
         const { data: legStatsData, error: legStatsError } = await legStatsQuery
-
         if (legStatsError) console.error("Error fetching leg statistics:", legStatsError)
-        else setLegStatistics(legStatsData || [])
+        if (!cancelled) setLegStatistics(legStatsData || [])
       } catch (error) {
         console.error("Error loading data:", error)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     loadData()
-  }, [dartTypeFilter, selectedSeasonId])
+    return () => {
+      cancelled = true
+    }
+  }, [selectedSeasonId, dartTypeFilter])
 
   const selectedSeasonLabel = useMemo(() => {
     const s = seasons.find((x) => x.id === selectedSeasonId)
@@ -499,41 +506,40 @@ export default function DartLeaguePage() {
       if (match.status === "completed") {
         const homeTeam = match.home_team || match.home_opponent_team
         const awayTeam = match.away_team || match.away_opponent_team
+        if (!homeTeam || !awayTeam) return
 
-        if (homeTeam && awayTeam) {
-          const homeId = match.home_team?.id
-          const awayId = match.away_team?.id
+        const homeId = match.home_team?.id
+        const awayId = match.away_team?.id
 
-          if (homeId && standings[homeId]) {
-            standings[homeId].played++
-            standings[homeId].legsFor += match.home_score || 0
-            standings[homeId].legsAgainst += match.away_score || 0
+        if (homeId && standings[homeId]) {
+          standings[homeId].played++
+          standings[homeId].legsFor += match.home_score || 0
+          standings[homeId].legsAgainst += match.away_score || 0
 
-            if ((match.home_score || 0) > (match.away_score || 0)) {
-              standings[homeId].won++
-              standings[homeId].points += 2
-            } else if ((match.away_score || 0) > (match.home_score || 0)) {
-              standings[homeId].lost++
-            } else {
-              standings[homeId].drawn++
-              standings[homeId].points += 1
-            }
+          if ((match.home_score || 0) > (match.away_score || 0)) {
+            standings[homeId].won++
+            standings[homeId].points += 2
+          } else if ((match.away_score || 0) > (match.home_score || 0)) {
+            standings[homeId].lost++
+          } else {
+            standings[homeId].drawn++
+            standings[homeId].points += 1
           }
+        }
 
-          if (awayId && standings[awayId]) {
-            standings[awayId].played++
-            standings[awayId].legsFor += match.away_score || 0
-            standings[awayId].legsAgainst += match.home_score || 0
+        if (awayId && standings[awayId]) {
+          standings[awayId].played++
+          standings[awayId].legsFor += match.away_score || 0
+          standings[awayId].legsAgainst += match.home_score || 0
 
-            if ((match.away_score || 0) > (match.home_score || 0)) {
-              standings[awayId].won++
-              standings[awayId].points += 2
-            } else if ((match.home_score || 0) > (match.away_score || 0)) {
-              standings[awayId].lost++
-            } else {
-              standings[awayId].drawn++
-              standings[awayId].points += 1
-            }
+          if ((match.away_score || 0) > (match.home_score || 0)) {
+            standings[awayId].won++
+            standings[awayId].points += 2
+          } else if ((match.home_score || 0) > (match.away_score || 0)) {
+            standings[awayId].lost++
+          } else {
+            standings[awayId].drawn++
+            standings[awayId].points += 1
           }
         }
       }
@@ -633,15 +639,13 @@ export default function DartLeaguePage() {
         const detailedStats = legStatistics
           .filter((stat: any) => stat.player_id === player.player_id)
           .reduce(
-            (acc: any, stat: any) => {
-              return {
-                throws_15: (acc.throws_15 || 0) + (stat.throws_15 || 0),
-                throws_16: (acc.throws_16 || 0) + (stat.throws_16 || 0),
-                throws_17: (acc.throws_17 || 0) + (stat.throws_17 || 0),
-                throws_18: (acc.throws_18 || 0) + (stat.throws_18 || 0),
-                throws_19: (acc.throws_19 || 0) + (stat.throws_19 || 0),
-              }
-            },
+            (acc: any, stat: any) => ({
+              throws_15: (acc.throws_15 || 0) + (stat.throws_15 || 0),
+              throws_16: (acc.throws_16 || 0) + (stat.throws_16 || 0),
+              throws_17: (acc.throws_17 || 0) + (stat.throws_17 || 0),
+              throws_18: (acc.throws_18 || 0) + (stat.throws_18 || 0),
+              throws_19: (acc.throws_19 || 0) + (stat.throws_19 || 0),
+            }),
             {} as any
           )
 
@@ -665,13 +669,15 @@ export default function DartLeaguePage() {
       })
   }, [legStatistics])
 
-  const completedMatches = matches.filter((match) => match.status === "completed")
-  const upcomingMatches = matches.filter((match) => match.status === "scheduled")
-  const postponedMatches = matches.filter((match) => match.status === "postponed")
+  const completedMatches = useMemo(() => matches.filter((match) => match.status === "completed"), [matches])
+  const upcomingMatches = useMemo(() => matches.filter((match) => match.status === "scheduled"), [matches])
+  const postponedMatches = useMemo(() => matches.filter((match) => match.status === "postponed"), [matches])
+
   const standings = calculateStandings()
   const playerLegStats = playerStatistics
 
-  const finishedForPred = useMemo(() => completedMatches.filter(isCompletedForPred), [completedMatches])
+  // ✅ WICHTIG: finishedForPred stabil aus matches (nicht aus completedMatches chain)
+  const finishedForPred = useMemo(() => matches.filter(isCompletedForPred), [matches])
 
   const totalPages = Math.ceil(playerLegStats.length / playersPerPage)
   const startIndex = (currentPage - 1) * playersPerPage
@@ -681,11 +687,9 @@ export default function DartLeaguePage() {
   const handleNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1)
   }
-
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1)
   }
-
   const handlePageSizeChange = (newSize: number) => {
     setPlayersPerPage(newSize)
     setCurrentPage(1)
@@ -742,6 +746,52 @@ export default function DartLeaguePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
+
+      {/* ✅ Sticky Filter: klickbar am PC (Framer-transform umgehen) */}
+      <div className="sticky top-0 z-[2000] bg-gradient-to-br from-gray-50 to-gray-100/95 backdrop-blur border-b border-gray-200">
+        <div className="container mx-auto px-4 py-3">
+          <div className="w-full max-w-2xl mx-auto pointer-events-auto">
+            <div className="flex flex-col gap-3 sm:gap-4 items-stretch sm:items-center">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-sm font-semibold text-gray-700">Saison:</span>
+
+                <select
+                  value={selectedSeasonId}
+                  disabled={seasons.length === 0}
+                  onChange={(e) => {
+                    setSelectedSeasonId(e.target.value)
+                    setCurrentPage(1)
+                  }}
+                  className="w-full sm:w-auto bg-white text-gray-900 rounded-lg px-3 py-3 sm:py-2 text-sm border border-gray-200 shadow-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-orange-300"
+                >
+                  {seasons.length === 0 ? (
+                    <option value="">Lade Saisonen…</option>
+                  ) : (
+                    seasons.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                <Button variant={dartTypeFilter === "gesamt" ? "default" : "outline"} onClick={() => setDartTypeFilter("gesamt")} className="flex-shrink-0">
+                  Gesamt
+                </Button>
+                <Button variant={dartTypeFilter === "edart" ? "default" : "outline"} onClick={() => setDartTypeFilter("edart")} className="flex-shrink-0">
+                  E-Dart
+                </Button>
+                <Button variant={dartTypeFilter === "steeldart" ? "default" : "outline"} onClick={() => setDartTypeFilter("steeldart")} className="flex-shrink-0">
+                  Steeldart
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <main className="container mx-auto px-4 py-8 pb-24 relative">
         <motion.div
           className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8 relative"
@@ -761,56 +811,6 @@ export default function DartLeaguePage() {
               <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-2 sm:mb-4">
                 Aktuelle Tabellen, Spielergebnisse und Statistiken
               </p>
-            </div>
-          </motion.div>
-
-          {/* ✅ Saison + DartType Filter oben (MOBILE FIX: z-index + pointer-events + touch) */}
-          <motion.div variants={itemVariants} className="mb-6 relative z-[999]">
-            <div className="w-full max-w-2xl mx-auto relative z-[999] pointer-events-auto">
-              <div className="flex flex-col gap-3 sm:gap-4 items-stretch sm:items-center relative z-[999]">
-                <div className="relative z-[999] flex flex-col sm:flex-row sm:items-center gap-2 pointer-events-auto">
-                  <span className="text-sm font-semibold text-gray-700">Saison:</span>
-
-                  <select
-                    value={selectedSeasonId}
-                    onChange={(e) => {
-                      setSelectedSeasonId(e.target.value)
-                      setCurrentPage(1)
-                    }}
-                    className="w-full sm:w-auto bg-white text-gray-900 rounded-lg px-3 py-3 sm:py-2 text-sm border border-gray-200 shadow-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-orange-300 pointer-events-auto touch-manipulation relative z-[999]"
-                  >
-                    {seasons.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 sm:overflow-visible sm:pb-0 sm:mx-0 sm:px-0 relative z-[999] pointer-events-auto">
-                  <Button
-                    variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
-                    onClick={() => setDartTypeFilter("gesamt")}
-                    className="flex items-center gap-2 flex-shrink-0"
-                  >
-                    Gesamt
-                  </Button>
-                  <Button
-                    variant={dartTypeFilter === "edart" ? "default" : "outline"}
-                    onClick={() => setDartTypeFilter("edart")}
-                    className="flex items-center gap-2 flex-shrink-0"
-                  >
-                    E-Dart
-                  </Button>
-                  <Button
-                    variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
-                    onClick={() => setDartTypeFilter("steeldart")}
-                    className="flex items-center gap-2 flex-shrink-0"
-                  >
-                    Steeldart
-                  </Button>
-                </div>
-              </div>
             </div>
           </motion.div>
 
@@ -891,7 +891,8 @@ export default function DartLeaguePage() {
                           <div className="p-4 border-t bg-gray-50">
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                               <div className="text-sm text-gray-600">
-                                Zeige {startIndex + 1} bis {Math.min(endIndex, playerLegStats.length)} von {playerLegStats.length} Spielern
+                                Zeige {startIndex + 1} bis {Math.min(endIndex, playerLegStats.length)} von{" "}
+                                {playerLegStats.length} Spielern
                               </div>
                               <div className="flex items-center gap-2">
                                 <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
@@ -1196,17 +1197,26 @@ export default function DartLeaguePage() {
                               const awayName = toTeamName(match, "away")
 
                               const prediction =
-                                homeKey && awayKey
-                                  ? calcPrediction({
-                                      finishedMatches: finishedForPred,
-                                      homeKey,
-                                      awayKey,
-                                      homeTeamName: homeName,
-                                      awayTeamName: awayName,
-                                      formN: 6,
-                                      h2hN: 8,
-                                    })
-                                  : null
+  homeKey && awayKey
+    ? calcPrediction({
+        finishedMatches: finishedForPred,
+        homeKey,
+        awayKey,
+        homeTeamName: homeName,
+        awayTeamName: awayName,
+        formN: 6,
+        h2hN: 8,
+      })
+    : {
+        favorite: "even",
+        homeWin: 0.33,
+        draw: 0.34,
+        awayWin: 0.33,
+        confidence: "low",
+        reasonsPretty: ["Keine Team-IDs gefunden → keine Datenbasis"],
+        lastDuelText: "Letztes Duell: keine Daten",
+      }
+
 
                               const favText =
                                 !prediction
@@ -1463,6 +1473,7 @@ export default function DartLeaguePage() {
           </motion.div>
         </motion.div>
       </main>
+
       <MobileBottomNav />
     </div>
   )

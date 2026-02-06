@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -185,6 +185,8 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
   const [successModalOpen, setSuccessModalOpen] = useState(false)
   const [savedPlayerName, setSavedPlayerName] = useState("")
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("")
+  const playersWithStats = useMemo(() => new Set(legStats.map((s) => s.player_id)), [legStats])
+  const playerById = useMemo(() => new Map(players.map((p) => [p.id, p] as const)), [players])
   const [validationErrorOpen, setValidationErrorOpen] = useState(false)
   const [validationErrorMessage, setValidationErrorMessage] = useState("")
   const [currentStats, setCurrentStats] = useState<LegStatistic>({
@@ -219,33 +221,59 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
   })
 
   useEffect(() => {
-    fetchPlayers()
-    fetchLegStatistics()
-    fetchOpponentTeams()
+    ;(async () => {
+      // run in parallel for snappier UI
+      await Promise.all([fetchPlayers(), fetchLegStatistics(), fetchOpponentTeams()])
+    })().catch((e) => console.error("initial load error:", e))
   }, [match.id, myTeamId])
 
   const fetchPlayers = async () => {
-    if (!myTeamId) {
-      return
-    }
+    if (!myTeamId) return
 
-    const { data, error } = await supabase
-      .from("team_members")
-      .select(`
-        club_players (
-          id,
-          name,
-          photo_url
-        )
-      `)
-      .eq("team_id", myTeamId)
-      .order("club_players(name)")
+    // NOTE:
+    // We intentionally avoid embedding `club_players` from `team_members` because PostgREST can throw PGRST201
+    // if more than one relationship exists between these tables (e.g. after schema/relationship changes).
+    // Instead, we fetch member player ids first, then fetch players in a second query.
+    try {
+      const { data: members, error: membersError } = await supabase
+        .from("team_members")
+        .select("player_id")
+        .eq("team_id", myTeamId)
 
-    if (!error && data) {
-      const teamPlayers = data.map((member: any) => member.club_players).filter(Boolean)
-      setPlayers(teamPlayers)
+      if (membersError) {
+        console.error("fetchPlayers membersError:", membersError)
+        setPlayers([])
+        return
+      }
+
+      const ids = Array.from(
+        new Set((members || []).map((m: any) => m?.player_id).filter(Boolean))
+      ) as string[]
+
+      if (ids.length === 0) {
+        setPlayers([])
+        return
+      }
+
+      const { data: playersData, error: playersError } = await supabase
+        .from("club_players")
+        .select("id, name, photo_url")
+        .in("id", ids)
+        .order("name")
+
+      if (playersError) {
+        console.error("fetchPlayers playersError:", playersError)
+        setPlayers([])
+        return
+      }
+
+      setPlayers(playersData || [])
+    } catch (e) {
+      console.error("fetchPlayers unexpected error:", e)
+      setPlayers([])
     }
   }
+
 
   const fetchLegStatistics = async () => {
     const { data, error } = await supabase
@@ -293,8 +321,8 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
     }
   }
 
-  const handlePlayerSelect = (playerId: string) => {
-    const player = players.find((p) => p.id === playerId)
+  const handlePlayerSelect = useCallback((playerId: string) => {
+    const player = playerById.get(playerId)
     if (!player) return
 
     const existingStats = legStats.find((s) => s.player_id === playerId)
@@ -335,7 +363,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
     }
 
     setSelectedPlayerId(playerId)
-  }
+  }, [legStats, match.dart_type, match.id, playerById])
 
   const validateLegCounts = (): { isValid: boolean; message: string } => {
     const playerLegs = currentStats.player_legs_won || 0
@@ -572,7 +600,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
       {showHeader && (
         <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
               <Button
                 variant="outline"
                 onClick={() => router.push("/member-dashboard")}
@@ -586,7 +614,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
               <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                 🎯 Spielstatistiken - {teamName} vs {getOpponentName()}
               </h1>
-              <div className="flex items-center gap-4 text-muted-foreground">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-muted-foreground">
                 <span className="text-lg font-medium">
                   {formatDate(enrichedMatch.match_date)} • {enrichedMatch.match_time}
                 </span>
@@ -597,8 +625,8 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                   </>
                 )}
               </div>
-              <div className="flex items-center gap-3 text-lg">
-                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border w-full sm:w-auto">
                   <span className="font-bold text-blue-600">{teamName}</span>
                   <Badge variant="secondary" className="text-lg px-3 py-1 font-bold bg-blue-100 text-blue-800">
                     {getScoreDisplay()}
@@ -625,14 +653,17 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
           <div className="space-y-3">
             <Label className="text-sm font-medium">Spieler auswählen</Label>
             <Select value={selectedPlayerId} onValueChange={handlePlayerSelect}>
-              <SelectTrigger>
+              <SelectTrigger className="min-h-[44px]">
                 <SelectValue placeholder="Spieler auswählen..." />
               </SelectTrigger>
               <SelectContent>
+                {players.length === 0 && (
+                  <div className="px-2 py-3 text-sm text-muted-foreground">Keine Spieler gefunden.</div>
+                )}
                 {players.map((player) => (
                   <SelectItem key={player.id} value={player.id}>
                     {player.name}
-                    {legStats.find((s) => s.player_id === player.id) && (
+                    {playersWithStats.has(player.id) && (
                       <Badge variant="secondary" className="ml-2">
                         Bereits eingegeben
                       </Badge>
@@ -882,7 +913,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                     <Card key={stat.id} className="border border-slate-200 shadow-sm">
                       <CardContent className="p-4">
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between border-b pb-3">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-3">
                             <h5 className="font-bold text-xl text-gray-900">{stat.player_name}</h5>
                             <div className="text-sm text-muted-foreground">{formatDate(match.match_date)}</div>
                           </div>

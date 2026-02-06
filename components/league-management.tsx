@@ -40,7 +40,11 @@ interface Team {
 interface OpponentTeam {
   id: string
   name: string
+  // venue = Adresse (bestehendes Feld)
   venue?: string
+  // venue_name = Lokalname (neu)
+  venue_name?: string
+  captain_phone?: string
 }
 
 interface Season {
@@ -106,10 +110,14 @@ export function LeagueManagement() {
   })
 
   const [newOpponentTeam, setNewOpponentTeam] = useState("")
+  const [newOpponentTeamVenueName, setNewOpponentTeamVenueName] = useState("")
   const [newOpponentTeamVenue, setNewOpponentTeamVenue] = useState("")
+  const [newOpponentTeamCaptainPhone, setNewOpponentTeamCaptainPhone] = useState("")
   const [editingOpponentTeam, setEditingOpponentTeam] = useState<string | null>(null)
   const [editOpponentTeamName, setEditOpponentTeamName] = useState("")
+  const [editOpponentTeamVenueName, setEditOpponentTeamVenueName] = useState("")
   const [editOpponentTeamVenue, setEditOpponentTeamVenue] = useState("")
+  const [editOpponentTeamCaptainPhone, setEditOpponentTeamCaptainPhone] = useState("")
   const [editingMatch, setEditingMatch] = useState<string | null>(null)
   const [editMatchScores, setEditMatchScores] = useState({ home: 0, away: 0 })
   const [showSuccessMessage, setShowSuccessMessage] = useState("")
@@ -451,14 +459,18 @@ export function LeagueManagement() {
       const { error } = await supabase.from("opponent_teams").insert([
         {
           name: newOpponentTeam.trim(),
+          venue_name: newOpponentTeamVenueName.trim() || null,
           venue: newOpponentTeamVenue.trim() || null,
+          captain_phone: newOpponentTeamCaptainPhone.trim() || null,
         },
       ])
 
       if (error) throw error
 
       setNewOpponentTeam("")
+      setNewOpponentTeamVenueName("")
       setNewOpponentTeamVenue("")
+      setNewOpponentTeamCaptainPhone("")
       fetchData()
     } catch (error) {
       console.error("Error creating opponent team:", error)
@@ -491,7 +503,9 @@ export function LeagueManagement() {
         .from("opponent_teams")
         .update({
           name: editOpponentTeamName.trim(),
+          venue_name: editOpponentTeamVenueName.trim() || null,
           venue: editOpponentTeamVenue.trim() || null,
+          captain_phone: editOpponentTeamCaptainPhone.trim() || null,
         })
         .eq("id", teamId)
 
@@ -500,6 +514,7 @@ export function LeagueManagement() {
       setEditingOpponentTeam(null)
       setEditOpponentTeamName("")
       setEditOpponentTeamVenue("")
+      setEditOpponentTeamCaptainPhone("")
       fetchData()
     } catch (error) {
       console.error("Error updating opponent team:", error)
@@ -625,7 +640,9 @@ const toggleTeamCollapse = (teamId: string) => {
   const startEditingOpponentTeam = (team: OpponentTeam) => {
     setEditingOpponentTeam(team.id)
     setEditOpponentTeamName(team.name)
+    setEditOpponentTeamVenueName(team.venue_name || "")
     setEditOpponentTeamVenue(team.venue || "")
+    setEditOpponentTeamCaptainPhone(team.captain_phone || "")
   }
 
   if (loading) {
@@ -670,7 +687,7 @@ const toggleTeamCollapse = (teamId: string) => {
           <h1 className="text-3xl font-bold">Ligaspiele</h1>
           <p className="text-muted-foreground">Verwalte Mannschaften, Saisons und Spiele</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Dialog open={isSeasonDialogOpen} onOpenChange={setIsSeasonDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -974,6 +991,32 @@ const toggleTeamCollapse = (teamId: string) => {
                     </div>
                     <div>
                       <Label>Spielort</Label>
+                      {newMatchState.home_team_id && (
+                        <div className="text-sm text-muted-foreground mb-1">
+                          {newMatchState.home_team_type === "own" ? (
+                            <>
+                              Heimteam-Lokal: <span className="font-medium">Dart Freizeitverein Pfeil - OK</span>
+                            </>
+                          ) : (
+                            (() => {
+                              const t = opponentTeams.find((ot) => ot.id === newMatchState.home_team_id)
+                              const lokal = t?.venue_name?.trim()
+                              const adresse = t?.venue?.trim()
+                              return (
+                                <div className="space-y-0.5">
+                                  <div>
+                                    Heimteam-Lokal (Gegner):{" "}
+                                    <span className="font-medium">{lokal || "—"}</span>
+                                  </div>
+                                  <div>
+                                    Adresse: <span className="font-medium">{adresse || "—"}</span>
+                                  </div>
+                                </div>
+                              )
+                            })()
+                          )}
+                        </div>
+                      )}
                       <Input
                         value={newMatchState.venue}
                         onChange={(e) => setNewMatch({ ...newMatchState, venue: e.target.value })}
@@ -1633,12 +1676,28 @@ const toggleTeamCollapse = (teamId: string) => {
                     </div>
                     <div className="flex-1">
                       <Input
-                        placeholder="Spielort..."
+                        placeholder="Lokal..."
+                        value={newOpponentTeamVenueName}
+                        onChange={(e) => setNewOpponentTeamVenueName(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && createOpponentTeam()}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Adresse..."
                         value={newOpponentTeamVenue}
                         onChange={(e) => setNewOpponentTeamVenue(e.target.value)}
                         onKeyPress={(e) => e.key === "Enter" && createOpponentTeam()}
                       />
                     </div>
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Kapitän Tel..."
+                        value={newOpponentTeamCaptainPhone}
+                        onChange={(e) => setNewOpponentTeamCaptainPhone(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && createOpponentTeam()}
+                      />
+</div>
                     <Button onClick={createOpponentTeam} size="sm">
                       <Plus className="h-4 w-4" />
                     </Button>
@@ -1652,23 +1711,45 @@ const toggleTeamCollapse = (teamId: string) => {
                           <div className="flex items-center gap-3">
                             <Users className="h-4 w-4 text-orange-600" />
                             {editingOpponentTeam === team.id ? (
-                              <div className="flex gap-2 flex-1">
+                              <div className="flex gap-2 flex-1 flex-wrap">
                                 <Input
                                   value={editOpponentTeamName}
                                   onChange={(e) => setEditOpponentTeamName(e.target.value)}
                                   onKeyPress={(e) => e.key === "Enter" && updateOpponentTeam(team.id)}
+                                  className="min-w-[160px]"
+                                />
+                                <Input
+                                  value={editOpponentTeamVenueName}
+                                  onChange={(e) => setEditOpponentTeamVenueName(e.target.value)}
+                                  onKeyPress={(e) => e.key === "Enter" && updateOpponentTeam(team.id)}
+                                  placeholder="Lokal..."
+                                  className="min-w-[160px]"
                                 />
                                 <Input
                                   value={editOpponentTeamVenue}
                                   onChange={(e) => setEditOpponentTeamVenue(e.target.value)}
                                   onKeyPress={(e) => e.key === "Enter" && updateOpponentTeam(team.id)}
-                                  placeholder="Spielort..."
+                                  placeholder="Adresse..."
+                                  className="min-w-[200px]"
+                                />
+                                <Input
+                                  value={editOpponentTeamCaptainPhone}
+                                  onChange={(e) => setEditOpponentTeamCaptainPhone(e.target.value)}
+                                  onKeyPress={(e) => e.key === "Enter" && updateOpponentTeam(team.id)}
+                                  placeholder="Kapitän Tel..."
+                                  className="min-w-[160px]"
                                 />
                               </div>
                             ) : (
                               <div>
                                 <span className="font-medium">{team.name}</span>
-                                {team.venue && <div className="text-sm text-muted-foreground">{team.venue}</div>}
+                                {team.venue_name && (
+                                  <div className="text-sm text-muted-foreground">Lokal: {team.venue_name}</div>
+                                )}
+                                {team.venue && <div className="text-sm text-muted-foreground">Adresse: {team.venue}</div>}
+                                {team.captain_phone && (
+                                  <div className="text-sm text-muted-foreground">Kapitän: {team.captain_phone}</div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -1686,6 +1767,7 @@ const toggleTeamCollapse = (teamId: string) => {
                                     setEditingOpponentTeam(null)
                                     setEditOpponentTeamName("")
                                     setEditOpponentTeamVenue("")
+                                    setEditOpponentTeamCaptainPhone("")
                                   }}
                                 >
                                   ✕

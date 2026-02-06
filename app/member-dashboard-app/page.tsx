@@ -147,6 +147,11 @@ interface Match {
 interface OpponentTeam {
   id: string
   name: string
+  // venue = Adresse, venue_name = Lokalname
+  venue: string | null
+  venue_name: string | null
+  captain_name: string | null
+  captain_phone: string | null
 }
 
 interface BonusConfig {
@@ -817,6 +822,90 @@ export default function DashboardPage() {
       console.error("Logout error:", err)
     }
   }
+
+
+const getOpponentForMatch = (match: Match): OpponentTeam | null => {
+  if (match.home_team_type === "opponent") return match.home_opponent_team ?? null
+  if (match.away_team_type === "opponent") return match.away_opponent_team ?? null
+  return null
+}
+
+const OpponentLokalInfo = ({ match }: { match: Match }) => {
+  const opp = getOpponentForMatch(match)
+  if (!opp) return null
+
+  const hasVenueName = Boolean(opp.venue_name && opp.venue_name.trim())
+  const hasVenue = Boolean(opp.venue && opp.venue.trim())
+  const hasCaptain = Boolean(opp.captain_name && opp.captain_name.trim())
+
+  const phoneRaw = opp.captain_phone || ""
+  const phone = phoneRaw.trim()
+  const tel = phone ? phone.replace(/[^\d+]/g, "") : null
+  const wa = (() => {
+    if (!phone) return null
+    let p = phone.replace(/[^\d+]/g, "").trim()
+    if (p.startsWith("+")) p = p.slice(1)
+    if (p.startsWith("00")) p = p.slice(2)
+    return `https://wa.me/${p}`
+  })()
+
+  // If there's nothing meaningful to show, render nothing.
+  if (!hasVenueName && !hasVenue && !hasCaptain && !tel) return null
+
+  return (
+    <div className="mt-3 rounded-2xl border bg-gray-50 p-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold text-gray-900">Gegner – Lokal</div>
+
+          <div className="mt-1 grid gap-1 text-sm text-gray-700">
+            {hasVenueName ? (
+              <div className="flex flex-wrap gap-x-2">
+                <span className="text-gray-500">Lokal:</span>
+                <span className="font-medium break-words">{opp.venue_name}</span>
+              </div>
+            ) : null}
+
+            {hasVenue ? (
+              <div className="flex flex-wrap gap-x-2">
+                <span className="text-gray-500">Ort:</span>
+                <span className="font-medium break-words">{opp.venue}</span>
+              </div>
+            ) : null}
+
+            {hasCaptain ? (
+              <div className="flex flex-wrap gap-x-2">
+                <span className="text-gray-500">Kapitän:</span>
+                <span className="font-medium break-words">{opp.captain_name}</span>
+              </div>
+            ) : null}
+
+            {tel ? (
+              <div className="flex flex-wrap gap-x-2">
+                <span className="text-gray-500">Telefon:</span>
+                <a
+                  className="font-medium underline underline-offset-2 break-all"
+                  href={`tel:${tel}`}
+                >
+                  {phone}
+                </a>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {wa ? (
+          <Button asChild size="sm" className="rounded-xl bg-green-600 hover:bg-green-700 self-start">
+            <a href={wa} target="_blank" rel="noreferrer">
+              WhatsApp
+            </a>
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
 
   const getRoleIcon = (role: string | null) => {
     switch (role) {
@@ -1681,7 +1770,7 @@ export default function DashboardPage() {
                         <div className="space-y-4">
                           {getUpcomingMatches().map((match) => (
                             <div key={match.id} className={`border rounded-lg p-4 ${getMatchBackgroundColor(match)}`}>
-                              <div className="flex items-center justify-between mb-3">
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-3">
                                 <div className="flex flex-col gap-2 flex-1">
                                   {/* Week and Format badges */}
                                   <div className="flex items-center gap-2 flex-wrap">
@@ -1717,6 +1806,7 @@ export default function DashboardPage() {
                                       <MapPin className="h-4 w-4 flex-shrink-0" />
                                       <span className="truncate font-medium">{match.venue}</span>
                                     </div>
+                                    <OpponentLokalInfo match={match} />
                                   </div>
                                 </div>
 
@@ -1872,7 +1962,7 @@ export default function DashboardPage() {
                         <div className="space-y-4">
                           {getPostponedMatches().map((match) => (
                             <div key={match.id} className="border rounded-lg p-4 bg-orange-50 border-orange-200">
-                              <div className="flex items-center justify-between mb-3">
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-3">
                                 <div className="flex flex-col gap-2 flex-1">
                                   {/* Week and Format badges */}
                                   <div className="flex items-center gap-2 flex-wrap">
@@ -1908,6 +1998,7 @@ export default function DashboardPage() {
                                       <MapPin className="h-4 w-4 flex-shrink-0" />
                                       <span className="truncate font-medium">{match.venue}</span>
                                     </div>
+                                    <OpponentLokalInfo match={match} />
                                   </div>
                                 </div>
 
@@ -2058,7 +2149,7 @@ export default function DashboardPage() {
                         <div className="space-y-4">
                           {getCompletedMatches().map((match) => (
                             <div key={match.id} className={`border rounded-lg p-4 ${getMatchBackgroundColor(match)}`}>
-                              <div className="flex items-center justify-between mb-3">
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-3">
                                 <div className="flex flex-col gap-2 flex-1">
                                   {/* Week and Format badges */}
                                   <div className="flex items-center gap-2 flex-wrap">
@@ -2094,6 +2185,7 @@ export default function DashboardPage() {
                                       <MapPin className="h-4 w-4 flex-shrink-0" />
                                       <span className="truncate font-medium">{match.venue}</span>
                                     </div>
+                                    <OpponentLokalInfo match={match} />
                                   </div>
                                 </div>
 

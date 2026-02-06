@@ -40,6 +40,11 @@ interface TeamMembership {
 interface OpponentTeam {
   id: string
   name: string
+  // venue = Adresse
+  venue?: string | null
+  // venue_name = Lokalname / Spielstätte
+  venue_name?: string | null
+  captain_phone?: string | null
 }
 
 interface Match {
@@ -123,6 +128,29 @@ function statusBadge(s: AvailabilityStatus | "none") {
 function leadershipIcon(role: string | null) {
   if (role === "Captain") return <Crown className="h-4 w-4 text-yellow-600" />
   if (role === "Co-Captain") return <ShieldCheck className="h-4 w-4 text-blue-600" />
+  return null
+}
+
+
+
+function normalizePhoneForLinks(input: string) {
+  // Keep + and digits only
+  const cleaned = input.replace(/[^\d+]/g, "")
+  return cleaned
+}
+
+function whatsappUrlFromPhone(phone: string) {
+  // wa.me expects international number digits only (no +)
+  let p = normalizePhoneForLinks(phone).trim()
+  if (p.startsWith("+")) p = p.slice(1)
+  if (p.startsWith("00")) p = p.slice(2)
+  return `https://wa.me/${p}`
+}
+
+function getOpponentForMatch(match: Match) {
+  // Prefer the opponent side (if any)
+  if (match.home_team_type === "opponent") return match.home_opponent_team ?? null
+  if (match.away_team_type === "opponent") return match.away_opponent_team ?? null
   return null
 }
 
@@ -757,10 +785,10 @@ async function loadMatchData(matchId: string, teamId: string) {
                     upcomingMatches.map((m) => {
                       const myTeams = myTeamsForMatch(m)
                       return (
-                        <Card key={m.id} className="border shadow-sm">
+                        <Card key={m.id} className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
                           <CardContent className="p-4">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                              <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
                                 <div className="font-semibold text-base md:text-lg truncate">
                                   {getTeamDisplayName(m, true)} vs {getTeamDisplayName(m, false)}
                                 </div>
@@ -776,6 +804,66 @@ async function loadMatchData(matchId: string, teamId: string) {
                                   </span>
                                 </div>
 
+                                {(() => {
+                                  const opp = getOpponentForMatch(m)
+                                  if (!opp) return null
+
+                                  const phone = opp.captain_phone
+                                  const tel = phone ? normalizePhoneForLinks(phone) : null
+                                  const wa = phone ? whatsappUrlFromPhone(phone) : null
+
+                                  const hasAny = !!(opp.venue_name || opp.venue || phone)
+                                  if (!hasAny) return null
+
+                                  return (
+                                    <div className="mt-3 space-y-2">
+                                      <div className="rounded-xl border bg-gray-50/80 p-3">
+                                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                                          <MapPin className="h-3.5 w-3.5" />
+                                          <span>Gegner-Lokal</span>
+                                        </div>
+
+                                        <div className="grid gap-1 text-sm">
+                                          <div className="flex gap-3">
+                                            <span className="w-16 shrink-0 text-gray-500">Lokal</span>
+                                            <span className="font-medium">{opp.venue_name || "—"}</span>
+                                          </div>
+                                          <div className="flex gap-3">
+                                            <span className="w-16 shrink-0 text-gray-500">Ort</span>
+                                            <span>{opp.venue || "—"}</span>
+                                          </div>
+
+                                          {phone && (
+                                            <div className="flex gap-3 items-center pt-1">
+                                              <span className="w-16 shrink-0 text-gray-500">Kapitän</span>
+                                              <a
+                                                href={`tel:${tel}`}
+                                                className="font-medium underline underline-offset-4"
+                                              >
+                                                {phone}
+                                              </a>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {phone && wa && (
+                                        <div className="flex justify-center sm:justify-start">
+                                          <Button
+                                            asChild
+                                            size="sm"
+                                            className="w-full sm:w-auto rounded-xl bg-green-600 hover:bg-green-700 shadow-sm"
+                                          >
+                                            <a href={wa} target="_blank" rel="noreferrer">
+                                              Kapitän kontaktieren (Gegner)
+                                            </a>
+                                          </Button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )
+                                })()}
+
                                 {myTeams.length > 0 && (
                                   <div className="mt-2 flex flex-wrap gap-2">
                                     {myTeams.map((t) => (
@@ -788,8 +876,8 @@ async function loadMatchData(matchId: string, teamId: string) {
                                 )}
                               </div>
 
-                              <div className="flex flex-col gap-2 flex-shrink-0">
-                                <Button size="sm" onClick={() => openMatchDialog(m)} className="bg-orange-600 hover:bg-orange-700">
+                              <div className="flex flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
+                                <Button size="sm" onClick={() => openMatchDialog(m)} className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto">
                                   <Eye className="h-4 w-4 mr-2" />
                                   Öffnen
                                 </Button>
@@ -851,7 +939,7 @@ async function loadMatchData(matchId: string, teamId: string) {
             <div className="space-y-4 min-w-0">
               {!dialogMatch ? null : (
                 <>
-                  <Card className="border shadow-sm">
+                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
                     <CardContent className="p-4">
                       <div className="font-semibold text-base">
                         {getTeamDisplayName(dialogMatch, true)} vs {getTeamDisplayName(dialogMatch, false)}
@@ -860,6 +948,44 @@ async function loadMatchData(matchId: string, teamId: string) {
                         {formatDate(dialogMatch.match_date)}{" "}
                         {dialogMatch.match_time ? `• ${formatTime(dialogMatch.match_time)}` : ""} • {dialogMatch.venue || "—"}
                       </div>
+
+                      {(() => {
+                        const opp = getOpponentForMatch(dialogMatch)
+                        if (!opp) return null
+                        const phone = opp.captain_phone
+                        const tel = phone ? normalizePhoneForLinks(phone) : null
+                        const hasAny = !!(opp.venue_name || opp.venue || phone)
+                        if (!hasAny) return null
+
+                        return (
+                          <div className="mt-3 rounded-2xl border bg-gray-50/80 p-4">
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                              <MapPin className="h-3.5 w-3.5" />
+                              <span>Gegner-Lokal</span>
+                            </div>
+
+                            <div className="grid gap-1 text-sm">
+                              <div className="flex gap-3">
+                                <span className="w-16 shrink-0 text-gray-500">Lokal</span>
+                                <span className="font-medium">{opp.venue_name || "—"}</span>
+                              </div>
+                              <div className="flex gap-3">
+                                <span className="w-16 shrink-0 text-gray-500">Ort</span>
+                                <span>{opp.venue || "—"}</span>
+                              </div>
+
+                              {phone && tel && (
+                                <div className="flex gap-3 items-center pt-1">
+                                  <span className="w-16 shrink-0 text-gray-500">Kapitän</span>
+                                  <a href={`tel:${tel}`} className="font-medium underline underline-offset-4">
+                                    {phone}
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })()}
 
                       {myTeamsForMatch(dialogMatch).length > 1 && (
                         <div className="mt-3">
@@ -884,7 +1010,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                     </CardContent>
                   </Card>
 
-                  <Card className="border shadow-sm">
+                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
                     <CardHeader>
                       <CardTitle className="text-base">Meine Zusage</CardTitle>
                     </CardHeader>
@@ -928,7 +1054,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                     </CardContent>
                   </Card>
 
-                  <Card className="border shadow-sm">
+                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
                     <CardHeader>
                       <CardTitle className="text-base">Team-Zusagen</CardTitle>
                     </CardHeader>
@@ -944,7 +1070,7 @@ async function loadMatchData(matchId: string, teamId: string) {
 
                           return (
                             <div key={p.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border p-3 gap-3">
-                              <div className="min-w-0">
+                              <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
                                 <div className="font-medium truncate">{p.name}</div>
                                 {a?.note ? <div className="text-xs text-gray-500 truncate">{a.note}</div> : null}
                               </div>
@@ -989,7 +1115,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                     </CardContent>
                   </Card>
 
-                  <Card className="border shadow-sm">
+                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         Aufstellung
@@ -1038,7 +1164,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                     </CardContent>
                   </Card>
 
-                  <Card className="border shadow-sm">
+                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         <MessageCircle className="h-4 w-4 text-orange-600" />
