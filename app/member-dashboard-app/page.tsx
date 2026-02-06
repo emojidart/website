@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-// import { Header } from "@/components/header" // REMOVED HEADER IMPORT
+import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -849,6 +849,8 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
     return `https://wa.me/${p}`
   })()
 
+  const mapsUrl = hasVenue ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(opp.venue)}` : null
+
   // If there's nothing meaningful to show, render nothing.
   if (!hasVenueName && !hasVenue && !hasCaptain && !tel) return null
 
@@ -893,14 +895,26 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
             ) : null}
           </div>
         </div>
+        <div className="flex flex-row flex-wrap gap-2 self-start sm:self-auto">
+          {mapsUrl ? (
+            <Button asChild size="sm" variant="outline" className="rounded-xl">
+              <a href={mapsUrl} target="_blank" rel="noreferrer">
+                <span className="inline-flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Route
+                </span>
+              </a>
+            </Button>
+          ) : null}
 
-        {wa ? (
-          <Button asChild size="sm" className="rounded-xl bg-green-600 hover:bg-green-700 self-start">
-            <a href={wa} target="_blank" rel="noreferrer">
-              WhatsApp
-            </a>
-          </Button>
-        ) : null}
+          {wa ? (
+            <Button asChild size="sm" className="rounded-xl bg-green-600 hover:bg-green-700">
+              <a href={wa} target="_blank" rel="noreferrer">
+                WhatsApp
+              </a>
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   )
@@ -1557,6 +1571,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
     return (
       // Removed Header component for mobile
       <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-4 pb-20">
+        <Header />
         {/* Changed py-6 to py-4 for mobile */}
         <div className="flex-grow flex items-center justify-center">
           <div className="flex items-center gap-3">
@@ -1572,6 +1587,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
     return (
       // Removed Header component for mobile
       <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-4 pb-20">
+        <Header />
         {/* Changed py-6 to py-4 for mobile */}
         <div className="flex-grow flex items-center justify-center p-4">
           <div className="text-center">
@@ -1626,18 +1642,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
       <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-4 pb-20">
         {/* Changed DashboardTutorial prop name */}
         <DashboardTutorial role={getUserRole()} />
-
-        <div className="mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/member-profile-app")}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Zurück zum Profil
-          </Button>
-        </div>
+        <Header />
 
         {getPostponedMatches().length > 0 && (
           <Card className="mb-4 sm:mb-6 border-0 shadow-xl bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-l-orange-500">
@@ -1725,10 +1730,22 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
               {/* Spielplan Section with Tabs */}
               <Card className="shadow-xl border-0 bg-white">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                    <Calendar className="h-6 w-6 text-orange-600" />
-                    Spielplan meiner Teams
-                  </CardTitle>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                      <Calendar className="h-6 w-6 text-orange-600" />
+                      Spielplan meiner Teams
+                    </CardTitle>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push("/member-profile-app")}
+                      className="flex items-center gap-2 self-start sm:self-auto"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Zurück zum Profil
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <Tabs
