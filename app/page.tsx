@@ -1545,40 +1545,19 @@ setDkoModal({
                 </div>
 				
                 <div className="text-center mb-4 sm:mb-6">
-                  <div className="inline-flex items-center gap-2 bg-slate-400 text-slate-900 px-3 py-1.5 rounded-full font-bold text-xs mb-3">
-                    <Trophy className="w-3.5 h-3.5" />
-                    <span>TURNIERSERIE 2026</span>
+                  <div className="inline-flex items-center gap-2 bg-emerald-300 text-slate-900 px-3 py-1.5 rounded-full font-bold text-xs mb-3">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>CUP BEENDET</span>
                   </div>
-                  <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-1">EMD-BUFFALO-STEEL</h1>
-                  <div className="h-10 flex items-center justify-center mb-1">
-                    {nextBuffaloCupEvent && (
-                      <div className="inline-block">
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20">
-                          <div className="flex items-center gap-2 text-xs">
-                            <Trophy className="w-3.5 h-3.5 text-slate-400" />
-                            <span className="text-slate-300">Spieltag {nextBuffaloCupEvent.matchday}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <h2 className="text-lg sm:text-xl lg:text-3xl font-bold text-slate-300 mb-2"></h2>
-                  <p className="text-base sm:text-lg lg:text-xl text-slate-200 mb-1">Nächstes Turnier</p>
-                  <p className="text-sm lg:text-base text-slate-300">
-                    {nextBuffaloCupEvent
-                      ? `${new Date(buffaloCupNextDate).toLocaleDateString("de-DE", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                        })} • ${nextBuffaloCupEvent.event_time || "19:30"} Uhr`
-                      : "22. Jänner 2026 • 19:30 Uhr"}
-                  </p>
-                </div>
+                  <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">EMD-BUFFALO-STEEL</h1>
 
-                <div className="flex justify-center mb-4 sm:mb-6">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 sm:px-4 lg:px-8 py-3 sm:py-4 border border-white/20">
-                    <CountdownTimer targetDate={buffaloCupNextDate} />
-                  </div>
+                  <p className="text-base sm:text-lg lg:text-xl text-slate-200 font-bold mb-2">
+                    Der EMD Buffalo Cup ist entschieden – die Sieger stehen fest!“
+                  </p>
+
+                  <p className="text-sm lg:text-base text-slate-300">
+                    Danke an alle Teilnehmer – bis zum nächsten EMD Steel - Cup! 🏆
+                  </p>
                 </div>
 
                 <div className="mb-4 sm:mb-6 flex-1 flex flex-col justify-center">
@@ -1589,7 +1568,7 @@ setDkoModal({
     <div className="flex items-center gap-2">
       <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-blue-200" />
       <span className="text-blue-200 text-xs lg:text-sm font-bold uppercase tracking-wider">
-        Top 5 AKTUELL
+        Top 5 ENDSTAND
       </span>
     </div>
     {buffaloTop5Loading && (
@@ -1633,18 +1612,15 @@ setDkoModal({
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
                         <span className="text-yellow-300 text-xs lg:text-sm font-bold uppercase tracking-wider">
-                          Aktuelles Preisgeld
+                          Ausbezahltes Preisgeld
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 text-green-300">
-                        <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                        <span className="text-[10px] sm:text-xs font-bold">+€5 pro Teilnahme</span>
-                      </div>
+                      
                     </div>
                     <div className="text-center">
                       <div className="text-3xl sm:text-4xl lg:text-5xl font-black mb-1">€{buffaloPrizePool.toFixed(2)}</div>
                       <p className="text-orange-200 text-xs lg:text-sm">
-                        Wächst mit jedem Teilnehmer und jeder Teilnahme
+                        
                       </p>
                     </div>
                   </div>
@@ -1659,24 +1635,6 @@ setDkoModal({
                     Zur Gesamtertung
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl backdrop-blur-sm w-full sm:w-auto"
-                    onClick={() => (window.location.href = "/buffalo-steel-cup")}
-                  >
-                    Regelwerk
-                    
-                  </Button>
-                <Button
-  size="lg"
-  variant="outline"
-  className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl backdrop-blur-sm w-full sm:w-auto"
-  onClick={() => (window.location.href = "/upcoming-tournaments-app")}
->
-  Anmelden
-</Button>
-
                 </div>
               </div>
             </div>
