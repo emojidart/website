@@ -864,7 +864,7 @@ export default function BuffaloSteelCupPage() {
               </div>
 
               <p className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Gesamtwertung</p>
-              <p className="text-sm sm:text-base text-gray-500 mb-4">Live-Wertung aller Teilnehmer</p>
+              <p className="text-sm sm:text-base text-gray-500 mb-4">Der EMD Buffalo Cup ist entschieden – die Sieger stehen fest!</p>
 
               <div className="flex justify-center items-center gap-4">
                 <div className="h-1 w-12 bg-gradient-to-r from-blue-500 to-yellow-500 rounded-full"></div>
@@ -907,7 +907,7 @@ export default function BuffaloSteelCupPage() {
             <div className="flex items-center gap-3">
               <Trophy className="w-8 h-8 text-yellow-600 flex-shrink-0" />
               <div className="min-w-0 flex-1 overflow-hidden">
-                <p className="text-gray-600 text-xs sm:text-sm truncate">Führender</p>
+                <p className="text-gray-600 text-xs sm:text-sm truncate">Gewinner</p>
                 <p className="text-base sm:text-xl font-bold text-gray-900 truncate">
                   {standings[0]?.player_name || "-"}
                 </p>
