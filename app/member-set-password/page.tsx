@@ -1,7 +1,9 @@
 "use client"
 
+export const dynamic = "force-dynamic"
+
 import type React from "react"
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { Header } from "@/components/header"
@@ -13,6 +15,25 @@ import { supabase } from "@/lib/supabase"
 import { Lock, Save } from "lucide-react"
 
 export default function MemberSetPasswordPage() {
+  return (
+    <Suspense fallback={<SetPasswordSkeleton />}>
+      <MemberSetPasswordClient />
+    </Suspense>
+  )
+}
+
+function SetPasswordSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header />
+      <main className="flex-grow flex items-center justify-center p-4">
+        <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
+      </main>
+    </div>
+  )
+}
+
+function MemberSetPasswordClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -22,16 +43,13 @@ export default function MemberSetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState("")
 
-  // 1) Stelle sicher, dass eine Session existiert (Recovery Link muss sie liefern)
   useEffect(() => {
     let unsub: null | (() => void) = null
 
     const run = async () => {
       setMsg("")
 
-      // Supabase verarbeitet dank detectSessionInUrl + implicit die URL selbst.
-      // Wir warten kurz und schauen dann ob eine Session da ist.
-      const check = async () => {
+      const checkSession = async () => {
         const { data } = await supabase.auth.getSession()
         if (data.session) {
           setReady(true)
@@ -40,11 +58,11 @@ export default function MemberSetPasswordPage() {
         return false
       }
 
-      // Erstcheck
-      if (await check()) return
+      // 1) Wenn Supabase detectSessionInUrl (implicit) gerade arbeitet: kurz prüfen
+      if (await checkSession()) return
 
-      // Falls noch nicht da: auf Auth-Event warten (wenn detectSessionInUrl async fertig wird)
-      const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      // 2) Auf Auth-Event warten (falls detectSessionInUrl async fertig wird)
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session) {
           setReady(true)
           setMsg("")
@@ -52,14 +70,14 @@ export default function MemberSetPasswordPage() {
       })
       unsub = () => data.subscription.unsubscribe()
 
-      // Wenn alter Link mit ?code=... kommt: versuchen (kann nur im selben Browser klappen)
+      // 3) Fallback: Falls alter Link mit ?code=... kommt, versuchen zu exchangen
       const code = searchParams.get("code")
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (error) {
           setReady(false)
           setMsg(
-            `Link ungültig/abgelaufen: ${error.message}\n\nTipp: Bitte „Passwort vergessen“ nochmal drücken und den neuen Link öffnen.`
+            `Link ungültig/abgelaufen: ${error.message}\n\nBitte auf der Login-Seite erneut „Passwort vergessen“ drücken und den neuen Link öffnen.`
           )
           return
         }
@@ -69,15 +87,15 @@ export default function MemberSetPasswordPage() {
           window.history.replaceState({}, document.title, window.location.pathname)
         }
 
-        // Session nochmal checken
-        if (!(await check())) {
+        // Session nochmal prüfen
+        if (!(await checkSession())) {
           setReady(false)
           setMsg("Konnte Session nicht aktivieren. Bitte Passwort-Reset erneut anfordern.")
         }
         return
       }
 
-      // Kein code & keine session
+      // 4) Kein code & keine session
       setReady(false)
       setMsg("Ungültiger oder abgelaufener Link. Bitte auf der Login-Seite erneut „Passwort vergessen“ drücken.")
     }
@@ -89,7 +107,6 @@ export default function MemberSetPasswordPage() {
     }
   }, [searchParams])
 
-  // 2) Passwort setzen
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMsg("")
