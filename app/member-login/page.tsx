@@ -239,7 +239,7 @@ function MemberLoginClient() {
 
                 <div className="text-center text-sm text-gray-600">
                   Noch keinen Zugang?{" "}
-                  <Link href="/member-register" className="font-semibold text-orange-600 hover:text-orange-700">
+                  <Link href="/member-account-request" className="font-semibold text-orange-600 hover:text-orange-700">
                     Mit Code registrieren
                   </Link>
                 </div>
