@@ -113,6 +113,9 @@ interface Vacation {
   end_date: string
   note?: string | null
   created_at?: string
+
+
+
 }
 
 
@@ -175,12 +178,13 @@ export default function CalendarPage() {
   const [selectedLeague, setSelectedLeague] = useState("Alle Ligen")
   const [selectedTeam, setSelectedTeam] = useState("Alle Teams")
   const [selectedItemType, setSelectedItemType] = useState("Alle")
-  const [viewMode, setViewMode] = useState<"month" | "list">("month")
+  const [viewMode, setViewMode] = useState<"month" | "list" | "browse">("month")
   const [matches, setMatches] = useState<Match[]>([])
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [leagues, setLeagues] = useState<string[]>(["Alle Ligen"])
   const [teams, setTeams] = useState<string[]>(["Alle Teams"])
+  const [clubTeams, setClubTeams] = useState<ClubTeam[]>([])
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [isMultiItemDialogOpen, setIsMultiItemDialogOpen] = useState(false)
   const [isMobileBottomSheetOpen, setIsMobileBottomSheetOpen] = useState(false)
@@ -188,6 +192,8 @@ export default function CalendarPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const [players, setPlayers] = useState<{ id: string; name: string }[]>([{ id: "0", name: "Alle Spieler" }])
   const [selectedResultType, setSelectedResultType] = useState("Alle")
+
+  const [browseTeamQuery, setBrowseTeamQuery] = useState("")
 
   const [birthdayPlayers, setBirthdayPlayers] = useState<BirthdayPlayer[]>([])
 
@@ -205,6 +211,30 @@ export default function CalendarPage() {
   const fetchData = async () => {
     try {
       setLoading(true)
+
+      // Vereins-Teams (nur eigene) laden
+      const { data: authData } = await supabase.auth.getUser()
+      const uid = authData?.user?.id
+      if (uid) {
+        const { data: clubTeamsData, error: clubTeamsError } = await supabase
+          .from("teams")
+          .select("id, name, logo_url")
+          .eq("user_id", uid)
+          .order("name", { ascending: true })
+
+        if (clubTeamsError) {
+          console.error("Error fetching club teams:", clubTeamsError)
+          setClubTeams([])
+          setTeams(["Alle Teams"])
+        } else {
+          const ct = (clubTeamsData || []) as ClubTeam[]
+          setClubTeams(ct)
+          setTeams(["Alle Teams", ...ct.map((t) => t.name)])
+        }
+      } else {
+        setClubTeams([])
+        setTeams(["Alle Teams"])
+      }
 
       const matchesResponse = await supabase
         .from("matches")
@@ -250,7 +280,7 @@ export default function CalendarPage() {
       }
 
 
-// ✅ Turniere/Spieltage aus dko_series_events (Name/Startgeld aus dko_series)
+
 try {
   const tournamentsResponse = await supabase
     .from("dko_series_events")
@@ -288,7 +318,7 @@ try {
         }
       })
 
-    // Events aus "events" + Turniertermine zusammenführen
+    
     enrichedEvents = [...enrichedEvents, ...tournamentEvents]
   }
 } catch (tournamentError) {
@@ -300,7 +330,7 @@ try {
       setMatches(enrichedMatches)
       setEvents(enrichedEvents as Event[])
 
-      // ✅ Geburtstage aus club_players (name + birthdate)
+      
       let fetchedBirthdayPlayers: BirthdayPlayer[] = []
       try {
         const playersResponse = await supabase
@@ -392,28 +422,13 @@ try {
 
 
       const uniqueLeagues = new Set<string>(["Alle Ligen"])
-      const uniqueTeams = new Set<string>(["Alle Teams"])
-
       enrichedMatches.forEach((match) => {
         if (match.season?.name) {
           uniqueLeagues.add(match.season.name)
         }
-        if (match.home_team?.name) {
-          uniqueTeams.add(match.home_team.name)
-        }
-        if (match.away_team?.name) {
-          uniqueTeams.add(match.away_team.name)
-        }
-        if (match.home_opponent_team?.name) {
-          uniqueTeams.add(match.home_opponent_team.name)
-        }
-        if (match.away_opponent_team?.name) {
-          uniqueTeams.add(match.away_opponent_team.name)
-        }
       })
 
       setLeagues(Array.from(uniqueLeagues))
-      setTeams(Array.from(uniqueTeams))
     } catch (err) {
       console.error("Error fetching data:", err)
     } finally {
@@ -472,8 +487,17 @@ try {
       match.home_opponent_team?.name === selectedTeam ||
       match.away_opponent_team?.name === selectedTeam
 
+    // ✅ Ergebnis-Filter soll auch greifen, wenn z.B. "Alle Termine" gewählt ist,
+    // aber zusätzlich nach Team/Liga gefiltert wird.
     let resultTypeMatch = true
-    if (selectedItemType === "Spiele") {
+    const shouldFilterByResultType =
+      selectedResultType !== "Alle" &&
+      selectedItemType !== "Events" &&
+      selectedItemType !== "Turniere" &&
+      selectedItemType !== "Geburtstage" &&
+      selectedItemType !== "Urlaube"
+
+    if (shouldFilterByResultType) {
       if (selectedResultType === "Gespielt") {
         resultTypeMatch = match.status === "completed" || match.status === "finished"
       } else if (selectedResultType === "Geplant") {
@@ -485,6 +509,8 @@ try {
   })
 
   const filteredEvents = events.filter((event) => {
+    // ✅ Team-Filter gilt nur für Spiele
+    if (selectedTeam !== "Alle Teams") return false
     if (selectedItemType === "Geburtstage" || selectedItemType === "Urlaube") return false
     if (selectedItemType === "Spiele") return false
 
@@ -515,6 +541,11 @@ try {
     const month = String(date.getMonth() + 1).padStart(2, "0")
     const day = String(date.getDate()).padStart(2, "0")
     const dateStr = `${year}-${month}-${day}`
+
+    // ✅ Team-Ansicht: Team-Filter gilt nur für Spiele (keine Events/Geburtstage/Urlaube anzeigen)
+    if (selectedTeam !== "Alle Teams") {
+      return filteredMatches.filter((match) => match.match_date === dateStr)
+    }
 
     const matchesForDate =
       selectedItemType !== "Events" && selectedItemType !== "Turniere" && selectedItemType !== "Geburtstage" && selectedItemType !== "Urlaube"
@@ -823,7 +854,7 @@ try {
     setIsMobileBottomSheetOpen(true)
   }
 
-  // ✅ Geburtstage auch in der Listenansicht (aktuelles Jahr der Ansicht) — ohne Alter
+  
   const birthdayEventsForList: Event[] =
     selectedItemType !== "Spiele" && selectedItemType !== "Turniere" && selectedItemType !== "Events"
       ? birthdayPlayers.map((p) => {
@@ -1032,6 +1063,15 @@ try {
                         <Filter className="h-4 w-4" />
                         Liste
                       </Button>
+                      <Button
+                        variant={viewMode === "browse" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setViewMode("browse")}
+                        className="flex items-center gap-2 text-xs"
+                      >
+                        <Users className="h-4 w-4" />
+                        Übersicht
+                      </Button>
                     </div>
                   </div>
 
@@ -1059,7 +1099,7 @@ try {
                         <SelectItem value="Events" className="text-sm">
                           <div className="flex items-center gap-2">
                             <CalendarDays className="h-4 w-4 text-green-600" />
-                            Nur Events & Spielfrei
+                            Nur Events
                           </div>
                         </SelectItem>
 
@@ -1154,7 +1194,7 @@ try {
                         setVacationNote("")
                         setIsVacationDialogOpen(true)
                       }}
-                      className="w-full text-xs"
+                      className="w-full h-11 rounded-2xl text-sm font-semibold shadow-sm"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Urlaub eintragen
@@ -1164,6 +1204,178 @@ try {
               </CardContent>
             </Card>
           </div>
+
+
+          {viewMode === "browse" && (
+            <div className="space-y-4">
+              <Card className="shadow-lg border-0 bg-white">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base text-gray-900">Kachelübersicht</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 mb-2">Typen</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedItemType("Alle")
+                          setSelectedLeague("Alle Ligen")
+                          setSelectedTeam("Alle Teams")
+                          setViewMode("list")
+                        }}
+                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-gray-700" />
+                          <div className="text-sm font-medium text-gray-900">Alle Termine</div>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedItemType("Spiele")
+                          setSelectedLeague("Alle Ligen")
+                          setSelectedTeam("Alle Teams")
+                          setViewMode("list")
+                        }}
+                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4 text-orange-600" />
+                          <div className="text-sm font-medium text-gray-900">Spiele</div>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedItemType("Turniere")
+                          setSelectedLeague("Alle Ligen")
+                          setSelectedTeam("Alle Teams")
+                          setViewMode("list")
+                        }}
+                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Trophy className="h-4 w-4 text-purple-600" />
+                          <div className="text-sm font-medium text-gray-900">Turniere</div>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedItemType("Events")
+                          setSelectedLeague("Alle Ligen")
+                          setSelectedTeam("Alle Teams")
+                          setViewMode("list")
+                        }}
+                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <CalendarDays className="h-4 w-4 text-green-600" />
+                          <div className="text-sm font-medium text-gray-900">Events</div>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedItemType("Urlaube")
+                          setSelectedLeague("Alle Ligen")
+                          setSelectedTeam("Alle Teams")
+                          setViewMode("list")
+                        }}
+                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Sun className="h-4 w-4 text-sky-700" />
+                          <div className="text-sm font-medium text-gray-900">Urlaube</div>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedItemType("Geburtstage")
+                          setSelectedLeague("Alle Ligen")
+                          setSelectedTeam("Alle Teams")
+                          setViewMode("list")
+                        }}
+                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Cake className="h-4 w-4 text-pink-700" />
+                          <div className="text-sm font-medium text-gray-900">Geburtstage</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 mb-2">Ligen</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {leagues
+                        .filter((l) => l !== "Alle Ligen")
+                        .map((league) => (
+                          <button
+                            key={league}
+                            onClick={() => {
+                              setSelectedLeague(league)
+                              setSelectedTeam("Alle Teams")
+                              setSelectedItemType("Spiele")
+                              setViewMode("list")
+                            }}
+                            className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Trophy className="h-4 w-4 text-gray-700 shrink-0" />
+                              <div className="text-sm font-medium text-gray-900 truncate">{league}</div>
+                            </div>
+                          </button>
+                        ))}
+                    </div>
+                    {leagues.filter((l) => l !== "Alle Ligen").length === 0 && (
+                      <div className="text-xs text-gray-500">Keine Ligen gefunden.</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 mb-2">Teams</div>
+                    <div className="mb-2">
+                      <Input
+                        value={browseTeamQuery}
+                        onChange={(e) => setBrowseTeamQuery(e.target.value)}
+                        placeholder="Team suchen…"
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {clubTeams
+                        .filter((t) => t.name.toLowerCase().includes(browseTeamQuery.toLowerCase().trim()))
+                        .map((team) => (
+                          <button
+                            key={team.id}
+                            onClick={() => {
+                              setSelectedTeam(team.name)
+                              setSelectedItemType("Spiele")
+                              setViewMode("list")
+                            }}
+                            className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Avatar className="h-6 w-6 shrink-0">
+                                <AvatarImage src={team.logo_url ?? undefined} alt={team.name} />
+                                <AvatarFallback>{team.name?.slice(0, 1)?.toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <div className="text-sm font-medium text-gray-900 truncate">{team.name}</div>
+                            </div>
+                          </button>
+                        ))}</div>
+                    {clubTeams.length === 0 && (
+                      <div className="text-xs text-gray-500">Keine Teams gefunden.</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {viewMode === "month" && (
             <Card className="shadow-xl border-0 bg-white">
@@ -1350,9 +1562,35 @@ try {
 
                 return listItems
                   .sort((a, b) => {
+                    const todayStr = format(new Date(), "yyyy-MM-dd")
+
                     const dateA = "match_date" in a ? a.match_date : a.event_date
                     const dateB = "match_date" in b ? b.match_date : b.event_date
-                    return dateA.localeCompare(dateB)
+
+                    const timeA =
+                      "match_time" in a
+                        ? (a.match_time || "00:00").slice(0, 5)
+                        : ((a.start_time || "00:00").toString().slice(0, 5) || "00:00")
+                    const timeB =
+                      "match_time" in b
+                        ? (b.match_time || "00:00").slice(0, 5)
+                        : ((b.start_time || "00:00").toString().slice(0, 5) || "00:00")
+
+                    const keyA = `${dateA}T${timeA}`
+                    const keyB = `${dateB}T${timeB}`
+
+                    const isUpcomingA = dateA >= todayStr
+                    const isUpcomingB = dateB >= todayStr
+
+                    // ✅ Kommende Termine zuerst (nächster Termin ganz oben),
+                    // danach vergangene Termine (neueste Ergebnisse zuerst).
+                    if (isUpcomingA && !isUpcomingB) return -1
+                    if (!isUpcomingA && isUpcomingB) return 1
+
+                    if (isUpcomingA && isUpcomingB) {
+                      return keyA.localeCompare(keyB) // soonest first
+                    }
+                    return keyB.localeCompare(keyA) // past: newest first
                   })
                   .map((item) => {
                     if (isEvent(item)) {

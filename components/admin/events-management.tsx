@@ -34,6 +34,7 @@ import {
   PartyPopper,
   Gamepad2,
   MessageSquare,
+  Trophy,
 } from "lucide-react"
 import Image from "next/image"
 import type { User } from "@supabase/supabase-js"
@@ -42,6 +43,9 @@ interface Event {
   id: string
   name: string
   event_type: string
+  source?: string | null
+  mode?: string | null
+  startgeld_details?: string | null
   event_date: string
   event_time: string
   location: string
@@ -61,6 +65,9 @@ export function EventsManagement({ user }: EventsManagementProps) {
   const [form, setForm] = useState<Omit<Event, "id" | "user_id" | "created_at"> & { photo_file: File | null }>({
     name: "",
     event_type: "party",
+    source: "internal",
+    mode: "both",
+    startgeld_details: "",
     event_date: "",
     event_time: "",
     location: "",
@@ -179,6 +186,9 @@ export function EventsManagement({ user }: EventsManagementProps) {
         max_participants: form.max_participants ? Number(form.max_participants) : null,
         details: form.details,
         photo_url: photoUrl,
+        source: form.source,
+        mode: form.event_type === "tournament" ? (form.mode || null) : null,
+        startgeld_details: form.event_type === "tournament" ? (form.startgeld_details || null) : null,
         user_id: user.id,
       }
 
@@ -226,6 +236,9 @@ export function EventsManagement({ user }: EventsManagementProps) {
     setForm({
       name: event.name,
       event_type: event.event_type,
+      source: event.source ?? "internal",
+      mode: event.mode ?? "both",
+      startgeld_details: event.startgeld_details ?? "",
       event_date: event.event_date,
       event_time: event.event_time,
       location: event.location,
@@ -259,6 +272,12 @@ export function EventsManagement({ user }: EventsManagementProps) {
     setForm({
       name: "",
       event_type: "party",
+      source: "internal",
+      mode: "both",
+      startgeld_details: "",
+    source: "internal",
+    mode: "both",
+    startgeld_details: "",
       event_date: "",
       event_time: "",
       location: "",
@@ -284,6 +303,8 @@ export function EventsManagement({ user }: EventsManagementProps) {
         return <Gamepad2 className="h-4 w-4 text-blue-600" />
       case "meeting":
         return <MessageSquare className="h-4 w-4 text-green-600" />
+      case "tournament":
+        return <Trophy className="h-4 w-4 text-yellow-600" />
       default:
         return <Calendar className="h-4 w-4 text-gray-600" />
     }
@@ -297,6 +318,8 @@ export function EventsManagement({ user }: EventsManagementProps) {
         return "Spielabend"
       case "meeting":
         return "Versammlung"
+      case "tournament":
+        return "Turnier"
       default:
         return "Sonstiges"
     }
@@ -318,7 +341,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
         </CardHeader>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label htmlFor="name" className="text-sm font-medium text-gray-700">
                   Veranstaltungsname
@@ -361,6 +384,12 @@ export function EventsManagement({ user }: EventsManagementProps) {
                         <span>Versammlung</span>
                       </div>
                     </SelectItem>
+                    <SelectItem value="tournament">
+                      <div className="flex items-center space-x-2">
+                        <Trophy className="h-4 w-4 text-yellow-600" />
+                        <span>Turnier</span>
+                      </div>
+                    </SelectItem>
                     <SelectItem value="other">
                       <div className="flex items-center space-x-2">
                         <Calendar className="h-4 w-4 text-gray-600" />
@@ -370,6 +399,21 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <label htmlFor="source" className="text-sm font-medium text-gray-700">
+                  Quelle
+                </label>
+                <Select value={form.source} onValueChange={(value) => handleSelectChange("source", value)}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Wähle eine Quelle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="internal">Intern (eigene Veranstaltung)</SelectItem>
+                    <SelectItem value="external">Extern (Fremdveranstaltung)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -452,6 +496,42 @@ export function EventsManagement({ user }: EventsManagementProps) {
               className="h-11"
               />
             </div>
+
+            {form.event_type === "tournament" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="mode" className="text-sm font-medium text-gray-700">
+                    Modus
+                  </label>
+                  <Select value={form.mode} onValueChange={(value) => handleSelectChange("mode", value)}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Wähle einen Modus" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="edart">E-Dart</SelectItem>
+                      <SelectItem value="steeldart">Steeldart</SelectItem>
+                      <SelectItem value="both">Beides</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="startgeld_details" className="text-sm font-medium text-gray-700">
+                    Startgeld (Details)
+                  </label>
+                  <Textarea
+                    id="startgeld_details"
+                    name="startgeld_details"
+                    value={form.startgeld_details}
+                    onChange={handleInputChange}
+                    placeholder='Z.B. "10€ Startgeld, 5€ Jackpot"'
+                    rows={2}
+                    className="resize-none"
+                  />
+                </div>
+              </div>
+            )}
+
 
             <div className="space-y-2">
               <label htmlFor="details" className="text-sm font-medium text-gray-700">
