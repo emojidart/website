@@ -18,11 +18,7 @@ import { useAuth } from "@/hooks/use-auth"
 
 import { Mail, Lock, ArrowRight, Users, Crown, ShieldCheck, KeyRound } from "lucide-react"
 
-/**
- * Wichtig:
- * - Suspense um useSearchParams ist der stabilste Weg für Builds/Prerender-Kontexte.
- * - dynamic="force-dynamic" verhindert SSG/Prerender bei Auth-Seiten.
- */
+
 export default function MemberLoginPage() {
   return (
     <Suspense fallback={<LoginSkeleton />}>
@@ -54,7 +50,7 @@ function MemberLoginClient() {
   const searchParams = useSearchParams()
   const { session, loading: authLoading } = useAuth()
 
-  // ✅ Recovery link kommt bei dir als ?code=...
+  
   useEffect(() => {
     const code = searchParams.get("code")
     if (!code) return
@@ -62,7 +58,7 @@ function MemberLoginClient() {
     router.replace(`/member-set-password?code=${encodeURIComponent(code)}`)
   }, [searchParams, router])
 
-  // ✅ Wenn schon eingeloggt → weiter
+  
   useEffect(() => {
     if (!authLoading && session) router.push("/member-profile-app")
   }, [session, authLoading, router])
@@ -103,7 +99,7 @@ function MemberLoginClient() {
         return
       }
 
-      // ✅ direkt auf Passwort-Seite
+    
       const redirectTo = `${window.location.origin}/member-set-password`
       const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo })
       if (error) {

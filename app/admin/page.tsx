@@ -288,7 +288,7 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
     },
     {
       title: "Veranstaltungen",
-      description: "Partys, Spielabende & Events verwalten",
+      description: "Turniere, Partys & Events verwalten",
       icon: PartyPopper,
       color: "bg-purple-500",
       view: "events" as const,
@@ -335,14 +335,7 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
       view: "leagues" as const,
       category: "sport" as const,
     },
-    {
-      title: "Bevorstehende Turniere",
-      description: "Kommende Turniere planen & pflegen",
-      icon: CalendarCheck,
-      color: "bg-cyan-600",
-      view: "upcoming-tournaments" as const,
-      category: "sport" as const,
-    },
+   
     {
       title: "Turniere starten",
       description: "Turnier-Tools & Startseiten",
@@ -417,7 +410,7 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
       label: "Sportbetrieb",
       items: [
         { key: "leagues", label: "Ligaspiele", icon: Target },
-        { key: "upcoming-tournaments", label: "Bevorstehende Turniere", icon: CalendarCheck },
+       
         { key: "tournaments", label: "Turniere", icon: Trophy },
         { key: "tournament-management", label: "Turnier verwalten", icon: Settings },
         { key: "dart-competition", label: "Lion Cup", icon: Trophy },
@@ -1113,21 +1106,7 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
               </div>
             )}
 
-            {currentView === "upcoming-tournaments" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <CalendarCheck className="h-5 w-5" />
-                      <span>Bevorstehende Turniere verwalten</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <UpcomingTournamentsManagement user={user} />
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+      
 
             {currentView === "player-database" && (
               <div className="space-y-6">

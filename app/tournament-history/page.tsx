@@ -39,7 +39,7 @@ const formatDateTime = (value?: string | null) => {
 
 const typeLabel = (t?: string | null) => {
   if (!t) return "—"
-  
+
   if (t.includes("8")) return "8er"
   if (t.includes("16")) return "16er"
   if (t.includes("32")) return "32er"
@@ -75,7 +75,7 @@ export default function TournamentHistoryPage() {
 
   // Filters
   const [q, setQ] = useState("")
-  const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "cancelled" | "draft">("all")
+  const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "cancelled" | "draft">("completed")
   const [typeFilter, setTypeFilter] = useState<"all" | "8er_dko" | "16er_dko" | "32er_dko" | "64er_dko">("all")
 
   useEffect(() => {
@@ -107,6 +107,10 @@ export default function TournamentHistoryPage() {
     const qq = q.trim().toLowerCase()
 
     return rows.filter((r) => {
+      // Nur abgeschlossene Turniere anzeigen
+      const forceStatus = (r.status ?? "").toLowerCase()
+      if (forceStatus !== "completed") return false
+
       if (statusFilter !== "all") {
         const s = (r.status ?? "").toLowerCase()
         if (statusFilter === "draft") {
@@ -130,9 +134,7 @@ export default function TournamentHistoryPage() {
   }, [rows, q, statusFilter, typeFilter])
 
   const openTournament = (r: TournamentOverviewRow) => {
-    
     router.push(`/tournament-history/${encodeURIComponent(r.tournament_id)}?type=${encodeURIComponent(r.tournament_type)}`)
-
   }
 
   return (
@@ -169,6 +171,7 @@ export default function TournamentHistoryPage() {
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value as any)}
                     title="Status"
+                    disabled
                   >
                     <option value="all">Alle Status</option>
                     <option value="completed">Abgeschlossen</option>
@@ -196,7 +199,7 @@ export default function TournamentHistoryPage() {
                   variant="outline"
                   onClick={() => {
                     setQ("")
-                    setStatusFilter("all")
+                    setStatusFilter("completed")
                     setTypeFilter("all")
                   }}
                 >
@@ -205,9 +208,7 @@ export default function TournamentHistoryPage() {
               </div>
             </div>
 
-            <div className="mt-4 text-sm text-gray-600">
-              {loading ? "Lade…" : `${filtered.length} Turnier(e) gefunden`}
-            </div>
+            <div className="mt-4 text-sm text-gray-600">{loading ? "Lade…" : `${filtered.length} Turnier(e) gefunden`}</div>
           </CardContent>
         </Card>
 
@@ -274,10 +275,7 @@ export default function TournamentHistoryPage() {
                     </div>
                   </div>
 
-                 <div className="mt-4 text-xs text-gray-500">
-  Letztes Update: {formatDateTime(r.last_updated_at ?? r.updated_at)}
-</div>
-
+                  <div className="mt-4 text-xs text-gray-500">Letztes Update: {formatDateTime(r.last_updated_at ?? r.updated_at)}</div>
 
                   <div className="mt-4">
                     <Button

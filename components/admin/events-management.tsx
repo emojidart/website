@@ -36,7 +36,6 @@ import {
   MessageSquare,
   Trophy,
 } from "lucide-react"
-import Image from "next/image"
 import type { User } from "@supabase/supabase-js"
 
 interface Event {
@@ -87,10 +86,10 @@ export function EventsManagement({ user }: EventsManagementProps) {
   const isBusy = useMemo(() => isFetching || isSaving, [isFetching, isSaving])
 
   useEffect(() => {
-    fetchEvents()
-  }, [])
+    if (user) fetchEvents()
+  }, [user])
 
-  // Cleanup object URLs created for local preview images
+
   useEffect(() => {
     return () => {
       if (createdObjectUrlRef.current) {
@@ -102,7 +101,8 @@ export function EventsManagement({ user }: EventsManagementProps) {
 
   const fetchEvents = async () => {
     setIsFetching(true)
-    const { data, error } = await supabase.from("events").select("*").order("event_date", { ascending: true })
+    const query = supabase.from("events").select("*").order("event_date", { ascending: true })
+    const { data, error } = await query
 
     if (error) {
       console.error("Error fetching events:", error)
@@ -126,7 +126,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
     const file = e.target.files?.[0]
     if (file) {
       setForm((prev) => ({ ...prev, photo_file: file }))
-      // Revoke the previous object URL (if any) before creating a new one
+   
       if (createdObjectUrlRef.current) {
         URL.revokeObjectURL(createdObjectUrlRef.current)
         createdObjectUrlRef.current = null
@@ -255,11 +255,26 @@ export function EventsManagement({ user }: EventsManagementProps) {
   const handleDelete = async (id: string) => {
     setIsSaving(true)
     setFormMessage(null)
-    const { error } = await supabase.from("events").delete().eq("id", id)
 
-    if (error) {
-      console.error("Error deleting event:", error)
-      setFormMessage({ type: "error", text: "Fehler beim Löschen der Veranstaltung." })
+    if (!user) {
+      setFormMessage({ type: "error", text: "Fehler: Nicht authentifiziert." })
+      setIsSaving(false)
+      return
+    }
+
+    // 1) Try deleting only by id (works if there is no user_id column / RLS is off)
+    const first = await supabase.from("events").delete().eq("id", id)
+
+    // 2) If that fails (often because of RLS), retry with user_id filter (if your table uses it)
+    const second = first.error
+      ? await supabase.from("events").delete().eq("id", id).eq("user_id", user.id)
+      : null
+
+    const finalError = second?.error ?? first.error
+
+    if (finalError) {
+      console.error("Error deleting event:", finalError)
+      setFormMessage({ type: "error", text: `Fehler beim Löschen der Veranstaltung: ${finalError.message}` })
     } else {
       setFormMessage({ type: "success", text: "Veranstaltung erfolgreich gelöscht!" })
       fetchEvents()
@@ -275,9 +290,6 @@ export function EventsManagement({ user }: EventsManagementProps) {
       source: "internal",
       mode: "both",
       startgeld_details: "",
-    source: "internal",
-    mode: "both",
-    startgeld_details: "",
       event_date: "",
       event_time: "",
       location: "",
@@ -562,13 +574,14 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   className="flex-1 h-11"
                 />
                 {photoPreview && (
-                  <div className="relative w-16 h-12 flex-shrink-0 rounded-md overflow-hidden border border-gray-200">
-                    <Image
-                      src={photoPreview || "/placeholder.svg"}
+                  <div className="w-16 h-12 flex-shrink-0 rounded-md overflow-hidden border border-gray-200">
+                    <img
+                      src={photoPreview}
                       alt="Veranstaltungsfoto Vorschau"
-                      fill
-                      style={{ objectFit: "cover" }}
-                      className="rounded-md"
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        ;(e.currentTarget as HTMLImageElement).src = "/placeholder.svg"
+                      }}
                     />
                   </div>
                 )}
@@ -659,6 +672,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Typ</TableHead>
+                    <TableHead>Foto</TableHead>
                     <TableHead>Datum</TableHead>
                     <TableHead>Ort</TableHead>
                     <TableHead>Teilnehmer</TableHead>
@@ -674,6 +688,22 @@ export function EventsManagement({ user }: EventsManagementProps) {
                           {getEventTypeIcon(event.event_type)}
                           <span>{getEventTypeLabel(event.event_type)}</span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {event.photo_url ? (
+                          <div className="w-12 h-9 rounded-md overflow-hidden border border-gray-200">
+                            <img
+                              src={event.photo_url}
+                              alt={`Foto: ${event.name}`}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                ;(e.currentTarget as HTMLImageElement).src = "/placeholder.svg"
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-500">—</span>
+                        )}
                       </TableCell>
                       <TableCell>{new Date(event.event_date).toLocaleDateString("de-DE")}</TableCell>
                       <TableCell>{event.location}</TableCell>
@@ -694,6 +724,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                disabled={isBusy || !user}
                                 className="h-9 w-9 p-0"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -710,7 +741,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(event.id)}>Löschen</AlertDialogAction>
+                                <AlertDialogAction disabled={isBusy || !user} onClick={() => handleDelete(event.id)}>Löschen</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>

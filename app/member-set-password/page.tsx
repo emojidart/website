@@ -58,10 +58,10 @@ function MemberSetPasswordClient() {
         return false
       }
 
-      // 1) Wenn Supabase detectSessionInUrl (implicit) gerade arbeitet: kurz prüfen
+     
       if (await checkSession()) return
 
-      // 2) Auf Auth-Event warten (falls detectSessionInUrl async fertig wird)
+     
       const { data } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session) {
           setReady(true)
@@ -70,7 +70,7 @@ function MemberSetPasswordClient() {
       })
       unsub = () => data.subscription.unsubscribe()
 
-      // 3) Fallback: Falls alter Link mit ?code=... kommt, versuchen zu exchangen
+      
       const code = searchParams.get("code")
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
@@ -82,12 +82,12 @@ function MemberSetPasswordClient() {
           return
         }
 
-        // URL säubern
+        
         if (typeof window !== "undefined") {
           window.history.replaceState({}, document.title, window.location.pathname)
         }
 
-        // Session nochmal prüfen
+        
         if (!(await checkSession())) {
           setReady(false)
           setMsg("Konnte Session nicht aktivieren. Bitte Passwort-Reset erneut anfordern.")
@@ -95,7 +95,7 @@ function MemberSetPasswordClient() {
         return
       }
 
-      // 4) Kein code & keine session
+      
       setReady(false)
       setMsg("Ungültiger oder abgelaufener Link. Bitte auf der Login-Seite erneut „Passwort vergessen“ drücken.")
     }

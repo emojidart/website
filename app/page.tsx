@@ -692,19 +692,20 @@ useEffect(() => {
         const today = new Date().toISOString().split("T")[0]
 
         const { data: tournamentsData, error: tournamentsError } = await supabase
-          .from("tournaments")
+          .from("events")
           .select("*")
-          .gte("date", today)
-          .order("date", { ascending: true })
-          .order("time", { ascending: true })
-
-        if (tournamentsError) {
+          .eq("event_type", "tournament")
+          .gte("event_date", today)
+          .order("event_date", { ascending: true })
+          .order("event_time", { ascending: true })
+if (tournamentsError) {
           console.error("Error fetching tournaments:", tournamentsError)
         }
 
         const { data: eventsData, error: eventsError } = await supabase
           .from("events")
           .select("*")
+          .neq("event_type", "tournament")
           .not("name", "ilike", "%LION%")
           .gte("event_date", today)
           .order("event_date", { ascending: true })
@@ -721,13 +722,14 @@ useEffect(() => {
             combined.push({
               id: tournament.id,
               name: tournament.name,
-              date: tournament.date,
-              time: tournament.time,
+              date: tournament.event_date,
+              time: tournament.event_time,
               location: tournament.location,
               details: tournament.details,
               photo_url: tournament.photo_url,
               type: "tournament",
               entry_fee: tournament.entry_fee,
+              max_participants: tournament.max_participants,
               mode: tournament.mode,
             })
           })
@@ -1552,7 +1554,7 @@ setDkoModal({
                   <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">EMD-BUFFALO-STEEL</h1>
 
                   <p className="text-base sm:text-lg lg:text-xl text-slate-200 font-bold mb-2">
-                    Der EMD Buffalo Cup ist entschieden – die Sieger stehen fest!“
+                    Der EMD Buffalo Cup ist entschieden – die Sieger stehen fest!
                   </p>
 
                   <p className="text-sm lg:text-base text-slate-300">

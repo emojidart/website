@@ -160,7 +160,7 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
         </Button>
       </div>
 
-      {/* ✅ Kein 16:9 mehr – nutzt fast den ganzen Screen */}
+      {}
       <div
         className="relative w-[96vw] h-[88vh] sm:w-[90vw] sm:h-[88vh] bg-black rounded-xl overflow-hidden shadow-2xl"
         onMouseDown={(e) => e.stopPropagation()}

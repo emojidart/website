@@ -19,6 +19,7 @@ import {
   CreditCard,
   X,
   Building2,
+  CalendarDays,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -60,8 +61,8 @@ export function MobileBottomNav() {
   const staticNavItems: NavItem[] = useMemo(
     () => [
       { name: "Home", href: "/", icon: Home },
-      { name: "Events", href: "/veranstaltungen", icon: Trophy },
-      { name: "Liga", href: "/liga-statistiken-app", icon: Table },
+      { name: "Events", href: "/veranstaltungen", icon: CalendarDays },
+      { name: "Liga", href: "/liga-statistiken-app", icon: Trophy },
       { name: "Verein", href: "/new-club", icon: Users },
     ],
     [],
@@ -71,7 +72,7 @@ export function MobileBottomNav() {
   const quickItems: NavItem[] = useMemo(
     () => [
       { name: "Lion Cup", href: "/tournament-series-app", icon: Trophy },
-      { name: "Buffalo Cup", href: "/buffalo_steel_cup_tabelle", icon: Trophy },
+      { name: "Live", href: "/live-all-app", icon: Radio },
       { name: "History", href: "/tournament-history", icon: History },
       {
         name: isLoggedIn ? "Profil" : "Login",

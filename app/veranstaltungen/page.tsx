@@ -51,7 +51,7 @@ type EventRow = {
 
   // ✅ Turnier
   mode: string | null
-  // ✅ Startgeld (nur Turniere, Text/Details)
+  
   startgeld_details: string | null
 
   source: string | null // "internal" | "external"
@@ -336,7 +336,7 @@ export default function VeranstaltungenPage() {
 
                 return (
                   <Card key={e.id} className="border-0 shadow-lg overflow-hidden">
-                    {/* ✅ Immer gleiche Optik oben: Bild oder Dummy */}
+                    {}
                     {e.photo_url ? (
                       <div className="relative h-40 bg-gray-200">
                         <Image src={e.photo_url} alt={e.name} fill className="object-cover" />
@@ -395,7 +395,7 @@ export default function VeranstaltungenPage() {
                           <span className="line-clamp-1">{e.location || "Wird bekannt gegeben"}</span>
                         </div>
 
-                        {/* ✅ Turnier: Mode + Startgeld (als Betrag) + Eintritt */}
+                        {}
                         {isTournament ? (
                           <div className="flex flex-wrap gap-2 pt-1">
                             <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-900 border border-orange-200">
@@ -417,7 +417,7 @@ export default function VeranstaltungenPage() {
                             ) : null}
                           </div>
                         ) : (
-                          // ✅ Nicht-Turnier: Eintritt
+                       
                           hasEintritt ? (
                             <div className="flex flex-wrap gap-2 pt-1">
                               <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-50 text-slate-900 border border-slate-200">
@@ -427,7 +427,7 @@ export default function VeranstaltungenPage() {
                           ) : null
                         )}
 
-                        {/* ❌ Startgeld-Block unten ist ABSICHTLICH weg */}
+                        {}
 
                         {e.details ? <div className="text-sm text-gray-600 line-clamp-3 pt-1">{e.details}</div> : null}
                       </div>
