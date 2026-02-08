@@ -1,4 +1,4 @@
-import { createServerClient, createBrowserClient } from "@supabase/ssr"
+import { createBrowserClient, createServerClient } from "@supabase/ssr"
 import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -8,23 +8,43 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase environment variables")
 }
 
-// Client-side Supabase client
+/**
+ * ============================
+ * Browser Client (Client Components)
+ * ============================
+ */
 export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    // Verwenden Sie cookieOptions, um Supabase anzuweisen, die Sitzung in Cookies zu speichern.
-    // Dies handhabt die Logik für das Setzen/Lesen/Entfernen von Cookies intern und korrekt.
+    /**
+     * 🔑 DAS ist der entscheidende Fix:
+     * - detectSessionInUrl: Supabase verarbeitet Recovery/Invite Links automatisch
+     * - flowType: "implicit": verhindert PKCE code_verifier Fehler bei Reset-Links
+     *
+     * Sonst wird NICHTS geändert.
+     */
+    detectSessionInUrl: true,
+    flowType: "implicit",
+
+    persistSession: true,
+    autoRefreshToken: true,
+
+    // deine bestehende Cookie-Strategie bleibt erhalten
     cookieOptions: {
-      name: "sb-session", // Ein generischer Name für das Sitzungscookie
-      lifetime: 60 * 60 * 8, // 8 Stunden Lebensdauer
-      maxAge: 60 * 60 * 8, // 8 Stunden maximale Lebensdauer
-      path: "/", // Cookie ist für die gesamte Anwendung verfügbar
-      sameSite: "lax", // Schutz vor CSRF-Angriffen
-      secure: process.env.NODE_ENV === "production", // Nur HTTPS in Produktion
+      name: "sb-session",
+      lifetime: 60 * 60 * 8, // 8h
+      maxAge: 60 * 60 * 8,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
     },
   },
 })
 
-// Server-side Supabase client creator for Server Components/Actions
+/**
+ * ============================
+ * Server Client (Server Components / Actions)
+ * ============================
+ */
 export function createServerSupabaseClient(cookies: ReadonlyRequestCookies) {
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -33,11 +53,11 @@ export function createServerSupabaseClient(cookies: ReadonlyRequestCookies) {
       },
       setAll(cookiesToSet) {
         try {
-          cookiesToSet.forEach(({ name, value, options }) => cookies.set(name, value, options))
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookies.set(name, value, options)
+          })
         } catch {
-          // The `setAll` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
+          // Wird in Server Components ignoriert
         }
       },
     },

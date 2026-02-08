@@ -1,584 +1,452 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Header } from "@/components/header"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import Image from "next/image"
 import { createBrowserClient } from "@supabase/ssr"
+import { Header } from "@/components/header"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  Trophy,
   Calendar,
-  MapPin,
   Clock,
+  MapPin,
+  Trophy,
+  PartyPopper,
+  Gamepad2,
+  MessageSquare,
   Info,
-  Euro,
+  Filter,
+  Search,
   Target,
   Swords,
   Users,
-  PartyPopper,
-  Gamepad2,
-  Filter,
-  Search,
-  Home,
-  CalendarDays,
-  Crown,
+  Image as ImageIcon,
 } from "lucide-react"
-import Image from "next/image"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
 
-const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
-interface Tournament {
+type TimeFilter = "upcoming" | "past" | "all"
+
+type EventRow = {
   id: string
   name: string
-  date: string
-  time: string
-  location: string
-  entry_fee: number
-  mode: string
-  details: string | null
-  photo_url: string | null
-}
-
-interface Event {
-  id: string
-  name: string
+  event_type: string
   event_date: string
   event_time: string | null
   location: string | null
-  event_type: string
-  description: string | null
-  photo_url: string | null
-  max_participants: number | null
-}
 
-interface CombinedEvent {
-  id: string
-  name: string
-  date: string
-  time: string
-  location: string
+  // ✅ Eintritt (für ALLE Events)
+  entry_fee: number | null
+
+  max_participants: number | null
   details: string | null
   photo_url: string | null
-  type: "tournament" | "event"
-  eventType?: string
-  entry_fee?: number
-  mode?: string
-  max_participants?: number | null
+
+  // ✅ Turnier
+  mode: string | null
+  // ✅ Startgeld (nur Turniere, Text/Details)
+  startgeld_details: string | null
+
+  source: string | null // "internal" | "external"
 }
 
 function getEventTypeIcon(eventType: string) {
-  const type = eventType.toLowerCase()
-  if (type.includes("party")) return PartyPopper
-  if (type.includes("spiel")) return Gamepad2
-  if (type.includes("turnier")) return Trophy
-  return Users
+  const t = (eventType || "").toLowerCase()
+  if (t === "tournament") return Trophy
+  if (t === "party") return PartyPopper
+  if (t === "console" || t === "gaming") return Gamepad2
+  if (t === "announcement") return MessageSquare
+  return Info
 }
 
 function getEventTypeLabel(eventType: string) {
-  const type = eventType.toLowerCase()
-  if (type.includes("party")) return "Party"
-  if (type.includes("spiel")) return "Spielabend"
-  if (type.includes("turnier")) return "Turnier"
-  if (type.includes("versammlung")) return "Versammlung"
-  return eventType
+  const t = (eventType || "").toLowerCase()
+  if (t === "tournament") return "Turnier"
+  if (t === "party") return "Party"
+  if (t === "console" || t === "gaming") return "Konsole"
+  if (t === "announcement") return "Ankündigung"
+  return eventType || "Event"
+}
+
+function formatDateDE(dateIso: string) {
+  return new Date(dateIso).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })
+}
+
+function formatTimeDE(time: string | null) {
+  const raw = (time || "19:00").toString()
+  return raw.length >= 5 ? raw.slice(0, 5) : raw
+}
+
+function toDateTime(e: Pick<EventRow, "event_date" | "event_time">) {
+  const raw = (e.event_time || "19:00").toString()
+  const time = raw.length === 5 ? `${raw}:00` : raw // HH:mm oder HH:mm:ss
+  return new Date(`${e.event_date}T${time}`)
+}
+
+function ModeIcon({ mode }: { mode: string | null }) {
+  const m = (mode || "").toLowerCase()
+  if (m === "edart") return <Target className="w-3.5 h-3.5" />
+  if (m === "steeldart") return <Swords className="w-3.5 h-3.5" />
+  return <Users className="w-3.5 h-3.5" />
+}
+
+function modeLabel(mode: string | null) {
+  const m = (mode || "").toLowerCase()
+  if (m === "edart") return "E-Dart"
+  if (m === "steeldart") return "Steel Dart"
+  if (m === "both") return "Beide"
+  return mode || "—"
+}
+
+function formatEuro(value: number) {
+  return `€ ${value.toFixed(2)}`
+}
+
+function formatEuroCompact(n: number) {
+  const isInt = Math.abs(n - Math.round(n)) < 1e-9
+  return isInt ? `€ ${Math.round(n)}` : `€ ${n.toFixed(2)}`
+}
+
+function parseStartgeld(details: string | null) {
+  if (!details) return null
+  // akzeptiert: "10", "€10", "10€", "10,50", "10.50", "Startgeld: 10"
+  const m = details.replace(",", ".").match(/(\d+(\.\d{1,2})?)/)
+  if (!m) return null
+  const n = Number(m[1])
+  return Number.isFinite(n) ? n : null
+}
+
+function DummyCover({ label }: { label?: string }) {
+  return (
+    <div className="relative h-40 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700">
+      <div className="absolute inset-0 opacity-20">
+        <div className="w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18),transparent_45%),radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.10),transparent_40%),radial-gradient(circle_at_30%_80%,rgba(255,255,255,0.12),transparent_45%)]" />
+      </div>
+      <div className="relative h-full flex items-center justify-center text-white">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur">
+          <ImageIcon className="w-5 h-5" />
+          <span className="text-sm font-semibold">{label || "Event"}</span>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function VeranstaltungenPage() {
-  const [combinedEvents, setCombinedEvents] = useState<CombinedEvent[]>([])
-  const [filteredEvents, setFilteredEvents] = useState<CombinedEvent[]>([])
+  const [events, setEvents] = useState<EventRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null)
-  const [filterType, setFilterType] = useState<"all" | "tournament" | "event">("all")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [error, setError] = useState<string | null>(null)
+
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("upcoming")
+  const [typeFilter, setTypeFilter] = useState<string>("all")
+  const [sourceFilter, setSourceFilter] = useState<string>("all")
+  const [query, setQuery] = useState<string>("")
 
   useEffect(() => {
-    const fetchEventsAndTournaments = async () => {
+    let cancelled = false
+
+    const load = async () => {
+      setLoading(true)
+      setError(null)
       try {
-        const today = new Date().toISOString().split("T")[0]
-
-        const { data: tournamentsData, error: tournamentsError } = await supabase
-          .from("tournaments")
-          .select("*")
-          .gte("date", today)
-          .order("date", { ascending: true })
-          .order("time", { ascending: true })
-
-        if (tournamentsError) {
-          console.error("Error fetching tournaments:", tournamentsError)
-        }
-
-        const { data: eventsData, error: eventsError } = await supabase
+        const { data, error } = await supabase
           .from("events")
-          .select("*")
-          .not("name", "ilike", "%LION%")
-          .gte("event_date", today)
+          .select(
+            "id,name,event_type,event_date,event_time,location,entry_fee,max_participants,details,photo_url,mode,startgeld_details,source"
+          )
           .order("event_date", { ascending: true })
           .order("event_time", { ascending: true })
 
-        if (eventsError) {
-          console.error("Error fetching events:", eventsError)
-        }
-
-        const combined: CombinedEvent[] = []
-
-        if (tournamentsData) {
-          tournamentsData.forEach((tournament) => {
-            combined.push({
-              id: tournament.id,
-              name: tournament.name,
-              date: tournament.date,
-              time: tournament.time,
-              location: tournament.location,
-              details: tournament.details,
-              photo_url: tournament.photo_url,
-              type: "tournament",
-              entry_fee: tournament.entry_fee,
-              mode: tournament.mode,
-            })
-          })
-        }
-
-        if (eventsData) {
-          eventsData.forEach((event) => {
-            combined.push({
-              id: event.id,
-              name: event.name,
-              date: event.event_date,
-              time: event.event_time || "19:00",
-              location: event.location || "Wird bekannt gegeben",
-              details: event.description,
-              photo_url: event.photo_url,
-              type: "event",
-              eventType: event.event_type,
-              max_participants: event.max_participants,
-            })
-          })
-        }
-
-        combined.sort((a, b) => {
-          const dateA = new Date(`${a.date}T${a.time}`)
-          const dateB = new Date(`${b.date}T${b.time}`)
-          return dateA.getTime() - dateB.getTime()
-        })
-
-        setCombinedEvents(combined)
-        setFilteredEvents(combined)
-      } catch (error) {
-        console.error("Error fetching events and tournaments:", error)
+        if (error) throw error
+        if (!cancelled) setEvents((data as EventRow[]) || [])
+      } catch (e: any) {
+        console.error("Error loading events:", e)
+        if (!cancelled) setError(e?.message ? String(e.message) : "Fehler beim Laden der Veranstaltungen")
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
-    fetchEventsAndTournaments()
+    load()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  useEffect(() => {
-    let filtered = combinedEvents
+  const distinctTypes = useMemo(() => {
+    const s = new Set<string>()
+    for (const e of events) s.add((e.event_type || "").toLowerCase())
+    return Array.from(s).filter(Boolean).sort()
+  }, [events])
 
-    if (filterType !== "all") {
-      filtered = filtered.filter((event) => event.type === filterType)
-    }
+  const filtered = useMemo(() => {
+    const nowTs = Date.now()
+    const q = query.trim().toLowerCase()
 
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (event) =>
-          event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          event.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          event.details?.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    }
+    return events
+      .filter((e) => {
+        const dt = toDateTime(e).getTime()
+        if (timeFilter === "upcoming") return dt >= nowTs
+        if (timeFilter === "past") return dt < nowTs
+        return true
+      })
+      .filter((e) => {
+        if (typeFilter === "all") return true
+        return (e.event_type || "").toLowerCase() === typeFilter
+      })
+      .filter((e) => {
+        if (sourceFilter === "all") return true
+        return (e.source || "internal").toLowerCase() === sourceFilter
+      })
+      .filter((e) => {
+        if (!q) return true
+        const hay = [
+          e.name,
+          e.location,
+          e.details,
+          e.event_type,
+          e.mode,
+          e.startgeld_details,
+          e.entry_fee != null ? String(e.entry_fee) : null,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+        return hay.includes(q)
+      })
+      .sort((a, b) => {
+        const ta = toDateTime(a).getTime()
+        const tb = toDateTime(b).getTime()
 
-    setFilteredEvents(filtered)
-  }, [filterType, searchQuery, combinedEvents])
+        if (timeFilter === "past") return tb - ta
+        if (timeFilter === "upcoming") return ta - tb
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-            <p className="text-gray-600">Lade Veranstaltungen...</p>
-          </div>
-        </main>
-      </div>
-    )
-  }
+        const aIsPast = ta < nowTs
+        const bIsPast = tb < nowTs
+        if (aIsPast !== bIsPast) return aIsPast ? 1 : -1
+        return aIsPast ? tb - ta : ta - tb
+      })
+  }, [events, timeFilter, typeFilter, sourceFilter, query])
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <Header />
 
-      <section className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white py-16 lg:py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/stadium-crowd-atmosphere.jpg')] bg-cover bg-center opacity-10" />
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-900 px-4 py-2 rounded-full font-bold text-sm mb-6">
-              <Trophy className="w-4 h-4" />
-              <span>ALLE VERANSTALTUNGEN</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6 text-balance">
-              Turniere & Veranstaltungen
-            </h1>
-            <p className="text-lg sm:text-xl text-orange-100 mb-8 text-pretty">
-              Entdecke alle kommenden Turniere, Events und Veranstaltungen von EMD Dart. Melde dich jetzt an und sei
-              dabei!
+      <section className="bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white py-10">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl">
+            <h1 className="text-3xl sm:text-4xl font-black">Veranstaltungen</h1>
+            <p className="text-orange-100 mt-2">
+              Turniere, Partys und mehr.
             </p>
           </div>
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-8 lg:py-12">
-        <div className="mb-8 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={filterType === "all" ? "default" : "outline"}
-                onClick={() => setFilterType("all")}
-                className="font-semibold"
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                Alle ({combinedEvents.length})
-              </Button>
-              <Button
-                variant={filterType === "tournament" ? "default" : "outline"}
-                onClick={() => setFilterType("tournament")}
-                className="font-semibold"
-              >
-                <Trophy className="w-4 h-4 mr-2" />
-                Turniere ({combinedEvents.filter((e) => e.type === "tournament").length})
-              </Button>
-              <Button
-                variant={filterType === "event" ? "default" : "outline"}
-                onClick={() => setFilterType("event")}
-                className="font-semibold"
-              >
-                <PartyPopper className="w-4 h-4 mr-2" />
-                Events ({combinedEvents.filter((e) => e.type === "event").length})
-              </Button>
+      <div className="container mx-auto px-4 py-6">
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap gap-2">
+                <Button variant={timeFilter === "upcoming" ? "default" : "outline"} onClick={() => setTimeFilter("upcoming")}>
+                  Anstehend
+                </Button>
+                <Button variant={timeFilter === "past" ? "default" : "outline"} onClick={() => setTimeFilter("past")}>
+                  Abgelaufen
+                </Button>
+                <Button variant={timeFilter === "all" ? "default" : "outline"} onClick={() => setTimeFilter("all")}>
+                  Alle
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Suchen (Name, Ort, Details …)"
+                    className="pl-9"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gray-500" />
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Typ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Alle Typen</SelectItem>
+                      {distinctTypes.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {getEventTypeLabel(t)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gray-500" />
+                  <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Quelle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Intern + Extern</SelectItem>
+                      <SelectItem value="internal">Nur intern</SelectItem>
+                      <SelectItem value="external">Nur extern</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-600">{loading ? "Lade…" : `${filtered.length} Ergebnis(se)`}</div>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="relative w-full sm:w-auto sm:min-w-[300px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Suche nach Name, Ort..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-          </div>
+        <div className="mt-6">
+          {loading ? (
+            <div className="text-center text-gray-600 py-12">Lade Veranstaltungen…</div>
+          ) : error ? (
+            <div className="text-center text-red-600 py-12">{error}</div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center text-gray-600 py-12">Keine passenden Veranstaltungen gefunden.</div>
+          ) : (
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filtered.map((e) => {
+                const dt = toDateTime(e)
+                const isPast = dt.getTime() < Date.now()
+                const isTournament = (e.event_type || "").toLowerCase() === "tournament"
+                const isExternal = (e.source || "internal").toLowerCase() === "external"
+                const Icon = getEventTypeIcon(e.event_type)
 
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <p>
-              {filteredEvents.length} {filteredEvents.length === 1 ? "Veranstaltung" : "Veranstaltungen"} gefunden
-            </p>
-          </div>
-        </div>
+                const hasEintritt = (e.entry_fee ?? 0) > 0
+                const hasStartgeldDetails = Boolean(e.startgeld_details && e.startgeld_details.trim().length > 0)
+                const startgeldAmount = parseStartgeld(e.startgeld_details)
 
-        {filteredEvents.length === 0 ? (
-          <Card className="border-0 shadow-lg">
-            <CardContent className="p-12 text-center">
-              <Info className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Keine Veranstaltungen gefunden</h3>
-              <p className="text-gray-500">
-                {searchQuery
-                  ? "Versuche es mit anderen Suchbegriffen."
-                  : "Derzeit sind keine weiteren Turniere oder Veranstaltungen geplant."}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map((item) => {
-              const EventIcon = item.type === "event" && item.eventType ? getEventTypeIcon(item.eventType) : Trophy
+                return (
+                  <Card key={e.id} className="border-0 shadow-lg overflow-hidden">
+                    {/* ✅ Immer gleiche Optik oben: Bild oder Dummy */}
+                    {e.photo_url ? (
+                      <div className="relative h-40 bg-gray-200">
+                        <Image src={e.photo_url} alt={e.name} fill className="object-cover" />
+                      </div>
+                    ) : (
+                      <DummyCover label={getEventTypeLabel(e.event_type)} />
+                    )}
 
-              return (
-                <Dialog key={item.id}>
-                  <DialogTrigger asChild>
-                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer hover:-translate-y-1">
-                      <div className="relative h-56 bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
-                        {item.photo_url ? (
-                          <Image
-                            src={item.photo_url || "/placeholder.svg"}
-                            alt={item.name}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/40">
-                            <EventIcon className="h-20 w-20 text-primary" />
-                          </div>
-                        )}
-                        <div className="absolute top-4 left-4">
-                          <span className="bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            {item.type === "tournament"
-                              ? "TURNIER"
-                              : getEventTypeLabel(item.eventType || "").toUpperCase()}
-                          </span>
-                        </div>
-                        {item.type === "tournament" && item.mode && (
-                          <div className="absolute top-4 right-4">
-                            <span className="bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                              {item.mode === "edart" ? "E-DART" : item.mode === "steeldart" ? "STEEL" : "BEIDE"}
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <CardTitle className="text-lg font-extrabold leading-snug line-clamp-2">{e.name}</CardTitle>
+
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-800">
+                              <Icon className="w-3.5 h-3.5" />
+                              {getEventTypeLabel(e.event_type)}
+                            </span>
+
+                            <span
+                              className={
+                                "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full " +
+                                (isExternal ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900")
+                              }
+                            >
+                              {isExternal ? "Extern" : "Intern"}
+                            </span>
+
+                            <span
+                              className={
+                                "inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full " +
+                                (isPast ? "bg-slate-100 text-slate-700" : "bg-blue-100 text-blue-900")
+                              }
+                            >
+                              {isPast ? "Abgelaufen" : "Anstehend"}
                             </span>
                           </div>
-                        )}
-                      </div>
-                      <CardContent className="p-5">
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                          <Calendar className="w-3.5 h-3.5" />
-                          {new Date(item.date)
-                            .toLocaleDateString("de-DE", {
-                              day: "2-digit",
-                              month: "long",
-                              year: "numeric",
-                            })
-                            .toUpperCase()}
-                        </div>
-                        <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-2 min-h-[3.5rem]">
-                          {item.name}
-                        </h3>
-                        <div className="space-y-2 text-sm text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-orange-600 flex-shrink-0" />
-                            <span>{item.time} Uhr</span>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <MapPin className="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5" />
-                            <span className="line-clamp-2">{item.location}</span>
-                          </div>
-                          {item.type === "tournament" && item.entry_fee !== undefined && (
-                            <div className="flex items-center gap-2">
-                              <Euro className="w-4 h-4 text-orange-600 flex-shrink-0" />
-                              <span className="font-semibold">€{item.entry_fee.toFixed(2)} Startgeld</span>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto w-[95vw] sm:w-full">
-                    <DialogHeader>
-                      <DialogTitle className="text-xl sm:text-2xl font-black text-primary pr-8">
-                        {item.name}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      {item.photo_url && (
-                        <div
-                          className="relative w-full h-40 sm:h-56 rounded-xl overflow-hidden cursor-pointer group"
-                          onClick={() => setFullscreenPhoto(item.photo_url)}
-                        >
-                          <Image
-                            src={item.photo_url || "/placeholder.svg"}
-                            alt={item.name}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            sizes="(max-width: 768px) 95vw, 800px"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-2 sm:p-3">
-                              <svg
-                                className="w-5 h-5 sm:w-6 sm:h-6 text-gray-900"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-3 sm:p-4 border border-orange-200">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <EventIcon className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 flex-shrink-0" />
-                          <div>
-                            <h4 className="text-base sm:text-lg font-bold text-gray-900">
-                              {item.type === "tournament" ? "Turnierinformationen" : "Veranstaltungsinformationen"}
-                            </h4>
-                            <p className="text-xs sm:text-sm text-gray-700">Alle wichtigen Details</p>
-                          </div>
                         </div>
                       </div>
+                    </CardHeader>
 
-                      <div className="space-y-2.5">
-                        <div className="flex items-start gap-2.5">
-                          <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-semibold text-sm sm:text-base text-gray-900">Datum</p>
-                            <p className="text-sm text-gray-700">
-                              {new Date(item.date).toLocaleDateString("de-DE", {
-                                day: "2-digit",
-                                month: "long",
-                                year: "numeric",
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-semibold text-sm sm:text-base text-gray-900">Uhrzeit</p>
-                            <p className="text-sm text-gray-700">{item.time} Uhr</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-semibold text-sm sm:text-base text-gray-900">Ort</p>
-                            <p className="text-sm text-gray-700">{item.location}</p>
-                          </div>
+                    <CardContent className="pt-0">
+                      <div className="space-y-2 text-sm text-gray-700">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-500" />
+                          <span className="font-medium">{formatDateDE(e.event_date)}</span>
                         </div>
 
-                        {item.type === "tournament" && (
-                          <>
-                            <div className="flex items-start gap-2.5">
-                              {item.mode === "edart" ? (
-                                <Target className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                              ) : item.mode === "steeldart" ? (
-                                <Swords className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                              ) : (
-                                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                              )}
-                              <div>
-                                <p className="font-semibold text-sm sm:text-base text-gray-900">Modus</p>
-                                <p className="text-sm text-gray-700">
-                                  {item.mode === "edart"
-                                    ? "E-Dart"
-                                    : item.mode === "steeldart"
-                                      ? "Steel Dart"
-                                      : "Beide Modi"}
-                                </p>
-                              </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-gray-500" />
+                          <span>{formatTimeDE(e.event_time)} Uhr</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-gray-500" />
+                          <span className="line-clamp-1">{e.location || "Wird bekannt gegeben"}</span>
+                        </div>
+
+                        {/* ✅ Turnier: Mode + Startgeld (als Betrag) + Eintritt */}
+                        {isTournament ? (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-900 border border-orange-200">
+                              <ModeIcon mode={e.mode} />
+                              {modeLabel(e.mode)}
+                            </span>
+
+                            {hasStartgeldDetails ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-900 border border-orange-200">
+                                <span className="font-bold">Startgeld:</span>{" "}
+                                {startgeldAmount != null ? formatEuroCompact(startgeldAmount) : e.startgeld_details}
+                              </span>
+                            ) : null}
+
+                            {hasEintritt ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-50 text-slate-900 border border-slate-200">
+                                <span className="font-bold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          // ✅ Nicht-Turnier: Eintritt
+                          hasEintritt ? (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-50 text-slate-900 border border-slate-200">
+                                <span className="font-bold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
+                              </span>
                             </div>
-                            {item.entry_fee !== undefined && (
-                              <div className="flex items-start gap-2.5">
-                                <Euro className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                                <div>
-                                  <p className="font-semibold text-sm sm:text-base text-gray-900">Startgeld</p>
-                                  <p className="text-sm text-gray-700">€{item.entry_fee.toFixed(2)}</p>
-                                </div>
-                              </div>
-                            )}
-                          </>
+                          ) : null
                         )}
 
-                        {item.type === "event" && item.eventType && (
-                          <div className="flex items-start gap-2.5">
-                            <EventIcon className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="font-semibold text-sm sm:text-base text-gray-900">Art der Veranstaltung</p>
-                              <p className="text-sm text-gray-700">{getEventTypeLabel(item.eventType)}</p>
-                            </div>
-                          </div>
-                        )}
+                        {/* ❌ Startgeld-Block unten ist ABSICHTLICH weg */}
 
-                        {item.max_participants && (
-                          <div className="flex items-start gap-2.5">
-                            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="font-semibold text-sm sm:text-base text-gray-900">Max. Teilnehmer</p>
-                              <p className="text-sm text-gray-700">{item.max_participants}</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {item.details && (
-                          <div className="flex items-start gap-2.5">
-                            <Info className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="font-semibold text-sm sm:text-base text-gray-900">Details</p>
-                              <p className="text-sm text-gray-700">{item.details}</p>
-                            </div>
-                          </div>
-                        )}
+                        {e.details ? <div className="text-sm text-gray-600 line-clamp-3 pt-1">{e.details}</div> : null}
                       </div>
 
-                      <Button
-                        className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-sm sm:text-base py-3 sm:py-4"
-                        onClick={() => (window.location.href = `/veranstaltungen/${item.id}/anmeldung`)}
-                        disabled={item.type === "event"}
-                      >
-                        {item.type === "tournament" ? "Jetzt anmelden" : "Mehr Infos"}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )
-            })}
-          </div>
-        )}
+                      <div className="mt-4">
+                        <Button asChild className="w-full">
+                          <Link href={`/veranstaltungen/${e.id}`}>Details</Link>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      {fullscreenPhoto && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 cursor-pointer"
-          onClick={() => setFullscreenPhoto(null)}
-        >
-          <button
-            className="absolute top-4 right-4 z-[110] bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full p-3 transition-all duration-200 hover:scale-110"
-            onClick={(e) => {
-              e.stopPropagation()
-              setFullscreenPhoto(null)
-            }}
-            aria-label="Foto schließen"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <div className="relative w-full h-full max-w-7xl max-h-[90vh]">
-            <Image
-              src={fullscreenPhoto || "/placeholder.svg"}
-              alt="Vollbild"
-              fill
-              className="object-contain"
-              sizes="100vw"
-            />
-          </div>
-        </div>
-      )}
-
       <FAQChatWidget />
-
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40 md:hidden">
-        <div className="flex items-center justify-around h-16">
-          <a
-            href="/"
-            className="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-primary transition-colors"
-          >
-            <Home className="w-5 h-5 mb-1" />
-            <span className="text-xs font-medium">Home</span>
-          </a>
-          <a
-            href="/veranstaltungen"
-            className="flex flex-col items-center justify-center flex-1 h-full text-primary transition-colors"
-          >
-            <CalendarDays className="w-5 h-5 mb-1" />
-            <span className="text-xs font-medium">Events</span>
-          </a>
-          <a
-            href="/upcoming-tournaments-app"
-            className="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-primary transition-colors"
-          >
-            <Crown className="w-5 h-5 mb-1" />
-            <span className="text-xs font-medium">Lion Cup</span>
-          </a>
-        </div>
-      </nav>
     </div>
   )
 }

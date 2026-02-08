@@ -1,73 +1,49 @@
 "use client"
 
 import type React from "react"
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 
 import { Header } from "@/components/header"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { useEffect, useState } from "react"
+
 import { supabase } from "@/lib/supabase"
-import { Mail, Lock, ArrowRight, Users, Crown, ShieldCheck } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
-import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+
+import { Mail, Lock, ArrowRight, Users, Crown, ShieldCheck, KeyRound } from "lucide-react"
 
 export default function MemberLoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
   const [message, setMessage] = useState("")
+
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { session, loading: authLoading } = useAuth()
 
-  // ✅ Handle invite/confirmation links that land on /member-login with tokens in URL hash
-  // Example:
-  // /member-login#access_token=...&refresh_token=...&type=invite
+  /**
+   * ✅ Recovery/Invite Links:
+   * Früher hast du hier exchangeCodeForSession gemacht -> PKCE verifier error.
+   * Jetzt: wir leiten sauber zur Passwort-Seite weiter und lassen Supabase (detectSessionInUrl)
+   * die URL verarbeiten (implicit flow).
+   */
   useEffect(() => {
-    const run = async () => {
-      try {
-        if (typeof window === "undefined") return
-        const hash = window.location.hash || ""
-        if (!hash || hash.length < 2) return
+    const code = searchParams.get("code")
+    if (!code) return
 
-        const params = new URLSearchParams(hash.replace(/^#/, ""))
-        const type = params.get("type")
-        const access_token = params.get("access_token")
-        const refresh_token = params.get("refresh_token")
+    setMessage("Aktiviere Link…")
+    // Code einfach weiterreichen – /member-set-password kümmert sich drum (und Hash Links sowieso)
+    router.replace(`/member-set-password?code=${encodeURIComponent(code)}`)
+  }, [searchParams, router])
 
-        if (type === "invite" && access_token && refresh_token) {
-          setLoading(true)
-          setMessage("Einladung bestätigt – bitte Passwort festlegen...")
-
-          const { error } = await supabase.auth.setSession({ access_token, refresh_token })
-          if (error) {
-            setMessage(`Aktivierung fehlgeschlagen: ${error.message}`)
-            setLoading(false)
-            return
-          }
-
-          // Remove tokens from the URL (security/cleanliness)
-          window.history.replaceState({}, document.title, window.location.pathname)
-
-          // Go to password setup page (your app uses /member-set-password)
-          router.replace("/member-set-password")
-        }
-      } catch (e: any) {
-        setMessage(`Aktivierung fehlgeschlagen: ${e?.message || "Unbekannter Fehler"}`)
-        setLoading(false)
-      }
-    }
-
-    run()
-  }, [router])
-
-  // Redirect if already logged in (but NOT if we're in the invite-hash flow)
+  // Redirect if already logged in
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash || ""
-      if (hash.includes("type=invite")) return
-    }
     if (!authLoading && session) {
       router.push("/member-profile-app")
     }
@@ -79,21 +55,54 @@ export default function MemberLoginPage() {
     setMessage("")
 
     try {
+      const cleanEmail = email.trim().toLowerCase()
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: cleanEmail,
         password,
       })
 
-      if (error) throw error
+      if (error) {
+        setMessage(`Anmeldung fehlgeschlagen: ${error.message}`)
+        return
+      }
 
       if (data.user) {
-        setMessage("Anmeldung erfolgreich!")
         router.push("/member-profile-app")
+      } else {
+        setMessage("Anmeldung fehlgeschlagen: Kein User zurückgegeben.")
       }
     } catch (error: any) {
-      setMessage(`Anmeldung fehlgeschlagen: ${error.message}`)
+      setMessage(`Anmeldung fehlgeschlagen: ${error?.message || "Unbekannter Fehler"}`)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // ✅ Send reset link that goes straight to /member-set-password
+  const handlePasswordReset = async () => {
+    setResetLoading(true)
+    setMessage("")
+
+    try {
+      const cleanEmail = email.trim().toLowerCase()
+      if (!cleanEmail) {
+        setMessage("Bitte zuerst deine E-Mail-Adresse eingeben.")
+        return
+      }
+
+      const redirectTo = `${window.location.origin}/member-set-password`
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo })
+
+      if (error) {
+        setMessage(`Reset fehlgeschlagen: ${error.message}`)
+        return
+      }
+
+      setMessage("Reset-Mail wurde gesendet. Bitte Link in der Mail klicken.")
+    } catch (e: any) {
+      setMessage(`Reset fehlgeschlagen: ${e?.message || "Unbekannter Fehler"}`)
+    } finally {
+      setResetLoading(false)
     }
   }
 
@@ -112,6 +121,7 @@ export default function MemberLoginPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
+
       <main className="flex-grow flex items-center justify-center p-4 pb-24 md:pb-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
@@ -142,13 +152,12 @@ export default function MemberLoginPage() {
 
             <CardContent className="pt-0">
               <form onSubmit={handleLogin} className="space-y-6">
-                {/* Email Field */}
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                     E-Mail-Adresse
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
                       id="email"
                       type="email"
@@ -157,17 +166,17 @@ export default function MemberLoginPage() {
                       placeholder="deine.email@example.com"
                       className="pl-12 h-12 border-2 border-gray-200 focus:border-orange-500 rounded-xl"
                       required
+                      autoComplete="email"
                     />
                   </div>
                 </div>
 
-                {/* Password Field */}
                 <div className="space-y-2">
                   <label htmlFor="password" className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                     Passwort
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
                       id="password"
                       type="password"
@@ -176,34 +185,30 @@ export default function MemberLoginPage() {
                       placeholder="Dein Passwort"
                       className="pl-12 h-12 border-2 border-gray-200 focus:border-orange-500 rounded-xl"
                       required
+                      autoComplete="current-password"
                     />
                   </div>
                 </div>
 
-                {/* Message */}
-                {message && (
+                {message ? (
                   <div
                     className={`text-center p-4 rounded-xl text-sm font-medium ${
-                      message.includes("erfolgreich") || message.includes("Einladung bestätigt")
+                      message.includes("gesendet") || message.includes("Aktiviere")
                         ? "bg-green-50 text-green-700 border border-green-200"
                         : "bg-red-50 text-red-700 border border-red-200"
                     }`}
                   >
                     {message}
                   </div>
-                )}
+                ) : null}
 
-                {/* Login Button */}
                 <Button
                   type="submit"
                   disabled={loading}
                   className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg"
                 >
                   {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Wird geladen...
-                    </div>
+                    "Wird geladen…"
                   ) : (
                     <div className="flex items-center gap-2">
                       Anmelden
@@ -211,11 +216,36 @@ export default function MemberLoginPage() {
                     </div>
                   )}
                 </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={resetLoading || loading}
+                  onClick={handlePasswordReset}
+                  className="w-full h-12 rounded-xl border-2"
+                >
+                  {resetLoading ? (
+                    "Sende Reset-Mail…"
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <KeyRound className="h-5 w-5" />
+                      Passwort vergessen
+                    </div>
+                  )}
+                </Button>
+
+                <div className="text-center text-sm text-gray-600">
+                  Noch keinen Zugang?{" "}
+                  <Link href="/member-account-request" className="font-semibold text-orange-600 hover:text-orange-700">
+                    Mit Code registrieren
+                  </Link>
+                </div>
               </form>
             </CardContent>
           </Card>
         </div>
       </main>
+
       <MobileBottomNav />
     </div>
   )

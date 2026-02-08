@@ -126,7 +126,7 @@ export function Header() {
 
                   <NavigationMenuItem>
                     <NavigationMenuTrigger className="h-11 bg-transparent hover:bg-orange-50 hover:text-orange-600 font-semibold">
-                      TURNIERE
+                      EVENTS
                     </NavigationMenuTrigger>
                     <NavigationMenuContent>
                       <ul className="grid w-[420px] gap-2 p-4">

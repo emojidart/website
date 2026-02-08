@@ -60,7 +60,7 @@ export function MobileBottomNav() {
   const staticNavItems: NavItem[] = useMemo(
     () => [
       { name: "Home", href: "/", icon: Home },
-      { name: "Turniere", href: "/veranstaltungen", icon: Trophy },
+      { name: "Events", href: "/veranstaltungen", icon: Trophy },
       { name: "Liga", href: "/liga-statistiken-app", icon: Table },
       { name: "Verein", href: "/new-club", icon: Users },
     ],
