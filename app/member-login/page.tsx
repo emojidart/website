@@ -1,7 +1,9 @@
 "use client"
 
+export const dynamic = "force-dynamic"
+
 import type React from "react"
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 
@@ -16,7 +18,32 @@ import { useAuth } from "@/hooks/use-auth"
 
 import { Mail, Lock, ArrowRight, Users, Crown, ShieldCheck, KeyRound } from "lucide-react"
 
+/**
+ * Wichtig:
+ * - Suspense um useSearchParams ist der stabilste Weg für Builds/Prerender-Kontexte.
+ * - dynamic="force-dynamic" verhindert SSG/Prerender bei Auth-Seiten.
+ */
 export default function MemberLoginPage() {
+  return (
+    <Suspense fallback={<LoginSkeleton />}>
+      <MemberLoginClient />
+    </Suspense>
+  )
+}
+
+function LoginSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header />
+      <main className="flex-grow flex items-center justify-center p-4">
+        <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
+      </main>
+      <MobileBottomNav />
+    </div>
+  )
+}
+
+function MemberLoginClient() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -27,26 +54,17 @@ export default function MemberLoginPage() {
   const searchParams = useSearchParams()
   const { session, loading: authLoading } = useAuth()
 
-  /**
-   * ✅ Recovery/Invite Links:
-   * Früher hast du hier exchangeCodeForSession gemacht -> PKCE verifier error.
-   * Jetzt: wir leiten sauber zur Passwort-Seite weiter und lassen Supabase (detectSessionInUrl)
-   * die URL verarbeiten (implicit flow).
-   */
+  // ✅ Recovery link kommt bei dir als ?code=...
   useEffect(() => {
     const code = searchParams.get("code")
     if (!code) return
-
     setMessage("Aktiviere Link…")
-    // Code einfach weiterreichen – /member-set-password kümmert sich drum (und Hash Links sowieso)
     router.replace(`/member-set-password?code=${encodeURIComponent(code)}`)
   }, [searchParams, router])
 
-  // Redirect if already logged in
+  // ✅ Wenn schon eingeloggt → weiter
   useEffect(() => {
-    if (!authLoading && session) {
-      router.push("/member-profile-app")
-    }
+    if (!authLoading && session) router.push("/member-profile-app")
   }, [session, authLoading, router])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -66,23 +84,18 @@ export default function MemberLoginPage() {
         return
       }
 
-      if (data.user) {
-        router.push("/member-profile-app")
-      } else {
-        setMessage("Anmeldung fehlgeschlagen: Kein User zurückgegeben.")
-      }
-    } catch (error: any) {
-      setMessage(`Anmeldung fehlgeschlagen: ${error?.message || "Unbekannter Fehler"}`)
+      if (data.user) router.push("/member-profile-app")
+      else setMessage("Anmeldung fehlgeschlagen: Kein User zurückgegeben.")
+    } catch (err: any) {
+      setMessage(`Anmeldung fehlgeschlagen: ${err?.message || "Unbekannter Fehler"}`)
     } finally {
       setLoading(false)
     }
   }
 
-  // ✅ Send reset link that goes straight to /member-set-password
   const handlePasswordReset = async () => {
     setResetLoading(true)
     setMessage("")
-
     try {
       const cleanEmail = email.trim().toLowerCase()
       if (!cleanEmail) {
@@ -90,9 +103,9 @@ export default function MemberLoginPage() {
         return
       }
 
+      // ✅ direkt auf Passwort-Seite
       const redirectTo = `${window.location.origin}/member-set-password`
       const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo })
-
       if (error) {
         setMessage(`Reset fehlgeschlagen: ${error.message}`)
         return
@@ -106,17 +119,7 @@ export default function MemberLoginPage() {
     }
   }
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </main>
-        <MobileBottomNav />
-      </div>
-    )
-  }
+  if (authLoading) return <LoginSkeleton />
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
@@ -236,7 +239,7 @@ export default function MemberLoginPage() {
 
                 <div className="text-center text-sm text-gray-600">
                   Noch keinen Zugang?{" "}
-                  <Link href="/member-account-request" className="font-semibold text-orange-600 hover:text-orange-700">
+                  <Link href="/member-register" className="font-semibold text-orange-600 hover:text-orange-700">
                     Mit Code registrieren
                   </Link>
                 </div>
