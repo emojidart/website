@@ -705,57 +705,78 @@ const fetchMyTeamRooms = async (playerId: string) => {
   }
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending) return
+  if (!newMessage.trim() || sending) return
 
-    if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) {
-      toast({ title: "Kein Zugriff", description: "Du bist nicht Captain/Co-Captain.", variant: "destructive" })
-      return
-    }
-
-    if (selectedScope === "vorstand" && !canSeeVorstandChat && !isVorstand) {
-      toast({ title: "Kein Zugriff", description: "Du bist nicht im Vorstand.", variant: "destructive" })
-      return
-    }
-
-    if (selectedScope === "team" && !selectedRoom) return
-
-    if (!profile?.id) {
-      toast({
-        title: "Profil fehlt",
-        description: "Dein Benutzerprofil ist nicht eingerichtet. Bitte melde dich beim Admin.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    const roomId = currentRoomId
-    if (!roomId) return
-
-    try {
-      setSending(true)
-
-      const { error } = await supabase.from("chat_messages").insert({
-        user_id: profile.id,
-        message: newMessage.trim(),
-        room_id: roomId,
-        scope: selectedScope,
-      })
-
-      if (error) throw error
-
-      setNewMessage("")
-      markCurrentAsVisited()
-    } catch (error) {
-      console.error("Error sending message:", error)
-      toast({
-        title: "Fehler",
-        description: "Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
-        variant: "destructive",
-      })
-    } finally {
-      setSending(false)
-    }
+  if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) {
+    toast({ title: "Kein Zugriff", description: "Du bist nicht Captain/Co-Captain.", variant: "destructive" })
+    return
   }
+
+  if (selectedScope === "vorstand" && !canSeeVorstandChat && !isVorstand) {
+    toast({ title: "Kein Zugriff", description: "Du bist nicht im Vorstand.", variant: "destructive" })
+    return
+  }
+
+  if (selectedScope === "team" && !selectedRoom) return
+
+  if (!profile?.id) {
+    toast({
+      title: "Profil fehlt",
+      description: "Dein Benutzerprofil ist nicht eingerichtet. Bitte melde dich beim Admin.",
+      variant: "destructive",
+    })
+    return
+  }
+
+  const roomId = currentRoomId
+  if (!roomId) return
+
+  try {
+    setSending(true)
+
+    const msg = newMessage.trim()
+
+    const { error } = await supabase.from("chat_messages").insert({
+      user_id: profile.id,
+      message: msg,
+      room_id: roomId,
+      scope: selectedScope,
+    })
+
+    if (error) throw error
+
+    setNewMessage("")
+    markCurrentAsVisited()
+
+    // ✅ Push (best-effort, nie blockieren)
+    const token = (session as any)?.access_token
+    if (token) {
+      fetch("/api/push/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          room_id: roomId,
+          scope: selectedScope,
+          message: msg,
+          sender_profile_id: profile.id,
+        }),
+      }).catch(() => {})
+    }
+  } catch (error) {
+    console.error("Error sending message:", error)
+    toast({
+      title: "Fehler",
+      description: "Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+      variant: "destructive",
+    })
+  } finally {
+    setSending(false)
+  }
+}
+
 
   const fetchUnreadCounts = async (roomsOverride?: TeamRoom[]) => {
     const rooms = roomsOverride ?? chatRooms
