@@ -65,6 +65,58 @@ export async function subscribeToPushNotifications(
   }
 }
 
+/**
+ * NEW: Save subscription to your API route.
+ * IMPORTANT: pass the Supabase access_token from the client (logged-in user),
+ * otherwise the server cannot set user_id (it will stay NULL).
+ */
+export async function savePushSubscriptionToServer(
+  subscriptionData: PushSubscriptionData,
+  accessToken?: string | null,
+): Promise<{ ok: boolean; status: number; data?: any; error?: string }> {
+  try {
+    const res = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      body: JSON.stringify(subscriptionData),
+    })
+
+    const json = await res.json().catch(() => ({}))
+
+    if (!res.ok) {
+      return { ok: false, status: res.status, data: json, error: json?.error || "Request failed" }
+    }
+
+    return { ok: true, status: res.status, data: json }
+  } catch (e: any) {
+    return { ok: false, status: 0, error: e?.message ?? "Network error" }
+  }
+}
+
+/**
+ * NEW: Convenience helper - does subscribe + save in one call.
+ * You still need to request permission before calling this, and pass accessToken for user_id.
+ */
+export async function subscribeAndSavePushNotifications(
+  registration: ServiceWorkerRegistration,
+  accessToken?: string | null,
+): Promise<{ ok: boolean; subscription?: PushSubscriptionData | null; server?: any; error?: string }> {
+  const subscriptionData = await subscribeToPushNotifications(registration)
+  if (!subscriptionData) {
+    return { ok: false, subscription: null, error: "subscribe_failed" }
+  }
+
+  const saved = await savePushSubscriptionToServer(subscriptionData, accessToken)
+  if (!saved.ok) {
+    return { ok: false, subscription: subscriptionData, server: saved.data, error: saved.error || "save_failed" }
+  }
+
+  return { ok: true, subscription: subscriptionData, server: saved.data }
+}
+
 export async function unsubscribeFromPushNotifications(registration: ServiceWorkerRegistration): Promise<boolean> {
   try {
     const subscription = await registration.pushManager.getSubscription()
