@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { Bell, X, CheckCircle, AlertCircle } from "lucide-react"
-import { useAuth } from "@/hooks/use-auth"
-import { supabase } from "@/lib/supabase"
+import { createBrowserClient } from "@supabase/ssr"
+
+const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 export function PushNotificationDialog() {
-  const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
@@ -16,35 +16,28 @@ export function PushNotificationDialog() {
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true
 
-    if (!isStandalone) return
+    if (!isStandalone) {
+      return
+    }
 
-    const delayTimer = setTimeout(async () => {
-      const isPushSupported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window
+    const delayTimer = setTimeout(() => {
+      const isPushSupported = "serviceWorker" in navigator && "PushManager" in window
       setIsSupported(isPushSupported)
 
-      // ✅ Wichtig: Dialog nur zeigen, wenn User eingeloggt ist.
-      // Sonst wird die Subscription ohne user_id gespeichert (NULL).
-      if (!isPushSupported) return
-      if (Notification.permission !== "default") return
-      if (!user) return
-
-      setIsOpen(true)
+      if (isPushSupported && Notification.permission === "default") {
+        setIsOpen(true)
+      }
     }, 8000)
 
     return () => clearTimeout(delayTimer)
-  }, [user])
+  }, [])
 
   const handleEnable = async () => {
     try {
       setStatus("loading")
 
-      if (!user) {
-        setStatus("error")
-        setErrorMessage("Bitte zuerst einloggen, dann Push aktivieren.")
-        return
-      }
-
       const permission = await Notification.requestPermission()
+
       if (permission !== "granted") {
         setStatus("error")
         setErrorMessage("Benachrichtigungen wurden abgelehnt")
@@ -61,6 +54,7 @@ export function PushNotificationDialog() {
       await navigator.serviceWorker.ready
 
       const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+
       if (!vapidPublicKey) {
         setStatus("error")
         setErrorMessage("VAPID Key fehlt")
@@ -72,49 +66,43 @@ export function PushNotificationDialog() {
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       })
 
-      // Speicherung für Debug/Backups ok
       localStorage.setItem("pushSubscription", JSON.stringify(subscription))
-
-      // ✅ Token holen und mitsenden -> user_id wird gesetzt
-      const { data: sessionData } = await supabase.auth.getSession()
-      const token = sessionData.session?.access_token
 
       const response = await fetch("/api/push/subscribe", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(subscription),
       })
 
-      const result = await response.json().catch(() => ({}))
-
       if (!response.ok) {
-        console.error("[push-dialog] API error:", result)
+        const errorData = await response.json()
+        console.error("[v0] API error:", errorData)
         setStatus("error")
-        setErrorMessage(result.error || "Speichern fehlgeschlagen")
+        setErrorMessage(errorData.error || "Speichern fehlgeschlagen")
         return
       }
 
-      if (result?.hasUserId === false) {
-        setStatus("error")
-        setErrorMessage("Push gespeichert, aber User konnte nicht zugeordnet werden. Bitte neu einloggen.")
-        return
-      }
+      const result = await response.json()
+      console.log("[v0] Subscription erfolgreich gespeichert:", result)
 
       setStatus("success")
-      setTimeout(() => setIsOpen(false), 3000)
+      setTimeout(() => {
+        setIsOpen(false)
+      }, 3000)
     } catch (error) {
-      console.error("[push-dialog] Error in handleEnable:", error)
+      console.error("[v0] Error in handleEnable:", error)
       setStatus("error")
       setErrorMessage(error instanceof Error ? error.message : "Unbekannter Fehler")
     }
   }
 
-  const handleDismiss = () => setIsOpen(false)
+  const handleDismiss = () => {
+    setIsOpen(false)
+  }
 
-  if (!isOpen || !isSupported) return null
+  if (!isOpen || !isSupported) {
+    return null
+  }
 
   if (status === "success") {
     return (
@@ -150,12 +138,6 @@ export function PushNotificationDialog() {
             className="w-full px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700"
           >
             Erneut versuchen
-          </button>
-          <button
-            onClick={handleDismiss}
-            className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-          >
-            Schließen
           </button>
         </div>
       </div>
@@ -204,10 +186,6 @@ export function PushNotificationDialog() {
             {status === "loading" ? "Lädt..." : "Aktivieren"}
           </button>
         </div>
-
-        <p className="text-[11px] text-gray-500">
-          Hinweis: Push wird erst nach dem Login aktiviert, damit dein Gerät korrekt deinem Account zugeordnet wird.
-        </p>
       </div>
     </div>
   )
