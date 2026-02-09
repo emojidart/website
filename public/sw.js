@@ -2,18 +2,18 @@
 // Service Worker for Push Notifications
 
 self.addEventListener("install", (event) => {
-  console.log("[v2] Service Worker installing...")
+  console.log("[v3] Service Worker installing...")
   self.skipWaiting()
 })
 
 self.addEventListener("activate", (event) => {
-  console.log("[v2] Service Worker activated")
+  console.log("[v3] Service Worker activated")
   event.waitUntil(clients.claim())
 })
 
 // Handle push notifications
 self.addEventListener("push", (event) => {
-  console.log("[v2] Push notification received:", event)
+  console.log("[v3] Push notification received:", event)
 
   let notificationData = {
     title: "EMD Vereinsapp",
@@ -21,7 +21,6 @@ self.addEventListener("push", (event) => {
     icon: "/icon-192.png",
     badge: "/icon-192.png",
     image: undefined,
-    // IMPORTANT: data object that will be available on click
     data: {},
   }
 
@@ -29,13 +28,7 @@ self.addEventListener("push", (event) => {
     try {
       const data = event.data.json()
 
-      // ✅ Support BOTH formats:
-      // 1) data.data (your previous event push format)
-      // 2) direct fields (our chat push route sends url/room_id/scope at top-level)
-      const mergedData =
-        data?.data && typeof data.data === "object"
-          ? data.data
-          : {}
+      const mergedData = data?.data && typeof data.data === "object" ? data.data : {}
 
       notificationData = {
         title: data.title || notificationData.title,
@@ -45,7 +38,6 @@ self.addEventListener("push", (event) => {
         image: data.image || notificationData.image,
         data: {
           ...mergedData,
-          // keep top-level helpers too (in case payload uses them)
           url: data.url ?? mergedData.url,
           link: data.link ?? mergedData.link,
           room_id: data.room_id ?? mergedData.room_id,
@@ -53,7 +45,7 @@ self.addEventListener("push", (event) => {
         },
       }
     } catch (e) {
-      console.error("[v2] Error parsing push data:", e)
+      console.error("[v3] Error parsing push data:", e)
     }
   }
 
@@ -75,41 +67,55 @@ self.addEventListener("push", (event) => {
 
 // Handle notification clicks
 self.addEventListener("notificationclick", (event) => {
-  console.log("[v2] Notification clicked:", event)
+  console.log("[v3] Notification clicked:", event)
   event.notification.close()
 
   const data = event.notification?.data || {}
 
-  // ✅ Chat deep-link:
-  // If it’s a chat push we expect scope + room_id
   const isChatPush = !!data.scope && !!data.room_id
 
   // Default fallback for non-chat pushes:
   let targetUrl = data.url || data.link || "/veranstaltungen"
 
   if (isChatPush) {
-    // Open chat, and include params (optional, later you can auto-select the room in the chat page)
-    const params = new URLSearchParams()
-    params.set("scope", String(data.scope))
-    params.set("room", String(data.room_id))
-    targetUrl = `/chat-app?${params.toString()}`
+    const scope = encodeURIComponent(String(data.scope))
+    const room = encodeURIComponent(String(data.room_id))
+    targetUrl = `/chat-app?scope=${scope}&room=${room}`
   }
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      // If any window is open, focus it and navigate there
+      // ✅ Focus only a window that is already on our origin (same site)
+      // If none found -> open new.
+      const targetOrigin = self.location.origin
+
+      // Prefer an existing /chat-app tab if available
+      let bestClient = null
+
       for (const client of clientList) {
-        if ("focus" in client) {
-          return client.focus().then(() => {
-            // navigate if possible
-            if ("navigate" in client) {
-              return client.navigate(targetUrl)
-            }
-          })
+        if (!client?.url) continue
+        if (!client.url.startsWith(targetOrigin)) continue
+
+        // Prefer chat tab
+        if (client.url.includes("/chat-app")) {
+          bestClient = client
+          break
         }
+
+        // Otherwise any tab of our site is acceptable
+        if (!bestClient) bestClient = client
       }
 
-      // If no window open, open a new one
+      if (bestClient && "focus" in bestClient) {
+        return bestClient.focus().then(() => {
+          // Navigate within that window (same origin)
+          if ("navigate" in bestClient) {
+            return bestClient.navigate(targetUrl)
+          }
+        })
+      }
+
+      // No suitable client -> open new window
       if (clients.openWindow) {
         return clients.openWindow(targetUrl)
       }
