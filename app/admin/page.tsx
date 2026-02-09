@@ -11,7 +11,6 @@ import {
   Shield,
   Eye,
   History,
-  ImageIcon,
   Trophy,
   Settings,
   List,
@@ -28,21 +27,17 @@ import {
   UserCheck,
   Activity,
 } from "lucide-react"
-import { useDartData } from "@/hooks/use-dart-data"
+
 import { AuthSection } from "@/components/auth-section"
 import { PlayerListModal } from "@/components/player-list-modal"
-import { TournamentRegistrations } from "@/components/tournament-registrations"
 import { GameHistoryTable } from "@/components/game-history-table"
-import { PlayerPhotoManagement } from "@/components/player-photo-management"
 import { PlayerRegistration } from "@/components/player-registration"
 import { PlayerManagement } from "@/components/player-management"
-import { AdminPanel as ResultEntry } from "@/components/admin-panel"
 import { ClubPlayerTeamManagement } from "@/components/club-player-team-management"
 import SeasonSettingsPage from "@/app/admin/season_settings/page"
 import { PlayerRecruitmentForm } from "@/components/player-recruitment-form"
 import { PlayerRecruitmentList } from "@/components/player-recruitment-list"
 import { PlayerApplicationsList } from "@/components/player-applications-list"
-import { UpcomingTournamentsManagement } from "@/components/admin/upcoming-tournaments-management"
 import { EventsManagement } from "@/components/admin/events-management"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
@@ -56,7 +51,6 @@ import { RolePermissionsManager } from "@/components/role-permissions-manager"
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading, clubRoles } = useAuth()
-  const { fetchAndRenderAllTables, fetchPlayers } = useDartData()
 
   const [isPlayerListModalOpen, setIsPlayerListModalOpen] = useState(false)
   const [selectedPlayerName, setSelectedPlayerName] = useState<string | null>(null)
@@ -76,7 +70,7 @@ export default function AdminPage() {
     | "club"
     | "tournaments"
     | "users"
-    | "user-management-internal" // ✅ NEU: alte UserManagement Komponente als Unterseite
+    | "user-management-internal"
     | "upcoming-tournaments"
     | "player-database"
     | "dart-competition"
@@ -94,72 +88,68 @@ export default function AdminPage() {
     | "role-permissions"
   >("dashboard")
 
-  
   const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
   const [roleLoading, setRoleLoading] = useState(false)
 
-// ✅ Lädt User-Seiten-Rechte (user_page_permissions) und filtert die Dashboard-Kacheln.
-useEffect(() => {
-  const run = async () => {
-    if (!user) {
-      setAllowedViews(null)
-      return
-    }
-
-    // Admins: alles sichtbar
-    if (isAdmin) {
-      setAllowedViews(new Set(["*"]))
-      return
-    }
-
-    setRoleLoading(true)
-
-    try {
-      // 1) player_id für den eingeloggten Auth-User holen
-      //    ⚠️ NICHT über club_players.user_id (das ist bei dir der Admin/Ersteller)
-      const { data: profile, error: profileErr } = await supabase
-        .from("user_profiles")
-        .select("player_id")
-        .eq("user_id", user.id) // <- Auth User ID
-        .maybeSingle()
-
-      if (profileErr) throw profileErr
-
-      const playerId = profile?.player_id as string | undefined
-      if (!playerId) {
-        // kein Mapping vorhanden -> keine Rechte
-        setAllowedViews(new Set())
+  // ✅ Lädt User-Seiten-Rechte (user_page_permissions) und filtert die Dashboard-Kacheln.
+  useEffect(() => {
+    const run = async () => {
+      if (!user) {
+        setAllowedViews(null)
         return
       }
 
-      // 2) Rechte für diesen Player laden
-      const { data: permRows, error: permErr } = await supabase
-        .from("user_page_permissions")
-        .select("page_key, allowed")
-        .eq("player_id", playerId)
+      // Admins: alles sichtbar
+      if (isAdmin) {
+        setAllowedViews(new Set(["*"]))
+        return
+      }
 
-      if (permErr) throw permErr
+      setRoleLoading(true)
 
-      const allowed = new Set<string>()
-      ;(permRows || []).forEach((row: any) => {
-        if (row.allowed) allowed.add(row.page_key)
-      })
+      try {
+        // 1) player_id für den eingeloggten Auth-User holen
+        const { data: profile, error: profileErr } = await supabase
+          .from("user_profiles")
+          .select("player_id")
+          .eq("user_id", user.id)
+          .maybeSingle()
 
-      setAllowedViews(allowed)
-    } catch (e) {
-      console.error("Permission load error:", e)
-      setAllowedViews(new Set())
-    } finally {
-      setRoleLoading(false)
+        if (profileErr) throw profileErr
+
+        const playerId = profile?.player_id as string | undefined
+        if (!playerId) {
+          setAllowedViews(new Set())
+          return
+        }
+
+        // 2) Rechte für diesen Player laden
+        const { data: permRows, error: permErr } = await supabase
+          .from("user_page_permissions")
+          .select("page_key, allowed")
+          .eq("player_id", playerId)
+
+        if (permErr) throw permErr
+
+        const allowed = new Set<string>()
+        ;(permRows || []).forEach((row: any) => {
+          if (row.allowed) allowed.add(row.page_key)
+        })
+
+        setAllowedViews(allowed)
+      } catch (e) {
+        console.error("Permission load error:", e)
+        setAllowedViews(new Set())
+      } finally {
+        setRoleLoading(false)
+      }
     }
-  }
 
-  run()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [user?.id, isAdmin])
+    run()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, isAdmin])
 
-
-const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
+  const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
   const [unreadCampusCount, setUnreadCampusCount] = useState(0)
 
   const fetchUnreadApplicationsCount = useCallback(async () => {
@@ -335,10 +325,9 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
       view: "leagues" as const,
       category: "sport" as const,
     },
-   
     {
       title: "Turniere starten",
-      description: "Turnier-Tools & Startseiten",
+      description: "Turnier-Tools",
       icon: Trophy,
       color: "bg-amber-500",
       view: "tournaments" as const,
@@ -366,7 +355,7 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
       icon: List,
       color: "bg-slate-500",
       view: "player-database" as const,
-      category: "system" as const,
+      category: "sport" as const,
     },
     {
       title: "Adventskalender Auswertung",
@@ -374,21 +363,14 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
       icon: Calendar,
       color: "bg-orange-500",
       view: "advent-quiz" as const,
-      category: "system" as const,
+      category: "verein" as const,
     },
   ]
 
   const visibleDashboardCards = dashboardCards.filter((card) => {
-    // Admins: alles
     if (allowedViews?.has("*")) return true
-
-    // Falls Rollen/Permissions noch laden: nichts flickern lassen -> zeig nur "Dashboard" (es gibt aber keine Dashboard-Kachel),
-    // also erstmal gar nichts, bis allowedViews da ist.
     if (allowedViews === null) return false
-
-    // Rechteverwaltung nur für Admins (oder wenn explizit freigegeben)
     if (card.view === "role-permissions") return false
-
     return allowedViews.has(card.view)
   })
 
@@ -396,7 +378,6 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
     if (viewKey === "dashboard") return true
     if (allowedViews?.has("*")) return true
     if (allowedViews === null) return false
-    // Ergebnis-/Historie-Ansicht hängt an Lion Cup
     if ((viewKey === "results" || viewKey === "history") && allowedViews.has("dart-competition")) return true
     return allowedViews.has(viewKey)
   }
@@ -407,15 +388,17 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
       items: [{ key: "dashboard", label: "Dashboard", icon: Home }],
     },
     {
-      label: "Sportbetrieb",
+      label: "Ligabetrieb",
+      items: [{ key: "leagues", label: "Ligaspiele", icon: Target }],
+    },
+    {
+      label: "Turnierbetrieb",
       items: [
-        { key: "leagues", label: "Ligaspiele", icon: Target },
-       
         { key: "tournaments", label: "Turniere", icon: Trophy },
         { key: "tournament-management", label: "Turnier verwalten", icon: Settings },
         { key: "dart-competition", label: "Lion Cup", icon: Trophy },
-        { key: "results", label: "Ergebnisse", icon: Trophy },
         { key: "history", label: "Historie", icon: History },
+        { key: "player-database", label: "Spielerdatenbank", icon: List },
       ],
     },
     {
@@ -439,7 +422,6 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
           badge: unreadCampusCount > 0 ? unreadCampusCount : undefined,
         },
         { key: "credit-loader", label: "Credit-Loader", icon: Zap },
-        { key: "player-database", label: "Spielerdatenbank", icon: List },
         { key: "advent-quiz", label: "Adventskalender", icon: Calendar },
       ],
     },
@@ -455,9 +437,26 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
     }))
     .filter((section) => section.items.length > 0)
 
-  const dashboardSportCards = visibleDashboardCards.filter((c) => c.category === "sport")
-  const dashboardVereinCards = visibleDashboardCards.filter((c) => c.category === "verein")
-  const dashboardSystemCards = visibleDashboardCards.filter((c) => c.category === "system")
+  // Dashboard-Kacheln rechts exakt wie die Navigation links aufteilen
+  const dashboardByNavSection = {
+    "Ligabetrieb": visibleDashboardCards.filter((c) => c.view === "leagues"),
+    "Turnierbetrieb": visibleDashboardCards.filter((c) =>
+      ["tournaments", "tournament-management", "dart-competition", "history", "player-database"].includes(c.view)
+    ),
+    "Verein": visibleDashboardCards.filter((c) =>
+      [
+        "users",
+        "recruitment",
+        "attendance",
+        "events",
+        "club",
+        "support-tickets",
+        "campus-registrations",
+        "credit-loader",
+        "advent-quiz",
+      ].includes(c.view)
+    ),
+  } as const
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -510,18 +509,8 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
       <Header />
 
       <main className="w-full p-4 md:p-8">
-        {/*
-          Header/Breadcrumb oben ausblenden:
-          - "Dashboard" (Breadcrumb)
-          - "Admin-Verwaltung" (Titel)
-          - Beschreibung (Untertitel)
-
-          Falls du später wieder einen Seitentitel willst,
-          kannst du hier eine kleinere Variante einsetzen.
-        */}
-
         {!session ? (
-          <div className="max-w-md mx-auto">
+          <div className="w-full max-w-none">
             <AuthSection
               isVisible={true}
               onLoginSuccess={handleLoginSuccess}
@@ -588,12 +577,7 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
                   </div>
 
                   <div className="p-3 border-t border-gray-100">
-                    <Button
-                      variant="outline"
-                      className="w-full bg-transparent"
-                      onClick={handleLogout}
-                      disabled={loggingOut}
-                    >
+                    <Button variant="outline" className="w-full bg-transparent" onClick={handleLogout} disabled={loggingOut}>
                       {loggingOut ? "Abmelden..." : "Abmelden"}
                     </Button>
                   </div>
@@ -622,9 +606,7 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
                     <div className="space-y-2">
                       {filteredNavSections.map((section) => (
                         <div key={section.label}>
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider py-2">
-                            {section.label}
-                          </div>
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider py-2">{section.label}</div>
                           <div className="space-y-1">
                             {section.items.map((item) => (
                               <Button
@@ -656,12 +638,7 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
                       ))}
                     </div>
                     <div className="mt-4">
-                      <Button
-                        variant="outline"
-                        className="w-full bg-transparent"
-                        onClick={handleLogout}
-                        disabled={loggingOut}
-                      >
+                      <Button variant="outline" className="w-full bg-transparent" onClick={handleLogout} disabled={loggingOut}>
                         {loggingOut ? "Abmelden..." : "Abmelden"}
                       </Button>
                     </div>
@@ -670,710 +647,575 @@ const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
               </div>
 
               <div className="space-y-6">
-            {authMessage && (
-              <div
-                className={`p-4 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  authMessage.includes("fehler") || authMessage.includes("Error")
-                    ? "bg-red-50 text-red-700 border border-red-100"
-                    : "bg-green-50 text-green-700 border border-green-100"
-                }`}
-              >
-                {authMessage}
-              </div>
-            )}
-
-            {currentView === "dashboard" && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="border-0 shadow-md">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ungelesen</div>
-                          <div className="text-2xl font-bold text-gray-900">{unreadApplicationsCount}</div>
-                          <div className="text-sm text-gray-600">Spielerbewerbungen</div>
-                        </div>
-                        <div className="p-3 bg-indigo-50 rounded-xl">
-                          <Mail className="h-5 w-5 text-indigo-600" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-0 shadow-md">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ungelesen</div>
-                          <div className="text-2xl font-bold text-gray-900">{unreadCampusCount}</div>
-                          <div className="text-sm text-gray-600">Campus-Registrierungen</div>
-                        </div>
-                        <div className="p-3 bg-pink-50 rounded-xl">
-                          <Users className="h-5 w-5 text-pink-600" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-0 shadow-md">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Zugriff</div>
-                          <div className="text-2xl font-bold text-gray-900">{allowedViews?.has("*") ? "Alle" : allowedViews?.size ?? 0}</div>
-                          <div className="text-sm text-gray-600">Freigeschaltete(r) Bereich(e)</div>
-                        </div>
-                        <div className="p-3 bg-gray-100 rounded-xl">
-                          <Eye className="h-5 w-5 text-gray-700" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="border-0 shadow-md">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Trophy className="h-5 w-5" />
-                        <span>Sportbetrieb</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {dashboardSportCards.map((card) => (
-                          <button
-                            key={card.view}
-                            onClick={() => setCurrentView(card.view)}
-                            className="text-left group rounded-xl border border-gray-100 bg-white hover:shadow-lg transition-all duration-200 p-4"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className={`p-3 ${card.color} rounded-xl shadow-sm`}>
-                                <card.icon className="h-5 w-5 text-white" />
-                              </div>
-                              {card.badge ? (
-                                <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
-                                  {card.badge}
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="mt-3 font-semibold text-gray-900 group-hover:text-gray-950">{card.title}</div>
-                            <div className="mt-1 text-sm text-gray-600">{card.description}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-0 shadow-md">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Users className="h-5 w-5" />
-                        <span>Vereinsverwaltung</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {dashboardVereinCards.map((card) => (
-                          <button
-                            key={card.view}
-                            onClick={() => setCurrentView(card.view)}
-                            className="text-left group rounded-xl border border-gray-100 bg-white hover:shadow-lg transition-all duration-200 p-4"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className={`p-3 ${card.color} rounded-xl shadow-sm`}>
-                                <card.icon className="h-5 w-5 text-white" />
-                              </div>
-                              {card.badge ? (
-                                <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
-                                  {card.badge}
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="mt-3 font-semibold text-gray-900 group-hover:text-gray-950">{card.title}</div>
-                            <div className="mt-1 text-sm text-gray-600">{card.description}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {dashboardSystemCards.length > 0 && (
-                  <Card className="border-0 shadow-md">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Settings className="h-5 w-5" />
-                        <span>Tools & Auswertungen</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {dashboardSystemCards.map((card) => (
-                          <button
-                            key={card.view}
-                            onClick={() => setCurrentView(card.view)}
-                            className="text-left group rounded-xl border border-gray-100 bg-white hover:shadow-lg transition-all duration-200 p-4"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className={`p-3 ${card.color} rounded-xl shadow-sm`}>
-                                <card.icon className="h-5 w-5 text-white" />
-                              </div>
-                              {card.badge ? (
-                                <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
-                                  {card.badge}
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="mt-3 font-semibold text-gray-900 group-hover:text-gray-950">{card.title}</div>
-                            <div className="mt-1 text-sm text-gray-600">{card.description}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
-
-            {currentView === "players" && <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />}
-
-            {currentView === "results" && (
-              <ResultEntry
-                isVisible={true}
-                user={user}
-                onDataSaved={handleDataSaved}
-                onOpenPlayerList={handleOpenPlayerList}
-                selectedPlayerName={selectedPlayerName}
-                onPlayerNameChange={handlePlayerNameChange}
-                isPlayerSelectedViaModal={isPlayerSelectedViaModal}
-              />
-            )}
-
-            {currentView === "history" && <GameHistoryTable />}
-
-            {currentView === "management" && <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />}
-
-            {currentView === "photos" && <PlayerPhotoManagement user={user} onDataSaved={handleDataSaved} />}
-
-            {currentView === "attendance" && <AttendanceManagement />}
-
-            {currentView === "leagues" && <LeagueManagement />}
-
-            {currentView === "support-tickets" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <HelpCircle className="h-5 w-5" />
-                      <span>Support Tickets verwalten</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">
-                      Hier können Sie alle Support-Anfragen von Vereinsmitgliedern einsehen und bearbeiten.
-                    </p>
-                    <div className="space-y-3">
-                      <Link href="/admin/support-tickets">
-                        <Button className="w-full">
-                          <HelpCircle className="h-4 w-4 mr-2" />
-                          Support Tickets verwalten
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {currentView === "events" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <PartyPopper className="h-5 w-5" />
-                      <span>Veranstaltungen verwalten</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <EventsManagement user={user} />
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {currentView === "recruitment" && (
-              <div className="space-y-6">
-                <div className="flex space-x-4 border-b border-gray-200">
-                  <Button
-                    variant="ghost"
-                    className="pb-2 border-b-2 border-transparent data-[active=true]:border-red-500 data-[active=true]:text-red-600"
-                    data-active={true}
+                {authMessage && (
+                  <div
+                    className={`p-4 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      authMessage.includes("fehler") || authMessage.includes("Error")
+                        ? "bg-red-50 text-red-700 border border-red-100"
+                        : "bg-green-50 text-green-700 border border-green-100"
+                    }`}
                   >
-                    Rekrutierung verwalten
-                  </Button>
-                </div>
+                    {authMessage}
+                  </div>
+                )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <PlusCircle className="h-5 w-5" />
-                        <span>Rekrutierungsbedarf eingeben</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <PlayerRecruitmentForm user={user} onDataSaved={handleDataSaved} />
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <List className="h-5 w-5" />
-                        <span>Aktuelle Rekrutierungen</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <PlayerRecruitmentList onDataSaved={handleDataSaved} />
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Mail className="h-5 w-5" />
-                      <span>Spielerbewerbungen</span>
-                      {unreadApplicationsCount > 0 && (
-                        <Badge className="bg-orange-500 text-white rounded-full px-2 py-0.5 text-xs">
-                          {unreadApplicationsCount}
-                        </Badge>
-                      )}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <PlayerApplicationsList onDataChanged={fetchUnreadApplicationsCount} />
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-
-            {currentView === "role-permissions" && (
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-2xl font-bold">Rechteverwaltung</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Lege den Seitenzugriff fest. (z.B. Supervisor).
-                  </p>
-                </div>
-                <RolePermissionsManager />
-              </div>
-            )}
-
-            {/* ✅ Benutzerverwaltung HUB */}
-            {currentView === "users" && (
-              <div className="space-y-6">
-                <Card className="border-0 shadow-md">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Users className="h-5 w-5" />
-                      <span>Benutzerverwaltung</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">
-                      Konten, Registrierungen und Aktivität der Mitglieder verwalten.
-                    </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {/* 1) bestehende interne Komponente */}
-                      <Button
-                        onClick={() => setCurrentView("user-management-internal")}
-                        variant="outline"
-                        className="w-full justify-start bg-transparent h-auto p-4"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-blue-50">
-                            <Users className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div className="flex flex-col items-start">
-                            <span className="font-semibold">Benutzer bearbeiten</span>
-                            <span className="text-xs text-gray-500">Rollen, Zuordnung, Spieler</span>
-                          </div>
-                        </div>
-                      </Button>
-
-                      {/* 2) admin_qr_codes */}
-                      <Link href="/admin/admin_qr_codes">
-                        <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-amber-50">
-                              <UserCheck className="h-5 w-5 text-amber-600" />
+                {currentView === "dashboard" && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card className="border-0 shadow-md">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ungelesen</div>
+                              <div className="text-2xl font-bold text-gray-900">{unreadApplicationsCount}</div>
+                              <div className="text-sm text-gray-600">Spielerbewerbungen</div>
                             </div>
-                            <div className="flex flex-col items-start">
-                              <span className="font-semibold">Account Anfragen</span>
-                              <span className="text-xs text-gray-500">QR Codes & Registrierung</span>
+                            <div className="p-3 bg-indigo-50 rounded-xl">
+                              <Mail className="h-5 w-5 text-indigo-600" />
                             </div>
                           </div>
-                        </Button>
-                      </Link>
+                        </CardContent>
+                      </Card>
 
-                      {/* 3) neue admin/users Seite */}
-                      <Link href="/admin/users">
-                        <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-green-50">
-                              <Activity className="h-5 w-5 text-green-600" />
+                      <Card className="border-0 shadow-md">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ungelesen</div>
+                              <div className="text-2xl font-bold text-gray-900">{unreadCampusCount}</div>
+                              <div className="text-sm text-gray-600">Campus-Registrierungen</div>
                             </div>
-                            <div className="flex flex-col items-start">
-                              <span className="font-semibold">Online Übersicht</span>
-                              <span className="text-xs text-gray-500">Zuletzt online & registriert</span>
-                            </div>
-                          </div>
-                        </Button>
-                      </Link>
-                      {isAdmin && (
-                        <Button
-                          onClick={() => setCurrentView("role-permissions")}
-                          variant="outline"
-                          className="w-full justify-start bg-transparent h-auto p-4"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-red-50">
-                              <Shield className="h-5 w-5 text-red-600" />
-                            </div>
-                            <div className="flex flex-col items-start">
-                              <span className="font-semibold">Rechteverwaltung</span>
-                              <span className="text-xs text-gray-500">Rollen-Rechte festlegen</span>
+                            <div className="p-3 bg-pink-50 rounded-xl">
+                              <Users className="h-5 w-5 text-pink-600" />
                             </div>
                           </div>
-                        </Button>
-                      )}
+                        </CardContent>
+                      </Card>
 
+                      <Card className="border-0 shadow-md">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Zugriff</div>
+                              <div className="text-2xl font-bold text-gray-900">{allowedViews?.has("*") ? "Alle" : allowedViews?.size ?? 0}</div>
+                              <div className="text-sm text-gray-600">Freigeschaltete(r) Bereich(e)</div>
+                            </div>
+                            <div className="p-3 bg-gray-100 rounded-xl">
+                              <Eye className="h-5 w-5 text-gray-700" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* ✅ interne Unterseite: deine alte UserManagement */}
-            {currentView === "user-management-internal" && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" className="bg-transparent" onClick={() => setCurrentView("users")}>
-                    Zurück
-                  </Button>
-                </div>
-
-                <UserManagement user={user} onDataSaved={handleDataSaved} />
-              </div>
-            )}
-
-            {currentView === "club" && <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />}
-
-            {currentView === "tournaments" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Turnier-Tools</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <Link href="/kratzer-tournament">
-                        <Button variant="outline" className="w-full justify-start bg-transparent">
-                          <Trophy className="h-4 w-4 mr-2" />
-                          Kratzer-Turnier
-                        </Button>
-                      </Link>
-                      <Link href="/dko_tournament_registration">
-                        <Button variant="outline" className="w-full justify-start bg-transparent">
-                          <Trophy className="h-4 w-4 mr-2" />
-                          DKO Turnier
-                        </Button>
-                      </Link>
-
-                      <Link href="/admin/turnier_spieltage_starten">
-                        <Button variant="outline" className="w-full justify-start bg-transparent">
-                          <Trophy className="h-4 w-4 mr-2" />
-                          Turnierserie starten
-                        </Button>
-                      </Link>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {(["Ligabetrieb", "Turnierbetrieb", "Verein"] as const).map((section) => (
+                        <Card key={section} className="border-0 shadow-md">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                              {section === "Ligabetrieb" ? (
+                                <Target className="h-5 w-5" />
+                              ) : section === "Turnierbetrieb" ? (
+                                <Trophy className="h-5 w-5" />
+                              ) : (
+                                <Users className="h-5 w-5" />
+                              )}
+                              <span>{section}</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {dashboardByNavSection[section].map((card) => (
+                                <button
+                                  key={card.view}
+                                  onClick={() => setCurrentView(card.view)}
+                                  className="text-left group rounded-xl border border-gray-100 bg-white hover:shadow-lg transition-all duration-200 p-4"
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className={`p-3 ${card.color} rounded-xl shadow-sm`}>
+                                      <card.icon className="h-5 w-5 text-white" />
+                                    </div>
+                                    {card.badge ? (
+                                      <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
+                                        {card.badge}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                  <div className="mt-3 font-semibold text-gray-900 group-hover:text-gray-950">
+                                    {card.title}
+                                  </div>
+                                  <div className="mt-1 text-sm text-gray-600">{card.description}</div>
+                                </button>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+                  </div>
+                )}
 
-      
+                {currentView === "players" && <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />}
+                {currentView === "history" && <GameHistoryTable />}
+                {currentView === "management" && <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />}
+                {currentView === "attendance" && <AttendanceManagement />}
+                {currentView === "leagues" && <LeagueManagement />}
 
-            {currentView === "player-database" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <List className="h-5 w-5" />
-                      <span>Spielerdatenbank</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">Hier können Sie alle Spielerdaten einsehen und verwalten.</p>
-                    <div className="space-y-3">
-                      <Link href="/spielerdatenbank">
-                        <Button className="w-full">
-                          <List className="h-4 w-4 mr-2" />
-                          Zur Spielerdatenbank
-                        </Button>
-                      </Link>
-                      <Button onClick={handleOpenPlayerList} variant="outline" className="w-full bg-transparent">
-                        <Users className="h-4 w-4 mr-2" />
-                        Spielerliste Modal anzeigen
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {currentView === "dart-competition" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Trophy className="h-5 w-5" />
-                      <span>EMD - LION CUP Verwaltung</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
-                      <Button
-                        onClick={() => setCurrentView("results")}
-                        variant="outline"
-                        className="w-full justify-start bg-transparent h-auto p-4"
-                      >
-                        <div className="flex flex-col items-start space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <Trophy className="h-4 w-4" />
-                            <span className="font-medium">Ergebnisse eingeben</span>
-                          </div>
-                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
+                {currentView === "support-tickets" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <HelpCircle className="h-5 w-5" />
+                          <span>Support Tickets verwalten</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 mb-4">
+                          Hier können Sie alle Support-Anfragen von Vereinsmitgliedern einsehen und bearbeiten.
+                        </p>
+                        <div className="space-y-3">
+                          <Link href="/admin/support-tickets">
+                            <Button className="w-full">
+                              <HelpCircle className="h-4 w-4 mr-2" />
+                              Support Tickets verwalten
+                            </Button>
+                          </Link>
                         </div>
-                      </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
-                      <Button
-                        onClick={() => setCurrentView("history")}
-                        variant="outline"
-                        className="w-full justify-start bg-transparent h-auto p-4"
-                      >
-                        <div className="flex flex-col items-start space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <History className="h-4 w-4" />
-                            <span className="font-medium">Spiele Historie</span>
-                          </div>
-                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
-                        </div>
-                      </Button>
+                {currentView === "events" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <PartyPopper className="h-5 w-5" />
+                          <span>Veranstaltungen verwalten</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <EventsManagement user={user} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
+                {currentView === "recruitment" && (
+                  <div className="space-y-6">
+                    <div className="flex space-x-4 border-b border-gray-200">
                       <Button
-                        onClick={() => setCurrentView("management")}
-                        variant="outline"
-                        className="w-full justify-start bg-transparent h-auto p-4"
+                        variant="ghost"
+                        className="pb-2 border-b-2 border-transparent data-[active=true]:border-red-500 data-[active=true]:text-red-600"
+                        data-active={true}
                       >
-                        <div className="flex flex-col items-start space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <Settings className="h-4 w-4" />
-                            <span className="font-medium">Spielerverwaltung</span>
-                          </div>
-                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
-                        </div>
-                      </Button>
-
-                      <Button
-                        onClick={() => setCurrentView("photos")}
-                        variant="outline"
-                        className="w-full justify-start bg-transparent h-auto p-4"
-                      >
-                        <div className="flex flex-col items-start space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <ImageIcon className="h-4 w-4" />
-                            <span className="font-medium">Spielerfotos</span>
-                          </div>
-                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
-                        </div>
-                      </Button>
-
-                      <Button
-                        onClick={() => setCurrentView("lion-cup-registrations")}
-                        variant="outline"
-                        className="w-full justify-start bg-transparent h-auto p-4"
-                      >
-                        <div className="flex flex-col items-start space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <Eye className="h-4 w-4" />
-                            <span className="font-medium">Turnier Anmeldungen</span>
-                          </div>
-                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
-                        </div>
-                      </Button>
-
-                      <Button
-                        onClick={() => setCurrentView("lion-cup-settings")}
-                        variant="outline"
-                        className="w-full justify-start bg-transparent h-auto p-4"
-                      >
-                        <div className="flex flex-col items-start space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <Settings className="h-4 w-4" />
-                            <span className="font-medium">Lion Cup Settings</span>
-                          </div>
-                          <span className="text-xs text-gray-500">EMD - LION CUP</span>
-                        </div>
+                        Rekrutierung verwalten
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
 
-            {currentView === "lion-cup-registrations" && <TournamentRegistrations />}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <PlusCircle className="h-5 w-5" />
+                            <span>Rekrutierungsbedarf eingeben</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <PlayerRecruitmentForm user={user} onDataSaved={handleDataSaved} />
+                        </CardContent>
+                      </Card>
 
-            {currentView === "tournament-management" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Settings className="h-5 w-5" />
-                      <span>Turnier verwalten</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">Zentrale Verwaltung für Turnier-Struktur, Serien und Spieltage.</p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <Link href="/admin/tournaments">
-                        <Button className="w-full justify-start" variant="outline">
-                          <Settings className="h-4 w-4 mr-2" />
-                          Turnierverwaltung
-                        </Button>
-                      </Link>
-
-                      <Link href="/admin/tournament-schedules">
-                        <Button className="w-full justify-start" variant="outline">
-                          <Trophy className="h-4 w-4 mr-2" />
-                          Turnier-Serien & Spieltage
-                        </Button>
-                      </Link>
-
-                      <Link href="/admin/turnierserie-bearbeiten">
-                        <Button className="w-full justify-start" variant="outline">
-                          <ChevronRight className="h-4 w-4 mr-2" />
-                          Turnier transferieren
-                        </Button>
-                      </Link>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <List className="h-5 w-5" />
+                            <span>Aktuelle Rekrutierungen</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <PlayerRecruitmentList onDataSaved={handleDataSaved} />
+                        </CardContent>
+                      </Card>
                     </div>
 
-                    <div className="mt-4 text-xs text-gray-500">
-                      Tipp: Serien & Spieltage sind die Basis für Startseite/Upcoming — bitte dort zuerst pflegen.
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Mail className="h-5 w-5" />
+                          <span>Spielerbewerbungen</span>
+                          {unreadApplicationsCount > 0 && (
+                            <Badge className="bg-orange-500 text-white rounded-full px-2 py-0.5 text-xs">
+                              {unreadApplicationsCount}
+                            </Badge>
+                          )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <PlayerApplicationsList onDataChanged={fetchUnreadApplicationsCount} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {currentView === "role-permissions" && (
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-2xl font-bold">Rechteverwaltung</h2>
+                      <p className="text-sm text-muted-foreground">Lege den Seitenzugriff fest. (z.B. Supervisor).</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+                    <RolePermissionsManager />
+                  </div>
+                )}
 
-            {currentView === "tournament-series" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Trophy className="h-5 w-5" />
-                      <span>Turnier-Serien & Spieltage</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">Serien anlegen und Spieltage pflegen (inkl. Verschiebungen).</p>
-                    <Link href="/admin/tournament-series">
-                      <Button className="w-full">
-                        <Trophy className="h-4 w-4 mr-2" />
-                        Öffnen
+                {currentView === "users" && (
+                  <div className="space-y-6">
+                    <Card className="border-0 shadow-md">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Users className="h-5 w-5" />
+                          <span>Benutzerverwaltung</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 mb-4">Konten, Registrierungen und Aktivität der Mitglieder verwalten.</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <Button
+                            onClick={() => setCurrentView("user-management-internal")}
+                            variant="outline"
+                            className="w-full justify-start bg-transparent h-auto p-4"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded-lg bg-blue-50">
+                                <Users className="h-5 w-5 text-blue-600" />
+                              </div>
+                              <div className="flex flex-col items-start">
+                                <span className="font-semibold">Benutzer bearbeiten</span>
+                                <span className="text-xs text-gray-500">Rollen, Zuordnung, Spieler</span>
+                              </div>
+                            </div>
+                          </Button>
+
+                          <Link href="/admin/admin_qr_codes">
+                            <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-amber-50">
+                                  <UserCheck className="h-5 w-5 text-amber-600" />
+                                </div>
+                                <div className="flex flex-col items-start">
+                                  <span className="font-semibold">Account Anfragen</span>
+                                  <span className="text-xs text-gray-500">QR Codes & Registrierung</span>
+                                </div>
+                              </div>
+                            </Button>
+                          </Link>
+
+                          <Link href="/admin/users">
+                            <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-green-50">
+                                  <Activity className="h-5 w-5 text-green-600" />
+                                </div>
+                                <div className="flex flex-col items-start">
+                                  <span className="font-semibold">Online Übersicht</span>
+                                  <span className="text-xs text-gray-500">Zuletzt online & registriert</span>
+                                </div>
+                              </div>
+                            </Button>
+                          </Link>
+
+                          {isAdmin && (
+                            <Button
+                              onClick={() => setCurrentView("role-permissions")}
+                              variant="outline"
+                              className="w-full justify-start bg-transparent h-auto p-4"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-red-50">
+                                  <Shield className="h-5 w-5 text-red-600" />
+                                </div>
+                                <div className="flex flex-col items-start">
+                                  <span className="font-semibold">Rechteverwaltung</span>
+                                  <span className="text-xs text-gray-500">Rollen-Rechte festlegen</span>
+                                </div>
+                              </div>
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {currentView === "user-management-internal" && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" className="bg-transparent" onClick={() => setCurrentView("users")}>
+                        Zurück
                       </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+                    </div>
 
-            {currentView === "advent-quiz" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Calendar className="h-5 w-5" />
-                      <span>Adventskalender Auswertung</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">
-                      Hier können Sie alle Quiz-Antworten der Teilnehmer einsehen und die Rangliste verwalten.
-                    </p>
-                    <Link href="/admin/advent-quiz">
-                      <Button className="w-full">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Zur Adventskalender Auswertung
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+                    <UserManagement user={user} onDataSaved={handleDataSaved} />
+                  </div>
+                )}
 
-            {currentView === "campus-registrations" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Users className="h-5 w-5" />
-                      <span>Campus-Registrierungen verwalten</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">
-                      Hier können Sie alle EMD-CAMPUS Anmeldungen einsehen und verwalten.
-                    </p>
-                    <Link href="/admin/campus-registrations">
-                      <Button className="w-full">
-                        <Users className="h-4 w-4 mr-2" />
-                        Zur Campus-Registrierungen Verwaltung
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+                {currentView === "club" && <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />}
 
-            {currentView === "credit-loader" && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Zap className="h-5 w-5" />
-                      <span>Credit-Loader verwalten</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">Hier können Sie Gutscheine und Credits verwalten.</p>
-                    <Link href="/admin/credit-loader">
-                      <Button className="w-full">
-                        <Zap className="h-4 w-4 mr-2" />
-                        Zur Credit-Loader Verwaltung
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+                {currentView === "tournaments" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Turnier-Tools</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <Link href="/kratzer-tournament">
+                            <Button variant="outline" className="w-full justify-start bg-transparent">
+                              <Trophy className="h-4 w-4 mr-2" />
+                              Kratzer-Turnier
+                            </Button>
+                          </Link>
+                          <Link href="/dko_tournament_registration">
+                            <Button variant="outline" className="w-full justify-start bg-transparent">
+                              <Trophy className="h-4 w-4 mr-2" />
+                              DKO Turnier
+                            </Button>
+                          </Link>
 
-            {currentView === "lion-cup-settings" && <SeasonSettingsPage />}
+                          <Link href="/admin/turnier_spieltage_starten">
+                            <Button variant="outline" className="w-full justify-start bg-transparent">
+                              <Trophy className="h-4 w-4 mr-2" />
+                              Turnierserie starten
+                            </Button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {currentView === "player-database" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <List className="h-5 w-5" />
+                          <span>Spielerdatenbank</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 mb-4">Hier können Sie alle Spielerdaten einsehen und verwalten.</p>
+                        <div className="space-y-3">
+                          <Link href="/spielerdatenbank">
+                            <Button className="w-full">
+                              <List className="h-4 w-4 mr-2" />
+                              Zur Spielerdatenbank
+                            </Button>
+                          </Link>
+                          <Button onClick={handleOpenPlayerList} variant="outline" className="w-full bg-transparent">
+                            <Users className="h-4 w-4 mr-2" />
+                            Spielerliste Modal anzeigen
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {currentView === "dart-competition" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Trophy className="h-5 w-5" />
+                          <span>EMD - LION CUP Verwaltung</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
+                          <Button
+                            onClick={() => setCurrentView("history")}
+                            variant="outline"
+                            className="w-full justify-start bg-transparent h-auto p-4"
+                          >
+                            <div className="flex flex-col items-start space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <History className="h-4 w-4" />
+                                <span className="font-medium">Spiele Historie</span>
+                              </div>
+                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
+                            </div>
+                          </Button>
+
+                          <Button
+                            onClick={() => setCurrentView("management")}
+                            variant="outline"
+                            className="w-full justify-start bg-transparent h-auto p-4"
+                          >
+                            <div className="flex flex-col items-start space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <Settings className="h-4 w-4" />
+                                <span className="font-medium">Spielerverwaltung</span>
+                              </div>
+                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
+                            </div>
+                          </Button>
+
+                          <Button
+                            onClick={() => setCurrentView("lion-cup-settings")}
+                            variant="outline"
+                            className="w-full justify-start bg-transparent h-auto p-4"
+                          >
+                            <div className="flex flex-col items-start space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <Settings className="h-4 w-4" />
+                                <span className="font-medium">Lion Cup Settings</span>
+                              </div>
+                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
+                            </div>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {currentView === "tournament-management" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Settings className="h-5 w-5" />
+                          <span>Turnier verwalten</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 mb-4">Zentrale Verwaltung für Turnier-Struktur, Serien und Spieltage.</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <Link href="/admin/tournaments">
+                            <Button className="w-full justify-start" variant="outline">
+                              <Settings className="h-4 w-4 mr-2" />
+                              Turnierverwaltung
+                            </Button>
+                          </Link>
+
+                          <Link href="/admin/tournament-schedules">
+                            <Button className="w-full justify-start" variant="outline">
+                              <Trophy className="h-4 w-4 mr-2" />
+                              Turnier-Serien & Spieltage
+                            </Button>
+                          </Link>
+
+                          <Link href="/admin/turnierserie-bearbeiten">
+                            <Button className="w-full justify-start" variant="outline">
+                              <ChevronRight className="h-4 w-4 mr-2" />
+                              Turnier transferieren
+                            </Button>
+                          </Link>
+                        </div>
+
+                        <div className="mt-4 text-xs text-gray-500">
+                          Tipp: Serien & Spieltage sind die Basis für Startseite/Upcoming — bitte dort zuerst pflegen.
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {currentView === "tournament-series" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Trophy className="h-5 w-5" />
+                          <span>Turnier-Serien & Spieltage</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 mb-4">Serien anlegen und Spieltage pflegen (inkl. Verschiebungen).</p>
+                        <Link href="/admin/tournament-series">
+                          <Button className="w-full">
+                            <Trophy className="h-4 w-4 mr-2" />
+                            Öffnen
+                          </Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {currentView === "advent-quiz" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Calendar className="h-5 w-5" />
+                          <span>Adventskalender Auswertung</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 mb-4">
+                          Hier können Sie alle Quiz-Antworten der Teilnehmer einsehen und die Rangliste verwalten.
+                        </p>
+                        <Link href="/admin/advent-quiz">
+                          <Button className="w-full">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            Zur Adventskalender Auswertung
+                          </Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {currentView === "campus-registrations" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Users className="h-5 w-5" />
+                          <span>Campus-Registrierungen verwalten</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 mb-4">Hier können Sie alle EMD-CAMPUS Anmeldungen einsehen und verwalten.</p>
+                        <Link href="/admin/campus-registrations">
+                          <Button className="w-full">
+                            <Users className="h-4 w-4 mr-2" />
+                            Zur Campus-Registrierungen Verwaltung
+                          </Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {currentView === "credit-loader" && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Zap className="h-5 w-5" />
+                          <span>Credit-Loader verwalten</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 mb-4">Hier können Sie Gutscheine und Credits verwalten.</p>
+                        <Link href="/admin/credit-loader">
+                          <Button className="w-full">
+                            <Zap className="h-4 w-4 mr-2" />
+                            Zur Credit-Loader Verwaltung
+                          </Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {currentView === "lion-cup-settings" && <SeasonSettingsPage />}
               </div>
             </section>
           </div>

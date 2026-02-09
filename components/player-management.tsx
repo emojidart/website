@@ -228,7 +228,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
   if (!isVisible) return null
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full max-w-none">
       <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
         <CardHeader className="border-b border-gray-100 pb-6">
           <div className="flex items-center justify-between">

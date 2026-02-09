@@ -347,7 +347,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
             </div>
             <div>
               <CardTitle className="text-lg">{editingEventId ? "Veranstaltung bearbeiten" : "Neue Veranstaltung anlegen"}</CardTitle>
-              <CardDescription>Details für Partys, Spielabende und andere Veranstaltungen eingeben.</CardDescription>
+              <CardDescription>Turniere, Partys und andere Veranstaltungen anlegen.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -364,7 +364,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   type="text"
                   value={form.name}
                   onChange={handleInputChange}
-                  placeholder="Z.B. Weihnachtsfeier 2025"
+                  placeholder="Z.B. Kratzer Turnier..."
                   required
                   className="h-11"
                 />
@@ -529,14 +529,14 @@ export function EventsManagement({ user }: EventsManagementProps) {
 
                 <div className="space-y-2">
                   <label htmlFor="startgeld_details" className="text-sm font-medium text-gray-700">
-                    Startgeld (Details)
+                    Startgeld
                   </label>
                   <Textarea
                     id="startgeld_details"
                     name="startgeld_details"
                     value={form.startgeld_details}
                     onChange={handleInputChange}
-                    placeholder='Z.B. "10€ Startgeld, 5€ Jackpot"'
+                    placeholder='Z.B. "10"'
                     rows={2}
                     className="resize-none"
                   />
