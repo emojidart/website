@@ -38,6 +38,7 @@ type ChatMessage = {
   room_id: string // uuid as string
   scope: ChatScope
   created_at: string
+  sender_player_id?: string | null
   sender?: { name: string; photo_url: string | null } | null
 }
 
@@ -93,6 +94,30 @@ export default function TeamChatPage() {
   const [roomsLoading, setRoomsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  // Vorstand (club_roles.role = "Vorstand") can see/write in all chats
+  const [isVorstand, setIsVorstand] = useState(false)
+  const [canSeeVorstandChat, setCanSeeVorstandChat] = useState(false)
+
+  const fetchIsVorstand = async () => {
+    if (!profile?.user_id) return
+    const { data, error } = await supabase
+      .from("club_roles")
+      .select("role")
+      .eq("user_id", profile?.user_id)
+
+    if (!error && data) {
+      const isV = data.some((r: any) => r.role === "Vorstand")
+      setIsVorstand(isV)
+      setCanSeeVorstandChat(isV)
+    }
+  }
+  const [vorstandMembers, setVorstandMembers] = useState<VorstandMember[]>([])
+  const [vorstandMembersLoading, setVorstandMembersLoading] = useState(false)
+
+  const vorstandPlayerIdSet = useMemo(() => {
+    return new Set((vorstandMembers || []).map((m) => m.player_id).filter(Boolean))
+  }, [vorstandMembers])
+
   // unreadCounts key: `${roomId}:${scope}`
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
 
@@ -104,10 +129,25 @@ export default function TeamChatPage() {
   const [globalCaptains, setGlobalCaptains] = useState<TeamMember[]>([])
   const [globalCaptainsLoading, setGlobalCaptainsLoading] = useState(false)
 
-  // Vorstand access + members list
-  const [canSeeVorstandChat, setCanSeeVorstandChat] = useState(false)
-  const [vorstandMembers, setVorstandMembers] = useState<VorstandMember[]>([])
-  const [vorstandMembersLoading, setVorstandMembersLoading] = useState(false)
+  useEffect(() => {
+    if (!profile?.id) return
+
+    // Vorstand sieht ALLE Team-Chats (auch ohne Spieler-Zuordnung)
+    if (isVorstand) {
+      fetchAllTeamRooms()
+      return
+    }
+
+    // Alle anderen: nur eigene Team-Chats (über team_members)
+    if (profile.player_id) {
+      fetchMyTeamRooms(profile.player_id)
+    } else {
+      setChatRooms([])
+      setSelectedRoom(null)
+      setRoomsLoading(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, profile?.player_id, isVorstand])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -145,6 +185,7 @@ export default function TeamChatPage() {
   useEffect(() => {
     if (!profile?.id) return
     fetchVorstandAccess()
+    fetchIsVorstand()
     fetchVorstandMembers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id])
@@ -168,7 +209,7 @@ export default function TeamChatPage() {
     return chatRooms.some((r) => r.role === "Captain" || r.role === "Co-Captain")
   }, [chatRooms])
 useEffect(() => {
-    if (selectedScope === "captains" && !canSeeCaptainChat) setSelectedScope("team")
+    if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) setSelectedScope("team")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedScope, canSeeCaptainChat])
 
@@ -210,7 +251,51 @@ useEffect(() => {
     }
   }
 
-  const fetchMyTeamRooms = async (playerId: string) => {
+  
+  const fetchAllTeamRooms = async () => {
+    try {
+      setRoomsLoading(true)
+
+      const { data: teams, error } = await supabase
+        .from("teams")
+        .select("id, name, description, created_at, logo_url")
+        .order("name", { ascending: true })
+
+      if (error) throw error
+
+      const rooms: TeamRoom[] =
+        (teams || []).map((t: any) => ({
+          id: t.id,
+          name: t.name,
+          description: t.description ?? null,
+          created_at: t.created_at,
+          logo_url: t.logo_url ?? null,
+          role: "Vorstand",
+        })) || []
+
+      setChatRooms(rooms)
+
+      if (!["club", "freizeit", "vorstand"].includes(selectedScope)) {
+        let nextSelected = selectedRoom
+        if (!nextSelected && rooms.length > 0) nextSelected = rooms[0]
+        if (nextSelected && !rooms.find((r) => r.id === nextSelected!.id)) nextSelected = rooms[0] ?? null
+        setSelectedRoom(nextSelected ?? null)
+      }
+
+      setTimeout(() => fetchUnreadCounts(rooms), 150)
+    } catch (error) {
+      console.error("Error fetching all team rooms:", error)
+      toast({
+        title: "Fehler",
+        description: "Die Team-Chats konnten nicht geladen werden.",
+        variant: "destructive",
+      })
+    } finally {
+      setRoomsLoading(false)
+    }
+  }
+
+const fetchMyTeamRooms = async (playerId: string) => {
     try {
       setRoomsLoading(true)
 
@@ -496,12 +581,12 @@ useEffect(() => {
       }
     }
 
-    if (selectedScope === "captains" && !canSeeCaptainChat) {
+    if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) {
       setMessages([])
       return
     }
 
-    if (selectedScope === "vorstand" && !canSeeVorstandChat) {
+    if (selectedScope === "vorstand" && !canSeeVorstandChat && !isVorstand) {
       setMessages([])
       return
     }
@@ -554,7 +639,7 @@ useEffect(() => {
       const withSender = rows.map((r) => {
         const playerId = profileToPlayer.get(r.user_id)
         const sender = playerId ? playerMap.get(playerId) ?? null : null
-        return { ...r, sender }
+        return { ...r, sender_player_id: playerId ?? null, sender }
       })
 
       setMessages(withSender as any)
@@ -605,7 +690,7 @@ useEffect(() => {
             if (cp) sender = { name: (cp as any).name, photo_url: (cp as any).photo_url ?? null }
           }
 
-          setMessages((prev) => [...prev, { ...incoming, sender }])
+          setMessages((prev) => [...prev, { ...incoming, sender_player_id: playerId ?? null, sender }])
 
           if (incoming.user_id !== profile?.id) {
             fetchUnreadCounts(chatRooms)
@@ -622,12 +707,12 @@ useEffect(() => {
   const sendMessage = async () => {
     if (!newMessage.trim() || sending) return
 
-    if (selectedScope === "captains" && !canSeeCaptainChat) {
+    if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) {
       toast({ title: "Kein Zugriff", description: "Du bist nicht Captain/Co-Captain.", variant: "destructive" })
       return
     }
 
-    if (selectedScope === "vorstand" && !canSeeVorstandChat) {
+    if (selectedScope === "vorstand" && !canSeeVorstandChat && !isVorstand) {
       toast({ title: "Kein Zugriff", description: "Du bist nicht im Vorstand.", variant: "destructive" })
       return
     }
@@ -847,6 +932,15 @@ setUnreadCounts(counts)
                       <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
                         <X className="h-4 w-4" />
                       </Button>
+
+                      <div className="shrink-0 pt-1">
+                        {isVorstand && (
+                          <Badge variant="secondary" className="gap-1">
+                            <Shield className="h-3.5 w-3.5" />
+                            Vorstand
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
 
@@ -914,7 +1008,7 @@ setUnreadCounts(counts)
                           </div>
                         </Button>
 
-                        {canSeeCaptainChat && (
+                        {(canSeeCaptainChat || isVorstand) && (
                           <Button
                             variant={selectedScope === "captains" ? "default" : "ghost"}
                             className="w-full justify-start h-auto p-3 text-left mt-1"
@@ -1058,7 +1152,7 @@ setUnreadCounts(counts)
               <div className="flex-1 min-w-0">
                 <Card className="h-full border-0 shadow-lg">
                   <CardHeader className="pb-3 border-b border-border">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start justify-between gap-3">
                       <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
                         <Menu className="h-4 w-4" />
                       </Button>
@@ -1180,7 +1274,7 @@ setUnreadCounts(counts)
                           <p className="text-sm">Kein Zugriff auf den Captain-Chat.</p>
                         </div>
                       </div>
-                    ) : selectedScope === "vorstand" && !canSeeVorstandChat ? (
+                    ) : selectedScope === "vorstand" && !canSeeVorstandChat && !isVorstand ? (
                       <div className="flex-1 flex items-center justify-center text-muted-foreground">
                         <div className="text-center">
                           <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -1207,6 +1301,7 @@ setUnreadCounts(counts)
                                 const isOwnMessage = message.user_id === profile?.id
                                 const name = message.sender?.name ?? "Unbekannt"
                                 const photoUrl = message.sender?.photo_url
+                                const isSenderVorstand = !!(message.sender_player_id && vorstandPlayerIdSet.has(message.sender_player_id))
 
                                 return (
                                   <div
@@ -1227,6 +1322,11 @@ setUnreadCounts(counts)
                                     >
                                       <div className="flex items-center gap-2 mb-1">
                                         <span className="text-sm font-medium">{isOwnMessage ? "Du" : name}</span>
+                                        {isSenderVorstand && (
+                                          <span className="ml-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                            🛡️ Vorstand
+                                          </span>
+                                        )}
                                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                                           <Clock className="h-3 w-3" />
                                           {new Date(message.created_at).toLocaleTimeString("de-DE", {
@@ -1253,6 +1353,20 @@ setUnreadCounts(counts)
                         </ScrollArea>
 
                         <div className="p-4 border-t border-border bg-card">
+
+                          {isVorstand && (
+                            <div className="mb-2 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="gap-1">
+                                  <Shield className="h-3.5 w-3.5" />
+                                  Vorstand-Modus
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  Deine Nachrichten sind als Vorstand erkennbar.
+                                </span>
+                              </div>
+                            </div>
+                          )}
                           <div className="flex gap-2">
                             <Input
                               placeholder="Nachricht eingeben..."

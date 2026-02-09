@@ -28,6 +28,13 @@ export async function POST(request: NextRequest) {
       },
     )
 
+    // Optional: attach subscription to logged-in user (does NOT break existing event pushes)
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    const userId = authData?.user?.id ?? null
+    if (authError) {
+      console.warn("[v0] Could not read auth user for subscription:", authError.message)
+    }
+
     const { endpoint, keys } = subscription
 
     const { data: existingSubscription, error: selectError } = await supabase
@@ -49,6 +56,7 @@ export async function POST(request: NextRequest) {
         .update({
           auth: keys?.auth,
           p256dh: keys?.p256dh,
+          user_id: userId,
           last_used: new Date().toISOString(),
         })
         .eq("endpoint", endpoint)
@@ -64,6 +72,8 @@ export async function POST(request: NextRequest) {
           endpoint,
           auth: keys?.auth,
           p256dh: keys?.p256dh,
+          user_id: userId,
+          last_used: new Date().toISOString(),
         })
         .select()
 
