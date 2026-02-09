@@ -26,6 +26,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,7 +52,7 @@ type EventRow = {
 
   // ✅ Turnier
   mode: string | null
-  
+
   startgeld_details: string | null
 
   source: string | null // "internal" | "external"
@@ -236,16 +237,14 @@ export default function VeranstaltungenPage() {
   }, [events, timeFilter, typeFilter, sourceFilter, query])
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-24 md:pb-0">
       <Header />
 
       <section className="bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
             <h1 className="text-3xl sm:text-4xl font-black">Veranstaltungen</h1>
-            <p className="text-orange-100 mt-2">
-              Turniere, Partys und mehr.
-            </p>
+            <p className="text-orange-100 mt-2">Turniere, Partys und mehr.</p>
           </div>
         </div>
       </section>
@@ -255,7 +254,10 @@ export default function VeranstaltungenPage() {
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap gap-2">
-                <Button variant={timeFilter === "upcoming" ? "default" : "outline"} onClick={() => setTimeFilter("upcoming")}>
+                <Button
+                  variant={timeFilter === "upcoming" ? "default" : "outline"}
+                  onClick={() => setTimeFilter("upcoming")}
+                >
                   Anstehend
                 </Button>
                 <Button variant={timeFilter === "past" ? "default" : "outline"} onClick={() => setTimeFilter("past")}>
@@ -336,7 +338,6 @@ export default function VeranstaltungenPage() {
 
                 return (
                   <Card key={e.id} className="border-0 shadow-lg overflow-hidden">
-                    {}
                     {e.photo_url ? (
                       <div className="relative h-40 bg-gray-200">
                         <Image src={e.photo_url} alt={e.name} fill className="object-cover" />
@@ -395,7 +396,6 @@ export default function VeranstaltungenPage() {
                           <span className="line-clamp-1">{e.location || "Wird bekannt gegeben"}</span>
                         </div>
 
-                        {}
                         {isTournament ? (
                           <div className="flex flex-wrap gap-2 pt-1">
                             <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-900 border border-orange-200">
@@ -416,18 +416,13 @@ export default function VeranstaltungenPage() {
                               </span>
                             ) : null}
                           </div>
-                        ) : (
-                       
-                          hasEintritt ? (
-                            <div className="flex flex-wrap gap-2 pt-1">
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-50 text-slate-900 border border-slate-200">
-                                <span className="font-bold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
-                              </span>
-                            </div>
-                          ) : null
-                        )}
-
-                        {}
+                        ) : hasEintritt ? (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-50 text-slate-900 border border-slate-200">
+                              <span className="font-bold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
+                            </span>
+                          </div>
+                        ) : null}
 
                         {e.details ? <div className="text-sm text-gray-600 line-clamp-3 pt-1">{e.details}</div> : null}
                       </div>
@@ -447,6 +442,7 @@ export default function VeranstaltungenPage() {
       </div>
 
       <FAQChatWidget />
+      <MobileBottomNav />
     </div>
   )
 }

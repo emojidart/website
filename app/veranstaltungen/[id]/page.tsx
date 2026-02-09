@@ -25,6 +25,7 @@ import {
   X,
   ZoomIn,
 } from "lucide-react"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -160,7 +161,6 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
         </Button>
       </div>
 
-      {}
       <div
         className="relative w-[96vw] h-[88vh] sm:w-[90vw] sm:h-[88vh] bg-black rounded-xl overflow-hidden shadow-2xl"
         onMouseDown={(e) => e.stopPropagation()}
@@ -229,7 +229,7 @@ export default function VeranstaltungDetailPage() {
   }, [event])
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-24 md:pb-0">
       <Header />
 
       <div className="container mx-auto px-4 py-6">
@@ -372,6 +372,8 @@ export default function VeranstaltungDetailPage() {
           </>
         )}
       </div>
+
+      <MobileBottomNav />
     </div>
   )
 }
