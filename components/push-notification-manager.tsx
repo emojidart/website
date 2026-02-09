@@ -11,9 +11,10 @@ import {
   unsubscribeFromPushNotifications,
 } from "@/lib/push-notifications"
 import { useAuth } from "@/hooks/use-auth"
+import { supabase } from "@/lib/supabase"
 
 export function PushNotificationManager() {
-  const { user, session } = useAuth() as any
+  const { user } = useAuth()
   const [isSupported, setIsSupported] = useState(false)
   const [permission, setPermission] = useState<NotificationPermission>("default")
   const [isSubscribed, setIsSubscribed] = useState(false)
@@ -41,6 +42,28 @@ export function PushNotificationManager() {
     }
   }
 
+  const getValidAccessTokenOrThrow = async (): Promise<string> => {
+    // getSession() kann refresh versuchen -> wenn refresh token kaputt ist, kommt dein Fehler
+    const { data: sessionData, error: sessionErr } = await supabase.auth.getSession()
+    if (sessionErr) {
+      throw new Error(sessionErr.message || "Session Error")
+    }
+
+    const token = sessionData.session?.access_token
+    if (!token) {
+      // Versuche einmal direkt user zu holen (falls session gerade leer ist)
+      const { data: userData, error: userErr } = await supabase.auth.getUser()
+      if (userErr || !userData.user) {
+        throw new Error("Keine gültige Anmeldung gefunden. Bitte neu einloggen.")
+      }
+
+      // Wenn user vorhanden aber token fehlt -> trotzdem neu einloggen erzwingen
+      throw new Error("Session ungültig. Bitte abmelden und neu einloggen.")
+    }
+
+    return token
+  }
+
   const handleSubscribe = async () => {
     if (!user) {
       alert("Bitte melde dich an, um Benachrichtigungen zu aktivieren")
@@ -49,6 +72,18 @@ export function PushNotificationManager() {
 
     setLoading(true)
     try {
+      // ✅ 1) Token validieren (hier kommt sonst dein Refresh-Token Error)
+      let token: string
+      try {
+        token = await getValidAccessTokenOrThrow()
+      } catch (e: any) {
+        // Session kaputt -> sauber ausloggen, damit Login neu sauber passiert
+        await supabase.auth.signOut()
+        alert(e?.message || "Session ungültig. Bitte neu einloggen und erneut versuchen.")
+        return
+      }
+
+      // Registriere Service Worker
       let reg = registration
       if (!reg) {
         reg = await registerServiceWorker()
@@ -56,38 +91,33 @@ export function PushNotificationManager() {
       }
       if (!reg) throw new Error("Service Worker konnte nicht registriert werden")
 
+      // Permission
       const perm = await requestNotificationPermission()
       setPermission(perm)
-
       if (perm !== "granted") {
         alert("Benachrichtigungen wurden nicht erlaubt")
         return
       }
 
+      // Subscribe
       const subscription = await subscribeToPushNotifications(reg)
       if (!subscription) throw new Error("Abonnement fehlgeschlagen")
 
-      // ✅ Token AUS useAuth Session (das ist der richtige Token deines Logins)
-      const token = session?.access_token ?? null
-
+      // ✅ 2) Subscription speichern MIT Token
       const response = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(subscription),
       })
 
       const json = await response.json().catch(() => ({}))
-      console.log("[push] subscribe response:", json)
-
-      if (!response.ok) {
-        throw new Error(json?.error || "Fehler beim Speichern des Abonnements")
-      }
+      if (!response.ok) throw new Error(json?.error || "Fehler beim Speichern des Abonnements")
 
       if (json?.hasUserId === false) {
-        console.warn("[push] Subscription gespeichert, aber user_id wurde NICHT gesetzt (Token fehlt/ungültig).")
+        throw new Error("Push gespeichert, aber User konnte nicht zugeordnet werden. Bitte neu einloggen.")
       }
 
       setIsSubscribed(true)
@@ -108,7 +138,13 @@ export function PushNotificationManager() {
       const subscription = await registration.pushManager.getSubscription()
       if (!subscription) throw new Error("Kein Abonnement gefunden")
 
-      const token = session?.access_token ?? null
+      // Token optional; unsubscribe kann auch ohne gehen, aber wir versuchen sauber
+      let token: string | null = null
+      try {
+        token = await getValidAccessTokenOrThrow()
+      } catch {
+        token = null
+      }
 
       await fetch("/api/push/unsubscribe", {
         method: "POST",
