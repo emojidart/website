@@ -11,10 +11,9 @@ import {
   unsubscribeFromPushNotifications,
 } from "@/lib/push-notifications"
 import { useAuth } from "@/hooks/use-auth"
-import { supabase } from "@/lib/supabase"
 
 export function PushNotificationManager() {
-  const { user } = useAuth()
+  const { user, session } = useAuth() as any
   const [isSupported, setIsSupported] = useState(false)
   const [permission, setPermission] = useState<NotificationPermission>("default")
   const [isSubscribed, setIsSubscribed] = useState(false)
@@ -22,7 +21,6 @@ export function PushNotificationManager() {
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null)
 
   useEffect(() => {
-    // Prüfe, ob Push-Benachrichtigungen unterstützt werden
     const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window
     setIsSupported(supported)
 
@@ -51,18 +49,13 @@ export function PushNotificationManager() {
 
     setLoading(true)
     try {
-      // Registriere Service Worker
       let reg = registration
       if (!reg) {
         reg = await registerServiceWorker()
         setRegistration(reg)
       }
+      if (!reg) throw new Error("Service Worker konnte nicht registriert werden")
 
-      if (!reg) {
-        throw new Error("Service Worker konnte nicht registriert werden")
-      }
-
-      // Fordere Berechtigung an
       const perm = await requestNotificationPermission()
       setPermission(perm)
 
@@ -71,18 +64,12 @@ export function PushNotificationManager() {
         return
       }
 
-      // Abonniere Push-Benachrichtigungen
       const subscription = await subscribeToPushNotifications(reg)
+      if (!subscription) throw new Error("Abonnement fehlgeschlagen")
 
-      if (!subscription) {
-        throw new Error("Abonnement fehlgeschlagen")
-      }
+      // ✅ Token AUS useAuth Session (das ist der richtige Token deines Logins)
+      const token = session?.access_token ?? null
 
-      // ✅ WICHTIG: Access Token holen (Supabase Session liegt oft im localStorage, nicht in Cookies)
-      const { data: sessionData } = await supabase.auth.getSession()
-      const token = sessionData.session?.access_token
-
-      // Speichere Abonnement auf dem Server (mit Bearer Token -> user_id wird gesetzt)
       const response = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: {
@@ -93,14 +80,14 @@ export function PushNotificationManager() {
       })
 
       const json = await response.json().catch(() => ({}))
+      console.log("[push] subscribe response:", json)
 
       if (!response.ok) {
         throw new Error(json?.error || "Fehler beim Speichern des Abonnements")
       }
 
-      // optional: schnelle Debug-Hilfe
       if (json?.hasUserId === false) {
-        console.warn("[push] Subscription saved but hasUserId=false (token missing or invalid)")
+        console.warn("[push] Subscription gespeichert, aber user_id wurde NICHT gesetzt (Token fehlt/ungültig).")
       }
 
       setIsSubscribed(true)
@@ -116,20 +103,13 @@ export function PushNotificationManager() {
   const handleUnsubscribe = async () => {
     setLoading(true)
     try {
-      if (!registration) {
-        throw new Error("Keine Service Worker Registrierung gefunden")
-      }
+      if (!registration) throw new Error("Keine Service Worker Registrierung gefunden")
 
       const subscription = await registration.pushManager.getSubscription()
-      if (!subscription) {
-        throw new Error("Kein Abonnement gefunden")
-      }
+      if (!subscription) throw new Error("Kein Abonnement gefunden")
 
-      // optional Token auch beim unsubscribe mitsenden (schadet nicht)
-      const { data: sessionData } = await supabase.auth.getSession()
-      const token = sessionData.session?.access_token
+      const token = session?.access_token ?? null
 
-      // Abmelden auf dem Server
       await fetch("/api/push/unsubscribe", {
         method: "POST",
         headers: {
@@ -139,9 +119,7 @@ export function PushNotificationManager() {
         body: JSON.stringify({ endpoint: subscription.endpoint }),
       })
 
-      // Lokales Abonnement löschen
       await unsubscribeFromPushNotifications(registration)
-
       setIsSubscribed(false)
       alert("Benachrichtigungen erfolgreich deaktiviert")
     } catch (error) {
