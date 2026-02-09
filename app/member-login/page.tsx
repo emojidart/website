@@ -12,11 +12,12 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 
-import { Mail, Lock, ArrowRight, Users, Crown, ShieldCheck, KeyRound } from "lucide-react"
+import { Mail, Lock, ArrowRight, Users, Crown, ShieldCheck, KeyRound, AlertTriangle, Info } from "lucide-react"
 
 
 export default function MemberLoginPage() {
@@ -45,6 +46,7 @@ function MemberLoginClient() {
   const [loading, setLoading] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
   const [message, setMessage] = useState("")
+  const [isInfoOpen, setIsInfoOpen] = useState(false)
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -129,7 +131,77 @@ function MemberLoginClient() {
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-3">Member-Zugang</h1>
             <p className="text-gray-600 text-lg">Willkommen bei Emoj!&apos;s Dartverein</p>
+          
+          {/* Wichtige Info (Login-Update) */}
+          <div className="mb-6 rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-white p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-extrabold text-gray-900">Wichtige Info</div>
+                    <div className="text-sm text-gray-700">
+                      Falls du dich nicht mehr einloggen kannst, setze bitte dein Passwort einmalig zurück.
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0 rounded-xl border-orange-200 bg-white hover:bg-orange-50"
+                    onClick={() => setIsInfoOpen(true)}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-60" />
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-orange-500" />
+                      </span>
+                      Details
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
+            <DialogContent className="sm:max-w-lg rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Info className="h-5 w-5 text-orange-600" />
+                  Hinweis zum Login
+                </DialogTitle>
+                <DialogDescription>
+                  Infolge eines technischen Sicherheitsupdates kann es vorkommen, dass sich einzelne Benutzer nicht mehr wie gewohnt anmelden können.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3 text-sm text-gray-700">
+                <div className="rounded-xl border bg-gray-50 p-3">
+                  <div className="font-semibold text-gray-900 mb-1">Was ist zu tun?</div>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>Auf <span className="font-semibold">„Passwort vergessen“</span> klicken</li>
+                    <li>E-Mail öffnen und den Link bestätigen</li>
+                    <li>Neues Passwort setzen und erneut anmelden</li>
+                  </ul>
+                </div>
+                <div className="rounded-xl border bg-white p-3">
+                  <div className="font-semibold text-gray-900 mb-1">Warum?</div>
+                  <p>
+                    Durch das Update werden ältere Anmeldeverfahren nicht mehr unterstützt. Das Zurücksetzen des Passworts stellt sicher, dass dein Konto den aktuellen Sicherheitsstandards entspricht.
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button className="rounded-xl" onClick={() => setIsInfoOpen(false)}>
+                  Verstanden
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+</div>
 
           <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
             <CardHeader className="pb-6 text-center">
