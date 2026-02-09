@@ -116,6 +116,11 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "Subscription saved successfully",
       hasUserId: !!userId,
+      debug: {
+        gotAuthorizationHeader: !!authHeader,
+        gotBearerToken: !!bearer,
+        resolvedUserId: userId,
+      },
     })
   } catch (error) {
     console.error("[v0] Error in POST /api/push/subscribe:", error)
