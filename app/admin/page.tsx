@@ -980,7 +980,7 @@ export default function AdminPage() {
                           <Link href="/dko_tournament_registration">
                             <Button variant="outline" className="w-full justify-start bg-transparent">
                               <Trophy className="h-4 w-4 mr-2" />
-                              DKO Turnier
+                              DKO | Round Robin Turnier
                             </Button>
                           </Link>
 

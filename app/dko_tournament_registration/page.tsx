@@ -46,6 +46,149 @@ interface RegisteredPlayer {
   payment_method?: string | null
 }
 
+type TournamentMode = "dko" | "round_robin"
+type RRPlayer = { id: string; name: string }
+
+const makeMatchId = (groupNo: number, roundNo: number, matchNo: number) =>
+  groupNo * 10000 + roundNo * 100 + matchNo
+
+function splitIntoGroups(players: RRPlayer[], groupCount: number): RRPlayer[][] {
+  const groups: RRPlayer[][] = Array.from({ length: groupCount }, () => [])
+  const shuffled = [...players].sort(() => Math.random() - 0.5)
+  shuffled.forEach((p, idx) => groups[idx % groupCount].push(p))
+  return groups
+}
+
+function generateRoundRobinPairs(playersIn: RRPlayer[]) {
+  const BYE: RRPlayer = { id: "__bye__", name: "Freilos" }
+  const players = [...playersIn]
+  if (players.length < 2) return []
+  if (players.length % 2 === 1) players.push(BYE)
+
+  const n = players.length
+  const rounds: Array<{ roundNo: number; pairs: Array<{ a: RRPlayer; b: RRPlayer }> }> = []
+  const arr = [...players]
+
+  for (let r = 0; r < n - 1; r++) {
+    const pairs: Array<{ a: RRPlayer; b: RRPlayer }> = []
+    for (let i = 0; i < n / 2; i++) {
+      const a = arr[i]
+      const b = arr[n - 1 - i]
+      if (a.id !== BYE.id && b.id !== BYE.id) pairs.push({ a, b })
+    }
+    rounds.push({ roundNo: r + 1, pairs })
+
+    // rotate (keep first fixed)
+    const fixed = arr[0]
+    const rest = arr.slice(1)
+    rest.unshift(rest.pop()!)
+    arr.splice(0, arr.length, fixed, ...rest)
+  }
+
+  return rounds
+}
+
+async function createRoundRobinWithSchedule(opts: {
+  name: string
+  groupCount: number
+  players: RRPlayer[]
+}) {
+  const { name, groupCount, players } = opts
+
+  // 1) round_robin anlegen
+  const { data: rr, error: rrErr } = await supabase
+    .from("round_robin")
+    .insert({ name, status: "created" })
+    .select("id")
+    .single()
+
+  if (rrErr) throw rrErr
+  const roundRobinId = rr.id as string
+
+  // 2) groups anlegen
+  const groupInsertRows = Array.from({ length: groupCount }, (_, i) => ({
+    round_robin_id: roundRobinId,
+    group_no: i + 1,
+    name: `Gruppe ${i + 1}`,
+  }))
+
+  const { data: groups, error: gErr } = await supabase
+    .from("round_robin_groups")
+    .insert(groupInsertRows)
+    .select("id, group_no")
+
+  if (gErr) throw gErr
+  if (!groups || groups.length === 0) throw new Error("No groups inserted")
+
+  const groupsByNo = new Map<number, string>()
+  groups.forEach((g: any) => groupsByNo.set(Number(g.group_no), String(g.id)))
+
+  const grouped = splitIntoGroups(players, groupCount)
+
+  const groupPlayerRows: any[] = []
+  const matchRows: any[] = []
+
+  for (let gi = 0; gi < grouped.length; gi++) {
+    const groupNo = gi + 1
+    const groupId = groupsByNo.get(groupNo)
+    if (!groupId) throw new Error(`Missing groupId for group ${groupNo}`)
+
+    const playersInGroup = grouped[gi]
+
+    // group players
+    playersInGroup.forEach((p, idx) => {
+      groupPlayerRows.push({
+        group_id: groupId,
+        player_id: p.id,
+        player_name: p.name,
+        seed: idx + 1,
+      })
+    })
+
+    // schedule
+    const rounds = generateRoundRobinPairs(playersInGroup)
+    rounds.forEach((rnd) => {
+      rnd.pairs.forEach((pair, mi) => {
+        const matchNo = mi + 1
+        matchRows.push({
+  round_robin_id: roundRobinId,
+  group_id: groupId,
+  round_no: rnd.roundNo,
+  match_no: matchNo,
+  player1_id: pair.a.id,
+  player1_name: pair.a.name,
+  player2_id: pair.b.id,
+  player2_name: pair.b.name,
+  planned_machine: null,
+})
+
+      })
+    })
+  }
+
+  if (groupPlayerRows.length) {
+    const { error } = await supabase.from("round_robin_group_players").insert(groupPlayerRows)
+    if (error) throw error
+  }
+
+  if (matchRows.length) {
+    const { error } = await supabase.from("round_robin_matches").insert(matchRows)
+    if (error) throw error
+  }
+
+  // tournaments_status setzen wie bei DKO
+  const { error: statusErr } = await supabase.from("tournaments_status").insert({
+    tournament_id: roundRobinId,
+    tournament_type: "round_robin",
+    tournament_name: name,
+    status: "active",
+  })
+  if (statusErr && (statusErr as any).code !== "23505") throw statusErr
+
+  return { roundRobinId }
+}
+
+
 export default function DKOTournamentRegistration() {
   const { user, isAdmin, loading: authLoading, adminLoading } = useAuth()
   const [availablePlayers, setAvailablePlayers] = useState<Player[]>([])
@@ -56,6 +199,11 @@ export default function DKOTournamentRegistration() {
   const [loading, setLoading] = useState(true)
   const [tournamentName, setTournamentName] = useState("")
   const [tournamentEntryFee, setTournamentEntryFee] = useState("")
+  type TournamentMode = "dko" | "round_robin"
+const [tournamentMode, setTournamentMode] = useState<TournamentMode>("dko")
+const [rrGroupCount, setRrGroupCount] = useState<number>(2)
+const [startingTournament, setStartingTournament] = useState(false)
+
   const [showPaymentWarning, setShowPaymentWarning] = useState(false)
   const [showNameWarning, setShowNameWarning] = useState(false)
   const [playerViewMode, setPlayerViewMode] = useState<"frequent" | "all">("frequent")
@@ -825,21 +973,29 @@ useEffect(() => {
   }
 
   const handleContinueTournament = () => {
-    if (!activeTournament) return
+  if (!activeTournament) return
 
-    const { tournamentType, tournamentId, tournamentName } = activeTournament
-    const encodedName = encodeURIComponent(tournamentName)
+  const { tournamentType, tournamentId, tournamentName } = activeTournament
+  const encodedName = encodeURIComponent(tournamentName)
 
-    const routeMap: Record<string, string> = {
-      "8er_dko": "/8erdko",
-      "16er_dko": "/16erdko",
-      "32er_dko": "/32erdko",
-      "64er_dko": "/64erdko",
-    }
-
-    const route = routeMap[tournamentType] || "/16erdko"
-    router.push(`${route}?tournamentId=${tournamentId}&tournamentName=${encodedName}`)
+  // ✅ Round Robin extra behandeln
+  if (tournamentType === "round_robin") {
+    router.push(`/roundrobin?roundRobinId=${tournamentId}&tournamentName=${encodedName}`)
+    return
   }
+
+  const routeMap: Record<string, string> = {
+    "8er_dko": "/8erdko",
+    "16er_dko": "/16erdko",
+    "32er_dko": "/32erdko",
+    "64er_dko": "/64erdko",
+  }
+
+  const route = routeMap[tournamentType] || "/16erdko"
+
+  router.push(`${route}?tournamentId=${tournamentId}&tournamentName=${encodedName}`)
+}
+
 
   const startScanner = async () => {
     if (!tournamentFormCompleted) {
@@ -1053,7 +1209,8 @@ player_id: spielData.id.toString(),
 
   const tournamentSize = getTournamentSize(registeredPlayers.length)
 
-  const handleStartTournament = () => {
+  const handleStartTournament = async () => {
+
     if (registeredPlayers.length === 0) {
       alert("Bitte registriere mindestens einen Spieler!")
       return
@@ -1070,6 +1227,41 @@ player_id: spielData.id.toString(),
     }
 
     const encodedName = encodeURIComponent(tournamentName.trim())
+	
+	  // ✅ NEW: Round Robin Start
+  if (tournamentMode === "round_robin") {
+    try {
+      setStartingTournament(true)
+
+      const rrPlayers: RRPlayer[] = registeredPlayers
+        .filter((p) => p.player_id && p.player_name)
+        .map((p) => ({ id: String(p.player_id), name: String(p.player_name) }))
+
+      if (rrPlayers.length < 2) {
+        alert("Für Round Robin brauchst du mindestens 2 Spieler.")
+        return
+      }
+
+      const groupCount = Math.max(1, Math.min(8, rrGroupCount || 1))
+
+      const { roundRobinId } = await createRoundRobinWithSchedule({
+        name: tournamentName.trim(),
+        groupCount,
+        players: rrPlayers,
+      })
+
+      // Weiterleiten zur RoundRobin Seite
+      router.push(`/roundrobin?roundRobinId=${roundRobinId}&tournamentName=${encodedName}`)
+      return
+    } catch (e) {
+      console.error("[RR] start error:", e)
+      alert("Fehler beim Starten des Round Robin Turniers. Schau Console / Supabase Logs.")
+      return
+    } finally {
+      setStartingTournament(false)
+    }
+  }
+
 
     if (tournamentSize === 16) {
       router.push(`/16erdko?shuffle=true&tournamentName=${encodedName}`)
@@ -1687,8 +1879,50 @@ player_id: spielData.id.toString(),
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Turnier bereit zum Starten</h3>
                 <p className="text-gray-600">
-                  {registeredPlayers.length} Spieler registriert → {tournamentSize}er DKO Turnier
+                  {registeredPlayers.length} Spieler registriert →{" "}{tournamentMode === "dko" ? `${tournamentSize}er DKO Turnier` : `Round Robin (${rrGroupCount} Gruppen)`}
+
                 </p>
+				
+				
+				<div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-3">
+  <div className="flex items-center gap-2">
+    <span className="text-sm font-bold text-gray-700">Modus:</span>
+
+    <Button
+      type="button"
+      onClick={() => setTournamentMode("dko")}
+      variant={tournamentMode === "dko" ? "default" : "outline"}
+    >
+      DKO
+    </Button>
+
+    <Button
+      type="button"
+      onClick={() => setTournamentMode("round_robin")}
+      variant={tournamentMode === "round_robin" ? "default" : "outline"}
+    >
+      Round Robin
+    </Button>
+  </div>
+
+  {tournamentMode === "round_robin" && (
+    <div className="flex items-center gap-2">
+      <span className="text-sm font-bold text-gray-700">Gruppen:</span>
+      <input
+        type="number"
+        min={1}
+        max={8}
+        value={rrGroupCount}
+        onChange={(e) => setRrGroupCount(Math.max(1, Math.min(8, Number(e.target.value) || 1)))}
+        className="w-20 px-3 py-2 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none bg-white shadow-md"
+      />
+    </div>
+  )}
+</div>
+
+				
+				
+				
                 <div className="flex items-center gap-2 mt-2">
                   <Euro className="w-5 h-5 text-orange-600" />
                   <span className={`font-semibold ${allPlayersPaid ? "text-green-600" : "text-orange-600"}`}>
@@ -1698,7 +1932,8 @@ player_id: spielData.id.toString(),
               </div>
               <button
                 onClick={handleStartTournament}
-                disabled={!allPlayersPaid}
+                disabled={!allPlayersPaid || startingTournament}
+
                 className={`flex items-center gap-2 font-bold py-3 px-6 rounded-lg transition-colors ${
                   allPlayersPaid
                     ? "bg-orange-500 hover:bg-orange-600 text-white"
@@ -1706,7 +1941,8 @@ player_id: spielData.id.toString(),
                 }`}
               >
                 <Play className="w-5 h-5" />
-                Turnier starten
+                {startingTournament ? "Starte..." : "Turnier starten"}
+
               </button>
             </div>
           </div>
