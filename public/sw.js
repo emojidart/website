@@ -1,105 +1,97 @@
-// sw.js
-// Service Worker for Push Notifications
+// sw.js - Service Worker for Push Notifications (Android/Chrome friendly)
 
 self.addEventListener("install", (event) => {
-  console.log("[v4] Service Worker installing...")
+  console.log("[sw] installing...")
   self.skipWaiting()
 })
 
 self.addEventListener("activate", (event) => {
-  console.log("[v4] Service Worker activated")
+  console.log("[sw] activated")
   event.waitUntil(clients.claim())
 })
 
-// Handle push notifications
 self.addEventListener("push", (event) => {
-  console.log("[v4] Push notification received:", event)
+  console.log("[sw] push received")
 
-  let notificationData = {
-    title: "EMD Vereinsapp",
-    body: "Neue Benachrichtigung",
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
-    image: undefined,
-    tag: "emd-notification",
-    renotify: false,
-    data: {},
-  }
-
+  let payload = {}
   if (event.data) {
     try {
-      const data = event.data.json()
-
-      const mergedData = data?.data && typeof data.data === "object" ? data.data : {}
-
-      notificationData = {
-        title: data.title || notificationData.title,
-        body: data.body || notificationData.body,
-        icon: data.icon || notificationData.icon,
-        badge: data.badge || notificationData.badge,
-        image: data.image || notificationData.image,
-        tag: data.tag || notificationData.tag,
-        renotify: !!data.renotify,
-        data: {
-          ...mergedData,
-          url: data.url ?? mergedData.url,
-          link: data.link ?? mergedData.link,
-          room_id: data.room_id ?? mergedData.room_id,
-          scope: data.scope ?? mergedData.scope,
-        },
-      }
+      payload = event.data.json()
     } catch (e) {
-      console.error("[v4] Error parsing push data:", e)
+      console.error("[sw] could not parse push payload as json:", e)
+      payload = {}
     }
   }
 
-  const notificationOptions = {
-    body: notificationData.body,
-    icon: notificationData.icon,
-    badge: notificationData.badge,
-    data: notificationData.data,
+  const title = payload.title || "EMD Vereinsapp"
+
+  const dataObj = payload.data && typeof payload.data === "object" ? payload.data : {}
+
+  const options = {
+    body: payload.body || "Neue Benachrichtigung",
+    icon: payload.icon || "/icon-192.png",
+    badge: payload.badge || "/icon-192.png",
+
+    // Gruppierung pro Chat
+    tag: payload.tag || "emd-notification",
+    renotify: !!payload.renotify,
+
+    // wichtig fürs routing beim click
+    data: {
+      ...dataObj,
+      // fallback url
+      url: dataObj.url || payload.url || "/",
+    },
+
+    // Android nice
     vibrate: [200, 100, 200],
-
-    // ✅ Gruppierung pro Chat
-    tag: notificationData.tag,
-
-    // ✅  wenn gleiche tag... soll neue Nachricht trotzdem vibrieren
-    renotify: notificationData.renotify,
   }
 
-  if (notificationData.image) {
-    notificationOptions.image = notificationData.image
+  if (typeof payload.timestamp === "number") {
+    options.timestamp = payload.timestamp
   }
 
-  event.waitUntil(self.registration.showNotification(notificationData.title, notificationOptions))
+  if (payload.image) {
+    options.image = payload.image
+  }
+
+  if (Array.isArray(payload.actions)) {
+    options.actions = payload.actions
+  }
+
+  event.waitUntil(self.registration.showNotification(title, options))
 })
 
-// Handle notification clicks
 self.addEventListener("notificationclick", (event) => {
-  console.log("[v4] Notification clicked:", event)
+  const action = event.action // "open" | "reply" | "" (body click)
+  const data = event.notification?.data || {}
   event.notification.close()
 
-  const data = event.notification?.data || {}
   const isChatPush = !!data.scope && !!data.room_id
 
-  // Default fallback for non-chat pushes:
-  let targetUrl = data.url || data.link || "/veranstaltungen"
+  let targetUrl = data.url || "/veranstaltungen"
 
   if (isChatPush) {
     const scope = encodeURIComponent(String(data.scope))
     const room = encodeURIComponent(String(data.room_id))
     targetUrl = `/chat-app?scope=${scope}&roomId=${room}`
+
+    // optional: wenn "reply" gedrückt wurde, könntest du z.B. ?focus=reply setzen
+    if (action === "reply") {
+      targetUrl += "&focus=reply"
+    }
   }
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      const targetOrigin = self.location.origin
+      const origin = self.location.origin
       let bestClient = null
 
       for (const client of clientList) {
         if (!client?.url) continue
-        if (!client.url.startsWith(targetOrigin)) continue
+        if (!client.url.startsWith(origin)) continue
 
+        // wenn chat schon offen: den nehmen
         if (client.url.includes("/chat-app")) {
           bestClient = client
           break

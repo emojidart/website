@@ -5,11 +5,6 @@ import webpush from "web-push"
 
 type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand"
 
-const CLUB_ROOM_ID = "11111111-1111-1111-1111-111111111111"
-const FREIZEIT_ROOM_ID = "22222222-2222-2222-2222-222222222222"
-const VORSTAND_ROOM_ID = "33333333-3333-3333-3333-333333333333"
-const CAPTAINS_ROOM_ID = "44444444-4444-4444-4444-444444444444"
-
 const ROLE_TABLE = "club_roles"
 const BOARD_ROLES = ["Vorstand", "Kassier", "Schriftführer"]
 
@@ -19,7 +14,6 @@ const THROTTLE_SECONDS = 0
 function nowIso() {
   return new Date().toISOString()
 }
-
 function secondsAgoIso(sec: number) {
   return new Date(Date.now() - sec * 1000).toISOString()
 }
@@ -110,9 +104,9 @@ export async function POST(request: NextRequest) {
       if ((cp as any)?.name) senderName = (cp as any).name
     }
 
-    // Standard Icons
+    // --- Standard Icons (WICHTIG: badge != icon ist schöner auf Android)
     const DEFAULT_ICON = "/icon-192.png"
-    const DEFAULT_BADGE = "/icon-192.png"
+    const DEFAULT_BADGE = "/badge-72.png" // <-- leg diese Datei an (kleines, simples Badge)
 
     let iconToUse = DEFAULT_ICON
     let badgeToUse = DEFAULT_BADGE
@@ -130,7 +124,7 @@ export async function POST(request: NextRequest) {
       const teamName = (teamRow as any)?.name as string | null
       const logoUrl = (teamRow as any)?.logo_url as string | null
 
-      if (teamName) titleToUse = `⚽ ${teamName}`
+      if (teamName) titleToUse = `🎯 ${teamName}`
       if (logoUrl) iconToUse = logoUrl
     } else if (scope === "vorstand") {
       titleToUse = `🛡️ ${pickTitle(scope)}`
@@ -216,8 +210,6 @@ export async function POST(request: NextRequest) {
 
     const allSubs = (subs as any[]) || []
 
-    // ✅ Throttle deaktiviert => ALLE subs nehmen
-    // (Wenn THROTTLE_SECONDS > 0, dann filtern wir wie früher)
     const cutoff = THROTTLE_SECONDS > 0 ? secondsAgoIso(THROTTLE_SECONDS) : null
     const toSend =
       THROTTLE_SECONDS > 0 ? allSubs.filter((s) => !s.last_used || s.last_used < cutoff!) : allSubs
@@ -239,6 +231,7 @@ export async function POST(request: NextRequest) {
     const chatBody = `${senderName}: ${normalizePreview(message)}`
     const chatTag = makeChatTag(scope, room_id)
 
+    // ✅ ANDROID: Actions + data + timestamp geben das "App Feeling"
     const payload = JSON.stringify({
       title: titleToUse,
       body: chatBody,
@@ -246,9 +239,23 @@ export async function POST(request: NextRequest) {
       badge: badgeToUse,
       tag: chatTag,
       renotify: true,
-      url: "/chat-app",
-      room_id,
-      scope,
+      timestamp: Date.now(),
+
+      actions: [
+        { action: "open", title: "Öffnen" },
+        { action: "reply", title: "Antworten" },
+      ],
+
+      // Alles was du fürs Routing brauchst in data:
+      data: {
+        url: "/chat-app",
+        room_id,
+        scope,
+        senderName,
+      },
+
+      // optional später:
+      // image: "https://.../banner.png",
     })
 
     // Send pushes
@@ -278,7 +285,7 @@ export async function POST(request: NextRequest) {
       }),
     )
 
-    // last_used trotzdem updaten (nur Tracking)
+    // last_used updaten (Tracking)
     if (updatedIds.length > 0) {
       await supabase.from("push_subscriptions").update({ last_used: nowIso() }).in("id", updatedIds)
     }
