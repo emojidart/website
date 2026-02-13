@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand"
 
@@ -75,6 +75,22 @@ export default function TeamChatPage() {
   const { session } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // ✅ Query-Params nur 1x beim ersten Render einfrieren (Hook darf NICHT außerhalb der Komponente verwendet werden)
+  const initialParamsRef = useRef<{ roomId: string | null; scope: ChatScope | null } | null>(null)
+  const initialAppliedRef = useRef(false)
+
+  if (!initialParamsRef.current) {
+    const scopeRaw = searchParams.get("scope") as ChatScope | null
+    const scope: ChatScope | null =
+      scopeRaw && (["team", "captains", "club", "freizeit", "vorstand"] as const).includes(scopeRaw) ? scopeRaw : null
+
+    initialParamsRef.current = {
+      roomId: searchParams.get("roomId"),
+      scope,
+    }
+  }
 
   const [profile, setProfile] = useState<UserProfileLite | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
@@ -100,10 +116,7 @@ export default function TeamChatPage() {
 
   const fetchIsVorstand = async () => {
     if (!profile?.user_id) return
-    const { data, error } = await supabase
-      .from("club_roles")
-      .select("role")
-      .eq("user_id", profile?.user_id)
+    const { data, error } = await supabase.from("club_roles").select("role").eq("user_id", profile?.user_id)
 
     if (!error && data) {
       const isV = data.some((r: any) => r.role === "Vorstand")
@@ -111,6 +124,7 @@ export default function TeamChatPage() {
       setCanSeeVorstandChat(isV)
     }
   }
+
   const [vorstandMembers, setVorstandMembers] = useState<VorstandMember[]>([])
   const [vorstandMembersLoading, setVorstandMembersLoading] = useState(false)
 
@@ -128,6 +142,34 @@ export default function TeamChatPage() {
   // GLOBAL captains/co-captains across all teams
   const [globalCaptains, setGlobalCaptains] = useState<TeamMember[]>([])
   const [globalCaptainsLoading, setGlobalCaptainsLoading] = useState(false)
+
+  const applyInitialSelection = (rooms: TeamRoom[]) => {
+    if (initialAppliedRef.current) return
+    const init = initialParamsRef.current
+    if (!init) return
+
+    const scopeToUse: ChatScope = init.scope ?? "team"
+
+    // Scope setzen (mit Access-Checks)
+    if (scopeToUse === "vorstand" && !canSeeVorstandChat && !isVorstand) {
+      // kein Zugriff -> ignorieren
+    } else if (scopeToUse === "captains") {
+      // Zugriff-Check passiert später via canSeeCaptainChat effect
+      setSelectedScope("captains")
+    } else if (scopeToUse !== "team") {
+      setSelectedScope(scopeToUse)
+    } else {
+      setSelectedScope("team")
+    }
+
+    // Teamraum auswählen falls team + roomId
+    if (scopeToUse === "team" && init.roomId) {
+      const found = rooms.find((r) => r.id === init.roomId) ?? null
+      if (found) setSelectedRoom(found)
+    }
+
+    initialAppliedRef.current = true
+  }
 
   useEffect(() => {
     if (!profile?.id) return
@@ -190,8 +232,7 @@ export default function TeamChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id])
 
-  // Wenn man im Captain-Chat ist, aber in keinem Team Captain/Co-Captain ist, zurück zum Team-Chat
-    // Load messages whenever target changes
+  // Load messages whenever target changes
   useEffect(() => {
     fetchMessages()
     markCurrentAsVisited()
@@ -208,11 +249,11 @@ export default function TeamChatPage() {
     // Zugriff auf globalen Captain-Chat, wenn du in irgendeinem Team Captain/Co-Captain bist
     return chatRooms.some((r) => r.role === "Captain" || r.role === "Co-Captain")
   }, [chatRooms])
-useEffect(() => {
+
+  useEffect(() => {
     if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) setSelectedScope("team")
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedScope, canSeeCaptainChat])
-
+  }, [selectedScope, canSeeCaptainChat, isVorstand])
 
   const currentRoomId = useMemo(() => {
     if (selectedScope === "club") return CLUB_ROOM_ID
@@ -226,8 +267,9 @@ useEffect(() => {
     if (selectedScope === "club") return "Vereinsinfo"
     if (selectedScope === "freizeit") return "Freizeit"
     if (selectedScope === "vorstand") return "Vorstand"
+    if (selectedScope === "captains") return "Captain-Chat"
     if (!selectedRoom) return "Team-Chat"
-    return selectedScope === "captains" ? "Captain-Chat" : selectedRoom.name
+    return selectedRoom.name
   }, [selectedRoom, selectedScope])
 
   const unreadKey = (roomId: string, scope: ChatScope) => `${roomId}:${scope}`
@@ -251,7 +293,6 @@ useEffect(() => {
     }
   }
 
-  
   const fetchAllTeamRooms = async () => {
     try {
       setRoomsLoading(true)
@@ -273,9 +314,14 @@ useEffect(() => {
           role: "Vorstand",
         })) || []
 
+      rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+
       setChatRooms(rooms)
 
-      if (!["club", "freizeit", "vorstand"].includes(selectedScope)) {
+      // ✅ URL-Auswahl anwenden (nur 1x)
+      applyInitialSelection(rooms)
+
+      if (!["club", "freizeit", "vorstand", "captains"].includes(selectedScope)) {
         let nextSelected = selectedRoom
         if (!nextSelected && rooms.length > 0) nextSelected = rooms[0]
         if (nextSelected && !rooms.find((r) => r.id === nextSelected!.id)) nextSelected = rooms[0] ?? null
@@ -295,7 +341,7 @@ useEffect(() => {
     }
   }
 
-const fetchMyTeamRooms = async (playerId: string) => {
+  const fetchMyTeamRooms = async (playerId: string) => {
     try {
       setRoomsLoading(true)
 
@@ -327,8 +373,10 @@ const fetchMyTeamRooms = async (playerId: string) => {
 
       setChatRooms(rooms)
 
-      // Keep selection only if not in global chats
-      if (!["club", "freizeit", "vorstand"].includes(selectedScope)) {
+      // ✅ URL-Auswahl anwenden (nur 1x)
+      applyInitialSelection(rooms)
+
+      if (!["club", "freizeit", "vorstand", "captains"].includes(selectedScope)) {
         let nextSelected = selectedRoom
         if (!nextSelected && rooms.length > 0) nextSelected = rooms[0]
         if (nextSelected && !rooms.find((r) => r.id === nextSelected!.id)) nextSelected = rooms[0] ?? null
@@ -368,10 +416,7 @@ const fetchMyTeamRooms = async (playerId: string) => {
         return
       }
 
-      const { data: players, error: pErr } = await supabase
-        .from("club_players")
-        .select("id, name, photo_url")
-        .in("id", playerIds)
+      const { data: players, error: pErr } = await supabase.from("club_players").select("id, name, photo_url").in("id", playerIds)
 
       if (pErr) throw pErr
 
@@ -434,10 +479,7 @@ const fetchMyTeamRooms = async (playerId: string) => {
         return
       }
 
-      const { data: players, error: pErr } = await supabase
-        .from("club_players")
-        .select("id, name, photo_url")
-        .in("id", playerIds)
+      const { data: players, error: pErr } = await supabase.from("club_players").select("id, name, photo_url").in("id", playerIds)
 
       if (pErr) throw pErr
 
@@ -489,12 +531,10 @@ const fetchMyTeamRooms = async (playerId: string) => {
     }
   }
 
-  
   const fetchVorstandMembers = async () => {
     try {
       setVorstandMembersLoading(true)
 
-      // club_roles: user_id = auth.uid, role = text (Vorstand, Kassier, Schriftführer, ...)
       const { data: roles, error: rolesError } = await supabase
         .from(ROLE_TABLE)
         .select(`${ROLE_PROFILE_COL}, role`)
@@ -529,10 +569,7 @@ const fetchMyTeamRooms = async (playerId: string) => {
         return
       }
 
-      const { data: players, error: playersError } = await supabase
-        .from("club_players")
-        .select("id, name, photo_url")
-        .in("id", playerIds)
+      const { data: players, error: playersError } = await supabase.from("club_players").select("id, name, photo_url").in("id", playerIds)
 
       if (playersError) throw playersError
 
@@ -571,7 +608,6 @@ const fetchMyTeamRooms = async (playerId: string) => {
       setVorstandMembersLoading(false)
     }
   }
-
 
   const fetchMessages = async () => {
     if (selectedScope === "team") {
@@ -625,9 +661,7 @@ const fetchMyTeamRooms = async (playerId: string) => {
         if (p?.id && p?.player_id) profileToPlayer.set(p.id, p.player_id)
       })
 
-      const playerIds = Array.from(
-        new Set((profiles as any[] | null)?.map((p) => p.player_id).filter(Boolean) ?? []),
-      )
+      const playerIds = Array.from(new Set((profiles as any[] | null)?.map((p) => p.player_id).filter(Boolean) ?? []))
 
       const { data: players } = await supabase.from("club_players").select("id,name,photo_url").in("id", playerIds)
 
@@ -673,20 +707,12 @@ const fetchMyTeamRooms = async (playerId: string) => {
           const incoming = payload.new as any
           if ((incoming.scope as ChatScope) !== selectedScope) return
 
-          const { data: prof } = await supabase
-            .from("user_profiles")
-            .select("player_id")
-            .eq("id", incoming.user_id)
-            .maybeSingle()
+          const { data: prof } = await supabase.from("user_profiles").select("player_id").eq("id", incoming.user_id).maybeSingle()
 
           let sender: { name: string; photo_url: string | null } | null = null
           const playerId = (prof as any)?.player_id
           if (playerId) {
-            const { data: cp } = await supabase
-              .from("club_players")
-              .select("name,photo_url")
-              .eq("id", playerId)
-              .maybeSingle()
+            const { data: cp } = await supabase.from("club_players").select("name,photo_url").eq("id", playerId).maybeSingle()
             if (cp) sender = { name: (cp as any).name, photo_url: (cp as any).photo_url ?? null }
           }
 
@@ -705,78 +731,77 @@ const fetchMyTeamRooms = async (playerId: string) => {
   }
 
   const sendMessage = async () => {
-  if (!newMessage.trim() || sending) return
+    if (!newMessage.trim() || sending) return
 
-  if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) {
-    toast({ title: "Kein Zugriff", description: "Du bist nicht Captain/Co-Captain.", variant: "destructive" })
-    return
-  }
-
-  if (selectedScope === "vorstand" && !canSeeVorstandChat && !isVorstand) {
-    toast({ title: "Kein Zugriff", description: "Du bist nicht im Vorstand.", variant: "destructive" })
-    return
-  }
-
-  if (selectedScope === "team" && !selectedRoom) return
-
-  if (!profile?.id) {
-    toast({
-      title: "Profil fehlt",
-      description: "Dein Benutzerprofil ist nicht eingerichtet. Bitte melde dich beim Admin.",
-      variant: "destructive",
-    })
-    return
-  }
-
-  const roomId = currentRoomId
-  if (!roomId) return
-
-  try {
-    setSending(true)
-
-    const msg = newMessage.trim()
-
-    const { error } = await supabase.from("chat_messages").insert({
-      user_id: profile.id,
-      message: msg,
-      room_id: roomId,
-      scope: selectedScope,
-    })
-
-    if (error) throw error
-
-    setNewMessage("")
-    markCurrentAsVisited()
-
-    // ✅ Push (best-effort, nie blockieren)
-    const token = (session as any)?.access_token
-    if (token) {
-      fetch("/api/push/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          room_id: roomId,
-          scope: selectedScope,
-          message: msg,
-          sender_profile_id: profile.id,
-        }),
-      }).catch(() => {})
+    if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) {
+      toast({ title: "Kein Zugriff", description: "Du bist nicht Captain/Co-Captain.", variant: "destructive" })
+      return
     }
-  } catch (error) {
-    console.error("Error sending message:", error)
-    toast({
-      title: "Fehler",
-      description: "Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
-      variant: "destructive",
-    })
-  } finally {
-    setSending(false)
-  }
-}
 
+    if (selectedScope === "vorstand" && !canSeeVorstandChat && !isVorstand) {
+      toast({ title: "Kein Zugriff", description: "Du bist nicht im Vorstand.", variant: "destructive" })
+      return
+    }
+
+    if (selectedScope === "team" && !selectedRoom) return
+
+    if (!profile?.id) {
+      toast({
+        title: "Profil fehlt",
+        description: "Dein Benutzerprofil ist nicht eingerichtet. Bitte melde dich beim Admin.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const roomId = currentRoomId
+    if (!roomId) return
+
+    try {
+      setSending(true)
+
+      const msg = newMessage.trim()
+
+      const { error } = await supabase.from("chat_messages").insert({
+        user_id: profile.id,
+        message: msg,
+        room_id: roomId,
+        scope: selectedScope,
+      })
+
+      if (error) throw error
+
+      setNewMessage("")
+      markCurrentAsVisited()
+
+      // ✅ Push (best-effort, nie blockieren)
+      const token = (session as any)?.access_token
+      if (token) {
+        fetch("/api/push/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            room_id: roomId,
+            scope: selectedScope,
+            message: msg,
+            sender_profile_id: profile.id,
+          }),
+        }).catch(() => {})
+      }
+    } catch (error) {
+      console.error("Error sending message:", error)
+      toast({
+        title: "Fehler",
+        description: "Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
+    } finally {
+      setSending(false)
+    }
+  }
 
   const fetchUnreadCounts = async (roomsOverride?: TeamRoom[]) => {
     const rooms = roomsOverride ?? chatRooms
@@ -847,7 +872,7 @@ const fetchMyTeamRooms = async (playerId: string) => {
         counts[unreadKey(room.id, scope)] = count || 0
       }
 
-setUnreadCounts(counts)
+      setUnreadCounts(counts)
     } catch (error) {
       console.error("Error fetching unread counts:", error)
     }
@@ -933,9 +958,7 @@ setUnreadCounts(counts)
             </Card>
           ) : (
             <div className="flex h-[calc(100vh-200px)] gap-4">
-              {sidebarOpen && (
-                <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-              )}
+              {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
               {/* Sidebar */}
               <div
@@ -1106,7 +1129,7 @@ setUnreadCounts(counts)
                         </div>
                       ) : chatRooms.length === 0 ? (
                         <div className="p-4 text-center text-muted-foreground">
-                          <Hash className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                          <Hash className="h-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
                           <p className="text-sm">Du bist in keinem Team.</p>
                         </div>
                       ) : (
@@ -1211,11 +1234,7 @@ setUnreadCounts(counts)
                             <Users className="h-3.5 w-3.5" />
                             <span className="truncate">
                               Team:{" "}
-                              {membersLoading
-                                ? "Lade..."
-                                : teamMembers.length === 0
-                                  ? "—"
-                                  : teamMembers.map((m) => m.name).join(", ")}
+                              {membersLoading ? "Lade..." : teamMembers.length === 0 ? "—" : teamMembers.map((m) => m.name).join(", ")}
                             </span>
                           </div>
                         )}
@@ -1249,25 +1268,22 @@ setUnreadCounts(counts)
                         )}
                       </div>
 
-                      {selectedScope !== "club" &&
-                        selectedScope !== "freizeit" &&
-                        selectedScope !== "vorstand" &&
-                        selectedRoom && (
-                          <div className="hidden sm:flex gap-2">
-                            <Button size="sm" variant={selectedScope === "team" ? "default" : "outline"} onClick={() => setSelectedScope("team")}>
-                              Team
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={selectedScope === "captains" ? "default" : "outline"}
-                              onClick={() => setSelectedScope("captains")}
-                              disabled={!canSeeCaptainChat}
-                              title={!canSeeCaptainChat ? "Nur Captain/Co-Captain" : undefined}
-                            >
-                              Captain
-                            </Button>
-                          </div>
-                        )}
+                      {selectedScope !== "club" && selectedScope !== "freizeit" && selectedScope !== "vorstand" && selectedRoom && (
+                        <div className="hidden sm:flex gap-2">
+                          <Button size="sm" variant={selectedScope === "team" ? "default" : "outline"} onClick={() => setSelectedScope("team")}>
+                            Team
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={selectedScope === "captains" ? "default" : "outline"}
+                            onClick={() => setSelectedScope("captains")}
+                            disabled={!canSeeCaptainChat}
+                            title={!canSeeCaptainChat ? "Nur Captain/Co-Captain" : undefined}
+                          >
+                            Captain
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardHeader>
 
@@ -1277,12 +1293,7 @@ setUnreadCounts(counts)
                         <div className="text-center">
                           <Hash className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                           <p className="text-sm">Wähle ein Team aus der Seitenleiste</p>
-                          <Button
-                            variant="outline"
-                            className="mt-4 lg:hidden bg-transparent"
-                            size="sm"
-                            onClick={() => setSidebarOpen(true)}
-                          >
+                          <Button variant="outline" className="mt-4 lg:hidden bg-transparent" size="sm" onClick={() => setSidebarOpen(true)}>
                             <Menu className="h-4 w-4 mr-2" />
                             Chats anzeigen
                           </Button>
@@ -1325,10 +1336,7 @@ setUnreadCounts(counts)
                                 const isSenderVorstand = !!(message.sender_player_id && vorstandPlayerIdSet.has(message.sender_player_id))
 
                                 return (
-                                  <div
-                                    key={message.id}
-                                    className={`flex gap-3 ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}
-                                  >
+                                  <div key={message.id} className={`flex gap-3 ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}>
                                     <Avatar className="w-8 h-8 flex-shrink-0">
                                       <AvatarImage src={photoUrl || "/placeholder.svg"} alt={name} />
                                       <AvatarFallback className="bg-primary/10 text-primary">
@@ -1337,9 +1345,7 @@ setUnreadCounts(counts)
                                     </Avatar>
 
                                     <div
-                                      className={`flex flex-col max-w-[78%] sm:max-w-xs lg:max-w-md ${
-                                        isOwnMessage ? "items-end" : "items-start"
-                                      }`}
+                                      className={`flex flex-col max-w-[78%] sm:max-w-xs lg:max-w-md ${isOwnMessage ? "items-end" : "items-start"}`}
                                     >
                                       <div className="flex items-center gap-2 mb-1">
                                         <span className="text-sm font-medium">{isOwnMessage ? "Du" : name}</span>
@@ -1349,23 +1355,18 @@ setUnreadCounts(counts)
                                           </span>
                                         )}
                                         <span className="text-xs text-muted-foreground flex items-center gap-1">
-  <Clock className="h-3 w-3" />
-  {new Date(message.created_at).toLocaleString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })}
-</span>
-
+                                          <Clock className="h-3 w-3" />
+                                          {new Date(message.created_at).toLocaleString("de-DE", {
+                                            day: "2-digit",
+                                            month: "2-digit",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })}
+                                        </span>
                                       </div>
 
-                                      <div
-                                        className={`p-3 rounded-lg ${
-                                          isOwnMessage ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                                        }`}
-                                      >
+                                      <div className={`p-3 rounded-lg ${isOwnMessage ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
                                         <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
                                       </div>
                                     </div>
@@ -1378,7 +1379,6 @@ setUnreadCounts(counts)
                         </ScrollArea>
 
                         <div className="p-4 border-t border-border bg-card">
-
                           {isVorstand && (
                             <div className="mb-2 flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
@@ -1386,9 +1386,7 @@ setUnreadCounts(counts)
                                   <Shield className="h-3.5 w-3.5" />
                                   Vorstand-Modus
                                 </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  Deine Nachrichten sind als Vorstand erkennbar.
-                                </span>
+                                <span className="text-xs text-muted-foreground">Deine Nachrichten sind als Vorstand erkennbar.</span>
                               </div>
                             </div>
                           )}
@@ -1397,7 +1395,7 @@ setUnreadCounts(counts)
                               placeholder="Nachricht eingeben..."
                               value={newMessage}
                               onChange={(e) => setNewMessage(e.target.value)}
-                              onKeyPress={(e) => {
+                              onKeyDown={(e) => {
                                 if (e.key === "Enter" && !e.shiftKey) {
                                   e.preventDefault()
                                   sendMessage()
@@ -1406,12 +1404,7 @@ setUnreadCounts(counts)
                               disabled={sending || !profile?.id}
                               className="flex-1 bg-background text-sm"
                             />
-                            <Button
-                              onClick={sendMessage}
-                              disabled={!newMessage.trim() || sending || !profile?.id}
-                              size="sm"
-                              className="px-3"
-                            >
+                            <Button onClick={sendMessage} disabled={!newMessage.trim() || sending || !profile?.id} size="sm" className="px-3">
                               {sending ? (
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
                               ) : (
