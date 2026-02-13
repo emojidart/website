@@ -31,6 +31,14 @@ function pickTitle(scope: ChatScope) {
   return "Vereinsinfo"
 }
 
+function pickEmoji(scope: ChatScope) {
+  if (scope === "team") return "💬"
+  if (scope === "captains") return "👥"
+  if (scope === "vorstand") return "🛡️"
+  if (scope === "freizeit") return "☕"
+  return "ℹ️"
+}
+
 function normalizePreview(text: string) {
   const t = (text || "").trim()
   if (!t) return ""
@@ -202,10 +210,37 @@ export async function POST(request: NextRequest) {
 
     webpush.setVapidDetails("mailto:admin@emojsdartverein.at", vapidPublic, vapidPrivate)
 
+    // ===== Step 1: WhatsApp-Style Title/Body (echte DB-Daten) =====
+
+    // Sendername (club_players.name) holen
+    let senderName = "Jemand"
+    const senderPlayerId = (senderProfile as any)?.player_id
+
+    if (senderPlayerId) {
+      const { data: sp, error: spErr } = await supabase
+        .from("club_players")
+        .select("name")
+        .eq("id", senderPlayerId)
+        .maybeSingle()
+
+      if (!spErr && (sp as any)?.name) senderName = (sp as any).name
+    }
+
+    // Chatname je nach Scope (bei Team: teams.name)
+    let chatName = pickTitle(scope)
+
+    if (scope === "team") {
+      const { data: t, error: tErr } = await supabase.from("teams").select("name").eq("id", room_id).maybeSingle()
+      if (!tErr && (t as any)?.name) chatName = (t as any).name
+    }
+
+    const title = `${pickEmoji(scope)} ${chatName}`
+    const bodyText = `${senderName}: ${normalizePreview(message)}`
+
     const payload = JSON.stringify({
-      title: pickTitle(scope),
-      body: normalizePreview(message),
-      url: "/chat-app", // optional: deep-link später mit room_id/scope
+      title,
+      body: bodyText,
+      url: "/chat-app", // Step 2 machen wir als nächstes: /chat-app?scope=...&room=...
       room_id,
       scope,
     })
@@ -257,8 +292,18 @@ export async function POST(request: NextRequest) {
       throttled_skipped: allSubs.length - throttled.length,
       deleted_dead: toDelete.length,
     })
-  } catch (error: any) {
+    } catch (error: any) {
     console.error("[push-chat] error:", error)
-    return NextResponse.json({ success: false, error: error?.message || "Failed" }, { status: 500 })
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: error?.message || String(error) || "Failed",
+        name: error?.name,
+        stack: error?.stack,
+      },
+      { status: 500 },
+    )
   }
 }
+

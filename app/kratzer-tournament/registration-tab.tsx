@@ -77,9 +77,7 @@ export function RegistrationTab({
     selectedPlayersForRegistration.some((p) => p.id === player.id)
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8">
-
-
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Available Players Card */}
       <Card className="p-6 shadow-xl border-gray-200">
         <CardHeader className="border-b pb-4 mb-6">
