@@ -13,7 +13,8 @@ const CAPTAINS_ROOM_ID = "44444444-4444-4444-4444-444444444444"
 const ROLE_TABLE = "club_roles"
 const BOARD_ROLES = ["Vorstand", "Kassier", "Schriftführer"]
 
-const THROTTLE_SECONDS = 60
+// ✅ 0 = KEIN Throttle (jede Nachricht pushen)
+const THROTTLE_SECONDS = 0
 
 function nowIso() {
   return new Date().toISOString()
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing params" }, { status: 400 })
     }
 
+    // --- Auth: Bearer Token erforderlich
     const authHeader = request.headers.get("authorization") || request.headers.get("Authorization")
     const bearer =
       authHeader && authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : null
@@ -78,12 +80,14 @@ export async function POST(request: NextRequest) {
       },
     )
 
+    // Sender-User via token validieren
     const { data: senderAuth, error: senderAuthErr } = await supabase.auth.getUser(bearer)
     if (senderAuthErr || !senderAuth?.user?.id) {
       return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 })
     }
     const senderAuthUserId = senderAuth.user.id
 
+    // Sender-Profile prüfen
     const { data: senderProfile, error: senderProfileErr } = await supabase
       .from("user_profiles")
       .select("id,user_id,player_id")
@@ -106,13 +110,14 @@ export async function POST(request: NextRequest) {
       if ((cp as any)?.name) senderName = (cp as any).name
     }
 
-    // Icon / Badge
+    // Standard Icons
     const DEFAULT_ICON = "/icon-192.png"
     const DEFAULT_BADGE = "/icon-192.png"
+
     let iconToUse = DEFAULT_ICON
     let badgeToUse = DEFAULT_BADGE
 
-    // ✅ Step 2: Teamname als Notification-Titel (WhatsApp-like)
+    // Titel (Teamname bei Team-Chat)
     let titleToUse = pickTitle(scope)
 
     if (scope === "team") {
@@ -125,11 +130,19 @@ export async function POST(request: NextRequest) {
       const teamName = (teamRow as any)?.name as string | null
       const logoUrl = (teamRow as any)?.logo_url as string | null
 
-      if (teamName) titleToUse = teamName
+      if (teamName) titleToUse = `⚽ ${teamName}`
       if (logoUrl) iconToUse = logoUrl
+    } else if (scope === "vorstand") {
+      titleToUse = `🛡️ ${pickTitle(scope)}`
+    } else if (scope === "captains") {
+      titleToUse = `👑 ${pickTitle(scope)}`
+    } else if (scope === "freizeit") {
+      titleToUse = `☕ ${pickTitle(scope)}`
+    } else if (scope === "club") {
+      titleToUse = `ℹ️ ${pickTitle(scope)}`
     }
 
-    // Empfänger ermitteln
+    // --- Empfänger ermitteln (auth.user_id)
     let targetAuthUserIds: string[] = []
 
     if (scope === "team") {
@@ -143,7 +156,10 @@ export async function POST(request: NextRequest) {
       const playerIds = Array.from(new Set(((mems as any[]) || []).map((m) => m.player_id).filter(Boolean)))
       if (playerIds.length === 0) return NextResponse.json({ success: true, sent: 0, info: "No team members" })
 
-      const { data: profs, error: profErr } = await supabase.from("user_profiles").select("user_id").in("player_id", playerIds)
+      const { data: profs, error: profErr } = await supabase
+        .from("user_profiles")
+        .select("user_id")
+        .in("player_id", playerIds)
       if (profErr) throw profErr
 
       targetAuthUserIds = Array.from(new Set(((profs as any[]) || []).map((p) => p.user_id).filter(Boolean)))
@@ -158,17 +174,26 @@ export async function POST(request: NextRequest) {
       const playerIds = Array.from(new Set(((mems as any[]) || []).map((m) => m.player_id).filter(Boolean)))
       if (playerIds.length === 0) return NextResponse.json({ success: true, sent: 0, info: "No captains" })
 
-      const { data: profs, error: profErr } = await supabase.from("user_profiles").select("user_id").in("player_id", playerIds)
+      const { data: profs, error: profErr } = await supabase
+        .from("user_profiles")
+        .select("user_id")
+        .in("player_id", playerIds)
       if (profErr) throw profErr
 
       targetAuthUserIds = Array.from(new Set(((profs as any[]) || []).map((p) => p.user_id).filter(Boolean)))
     } else if (scope === "vorstand") {
-      const { data: roles, error: rolesErr } = await supabase.from(ROLE_TABLE).select("user_id,role").in("role", BOARD_ROLES)
+      const { data: roles, error: rolesErr } = await supabase
+        .from(ROLE_TABLE)
+        .select("user_id,role")
+        .in("role", BOARD_ROLES)
       if (rolesErr) throw rolesErr
 
       targetAuthUserIds = Array.from(new Set(((roles as any[]) || []).map((r) => r.user_id).filter(Boolean)))
     } else if (scope === "club" || scope === "freizeit") {
-      const { data: profs, error: profErr } = await supabase.from("user_profiles").select("user_id").not("user_id", "is", null)
+      const { data: profs, error: profErr } = await supabase
+        .from("user_profiles")
+        .select("user_id")
+        .not("user_id", "is", null)
       if (profErr) throw profErr
 
       targetAuthUserIds = Array.from(new Set(((profs as any[]) || []).map((p) => p.user_id).filter(Boolean)))
@@ -176,11 +201,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Invalid scope" }, { status: 400 })
     }
 
+    // Sender nie pushen
     targetAuthUserIds = targetAuthUserIds.filter((uid) => uid !== senderAuthUserId)
-    if (targetAuthUserIds.length === 0) return NextResponse.json({ success: true, sent: 0, info: "No recipients" })
+    if (targetAuthUserIds.length === 0) {
+      return NextResponse.json({ success: true, sent: 0, info: "No recipients" })
+    }
 
-    // Subs holen + Throttle
-    const cutoff = secondsAgoIso(THROTTLE_SECONDS)
+    // --- Push subs holen
     const { data: subs, error: subErr } = await supabase
       .from("push_subscriptions")
       .select("id,user_id,endpoint,auth,p256dh,last_used")
@@ -188,15 +215,25 @@ export async function POST(request: NextRequest) {
     if (subErr) throw subErr
 
     const allSubs = (subs as any[]) || []
-    const throttled = allSubs.filter((s) => !s.last_used || s.last_used < cutoff)
-    if (throttled.length === 0) return NextResponse.json({ success: true, sent: 0, throttled: true })
 
-    // VAPID
+    // ✅ Throttle deaktiviert => ALLE subs nehmen
+    // (Wenn THROTTLE_SECONDS > 0, dann filtern wir wie früher)
+    const cutoff = THROTTLE_SECONDS > 0 ? secondsAgoIso(THROTTLE_SECONDS) : null
+    const toSend =
+      THROTTLE_SECONDS > 0 ? allSubs.filter((s) => !s.last_used || s.last_used < cutoff!) : allSubs
+
+    if (toSend.length === 0) {
+      return NextResponse.json({ success: true, sent: 0, throttled: true })
+    }
+
+    // --- web-push config
     const vapidPublic = process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
     const vapidPrivate = process.env.VAPID_PRIVATE_KEY
+
     if (!vapidPublic || !vapidPrivate) {
       return NextResponse.json({ success: false, error: "Missing VAPID keys on server" }, { status: 500 })
     }
+
     webpush.setVapidDetails("mailto:admin@emojsdartverein.at", vapidPublic, vapidPrivate)
 
     const chatBody = `${senderName}: ${normalizePreview(message)}`
@@ -214,37 +251,49 @@ export async function POST(request: NextRequest) {
       scope,
     })
 
+    // Send pushes
     let sent = 0
     const toDelete: string[] = []
     const updatedIds: string[] = []
 
     await Promise.all(
-      throttled.map(async (s) => {
+      toSend.map(async (s) => {
         try {
           const subscription = {
             endpoint: s.endpoint,
             keys: { auth: s.auth, p256dh: s.p256dh },
           }
+
           await webpush.sendNotification(subscription as any, payload)
           sent += 1
           updatedIds.push(s.id)
         } catch (e: any) {
           const statusCode = e?.statusCode
-          if (statusCode === 410 || statusCode === 404) toDelete.push(s.id)
-          else console.warn("[push-chat] send failed:", statusCode || e?.message || e)
+          if (statusCode === 410 || statusCode === 404) {
+            toDelete.push(s.id)
+          } else {
+            console.warn("[push-chat] send failed:", statusCode || e?.message || e)
+          }
         }
       }),
     )
 
-    if (updatedIds.length > 0) await supabase.from("push_subscriptions").update({ last_used: nowIso() }).in("id", updatedIds)
-    if (toDelete.length > 0) await supabase.from("push_subscriptions").delete().in("id", toDelete)
+    // last_used trotzdem updaten (nur Tracking)
+    if (updatedIds.length > 0) {
+      await supabase.from("push_subscriptions").update({ last_used: nowIso() }).in("id", updatedIds)
+    }
+
+    // Dead subs löschen
+    if (toDelete.length > 0) {
+      await supabase.from("push_subscriptions").delete().in("id", toDelete)
+    }
 
     return NextResponse.json({
       success: true,
       sent,
       recipients: targetAuthUserIds.length,
       subscriptions: allSubs.length,
-      throttled_skipped: allSubs.length - throttled.length,
+      throttled_skipped: allSubs.length - toSend.length,
       deleted_dead: toDelete.length,
     })
   } catch (error: any) {
