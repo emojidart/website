@@ -38,7 +38,6 @@ function normalizePreview(text: string) {
 }
 
 function makeChatTag(scope: ChatScope, room_id: string) {
-  // Gruppiert Notifications pro Chat (WhatsApp-like)
   return `chat:${scope}:${room_id}`
 }
 
@@ -55,7 +54,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing params" }, { status: 400 })
     }
 
-    // --- Auth: Bearer Token erforderlich (damit nicht jeder pushen kann)
     const authHeader = request.headers.get("authorization") || request.headers.get("Authorization")
     const bearer =
       authHeader && authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : null
@@ -65,7 +63,6 @@ export async function POST(request: NextRequest) {
 
     const cookieStore = await cookies()
 
-    // Wichtig: Service Role für DB-Lesen
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
@@ -81,14 +78,12 @@ export async function POST(request: NextRequest) {
       },
     )
 
-    // Sender-User via token validieren
     const { data: senderAuth, error: senderAuthErr } = await supabase.auth.getUser(bearer)
     if (senderAuthErr || !senderAuth?.user?.id) {
       return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 })
     }
     const senderAuthUserId = senderAuth.user.id
 
-    // Sender-Profile prüfen (profile.id -> profile.user_id)
     const { data: senderProfile, error: senderProfileErr } = await supabase
       .from("user_profiles")
       .select("id,user_id,player_id")
@@ -103,45 +98,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Sender mismatch" }, { status: 403 })
     }
 
-    // ----------------------------
-    // Step 1: Sender-Name holen (für "Max: Hallo...")
-    // ----------------------------
+    // Sender-Name holen
     let senderName = "Jemand"
     const senderPlayerId = (senderProfile as any).player_id as string | null
-
     if (senderPlayerId) {
-      const { data: cp } = await supabase
-        .from("club_players")
-        .select("name")
-        .eq("id", senderPlayerId)
-        .maybeSingle()
+      const { data: cp } = await supabase.from("club_players").select("name").eq("id", senderPlayerId).maybeSingle()
       if ((cp as any)?.name) senderName = (cp as any).name
     }
 
-    // ----------------------------
-    // Step 1: Icon-Logik
-    // - Team-Chat: Team Logo (teams.logo_url)
-    // - sonst: Standard Icon
-    // ----------------------------
+    // Icon / Badge
     const DEFAULT_ICON = "/icon-192.png"
     const DEFAULT_BADGE = "/icon-192.png"
-
     let iconToUse = DEFAULT_ICON
     let badgeToUse = DEFAULT_BADGE
 
+    // ✅ Step 2: Teamname als Notification-Titel (WhatsApp-like)
+    let titleToUse = pickTitle(scope)
+
     if (scope === "team") {
-      // room_id == team_id
       const { data: teamRow } = await supabase
         .from("teams")
-        .select("logo_url")
+        .select("name,logo_url")
         .eq("id", room_id)
         .maybeSingle()
 
+      const teamName = (teamRow as any)?.name as string | null
       const logoUrl = (teamRow as any)?.logo_url as string | null
+
+      if (teamName) titleToUse = teamName
       if (logoUrl) iconToUse = logoUrl
     }
 
-    // --- Empfänger ermitteln (auth.user_id)
+    // Empfänger ermitteln
     let targetAuthUserIds: string[] = []
 
     if (scope === "team") {
@@ -150,19 +138,12 @@ export async function POST(request: NextRequest) {
         .select("player_id")
         .eq("team_id", room_id)
         .is("left_at", null)
-
       if (memErr) throw memErr
 
       const playerIds = Array.from(new Set(((mems as any[]) || []).map((m) => m.player_id).filter(Boolean)))
-      if (playerIds.length === 0) {
-        return NextResponse.json({ success: true, sent: 0, info: "No team members" })
-      }
+      if (playerIds.length === 0) return NextResponse.json({ success: true, sent: 0, info: "No team members" })
 
-      const { data: profs, error: profErr } = await supabase
-        .from("user_profiles")
-        .select("user_id")
-        .in("player_id", playerIds)
-
+      const { data: profs, error: profErr } = await supabase.from("user_profiles").select("user_id").in("player_id", playerIds)
       if (profErr) throw profErr
 
       targetAuthUserIds = Array.from(new Set(((profs as any[]) || []).map((p) => p.user_id).filter(Boolean)))
@@ -172,81 +153,57 @@ export async function POST(request: NextRequest) {
         .select("player_id")
         .in("role", ["Captain", "Co-Captain"])
         .is("left_at", null)
-
       if (memErr) throw memErr
 
       const playerIds = Array.from(new Set(((mems as any[]) || []).map((m) => m.player_id).filter(Boolean)))
       if (playerIds.length === 0) return NextResponse.json({ success: true, sent: 0, info: "No captains" })
 
-      const { data: profs, error: profErr } = await supabase
-        .from("user_profiles")
-        .select("user_id")
-        .in("player_id", playerIds)
-
+      const { data: profs, error: profErr } = await supabase.from("user_profiles").select("user_id").in("player_id", playerIds)
       if (profErr) throw profErr
 
       targetAuthUserIds = Array.from(new Set(((profs as any[]) || []).map((p) => p.user_id).filter(Boolean)))
     } else if (scope === "vorstand") {
-      const { data: roles, error: rolesErr } = await supabase
-        .from(ROLE_TABLE)
-        .select("user_id,role")
-        .in("role", BOARD_ROLES)
-
+      const { data: roles, error: rolesErr } = await supabase.from(ROLE_TABLE).select("user_id,role").in("role", BOARD_ROLES)
       if (rolesErr) throw rolesErr
+
       targetAuthUserIds = Array.from(new Set(((roles as any[]) || []).map((r) => r.user_id).filter(Boolean)))
     } else if (scope === "club" || scope === "freizeit") {
-      const { data: profs, error: profErr } = await supabase
-        .from("user_profiles")
-        .select("user_id")
-        .not("user_id", "is", null)
-
+      const { data: profs, error: profErr } = await supabase.from("user_profiles").select("user_id").not("user_id", "is", null)
       if (profErr) throw profErr
+
       targetAuthUserIds = Array.from(new Set(((profs as any[]) || []).map((p) => p.user_id).filter(Boolean)))
     } else {
       return NextResponse.json({ success: false, error: "Invalid scope" }, { status: 400 })
     }
 
-    // Sender nie pushen
     targetAuthUserIds = targetAuthUserIds.filter((uid) => uid !== senderAuthUserId)
+    if (targetAuthUserIds.length === 0) return NextResponse.json({ success: true, sent: 0, info: "No recipients" })
 
-    if (targetAuthUserIds.length === 0) {
-      return NextResponse.json({ success: true, sent: 0, info: "No recipients" })
-    }
-
-    // --- Push subs holen (throttle via last_used)
+    // Subs holen + Throttle
     const cutoff = secondsAgoIso(THROTTLE_SECONDS)
-
     const { data: subs, error: subErr } = await supabase
       .from("push_subscriptions")
       .select("id,user_id,endpoint,auth,p256dh,last_used")
       .in("user_id", targetAuthUserIds)
-
     if (subErr) throw subErr
 
     const allSubs = (subs as any[]) || []
     const throttled = allSubs.filter((s) => !s.last_used || s.last_used < cutoff)
+    if (throttled.length === 0) return NextResponse.json({ success: true, sent: 0, throttled: true })
 
-    if (throttled.length === 0) {
-      return NextResponse.json({ success: true, sent: 0, throttled: true })
-    }
-
-    // --- web-push config
+    // VAPID
     const vapidPublic = process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
     const vapidPrivate = process.env.VAPID_PRIVATE_KEY
-
     if (!vapidPublic || !vapidPrivate) {
       return NextResponse.json({ success: false, error: "Missing VAPID keys on server" }, { status: 500 })
     }
-
     webpush.setVapidDetails("mailto:admin@emojsdartverein.at", vapidPublic, vapidPrivate)
 
-    // ✅ Step 1: Body WhatsApp-like + Tag pro Chat + Icon
-    const chatTitle = pickTitle(scope)
     const chatBody = `${senderName}: ${normalizePreview(message)}`
     const chatTag = makeChatTag(scope, room_id)
 
     const payload = JSON.stringify({
-      title: chatTitle,
+      title: titleToUse,
       body: chatBody,
       icon: iconToUse,
       badge: badgeToUse,
@@ -257,7 +214,6 @@ export async function POST(request: NextRequest) {
       scope,
     })
 
-    // Send pushes
     let sent = 0
     const toDelete: string[] = []
     const updatedIds: string[] = []
@@ -269,28 +225,19 @@ export async function POST(request: NextRequest) {
             endpoint: s.endpoint,
             keys: { auth: s.auth, p256dh: s.p256dh },
           }
-
           await webpush.sendNotification(subscription as any, payload)
           sent += 1
           updatedIds.push(s.id)
         } catch (e: any) {
           const statusCode = e?.statusCode
-          if (statusCode === 410 || statusCode === 404) {
-            toDelete.push(s.id)
-          } else {
-            console.warn("[push-chat] send failed:", statusCode || e?.message || e)
-          }
+          if (statusCode === 410 || statusCode === 404) toDelete.push(s.id)
+          else console.warn("[push-chat] send failed:", statusCode || e?.message || e)
         }
       }),
     )
 
-    if (updatedIds.length > 0) {
-      await supabase.from("push_subscriptions").update({ last_used: nowIso() }).in("id", updatedIds)
-    }
-
-    if (toDelete.length > 0) {
-      await supabase.from("push_subscriptions").delete().in("id", toDelete)
-    }
+    if (updatedIds.length > 0) await supabase.from("push_subscriptions").update({ last_used: nowIso() }).in("id", updatedIds)
+    if (toDelete.length > 0) await supabase.from("push_subscriptions").delete().in("id", toDelete)
 
     return NextResponse.json({
       success: true,
