@@ -1801,7 +1801,8 @@ player_id: spielData.id.toString(),
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="w-full px-8 py-12">
+
         <div className="mb-6">
           <Button
             onClick={() => router.push("/admin")}

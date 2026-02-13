@@ -1349,12 +1349,16 @@ setUnreadCounts(counts)
                                           </span>
                                         )}
                                         <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                          <Clock className="h-3 w-3" />
-                                          {new Date(message.created_at).toLocaleTimeString("de-DE", {
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                          })}
-                                        </span>
+  <Clock className="h-3 w-3" />
+  {new Date(message.created_at).toLocaleString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })}
+</span>
+
                                       </div>
 
                                       <div

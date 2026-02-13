@@ -132,16 +132,15 @@ const PO_DEFS_8: PoMatchDef[] = [
   { id: PO_QF2, round: "QF", label: "VF2" },
   { id: PO_QF3, round: "QF", label: "VF3" },
   { id: PO_QF4, round: "QF", label: "VF4" },
+
+  // ✅ Standard: VF1 vs VF2 und VF3 vs VF4
   { id: PO_SF1, round: "SF", label: "HF1", srcA: PO_QF1, srcB: PO_QF2 },
   { id: PO_SF2, round: "SF", label: "HF2", srcA: PO_QF3, srcB: PO_QF4 },
+
   { id: PO_F, round: "F", label: "FINAL", srcA: PO_SF1, srcB: PO_SF2 },
 ]
 
-const PO_DEFS_4: PoMatchDef[] = [
-  { id: PO_SF1, round: "SF", label: "HF1" },
-  { id: PO_SF2, round: "SF", label: "HF2" },
-  { id: PO_F, round: "F", label: "FINAL", srcA: PO_SF1, srcB: PO_SF2 },
-]
+
 
 function emptyState(id: number): MatchState {
   return {
@@ -658,84 +657,102 @@ export default function RoundRobinClient() {
     return Object.keys(playoffStates).length > 0
   }, [playoffStates])
 
-  // ---- seeding + pairings (QF or SF)
-  function buildPairings(size: PlayoffSize, players: Qualifier[]) {
-    const ps = [...players]
+  
+  
+  
+  // ---- seeding + pairings (QF or SF) ✅ PERFEKT-LOGIK
+function buildPairings(size: PlayoffSize, players: Qualifier[]) {
+  // 1) Ranking/Seeding nach Leistung
+  const ps = [...players].sort((a, b) => {
+    if (a.place !== b.place) return a.place - b.place
+    if (b.points !== a.points) return b.points - a.points
+    const da = a.legsFor - a.legsAgainst
+    const db = b.legsFor - b.legsAgainst
+    if (db !== da) return db - da
+    if (b.legsFor !== a.legsFor) return b.legsFor - a.legsFor
+    return a.name.localeCompare(b.name)
+  })
 
-    // helper: group cross-seeding for 4 groups exactly with top2
-    const canClassicCross8 = size === 8 && groups.length === 4 && qualifiersPerGroup === 2
-    const canClassicCross4 = size === 4 && groups.length === 2 && qualifiersPerGroup === 2
+  const okPair = (a?: Qualifier, b?: Qualifier) => {
+    if (!a || !b) return false
+    return a.group_id !== b.group_id
+  }
 
-    const groupsByNo = new Map<number, Qualifier[]>()
-    ps.forEach((p) => {
-      const arr = groupsByNo.get(p.group_no) ?? []
-      arr.push(p)
-      groupsByNo.set(p.group_no, arr)
-    })
-    ;[...groupsByNo.values()].forEach((arr) => arr.sort((a, b) => a.place - b.place))
+  // 2) Standard-Paarung: 1vN, 2v(N-1), ...
+  const pairs: Array<[Qualifier | undefined, Qualifier | undefined]> = []
+  for (let i = 0; i < size / 2; i++) {
+    pairs.push([ps[i], ps[size - 1 - i]])
+  }
 
-    if (canClassicCross4) {
-      const A = groupsByNo.get(groups[0].group_no)?.slice().sort((a, b) => a.place - b.place) ?? []
-      const B = groupsByNo.get(groups[1].group_no)?.slice().sort((a, b) => a.place - b.place) ?? []
-      // 1A vs 2B / 1B vs 2A
-      return [
-        [A[0], B[1]],
-        [B[0], A[1]],
-      ] as Array<[Qualifier | undefined, Qualifier | undefined]>
+  // 3) Konflikte (gleiche Gruppe) in Runde 1 reparieren: swap der zweiten Spieler
+  for (let i = 0; i < pairs.length; i++) {
+    const [a, b] = pairs[i]
+    if (!a || !b) continue
+    if (okPair(a, b)) continue
+
+    for (let j = i + 1; j < pairs.length; j++) {
+      const [c, d] = pairs[j]
+      if (!c || !d) continue
+      if (okPair(a, d) && okPair(c, b)) {
+        pairs[i] = [a, d]
+        pairs[j] = [c, b]
+        break
+      }
     }
+  }
 
-    if (canClassicCross8) {
-      // group_no order
-      const ordered = [...groups].sort((a, b) => a.group_no - b.group_no).map((g) => g.group_no)
-      const g1 = groupsByNo.get(ordered[0]) ?? []
-      const g2 = groupsByNo.get(ordered[1]) ?? []
-      const g3 = groupsByNo.get(ordered[2]) ?? []
-      const g4 = groupsByNo.get(ordered[3]) ?? []
-      return [
-        [g1[0], g2[1]],
-        [g2[0], g1[1]],
-        [g3[0], g4[1]],
-        [g4[0], g3[1]],
-      ] as Array<[Qualifier | undefined, Qualifier | undefined]>
-    }
+  // 4) 8er: Gruppensieger (#1) bestmöglich auf verschiedene Halbfinal-Seiten verteilen
+  // Ziel: In (Pair0, Pair1) und (Pair2, Pair3) nicht 2x Platz1 im selben Ast.
+  if (size === 8) {
+    const hasGroupWinner = (p: [Qualifier | undefined, Qualifier | undefined]) =>
+      (p[0]?.place === 1) || (p[1]?.place === 1)
 
-    // fallback: overall ranking seeding
-    ps.sort((a, b) => {
-      // best: place 1 first; within place: points, diff, legsFor
-      if (a.place !== b.place) return a.place - b.place
-      if (b.points !== a.points) return b.points - a.points
-      const da = a.legsFor - a.legsAgainst
-      const db = b.legsFor - b.legsAgainst
-      if (db !== da) return db - da
-      if (b.legsFor !== a.legsFor) return b.legsFor - a.legsFor
-      return a.name.localeCompare(b.name)
-    })
-
-    // seed pairing 1vN, 2v(N-1), etc.
-    const pairs: Array<[Qualifier | undefined, Qualifier | undefined]> = []
-    for (let i = 0; i < size / 2; i++) {
-      pairs.push([ps[i], ps[size - 1 - i]])
-    }
-
-    // best-effort: avoid same-group in first round by swapping second entries
-    for (let i = 0; i < pairs.length; i++) {
-      const [a, b] = pairs[i]
-      if (!a || !b) continue
-      if (!sameGroup(a, b)) continue
-      for (let j = i + 1; j < pairs.length; j++) {
-        const [c, d] = pairs[j]
-        if (!c || !d) continue
-        // try swap b <-> d
-        if (!sameGroup(a, d) && !sameGroup(c, b)) {
-          pairs[i] = [a, d]
-          pairs[j] = [c, b]
-          break
+    // kleine Permutation (max 24) -> beste Reihenfolge suchen
+    const permute = <T,>(arr: T[]) => {
+      const out: T[][] = []
+      const rec = (a: T[], i: number) => {
+        if (i === a.length) return out.push([...a])
+        for (let j = i; j < a.length; j++) {
+          ;[a[i], a[j]] = [a[j], a[i]]
+          rec(a, i + 1)
+          ;[a[i], a[j]] = [a[j], a[i]]
         }
+      }
+      rec([...arr], 0)
+      return out
+    }
+
+    const scoreOrder = (ord: typeof pairs) => {
+      const left = (hasGroupWinner(ord[0]) ? 1 : 0) + (hasGroupWinner(ord[1]) ? 1 : 0)
+      const right = (hasGroupWinner(ord[2]) ? 1 : 0) + (hasGroupWinner(ord[3]) ? 1 : 0)
+      let s = 0
+      if (left <= 1) s += 3
+      if (right <= 1) s += 3
+      return s
+    }
+
+    const all = [...pairs]
+    let best = all
+    let bestScore = -1
+
+    for (const ord of permute(all)) {
+      const s = scoreOrder(ord as any)
+      if (s > bestScore) {
+        bestScore = s
+        best = ord as any
+        if (bestScore >= 6) break
       }
     }
 
-    return pairs
+    return best
   }
+
+  return pairs
+}
+
+  
+  
+  
 
   // ---- Create playoffs in DB (dko_match_states rows with playoff type)
   const createPlayoffs = async () => {
@@ -942,6 +959,55 @@ export default function RoundRobinClient() {
     return Array.from({ length: totalMachines }, (_, i) => i + 1).filter((n) => !used.includes(n))
   }
   const availableMachines = getAvailableMachines()
+  
+    // ✅ Wer ist gerade "busy" (spielt bereits in einem laufenden Match)?
+  const busyPlayers = useMemo(() => {
+    const busy = new Set<string>()
+
+    // Gruppenphase (displayMatches enthält state)
+    displayMatches.forEach((m) => {
+      const s = m.state
+      if (s.machineNumber && !s.winner) {
+        busy.add(normalizeName(s.player1))
+        busy.add(normalizeName(s.player2))
+      }
+    })
+
+    // Playoff
+    Object.values(playoffStates).forEach((s) => {
+      if (s.machineNumber && !s.winner) {
+        busy.add(normalizeName(s.player1))
+        busy.add(normalizeName(s.player2))
+      }
+    })
+
+    return busy
+  }, [displayMatches, playoffStates])
+
+    // ✅ Matches in aktiver Gruppe, die JETZT gestartet werden dürfen
+  const playableMatches = useMemo(() => {
+    return matchesForActiveGroup
+      .filter((m) => {
+        const s = m.state
+
+        if (!s.player1 || !s.player2) return false
+        if (isFreilos(s.player1) || isFreilos(s.player2)) return false
+
+        if (s.winner) return false              // schon fertig
+        if (s.machineNumber) return false       // läuft schon
+
+        const p1 = normalizeName(s.player1)
+        const p2 = normalizeName(s.player2)
+
+        // darf nicht, wenn einer gerade spielt
+        if (busyPlayers.has(p1) || busyPlayers.has(p2)) return false
+
+        return true
+      })
+      .sort((a, b) => a.round_no - b.round_no || a.match_no - b.match_no)
+  }, [matchesForActiveGroup, busyPlayers])
+
+  
 
   // ---- Actions: start/assign/score/confirm/reset for group & playoff
   const startMatch = (scope: "group" | "playoff", matchId: number, fallback?: MatchState) => {
@@ -1062,8 +1128,16 @@ export default function RoundRobinClient() {
     else setMatchStates((prev) => ({ ...prev, [matchId]: next }))
   }
 
-  // ---- Playoff display list
-  const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4), [playoffSize])
+  const PO_DEFS_4: PoMatchDef[] = [
+  { id: PO_SF1, round: "SF", label: "HF1" },
+  { id: PO_SF2, round: "SF", label: "HF2" },
+  { id: PO_F, round: "F", label: "FINAL", srcA: PO_SF1, srcB: PO_SF2 },
+]
+
+// ---- Playoff display list
+const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4), [playoffSize])
+
+
 
   const playoffRoundGroups = useMemo(() => {
     const by: Record<string, PoMatchDef[]> = { QF: [], SF: [], F: [] }
@@ -1237,52 +1311,103 @@ export default function RoundRobinClient() {
               </div>
             </div>
           </Card>
+		  
+		  
+		  <Card className="rounded-2xl border-2 border-white shadow-lg p-5 bg-white">
+  <div className="flex items-center justify-between mb-3">
+    <div className="flex items-center gap-3">
+      <Monitor className="w-5 h-5 text-orange-600" />
+      <h2 className="text-lg font-black text-gray-900">Automaten</h2>
+    </div>
+    <div className="inline-flex items-center gap-2 text-xs font-black text-gray-700 bg-gray-50 border-2 border-gray-200 px-3 py-1 rounded-full">
+      <Cpu className="w-4 h-4 text-orange-600" />
+      Frei: {availableMachines.length}/{totalMachines}
+    </div>
+  </div>
 
-          <Card className="rounded-2xl border-2 border-white shadow-lg p-5 bg-white">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <Monitor className="w-5 h-5 text-orange-600" />
-                <h2 className="text-lg font-black text-gray-900">Automaten</h2>
+  <div className="flex items-center gap-2">
+    <span className="text-sm font-bold text-gray-700">Anzahl:</span>
+    <Input
+      type="number"
+      min={1}
+      max={50}
+      value={totalMachines}
+      onChange={(e) => setTotalMachines(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
+      className="h-10 w-28 text-center font-black"
+    />
+    <span className="text-sm font-semibold text-gray-600">Stk</span>
+  </div>
+
+  <div className="mt-4 flex flex-wrap gap-2 max-h-[120px] overflow-auto">
+    {availableMachines.slice(0, 16).map((n) => (
+      <span
+        key={n}
+        className="inline-flex items-center justify-center rounded-xl border-2 border-green-200 bg-green-50 text-green-800 font-black px-3 py-1 text-xs"
+      >
+        {n}
+      </span>
+    ))}
+
+    {availableMachines.length > 16 && (
+      <span className="inline-flex items-center justify-center rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-700 font-black px-3 py-1 text-xs">
+        +{availableMachines.length - 16} mehr
+      </span>
+    )}
+
+    {availableMachines.length === 0 && (
+      <span className="text-sm font-semibold text-gray-500">Keine Automaten frei.</span>
+    )}
+  </div>
+
+{/* ✅ Spielbar jetzt – direkt danach */}
+<div className="mt-5">
+  <div className="flex items-center justify-between">
+    <p className="text-sm font-black text-gray-900">Spielbar jetzt</p>
+    <p className="text-xs font-black text-gray-600">
+      {playableMatches.length} Match{playableMatches.length === 1 ? "" : "es"}
+    </p>
+  </div>
+
+  {playableMatches.length === 0 ? (
+    <div className="mt-2 text-sm font-semibold text-gray-500">
+      Gerade kein Match frei (Spieler sind beschäftigt oder alles läuft/fertig).
+    </div>
+  ) : (
+    <div className="mt-3 space-y-2 max-h-[220px] overflow-auto pr-1">
+      {playableMatches.slice(0, 6).map((m) => (
+        <div key={m.id} className="rounded-xl border-2 border-gray-200 bg-gray-50 px-3 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-xs font-black text-gray-600">
+                Runde {m.round_no} · Match {m.match_no}
               </div>
-              <div className="inline-flex items-center gap-2 text-xs font-black text-gray-700 bg-gray-50 border-2 border-gray-200 px-3 py-1 rounded-full">
-                <Cpu className="w-4 h-4 text-orange-600" />
-                Frei: {availableMachines.length}/{totalMachines}
+              <div className="text-sm font-black text-gray-900 truncate">
+                {m.state.player1} vs {m.state.player2}
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-gray-700">Anzahl:</span>
-              <Input
-                type="number"
-                min={1}
-                max={50}
-                value={totalMachines}
-                onChange={(e) => setTotalMachines(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
-                className="h-10 w-28 text-center font-black"
-              />
-              <span className="text-sm font-semibold text-gray-600">Stk</span>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2 max-h-[120px] overflow-auto">
-              {availableMachines.slice(0, 16).map((n) => (
-                <span
-                  key={n}
-                  className="inline-flex items-center justify-center rounded-xl border-2 border-green-200 bg-green-50 text-green-800 font-black px-3 py-1 text-xs"
-                >
-                  {n}
-                </span>
-              ))}
-              {availableMachines.length > 16 && (
-                <span className="inline-flex items-center justify-center rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-700 font-black px-3 py-1 text-xs">
-                  +{availableMachines.length - 16} mehr
-                </span>
-              )}
-              {availableMachines.length === 0 && (
-                <span className="text-sm font-semibold text-gray-500">Keine Automaten frei.</span>
-              )}
-            </div>
-          </Card>
+            <Button
+              onClick={() => startMatch("group", m.id, m.state)}
+              className="h-8 px-3 text-xs font-black rounded-xl"
+              disabled={availableMachines.length === 0}
+            >
+              Starten
+            </Button>
+          </div>
         </div>
+      ))}
+    </div>
+  )}
+</div>
+
+</Card>   
+</div>    
+
+          
+
+
+
+
 
         {/* FINALRUNDE PANEL */}
         <Card className="rounded-2xl border-2 border-white shadow-lg p-6 bg-white">

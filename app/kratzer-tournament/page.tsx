@@ -1018,7 +1018,9 @@ export default function KratzerTournamentPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900 font-sans">
       <Header />
-      <main className="container mx-auto p-4 md:p-6 max-w-7xl flex-grow">
+     <main className="mx-auto max-w-[1800px] p-6 flex-grow w-full">
+
+
         <h1 className="text-4xl font-extrabold text-center mb-8 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
           Kratzer-Turnier
         </h1>
