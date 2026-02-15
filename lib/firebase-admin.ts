@@ -1,30 +1,25 @@
 import admin from "firebase-admin"
-import fs from "fs"
-import path from "path"
 
-function loadServiceAccount() {
-  const p = path.join(
-    process.cwd(),
-    "lib",
-    "emd-vereinsapp-firebase-adminsdk-fbsvc-6bf4e9d1d8.json"
-  )
+function parseServiceAccountFromEnv(): any {
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+  if (!raw) throw new Error("Missing FIREBASE_SERVICE_ACCOUNT_JSON env var")
 
-  if (!fs.existsSync(p)) {
-    throw new Error(`[firebase-admin] JSON not found at: ${p}`)
+  // Netlify: entweder direkt JSON oder Base64
+  try {
+    return JSON.parse(raw)
+  } catch {
+    const decoded = Buffer.from(raw, "base64").toString("utf8")
+    return JSON.parse(decoded)
   }
-
-  const raw = fs.readFileSync(p, "utf8")
-  return JSON.parse(raw)
 }
 
-if (!admin.apps.length) {
-  const serviceAccount = loadServiceAccount()
+export function getFirebaseAdmin() {
+  if (admin.apps.length) return admin
 
+  const serviceAccount = parseServiceAccountFromEnv()
   admin.initializeApp({
-    credential: admin.credential.cert(
-      serviceAccount as admin.ServiceAccount
-    ),
+    credential: admin.credential.cert(serviceAccount),
   })
-}
 
-export const firebaseAdmin = admin
+  return admin
+}
