@@ -7,7 +7,6 @@ import {
   Users,
   UserCircle,
   LogIn,
-  Table,
   MoreHorizontal,
   HelpCircle,
   LogOut,
@@ -101,7 +100,6 @@ export function MobileBottomNav() {
       },
       { name: "Liveticker", href: "/live-all-app", icon: Radio, action: null },
       { name: "Livestream", href: "/livestream", icon: Radio, action: null },
-      // anderes Icon für EMD Campus:
       { name: "EMD Campus", href: "/emd-campus", icon: Building2, action: null },
       { name: "Match Galerie", href: "/match-galerie", icon: Images, action: null, requiresLogin: true },
       { name: "FAQ", href: "/faq", icon: MessageCircle, action: null },
@@ -145,20 +143,17 @@ export function MobileBottomNav() {
 
   return (
     <>
+      {/* Spacer damit Content nicht unter der Nav liegt */}
       <div className="h-28 md:hidden" />
 
       {/* ===== MORE OVERLAY ===== */}
       {isMoreMenuOpen && (
         <div className="fixed inset-0 z-[60] md:hidden">
           {/* Backdrop - klick schließt */}
-          <button
-            aria-label="Schließen"
-            className="absolute inset-0 bg-black/30"
-            onClick={closeMore}
-          />
+          <button aria-label="Schließen" className="absolute inset-0 bg-black/30" onClick={closeMore} />
 
           {/* Bottom Sheet */}
-          <div className="absolute left-0 right-0 bottom-0 pb-28">
+          <div className="absolute left-0 right-0 bottom-0 pb-28 safe-pb">
             <div className="mx-3 rounded-t-2xl bg-white shadow-2xl border overflow-hidden">
               <div className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -186,15 +181,10 @@ export function MobileBottomNav() {
                         onClick={item.action}
                         className={cn(
                           "flex items-center gap-4 p-3 rounded-lg w-full text-left transition-colors",
-                          danger
-                            ? "text-red-600 font-semibold hover:bg-red-50"
-                            : "hover:bg-gray-100 text-gray-900",
+                          danger ? "text-red-600 font-semibold hover:bg-red-50" : "hover:bg-gray-100 text-gray-900",
                         )}
                       >
-                        <Icon
-                          className={cn("h-6 w-6", danger ? "text-red-600" : "text-gray-800")}
-                          strokeWidth={2.3}
-                        />
+                        <Icon className={cn("h-6 w-6", danger ? "text-red-600" : "text-gray-800")} strokeWidth={2.3} />
                         <span>{item.name}</span>
                       </button>
                     )
@@ -219,7 +209,7 @@ export function MobileBottomNav() {
       )}
 
       {/* ===== NAV ===== */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-area-inset-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-pb">
         {/* Quickbar */}
         <div className="mx-3 mb-2 rounded-2xl bg-white/90 backdrop-blur border shadow-lg">
           <div className="grid grid-cols-4 h-10">

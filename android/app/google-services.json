@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "488863342317",
+    "project_id": "emd-vereinsapp",
+    "storage_bucket": "emd-vereinsapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:488863342317:android:3e293e67b5e4efd22eb6e4",
+        "android_client_info": {
+          "package_name": "com.emojisdartverein.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFuGw9Z_4qVJn4-BhPnMZHbsRxTQFt43U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

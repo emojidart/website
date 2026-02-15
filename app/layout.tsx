@@ -1,10 +1,10 @@
-// layout.tsx
+// app/layout.tsx
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
-import { SplashScreen } from "@/components/splash-screen"
 import { PresenceTracker } from "@/components/presence-tracker"
 import { PushSubscriptionRepair } from "@/components/push-subscription-repair"
+import PushInit from "./PushInit"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -24,28 +24,28 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#d97706",
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="de">
-      <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
-        />
-        <meta name="theme-color" content="#d97706" />
-      </head>
       <body className={`${inter.className} antialiased`}>
-        <SplashScreen />
-        <PresenceTracker />
+        <div className="app-root safe-pt safe-pb">
+          <PresenceTracker />
+          <PushSubscriptionRepair />
 
-        {/* 🔧 Repariert Push-Subscriptions nach Login (setzt user_id nachträglich) */}
-        <PushSubscriptionRepair />
+          {/* 🔔 Native Firebase Push Initialisierung */}
+          <PushInit />
 
-        {children}
+          {children}
+        </div>
       </body>
     </html>
   )
