@@ -23,8 +23,9 @@ return t.length > 240 ? t.slice(0, 240) + "…" : t
 }
 
 function makeChatTag(scope: ChatScope, room_id: string) {
-return chat:${scope}:${room_id}
+  return `chat:${scope}:${room_id}`
 }
+
 
 function stableNotifIdFromTag(tag: string) {
 let h = 0
