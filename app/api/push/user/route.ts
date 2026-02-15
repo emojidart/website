@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { firebaseAdmin as admin } from "@/lib/firebase-admin"
+import { getFirebaseAdmin } from "@/lib/firebase-admin"
 
 import { createClient } from "@supabase/supabase-js"
 

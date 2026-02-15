@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
-import { firebaseAdmin } from "@/lib/firebase-admin"
+import { getFirebaseAdmin } from "@/lib/firebase-admin"
 
 function makeSupabase() {
   const cookieStore = cookies()
