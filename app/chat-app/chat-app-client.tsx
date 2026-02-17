@@ -43,7 +43,8 @@ type ChatMessage = {
 }
 
 type TeamRoom = {
-  id: string
+  id: string // ✅ chat_rooms.id (teams.chat_room_id)
+  team_id: string // ✅ teams.id (für Members-Liste)
   name: string
   description: string | null
   created_at?: string
@@ -153,7 +154,7 @@ export default function TeamChatPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // ✅ Query-Params nur 1x beim ersten Render einfrieren (Hook darf NICHT außerhalb der Komponente verwendet werden)
+  // ✅ Query-Params nur 1x beim ersten Render einfrieren
   const initialParamsRef = useRef<{ roomId: string | null; scope: ChatScope | null } | null>(null)
   const initialAppliedRef = useRef(false)
 
@@ -162,8 +163,9 @@ export default function TeamChatPage() {
     const scope: ChatScope | null =
       scopeRaw && (["team", "captains", "club", "freizeit", "vorstand"] as const).includes(scopeRaw) ? scopeRaw : null
 
+    // ✅ Push/DeepLink nutzt room_id
     initialParamsRef.current = {
-      roomId: searchParams.get("roomId"),
+      roomId: searchParams.get("room_id"),
       scope,
     }
   }
@@ -238,7 +240,7 @@ export default function TeamChatPage() {
       setSelectedScope("team")
     }
 
-    // Teamraum auswählen falls team + roomId
+    // Teamraum auswählen falls team + room_id (chat_room_id)
     if (scopeToUse === "team" && init.roomId) {
       const found = rooms.find((r) => r.id === init.roomId) ?? null
       if (found) setSelectedRoom(found)
@@ -313,13 +315,14 @@ export default function TeamChatPage() {
     fetchMessages()
     markCurrentAsVisited()
 
-    if (selectedScope === "team" && selectedRoom?.id) fetchTeamMembers(selectedRoom.id)
+    // ✅ Team members brauchen TEAM-ID, nicht room-id
+    if (selectedScope === "team" && selectedRoom?.team_id) fetchTeamMembers(selectedRoom.team_id)
     if (selectedScope !== "team") setTeamMembers([])
 
     const unsubscribe = subscribeToMessages()
     return () => unsubscribe()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRoom?.id, selectedScope, canSeeVorstandChat])
+  }, [selectedRoom?.id, selectedRoom?.team_id, selectedScope, canSeeVorstandChat])
 
   const canSeeCaptainChat = useMemo(() => {
     // Zugriff auf globalen Captain-Chat, wenn du in irgendeinem Team Captain/Co-Captain bist
@@ -336,7 +339,7 @@ export default function TeamChatPage() {
     if (selectedScope === "freizeit") return FREIZEIT_ROOM_ID
     if (selectedScope === "vorstand") return VORSTAND_ROOM_ID
     if (selectedScope === "captains") return CAPTAINS_ROOM_ID
-    return selectedRoom?.id ?? null
+    return selectedRoom?.id ?? null // ✅ chat_rooms.id
   }, [selectedScope, selectedRoom?.id])
 
   const selectedRoomName = useMemo(() => {
@@ -375,20 +378,26 @@ export default function TeamChatPage() {
 
       const { data: teams, error } = await supabase
         .from("teams")
-        .select("id, name, description, created_at, logo_url")
+        .select("id, name, description, created_at, logo_url, chat_room_id")
         .order("name", { ascending: true })
 
       if (error) throw error
 
       const rooms: TeamRoom[] =
-        (teams || []).map((t: any) => ({
-          id: t.id,
-          name: t.name,
-          description: t.description ?? null,
-          created_at: t.created_at,
-          logo_url: t.logo_url ?? null,
-          role: "Vorstand",
-        })) || []
+        (teams || [])
+          .map((t: any) => {
+            if (!t?.id || !t?.chat_room_id) return null
+            return {
+              id: t.chat_room_id, // ✅ chat_rooms.id
+              team_id: t.id, // ✅ teams.id
+              name: t.name,
+              description: t.description ?? null,
+              created_at: t.created_at,
+              logo_url: t.logo_url ?? null,
+              role: "Vorstand",
+            } as TeamRoom
+          })
+          .filter(Boolean) || []
 
       rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
 
@@ -423,7 +432,7 @@ export default function TeamChatPage() {
 
       const { data: memberships, error: membershipsError } = await supabase
         .from("team_members")
-        .select("role, teams:teams(id, name, description, created_at, logo_url)")
+        .select("role, teams:teams(id, name, description, created_at, logo_url, chat_room_id)")
         .eq("player_id", playerId)
         .is("left_at", null)
 
@@ -433,9 +442,10 @@ export default function TeamChatPage() {
         (memberships || [])
           .map((m: any) => {
             const t = m.teams
-            if (!t?.id) return null
+            if (!t?.id || !t?.chat_room_id) return null
             return {
-              id: t.id,
+              id: t.chat_room_id, // ✅ chat_rooms.id
+              team_id: t.id, // ✅ teams.id
               name: t.name,
               description: t.description ?? null,
               created_at: t.created_at,

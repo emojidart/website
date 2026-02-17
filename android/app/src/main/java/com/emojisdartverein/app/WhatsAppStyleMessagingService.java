@@ -1,3 +1,4 @@
+// WhatsAppStyleMessagingService.java
 package com.emojisdartverein.app;
 
 import android.app.NotificationChannel;
@@ -10,6 +11,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.net.Uri;
 import android.os.Build;
 import android.text.TextUtils;
 
@@ -45,9 +47,16 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         String body         = get(data, "body");
         String tag          = get(data, "tag");
         String notifIdStr   = get(data, "notif_id");
+
         String scope        = get(data, "scope");
+
+        // ✅ room_id muss chat_room_id sein
         String roomId       = get(data, "room_id");
+
         String iconUrl      = get(data, "iconUrl");
+
+        // ✅ server soll das mitsenden: "/chat-app?scope=team&room_id=..."
+        String clickUrl     = get(data, "clickUrl");
 
         if (TextUtils.isEmpty(conversation)) conversation = "Neue Nachricht";
         if (TextUtils.isEmpty(senderName)) senderName = "Jemand";
@@ -56,10 +65,30 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         int orange = ContextCompat.getColor(this, R.color.emd_orange);
         int notifId = safeInt(notifIdStr, stableIdFrom(tag));
 
+        // Fallback wenn clickUrl fehlt
+        if (TextUtils.isEmpty(clickUrl)) {
+            if (!TextUtils.isEmpty(scope) && "team".equals(scope) && !TextUtils.isEmpty(roomId)) {
+                clickUrl = "/chat-app?scope=team&room_id=" + Uri.encode(roomId);
+            } else if (!TextUtils.isEmpty(scope)) {
+                clickUrl = "/chat-app?scope=" + Uri.encode(scope);
+            } else {
+                clickUrl = "/chat-app";
+            }
+        }
+
+        if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
+
         Intent intent = new Intent(this, MainActivity.class);
+
+        // ✅ EXTREM WICHTIG:
+        // PendingIntents werden sonst recycelt → Extras (path) gehen verloren/alt
+        intent.setAction("OPEN_PUSH_" + notifId);
+        intent.setData(Uri.parse("emd://push/" + notifId));
+
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        if (!TextUtils.isEmpty(scope)) intent.putExtra("scope", scope);
-        if (!TextUtils.isEmpty(roomId)) intent.putExtra("roomId", roomId);
+
+        // ✅ NUR interner Pfad als Extra
+        intent.putExtra("path", clickUrl);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
@@ -70,13 +99,11 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
         ensureChannel();
 
-        // ✅ Teamlogo laden + rund machen (Premium-Look)
         Bitmap raw = fetchBitmap(iconUrl);
         Bitmap round = null;
         if (raw != null) {
-            // Größe auf notification-typische largeIcon size runter (sauber & schneller)
             Bitmap scaled = scaleSquareCenterCrop(raw, 128);
-            round = circleWithBorder(scaled, 6 /* border px */, 0xFFFFFFFF /* white border */);
+            round = circleWithBorder(scaled, 6, 0xFFFFFFFF);
         }
 
         Person user = new Person.Builder().setName("Du").build();
@@ -102,14 +129,12 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setGroup(GROUP_KEY_CHAT)
                 .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN);
 
-        // ✅ rundes largeIcon
         if (round != null) chatBuilder.setLargeIcon(round);
 
         NotificationManagerCompat nm = NotificationManagerCompat.from(this);
         if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, chatBuilder.build());
         else nm.notify(notifId, chatBuilder.build());
 
-        // Summary
         int unread = incrementUnreadCounter(getApplicationContext());
         NotificationCompat.Builder summary = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
@@ -161,14 +186,13 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
     }
 
     private static int incrementUnreadCounter(Context ctx) {
-        var sp = ctx.getSharedPreferences("emd_push", MODE_PRIVATE);
+        android.content.SharedPreferences sp = ctx.getSharedPreferences("emd_push", MODE_PRIVATE);
         int cur = sp.getInt("unread_total", 0);
         int next = cur + 1;
         sp.edit().putInt("unread_total", next).apply();
         return next;
     }
 
-    // --- image download ---
     private Bitmap fetchBitmap(String urlStr) {
         try {
             if (TextUtils.isEmpty(urlStr)) return null;
@@ -191,7 +215,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         }
     }
 
-    // --- make it square crop ---
     private static Bitmap scaleSquareCenterCrop(Bitmap src, int size) {
         int w = src.getWidth();
         int h = src.getHeight();
@@ -204,7 +227,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         return Bitmap.createScaledBitmap(cropped, size, size, true);
     }
 
-    // --- circle + border (premium avatar) ---
     private static Bitmap circleWithBorder(Bitmap src, int borderPx, int borderColor) {
         int size = src.getWidth();
         Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
@@ -213,17 +235,14 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         RectF rect = new RectF(0, 0, size, size);
 
-        // draw circle mask
         canvas.drawARGB(0, 0, 0, 0);
         paint.setColor(0xFFFFFFFF);
         canvas.drawOval(rect, paint);
 
-        // draw image clipped
         paint.setXfermode(new android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN));
         canvas.drawBitmap(src, 0, 0, paint);
         paint.setXfermode(null);
 
-        // border
         if (borderPx > 0) {
             Paint b = new Paint(Paint.ANTI_ALIAS_FLAG);
             b.setStyle(Paint.Style.STROKE);

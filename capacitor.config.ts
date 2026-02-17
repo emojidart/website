@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   appName: "EMD Vereinsapp",
   webDir: "www",
   server: {
-    url: "https://emojisdartverein.netlify.app",
+    url: "https://emojisdartverein.com",
   },
 }
 
