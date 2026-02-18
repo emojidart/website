@@ -5,18 +5,19 @@ import { useEffect, useRef } from "react"
 import { PushNotifications } from "@capacitor/push-notifications"
 import { Capacitor } from "@capacitor/core"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
-import { useRouter } from "next/navigation"
 
 function getSupabaseBrowser(): SupabaseClient {
-  // ✅ WICHTIG: in Capacitor/WebView unbedingt supabase-js Client verwenden
-  // -> nutzt localStorage und persistiert Session zuverlässig
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false, // in App/WebView meist kein OAuth callback per URL nötig
+      detectSessionInUrl: false,
     },
   })
+}
+
+async function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms))
 }
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit & { timeoutMs?: number } = {}) {
@@ -31,8 +32,9 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit & { 
 }
 
 export default function PushInit() {
-  const router = useRouter()
   const supabaseRef = useRef<SupabaseClient | null>(null)
+  const latestTokenRef = useRef<string | null>(null)
+  const registeringRef = useRef(false)
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
@@ -40,18 +42,25 @@ export default function PushInit() {
     const supabase = getSupabaseBrowser()
     supabaseRef.current = supabase
 
-    const registerTokenIfLoggedIn = async (fcmToken: string) => {
+    const registerToken = async (fcmToken: string) => {
+      if (!fcmToken) return
+      if (registeringRef.current) return
+      registeringRef.current = true
+
       try {
-        // Session holen (sollte bei supabase-js + localStorage zuverlässig sein)
-        const { data, error } = await supabase.auth.getSession()
-        if (error) {
-          console.log("[push] getSession error:", error.message)
-          return
+        // ✅ Session kann beim Cold Start kurz NULL sein -> retry max ~10s
+        let accessToken: string | null = null
+        for (let i = 0; i < 20; i++) {
+          const { data, error } = await supabase.auth.getSession()
+          if (!error && data?.session?.access_token) {
+            accessToken = data.session.access_token
+            break
+          }
+          await sleep(500)
         }
 
-        const accessToken = data?.session?.access_token
         if (!accessToken) {
-          console.log("[push] no session yet -> will register after login")
+          console.log("[push] no session after retry -> skip register (will retry on auth events)")
           return
         }
 
@@ -65,19 +74,20 @@ export default function PushInit() {
           timeoutMs: 8000,
         })
 
+        const txt = await res.text().catch(() => "")
         if (!res.ok) {
-          const txt = await res.text().catch(() => "")
           console.log("[push] register-fcm failed:", res.status, txt)
         } else {
-          console.log("[push] token registered in DB")
+          console.log("[push] token registered in DB:", txt || "ok")
         }
       } catch (err) {
         console.error("[push] register-fcm error:", err)
+      } finally {
+        registeringRef.current = false
       }
     }
 
     const init = async () => {
-      // ✅ zuerst checken, damit wir keinen unnötigen Flow starten
       try {
         const cur = await PushNotifications.checkPermissions()
         if (cur.receive !== "granted") {
@@ -88,27 +98,22 @@ export default function PushInit() {
           }
         }
       } catch (e) {
-        console.log("[push] permission check/request error:", e)
+        console.log("[push] permission error:", e)
         return
       }
 
-      // Android Channel (WhatsApp-like: high)
       try {
         await PushNotifications.createChannel({
           id: "chat",
           name: "Chat",
           description: "Chat Benachrichtigungen",
-          importance: 5, // HIGH
-          visibility: 1, // PUBLIC
+          importance: 5,
+          visibility: 1,
           vibration: true,
           lights: true,
         })
-        console.log("[push] channel created: chat")
-      } catch (e) {
-        console.log("[push] createChannel skipped:", e)
-      }
+      } catch {}
 
-      // ✅ Register FCM (nicht blockierend für UI – aber hier ok)
       try {
         await PushNotifications.register()
       } catch (e) {
@@ -116,16 +121,16 @@ export default function PushInit() {
       }
     }
 
-    // Listener: Token
     const subRegistration = PushNotifications.addListener("registration", (token) => {
       console.log("[push] FCM token:", token.value)
 
+      latestTokenRef.current = token.value
       try {
         localStorage.setItem("fcm_token", token.value)
       } catch {}
 
-      // ✅ NICHT awaiten -> niemals App-Start blockieren
-      void registerTokenIfLoggedIn(token.value)
+      // ✅ nicht blockieren
+      void registerToken(token.value)
     })
 
     const subRegErr = PushNotifications.addListener("registrationError", (err) => {
@@ -136,23 +141,14 @@ export default function PushInit() {
       console.log("[push] received:", notif)
     })
 
-    // Tap auf Notification
     const subAction = PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
       console.log("[push] action:", action)
-      try {
-        const data: any = (action as any)?.notification?.data || {}
-        const url = data?.url || data?.clickUrl || data?.path
-        if (url && typeof url === "string") {
-          // ✅ Kein window.location.href (Full reload)
-          // ✅ Router push (SPA Navigation)
-          router.push(url.startsWith("/") ? url : `/${url}`)
-        }
-      } catch {}
+      // Navigation machst du eh nativ über MainActivity/Intent – hier lassen wir nur loggen
     })
 
-    // Wenn User später einloggt -> Token nochmal registrieren
+    // ✅ Sobald supabase die Session initial geladen hat, nochmal registrieren
     const { data: authSub } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+      if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         const saved = (() => {
           try {
             return localStorage.getItem("fcm_token")
@@ -160,14 +156,11 @@ export default function PushInit() {
             return null
           }
         })()
-        if (saved) {
-          // ✅ wieder nicht blockieren
-          void registerTokenIfLoggedIn(saved)
-        }
+        const token = latestTokenRef.current || saved
+        if (token) void registerToken(token)
       }
     })
 
-    // ✅ init starten (nicht awaited im Effect)
     void init()
 
     return () => {
@@ -177,7 +170,7 @@ export default function PushInit() {
       subAction.remove()
       authSub?.subscription?.unsubscribe()
     }
-  }, [router])
+  }, [])
 
   return null
 }
