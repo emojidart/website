@@ -142,12 +142,6 @@ function initials(name: string) {
   return (a + b).toUpperCase()
 }
 
-function firstName(name: string) {
-  const n = (name || "").trim()
-  if (!n) return name
-  return n.split(/\s+/)[0]
-}
-
 export default function TeamChatPage() {
   const { session } = useAuth()
   const { toast } = useToast()
@@ -204,8 +198,6 @@ export default function TeamChatPage() {
   }
 
   const [vorstandMembers, setVorstandMembers] = useState<VorstandMember[]>([])
-  const [vorstandMembersLoading, setVorstandMembersLoading] = useState(false)
-
   const vorstandPlayerIdSet = useMemo(() => {
     return new Set((vorstandMembers || []).map((m) => m.player_id).filter(Boolean))
   }, [vorstandMembers])
@@ -619,8 +611,6 @@ export default function TeamChatPage() {
 
   const fetchVorstandMembers = async () => {
     try {
-      setVorstandMembersLoading(true)
-
       const { data: roles, error: rolesError } = await supabase
         .from(ROLE_TABLE)
         .select(`${ROLE_PROFILE_COL}, role`)
@@ -673,25 +663,11 @@ export default function TeamChatPage() {
         })
         .filter(Boolean) as any
 
-      const roleRank = (role: string | null) => {
-        if (role === "Vorstand") return 0
-        if (role === "Kassier") return 1
-        if (role === "Schriftführer") return 2
-        return 9
-      }
-
-      members.sort((a, b) => {
-        const rr = roleRank(a.role) - roleRank(b.role)
-        if (rr !== 0) return rr
-        return (a.name || "").localeCompare(b.name || "")
-      })
-
+      members.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
       setVorstandMembers(members)
     } catch (e) {
       console.error("fetchVorstandMembers error", e)
       setVorstandMembers([])
-    } finally {
-      setVorstandMembersLoading(false)
     }
   }
 
@@ -1013,7 +989,6 @@ export default function TeamChatPage() {
     sendBtn: "bg-orange-600 hover:bg-orange-600/90 text-white",
   }
 
-  // ✅ ALLE hooks/derived values VOR irgendwelchen returns, sonst Hook-Order Error
   const clubUnread = unreadCounts[unreadKey(CLUB_ROOM_ID, "club")] || 0
   const freizeitUnread = unreadCounts[unreadKey(FREIZEIT_ROOM_ID, "freizeit")] || 0
   const vorstandUnread = unreadCounts[unreadKey(VORSTAND_ROOM_ID, "vorstand")] || 0
@@ -1029,16 +1004,8 @@ export default function TeamChatPage() {
   const headerPeopleLoading = useMemo(() => {
     if (selectedScope === "team") return membersLoading
     if (selectedScope === "captains") return globalCaptainsLoading
-    if (selectedScope === "vorstand") return vorstandMembersLoading
     return false
-  }, [selectedScope, membersLoading, globalCaptainsLoading, vorstandMembersLoading])
-
-  const headerPeopleLabel = useMemo(() => {
-    if (selectedScope === "team") return "Mitglieder"
-    if (selectedScope === "captains") return "Captain/Co-Captain"
-    if (selectedScope === "vorstand") return "Vorstand"
-    return ""
-  }, [selectedScope])
+  }, [selectedScope, membersLoading, globalCaptainsLoading])
 
   const renderedStream = useMemo(() => {
     const out: Array<{ type: "date"; key: string; label: string } | { type: "msg"; msg: ChatMessage }> = []
@@ -1057,11 +1024,10 @@ export default function TeamChatPage() {
 
   const showNoProfile = !profileLoading && !profile
 
-  // ✅ Erst nach allen hooks returnen
   if (!session) {
     return (
-      <div className={`min-h-screen flex flex-col pb-20 ${WA.appBg}`}>
-        <main className="flex-grow flex items-center justify-center p-4">
+      <div className={`min-h-[100dvh] flex flex-col ${WA.appBg}`}>
+        <main className="flex-1 flex items-center justify-center p-4">
           <Card className={`w-full max-w-md ${WA.card}`}>
             <CardContent className="p-6 text-center">
               <MessageCircle className="h-12 w-12 text-orange-600 mx-auto mb-4" />
@@ -1079,581 +1045,497 @@ export default function TeamChatPage() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col pb-20 ${WA.appBg}`}>
-      <main className="flex-grow pt-4">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="mb-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/member-profile-app")}
-              className="bg-white hover:bg-orange-50 text-slate-900 border border-slate-200 rounded-xl"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Zurück zum Profil
-            </Button>
-          </div>
-
-          {showNoProfile ? (
-            <Card className={WA.card}>
-              <CardContent className="p-6 text-center">
-                <MessageCircle className="h-12 w-12 text-orange-600 mx-auto mb-4" />
-                <h2 className="text-xl font-bold mb-2">Profil fehlt</h2>
-                <p className="text-muted-foreground mb-4">
-                  Für diesen Account gibt es keinen Eintrag in <code>user_profiles</code>. Bitte melde dich beim Admin.
-                </p>
-                <Button onClick={() => router.push("/member-profile-app")} className={WA.sendBtn}>
-                  Zurück
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="flex h-[calc(100vh-200px)] gap-4">
-              {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
-
-              {/* Sidebar */}
-              <div
-                className={`fixed lg:relative inset-y-0 left-0 z-50 w-80 lg:w-72 xl:w-80 transform ${
-                  sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                } lg:translate-x-0 transition-transform duration-200 ease-in-out`}
+    <div className={`h-[100dvh] flex flex-col overflow-hidden ${WA.appBg}`}>
+      {/* ✅ Wichtig: Seite selbst darf nicht scrollen -> nur die Chat-ScrollArea */}
+      <main className="flex-1 min-h-0 overflow-hidden pt-3 pb-[env(safe-area-inset-bottom)]">
+        <div className="container mx-auto px-4 max-w-6xl h-full">
+          <div className="flex flex-col h-full min-h-0">
+            <div className="mb-4 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/member-profile-app")}
+                className="bg-white hover:bg-orange-50 text-slate-900 border border-slate-200 rounded-xl"
               >
-                <Card className={`h-full ${WA.card}`}>
-                  <CardHeader className={`pb-3 ${WA.header}`}>
-                    <div className="flex items-center justify-between gap-3">
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Hash className="h-5 w-5 text-orange-600" />
-                        Chats
-                      </CardTitle>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Zurück zum Profil
+              </Button>
+            </div>
 
-                      <div className="flex items-center gap-2">
-                        {isVorstand && (
-                          <Badge variant="secondary" className={`gap-1 ${WA.iconBadge}`}>
-                            <Shield className="h-3.5 w-3.5" />
-                            Vorstand
-                          </Badge>
-                        )}
-                        <Button variant="ghost" size="sm" className="lg:hidden rounded-xl" onClick={() => setSidebarOpen(false)}>
-                          <X className="h-4 w-4" />
-                        </Button>
+            {showNoProfile ? (
+              <Card className={`${WA.card} shrink-0`}>
+                <CardContent className="p-6 text-center">
+                  <MessageCircle className="h-12 w-12 text-orange-600 mx-auto mb-4" />
+                  <h2 className="text-xl font-bold mb-2">Profil fehlt</h2>
+                  <p className="text-muted-foreground mb-4">
+                    Für diesen Account gibt es keinen Eintrag in <code>user_profiles</code>. Bitte melde dich beim Admin.
+                  </p>
+                  <Button onClick={() => router.push("/member-profile-app")} className={WA.sendBtn}>
+                    Zurück
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="flex-1 min-h-0 flex gap-4 overflow-hidden">
+                {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+
+                {/* Sidebar */}
+                <div
+                  className={`fixed lg:relative inset-y-0 left-0 z-50 w-80 lg:w-72 xl:w-80 transform ${
+                    sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                  } lg:translate-x-0 transition-transform duration-200 ease-in-out`}
+                >
+                  <Card className={`h-full ${WA.card} flex flex-col min-h-0 overflow-hidden`}>
+                    <CardHeader className={`pb-3 ${WA.header} shrink-0`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Hash className="h-5 w-5 text-orange-600" />
+                          Chats
+                        </CardTitle>
+
+                        <div className="flex items-center gap-2">
+                          {isVorstand && (
+                            <Badge variant="secondary" className={`gap-1 ${WA.iconBadge}`}>
+                              <Shield className="h-3.5 w-3.5" />
+                              Vorstand
+                            </Badge>
+                          )}
+                          <Button variant="ghost" size="sm" className="lg:hidden rounded-xl" onClick={() => setSidebarOpen(false)}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
+                    </CardHeader>
 
-                  <CardContent className="p-0">
-                    <ScrollArea className="h-[calc(100vh-280px)]">
-                      {/* Vereinsinfo + Freizeit + Vorstand */}
-                      <div className="p-2 border-b border-black/5">
-                        <Button
-                          variant="ghost"
-                          className={`${WA.sidebarItemBase} ${selectedScope === "club" ? WA.sidebarItemSelected : WA.sidebarItemUnselected}`}
-                          onClick={() => {
-                            setSelectedScope("club")
-                            setSidebarOpen(false)
-                            setTimeout(() => markRoomAsVisited(CLUB_ROOM_ID, "club"), 50)
-                          }}
-                        >
-                          <div className="flex items-center gap-3 w-full">
-                            <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                selectedScope === "club" ? "bg-white/20" : "bg-orange-100"
-                              }`}
-                            >
-                              <Info className={`h-4 w-4 ${selectedScope === "club" ? WA.iconInSelected : WA.iconInUnselected}`} />
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate text-sm">Vereinsinfo</div>
-                              <p className={`text-xs mt-1 truncate ${selectedScope === "club" ? "text-white/80" : "text-muted-foreground"}`}>
-                                Für alle Mitglieder
-                              </p>
-                            </div>
-
-                            {clubUnread > 0 && (
-                              <Badge variant="destructive" className={WA.unreadBadge}>
-                                {clubUnread > 99 ? "99+" : clubUnread}
-                              </Badge>
-                            )}
-                          </div>
-                        </Button>
-
-                        <Button
-                          variant="ghost"
-                          className={`${WA.sidebarItemBase} mt-1 ${
-                            selectedScope === "freizeit" ? WA.sidebarItemSelected : WA.sidebarItemUnselected
-                          }`}
-                          onClick={() => {
-                            setSelectedScope("freizeit")
-                            setSidebarOpen(false)
-                            setTimeout(() => markRoomAsVisited(FREIZEIT_ROOM_ID, "freizeit"), 50)
-                          }}
-                        >
-                          <div className="flex items-center gap-3 w-full">
-                            <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                selectedScope === "freizeit" ? "bg-white/20" : "bg-orange-100"
-                              }`}
-                            >
-                              <Coffee className={`h-4 w-4 ${selectedScope === "freizeit" ? WA.iconInSelected : WA.iconInUnselected}`} />
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate text-sm">Freizeit</div>
-                              <p className={`text-xs mt-1 truncate ${selectedScope === "freizeit" ? "text-white/80" : "text-muted-foreground"}`}>
-                                Für alle Mitglieder
-                              </p>
-                            </div>
-
-                            {freizeitUnread > 0 && (
-                              <Badge variant="destructive" className={WA.unreadBadge}>
-                                {freizeitUnread > 99 ? "99+" : freizeitUnread}
-                              </Badge>
-                            )}
-                          </div>
-                        </Button>
-
-                        {(canSeeCaptainChat || isVorstand) && (
+                    <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
+                      <ScrollArea className="h-full">
+                        <div className="p-2 border-b border-black/5">
                           <Button
                             variant="ghost"
-                            className={`${WA.sidebarItemBase} mt-1 ${
-                              selectedScope === "captains" ? WA.sidebarItemSelected : WA.sidebarItemUnselected
-                            }`}
+                            className={`${WA.sidebarItemBase} ${selectedScope === "club" ? WA.sidebarItemSelected : WA.sidebarItemUnselected}`}
                             onClick={() => {
-                              setSelectedScope("captains")
+                              setSelectedScope("club")
                               setSidebarOpen(false)
-                              setTimeout(() => markRoomAsVisited(CAPTAINS_ROOM_ID, "captains"), 50)
+                              setTimeout(() => markRoomAsVisited(CLUB_ROOM_ID, "club"), 50)
                             }}
                           >
                             <div className="flex items-center gap-3 w-full">
                               <div
                                 className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                  selectedScope === "captains" ? "bg-white/20" : "bg-orange-100"
+                                  selectedScope === "club" ? "bg-white/20" : "bg-orange-100"
                                 }`}
                               >
-                                <Users className={`h-4 w-4 ${selectedScope === "captains" ? WA.iconInSelected : WA.iconInUnselected}`} />
+                                <Info className={`h-4 w-4 ${selectedScope === "club" ? WA.iconInSelected : WA.iconInUnselected}`} />
                               </div>
 
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate text-sm">Captain-Chat</div>
-                                <p className={`text-xs mt-1 truncate ${selectedScope === "captains" ? "text-white/80" : "text-muted-foreground"}`}>
-                                  Alle Captain &amp; Co-Captain
+                                <div className="font-medium truncate text-sm">Vereinsinfo</div>
+                                <p className={`text-xs mt-1 truncate ${selectedScope === "club" ? "text-white/80" : "text-muted-foreground"}`}>
+                                  Für alle Mitglieder
                                 </p>
                               </div>
 
-                              {captainsUnread > 0 && (
+                              {clubUnread > 0 && (
                                 <Badge variant="destructive" className={WA.unreadBadge}>
-                                  {captainsUnread > 99 ? "99+" : captainsUnread}
+                                  {clubUnread > 99 ? "99+" : clubUnread}
                                 </Badge>
                               )}
                             </div>
                           </Button>
-                        )}
 
-                        {canSeeVorstandChat && (
                           <Button
                             variant="ghost"
-                            className={`${WA.sidebarItemBase} mt-1 ${
-                              selectedScope === "vorstand" ? WA.sidebarItemSelected : WA.sidebarItemUnselected
-                            }`}
+                            className={`${WA.sidebarItemBase} mt-1 ${selectedScope === "freizeit" ? WA.sidebarItemSelected : WA.sidebarItemUnselected}`}
                             onClick={() => {
-                              setSelectedScope("vorstand")
+                              setSelectedScope("freizeit")
                               setSidebarOpen(false)
-                              setTimeout(() => markRoomAsVisited(VORSTAND_ROOM_ID, "vorstand"), 50)
+                              setTimeout(() => markRoomAsVisited(FREIZEIT_ROOM_ID, "freizeit"), 50)
                             }}
                           >
                             <div className="flex items-center gap-3 w-full">
                               <div
                                 className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                  selectedScope === "vorstand" ? "bg-white/20" : "bg-orange-100"
+                                  selectedScope === "freizeit" ? "bg-white/20" : "bg-orange-100"
                                 }`}
                               >
-                                <Shield className={`h-4 w-4 ${selectedScope === "vorstand" ? WA.iconInSelected : WA.iconInUnselected}`} />
+                                <Coffee className={`h-4 w-4 ${selectedScope === "freizeit" ? WA.iconInSelected : WA.iconInUnselected}`} />
                               </div>
 
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate text-sm">Vorstand</div>
-                                <p className={`text-xs mt-1 truncate ${selectedScope === "vorstand" ? "text-white/80" : "text-muted-foreground"}`}>
-                                  Nur Vorstand-Rollen
+                                <div className="font-medium truncate text-sm">Freizeit</div>
+                                <p className={`text-xs mt-1 truncate ${selectedScope === "freizeit" ? "text-white/80" : "text-muted-foreground"}`}>
+                                  Für alle Mitglieder
                                 </p>
                               </div>
 
-                              {vorstandUnread > 0 && (
+                              {freizeitUnread > 0 && (
                                 <Badge variant="destructive" className={WA.unreadBadge}>
-                                  {vorstandUnread > 99 ? "99+" : vorstandUnread}
+                                  {freizeitUnread > 99 ? "99+" : freizeitUnread}
                                 </Badge>
                               )}
                             </div>
                           </Button>
-                        )}
-                      </div>
 
-                      {roomsLoading ? (
-                        <div className="p-4 text-center">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto" />
-                          <p className="mt-2 text-sm text-muted-foreground">Lade Teams...</p>
+                          {(canSeeCaptainChat || isVorstand) && (
+                            <Button
+                              variant="ghost"
+                              className={`${WA.sidebarItemBase} mt-1 ${
+                                selectedScope === "captains" ? WA.sidebarItemSelected : WA.sidebarItemUnselected
+                              }`}
+                              onClick={() => {
+                                setSelectedScope("captains")
+                                setSidebarOpen(false)
+                                setTimeout(() => markRoomAsVisited(CAPTAINS_ROOM_ID, "captains"), 50)
+                              }}
+                            >
+                              <div className="flex items-center gap-3 w-full">
+                                <div
+                                  className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                    selectedScope === "captains" ? "bg-white/20" : "bg-orange-100"
+                                  }`}
+                                >
+                                  <Users className={`h-4 w-4 ${selectedScope === "captains" ? WA.iconInSelected : WA.iconInUnselected}`} />
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate text-sm">Captain-Chat</div>
+                                  <p
+                                    className={`text-xs mt-1 truncate ${
+                                      selectedScope === "captains" ? "text-white/80" : "text-muted-foreground"
+                                    }`}
+                                  >
+                                    Alle Captain &amp; Co-Captain
+                                  </p>
+                                </div>
+
+                                {captainsUnread > 0 && (
+                                  <Badge variant="destructive" className={WA.unreadBadge}>
+                                    {captainsUnread > 99 ? "99+" : captainsUnread}
+                                  </Badge>
+                                )}
+                              </div>
+                            </Button>
+                          )}
+
+                          {canSeeVorstandChat && (
+                            <Button
+                              variant="ghost"
+                              className={`${WA.sidebarItemBase} mt-1 ${
+                                selectedScope === "vorstand" ? WA.sidebarItemSelected : WA.sidebarItemUnselected
+                              }`}
+                              onClick={() => {
+                                setSelectedScope("vorstand")
+                                setSidebarOpen(false)
+                                setTimeout(() => markRoomAsVisited(VORSTAND_ROOM_ID, "vorstand"), 50)
+                              }}
+                            >
+                              <div className="flex items-center gap-3 w-full">
+                                <div
+                                  className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                    selectedScope === "vorstand" ? "bg-white/20" : "bg-orange-100"
+                                  }`}
+                                >
+                                  <Shield className={`h-4 w-4 ${selectedScope === "vorstand" ? WA.iconInSelected : WA.iconInUnselected}`} />
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate text-sm">Vorstand</div>
+                                  <p
+                                    className={`text-xs mt-1 truncate ${
+                                      selectedScope === "vorstand" ? "text-white/80" : "text-muted-foreground"
+                                    }`}
+                                  >
+                                    Nur Vorstand-Rollen
+                                  </p>
+                                </div>
+
+                                {vorstandUnread > 0 && (
+                                  <Badge variant="destructive" className={WA.unreadBadge}>
+                                    {vorstandUnread > 99 ? "99+" : vorstandUnread}
+                                  </Badge>
+                                )}
+                              </div>
+                            </Button>
+                          )}
                         </div>
-                      ) : !profile?.player_id ? (
-                        <div className="p-4 text-center text-muted-foreground">
-                          <Hash className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                          <p className="text-sm">Du bist noch keinem Spieler zugeordnet.</p>
+
+                        {roomsLoading ? (
+                          <div className="p-4 text-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto" />
+                            <p className="mt-2 text-sm text-muted-foreground">Lade Teams...</p>
+                          </div>
+                        ) : !profile?.player_id ? (
+                          <div className="p-4 text-center text-muted-foreground">
+                            <Hash className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                            <p className="text-sm">Du bist noch keinem Spieler zugeordnet.</p>
+                          </div>
+                        ) : chatRooms.length === 0 ? (
+                          <div className="p-4 text-center text-muted-foreground">
+                            <Hash className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                            <p className="text-sm">Du bist in keinem Team.</p>
+                          </div>
+                        ) : (
+                          <div className="p-2">
+                            {chatRooms.map((room) => {
+                              const teamUnread = unreadCounts[unreadKey(room.id, "team")] || 0
+                              const isSelected = selectedScope === "team" && selectedRoom?.id === room.id
+
+                              return (
+                                <div key={room.id} className="mb-2">
+                                  <Button
+                                    variant="ghost"
+                                    className={`${WA.sidebarItemBase} ${isSelected ? WA.sidebarItemSelected : WA.sidebarItemUnselected}`}
+                                    onClick={() => {
+                                      setSelectedRoom(room)
+                                      setSelectedScope("team")
+                                      setSidebarOpen(false)
+                                      setTimeout(() => markRoomAsVisited(room.id, "team"), 50)
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-3 w-full">
+                                      {room.logo_url ? (
+                                        <Avatar className="w-8 h-8 flex-shrink-0">
+                                          <AvatarImage src={room.logo_url || "/placeholder.svg"} alt={room.name} />
+                                          <AvatarFallback className={isSelected ? "bg-white/20 text-white" : "bg-orange-100 text-orange-700"}>
+                                            {room.name.charAt(0).toUpperCase()}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                      ) : (
+                                        <div
+                                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                            isSelected ? "bg-white/20" : "bg-orange-100"
+                                          }`}
+                                        >
+                                          <Hash className={`h-4 w-4 ${isSelected ? WA.iconInSelected : WA.iconInUnselected}`} />
+                                        </div>
+                                      )}
+
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium truncate text-sm">{room.name}</div>
+                                        {room.role ? (
+                                          <p className={`text-xs mt-1 truncate ${isSelected ? "text-white/80" : "text-muted-foreground"}`}>
+                                            Rolle: {room.role}
+                                          </p>
+                                        ) : room.description ? (
+                                          <p className={`text-xs mt-1 truncate ${isSelected ? "text-white/80" : "text-muted-foreground"}`}>
+                                            {room.description}
+                                          </p>
+                                        ) : null}
+                                      </div>
+
+                                      {teamUnread > 0 && (
+                                        <Badge variant="destructive" className={WA.unreadBadge}>
+                                          {teamUnread > 99 ? "99+" : teamUnread}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </Button>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Main */}
+                <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
+                  <Card className={`h-full ${WA.card} overflow-hidden flex flex-col min-h-0`}>
+                    <CardHeader className={`pb-3 ${WA.header} shrink-0`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <Button variant="ghost" size="sm" className="lg:hidden rounded-xl" onClick={() => setSidebarOpen(true)}>
+                          <Menu className="h-4 w-4" />
+                        </Button>
+
+                        <div className="flex items-center justify-center">
+                          {selectedScope === "team" && selectedRoom?.logo_url ? (
+                            <Avatar className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0">
+                              <AvatarImage src={selectedRoom.logo_url || "/placeholder.svg"} alt={selectedRoomName} />
+                              <AvatarFallback className="bg-orange-100 text-orange-700">
+                                {(selectedRoomName || "#").charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          ) : (
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-orange-100 flex items-center justify-center">
+                              {selectedScope === "club" ? (
+                                <Info className="h-4 w-4 text-orange-600" />
+                              ) : selectedScope === "freizeit" ? (
+                                <Coffee className="h-4 w-4 text-orange-600" />
+                              ) : selectedScope === "vorstand" ? (
+                                <Shield className="h-4 w-4 text-orange-600" />
+                              ) : selectedScope === "captains" ? (
+                                <Users className="h-4 w-4 text-orange-600" />
+                              ) : (
+                                <Hash className="h-4 w-4 text-orange-600" />
+                              )}
+                            </div>
+                          )}
                         </div>
-                      ) : chatRooms.length === 0 ? (
-                        <div className="p-4 text-center text-muted-foreground">
-                          <Hash className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                          <p className="text-sm">Du bist in keinem Team.</p>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <CardTitle className="text-base truncate">{selectedRoomName}</CardTitle>
+                          </div>
+
+                          {/* ✅ Mitglieder-Anzeige komplett weg (wie gewünscht) */}
+                        </div>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
+                      {selectedScope === "team" && !selectedRoom ? (
+                        <div className={`flex-1 flex items-center justify-center text-muted-foreground ${WA.chatBg}`}>
+                          <div className="text-center">
+                            <Hash className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                            <p className="text-sm">Wähle ein Team aus der Seitenleiste</p>
+                            <Button
+                              variant="outline"
+                              className="mt-4 lg:hidden bg-white hover:bg-orange-50 border-slate-200 rounded-xl"
+                              size="sm"
+                              onClick={() => setSidebarOpen(true)}
+                            >
+                              <Menu className="h-4 w-4 mr-2" />
+                              Chats anzeigen
+                            </Button>
+                          </div>
+                        </div>
+                      ) : selectedScope === "captains" && !canSeeCaptainChat ? (
+                        <div className={`flex-1 flex items-center justify-center text-muted-foreground ${WA.chatBg}`}>
+                          <div className="text-center">
+                            <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                            <p className="text-sm">Kein Zugriff auf den Captain-Chat.</p>
+                          </div>
+                        </div>
+                      ) : selectedScope === "vorstand" && !canSeeVorstandChat && !isVorstand ? (
+                        <div className={`flex-1 flex items-center justify-center text-muted-foreground ${WA.chatBg}`}>
+                          <div className="text-center">
+                            <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                            <p className="text-sm">Kein Zugriff auf den Vorstand-Chat.</p>
+                          </div>
                         </div>
                       ) : (
-                        <div className="p-2">
-                          {chatRooms.map((room) => {
-                            const teamUnread = unreadCounts[unreadKey(room.id, "team")] || 0
-                            const isSelected = selectedScope === "team" && selectedRoom?.id === room.id
-
-                            return (
-                              <div key={room.id} className="mb-2">
-                                <Button
-                                  variant="ghost"
-                                  className={`${WA.sidebarItemBase} ${isSelected ? WA.sidebarItemSelected : WA.sidebarItemUnselected}`}
-                                  onClick={() => {
-                                    setSelectedRoom(room)
-                                    setSelectedScope("team")
-                                    setSidebarOpen(false)
-                                    setTimeout(() => markRoomAsVisited(room.id, "team"), 50)
-                                  }}
-                                >
-                                  <div className="flex items-center gap-3 w-full">
-                                    {room.logo_url ? (
-                                      <Avatar className="w-8 h-8 flex-shrink-0">
-                                        <AvatarImage src={room.logo_url || "/placeholder.svg"} alt={room.name} />
-                                        <AvatarFallback className={isSelected ? "bg-white/20 text-white" : "bg-orange-100 text-orange-700"}>
-                                          {room.name.charAt(0).toUpperCase()}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                    ) : (
-                                      <div
-                                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                          isSelected ? "bg-white/20" : "bg-orange-100"
-                                        }`}
-                                      >
-                                        <Hash className={`h-4 w-4 ${isSelected ? WA.iconInSelected : WA.iconInUnselected}`} />
-                                      </div>
-                                    )}
-
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-medium truncate text-sm">{room.name}</div>
-                                      {room.role ? (
-                                        <p className={`text-xs mt-1 truncate ${isSelected ? "text-white/80" : "text-muted-foreground"}`}>
-                                          Rolle: {room.role}
-                                        </p>
-                                      ) : room.description ? (
-                                        <p className={`text-xs mt-1 truncate ${isSelected ? "text-white/80" : "text-muted-foreground"}`}>
-                                          {room.description}
-                                        </p>
-                                      ) : null}
-                                    </div>
-
-                                    {teamUnread > 0 && (
-                                      <Badge variant="destructive" className={WA.unreadBadge}>
-                                        {teamUnread > 99 ? "99+" : teamUnread}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </Button>
+                        <>
+                          <ScrollArea className={`flex-1 min-h-0 p-3 sm:p-4 ${WA.chatBg}`}>
+                            {loading ? (
+                              <div className="text-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto" />
+                                <p className="mt-2 text-muted-foreground text-sm">Lade Chat...</p>
                               </div>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Main */}
-              <div className="flex-1 min-w-0">
-                <Card className={`h-full ${WA.card} overflow-hidden`}>
-                  <CardHeader className={`pb-3 ${WA.header}`}>
-                    <div className="flex items-center justify-between gap-3">
-
-                      <Button variant="ghost" size="sm" className="lg:hidden rounded-xl" onClick={() => setSidebarOpen(true)}>
-                        <Menu className="h-4 w-4" />
-                      </Button>
-
-                      <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center">
-
-                        {selectedScope === "club" ? (
-                          <Info className="h-3.5 w-3.5 text-orange-600" />
-                        ) : selectedScope === "freizeit" ? (
-                          <Coffee className="h-3.5 w-3.5 text-orange-600" />
-                        ) : selectedScope === "vorstand" ? (
-                          <Shield className="h-3.5 w-3.5 text-orange-600" />
-                        ) : selectedScope === "captains" ? (
-                          <Users className="h-3.5 w-3.5 text-orange-600" />
-                        ) : (
-                          <Hash className="h-3.5 w-3.5 text-orange-600" />
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <CardTitle className="text-base truncate">{selectedRoomName}</CardTitle>
-
-                          <div className="hidden sm:flex items-center gap-2 shrink-0">
-                            {selectedScope === "team" && selectedRoom?.role && (
-                              <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-orange-100 text-orange-800 border border-orange-200">
-                                {selectedRoom.role}
-                              </span>
-                            )}
-                            {selectedScope === "vorstand" && (
-                              <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-orange-100 text-orange-800 border border-orange-200">
-                                🛡️ Vorstand
-                              </span>
-                            )}
-                            {selectedScope === "captains" && (
-                              <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-orange-100 text-orange-800 border border-orange-200">
-                                👑 Captain
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-muted-foreground truncate">
-                          {selectedScope === "club"
-                            ? "Vereinsweite Infos – alle haben Zugriff."
-                            : selectedScope === "freizeit"
-                              ? "Freizeit & Community – alle haben Zugriff."
-                              : selectedScope === "vorstand"
-                                ? "Nur Vorstand-Rollen sehen diesen Chat."
-                                : selectedScope === "captains"
-                                  ? "Nur Captain & Co-Captain sehen diesen Chat."
-                                  : "Nur Mitglieder dieses Teams sehen diesen Chat."}
-                        </p>
-
-                        {(selectedScope === "team" || selectedScope === "captains" || selectedScope === "vorstand") && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="text-[11px] text-muted-foreground shrink-0">{headerPeopleLabel}:</span>
-
-                            {headerPeopleLoading ? (
-                              <span className="text-[11px] text-muted-foreground">Lade…</span>
-                            ) : headerPeople.length === 0 ? (
-                              <span className="text-[11px] text-muted-foreground">—</span>
+                            ) : messages.length === 0 ? (
+                              <div className="text-center py-8 text-muted-foreground">
+                                <MessageCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                                <p className="text-sm">Noch keine Nachrichten.</p>
+                                <p className="text-xs mt-2">Sei der Erste, der eine Nachricht schreibt!</p>
+                              </div>
                             ) : (
-                              <ScrollArea className="w-full whitespace-nowrap">
-                                <div className="flex gap-2 pr-2">
-                                  {headerPeople.slice(0, 40).map((m: any) => (
-                                    <div
-                                      key={m.player_id}
-                                      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/70 border border-black/5 shadow-sm"
-                                      title={m.name}
-                                    >
-                                      <Avatar className="w-5 h-5">
-                                        <AvatarImage src={m.photo_url || "/placeholder.svg"} alt={m.name} />
-                                        <AvatarFallback className="bg-orange-100 text-orange-700 text-[10px]">
-                                          {initials(m.name)}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <span className="text-[11px] text-slate-700 font-medium">{firstName(m.name)}</span>
-                                    </div>
-                                  ))}
-                                  {headerPeople.length > 40 && (
-                                    <div className="inline-flex items-center px-2 py-1 rounded-full bg-white/70 border border-black/5 text-[11px] text-muted-foreground">
-                                      +{headerPeople.length - 40}
-                                    </div>
-                                  )}
-                                </div>
-                              </ScrollArea>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {selectedScope !== "club" && selectedScope !== "freizeit" && selectedScope !== "vorstand" && selectedRoom && (
-                        <div className="hidden sm:flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className={`rounded-xl ${selectedScope === "team" ? WA.sidebarItemSelected : "bg-white hover:bg-orange-50 border border-slate-200"}`}
-                            onClick={() => setSelectedScope("team")}
-                          >
-                            Team
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className={`rounded-xl ${
-                              selectedScope === "captains"
-                                ? WA.sidebarItemSelected
-                                : "bg-white hover:bg-orange-50 border border-slate-200"
-                            }`}
-                            onClick={() => setSelectedScope("captains")}
-                            disabled={!canSeeCaptainChat}
-                            title={!canSeeCaptainChat ? "Nur Captain/Co-Captain" : undefined}
-                          >
-                            Captain
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="p-0 flex flex-col h-[calc(100%-70px)]">
-                    {selectedScope === "team" && !selectedRoom ? (
-                      <div className={`flex-1 flex items-center justify-center text-muted-foreground ${WA.chatBg}`}>
-                        <div className="text-center">
-                          <Hash className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                          <p className="text-sm">Wähle ein Team aus der Seitenleiste</p>
-                          <Button
-                            variant="outline"
-                            className="mt-4 lg:hidden bg-white hover:bg-orange-50 border-slate-200 rounded-xl"
-                            size="sm"
-                            onClick={() => setSidebarOpen(true)}
-                          >
-                            <Menu className="h-4 w-4 mr-2" />
-                            Chats anzeigen
-                          </Button>
-                        </div>
-                      </div>
-                    ) : selectedScope === "captains" && !canSeeCaptainChat ? (
-                      <div className={`flex-1 flex items-center justify-center text-muted-foreground ${WA.chatBg}`}>
-                        <div className="text-center">
-                          <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                          <p className="text-sm">Kein Zugriff auf den Captain-Chat.</p>
-                        </div>
-                      </div>
-                    ) : selectedScope === "vorstand" && !canSeeVorstandChat && !isVorstand ? (
-                      <div className={`flex-1 flex items-center justify-center text-muted-foreground ${WA.chatBg}`}>
-                        <div className="text-center">
-                          <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                          <p className="text-sm">Kein Zugriff auf den Vorstand-Chat.</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <ScrollArea className={`flex-1 p-4 ${WA.chatBg}`}>
-                          {loading ? (
-                            <div className="text-center py-8">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto" />
-                              <p className="mt-2 text-muted-foreground text-sm">Lade Chat...</p>
-                            </div>
-                          ) : messages.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">
-                              <MessageCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                              <p className="text-sm">Noch keine Nachrichten.</p>
-                              <p className="text-xs mt-2">Sei der Erste, der eine Nachricht schreibt!</p>
-                            </div>
-                          ) : (
-                            <div className="space-y-3">
-                              {renderedStream.map((item) => {
-                                if (item.type === "date") {
-                                  return (
-                                    <div key={`date-${item.key}`} className="py-2 flex items-center justify-center">
-                                      <div className="px-3 py-1 rounded-full bg-white/75 border border-black/5 text-[11px] text-slate-600 shadow-sm">
-                                        {item.label}
+                              <div className="space-y-3">
+                                {renderedStream.map((item) => {
+                                  if (item.type === "date") {
+                                    return (
+                                      <div key={`date-${item.key}`} className="py-2 flex items-center justify-center">
+                                        <div className="px-3 py-1 rounded-full bg-white/75 border border-black/5 text-[11px] text-slate-600 shadow-sm">
+                                          {item.label}
+                                        </div>
                                       </div>
-                                    </div>
-                                  )
-                                }
+                                    )
+                                  }
 
-                                const message = item.msg
-                                const isOwnMessage = message.user_id === profile?.id
-                                const name = message.sender?.name ?? "Unbekannt"
-                                const photoUrl = message.sender?.photo_url
-                                const isSenderVorstand = !!(message.sender_player_id && vorstandPlayerIdSet.has(message.sender_player_id))
-                                const time = formatTimeVienna(message.created_at)
+                                  const message = item.msg
+                                  const isOwnMessage = message.user_id === profile?.id
+                                  const name = message.sender?.name ?? "Unbekannt"
+                                  const photoUrl = message.sender?.photo_url
+                                  const isSenderVorstand = !!(message.sender_player_id && vorstandPlayerIdSet.has(message.sender_player_id))
+                                  const time = formatTimeVienna(message.created_at)
 
-                                return (
-                                  <div key={message.id} className={`flex gap-2 ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}>
-                                    <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0 mt-0.5">
-                                      <AvatarImage src={photoUrl || "/placeholder.svg"} alt={name} />
-                                      <AvatarFallback className="bg-orange-100 text-orange-700 text-[10px]">{initials(name)}</AvatarFallback>
-                                    </Avatar>
+                                  return (
+                                    <div key={message.id} className={`flex gap-2 ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}>
+                                      <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0 mt-0.5">
+                                        <AvatarImage src={photoUrl || "/placeholder.svg"} alt={name} />
+                                        <AvatarFallback className="bg-orange-100 text-orange-700 text-[10px]">{initials(name)}</AvatarFallback>
+                                      </Avatar>
 
-                                    <div className={`flex flex-col max-w-[92%] sm:max-w-xs lg:max-w-md ${isOwnMessage ? "items-end" : "items-start"}`}>
-                                      {!isOwnMessage && (
-                                        <div className="w-full mb-1">
-                                          <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-                                            <div className="min-w-0 flex items-center gap-2">
-                                              <span className="text-[13px] font-semibold text-slate-700 truncate">{name}</span>
-                                              {isSenderVorstand && (
-                                                <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-800 shrink-0">
-                                                  🛡️ Vorstand
-                                                </span>
-                                              )}
+                                      <div className={`flex flex-col max-w-[92%] sm:max-w-xs lg:max-w-md ${isOwnMessage ? "items-end" : "items-start"}`}>
+                                        {!isOwnMessage && (
+                                          <div className="w-full mb-1">
+                                            <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+                                              <div className="min-w-0 flex items-center gap-2">
+                                                <span className="text-[13px] font-semibold text-slate-700 truncate">{name}</span>
+                                                {isSenderVorstand && (
+                                                  <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-800 shrink-0">
+                                                    🛡️ Vorstand
+                                                  </span>
+                                                )}
+                                              </div>
+
+                                              <span className="text-[11px] text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                                                <Clock className="h-3 w-3" />
+                                                {time}
+                                              </span>
                                             </div>
+                                          </div>
+                                        )}
 
-                                            <span className="text-[11px] text-muted-foreground flex items-center gap-1 whitespace-nowrap">
-                                              <Clock className="h-3 w-3" />
+                                        <div className={`px-3 py-2 ${isOwnMessage ? WA.bubbleOwn : WA.bubbleOther}`}>
+                                          <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.message}</p>
+
+                                          <div className="mt-1 flex justify-end">
+                                            <span className={`text-[10px] flex items-center gap-1 ${isOwnMessage ? "text-white/80" : "text-slate-500"}`}>
+                                              {isOwnMessage && <Clock className="h-3 w-3" />}
                                               {time}
                                             </span>
                                           </div>
                                         </div>
-                                      )}
-
-                                      <div className={`px-3 py-2 ${isOwnMessage ? WA.bubbleOwn : WA.bubbleOther}`}>
-                                        <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.message}</p>
-
-                                        <div className="mt-1 flex justify-end">
-                                          <span className={`text-[10px] flex items-center gap-1 ${isOwnMessage ? "text-white/80" : "text-slate-500"}`}>
-                                            {isOwnMessage && <Clock className="h-3 w-3" />}
-                                            {time}
-                                          </span>
-                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                )
-                              })}
-                              <div ref={messagesEndRef} />
-                            </div>
-                          )}
-                        </ScrollArea>
-
-                        <div className={`p-4 ${WA.composer}`}>
-                          {isVorstand && (
-                            <div className="mb-2 flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className={`gap-1 ${WA.iconBadge}`}>
-                                  <Shield className="h-3.5 w-3.5" />
-                                  Vorstand-Modus
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">Deine Nachrichten sind als Vorstand erkennbar.</span>
+                                  )
+                                })}
+                                <div ref={messagesEndRef} />
                               </div>
+                            )}
+                          </ScrollArea>
+
+                          {/* ✅ Composer "fixiert": sticky bottom im Card-Container */}
+                          <div
+                            className={`px-3 py-2 ${WA.composer} shrink-0 sticky bottom-0 z-10 pb-[env(safe-area-inset-bottom)]`}
+                          >
+                            <div className="flex gap-2 items-end">
+                              <Input
+                                placeholder="Nachricht eingeben..."
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault()
+                                    sendMessage()
+                                  }
+                                }}
+                                disabled={sending || !profile?.id}
+                                className={`flex-1 text-sm rounded-2xl ${WA.input}`}
+                              />
+                              <Button
+                                onClick={sendMessage}
+                                disabled={!newMessage.trim() || sending || !profile?.id}
+                                size="sm"
+                                className={`px-3 rounded-2xl ${WA.sendBtn}`}
+                              >
+                                {sending ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                                ) : (
+                                  <Send className="h-4 w-4" />
+                                )}
+                              </Button>
                             </div>
-                          )}
-                          <div className="flex gap-2 items-end">
-                            <Input
-                              placeholder="Nachricht eingeben..."
-                              value={newMessage}
-                              onChange={(e) => setNewMessage(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                  e.preventDefault()
-                                  sendMessage()
-                                }
-                              }}
-                              disabled={sending || !profile?.id}
-                              className={`flex-1 text-sm rounded-2xl ${WA.input}`}
-                            />
-                            <Button
-                              onClick={sendMessage}
-                              disabled={!newMessage.trim() || sending || !profile?.id}
-                              size="sm"
-                              className={`px-3 rounded-2xl ${WA.sendBtn}`}
-                            >
-                              {sending ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                              ) : (
-                                <Send className="h-4 w-4" />
-                              )}
-                            </Button>
                           </div>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </main>
 

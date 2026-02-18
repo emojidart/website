@@ -59,7 +59,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         String clickUrl     = get(data, "clickUrl");
 
         if (TextUtils.isEmpty(conversation)) conversation = "Neue Nachricht";
-        if (TextUtils.isEmpty(senderName)) senderName = "Jemand";
+        if (TextUtils.isEmpty(senderName)) senderName = "System";
         if (TextUtils.isEmpty(message)) message = !TextUtils.isEmpty(body) ? body : "";
 
         int orange = ContextCompat.getColor(this, R.color.emd_orange);

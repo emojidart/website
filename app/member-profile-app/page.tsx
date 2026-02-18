@@ -213,16 +213,20 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
     }
   }, [session])
 
-  // Team-Räume aus deinen Team-Mitgliedschaften ableiten (Team-ID = Room-ID)
-  useEffect(() => {
-    const rooms =
-      (teamMemberships || [])
-        .map((m) => ({ id: m.team_id, name: m.teams?.name || "Team-Chat" }))
-        .filter((r) => !!r.id)
+ // ✅ Team-Räume ableiten: room_id ist chat_room_id (nicht team_id!)
+useEffect(() => {
+  const rooms =
+    (teamMemberships || [])
+      .map((m: any) => ({
+        id: m.teams?.chat_room_id, // ✅ DAS ist die room_id in chat_messages
+        name: m.teams?.name || "Team-Chat",
+      }))
+      .filter((r: any) => !!r.id)
 
-    setChatRooms(rooms)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teamMemberships?.length])
+  setChatRooms(rooms)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [teamMemberships?.length])
+
 
   // Ungelesene Nachrichten laden (sobald Profil + Rooms da sind)
   useEffect(() => {
@@ -504,7 +508,8 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
 
         const { data: teamData, error: teamError } = await supabase
   .from("team_members")
-  .select(`id, team_id, role, teams (id, name, logo_url)`)
+  .select(`id, team_id, role, teams (id, name, logo_url, chat_room_id)`)
+
   .eq("player_id", profileData.player_id)
   .is("left_at", null)
 
@@ -1122,7 +1127,8 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
     <div
       key={room.id}
       className="flex items-center justify-between bg-white/70 rounded-lg p-3 border border-purple-200 cursor-pointer hover:bg-white transition-colors"
-      onClick={() => router.push(`/chat-app?roomId=${room.id}&scope=${CHAT_SCOPE}`)}
+      onClick={() => router.push(`/chat-app?room_id=${room.id}&scope=${CHAT_SCOPE}`)}
+
     >
       <div className="min-w-0">
         <div className="text-sm font-semibold text-gray-900 truncate">{room.name}</div>

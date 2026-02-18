@@ -25,6 +25,20 @@ type Props = {
   onDeletePlayer: (playerId: string, photoUrl: string | null) => void
 }
 
+function fmtDateISO(d: string | null | undefined) {
+  if (!d) return "—"
+
+  // Accept: "YYYY-MM-DD" (from DATE), or ISO strings like "YYYY-MM-DDTHH:mm:ss..."
+  const s = String(d)
+  const iso = s.includes("T") ? s.split("T")[0] : s
+
+  // If it's not ISO-date, just return as-is
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return s
+
+  const [y, m, day] = iso.split("-")
+  return `${day}.${m}.${y}` // dd.mm.yyyy
+}
+
 export function ManagePlayersTab(props: Props) {
   const {
     visiblePlayers,
@@ -110,17 +124,12 @@ export function ManagePlayersTab(props: Props) {
               {visiblePlayers.map((player, idx) => (
                 <tr
                   key={player.id}
-                  className={cn(
-                    "border-t border-gray-200 hover:bg-gray-50/60",
-                    idx % 2 === 1 && "bg-gray-50/30",
-                  )}
+                  className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}
                 >
                   <td className="px-3 py-2 lg:px-4 lg:py-3">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage
-                          src={player.photo_url || "/placeholder.svg?height=32&width=32&query=player-avatar"}
-                        />
+                        <AvatarImage src={player.photo_url || "/placeholder.svg?height=32&width=32&query=player-avatar"} />
                         <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium text-gray-800">{player.name}</span>
@@ -128,7 +137,7 @@ export function ManagePlayersTab(props: Props) {
                   </td>
 
                   <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.player_number ?? "—"}</td>
-                  <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.birthdate ?? "—"}</td>
+                  <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{fmtDateISO(player.birthdate)}</td>
                   <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.street ?? "—"}</td>
                   <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.house_number ?? "—"}</td>
                   <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.postal_code ?? "—"}</td>

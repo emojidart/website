@@ -29,7 +29,16 @@ export type MembershipTabProps = {
 
 function fmtDateISO(d: string | null | undefined) {
   if (!d) return "—"
-  return d
+
+  // Accept: "YYYY-MM-DD" (from DATE), or ISO strings like "YYYY-MM-DDTHH:mm:ss..."
+  const s = String(d)
+  const iso = s.includes("T") ? s.split("T")[0] : s
+
+  // If it's not ISO-date, just return as-is
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return s
+
+  const [y, m, day] = iso.split("-")
+  return `${day}.${m}.${y}` // ✅ dd.mm.yyyy
 }
 
 type StatusTone = "member" | "open" | "ended"
@@ -63,8 +72,16 @@ export function MembershipTab({ clubPlayers, loading, message, messageType, onSa
       setLeftAt("")
       return
     }
-    setJoinedAt(selectedPlayer.club_joined_at ?? "")
-    setLeftAt(selectedPlayer.club_left_at ?? "")
+
+    // Inputs type="date" want "YYYY-MM-DD"
+    const norm = (v: string | null | undefined) => {
+      if (!v) return ""
+      const s = String(v)
+      return s.includes("T") ? s.split("T")[0] : s
+    }
+
+    setJoinedAt(norm(selectedPlayer.club_joined_at))
+    setLeftAt(norm(selectedPlayer.club_left_at))
   }, [selectedPlayer])
 
   const leftBeforeJoined = joinedAt && leftAt ? new Date(leftAt).getTime() < new Date(joinedAt).getTime() : false
@@ -177,7 +194,12 @@ export function MembershipTab({ clubPlayers, loading, message, messageType, onSa
               </div>
 
               <div className="pt-2">
-                <span className={cn("inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold", badgeClass(selectedStatus!.tone))}>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold",
+                    badgeClass(selectedStatus!.tone),
+                  )}
+                >
                   {badgeIcon(selectedStatus!.tone)}
                   {selectedStatus!.label}
                 </span>
@@ -293,7 +315,6 @@ export function MembershipTab({ clubPlayers, loading, message, messageType, onSa
               ) : (
                 sortedRows.map((p, idx) => {
                   const st = statusOf(p)
-                  const leftText = p.club_left_at ? p.club_left_at : "—"
                   return (
                     <tr
                       key={p.id}
@@ -301,7 +322,7 @@ export function MembershipTab({ clubPlayers, loading, message, messageType, onSa
                     >
                       <td className="px-3 py-2 lg:px-4 lg:py-3 font-medium text-gray-800">{p.name}</td>
                       <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{fmtDateISO(p.club_joined_at)}</td>
-                      <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{leftText}</td>
+                      <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{fmtDateISO(p.club_left_at)}</td>
                       <td className="px-3 py-2 lg:px-4 lg:py-3">
                         <span className={cn("inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold", badgeClass(st.tone))}>
                           {badgeIcon(st.tone)}
