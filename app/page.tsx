@@ -740,7 +740,7 @@ export default function Home() {
         // Serien (fixe ID)
         const LION_SERIES_ID = "bae7b8fe-7013-4160-8a85-f46ac765e003"
 
-        // ✅ Startgeld je Serie laden (wichtig für Guthaben-Zahlung im Modal)
+        
         const { data: seriesRows, error: seriesErr } = await supabase
           .from("dko_series")
           .select("id,startgeld")
@@ -1771,7 +1771,7 @@ export default function Home() {
         <div className="mt-10 flex flex-col items-center lg:items-start gap-4">
 
           <a
-            href="https://play.google.com/store/apps/details?id=DEINE_APP_ID"
+            href="https://play.google.com/store/apps/details?id=APP_ID"
             target="_blank"
             rel="noopener noreferrer"
             className="transition-transform duration-300 hover:scale-105"
@@ -1786,9 +1786,7 @@ export default function Home() {
             />
           </a>
 
-          <p className="text-sm text-orange-50/70">
-            Kostenlos • Schnell installiert • Immer aktuell
-          </p>
+         
 
         </div>
       </div>
