@@ -21,10 +21,11 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // ✅ Normaler Start (App Icon) -> KEIN Push erzwingen
+        // ✅ Wichtig: Beim echten Launcher-Start (App Icon) niemals Push erzwingen
         if (isLauncherIntent(getIntent())) {
             pendingPath = null;
-            // ❌ kein return! Capacitor soll normal initialisieren
+            // Intent "säubern" (falls Android alten Push-Intent wiederverwendet)
+            clearToLauncherIntent();
             return;
         }
 
@@ -37,9 +38,10 @@ public class MainActivity extends BridgeActivity {
         super.onNewIntent(intent);
         setIntent(intent);
 
-        // ✅ Normal geöffnet -> kein Push erzwingen
+        // ✅ Wenn App über Icon / Task Switcher normal geöffnet wird -> kein Push erzwingen
         if (isLauncherIntent(intent)) {
             pendingPath = null;
+            clearToLauncherIntent();
             return;
         }
 
@@ -61,12 +63,11 @@ public class MainActivity extends BridgeActivity {
 
         boolean hasLauncherCategory = false;
         if (intent.getCategories() != null) {
-            hasLauncherCategory =
-                    intent.getCategories().contains(Intent.CATEGORY_LAUNCHER) ||
-                    intent.getCategories().contains(Intent.CATEGORY_LEANBACK_LAUNCHER);
+            hasLauncherCategory = intent.getCategories().contains(Intent.CATEGORY_LAUNCHER)
+                    || intent.getCategories().contains(Intent.CATEGORY_LEANBACK_LAUNCHER);
         }
 
-        // ACTION_MAIN + LAUNCHER => normaler Start
+        // Wenn ACTION_MAIN + LAUNCHER => normaler Start => Push ignorieren
         return isMain && hasLauncherCategory;
     }
 
@@ -112,11 +113,9 @@ public class MainActivity extends BridgeActivity {
             return;
         }
 
-        // ✅ bevorzugt kompletter Pfad vom Server
         String path = pathExtra;
         String scope = scopeExtra;
 
-        // Fallback (alte Pushes)
         if (TextUtils.isEmpty(path)) {
             if (!TextUtils.isEmpty(scope) && "team".equals(scope) && !TextUtils.isEmpty(rid)) {
                 path = "/chat-app?scope=team&room_id=" + Uri.encode(rid);
@@ -156,10 +155,9 @@ public class MainActivity extends BridgeActivity {
             String url = bridge.getServerUrl() + pendingPath;
             bridge.getWebView().loadUrl(url);
 
-            // ✅ consumed
             pendingPath = null;
 
-            // ✅ NUR nach Push säubern (hier sind wir sicher im Push-Fall)
+            // ✅ nach Push säubern
             clearToLauncherIntent();
         }
     };
