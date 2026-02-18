@@ -49,6 +49,23 @@ function cadenceMonths(cadence: DuesCadence) {
   }
 }
 
+/**
+ * ✅ "Überfällig" erst ab dem 26. (wenn bis inkl. 25. nicht bezahlt markiert wurde)
+ * - Fällig bleibt wie bisher (ab due_on)
+ * - Überfällig erst, wenn today > graceDate (25. des Monats)
+ *
+ * graceDate-Regel:
+ * - Standard: 25. des Monats von due_on
+ * - Aber: graceDate darf NIE vor due_on liegen (Sicherheit, falls due_on > 25)
+ */
+function graceDateISO(dueOnISO: string) {
+  const d = toUTCDate(dueOnISO)
+  const y = d.getUTCFullYear()
+  const m = d.getUTCMonth()
+  const grace = toISODate(new Date(Date.UTC(y, m, 25)))
+  return grace < dueOnISO ? dueOnISO : grace
+}
+
 export type PeriodStatusTone = "paid" | "due" | "overdue" | "upcoming"
 
 export type DuesPeriod = {
@@ -83,26 +100,33 @@ export type PlayerDuesSummaryRow = {
   summary_tone: PlayerDuesSummaryTone
 }
 
+export type PlayerDuesDetail = {
+  player_id: string
+  currency: string
+  overdueCount: number
+  dueCount: number
+  unpaidCount: number
+  overdueAmount: number
+  dueAmount: number
+  totalUnpaidAmount: number
+  nextUnpaidDueOn: string | null
+}
+
 function inRange(date: string, start: string, endInclusive: string) {
   return date >= start && date <= endInclusive
 }
 
 function buildScheduleDates(startOn: string, cadence: DuesCadence, rangeStart: string, rangeEndInclusive: string) {
-  // Generate due dates (period starts) starting from startOn, only those that intersect range
   const months = cadenceMonths(cadence)
   const dates: string[] = []
 
-  // Step forward until >= rangeStart (but keep anchor day consistent via addMonths)
   let cur = startOn
-  // if startOn < rangeStart, advance
   while (cur < rangeStart) {
     const nxt = addMonths(cur, months)
     if (nxt === cur) break
     cur = nxt
   }
 
-  // if we overshot but startOn itself might still be inside range? (handled)
-  // Now collect until rangeEndInclusive
   while (cur <= rangeEndInclusive) {
     if (inRange(cur, rangeStart, rangeEndInclusive)) dates.push(cur)
     const nxt = addMonths(cur, months)
@@ -166,10 +190,7 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
 
   const periodsByPlayer = useMemo(() => {
     const today = todayISO()
-    // we show one period in future too
-    // endRange = today + max cadence months (12) so future “preview” works
     const endRange = addMonths(today, 12)
-
     const out = new Map<string, DuesPeriod[]>()
 
     for (const p of clubPlayers) {
@@ -179,16 +200,12 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
         continue
       }
 
-      // Determine schedule window:
-      // - start = max(setting.start_on, club_joined_at if exists)
-      // - end = min(endRange, club_left_at if exists)
       const startA = s.start_on
       const startB = p.club_joined_at || startA
       const rangeStart = startA > startB ? startA : startB
 
       const rangeEndInclusive = p.club_left_at ? (p.club_left_at < endRange ? p.club_left_at : endRange) : endRange
 
-      // If left_at exists and before rangeStart -> empty
       if (rangeEndInclusive < rangeStart) {
         out.set(p.id, [])
         continue
@@ -199,6 +216,7 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
       const per: DuesPeriod[] = dates.map((due_on) => {
         const entry = ledgerByPlayerDue.get(p.id)?.get(due_on) || null
         const paid_on = entry?.paid_on ?? null
+
         if (paid_on) {
           return {
             due_on,
@@ -221,7 +239,9 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
           }
         }
 
-        if (due_on < today) {
+        const grace = graceDateISO(due_on)
+
+        if (today > grace) {
           return {
             due_on,
             amount: Number(s.amount),
@@ -242,13 +262,60 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
         }
       })
 
-      // Sort by date desc (latest first)
       per.sort((a, b) => b.due_on.localeCompare(a.due_on))
       out.set(p.id, per)
     }
 
     return out
   }, [clubPlayers, settingByPlayer, ledgerByPlayerDue])
+
+  // ✅ NEU: Detail-Counts + Summen pro Spieler (damit du im Profil "x überfällig / y fällig / Betrag" zeigen kannst)
+  const detailByPlayer = useMemo(() => {
+    const out = new Map<string, PlayerDuesDetail>()
+
+    for (const p of clubPlayers) {
+      const s = settingByPlayer.get(p.id) || null
+      const periods = periodsByPlayer.get(p.id) || []
+
+      const currency = s?.currency || "EUR"
+
+      let overdueCount = 0
+      let dueCount = 0
+      let overdueAmount = 0
+      let dueAmount = 0
+      let nextUnpaidDueOn: string | null = null
+
+      // periods sind DESC sortiert (neueste zuerst) – für "nächstes" brauchen wir MIN Datum der offenen
+      for (const per of periods) {
+        if (per.status_tone === "overdue") {
+          overdueCount += 1
+          overdueAmount += Number(per.amount || 0)
+          if (!nextUnpaidDueOn || per.due_on < nextUnpaidDueOn) nextUnpaidDueOn = per.due_on
+        } else if (per.status_tone === "due") {
+          dueCount += 1
+          dueAmount += Number(per.amount || 0)
+          if (!nextUnpaidDueOn || per.due_on < nextUnpaidDueOn) nextUnpaidDueOn = per.due_on
+        }
+      }
+
+      const unpaidCount = overdueCount + dueCount
+      const totalUnpaidAmount = overdueAmount + dueAmount
+
+      out.set(p.id, {
+        player_id: p.id,
+        currency,
+        overdueCount,
+        dueCount,
+        unpaidCount,
+        overdueAmount,
+        dueAmount,
+        totalUnpaidAmount,
+        nextUnpaidDueOn,
+      })
+    }
+
+    return out
+  }, [clubPlayers, settingByPlayer, periodsByPlayer])
 
   const summaryRows: PlayerDuesSummaryRow[] = useMemo(() => {
     const out: PlayerDuesSummaryRow[] = []
@@ -332,7 +399,6 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
       })
     }
 
-    // Sort: overdue, due, ok, no_plan, inactive
     const rank = (r: PlayerDuesSummaryRow) => {
       switch (r.summary_tone) {
         case "overdue":
@@ -395,7 +461,6 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
     }
   }
 
-  // ✅ Mark paid for a SPECIFIC due_on (nicht nur "current")
   const markPaid = async (playerId: string, dueOn: string, paidOn?: string) => {
     setLoading(true)
     setMessage("Zahlung wird gespeichert...")
@@ -478,6 +543,7 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
   return {
     summaryRows,
     periodsByPlayer,
+    detailByPlayer, // ✅ NEU
 
     loading,
     message,

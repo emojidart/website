@@ -1,4 +1,5 @@
 "use client"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import type React from "react"
@@ -24,7 +25,7 @@ import {
   Target,
   Trophy,
   ArrowRight,
-    LogOut,
+  LogOut,
   Camera,
   Upload,
   Euro,
@@ -39,7 +40,6 @@ import {
 import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
 
 type UserProfileWithLastSeen = UserProfile & { last_seen_at?: string | null }
-
 type UserPagePermission = { page_key: string; allowed: boolean }
 
 const formatDate = (date: string | Date) => {
@@ -64,8 +64,6 @@ const getMatchStartDateTime = (match: any): Date | null => {
   const dateStr = match?.match_date
   if (!dateStr) return null
   const timeStr = match?.match_time
-
-  // If match_time includes seconds, Date can still parse it.
   if (timeStr) return new Date(`${dateStr}T${timeStr}`)
   return new Date(`${dateStr}T00:00:00`)
 }
@@ -87,21 +85,33 @@ const formatCountdown = (target: Date) => {
   return days > 0 ? `${days}T ${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss}`
 }
 
+const formatCurrencyEUR = (value: number) => {
+  return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value || 0)
+}
+
+const formatMonthYearDE = (iso: string) => {
+  const d = new Date(`${iso}T00:00:00`)
+  return d.toLocaleDateString("de-DE", { month: "long", year: "numeric" })
+}
+
 export default function MemberProfileAppPage() {
-const CHAT_SCOPE: "team" | "captains" | "club" = "team"
+  const CHAT_SCOPE: "team" | "captains" | "club" = "team"
 
   const { session, loading: authLoading } = useAuth()
   const router = useRouter()
+
   const [profile, setProfile] = useState<UserProfileWithLastSeen | null>(null)
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermission[]>([])
+
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
   const [photoMessage, setPhotoMessage] = useState("")
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false)
+
   const [statistics, setStatistics] = useState({
     totalWins: 0,
     totalLegs: 0,
@@ -115,13 +125,95 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
     return [profile.club_players as any]
   }, [profile])
 
-  const { summaryRows: duesSummaryRows } = useDues(session?.user ?? null, clubPlayersForDues as any, () => {})
+  // ✅ useDues: periodsByPlayer ist eine Map<playerId, periods[]>
+  const { summaryRows: duesSummaryRows, periodsByPlayer } = useDues(session?.user ?? null, clubPlayersForDues as any, () => {})
 
   const myDues = useMemo(() => {
     const pid = profile?.club_players?.id
     if (!pid) return null
     return duesSummaryRows.find((r) => r.player_id === pid) ?? null
   }, [duesSummaryRows, profile])
+
+  // ✅ FIX: periodsByPlayer ist Map -> periodsByPlayer.get(pid)
+  // ✅ FIX: Felder heißen due_on & amount
+  const myDuesDetail = useMemo(() => {
+    const pid = profile?.club_players?.id
+    if (!pid) {
+      return {
+        overdueCount: 0,
+        dueCount: 0,
+        unpaidCount: 0,
+        overdueAmount: 0,
+        dueAmount: 0,
+        unpaidAmount: 0,
+        nextUnpaidDueDate: null as string | null,
+      }
+    }
+
+    // ✅ periodsByPlayer ist eine Map => get(pid)
+    const periods = (periodsByPlayer as any)?.get?.(pid) || []
+
+    const overdue = periods.filter((p: any) => p.status_tone === "overdue")
+    const due = periods.filter((p: any) => p.status_tone === "due")
+
+    // ✅ Feld heißt amount (nicht amount_due)
+    const overdueAmount = overdue.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
+    const dueAmount = due.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
+
+    const unpaidPeriods = [...overdue, ...due]
+    const unpaidAmount = unpaidPeriods.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
+
+    // ✅ Feld heißt due_on (nicht due_date)
+    const nextUnpaid = unpaidPeriods
+      .slice()
+      .sort((a: any, b: any) => String(a.due_on).localeCompare(String(b.due_on)))[0]
+
+    return {
+      overdueCount: overdue.length,
+      dueCount: due.length,
+      unpaidCount: unpaidPeriods.length,
+      overdueAmount,
+      dueAmount,
+      unpaidAmount,
+      nextUnpaidDueDate: nextUnpaid?.due_on ?? null,
+    }
+  }, [periodsByPlayer, profile])
+
+  const overdueMonthsLabel = useMemo(() => {
+    const pid = profile?.club_players?.id
+    if (!pid) return []
+
+    const periods = (periodsByPlayer as any)?.get?.(pid) || []
+    const overdue = periods
+      .filter((p: any) => p.status_tone === "overdue")
+      .sort((a: any, b: any) => String(a.due_on).localeCompare(String(b.due_on)))
+
+    return Array.from(new Set(overdue.map((p: any) => formatMonthYearDE(p.due_on))))
+  }, [periodsByPlayer, profile])
+
+  const dueMonthsLabel = useMemo(() => {
+    const pid = profile?.club_players?.id
+    if (!pid) return []
+
+    const periods = (periodsByPlayer as any)?.get?.(pid) || []
+    const due = periods
+      .filter((p: any) => p.status_tone === "due")
+      .sort((a: any, b: any) => String(a.due_on).localeCompare(String(b.due_on)))
+
+    return Array.from(new Set(due.map((p: any) => formatMonthYearDE(p.due_on))))
+  }, [periodsByPlayer, profile])
+
+  const duesBadgeText = useMemo(() => {
+    const overdue = myDuesDetail.overdueCount
+    const due = myDuesDetail.dueCount
+    const unpaid = myDuesDetail.unpaidCount
+    if (unpaid <= 0) return null
+
+    const parts: string[] = []
+    if (overdue > 0) parts.push(`${overdue}× überfällig`)
+    if (due > 0) parts.push(`${due}× fällig`)
+    return parts.join(" • ")
+  }, [myDuesDetail])
 
   const [pendingMatches, setPendingMatches] = useState<Match[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -134,72 +226,20 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
   }>(null)
   const [countdown, setCountdown] = useState<string>("")
 
-  // Ungelesene Team-Chat Nachrichten (Badge/Box)
   const [chatRooms, setChatRooms] = useState<Array<{ id: string; name: string }>>([])
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
 
-
-
-  // Countdown for the next match (updates every second)
   useEffect(() => {
     const target = nextMatchSummary ? getMatchStartDateTime(nextMatchSummary.match as any) : null
     if (!target) {
       setCountdown("")
       return
     }
-
-
     const updateCountdown = () => setCountdown(formatCountdown(target))
     updateCountdown()
     const id = window.setInterval(updateCountdown, 1000)
     return () => window.clearInterval(id)
   }, [nextMatchSummary])
-
-
-  // PWA installation state
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
-  const [showInstallButton, setShowInstallButton] = useState(false)
-
-  // PWA installation effect
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-      setShowInstallButton(true)
-    }
-
-    const handleAppInstalled = () => {
-      setShowInstallButton(false)
-      setDeferredPrompt(null)
-    }
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
-    window.addEventListener("appinstalled", handleAppInstalled)
-
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setShowInstallButton(false)
-    }
-
-      return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
-      window.removeEventListener("appinstalled", handleAppInstalled)
-    }
-  }, [])
-
-  // PWA installation handler
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      alert("Installation nicht verfügbar. Auf iOS: Teilen-Menü → Zum Home-Bildschirm hinzufügen")
-      return
-    }
-
-    deferredPrompt.prompt()
-
-    const { outcome } = await deferredPrompt.userChoice
-
-    setDeferredPrompt(null)
-    setShowInstallButton(false)
-  }
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -211,24 +251,21 @@ const CHAT_SCOPE: "team" | "captains" | "club" = "team"
     if (session?.user) {
       fetchProfile()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
- // ✅ Team-Räume ableiten: room_id ist chat_room_id (nicht team_id!)
-useEffect(() => {
-  const rooms =
-    (teamMemberships || [])
+  useEffect(() => {
+    const rooms = (teamMemberships || [])
       .map((m: any) => ({
-        id: m.teams?.chat_room_id, // ✅ DAS ist die room_id in chat_messages
+        id: m.teams?.chat_room_id,
         name: m.teams?.name || "Team-Chat",
       }))
       .filter((r: any) => !!r.id)
 
-  setChatRooms(rooms)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [teamMemberships?.length])
+    setChatRooms(rooms)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamMemberships?.length])
 
-
-  // Ungelesene Nachrichten laden (sobald Profil + Rooms da sind)
   useEffect(() => {
     if (!profile?.id) return
     if (chatRooms.length === 0) return
@@ -241,17 +278,7 @@ useEffect(() => {
 
     const channel = supabase
       .channel("realtime-chat-unread")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-        },
-        () => {
-          fetchUnreadCounts(chatRooms)
-        }
-      )
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, () => fetchUnreadCounts(chatRooms))
       .subscribe()
 
     return () => {
@@ -271,7 +298,7 @@ useEffect(() => {
       if (error) throw error
 
       const enrichedNotifications = await Promise.all(
-        (data || []).map(async (notification) => {
+        (data || []).map(async (notification: any) => {
           if (notification.statistics_entry_id) {
             const { data: legData } = await supabase
               .from("leg_statistics")
@@ -283,30 +310,25 @@ useEffect(() => {
               const { data: matchData } = await supabase
                 .from("matches")
                 .select(
-                  `match_date, home_team_type, away_team_type, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name), home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(name), away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(name)`,
+                  `match_date, home_team_type, away_team_type,
+                   home_team:teams!matches_home_team_id_fkey(name),
+                   away_team:teams!matches_away_team_id_fkey(name),
+                   home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(name),
+                   away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(name)`,
                 )
-                .eq("id", legData.match_id)
+                .eq("id", (legData as any).match_id)
                 .single()
 
-              const { data: playerData } = await supabase
-                .from("club_players")
-                .select("name")
-                .eq("id", legData.player_id)
-                .single()
+              const { data: playerData } = await supabase.from("club_players").select("name").eq("id", (legData as any).player_id).single()
 
-              return {
-                ...notification,
-                leg_statistics: legData,
-                match: matchData,
-                player: playerData,
-              }
+              return { ...notification, leg_statistics: legData, match: matchData, player: playerData }
             }
           }
           return notification
         }),
       )
 
-      setNotifications(enrichedNotifications)
+      setNotifications(enrichedNotifications as any)
     } catch (err) {
       console.error("Error fetching notifications:", err)
     }
@@ -315,10 +337,8 @@ useEffect(() => {
   const markNotificationAsRead = async (notificationId: string) => {
     try {
       const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", notificationId)
-
       if (error) throw error
-
-      setNotifications((prev) => prev.filter((n) => n.id !== notificationId))
+      setNotifications((prev: any) => prev.filter((n: any) => n.id !== notificationId))
     } catch (err) {
       console.error("Error marking notification as read:", err)
     }
@@ -333,15 +353,13 @@ useEffect(() => {
 
       for (const room of rooms) {
         const { data: visitData, error: visitError } = await supabase
-  .from("user_room_visits")
-  .select("last_visit_at")
-  .eq("user_id", profile.id)
-  .eq("room_id", room.id)
-  .eq("scope", CHAT_SCOPE)
-  .maybeSingle()
+          .from("user_room_visits")
+          .select("last_visit_at")
+          .eq("user_id", profile.id)
+          .eq("room_id", room.id)
+          .eq("scope", CHAT_SCOPE)
+          .maybeSingle()
 
-
-        // Tabelle evtl. noch nicht vorhanden -> dann einfach 0 anzeigen
         if (visitError && (visitError as any).code === "42P01") {
           counts[room.id] = 0
           continue
@@ -356,8 +374,7 @@ useEffect(() => {
           .gt("created_at", lastVisit)
           .neq("user_id", profile.id)
 
-        if (countError) counts[room.id] = 0
-        else counts[room.id] = count || 0
+        counts[room.id] = countError ? 0 : count || 0
       }
 
       setUnreadCounts(counts)
@@ -369,37 +386,27 @@ useEffect(() => {
   const totalUnread = Object.values(unreadCounts).reduce((sum, n) => sum + (n || 0), 0)
 
   type AvailabilityStatus = "yes" | "maybe" | "no"
-  const statusLabel = (s: "none" | AvailabilityStatus) => {
-    if (s === "yes") return "Ja"
-    if (s === "maybe") return "Nur wenn Not am Mann"
-    if (s === "no") return "Nein"
-      return "Keine Antwort"
-  }
+
   const statusBadge = (s: "none" | AvailabilityStatus) => {
     if (s === "yes") return <Badge className="bg-green-600 text-white">Ja</Badge>
     if (s === "maybe") return <Badge className="bg-yellow-600 text-white">Nur wenn Not am Mann</Badge>
     if (s === "no") return <Badge className="bg-red-600 text-white">Nein</Badge>
-      return <Badge variant="outline">Keine Antwort</Badge>
+    return <Badge variant="outline">Keine Antwort</Badge>
   }
+
   const getAvailabilityNudge = (status: "none" | AvailabilityStatus, lineup: "none" | "starter" | "substitute") => {
     const lineupHint =
-      lineup === "starter"
-        ? " Du bist aktuell in der Aufstellung."
-        : lineup === "substitute"
-          ? " Du bist als Ersatz vorgesehen."
-          : ""
+      lineup === "starter" ? " Du bist aktuell in der Aufstellung." : lineup === "substitute" ? " Du bist als Ersatz vorgesehen." : ""
 
     if (status === "yes") return `Super, danke für deine Zusage!${lineupHint}`
-    if (status === "maybe")
-      return `Danke! Wenn Not am Mann ist, melden wir uns – wenn möglich, halte dir den Termin frei.${lineupHint}`
+    if (status === "maybe") return `Danke! Wenn Not am Mann ist, melden wir uns – wenn möglich, halte dir den Termin frei.${lineupHint}`
     if (status === "no") return `Schade – vielleicht hast du beim nächsten Spiel Zeit.${lineupHint}`
-      return `Bitte gib kurz Bescheid, ob du kannst – das hilft bei der Planung.${lineupHint}`
+    return `Bitte gib kurz Bescheid, ob du kannst – das hilft bei der Planung.${lineupHint}`
   }
-
 
   const fetchNextMatchSummary = async (playerId: string, memberships: TeamMembership[]) => {
     try {
-      const teamIds = memberships.map((t) => t.team_id).filter(Boolean)
+      const teamIds = memberships.map((t: any) => t.team_id).filter(Boolean)
       if (!playerId || teamIds.length === 0) {
         setNextMatchSummary(null)
         return
@@ -443,14 +450,7 @@ useEffect(() => {
         else if (r.status === "no") counts.no += 1
       }
 
-      // none = all team members - answered; best effort using team_members count
-      const { count: teamMemberCount } = await supabase
-  .from("team_members")
-  .select("id", { count: "exact", head: true })
-  .eq("team_id", teamId)
-  .is("left_at", null)
-
-
+      const { count: teamMemberCount } = await supabase.from("team_members").select("id", { count: "exact", head: true }).eq("team_id", teamId).is("left_at", null)
 
       const total = teamMemberCount ?? rows.length
       const answered = counts.yes + counts.maybe + counts.no
@@ -483,134 +483,49 @@ useEffect(() => {
         .eq("user_id", session.user.id)
         .single()
 
-      if (profileError) {
-        throw profileError
-      }
+      if (profileError) throw profileError
+      setProfile(profileData as any)
 
-      setProfile(profileData)
-
-      // Admin/Verwaltung Berechtigungen laden (aus user_page_permissions)
-      // Box wird nur angezeigt, wenn der Benutzer in dieser Tabelle mindestens eine Berechtigung mit allowed=true hat.
-      if (profileData?.player_id) {
-        const { data: permissionRows, error: permissionErr } = await supabase
-          .from("user_page_permissions")
-          .select("page_key, allowed")
-          .eq("player_id", profileData.player_id)
+      if ((profileData as any)?.player_id) {
+        const { data: permissionRows, error: permissionErr } = await supabase.from("user_page_permissions").select("page_key, allowed").eq("player_id", (profileData as any).player_id)
 
         if (permissionErr) throw permissionErr
-        setUserPagePermissions((permissionRows ?? []) as UserPagePermission[])
+        setUserPagePermissions((permissionRows ?? []) as any)
       } else {
         setUserPagePermissions([])
       }
 
-      if (profileData?.player_id) {
-        await fetchNotifications(profileData.player_id)
+      if ((profileData as any)?.player_id) {
+        await fetchNotifications((profileData as any).player_id)
 
         const { data: teamData, error: teamError } = await supabase
-  .from("team_members")
-  .select(`id, team_id, role, teams (id, name, logo_url, chat_room_id)`)
+          .from("team_members")
+          .select(`id, team_id, role, teams (id, name, logo_url, chat_room_id)`)
+          .eq("player_id", (profileData as any).player_id)
+          .is("left_at", null)
 
-  .eq("player_id", profileData.player_id)
-  .is("left_at", null)
+        if (teamError) throw teamError
+        setTeamMemberships((teamData || []) as any)
 
+        await fetchNextMatchSummary((profileData as any).player_id, (teamData || []) as any)
 
-        if (teamError) {
-          throw teamError
-        }
+        // Stats (optional)
+        const { data: legStats } = await supabase.from("leg_statistics").select(`leg_wins, player_legs_won, opponent_legs_won, throws_180, throws_171`).eq("player_id", (profileData as any).player_id)
 
-        setTeamMemberships(teamData || [])
-
-        // Next upcoming match summary (for profile card)
-        await fetchNextMatchSummary(profileData.player_id, teamData || [])
-
-
-        if (teamData && teamData.length > 0) {
-          const teamIds = teamData.map((t) => t.team_id)
-          const today = new Date().toISOString().split("T")[0]
-
-          const [matchesResponse, opponentTeamsResponse] = await Promise.all([
-            supabase
-              .from("matches")
-              .select(`*,
-                home_team:teams!matches_home_team_id_fkey(id, name),
-                away_team:teams!matches_away_team_id_fkey(id, name),
-                home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
-                away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name),
-                season:seasons(id, name, type)
-              `)
-              .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
-              .lt("match_date", today)
-              .order("match_date", { ascending: true }),
-            supabase.from("opponent_teams").select("*"),
-          ])
-
-          const { data: matchesData, error: matchesError } = matchesResponse
-          const { data: opponentTeamsData, error: opponentTeamsError } = opponentTeamsResponse
-
-          if (matchesError) throw matchesError
-          if (opponentTeamsError) throw opponentTeamsError
-
-          const enrichedMatches =
-            matchesData?.map((match) => {
-              const homeOpponentTeam = match.home_opponent_team_id
-                ? opponentTeamsData?.find((team) => team.id === match.home_opponent_team_id)
-                : null
-              const awayOpponentTeam = match.away_opponent_team_id
-                ? opponentTeamsData?.find((team) => team.id === match.away_opponent_team_id)
-                : null
-
-              return {
-                ...match,
-                home_opponent_team: homeOpponentTeam,
-                away_opponent_team: awayOpponentTeam,
-              }
-            }) || []
-
-          if (enrichedMatches) {
-            const openMatches = enrichedMatches.filter((match) => {
-              const homeScore = match.home_score
-              const awayScore = match.away_score
-
-              return (
-                homeScore === null ||
-                awayScore === null ||
-                (homeScore === 0 && awayScore === 0) ||
-                match.status !== "completed"
-              )
-            })
-
-            setPendingMatches(openMatches)
-          }
-        }
-
-        const { data: legStats, error: legStatsError } = await supabase
-          .from("leg_statistics")
-          .select(`leg_wins, player_legs_won, opponent_legs_won, throws_180, throws_171`)
-          .eq("player_id", profileData.player_id)
-
-        if (!legStatsError && legStats) {
-          const totalWins = legStats.reduce((sum, stat) => sum + (stat.leg_wins || 0), 0)
-          const totalLegs = legStats.reduce((sum, stat) => {
+        if (legStats) {
+          const totalWins = (legStats as any[]).reduce((sum, stat) => sum + (stat.leg_wins || 0), 0)
+          const totalLegs = (legStats as any[]).reduce((sum, stat) => {
             const actualLegs = (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0)
             return sum + (actualLegs > 0 ? actualLegs : 1)
           }, 0)
-          const total180s = legStats.reduce((sum, stat) => sum + (stat.throws_180 || 0), 0)
           const winPercentage = totalLegs > 0 ? (totalWins / totalLegs) * 100 : 0
 
-          const { data: matchData } = await supabase
-            .from("matches")
-            .select("id")
-            .or(
-              `home_team_id.in.(${teamMemberships?.map((t) => t.team_id).join(",")}),away_team_id.in.(${teamMemberships?.map((t) => t.team_id).join(",")})`,
-            )
-
-          setStatistics({
+          setStatistics((prev) => ({
+            ...prev,
             totalWins,
             totalLegs,
             winPercentage: Math.round(winPercentage),
-            total180s,
-            totalEvents: matchData?.length || 0,
-          })
+          }))
         }
       }
     } catch (err: any) {
@@ -627,46 +542,33 @@ useEffect(() => {
   }
 
   const handlePhotoUpload = async () => {
-    if (!photoFile || !profile?.club_players?.id) return
+    if (!photoFile || !(profile as any)?.club_players?.id) return
 
     setPhotoUploading(true)
     setPhotoMessage("")
 
     try {
       const fileExtension = photoFile.name.split(".").pop()
-      const sanitizedPlayerName = profile.club_players.name.replace(/[^a-zA-Z0-9_.-]/g, "").replace(/\s/g, "_")
+      const sanitizedPlayerName = (profile as any).club_players.name.replace(/[^a-zA-Z0-9_.-]/g, "").replace(/\s/g, "_")
       const filePath = `player-avatars/${sanitizedPlayerName}-${Date.now()}.${fileExtension}`
 
       const { error: uploadError } = await supabase.storage.from("player-avatars").upload(filePath, photoFile, {
         cacheControl: "3600",
         upsert: false,
       })
-
-      if (uploadError) {
-        throw uploadError
-      }
+      if (uploadError) throw uploadError
 
       const { data: publicUrlData } = supabase.storage.from("player-avatars").getPublicUrl(filePath)
 
-      const { error: updateError } = await supabase
-        .from("club_players")
-        .update({ photo_url: publicUrlData.publicUrl })
-        .eq("id", profile.club_players.id)
+      const { error: updateError } = await supabase.from("club_players").update({ photo_url: publicUrlData.publicUrl }).eq("id", (profile as any).club_players.id)
 
-      if (updateError) {
-        throw updateError
-      }
+      if (updateError) throw updateError
 
       setProfile((prev) =>
         prev
           ? {
               ...prev,
-              club_players: prev.club_players
-                ? {
-                    ...prev.club_players,
-                    photo_url: publicUrlData.publicUrl,
-                  }
-                : null,
+              club_players: (prev as any).club_players ? { ...(prev as any).club_players, photo_url: publicUrlData.publicUrl } : null,
             }
           : null,
       )
@@ -687,9 +589,7 @@ useEffect(() => {
     if (file) {
       setPhotoFile(file)
       const reader = new FileReader()
-      reader.onload = (e) => {
-        setPhotoPreview(e.target?.result as string)
-      }
+      reader.onload = (e) => setPhotoPreview(e.target?.result as string)
       reader.readAsDataURL(file)
     }
   }
@@ -715,102 +615,23 @@ useEffect(() => {
         return "Spieler"
     }
   }
+
   const hasClubRole = userPagePermissions.some((p) => p.allowed)
 
-
   const navigationItems = [
-    {
-      title: "Dashboard",
-      description: "Statistiken, Teams und Verwaltung",
-      icon: BarChart3,
-      href: "/member-dashboard-app",
-      color: "from-blue-500 to-blue-600",
-    },
-	{
-  title: "Zusagen & Aufstellung",
-  description: "Spieler zusagen verwalten und Teamaufstellung erstellen",
-  icon: CheckCircle,
-  href: "/member-availability",
-  color: "from-green-500 to-emerald-600",
-},
-
-    {
-      title: "Meine Teams",
-      description: "Teams und Teammitglieder verwalten",
-      icon: Users,
-      href: "/meine-teams-app",
-      color: "from-teal-500 to-teal-600",
-    },
-    {
-      title: "Spieler Statistiken",
-      description: "Detaillierte Leistungsanalyse",
-      icon: BarChart3,
-      href: "/member-statistics-app",
-      color: "from-indigo-500 to-indigo-600",
-    },
-    {
-      title: "Training",
-      description: "Trainingsübungen und Fortschritt",
-      icon: Dumbbell,
-      href: "/training-app",
-      color: "from-orange-500 to-red-600",
-    },
-    {
-      title: "Lobby",
-      description: "Spiele gegen andere Spieler",
-      icon: Target,
-      href: "/lobby-app",
-      color: "from-pink-500 to-pink-600",
-    },
-    {
-      title: "Match Galerie",
-      description: "Match-Galerie und Spielfotos",
-      icon: Camera,
-      href: "/match-galerie-app",
-      color: "from-purple-500 to-purple-600",
-    },
-    {
-      title: "Bonusgeld",
-      description: "Bonuspunkte und Belohnungen",
-      icon: Euro,
-      href: "/member-bonus-app",
-      color: "from-yellow-500 to-yellow-600",
-    },
-    {
-      title: "Liga Tabellen",
-      description: "Aktuelle Ligastände",
-      icon: Table,
-      href: "/member-league-app",
-      color: "from-emerald-500 to-emerald-600",
-    },
-    {
-      title: "Vereinskalender",
-      description: "Termine und Events verwalten",
-      icon: Calendar,
-      href: "/vereinskalender-app",
-      color: "from-green-500 to-green-600",
-    },
-    {
-      title: "Feed",
-      description: "Poste, kommentiere und bleib verbunden",
-      icon: MessageCircle,
-      href: "/community-app",
-      color: "from-orange-500 to-red-600",
-    },
-    {
-      title: "Team Chat",
-      description: "Kommunikation mit dem Team",
-      icon: MessageCircle,
-      href: "/chat-app",
-      color: "from-purple-500 to-purple-600",
-    },
-    {
-      title: "Support",
-      description: "Hilfe und Support-Anfragen",
-      icon: HelpCircle,
-      href: "/support-app",
-      color: "from-red-500 to-red-600",
-    },
+    { title: "Dashboard", description: "Statistiken, Teams und Verwaltung", icon: BarChart3, href: "/member-dashboard-app", color: "from-blue-500 to-blue-600" },
+    { title: "Zusagen & Aufstellung", description: "Spieler zusagen verwalten und Teamaufstellung erstellen", icon: CheckCircle, href: "/member-availability", color: "from-green-500 to-emerald-600" },
+    { title: "Meine Teams", description: "Teams und Teammitglieder verwalten", icon: Users, href: "/meine-teams-app", color: "from-teal-500 to-teal-600" },
+    { title: "Spieler Statistiken", description: "Detaillierte Leistungsanalyse", icon: BarChart3, href: "/member-statistics-app", color: "from-indigo-500 to-indigo-600" },
+    { title: "Training", description: "Trainingsübungen und Fortschritt", icon: Dumbbell, href: "/training-app", color: "from-orange-500 to-red-600" },
+    { title: "Lobby", description: "Spiele gegen andere Spieler", icon: Target, href: "/lobby-app", color: "from-pink-500 to-pink-600" },
+    { title: "Match Galerie", description: "Match-Galerie und Spielfotos", icon: Camera, href: "/match-galerie-app", color: "from-purple-500 to-purple-600" },
+    { title: "Bonusgeld", description: "Bonuspunkte und Belohnungen", icon: Euro, href: "/member-bonus-app", color: "from-yellow-500 to-yellow-600" },
+    { title: "Liga Tabellen", description: "Aktuelle Ligastände", icon: Table, href: "/member-league-app", color: "from-emerald-500 to-emerald-600" },
+    { title: "Vereinskalender", description: "Termine und Events verwalten", icon: Calendar, href: "/vereinskalender-app", color: "from-green-500 to-green-600" },
+    { title: "Feed", description: "Poste, kommentiere und bleib verbunden", icon: MessageCircle, href: "/community-app", color: "from-orange-500 to-red-600" },
+    { title: "Team Chat", description: "Kommunikation mit dem Team", icon: MessageCircle, href: "/chat-app", color: "from-purple-500 to-purple-600" },
+    { title: "Support", description: "Hilfe und Support-Anfragen", icon: HelpCircle, href: "/support-app", color: "from-red-500 to-red-600" },
   ]
 
   const formatMatchDate = (dateString: string) => {
@@ -818,9 +639,8 @@ useEffect(() => {
     const day = String(date.getDate()).padStart(2, "0")
     const month = String(date.getMonth() + 1).padStart(2, "0")
     const year = date.getFullYear()
-      return `${day}.${month}.${year}`
+    return `${day}.${month}.${year}`
   }
-
 
   const formatLastSeen = (timestamp?: string | null) => {
     if (!timestamp) return ""
@@ -830,35 +650,28 @@ useEffect(() => {
     const year = date.getFullYear()
     const hours = String(date.getHours()).padStart(2, "0")
     const minutes = String(date.getMinutes()).padStart(2, "0")
-      return `${day}.${month}.${year} ${hours}:${minutes}`
+    return `${day}.${month}.${year} ${hours}:${minutes}`
   }
 
   const getTeamDisplayName = (match: Match, isHome: boolean) => {
     if (!match) return "Unbekannt"
 
     if (isHome) {
-      if (match.home_team_type === "own" && match.home_team) {
-        return match.home_team.name
-      } else if (match.home_team_type === "opponent" && match.home_opponent_team) {
-        return match.home_opponent_team.name
-      }
+      if ((match as any).home_team_type === "own" && (match as any).home_team) return (match as any).home_team.name
+      if ((match as any).home_team_type === "opponent" && (match as any).home_opponent_team) return (match as any).home_opponent_team.name
     } else {
-      if (match.away_team_type === "own" && match.away_team) {
-        return match.away_team.name
-      } else if (match.away_team_type === "opponent" && match.away_opponent_team) {
-        return match.away_opponent_team.name
-      }
+      if ((match as any).away_team_type === "own" && (match as any).away_team) return (match as any).away_team.name
+      if ((match as any).away_team_type === "opponent" && (match as any).away_opponent_team) return (match as any).away_opponent_team.name
     }
-
-      return "Unbekannt"
+    return "Unbekannt"
   }
 
   const isLeadershipRole = () => {
-      return teamMemberships.some((membership) => membership.role === "Captain" || membership.role === "Co-Captain")
+    return teamMemberships.some((m: any) => m.role === "Captain" || m.role === "Co-Captain")
   }
 
   if (authLoading || loading) {
-      return (
+    return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
@@ -869,7 +682,7 @@ useEffect(() => {
   }
 
   if (error || !profile) {
-      return (
+    return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
@@ -885,304 +698,176 @@ useEffect(() => {
   const primaryTeam = teamMemberships[0]
   const hasMultipleTeams = teamMemberships.length > 1
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
 
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8 max-w-6xl">
-
-        {myDues?.summary_tone === "overdue" && (
+        {/* ✅ Beiträge: überfällig / fällig inkl. Beträge */}
+        {myDuesDetail.overdueCount > 0 && (
           <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-500">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 <div className="flex-shrink-0">
                   <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl shadow-lg">
-                    <svg className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
-                    </svg>
+                    <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
                 </div>
                 <div className="flex-grow w-full">
-                  <h3 className="text-base sm:text-lg font-bold text-red-700 mb-2">
-                    Beitrag überfällig
-                  </h3>
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    Dein Vereinsbeitrag ist aktuell überfällig. Bitte begleiche ihn so schnell wie möglich.
-                  </p>
-                  <Badge className="bg-red-600 text-white">Überfällig</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {showInstallButton && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-l-blue-500">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg">
-                    <svg
-                      className="h-5 w-5 sm:h-6 sm:w-6 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                <div className="flex-grow w-full">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
-                    App auf deinem Gerät installieren
-                  </h3>
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    Installiere die EMD-App auf deinem Handy oder PC für schnellen Zugriff und ein besseres Erlebnis!
-                  </p>
-                  <Button
-                    onClick={handleInstallClick}
-                    className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg text-sm sm:text-base"
-                  >
-                    <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                    Jetzt installieren
-                  </Button>
+                  <h3 className="text-base sm:text-lg font-bold text-red-700 mb-2">Beitrag überfällig</h3>
+                 <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+  Du hast{" "}
+  <b>
+    {myDuesDetail.overdueCount}×{" "}
+    {myDuesDetail.overdueCount === 1 ? "überfälligen Beitrag" : "überfällige Beiträge"}
+  </b>{" "}
+  offen (Summe: <b>{formatCurrencyEUR(myDuesDetail.overdueAmount)}</b>).
+  <br />
+  <span className="font-medium text-red-700">
+    {myDuesDetail.overdueCount === 1
+      ? "Der offene Betrag muss schnellstmöglich beglichen werden."
+      : "Die offenen Beträge müssen schnellstmöglich beglichen werden."}
+  </span>
+  <br />
+  Solltest du Zahlungsschwierigkeiten haben, wende dich bitte an die Vereinsleitung.
+</p>
+
+
+                  {overdueMonthsLabel.length > 0 && (
+                    <div className="text-sm text-gray-700 mb-3">
+                      Überfällig für: <b>{overdueMonthsLabel.join(", ")}</b>
+                    </div>
+                  )}
+
+                  <Badge className="bg-red-600 text-white">{myDuesDetail.overdueCount}× überfällig</Badge>
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {notifications.length > 0 && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-500">
+        {/* ✅ Fällig immer anzeigen, auch wenn es zusätzlich überfällige gibt (gelb) */}
+        {myDuesDetail.dueCount > 0 && (
+          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-l-yellow-500">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl shadow-lg">
+                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-xl shadow-lg">
                     <Bell className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
                 </div>
                 <div className="flex-grow w-full">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Admin-Benachrichtigungen</h3>
-                    </div>
-                    <Badge className="bg-red-500 text-white w-fit">{notifications.length}</Badge>
-                  </div>
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    Du hast {notifications.length} neue{" "}
-                    {notifications.length === 1 ? "Benachrichtigung" : "Benachrichtigungen"} vom Admin bezüglich
-                    fehlerhafter Statistik-Einträge.
-                  </p>
-                  <div className="space-y-2">
-                    {notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className="flex flex-col bg-white/70 rounded-lg p-3 border border-red-200 gap-2"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 mb-1">{notification.message}</p>
-                            {notification.match && (
-                              <div className="text-xs text-gray-700 font-medium mb-1">
-                                {notification.match.home_team_type === "own" && notification.match.home_team?.name
-                                  ? notification.match.home_team.name
-                                  : notification.match.home_opponent_team?.name || "Unbekannt"}{" "}
-                                vs{" "}
-                                {notification.match.away_team_type === "own" && notification.match.away_team?.name
-                                  ? notification.match.away_team.name
-                                  : notification.match.away_opponent_team?.name || "Unbekannt"}
-                                {" - "}
-                                {formatMatchDate(notification.match.match_date)}
-                              </div>
-                            )}
-                            {notification.player && (
-                              <div className="text-xs text-gray-600 mb-1">
-                                Spieler: <span className="font-medium">{notification.player.name}</span>
-                              </div>
-                            )}
-                            {notification.leg_statistics && (
-                              <div className="text-xs text-gray-600">
-                                Leg {notification.leg_statistics.leg_number} - Ergebnis:{" "}
-                                {notification.leg_statistics.player_legs_won}:
-                                {notification.leg_statistics.opponent_legs_won}
-                              </div>
-                            )}
-                            <div className="text-xs text-gray-500 mt-1">
-                              Gemeldet am: {formatMatchDate(notification.created_at)}
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => markNotificationAsRead(notification.id)}
-                            className="flex-shrink-0 h-8 w-8 p-0"
-                            title="Als gelesen markieren"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {pendingMatches.length > 0 && isLeadershipRole() && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-l-yellow-500">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl shadow-lg">
-                    <Inbox className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
-                </div>
-                <div className="flex-grow w-full">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Offene Spielergebnisse</h3>
-                    </div>
-                    <Badge className="bg-yellow-500 text-white w-fit">{pendingMatches.length}</Badge>
-                  </div>
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    Du hast {pendingMatches.length} vergangene {pendingMatches.length === 1 ? "Spiel" : "Spiele"}, für{" "}
-                    {pendingMatches.length === 1 ? "das" : "die"} noch kein Ergebnis eingetragen wurde.
-                  </p>
-                  <div className="space-y-2 mb-3 sm:mb-4">
-                    {pendingMatches.slice(0, 3).map((match) => (
-                      <div
-                        key={match.id}
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white/70 rounded-lg p-3 border border-yellow-200 gap-2"
-                      >
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                          <Calendar className="h-4 w-4 text-yellow-600 flex-shrink-0" />
-                          <span className="font-medium text-xs sm:text-sm truncate">
-                            {getTeamDisplayName(match, true)} vs {getTeamDisplayName(match, false)}
-                          </span>
-                        </div>
-                        <Badge variant="outline" className="text-xs border-yellow-300 text-yellow-700 w-fit">
-                          {formatMatchDate(match.match_date)}
-                        </Badge>
-                      </div>
-                    ))}
-                    {pendingMatches.length > 3 && (
-                      <div className="text-xs sm:text-sm text-gray-600 text-center py-2">
-                        ... und {pendingMatches.length - 3} weitere
-                      </div>
-                    )}
-                  </div>
-                  <Button
-                    onClick={() => router.push("/member-dashboard-app")}
-                    className="w-full sm:w-auto bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg text-sm sm:text-base"
-                  >
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    Ergebnisse eintragen
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {totalUnread > 0 && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-purple-50 to-indigo-50 border-l-4 border-l-purple-500">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-start gap-3 sm:gap-4">
-                <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl shadow-lg">
-                    <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
-                </div>
-
-                <div className="flex-grow w-full">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                    <h3 className="text-base sm:text-lg font-bold text-gray-900">Neue Team-Chat Nachrichten</h3>
-                    <Badge className="bg-purple-600 text-white w-fit">{totalUnread}</Badge>
-                  </div>
-
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    Du hast neue Nachrichten in deinen Team-Chats. Tippe auf ein Team, um den Chat zu öffnen.
-                  </p>
-
-                  <div className="space-y-2">
-                    {chatRooms
-  .filter((r) => (unreadCounts[r.id] || 0) > 0)
-  .slice(0, 5)
-  .map((room) => (
-    <div
-      key={room.id}
-      className="flex items-center justify-between bg-white/70 rounded-lg p-3 border border-purple-200 cursor-pointer hover:bg-white transition-colors"
-      onClick={() => router.push(`/chat-app?room_id=${room.id}&scope=${CHAT_SCOPE}`)}
-
-    >
-      <div className="min-w-0">
-        <div className="text-sm font-semibold text-gray-900 truncate">{room.name}</div>
-        <div className="text-xs text-gray-600">Tippen zum Öffnen</div>
-      </div>
-
-      <Badge className="bg-red-500 text-white">{unreadCounts[room.id] || 0}</Badge>
-    </div>
-  ))}
-
-                  </div>
-
-                  {chatRooms.filter((r) => (unreadCounts[r.id] || 0) > 0).length > 5 && (
-                    <div className="text-xs text-gray-600 text-center mt-2">
-                      ... und weitere Chats mit neuen Nachrichten
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">Beitrag fällig</h3>
+                  {dueMonthsLabel.length > 0 && (
+                    <div className="text-sm text-gray-700 mb-3">
+                      Fällig für: <b>{dueMonthsLabel.join(", ")}</b>
                     </div>
                   )}
+
+                <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+  Du hast{" "}
+  <b>
+    {myDuesDetail.dueCount}×{" "}
+    {myDuesDetail.dueCount === 1 ? "fälligen Beitrag" : "fällige Beiträge"}
+  </b>{" "}
+  offen (Summe: <b>{formatCurrencyEUR(myDuesDetail.dueAmount)}</b>).
+  <br />
+  {myDuesDetail.dueCount === 1
+    ? "Der Betrag muss spätestens bis zum 20. des Monats auf unserem Vereinskonto eingegangen sein."
+    : "Die Beträge müssen spätestens bis zum 20. des Monats auf unserem Vereinskonto eingegangen sein."}
+</p>
+
+
+                  <Badge className="bg-yellow-500 text-white">{myDuesDetail.dueCount}× fällig</Badge>
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
 
+		
+		
+		{totalUnread > 0 && (
+  <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-purple-50 to-indigo-50 border-l-4 border-l-purple-500">
+    <CardContent className="p-4 sm:p-6">
+      <div className="flex items-start gap-3 sm:gap-4">
+        <div className="flex-shrink-0">
+          <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl shadow-lg">
+            <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+          </div>
+        </div>
+
+        <div className="flex-grow w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900">Neue Team-Chat Nachrichten</h3>
+            <Badge className="bg-purple-600 text-white w-fit">{totalUnread}</Badge>
+          </div>
+
+          <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+            Du hast neue Nachrichten in deinen Team-Chats. Tippe auf ein Team, um den Chat zu öffnen.
+          </p>
+
+          <div className="space-y-2">
+            {chatRooms
+              .filter((r) => (unreadCounts[r.id] || 0) > 0)
+              .slice(0, 5)
+              .map((room) => (
+                <div
+                  key={room.id}
+                  className="flex items-center justify-between bg-white/70 rounded-lg p-3 border border-purple-200 cursor-pointer hover:bg-white transition-colors"
+                  onClick={() => router.push(`/chat-app?room_id=${room.id}&scope=${CHAT_SCOPE}`)}
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 truncate">{room.name}</div>
+                    <div className="text-xs text-gray-600">Tippen zum Öffnen</div>
+                  </div>
+
+                  <Badge className="bg-red-500 text-white">{unreadCounts[room.id] || 0}</Badge>
+                </div>
+              ))}
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+)}
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+
+        {/* Willkommen */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl mb-4 sm:mb-6 shadow-xl">
             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Willkommen!</h1>
+
           <div className="text-lg sm:text-xl text-gray-600 px-4">
             Schön dich zu sehen, {profile.club_players?.name || "Vereinsmitglied"}
-            {myDues?.summary_tone === "overdue" && (
-              <Badge variant="destructive" className="ml-2 inline-flex items-center gap-1 align-middle">
-                <AlertTriangle className="h-3 w-3" />
-                Beitrag überfällig
-              </Badge>
-            )}
-            {myDues?.summary_tone === "due" && (
-              <Badge className="ml-2 inline-flex items-center gap-1 align-middle">
-                <Bell className="h-3 w-3" />
-                Beitrag fällig
-              </Badge>
-            )}
+           
           </div>
+
+          
         </div>
 
+        {/* Profil Card */}
         <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
           <CardContent className="p-4 sm:p-6 lg:p-8">
             <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-6">
               <div className="relative">
                 <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-orange-200">
                   <AvatarImage
-                    src={
-                      profile.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=dart player avatar"
-                    }
+                    src={profile.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=dart player avatar"}
                     alt={profile.club_players?.name || "Spieler"}
                   />
                   <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xl sm:text-2xl font-bold">
@@ -1204,17 +889,16 @@ useEffect(() => {
               </div>
 
               <div className="flex-grow text-center md:text-left">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                  {profile.club_players?.name || "Vereinsmitglied"}
-                </h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{profile.club_players?.name || "Vereinsmitglied"}</h2>
+
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <Badge variant="secondary" className="flex items-center gap-2 px-2 sm:px-3 py-1 text-xs sm:text-sm">
-                    {getRoleIcon(primaryTeam?.role)}
-                    {getRoleLabel(primaryTeam?.role)}
+                    {getRoleIcon((primaryTeam as any)?.role)}
+                    {getRoleLabel((primaryTeam as any)?.role)}
                   </Badge>
-                  {primaryTeam?.teams && (
+                  {(primaryTeam as any)?.teams && (
                     <Badge variant="outline" className="px-2 sm:px-3 py-1 text-xs sm:text-sm">
-                      {primaryTeam.teams.name}
+                      {(primaryTeam as any).teams.name}
                       {hasMultipleTeams && ` (+${teamMemberships.length - 1} weitere)`}
                     </Badge>
                   )}
@@ -1224,17 +908,16 @@ useEffect(() => {
                     </Badge>
                   )}
                 </div>
+
                 {(profile as any)?.last_seen_at && (
-                  <p className="text-sm sm:text-base text-gray-600 mb-2">
-                    Zuletzt online: {formatLastSeen((profile as any).last_seen_at)}
-                  </p>
+                  <p className="text-sm sm:text-base text-gray-600 mb-2">Zuletzt online: {formatLastSeen((profile as any).last_seen_at)}</p>
                 )}
 
                 {hasMultipleTeams && (
                   <div className="mb-2">
                     <p className="text-xs sm:text-sm text-gray-600 mb-1">Alle Teams:</p>
                     <div className="flex flex-wrap gap-1 sm:gap-2">
-                      {teamMemberships.map((membership) => (
+                      {teamMemberships.map((membership: any) => (
                         <Badge key={membership.id} variant="outline" className="text-xs">
                           {membership.teams?.name} ({getRoleLabel(membership.role)})
                         </Badge>
@@ -1259,7 +942,7 @@ useEffect(() => {
           </CardContent>
         </Card>
 
-        {/* Eigene Box unterhalb des Profil-Headers: nur kommendes Spiel */}
+        {/* Kommendes Spiel */}
         <Card className="border shadow-sm bg-white mb-6 sm:mb-8">
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
@@ -1272,6 +955,7 @@ useEffect(() => {
                     <div className="font-semibold text-base sm:text-lg truncate mt-1">
                       {getTeamDisplayName(nextMatchSummary.match, true)} vs {getTeamDisplayName(nextMatchSummary.match, false)}
                     </div>
+
                     <div className="text-sm text-gray-600 mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
                       <span className="inline-flex items-center gap-1">
                         <Calendar className="h-4 w-4 text-orange-600" />
@@ -1308,21 +992,19 @@ useEffect(() => {
                       ) : (
                         <Badge variant="outline">Nicht gesetzt</Badge>
                       )}
-                    <div className="mt-3 rounded-lg border bg-gray-50 p-3 text-sm text-gray-700 flex items-start gap-2">
-                      {nextMatchSummary.myStatus === "yes" ? (
-                        <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
-                      ) : nextMatchSummary.myStatus === "no" ? (
-                        <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
-                      ) : nextMatchSummary.myStatus === "maybe" ? (
-                        <HelpCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                      ) : (
-                        <Bell className="h-4 w-4 text-gray-500 mt-0.5" />
-                      )}
-                      <span className="leading-snug">
-                        {getAvailabilityNudge(nextMatchSummary.myStatus, nextMatchSummary.myLineup)}
-                      </span>
-                    </div>
 
+                      <div className="mt-3 rounded-lg border bg-gray-50 p-3 text-sm text-gray-700 flex items-start gap-2">
+                        {nextMatchSummary.myStatus === "yes" ? (
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                        ) : nextMatchSummary.myStatus === "no" ? (
+                          <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
+                        ) : nextMatchSummary.myStatus === "maybe" ? (
+                          <HelpCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                        ) : (
+                          <Bell className="h-4 w-4 text-gray-500 mt-0.5" />
+                        )}
+                        <span className="leading-snug">{getAvailabilityNudge(nextMatchSummary.myStatus, nextMatchSummary.myLineup)}</span>
+                      </div>
                     </div>
                   </>
                 )}
@@ -1332,10 +1014,7 @@ useEffect(() => {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    if (!nextMatchSummary) return
-                    router.push(`/member-availability?matchId=${nextMatchSummary.match.id}`)
-                  }}
+                  onClick={() => nextMatchSummary && router.push(`/member-availability?matchId=${(nextMatchSummary.match as any).id}`)}
                   className="bg-white hover:bg-gray-50 border-gray-200"
                   disabled={!nextMatchSummary}
                 >
@@ -1349,8 +1028,6 @@ useEffect(() => {
         {hasClubRole && (
           <Card
             className="mb-6 border-0 shadow-2xl cursor-pointer overflow-hidden bg-gradient-to-r from-orange-500 to-orange-600 text-white ring-2 ring-orange-300 hover:ring-4 transition-all hover:shadow-[0_0_25px_rgba(251,146,60,0.8)]"
-
-
             onClick={() => router.push("/admin")}
           >
             <CardContent className="p-5 sm:p-6 flex items-center justify-between">
@@ -1366,6 +1043,7 @@ useEffect(() => {
           </Card>
         )}
 
+        {/* Navigation */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {navigationItems.map((item, index) => (
             <Card
@@ -1390,6 +1068,7 @@ useEffect(() => {
           ))}
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
             <CardContent className="p-3 sm:p-4 text-center">
@@ -1425,6 +1104,7 @@ useEffect(() => {
         </div>
       </main>
 
+      {/* Foto Dialog */}
       {isPhotoDialogOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
@@ -1432,12 +1112,7 @@ useEffect(() => {
 
             <div className="space-y-4">
               <div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoFileChange}
-                  className="w-full p-2 border rounded"
-                />
+                <input type="file" accept="image/*" onChange={handlePhotoFileChange} className="w-full p-2 border rounded" />
               </div>
 
               {photoPreview && (
@@ -1451,9 +1126,7 @@ useEffect(() => {
               )}
 
               {photoMessage && (
-                <p className={`text-sm ${photoMessage.includes("Fehler") ? "text-red-600" : "text-green-600"}`}>
-                  {photoMessage}
-                </p>
+                <p className={`text-sm ${photoMessage.includes("Fehler") ? "text-red-600" : "text-green-600"}`}>{photoMessage}</p>
               )}
 
               <div className="flex gap-2 justify-end">
@@ -1468,11 +1141,7 @@ useEffect(() => {
                 >
                   Abbrechen
                 </Button>
-                <Button
-                  onClick={handlePhotoUpload}
-                  disabled={!photoFile || photoUploading}
-                  className="bg-orange-600 hover:bg-orange-700"
-                >
+                <Button onClick={handlePhotoUpload} disabled={!photoFile || photoUploading} className="bg-orange-600 hover:bg-orange-700">
                   {photoUploading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />

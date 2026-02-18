@@ -228,7 +228,17 @@ export function DuesTab({
           <CreditCard className="h-5 w-5" />
           Beiträge / Überblick
         </h3>
-        <p className="text-sm text-gray-500">Filtere nach Überfällig/Fällig/Bezahlt und öffne pro Spieler die Periodenliste.</p>
+        <p className="text-sm text-gray-500">
+          Filtere nach Überfällig/Fällig/Bezahlt und öffne pro Spieler die Periodenliste.
+        </p>
+
+        {/* ✅ Hinweistext (UI) */}
+        <div className="mt-3 p-3 rounded-lg text-sm font-medium flex items-center space-x-2 bg-orange-50 text-orange-700 border border-orange-100">
+          <AlertCircle className="h-4 w-4" />
+          <span>
+            Beiträge müssen bis spätestens zum 20. des Monats am Konto sein. Als „Überfällig“ gilt es erst, wenn bis inkl. 25. nicht als bezahlt markiert wurde.
+          </span>
+        </div>
       </div>
 
       {/* Stat Kacheln */}
@@ -339,7 +349,13 @@ export function DuesTab({
                   : "bg-gray-50 text-gray-700 border border-gray-100",
             )}
           >
-            {messageType === "error" ? <AlertCircle className="h-4 w-4" /> : messageType === "success" ? <CheckCircle className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
+            {messageType === "error" ? (
+              <AlertCircle className="h-4 w-4" />
+            ) : messageType === "success" ? (
+              <CheckCircle className="h-4 w-4" />
+            ) : (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
             <span>{message}</span>
           </div>
         )}
@@ -376,10 +392,15 @@ export function DuesTab({
                 filteredRows.map((r, idx) => {
                   const b = summaryBadge(r.summary_tone)
                   return (
-                    <tr key={r.player_id} className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}>
+                    <tr
+                      key={r.player_id}
+                      className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}
+                    >
                       <td className="px-3 py-2 lg:px-4 lg:py-3 font-medium text-gray-800">{r.player_name}</td>
                       <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{r.cadence ? cadenceLabel(r.cadence) : "—"}</td>
-                      <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{r.amount != null ? `${r.amount.toFixed(2)} ${r.currency ?? "EUR"}` : "—"}</td>
+                      <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">
+                        {r.amount != null ? `${r.amount.toFixed(2)} ${r.currency ?? "EUR"}` : "—"}
+                      </td>
                       <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{fmtDateISO(r.next_unpaid_due_on)}</td>
                       <td className="px-3 py-2 lg:px-4 lg:py-3">
                         <span className={cn("inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold", b.cls)}>
@@ -397,7 +418,10 @@ export function DuesTab({
                             onClick={() => {
                               setSelectedPlayerId(r.player_id)
                               setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0)
-                              setTimeout(() => document.getElementById("dues-editor")?.scrollIntoView({ behavior: "smooth", block: "start" }), 150)
+                              setTimeout(
+                                () => document.getElementById("dues-editor")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                                150,
+                              )
                             }}
                           >
                             Öffnen
@@ -495,7 +519,9 @@ export function DuesTab({
                   type="button"
                   variant="outline"
                   className="h-10 border-gray-200"
-                  onClick={() => document.getElementById("dues-periods")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  onClick={() =>
+                    document.getElementById("dues-periods")?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
                 >
                   <ListChecks className="h-4 w-4 mr-2" />
                   Zu den Perioden
@@ -507,7 +533,9 @@ export function DuesTab({
               <h4 className="text-md font-semibold text-gray-800">Perioden / Fälligkeiten</h4>
 
               {periods.length === 0 ? (
-                <p className="text-sm text-gray-500">Keine Perioden berechnet. Lege zuerst einen aktiven Beitrag (Rhythmus + Startdatum + Betrag) an.</p>
+                <p className="text-sm text-gray-500">
+                  Keine Perioden berechnet. Lege zuerst einen aktiven Beitrag (Rhythmus + Startdatum + Betrag) an.
+                </p>
               ) : (
                 <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white">
                   <table className="w-full min-w-[860px] text-sm">
@@ -524,7 +552,10 @@ export function DuesTab({
                       {periods.map((per, idx) => {
                         const b = periodBadge(per)
                         return (
-                          <tr key={per.due_on} className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}>
+                          <tr
+                            key={per.due_on}
+                            className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}
+                          >
                             <td className="px-3 py-2 lg:px-4 lg:py-3 font-medium text-gray-800">{fmtDateISO(per.due_on)}</td>
                             <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">
                               {per.amount.toFixed(2)} {per.currency}

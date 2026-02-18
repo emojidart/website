@@ -27,7 +27,6 @@ import {
   Download,
   Loader2,
   Timer,
-  Lock,
   LogOut,
   UserPlus,
 } from "lucide-react"
@@ -36,7 +35,6 @@ import { FAQChatWidget } from "@/components/faq-chat-widget"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { DKOSelfRegistrationModal } from "@/components/dko-self-registration-modal"
 import { PushNotificationDialog } from "@/components/push-notification-dialog"
-import { Confetti, CarnivalBanner } from "@/components/confetti"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -123,17 +121,6 @@ interface LionCupEvent {
   matchday?: number | null
 }
 
-interface BuffaloCupEvent {
-  id: string
-  name: string
-  event_date: string
-  event_time: string | null
-  matchday: number
-  description: string | null
-}
-
-
-
 type DkoSeriesEventRow = {
   id: string
   series_id: string
@@ -175,7 +162,6 @@ function startOfDay(d: Date) {
   x.setHours(0, 0, 0, 0)
   return x
 }
-
 
 interface ActiveTournament {
   tournament_id: string
@@ -254,13 +240,11 @@ function getEventTypeLabel(eventType: string) {
   return eventType
 }
 
-
 function pad2(n: number) {
   return String(n).padStart(2, "0")
 }
 
 function formatGermanShortDateFromISO(isoDate: string) {
-  // iso: YYYY-MM-DD -> "DD. Mon. YYYY"
   const [y, m, d] = isoDate.split("-").map((x) => Number.parseInt(x, 10))
   const months = ["Jan.", "Feb.", "Mär.", "Apr.", "Mai", "Jun.", "Jul.", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."]
   const mm = Number.isFinite(m) ? m - 1 : 0
@@ -268,13 +252,11 @@ function formatGermanShortDateFromISO(isoDate: string) {
 }
 
 function ensureUhr(time: string) {
-  // "19:30" or "19:30 Uhr" -> "19:30 Uhr"
   const t = time.replace("Uhr", "").trim()
   return t.includes(":") ? `${t} Uhr` : `${t}:00 Uhr`
 }
 
 function parseTimeToHHMM(time: string) {
-  // "19:30" or "19:30 Uhr" -> "19:30"
   return time.replace("Uhr", "").trim()
 }
 
@@ -288,84 +270,78 @@ function formatHoursMinutesSeconds(totalSeconds: number) {
   const hours = Math.floor(s / 3600)
   const minutes = Math.floor((s % 3600) / 60)
   const seconds = s % 60
-  // Anzeige: "17 Std 33 Min 12 Sek"
   return `${hours} Std ${pad2(minutes)} Min ${pad2(seconds)} Sek`
 }
-
 
 export default function Home() {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [cupPrizePool, setCupPrizePool] = useState<number>(0)
-  const [lionTop5, setLionTop5] = useState<Array<{ player_name: string; total_points: number; original_total_points: number; tournaments_played: number }>>([])
+  const [lionTop5, setLionTop5] = useState<
+    Array<{ player_name: string; total_points: number; original_total_points: number; tournaments_played: number }>
+  >([])
   const [lionTop5Loading, setLionTop5Loading] = useState<boolean>(true)
   const [lionHalvingActive, setLionHalvingActive] = useState<boolean>(false)
-  const [buffaloPrizePool, setBuffaloPrizePool] = useState<number>(0)
-  const [buffaloTop5, setBuffaloTop5] = useState<Array<{ player_name: string; total_points: number; tournaments_played: number }>>([])
-  const [buffaloTop5Loading, setBuffaloTop5Loading] = useState<boolean>(true)
   const [combinedEvents, setCombinedEvents] = useState<CombinedEvent[]>([])
   const [nextEvent, setNextEvent] = useState<LionCupEvent | null>(null)
   const [nextTournamentEvent, setNextTournamentEvent] = useState<LionCupEvent | null>(null)
-  const [nextBuffaloCupEvent, setNextBuffaloCupEvent] = useState<BuffaloCupEvent | null>(null)
   const [lionCupLoading, setLionCupLoading] = useState(true)
-  const [buffaloCupLoading, setBuffaloCupLoading] = useState(true)
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null)
-  const [showTournamentModal, setShowTournamentModal] = useState(false)
   const [activeTournament, setActiveTournament] = useState<ActiveTournament | null>(null)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [showInstallButton, setShowInstallButton] = useState(false)
 
-// --- DKO Self Registration (Turniertag-Box) ---
-const [authUserId, setAuthUserId] = useState<string | null>(null)
-const [seriesStartgeldById, setSeriesStartgeldById] = useState<Record<string, number>>({})
+  // --- DKO Self Registration (Turniertag-Box) ---
+  const [authUserId, setAuthUserId] = useState<string | null>(null)
+  const [seriesStartgeldById, setSeriesStartgeldById] = useState<Record<string, number>>({})
 
-const ensureStartgeldForSeriesId = async (seriesId: string): Promise<number> => {
-  const cached = seriesStartgeldById[seriesId]
-  if (typeof cached === "number") return cached
+  const ensureStartgeldForSeriesId = async (seriesId: string): Promise<number> => {
+    const cached = seriesStartgeldById[seriesId]
+    if (typeof cached === "number") return cached
 
-  const { data, error } = await supabase.from("dko_series").select("startgeld").eq("id", seriesId).limit(1).single()
-  if (error) {
-    console.warn("ensureStartgeldForSeriesId error:", error)
-    return 0
+    const { data, error } = await supabase.from("dko_series").select("startgeld").eq("id", seriesId).limit(1).single()
+    if (error) {
+      console.warn("ensureStartgeldForSeriesId error:", error)
+      return 0
+    }
+
+    const sg = Number((data as any)?.startgeld ?? 0)
+    setSeriesStartgeldById((prev) => ({ ...prev, [seriesId]: sg }))
+    return sg
   }
 
-  const sg = Number((data as any)?.startgeld ?? 0)
-  setSeriesStartgeldById((prev) => ({ ...prev, [seriesId]: sg }))
-  return sg
-}
+  type DkoModalState = {
+    isOpen: boolean
+    title: string
+    dateLabel: string
+    timeLabel: string
+    seriesId: string | null
+    startgeld: number | null
+  }
 
-type DkoModalState = {
-  isOpen: boolean
-  title: string
-  dateLabel: string
-  timeLabel: string
-  seriesId: string | null
-  startgeld: number | null
-}
+  const [dkoModal, setDkoModal] = useState<DkoModalState>({
+    isOpen: false,
+    title: "",
+    dateLabel: "",
+    timeLabel: "",
+    seriesId: null,
+    startgeld: null,
+  })
 
-const [dkoModal, setDkoModal] = useState<DkoModalState>({
-  isOpen: false,
-  title: "",
-  dateLabel: "",
-  timeLabel: "",
-  seriesId: null,
-  startgeld: null,
-})
-
-const [liveInfoOpen, setLiveInfoOpen] = useState(false)
+  const [liveInfoOpen, setLiveInfoOpen] = useState(false)
 
   const [dkoRegistered, setDkoRegistered] = useState(false)
-const [dkoRegLoading, setDkoRegLoading] = useState(false)
+  const [dkoRegLoading, setDkoRegLoading] = useState(false)
 
-// ✅ Modal Auto-Close Guard + Success Toast
-const modalOpenedAtRef = useRef<number>(0)
-const [toast, setToast] = useState<{ show: boolean; text: string }>({ show: false, text: "" })
-const showToast = (text: string) => {
-  setToast({ show: true, text })
-  window.setTimeout(() => setToast({ show: false, text: "" }), 2500)
-}
-// Tick für Countdown (Turniertag-Box)
-const [nowTick, setNowTick] = useState<number>(() => Date.now())
+  // ✅ Modal Auto-Close Guard + Success Toast
+  const modalOpenedAtRef = useRef<number>(0)
+  const [toast, setToast] = useState<{ show: boolean; text: string }>({ show: false, text: "" })
+  const showToast = (text: string) => {
+    setToast({ show: true, text })
+    window.setTimeout(() => setToast({ show: false, text: "" }), 2500)
+  }
+  // Tick für Countdown (Turniertag-Box)
+  const [nowTick, setNowTick] = useState<number>(() => Date.now())
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -382,7 +358,6 @@ const [nowTick, setNowTick] = useState<number>(() => Date.now())
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
     window.addEventListener("appinstalled", handleAppInstalled)
 
-    // Check if app is already installed
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setShowInstallButton(false)
     }
@@ -392,7 +367,6 @@ const [nowTick, setNowTick] = useState<number>(() => Date.now())
       window.removeEventListener("appinstalled", handleAppInstalled)
     }
   }, [])
-
 
   // DKO: Sekunden-Tick für Countdown
   useEffect(() => {
@@ -417,7 +391,6 @@ const [nowTick, setNowTick] = useState<number>(() => Date.now())
     }
   }, [])
 
-
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
       alert("Installation nicht verfügbar. Auf iOS: Teilen-Menü → Zum Home-Bildschirm hinzufügen")
@@ -426,7 +399,7 @@ const [nowTick, setNowTick] = useState<number>(() => Date.now())
 
     deferredPrompt.prompt()
 
-    const { outcome } = await deferredPrompt.userChoice
+    await deferredPrompt.userChoice
 
     setDeferredPrompt(null)
     setShowInstallButton(false)
@@ -442,11 +415,13 @@ const [nowTick, setNowTick] = useState<number>(() => Date.now())
 
         const { data: matchesData } = await supabase
           .from("matches")
-          .select(`
+          .select(
+            `
             *,
             home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
             away_team:teams!matches_away_team_id_fkey(id, name, logo_url)
-          `)
+          `,
+          )
           .eq("status", "scheduled")
           .gte("match_date", today)
           .order("match_date", { ascending: true })
@@ -455,7 +430,7 @@ const [nowTick, setNowTick] = useState<number>(() => Date.now())
 
         if (matchesData) {
           const enrichedMatches =
-            matchesData?.map((match) => {
+            matchesData?.map((match: any) => {
               const homeOpponentTeam = match.home_opponent_team_id
                 ? opponentTeamsData?.find((team: any) => team.id === match.home_opponent_team_id)
                 : null
@@ -485,16 +460,14 @@ const [nowTick, setNowTick] = useState<number>(() => Date.now())
   useEffect(() => {
     const fetchCupData = async () => {
       try {
-        const { data, error } = await supabase
-          .from("tournament_series_aggregated")
-          .select("player_name, tournaments_played")
+        const { data, error } = await supabase.from("tournament_series_aggregated").select("player_name, tournaments_played")
 
         if (error) {
           throw error
         }
 
         const totalParticipants = data?.length || 0
-        const totalAppearances = data?.reduce((sum, player) => sum + player.tournaments_played, 0) || 0
+        const totalAppearances = data?.reduce((sum: number, player: any) => sum + player.tournaments_played, 0) || 0
 
         const prizePoolFromParticipants = totalParticipants * 5
         const prizePoolFromAppearances = totalAppearances * 4
@@ -512,134 +485,81 @@ const [nowTick, setNowTick] = useState<number>(() => Date.now())
       } catch (error) {
         console.error("Error fetching cup data:", error)
         setCupPrizePool(0)
-}
+      }
     }
 
     fetchCupData()
   }, [])
 
-  
-
- 
-
   useEffect(() => {
-  const fetchLionTop5 = async () => {
-    try {
-      setLionTop5Loading(true)
+    const fetchLionTop5 = async () => {
+      try {
+        setLionTop5Loading(true)
 
-  
-      const { data: settings } = await supabase
-        .from("season_settings")
-        .select("halving_active, halving_date")
-        .single()
+        const { data: settings } = await supabase.from("season_settings").select("halving_active, halving_date").single()
 
-      const halvingActive = Boolean(settings?.halving_active)
-      const halvingDate = settings?.halving_date ? new Date(settings.halving_date).getTime() : null
+        const halvingActive = Boolean(settings?.halving_active)
+        const halvingDate = settings?.halving_date ? new Date(settings.halving_date).getTime() : null
 
-      const { data: entries, error } = await supabase
-        .from("tournament_series_standings")
-        .select("player_name, placement_points, bonus_points, legs_won, tournament_date")
+        const { data: entries, error } = await supabase
+          .from("tournament_series_standings")
+          .select("player_name, placement_points, bonus_points, legs_won, tournament_date")
 
-      if (error) throw error
+        if (error) throw error
 
-      const stats = new Map<
-        string,
-        {
-          current_total: number
-          original_total: number
-          current_legs_won: number
-          current_placement_points: number
-          tournaments: number
-        }
-      >()
+        const stats = new Map<
+          string,
+          {
+            current_total: number
+            original_total: number
+            current_legs_won: number
+            current_placement_points: number
+            tournaments: number
+          }
+        >()
 
-      ;(entries || []).forEach((e: any) => {
-        const name = String(e.player_name || "").trim()
-        if (!name) return
+        ;(entries || []).forEach((e: any) => {
+          const name = String(e.player_name || "").trim()
+          if (!name) return
 
-        const placement = Number(e.placement_points || 0)
-        const bonus = Number(e.bonus_points || 0)
-        const legsWon = Number(e.legs_won || 0)
-        const entryTotal = placement + bonus + legsWon
+          const placement = Number(e.placement_points || 0)
+          const bonus = Number(e.bonus_points || 0)
+          const legsWon = Number(e.legs_won || 0)
+          const entryTotal = placement + bonus + legsWon
 
-        let multiplier = 1
-        if (halvingActive && halvingDate && e.tournament_date) {
-          const t = new Date(e.tournament_date).getTime()
-          if (!Number.isNaN(t) && t < halvingDate) multiplier = 0.5
-        }
+          let multiplier = 1
+          if (halvingActive && halvingDate && e.tournament_date) {
+            const t = new Date(e.tournament_date).getTime()
+            if (!Number.isNaN(t) && t < halvingDate) multiplier = 0.5
+          }
 
-        const prev =
-          stats.get(name) || ({
-            current_total: 0,
-            original_total: 0,
-            current_legs_won: 0,
-            current_placement_points: 0,
-            tournaments: 0,
-          } as const)
+          const prev =
+            stats.get(name) ||
+            ({
+              current_total: 0,
+              original_total: 0,
+              current_legs_won: 0,
+              current_placement_points: 0,
+              tournaments: 0,
+            } as const)
 
-        stats.set(name, {
-          current_total: prev.current_total + entryTotal * multiplier,
-          original_total: prev.original_total + entryTotal,
-          current_legs_won: prev.current_legs_won + legsWon * multiplier,
-          current_placement_points: prev.current_placement_points + placement * multiplier,
-          tournaments: prev.tournaments + 1,
+          stats.set(name, {
+            current_total: prev.current_total + entryTotal * multiplier,
+            original_total: prev.original_total + entryTotal,
+            current_legs_won: prev.current_legs_won + legsWon * multiplier,
+            current_placement_points: prev.current_placement_points + placement * multiplier,
+            tournaments: prev.tournaments + 1,
+          })
         })
-      })
 
-      const top5 = Array.from(stats.entries())
-        .map(([player_name, v]) => ({
-          player_name,
-          total_points: Math.round(v.current_total * 100) / 100,
-          original_total_points: Math.round(v.original_total * 100) / 100,
-          tournaments_played: v.tournaments,
-          _legs: v.current_legs_won,
-          _placement: v.current_placement_points,
-        }))
-        .sort((a, b) => {
-          if (b.total_points !== a.total_points) return b.total_points - a.total_points
-          if (b._legs !== a._legs) return b._legs - a._legs
-          if (b._placement !== a._placement) return b._placement - a._placement
-          return a.tournaments_played - b.tournaments_played
-        })
-        .slice(0, 5)
-        .map(({ _legs, _placement, ...rest }) => rest)
-
-      setLionHalvingActive(halvingActive)
-      setLionTop5(top5)
-    } catch (e) {
-      console.error("Error fetching Lion Top5:", e)
-      setLionTop5([])
-      setLionHalvingActive(false)
-    } finally {
-      setLionTop5Loading(false)
-    }
-  }
-
-  fetchLionTop5()
-}, [])
-
-useEffect(() => {
-  const fetchBuffaloTop5 = async () => {
-    try {
-      setBuffaloTop5Loading(true)
-
-      const { data, error } = await supabase
-        .from("buffalo_steel_cup_aggregated")
-        .select("player_name, placement_points, bonus_points, total_legs_won, tournaments_played")
-
-      if (error) throw error
-
-      const top5 =
-        (data || [])
-          .map((row: any) => ({
-            player_name: row.player_name,
-            total_points:
-              Number(row.placement_points || 0) +
-              Number(row.bonus_points || 0) +
-              Number(row.total_legs_won || 0),
-            tournaments_played: Number(row.tournaments_played || 0),
-            _legs: Number(row.total_legs_won || 0),
-            _placement: Number(row.placement_points || 0),
+        const top5 = Array.from(stats.entries())
+          .map(([player_name, v]) => ({
+            player_name,
+            total_points: Math.round(v.current_total * 100) / 100,
+            original_total_points: Math.round(v.original_total * 100) / 100,
+            tournaments_played: v.tournaments,
+            _legs: v.current_legs_won,
+            _placement: v.current_placement_points,
           }))
           .sort((a, b) => {
             if (b.total_points !== a.total_points) return b.total_points - a.total_points
@@ -650,43 +570,21 @@ useEffect(() => {
           .slice(0, 5)
           .map(({ _legs, _placement, ...rest }) => rest)
 
-      setBuffaloTop5(top5)
-    } catch (e) {
-      console.error("Error fetching Buffalo Top5:", e)
-      setBuffaloTop5([])
-    } finally {
-      setBuffaloTop5Loading(false)
-    }
-  }
-
-  fetchBuffaloTop5()
-}, [])
-
-
-  useEffect(() => {
-    const fetchBuffaloPrizePool = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("buffalo_steel_cup_aggregated")
-          .select("player_name, tournaments_played")
-
-        if (error) throw error
-
-        const totalParticipants = data?.length || 0
-        const totalAppearances = data?.reduce((sum, p) => sum + (p.tournaments_played || 0), 0) || 0
-
-        // 10€ einmalig pro Spieler + 5€ pro Antritt
-        const pool = totalParticipants * 10 + totalAppearances * 5
-        setBuffaloPrizePool(pool)
+        setLionHalvingActive(halvingActive)
+        setLionTop5(top5)
       } catch (e) {
-        console.error("Error fetching buffalo prize pool:", e)
-        setBuffaloPrizePool(0)
+        console.error("Error fetching Lion Top5:", e)
+        setLionTop5([])
+        setLionHalvingActive(false)
+      } finally {
+        setLionTop5Loading(false)
       }
     }
 
-    fetchBuffaloPrizePool()
+    fetchLionTop5()
   }, [])
-useEffect(() => {
+
+  useEffect(() => {
     const fetchEventsAndTournaments = async () => {
       try {
         const today = new Date().toISOString().split("T")[0]
@@ -698,7 +596,8 @@ useEffect(() => {
           .gte("event_date", today)
           .order("event_date", { ascending: true })
           .order("event_time", { ascending: true })
-if (tournamentsError) {
+
+        if (tournamentsError) {
           console.error("Error fetching tournaments:", tournamentsError)
         }
 
@@ -718,7 +617,7 @@ if (tournamentsError) {
         const combined: CombinedEvent[] = []
 
         if (tournamentsData) {
-          tournamentsData.forEach((tournament) => {
+          tournamentsData.forEach((tournament: any) => {
             combined.push({
               id: tournament.id,
               name: tournament.name,
@@ -736,7 +635,7 @@ if (tournamentsError) {
         }
 
         if (eventsData) {
-          eventsData.forEach((event) => {
+          eventsData.forEach((event: any) => {
             combined.push({
               id: event.id,
               name: event.name,
@@ -777,17 +676,17 @@ if (tournamentsError) {
           .limit(1)
           .single()
 
-        if (error && error.code !== "PGRST116") {
+        if (error && (error as any).code !== "PGRST116") {
           console.error("Error loading active tournament:", error)
           return
         }
 
         if (data) {
           setActiveTournament({
-            tournament_id: data.tournament_id,
-            tournament_name: data.tournament_name,
-            tournament_type: data.tournament_type,
-            status: data.status,
+            tournament_id: (data as any).tournament_id,
+            tournament_name: (data as any).tournament_name,
+            tournament_type: (data as any).tournament_type,
+            status: (data as any).status,
           })
         } else {
           setActiveTournament(null)
@@ -833,155 +732,118 @@ if (tournamentsError) {
     }
   }, [])
 
-  
-useEffect(() => {
-  const fetchFromDb = async () => {
-    try {
-      setLionCupLoading(true)
-      setBuffaloCupLoading(true)
+  useEffect(() => {
+    const fetchFromDb = async () => {
+      try {
+        setLionCupLoading(true)
 
-      // Serien (fixe IDs)
-      const LION_SERIES_ID = "bae7b8fe-7013-4160-8a85-f46ac765e003"
-      const BUFFALO_SERIES_ID = "747ec150-ea0d-44ba-bcb1-f323f532f122"
+        // Serien (fixe ID)
+        const LION_SERIES_ID = "bae7b8fe-7013-4160-8a85-f46ac765e003"
 
-// ✅ Startgeld je Serie laden (wichtig für Guthaben-Zahlung im Modal)
-const { data: seriesRows, error: seriesErr } = await supabase
-  .from("dko_series")
-  .select("id,startgeld")
-  .in("id", [LION_SERIES_ID, BUFFALO_SERIES_ID])
+        // ✅ Startgeld je Serie laden (wichtig für Guthaben-Zahlung im Modal)
+        const { data: seriesRows, error: seriesErr } = await supabase
+          .from("dko_series")
+          .select("id,startgeld")
+          .in("id", [LION_SERIES_ID])
 
-if (!seriesErr && seriesRows) {
-  const map: Record<string, number> = {}
-  for (const r of seriesRows as any[]) {
-    map[String((r as any).id)] = Number((r as any).startgeld ?? 0)
-  }
-  setSeriesStartgeldById(map)
-}
-
-      const fetchEvents = async (seriesId: string) => {
-        const { data, error } = await supabase
-          .from("dko_series_events")
-          .select("id,series_id,title,start_at,is_matchday,registration_cutoff_minutes,is_rescheduled,rescheduled_at")
-          .eq("series_id", seriesId)
-          .order("start_at", { ascending: true })
-
-        if (error) throw error
-        return (data || []) as DkoSeriesEventRow[]
-      }
-
-      const [lionRows, buffaloRows] = await Promise.all([
-        fetchEvents(LION_SERIES_ID),
-        fetchEvents(BUFFALO_SERIES_ID),
-      ])
-
-      const mapRow = (r: DkoSeriesEventRow): UiDkoEvent => {
-        const isRescheduled = !!r.is_rescheduled && !!r.rescheduled_at
-        const effectiveIso = isRescheduled && r.rescheduled_at ? r.rescheduled_at : r.start_at
-        const effectiveDT = new Date(effectiveIso)
-        const originalDT = new Date(r.start_at)
-        const cutoffMinutes = Number(r.registration_cutoff_minutes ?? 10) || 10
-
-        return {
-          id: r.id,
-          series_id: r.series_id,
-          title: r.title,
-          is_matchday: !!r.is_matchday,
-          cutoffMinutes,
-          originalDT,
-          effectiveDT,
-          effectiveISODate: toISODate(effectiveDT),
-          effectiveTimeHHMM: toHHMM(effectiveDT),
+        if (!seriesErr && seriesRows) {
+          const map: Record<string, number> = {}
+          for (const r of seriesRows as any[]) {
+            map[String((r as any).id)] = Number((r as any).startgeld ?? 0)
+          }
+          setSeriesStartgeldById(map)
         }
-      }
 
-      const lionEvents = lionRows.map(mapRow)
-      const buffaloEvents = buffaloRows.map(mapRow)
+        const fetchEvents = async (seriesId: string) => {
+          const { data, error } = await supabase
+            .from("dko_series_events")
+            .select("id,series_id,title,start_at,is_matchday,registration_cutoff_minutes,is_rescheduled,rescheduled_at")
+            .eq("series_id", seriesId)
+            .order("start_at", { ascending: true })
 
-      // Ab heute (inkl. heute)
-      const today0 = startOfDay(new Date()).getTime()
+          if (error) throw error
+          return (data || []) as DkoSeriesEventRow[]
+        }
 
-      const lionUpcoming = lionEvents
-        .filter((e) => startOfDay(e.effectiveDT).getTime() >= today0)
-        .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
+        const [lionRows] = await Promise.all([fetchEvents(LION_SERIES_ID)])
 
-      const buffaloUpcoming = buffaloEvents
-        .filter((e) => startOfDay(e.effectiveDT).getTime() >= today0)
-        .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
+        const mapRow = (r: DkoSeriesEventRow): UiDkoEvent => {
+          const isRescheduled = !!r.is_rescheduled && !!r.rescheduled_at
+          const effectiveIso = isRescheduled && r.rescheduled_at ? r.rescheduled_at : r.start_at
+          const effectiveDT = new Date(effectiveIso)
+          const originalDT = new Date(r.start_at)
+          const cutoffMinutes = Number(r.registration_cutoff_minutes ?? 10) || 10
 
-      // --- LION: nächstes Event (inkl. Spielfrei) ---
-      if (lionUpcoming.length > 0) {
-        const first = lionUpcoming[0]
-        setNextEvent({
-          id: first.id,
-          name: "EMD LION CUP",
-          event_date: first.effectiveISODate,
-          event_time: first.effectiveTimeHHMM,
-          event_type: first.is_matchday ? "Turnier" : "Spielfrei",
-          description: null,
-        })
-      } else {
+          return {
+            id: r.id,
+            series_id: r.series_id,
+            title: r.title,
+            is_matchday: !!r.is_matchday,
+            cutoffMinutes,
+            originalDT,
+            effectiveDT,
+            effectiveISODate: toISODate(effectiveDT),
+            effectiveTimeHHMM: toHHMM(effectiveDT),
+          }
+        }
+
+        const lionEvents = lionRows.map(mapRow)
+
+        // Ab heute (inkl. heute)
+        const today0 = startOfDay(new Date()).getTime()
+
+        const lionUpcoming = lionEvents
+          .filter((e) => startOfDay(e.effectiveDT).getTime() >= today0)
+          .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
+
+        // --- LION: nächstes Event (inkl. Spielfrei) ---
+        if (lionUpcoming.length > 0) {
+          const first = lionUpcoming[0]
+          setNextEvent({
+            id: first.id,
+            name: "EMD LION CUP",
+            event_date: first.effectiveISODate,
+            event_time: first.effectiveTimeHHMM,
+            event_type: first.is_matchday ? "Turnier" : "Spielfrei",
+            description: null,
+          })
+        } else {
+          setNextEvent(null)
+        }
+
+        // --- LION: nächstes Turnier (matchday) ---
+        const lionNextMatchday = lionUpcoming.find((e) => e.is_matchday) ?? null
+        if (lionNextMatchday) {
+          const allMatchdaysSorted = lionEvents
+            .filter((e) => e.is_matchday)
+            .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
+
+          const idx = allMatchdaysSorted.findIndex((e) => e.id === lionNextMatchday.id)
+          const matchday = idx >= 0 ? idx + 1 : 1
+
+          setNextTournamentEvent({
+            id: lionNextMatchday.id,
+            name: "EMD LION CUP",
+            event_date: lionNextMatchday.effectiveISODate,
+            event_time: lionNextMatchday.effectiveTimeHHMM,
+            event_type: "Turnier",
+            matchday,
+            description: null,
+          })
+        } else {
+          setNextTournamentEvent(null)
+        }
+      } catch (error) {
+        console.error("Error fetching DKO schedules from DB:", error)
         setNextEvent(null)
-      }
-
-      // --- LION: nächstes Turnier (matchday) ---
-      const lionNextMatchday = lionUpcoming.find((e) => e.is_matchday) ?? null
-      if (lionNextMatchday) {
-        const allMatchdaysSorted = lionEvents
-          .filter((e) => e.is_matchday)
-          .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
-
-        const idx = allMatchdaysSorted.findIndex((e) => e.id === lionNextMatchday.id)
-        const matchday = idx >= 0 ? idx + 1 : 1
-
-        setNextTournamentEvent({
-          id: lionNextMatchday.id,
-          name: "EMD LION CUP",
-          event_date: lionNextMatchday.effectiveISODate,
-          event_time: lionNextMatchday.effectiveTimeHHMM,
-          event_type: "Turnier",
-          matchday,
-          description: null,
-        })
-      } else {
         setNextTournamentEvent(null)
+      } finally {
+        setLionCupLoading(false)
       }
-
-      // --- BUFFALO: nächstes Turnier + matchday (Spielfrei wird NICHT als Spieltag gezählt) ---
-      const buffaloNext = buffaloUpcoming.find((e) => e.is_matchday) ?? null
-
-      if (buffaloNext) {
-        const allMatchdaysSorted = buffaloEvents
-          .filter((e) => e.is_matchday)
-          .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
-
-        const idx = allMatchdaysSorted.findIndex((e) => e.id === buffaloNext.id)
-        const matchday = idx >= 0 ? idx + 1 : 1
-
-        setNextBuffaloCupEvent({
-          id: buffaloNext.id,
-          name: "EMD BUFFALO STEEL CUP",
-          event_date: buffaloNext.effectiveISODate,
-          event_time: buffaloNext.effectiveTimeHHMM,
-          matchday,
-          description: null,
-        })
-      } else {
-        setNextBuffaloCupEvent(null)
-      }
-    } catch (error) {
-      console.error("Error fetching DKO schedules from DB:", error)
-      setNextEvent(null)
-      setNextTournamentEvent(null)
-      setNextBuffaloCupEvent(null)
-    } finally {
-      setLionCupLoading(false)
-      setBuffaloCupLoading(false)
     }
-  }
 
-  fetchFromDb()
-}, [])
-
+    fetchFromDb()
+  }, [])
 
   const getTeamName = (match: Match, isHome: boolean) => {
     if (isHome) {
@@ -1005,21 +867,12 @@ if (!seriesErr && seriesRows) {
     return new Date(`${event.event_date}T${time}`)
   }
 
-  const createBuffaloCupEventDate = (event: BuffaloCupEvent | null) => {
-    if (!event) return new Date("2026-01-23T19:30:00")
-    const time = event.event_time || "19:30:00"
-    return new Date(`${event.event_date}T${time}`)
-  }
-
   const lionCupNextDate = createEventDate(nextTournamentEvent)
-  const buffaloCupNextDate = createBuffaloCupEventDate(nextBuffaloCupEvent)
   const isNextEventSpielfrei = nextEvent?.event_type?.toLowerCase() === "spielfrei"
 
-
-  // --- Turniertag (Lion/Buffalo) Self-Registration Box ---
+  // --- Turniertag (Lion) Self-Registration Box ---
   const now = new Date()
-const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`
-
+  const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
 
   const liveSelfRegEvent = useMemo(() => {
     const lionToday =
@@ -1029,25 +882,14 @@ const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0"
 
     if (lionToday) {
       return {
-        cup: "lion" as const,
         title: "Anmeldung geöffnet • LION CUP",
         isoDate: nextTournamentEvent!.event_date,
         time: nextTournamentEvent!.event_time || "19:30",
       }
     }
 
-    const buffaloToday = nextBuffaloCupEvent && nextBuffaloCupEvent.event_date === todayISO
-    if (buffaloToday) {
-      return {
-        cup: "buffalo" as const,
-        title: "Anmeldung geöffnet • BUFFALO STEEL CUP",
-        isoDate: nextBuffaloCupEvent!.event_date,
-        time: nextBuffaloCupEvent!.event_time || "19:30",
-      }
-    }
-
     return null
-  }, [nextTournamentEvent, nextBuffaloCupEvent, todayISO])
+  }, [nextTournamentEvent, todayISO])
 
   const liveStartDT = liveSelfRegEvent ? getStartDateTimeFromISO(liveSelfRegEvent.isoDate, liveSelfRegEvent.time) : null
   const liveCutoffDT = liveStartDT ? new Date(liveStartDT.getTime() - 10 * 60 * 1000) : null
@@ -1057,7 +899,6 @@ const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0"
   const liveDateLabel = liveSelfRegEvent ? formatGermanShortDateFromISO(liveSelfRegEvent.isoDate) : ""
   const liveTimeLabel = liveSelfRegEvent ? ensureUhr(liveSelfRegEvent.time) : ""
 
-  
   const fetchDkoRegStatus = async () => {
     setDkoRegLoading(true)
     setDkoRegistered(false)
@@ -1074,18 +915,15 @@ const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0"
 
       if (profErr) throw profErr
 
-      // club_players kann als Array oder Objekt kommen
       const clubPlayersRel: any = (profile as any)?.club_players
-      const spieldatenbankId = Array.isArray(clubPlayersRel) ? clubPlayersRel?.[0]?.spieldatenbank_id : clubPlayersRel?.spieldatenbank_id
+      const spieldatenbankId = Array.isArray(clubPlayersRel)
+        ? clubPlayersRel?.[0]?.spieldatenbank_id
+        : clubPlayersRel?.spieldatenbank_id
       if (!spieldatenbankId) return
 
       const pid = String(spieldatenbankId)
 
-      const { data: reg, error: regErr } = await supabase
-        .from("dko_tournament_registration")
-        .select("id")
-        .eq("player_id", pid)
-        .limit(1)
+      const { data: reg, error: regErr } = await supabase.from("dko_tournament_registration").select("id").eq("player_id", pid).limit(1)
 
       if (regErr) throw regErr
 
@@ -1097,34 +935,28 @@ const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0"
     }
   }
 
-  // DKO: Status ob User bereits in dko_tournament_registration ist (für grüne Box)
   useEffect(() => {
     fetchDkoRegStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUserId, liveSelfRegEvent])
 
-  // ✅ Realtime: wenn sich jemand an-/abmeldet, Status live aktualisieren (ohne Refresh)
   useEffect(() => {
     if (!authUserId || !liveSelfRegEvent) return
 
     const channel = supabase
       .channel("dko-registration-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "dko_tournament_registration" },
-        () => {
-          // einfache, robuste Variante: Status neu laden
-          fetchDkoRegStatus()
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "dko_tournament_registration" }, () => {
+        fetchDkoRegStatus()
+      })
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUserId, liveSelfRegEvent])
 
-
-  if (loading || lionCupLoading || buffaloCupLoading) {
+  if (loading || lionCupLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
@@ -1140,12 +972,12 @@ const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0"
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Confetti />
       <Header />
-      <CarnivalBanner />
 
-      {/*  */}
+      {/* Abstand */}
       <div className="h-3 sm:h-4" aria-hidden="true" />
+
+      <PushNotificationDialog />
 
       <PushNotificationDialog />
 
@@ -1166,9 +998,7 @@ const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0"
                       LIVE
                     </span>
                   </div>
-                  <h3 className="text-sm sm:text-lg font-bold leading-tight truncate">
-                    {activeTournament.tournament_name}
-                  </h3>
+                  <h3 className="text-sm sm:text-lg font-bold leading-tight truncate">{activeTournament.tournament_name}</h3>
                   <p className="text-xs sm:text-sm text-white/90">
                     {activeTournament.tournament_type.replace("_", " ").toUpperCase()}
                   </p>
@@ -1189,191 +1019,157 @@ const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0"
       )}
 
       {liveSelfRegEvent && (
-  <div
-    className={`border-b shadow-md ${
-      dkoRegistered
-        ? "bg-gradient-to-r from-green-600 to-emerald-700 border-green-800"
-        : liveSelfRegEvent.cup === "lion"
-          ? "bg-gradient-to-r from-orange-600 to-orange-700 border-orange-800"
-          : "bg-gradient-to-r from-slate-700 to-slate-900 border-slate-950"
-    } border-b-4`}
-  >
-    <div className="container mx-auto px-4 py-3 sm:py-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="relative flex-shrink-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <Timer className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            </div>
-            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-white rounded-full animate-pulse shadow-lg"></div>
-          </div>
+        <div className={`border-b shadow-md ${dkoRegistered ? "bg-gradient-to-r from-green-600 to-emerald-700 border-green-800" : "bg-gradient-to-r from-orange-600 to-orange-700 border-orange-800"} border-b-4`}>
+          <div className="container mx-auto px-4 py-3 sm:py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="relative flex-shrink-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                    <Timer className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-white rounded-full animate-pulse shadow-lg"></div>
+                </div>
 
-          <div className="text-white flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-0.5">
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-xs font-black backdrop-blur-sm uppercase tracking-wider ${
-                  liveSelfRegEvent.cup === "lion" ? "bg-orange-200 text-orange-950" : "bg-slate-200 text-slate-950"
+                <div className="text-white flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-xs font-black backdrop-blur-sm uppercase tracking-wider bg-orange-200 text-orange-950">
+                      LION CUP
+                    </span>
+
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold bg-white/20 backdrop-blur-sm uppercase tracking-wider">
+                      TURNIERTAG
+                    </span>
+
+                    {dkoRegistered && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold bg-white/20 backdrop-blur-sm">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Du bist angemeldet
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="text-sm sm:text-lg font-black leading-tight truncate">{liveSelfRegEvent.title}</h3>
+
+                  <p className="text-xs sm:text-sm text-white/90 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {liveDateLabel}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {liveTimeLabel}
+                    </span>
+                  </p>
+
+                  <div className="mt-2 text-[11px] sm:text-xs text-white/90 flex items-center gap-2">
+                    <Info className="w-3.5 h-3.5" />
+                    {liveRegOpen ? (
+                      <span className="font-semibold">
+                        Anmeldung noch: {formatHoursMinutesSeconds(liveSecondsLeft ?? 0)} (schließt 10 Minuten vor Start)
+                      </span>
+                    ) : (
+                      <span className="font-semibold">Anmeldung geschlossen (10 Minuten vor Start)</span>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setLiveInfoOpen(true)}
+                      className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-white/90 underline underline-offset-4 hover:text-white"
+                    >
+                      <Info className="w-3.5 h-3.5" />
+                      Infos zu Abmeldung & Rückerstattung
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile action (shows below content) */}
+              <div className="sm:hidden mt-3">
+                <Button
+                  size="sm"
+                  disabled={!liveRegOpen || dkoRegLoading}
+                  className={`w-full font-black shadow-lg hover:shadow-xl transition-all duration-200 text-xs px-3 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed ${
+                    dkoRegistered ? "bg-white text-gray-900 hover:bg-white/90" : "bg-orange-200 text-orange-950 hover:bg-orange-100"
+                  }`}
+                  onClick={async () => {
+                    modalOpenedAtRef.current = Date.now()
+
+                    const seriesId = "bae7b8fe-7013-4160-8a85-f46ac765e003"
+                    const startgeld = await ensureStartgeldForSeriesId(seriesId)
+
+                    setDkoModal({
+                      isOpen: true,
+                      title: "LION CUP • Anmeldung",
+                      dateLabel: liveDateLabel,
+                      timeLabel: liveTimeLabel,
+                      seriesId,
+                      startgeld,
+                    })
+                  }}
+                >
+                  {dkoRegLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      ...
+                    </span>
+                  ) : dkoRegistered ? (
+                    "Anmeldung verwalten"
+                  ) : liveRegOpen ? (
+                    "Jetzt anmelden"
+                  ) : (
+                    "Anmeldung geschlossen"
+                  )}
+                </Button>
+              </div>
+
+              <Button
+                size="sm"
+                disabled={!liveRegOpen || dkoRegLoading}
+                className={`hidden sm:inline-flex font-black shadow-lg hover:shadow-xl transition-all duration-200 flex-shrink-0 text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 disabled:opacity-60 disabled:cursor-not-allowed ${
+                  dkoRegistered ? "bg-white text-gray-900 hover:bg-white/90" : "bg-orange-200 text-orange-950 hover:bg-orange-100"
                 }`}
+                onClick={async () => {
+                  modalOpenedAtRef.current = Date.now()
+
+                  const seriesId = "bae7b8fe-7013-4160-8a85-f46ac765e003"
+                  const startgeld = await ensureStartgeldForSeriesId(seriesId)
+
+                  setDkoModal({
+                    isOpen: true,
+                    title: "LION CUP • Anmeldung",
+                    dateLabel: liveDateLabel,
+                    timeLabel: liveTimeLabel,
+                    seriesId,
+                    startgeld,
+                  })
+                }}
               >
-                {liveSelfRegEvent.cup === "lion" ? "LION CUP" : "BUFFALO STEEL CUP"}
-              </span>
-
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold bg-white/20 backdrop-blur-sm uppercase tracking-wider">
-                TURNIERTAG
-              </span>
-
-              {dkoRegistered && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold bg-white/20 backdrop-blur-sm">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Du bist angemeldet
-                </span>
-              )}
+                {dkoRegLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    ...
+                  </span>
+                ) : dkoRegistered ? (
+                  <span className="flex items-center gap-2">
+                    <LogOut className="w-4 h-4" />
+                    Abmelden
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <UserPlus className="w-4 h-4" />
+                    Anmelden
+                  </span>
+                )}
+              </Button>
             </div>
-
-            <h3 className="text-sm sm:text-lg font-black leading-tight truncate">{liveSelfRegEvent.title}</h3>
-
-            <p className="text-xs sm:text-sm text-white/90 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" />
-                {liveDateLabel}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                {liveTimeLabel}
-              </span>
-            </p>
-
-            <div className="mt-2 text-[11px] sm:text-xs text-white/90 flex items-center gap-2">
-              <Info className="w-3.5 h-3.5" />
-              {liveRegOpen ? (
-                <span className="font-semibold">
-                  Anmeldung noch: {formatHoursMinutesSeconds(liveSecondsLeft ?? 0)} (schließt 10 Minuten vor Start)
-                </span>
-              ) : (
-                <span className="font-semibold">Anmeldung geschlossen (10 Minuten vor Start)</span>
-              )}
-            </div>
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={() => setLiveInfoOpen(true)}
-                className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-white/90 underline underline-offset-4 hover:text-white"
-              >
-                <Info className="w-3.5 h-3.5" />
-                Infos zu Abmeldung & Rückerstattung
-              </button>
-            </div>
-
-
-            
-
           </div>
         </div>
-
-        {/* Mobile action (shows below content) */}
-        <div className="sm:hidden mt-3">
-          <Button
-            size="sm"
-            disabled={!liveRegOpen || dkoRegLoading}
-            className={`w-full font-black shadow-lg hover:shadow-xl transition-all duration-200 text-xs px-3 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed ${
-              dkoRegistered
-                ? "bg-white text-gray-900 hover:bg-white/90"
-                : liveSelfRegEvent.cup === "lion"
-                  ? "bg-orange-200 text-orange-950 hover:bg-orange-100"
-                  : "bg-slate-200 text-slate-950 hover:bg-slate-100"
-            }`}
-            onClick={async () => {
-              
-modalOpenedAtRef.current = Date.now()
-
-const seriesId =
-  liveSelfRegEvent.cup === "lion"
-    ? "bae7b8fe-7013-4160-8a85-f46ac765e003"
-    : "747ec150-ea0d-44ba-bcb1-f323f532f122"
-
-const startgeld = await ensureStartgeldForSeriesId(seriesId)
-
-setDkoModal({
-  isOpen: true,
-  title: liveSelfRegEvent.cup === "lion" ? "LION CUP • Anmeldung" : "BUFFALO STEEL CUP • Anmeldung",
-  dateLabel: liveDateLabel,
-  timeLabel: liveTimeLabel,
-  seriesId,
-  startgeld,
-})}}
-          >
-            {dkoRegLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                ...
-              </span>
-            ) : dkoRegistered ? (
-              "Anmeldung verwalten"
-            ) : liveRegOpen ? (
-              "Jetzt anmelden"
-            ) : (
-              "Anmeldung geschlossen"
-            )}
-          </Button>
-        </div>
-
-
-        <Button
-          size="sm"
-          disabled={!liveRegOpen || dkoRegLoading}
-          className={`hidden sm:inline-flex font-black shadow-lg hover:shadow-xl transition-all duration-200 flex-shrink-0 text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 disabled:opacity-60 disabled:cursor-not-allowed ${
-            dkoRegistered
-              ? "bg-white text-gray-900 hover:bg-white/90"
-              : liveSelfRegEvent.cup === "lion"
-                ? "bg-orange-200 text-orange-950 hover:bg-orange-100"
-                : "bg-slate-200 text-slate-950 hover:bg-slate-100"
-          }` }
-          onClick={async () => {
-            
-modalOpenedAtRef.current = Date.now()
-
-const seriesId =
-  liveSelfRegEvent.cup === "lion"
-    ? "bae7b8fe-7013-4160-8a85-f46ac765e003"
-    : "747ec150-ea0d-44ba-bcb1-f323f532f122"
-
-const startgeld = await ensureStartgeldForSeriesId(seriesId)
-
-setDkoModal({
-  isOpen: true,
-  title: liveSelfRegEvent.cup === "lion" ? "LION CUP • Anmeldung" : "BUFFALO STEEL CUP • Anmeldung",
-  dateLabel: liveDateLabel,
-  timeLabel: liveTimeLabel,
-  seriesId,
-  startgeld,
-})}}
-        >
-          {dkoRegLoading ? (
-            <span className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              ...
-            </span>
-          ) : dkoRegistered ? (
-            <span className="flex items-center gap-2">
-              <LogOut className="w-4 h-4" />
-              Abmelden
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <UserPlus className="w-4 h-4" />
-              Anmelden
-            </span>
-          )}
-        </Button>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
 
       <section className="container mx-auto px-4 py-8 lg:py-12 overflow-x-hidden">
         <div className="grid lg:grid-cols-2 gap-6">
-          <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white overflow-hidden rounded-2xl shadow-2xl">
+          <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white overflow-hidden rounded-2xl shadow-2xl lg:col-span-2">
             <div className="absolute inset-0 bg-[url('/stadium-crowd-atmosphere.jpg')] bg-cover bg-center opacity-10" />
 
             <div className="relative p-4 sm:p-6 lg:p-10 flex flex-col min-h-full">
@@ -1390,7 +1186,8 @@ setDkoModal({
                     <span>TURNIERSERIE 2025/26</span>
                   </div>
                   <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-1">EMD - LION CUP</h1>
-                  <div className="h-10 flex items-center justify-center mb-1">                    {nextTournamentEvent?.matchday && (
+                  <div className="h-10 flex items-center justify-center mb-1">
+                    {nextTournamentEvent?.matchday && (
                       <div className="inline-block mr-2">
                         <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20">
                           <div className="flex items-center gap-2 text-xs">
@@ -1401,21 +1198,22 @@ setDkoModal({
                       </div>
                     )}
                     {isNextEventSpielfrei && nextEvent && (
-                                          <div className="inline-block">
-                                            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20">
-                                              <div className="flex items-center gap-2 text-xs">
-                                                <Calendar className="w-3.5 h-3.5 text-yellow-400" />
-                                                <span className="text-orange-100">
-                                                  Spielfrei am{" "}
-                                                  {new Date(nextEvent.event_date).toLocaleDateString("de-DE", {
-                                                    day: "2-digit",
-                                                    month: "long",
-                                                  })}
-                                                </span>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        )}</div>
+                      <div className="inline-block">
+                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20">
+                          <div className="flex items-center gap-2 text-xs">
+                            <Calendar className="w-3.5 h-3.5 text-yellow-400" />
+                            <span className="text-orange-100">
+                              Spielfrei am{" "}
+                              {new Date(nextEvent.event_date).toLocaleDateString("de-DE", {
+                                day: "2-digit",
+                                month: "long",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">Nächstes Turnier</p>
                   <p className="text-sm lg:text-base text-orange-200">
                     {nextTournamentEvent
@@ -1436,7 +1234,7 @@ setDkoModal({
 
                 <div className="mb-4 sm:mb-6 flex-1 flex flex-col justify-center">
                   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 lg:p-6 border border-white/20">
-<div className="mb-4">
+                    <div className="mb-4">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <Trophy className="w-4 h-4 text-yellow-300" />
@@ -1446,12 +1244,12 @@ setDkoModal({
                         </div>
                         {lionTop5Loading && <span className="text-[10px] sm:text-xs text-orange-200 font-bold">Lade…</span>}
                       </div>
-                    
+
                       <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/15 overflow-hidden">
                         {!lionTop5Loading && lionTop5.length === 0 && (
                           <div className="px-3 py-2 text-xs text-orange-200">Keine Daten verfügbar.</div>
                         )}
-                    
+
                         {lionTop5.map((p, idx) => (
                           <div key={p.player_name} className="flex items-center justify-between px-3 py-2 border-b border-white/10 last:border-b-0">
                             <div className="flex items-center gap-3 min-w-0">
@@ -1467,16 +1265,16 @@ setDkoModal({
                                 </div>
                               </div>
                             </div>
-                    
+
                             <div className="text-right flex-shrink-0">
                               {lionHalvingActive && p.original_total_points !== p.total_points ? (
-                      <div className="flex flex-col items-end">
-                        <span className="text-[10px] text-orange-200 line-through">{p.original_total_points}</span>
-                        <span className="text-xs sm:text-sm font-black text-yellow-200">{p.total_points}</span>
-                      </div>
-                    ) : (
-                      <div className="text-xs sm:text-sm font-black text-yellow-200">{p.total_points}</div>
-                    )}
+                                <div className="flex flex-col items-end">
+                                  <span className="text-[10px] text-orange-200 line-through">{p.original_total_points}</span>
+                                  <span className="text-xs sm:text-sm font-black text-yellow-200">{p.total_points}</span>
+                                </div>
+                              ) : (
+                                <div className="text-xs sm:text-sm font-black text-yellow-200">{p.total_points}</div>
+                              )}
                               <div className="text-[10px] text-orange-200">Punkte</div>
                             </div>
                           </div>
@@ -1498,9 +1296,7 @@ setDkoModal({
                     </div>
                     <div className="text-center">
                       <div className="text-3xl sm:text-4xl lg:text-5xl font-black mb-1">€{cupPrizePool.toFixed(2)}</div>
-                      <p className="text-orange-200 text-xs lg:text-sm">
-                        Wächst mit jedem Teilnehmer und jeder Teilnahme
-                      </p>
+                      <p className="text-orange-200 text-xs lg:text-sm">Wächst mit jedem Teilnehmer und jeder Teilnahme</p>
                     </div>
                   </div>
                 </div>
@@ -1534,113 +1330,6 @@ setDkoModal({
               </div>
             </div>
           </div>
-
-          <div className="relative bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 text-white overflow-hidden rounded-2xl shadow-2xl">
-            <div className="absolute inset-0 bg-[url('/stadium-crowd-atmosphere.jpg')] bg-cover bg-center opacity-5" />
-
-            <div className="relative p-4 sm:p-6 lg:p-10 flex flex-col min-h-full">
-              <div className="w-full mx-auto flex-1 flex flex-col">
-                <div className="flex items-center justify-center mb-6 sm:mb-8">
-                  <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 flex items-center justify-center">
-                    <Image src="/images/logo2.png" alt="Logo 2" width={96} height={96} className="object-contain p-2" />
-                  </div>
-                </div>
-				
-                <div className="text-center mb-4 sm:mb-6">
-                  <div className="inline-flex items-center gap-2 bg-emerald-300 text-slate-900 px-3 py-1.5 rounded-full font-bold text-xs mb-3">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>CUP BEENDET</span>
-                  </div>
-                  <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">EMD-BUFFALO-STEEL</h1>
-
-                  <p className="text-base sm:text-lg lg:text-xl text-slate-200 font-bold mb-2">
-                    Der EMD Buffalo Cup ist entschieden – die Sieger stehen fest!
-                  </p>
-
-                  <p className="text-sm lg:text-base text-slate-300">
-                    Danke an alle Teilnehmer – bis zum nächsten EMD Steel - Cup! 🏆
-                  </p>
-                </div>
-
-                <div className="mb-4 sm:mb-6 flex-1 flex flex-col justify-center">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 lg:p-6 border border-white/20">
-
-<div className="mb-4">
-  <div className="flex items-center justify-between mb-2">
-    <div className="flex items-center gap-2">
-      <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-blue-200" />
-      <span className="text-blue-200 text-xs lg:text-sm font-bold uppercase tracking-wider">
-        Top 5 ENDSTAND
-      </span>
-    </div>
-    {buffaloTop5Loading && (
-      <span className="text-[10px] sm:text-xs text-orange-200 font-bold">Lade…</span>
-    )}
-  </div>
-
-  <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/15 overflow-hidden">
-    {!buffaloTop5Loading && buffaloTop5.length === 0 && (
-      <div className="px-3 py-2 text-xs text-orange-200">Keine Daten verfügbar.</div>
-    )}
-
-    {buffaloTop5.map((p, idx) => (
-      <div
-        key={p.player_name}
-        className="flex items-center justify-between px-3 py-2 border-b border-white/10 last:border-b-0"
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center text-[11px] font-black text-white">
-            {idx + 1}
-          </div>
-          <div className="min-w-0">
-            <div className="text-xs sm:text-sm font-black text-white truncate max-w-[180px] sm:max-w-[260px]">
-              {p.player_name}
-            </div>
-            <div className="text-[10px] sm:text-xs text-orange-200">
-              Antritte: <span className="font-black text-white">{p.tournaments_played}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="text-right flex-shrink-0">
-          <div className="text-xs sm:text-sm font-black text-blue-200">{p.total_points}</div>
-          <div className="text-[10px] text-orange-200">Punkte</div>
-        </div>
-      </div>
-    ))}
-  </div>
-</div>
-                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
-                        <span className="text-yellow-300 text-xs lg:text-sm font-bold uppercase tracking-wider">
-                          Ausbezahltes Preisgeld
-                        </span>
-                      </div>
-                      
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl sm:text-4xl lg:text-5xl font-black mb-1">€{buffaloPrizePool.toFixed(2)}</div>
-                      <p className="text-orange-200 text-xs lg:text-sm">
-                        
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button
-                    size="lg"
-                    className="bg-slate-400 hover:bg-slate-500 text-slate-900 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl w-full sm:w-auto"
-                    onClick={() => (window.location.href = "/buffalo_steel_cup_tabelle")}
-                  >
-                    Zur Gesamtertung
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -1649,11 +1338,7 @@ setDkoModal({
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Nächste Spiele</h2>
-              <Button
-                variant="ghost"
-                className="text-primary font-semibold"
-                onClick={() => (window.location.href = "/liga-statistiken-app")}
-              >
+              <Button variant="ghost" className="text-primary font-semibold" onClick={() => (window.location.href = "/liga-statistiken-app")}>
                 Alle Spiele
               </Button>
             </div>
@@ -1718,11 +1403,7 @@ setDkoModal({
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Turniere & Veranstaltungen</h2>
-              <Button
-                variant="ghost"
-                className="text-primary font-semibold"
-                onClick={() => (window.location.href = "/veranstaltungen")}
-              >
+              <Button variant="ghost" className="text-primary font-semibold" onClick={() => (window.location.href = "/veranstaltungen")}>
                 Alle Veranstaltungen
               </Button>
             </div>
@@ -1759,9 +1440,7 @@ setDkoModal({
                             )}
                             <div className="absolute top-4 left-4">
                               <span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
-                                {item.type === "tournament"
-                                  ? "TURNIER"
-                                  : getEventTypeLabel(item.eventType || "").toUpperCase()}
+                                {item.type === "tournament" ? "TURNIER" : getEventTypeLabel(item.eventType || "").toUpperCase()}
                               </span>
                             </div>
                           </div>
@@ -1789,9 +1468,7 @@ setDkoModal({
                       </DialogTrigger>
                       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                          <DialogTitle className="text-2xl sm:text-3xl font-black text-primary">
-                            {item.name}
-                          </DialogTitle>
+                          <DialogTitle className="text-2xl sm:text-3xl font-black text-primary">{item.name}</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 sm:space-y-6">
                           {item.photo_url && (
@@ -1808,12 +1485,7 @@ setDkoModal({
                               />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-3">
-                                  <svg
-                                    className="w-6 h-6 text-gray-900"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
+                                  <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path
                                       strokeLinecap="round"
                                       strokeLinejoin="round"
@@ -1880,11 +1552,7 @@ setDkoModal({
                                   <div>
                                     <p className="font-semibold text-gray-900">Modus</p>
                                     <p className="text-gray-700">
-                                      {item.mode === "edart"
-                                        ? "E-Dart"
-                                        : item.mode === "steeldart"
-                                          ? "Steel Dart"
-                                          : "Beide Modi"}
+                                      {item.mode === "edart" ? "E-Dart" : item.mode === "steeldart" ? "Steel Dart" : "Beide Modi"}
                                     </p>
                                   </div>
                                 </div>
@@ -2039,12 +1707,9 @@ setDkoModal({
 
           <div className="mt-16 text-center">
             <div className="bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 rounded-2xl p-8 lg:p-12 border-2 border-orange-200 shadow-lg">
-              <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
-                Werden Sie Teil unserer Erfolgsgeschichte
-              </h3>
+              <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">Werden Sie Teil unserer Erfolgsgeschichte</h3>
               <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
-                Interessiert an einer Partnerschaft? Kontaktieren Sie uns und profitieren Sie von unserer wachsenden
-                Community.
+                Interessiert an einer Partnerschaft? Kontaktieren Sie uns und profitieren Sie von unserer wachsenden Community.
               </p>
               <Button
                 size="lg"
@@ -2061,119 +1726,100 @@ setDkoModal({
 
       <FAQChatWidget />
 
-      <section className="bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 py-16 lg:py-24">
-        <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-white">
-              {showInstallButton ? (
-                <>
-                  <div className="flex items-center gap-3 mb-6">
-                    <Download className="w-12 h-12 text-yellow-400" />
-                    <h2 className="text-4xl lg:text-5xl font-black">Lade dir die EMD Dart App runter</h2>
-                  </div>
-                  <p className="text-lg lg:text-xl text-orange-100 mb-8 leading-relaxed">
-                    Bleib immer auf dem Laufenden mit Live-Scores, Turnierergebnissen, Spielplänen und exklusiven News.
-                    Verfolge deine Lieblingsspieler und Teams in Echtzeit!
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center gap-3 mb-6">
-                    <CheckCircle2 className="w-12 h-12 text-green-400" />
-                    <h2 className="text-4xl lg:text-5xl font-black">App bereits installiert!</h2>
-                  </div>
-                  <p className="text-lg lg:text-xl text-orange-100 mb-8 leading-relaxed">
-                    Super! Du nutzt bereits die EMD Dart App. Bleib immer auf dem Laufenden mit Live-Scores,
-                    Turnierergebnissen, Spielplänen und exklusiven News.
-                  </p>
-                </>
-              )}
 
-              <div className="space-y-4 mb-8">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="w-4 h-4 text-orange-900" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg mb-1">Live-Scores & Ergebnisse</h3>
-                    <p className="text-orange-100">Verfolge alle Spiele in Echtzeit</p>
-                  </div>
-                </div>
 
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="w-4 h-4 text-orange-900" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg mb-1">Turnier-Anmeldungen</h3>
-                    <p className="text-orange-100">Melde dich direkt über die App an</p>
-                  </div>
-                </div>
+<section className="relative overflow-hidden py-16 lg:py-24 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700">
 
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="w-4 h-4 text-orange-900" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg mb-1">Push-Benachrichtigungen</h3>
-                    <p className="text-orange-100">Verpasse keine wichtigen Updates</p>
-                  </div>
-                </div>
-              </div>
+  {/* Soft Light Effect */}
+  <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-yellow-300/20 blur-[120px] rounded-full"></div>
+  </div>
 
-              {showInstallButton ? (
-                <>
-                  <Button
-                    onClick={handleInstallClick}
-                    size="lg"
-                    className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-orange-900 font-bold text-base lg:text-lg px-8 py-6 shadow-2xl hover:shadow-3xl transition-all duration-300 mb-6"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    Jetzt installieren
-                  </Button>
-                </>
-              ) : (
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                  <h3 className="font-bold text-lg mb-3">Du nutzt die App bereits!</h3>
-                  <p className="text-sm text-orange-100">
-                    Genieße alle Vorteile der EMD Dart App direkt auf deinem Gerät.
-                  </p>
-                </div>
-              )}
-            </div>
+  <div className="relative container mx-auto px-6">
+    <div className="grid lg:grid-cols-2 gap-16 items-center">
 
-            <div className="flex justify-center lg:justify-end">
-              <div className="relative w-full max-w-sm">
-                <Image
-                  src="/images/emd-app.png"
-                  alt="EMD Dart App auf Handy"
-                  width={1800}
-                  height={1800}
-                  className="object-contain drop-shadow-2xl"
-                />
-              </div>
-            </div>
-          </div>
+      {/* LEFT SIDE */}
+      <div className="text-white text-center lg:text-left">
+
+        <span className="inline-block mb-6 px-4 py-2 rounded-full bg-white/10 text-sm font-semibold backdrop-blur">
+          Neu: EMD Vereinsapp
+        </span>
+
+        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
+          Die neue <br className="hidden sm:block" />
+          EMD Vereinsapp
+        </h2>
+
+        <p className="mt-6 text-lg text-orange-50/90 max-w-xl mx-auto lg:mx-0">
+          Live-Scores, Turniere, Spielpläne & Vereins-News –
+          modern, schnell und direkt am Handy.
+        </p>
+
+        {/* Features */}
+        <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-3">
+          {["Live-Scores", "Turniere", "Push-Updates", "Spielpläne"].map((item) => (
+            <span
+              key={item}
+              className="px-4 py-2 rounded-full bg-white/10 text-sm font-medium backdrop-blur"
+            >
+              {item}
+            </span>
+          ))}
         </div>
-      </section>
+
+        {/* Google Badge */}
+        <div className="mt-10 flex flex-col items-center lg:items-start gap-4">
+
+          <a
+            href="https://play.google.com/store/apps/details?id=DEINE_APP_ID"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-transform duration-300 hover:scale-105"
+          >
+            <Image
+              src="/images/google-play-badge.png"
+              alt="Jetzt bei Google Play herunterladen"
+              width={240}
+              height={72}
+              className="h-16 w-auto drop-shadow-xl"
+              priority
+            />
+          </a>
+
+          <p className="text-sm text-orange-50/70">
+            Kostenlos • Schnell installiert • Immer aktuell
+          </p>
+
+        </div>
+      </div>
+
+      {/* RIGHT SIDE – APP IMAGE */}
+      <div className="flex justify-center lg:justify-end">
+
+        <div className="relative">
+
+          {/* Shadow Glow */}
+          <div className="absolute inset-0 bg-black/30 blur-3xl scale-90 rounded-[40px]"></div>
+
+          <Image
+            src="/images/emd-app.png"
+            alt="EMD Vereinsapp auf Smartphone"
+            width={500}
+            height={1000}
+            className="relative w-[260px] sm:w-[320px] lg:w-[360px] object-contain drop-shadow-2xl"
+            priority
+          />
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+
 
       <footer className="bg-slate-900 text-white mt-16">
         <div className="container mx-auto px-4 py-8">
@@ -2269,13 +1915,7 @@ setDkoModal({
             <X className="w-8 h-8" />
           </button>
           <div className="relative w-full h-full max-w-7xl max-h-[90vh]">
-            <Image
-              src={fullscreenPhoto || "/placeholder.svg"}
-              alt="Vollbild"
-              fill
-              className="object-contain"
-              sizes="100vw"
-            />
+            <Image src={fullscreenPhoto || "/placeholder.svg"} alt="Vollbild" fill className="object-contain" sizes="100vw" />
           </div>
         </div>
       )}
@@ -2286,40 +1926,39 @@ setDkoModal({
             <DialogTitle>Hinweis</DialogTitle>
           </DialogHeader>
           <div className="text-sm text-gray-700 leading-relaxed">
-            Abmeldungen sind jederzeit bis 10 Minuten vor Turnierbeginn möglich, solange die Anmeldung offen ist. Wenn du bis Turnierbeginn nicht anwesend bist, wird deine Anmeldung storniert und der Betrag bei vorab bezahlter Startgebühr rückerstattet.
+            Abmeldungen sind jederzeit bis 10 Minuten vor Turnierbeginn möglich, solange die Anmeldung offen ist. Wenn du
+            bis Turnierbeginn nicht anwesend bist, wird deine Anmeldung storniert und der Betrag bei vorab bezahlter
+            Startgebühr rückerstattet.
           </div>
         </DialogContent>
       </Dialog>
 
-<DKOSelfRegistrationModal
-  isOpen={dkoModal.isOpen}
-  onClose={() => setDkoModal((prev) => ({ ...prev, isOpen: false }))}
-  title={dkoModal.title}
-  dateLabel={dkoModal.dateLabel}
-  timeLabel={dkoModal.timeLabel}
-  seriesId={dkoModal.seriesId}
-  startgeld={dkoModal.startgeld}
-  onRegistrationChanged={(isReg: boolean) => {
-    // Status immer übernehmen
-    setDkoRegistered(isReg)
+      <DKOSelfRegistrationModal
+        isOpen={dkoModal.isOpen}
+        onClose={() => setDkoModal((prev) => ({ ...prev, isOpen: false }))}
+        title={dkoModal.title}
+        dateLabel={dkoModal.dateLabel}
+        timeLabel={dkoModal.timeLabel}
+        seriesId={dkoModal.seriesId}
+        startgeld={dkoModal.startgeld}
+        onRegistrationChanged={(isReg: boolean) => {
+          setDkoRegistered(isReg)
 
-    // Wenn Callback zu schnell nach Öffnen kommt => Initial Sync => NICHT schließen
-    const delta = Date.now() - (modalOpenedAtRef.current || 0)
-    if (delta < 900) return
+          const delta = Date.now() - (modalOpenedAtRef.current || 0)
+          if (delta < 900) return
 
-    // Echte Aktion => Toast + schließen
-    setDkoModal((prev) => ({ ...prev, isOpen: false }))
-    showToast(isReg ? "✅ Erfolgreich angemeldet!" : "✅ Erfolgreich abgemeldet!")
-  }}
-/>
+          setDkoModal((prev) => ({ ...prev, isOpen: false }))
+          showToast(isReg ? "✅ Erfolgreich angemeldet!" : "✅ Erfolgreich abgemeldet!")
+        }}
+      />
 
-{toast.show && (
-  <div className="fixed left-1/2 top-4 z-[9999] -translate-x-1/2">
-    <div className="rounded-full bg-black/85 text-white px-4 py-2 text-sm font-semibold shadow-lg">{toast.text}</div>
-  </div>
-)}
+      {toast.show && (
+        <div className="fixed left-1/2 top-4 z-[9999] -translate-x-1/2">
+          <div className="rounded-full bg-black/85 text-white px-4 py-2 text-sm font-semibold shadow-lg">{toast.text}</div>
+        </div>
+      )}
 
-<MobileBottomNav />
+      <MobileBottomNav />
     </div>
   )
 }
