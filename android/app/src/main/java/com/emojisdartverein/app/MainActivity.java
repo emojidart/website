@@ -21,11 +21,10 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // ✅ Wichtig: Beim echten Launcher-Start (App Icon) niemals Push erzwingen
+        // ✅ Beim echten Launcher-Start niemals Push erzwingen
         if (isLauncherIntent(getIntent())) {
             pendingPath = null;
-            // Intent "säubern" (falls Android alten Push-Intent wiederverwendet)
-            clearToLauncherIntent();
+            clearToLauncherIntent(); // wipes old extras that can be reused by Android
             return;
         }
 
@@ -55,20 +54,29 @@ public class MainActivity extends BridgeActivity {
         if (!TextUtils.isEmpty(pendingPath)) navigateWhenReady();
     }
 
+    /**
+     * Launcher-Start ist in der Praxis oft ACTION_MAIN.
+     * Categories können bei manchen Herstellern/Launchern fehlen oder anders sein.
+     */
     private boolean isLauncherIntent(Intent intent) {
         if (intent == null) return true;
 
         String action = intent.getAction();
-        boolean isMain = Intent.ACTION_MAIN.equals(action);
+        if (Intent.ACTION_MAIN.equals(action)) return true;
 
-        boolean hasLauncherCategory = false;
-        if (intent.getCategories() != null) {
-            hasLauncherCategory = intent.getCategories().contains(Intent.CATEGORY_LAUNCHER)
-                    || intent.getCategories().contains(Intent.CATEGORY_LEANBACK_LAUNCHER);
+        // Fallback: wenn kein klares Push-Signal da ist, behandeln wir es wie Launcher
+        // (verhindert "alte Extras" => fälschlicher Push-Start)
+        Uri data = intent.getData();
+        boolean looksLikePush = false;
+
+        if (data != null && "emd".equalsIgnoreCase(data.getScheme()) && "push".equalsIgnoreCase(data.getHost())) {
+            looksLikePush = true;
+        }
+        if (!TextUtils.isEmpty(action) && action.startsWith("OPEN_PUSH_")) {
+            looksLikePush = true;
         }
 
-        // Wenn ACTION_MAIN + LAUNCHER => normaler Start => Push ignorieren
-        return isMain && hasLauncherCategory;
+        return !looksLikePush;
     }
 
     private void clearToLauncherIntent() {
@@ -83,6 +91,9 @@ public class MainActivity extends BridgeActivity {
     private void captureIntent(Intent intent) {
         if (intent == null) return;
 
+        // ✅ Push nur dann, wenn wir es wirklich sicher wissen:
+        // - Action OPEN_PUSH_...
+        // - oder emd://push/...
         boolean isPush = false;
 
         String action = intent.getAction();
@@ -97,21 +108,18 @@ public class MainActivity extends BridgeActivity {
             }
         }
 
+        // ✅ Kein Push -> nix tun (wichtig!)
+        if (!isPush) {
+            pendingPath = null;
+            return;
+        }
+
+        // ✅ Nur bei echtem Push lesen wir Extras aus
         String pathExtra = intent.getStringExtra("path");
         String scopeExtra = intent.getStringExtra("scope");
         String roomId1 = intent.getStringExtra("room_id");
         String roomId2 = intent.getStringExtra("roomId");
         String rid = !TextUtils.isEmpty(roomId1) ? roomId1 : roomId2;
-
-        if (!TextUtils.isEmpty(pathExtra) || !TextUtils.isEmpty(scopeExtra) || !TextUtils.isEmpty(rid)) {
-            isPush = true;
-        }
-
-        // ✅ Kein Push -> nichts tun
-        if (!isPush) {
-            pendingPath = null;
-            return;
-        }
 
         String path = pathExtra;
         String scope = scopeExtra;
@@ -157,7 +165,7 @@ public class MainActivity extends BridgeActivity {
 
             pendingPath = null;
 
-            // ✅ nach Push säubern
+            // ✅ nach Push säubern (damit nix hängen bleibt)
             clearToLauncherIntent();
         }
     };
