@@ -1,78 +1,53 @@
 // app/PushInit.tsx
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect } from "react"
 import { PushNotifications } from "@capacitor/push-notifications"
 import { Capacitor } from "@capacitor/core"
-import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { createBrowserClient } from "@supabase/ssr"
 
-function getSupabaseBrowser(): SupabaseClient {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: false,
-    },
-  })
+function getSupabaseBrowser() {
+  return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 }
 
-async function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms))
-}
-
-async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit & { timeoutMs?: number } = {}) {
-  const { timeoutMs = 8000, ...rest } = init
+function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 8000) {
   const controller = new AbortController()
   const id = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    return await fetch(input, { ...rest, signal: controller.signal })
-  } finally {
-    clearTimeout(id)
-  }
+  return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(id))
 }
 
 export default function PushInit() {
-  const supabaseRef = useRef<SupabaseClient | null>(null)
-  const latestTokenRef = useRef<string | null>(null)
-  const registeringRef = useRef(false)
-
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
 
     const supabase = getSupabaseBrowser()
-    supabaseRef.current = supabase
 
-    const registerToken = async (fcmToken: string) => {
-      if (!fcmToken) return
-      if (registeringRef.current) return
-      registeringRef.current = true
-
+    const registerTokenIfLoggedIn = async (fcmToken: string) => {
       try {
-        // ✅ Session kann beim Cold Start kurz NULL sein -> retry max ~10s
-        let accessToken: string | null = null
-        for (let i = 0; i < 20; i++) {
-          const { data, error } = await supabase.auth.getSession()
-          if (!error && data?.session?.access_token) {
-            accessToken = data.session.access_token
-            break
-          }
-          await sleep(500)
-        }
-
-        if (!accessToken) {
-          console.log("[push] no session after retry -> skip register (will retry on auth events)")
+        const { data, error } = await supabase.auth.getSession()
+        if (error) {
+          console.log("[push] getSession error:", error.message)
           return
         }
 
-        const res = await fetchWithTimeout("/api/push/register-fcm", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
+        const accessToken = data?.session?.access_token
+        if (!accessToken) {
+          console.log("[push] no session yet -> will register after login")
+          return
+        }
+
+        const res = await fetchWithTimeout(
+          "/api/push/register-fcm",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ token: fcmToken, platform: "android" }),
           },
-          body: JSON.stringify({ token: fcmToken, platform: "android" }),
-          timeoutMs: 8000,
-        })
+          8000
+        )
 
         const txt = await res.text().catch(() => "")
         if (!res.ok) {
@@ -82,12 +57,11 @@ export default function PushInit() {
         }
       } catch (err) {
         console.error("[push] register-fcm error:", err)
-      } finally {
-        registeringRef.current = false
       }
     }
 
     const init = async () => {
+      // 1) Permission (erst checken, dann request)
       try {
         const cur = await PushNotifications.checkPermissions()
         if (cur.receive !== "granted") {
@@ -102,18 +76,23 @@ export default function PushInit() {
         return
       }
 
+      // 2) Android Channel (WhatsApp-like: high)
       try {
         await PushNotifications.createChannel({
           id: "chat",
           name: "Chat",
           description: "Chat Benachrichtigungen",
-          importance: 5,
-          visibility: 1,
+          importance: 5, // HIGH
+          visibility: 1, // PUBLIC
           vibration: true,
           lights: true,
         })
-      } catch {}
+        console.log("[push] channel created: chat")
+      } catch (e) {
+        console.log("[push] createChannel skipped:", e)
+      }
 
+      // 3) Register FCM
       try {
         await PushNotifications.register()
       } catch (e) {
@@ -121,16 +100,16 @@ export default function PushInit() {
       }
     }
 
+    // Listener: Token
     const subRegistration = PushNotifications.addListener("registration", (token) => {
       console.log("[push] FCM token:", token.value)
 
-      latestTokenRef.current = token.value
       try {
         localStorage.setItem("fcm_token", token.value)
       } catch {}
 
-      // ✅ nicht blockieren
-      void registerToken(token.value)
+      // ✅ EXTREM WICHTIG: NICHT awaiten -> blockiert sonst Start/Render
+      void registerTokenIfLoggedIn(token.value)
     })
 
     const subRegErr = PushNotifications.addListener("registrationError", (err) => {
@@ -141,14 +120,25 @@ export default function PushInit() {
       console.log("[push] received:", notif)
     })
 
+    // Tap auf Notification
     const subAction = PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
       console.log("[push] action:", action)
-      // Navigation machst du eh nativ über MainActivity/Intent – hier lassen wir nur loggen
+      try {
+        const data: any = (action as any)?.notification?.data || {}
+        const url = data?.url || data?.clickUrl || data?.path
+        if (url && typeof url === "string") {
+          // ✅ kein Full Reload, sondern nur History-State ändern + Event triggern
+          // (funktioniert in WebView stabiler als window.location.href)
+          const next = url.startsWith("/") ? url : `/${url}`
+          window.history.pushState({}, "", next)
+          window.dispatchEvent(new PopStateEvent("popstate"))
+        }
+      } catch {}
     })
 
-    // ✅ Sobald supabase die Session initial geladen hat, nochmal registrieren
+    // Wenn User später einloggt -> Token nochmal registrieren
     const { data: authSub } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         const saved = (() => {
           try {
             return localStorage.getItem("fcm_token")
@@ -156,8 +146,10 @@ export default function PushInit() {
             return null
           }
         })()
-        const token = latestTokenRef.current || saved
-        if (token) void registerToken(token)
+        if (saved) {
+          // ✅ nicht awaiten
+          void registerTokenIfLoggedIn(saved)
+        }
       }
     })
 
