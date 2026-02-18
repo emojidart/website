@@ -21,6 +21,10 @@ body {
   font-size: 15px;
 }
 
+html.is-native body {
+  font-size: 14px;      /* testweise 14, wenn zu klein -> 14.5 */
+  line-height: 1.35;    /* optional */
+}
 
 /* Medien niemals breiter als Screen */
 img,

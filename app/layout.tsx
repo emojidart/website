@@ -5,6 +5,7 @@ import { Inter } from "next/font/google"
 import { PresenceTracker } from "@/components/presence-tracker"
 import { PushSubscriptionRepair } from "@/components/push-subscription-repair"
 import PushInit from "./PushInit"
+import AppPlatformClass from "./AppPlatformClass"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -37,13 +38,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="de">
       <body className={`${inter.className} antialiased`}>
+        {/* ✅ setzt .is-native auf <html> wenn App */}
+        <AppPlatformClass />
+
         <div className="app-root safe-pt safe-pb">
           <PresenceTracker />
           <PushSubscriptionRepair />
-
-          {/* 🔔 Native Firebase Push Initialisierung */}
           <PushInit />
-
           {children}
         </div>
       </body>
