@@ -3,11 +3,12 @@
 import { useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { Capacitor } from "@capacitor/core"
 
-const INTERVAL_MS = 2 * 60 * 1000 // alle 2 Minuten (wenn möglich)
-const MIN_GAP_MS = 45 * 1000 // mind. 45s Abstand zwischen Pings (Anti-Spam)
-const RETRIES = 6 // Mobile/PWA: auth ist manchmal kurz nicht ready
-const RETRY_DELAY_MS = 300
+const INTERVAL_MS = 2 * 60 * 1000 // alle 2 Minuten
+const MIN_GAP_MS = 45 * 1000 // mind. 45s Abstand
+const RETRIES = 4 // weniger Retries = weniger Startlast
+const RETRY_DELAY_MS = 400
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms))
@@ -19,12 +20,15 @@ export function PresenceTracker() {
   const lastPingAtRef = useRef<number>(0)
   const inFlightRef = useRef<boolean>(false)
 
-  // ✅ Pageviews: pro Route nur 1x zählen (Counter)
+  // Pageviews: pro Route nur 1x zählen
   const lastTrackedPathRef = useRef<string | null>(null)
   const trackInFlightRef = useRef<boolean>(false)
 
-  // 0) Pageview Counter bei Route-Wechsel (Gesamt + Tageszähler)
+  // 0) Pageview Counter bei Route-Wechsel
   useEffect(() => {
+    // ✅ In nativer App skippen (sonst beim Start unnötig RPCs)
+    if (Capacitor.isNativePlatform()) return
+
     if (!pathname) return
     if (lastTrackedPathRef.current === pathname) return
     lastTrackedPathRef.current = pathname
@@ -33,10 +37,7 @@ export function PresenceTracker() {
       if (trackInFlightRef.current) return
       trackInFlightRef.current = true
       try {
-        // Gesamtzähler (eine Zeile pro Seite)
         await supabase.rpc("increment_page_view", { p_path: pathname })
-
-        // Tageszähler (eine Zeile pro Tag+Seite)
         await supabase.rpc("increment_page_view_daily", { p_path: pathname })
       } catch (e) {
         console.warn("page view counter failed:", e)
@@ -45,16 +46,20 @@ export function PresenceTracker() {
       }
     }
 
-    track()
+    // ✅ leicht verzögert, damit Startscreen nicht “gefühlt hängt”
+    const t = setTimeout(() => track(), 600)
+    return () => clearTimeout(t)
   }, [pathname])
 
   // 1) Presence Ping (last_seen_at)
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null
+    let cancelled = false
 
     const ping = async (opts?: { force?: boolean; reason?: string }) => {
       const force = !!opts?.force
 
+      if (cancelled) return
       if (inFlightRef.current) return
 
       const now = Date.now()
@@ -63,6 +68,11 @@ export function PresenceTracker() {
 
       inFlightRef.current = true
       try {
+        // ✅ kleiner Delay beim ersten Start
+        if (force && opts?.reason === "mount") {
+          await sleep(800)
+        }
+
         for (let i = 0; i < RETRIES; i++) {
           const { data, error } = await supabase.auth.getUser()
           if (error) break
@@ -80,12 +90,18 @@ export function PresenceTracker() {
 
           await sleep(RETRY_DELAY_MS)
         }
+      } catch {
+        // still
       } finally {
         inFlightRef.current = false
       }
     }
 
-    ping({ force: true, reason: "mount" })
+    // ✅ Wichtig: Nur pingen, wenn überhaupt sichtbar
+    if (document.visibilityState === "visible") {
+      ping({ force: true, reason: "mount" })
+    }
+
     timer = setInterval(() => ping({ force: false, reason: "interval" }), INTERVAL_MS)
 
     const onVis = () => {
@@ -107,6 +123,7 @@ export function PresenceTracker() {
     })
 
     return () => {
+      cancelled = true
       if (timer) clearInterval(timer)
       document.removeEventListener("visibilitychange", onVis)
       window.removeEventListener("focus", onFocus)
