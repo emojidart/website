@@ -997,7 +997,9 @@ const normalizeTimeHHMM = (value: any): string => {
     <div className="min-h-screen bg-white pb-20">
       <Header />
       <main className="flex-grow pt-4">
-        <div className="px-2 sm:container sm:mx-auto sm:px-4 py-4 sm:max-w-6xl overflow-x-hidden">
+       <div className="px-6 py-6 w-full overflow-x-hidden">
+
+
 
           <div className="mb-4">
             <Button
@@ -1044,9 +1046,10 @@ const normalizeTimeHHMM = (value: any): string => {
                                       🎯 {getTeamDisplayName(match, true)} vs {getTeamDisplayName(match, false)}
                                     </div>
                                     <div className="text-xs text-gray-600 mt-0.5">
-                                      formatTimeWithoutSeconds(match.match_time)
-                                      {match.season?.name ? ` • ${match.season.name}` : ""}
-                                    </div>
+  {formatTimeWithoutSeconds(match.match_time)} Uhr
+  {match.season?.name ? ` • ${match.season.name}` : ""}
+</div>
+
                                   </div>
 
                                   <div className="shrink-0">
@@ -1991,7 +1994,8 @@ text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awa
           </Dialog>
 
           <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
-            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
+            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md max-h-[80dvh] overflow-y-auto">
+
               <DialogHeader>
                 <DialogTitle className="text-lg">Event Details</DialogTitle>
                 <DialogDescription className="text-sm">Detaillierte Informationen zum Event</DialogDescription>
@@ -2134,9 +2138,9 @@ text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awa
                         handleItemClick(item)
                       }}
                     >
-                      <CardContent className="p-3">
+                      <CardContent className="p-3 overflow-hidden">
                         {isEvent(item) ? (
-                          <div className="flex items-center justify-between gap-2 min-w-0">
+                            <div className="flex items-center justify-between gap-2 min-w-0">
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="text-sm font-medium truncate">{item.name}</div>
                             </div>
@@ -2154,8 +2158,12 @@ text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awa
                         ) : (
                           <div className="flex items-center justify-between gap-2 min-w-0">
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="text-sm font-medium shrink-0">{formatTimeWithoutSeconds(item.match_time)}</div>
-                              <div className="text-sm truncate">
+                              <div className="text-sm font-medium shrink-0 whitespace-nowrap">
+  {formatTimeWithoutSeconds(item.match_time)}
+</div>
+
+                             <div className="text-sm break-words min-w-0">
+
                                 {getTeamDisplayName(item, true)} vs {getTeamDisplayName(item, false)}
                               </div>
                             </div>
