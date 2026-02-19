@@ -983,7 +983,7 @@ const normalizeTimeHHMM = (value: any): string => {
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <div className="animate-spin rounded-sm-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Lade Spieldaten...</p>
+                <p className="text-gray-600">Lade Kalender...</p>
               </div>
             </div>
           </div>
