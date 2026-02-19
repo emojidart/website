@@ -1577,22 +1577,19 @@ text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awa
     className={`${bg} text-white text-[11px] font-medium px-1 py-0.5 rounded-sm`}
     title={text}
   >
-    {/* MOBILE */}
-   <span
-  className="md:hidden block leading-tight overflow-hidden"
+   
+  <span
+  className="block leading-tight overflow-hidden"
   style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
 >
-
-  {text}
+  {isMatch
+    ? `${normalizeTimeHHMM((item as any).match_time)} ${getTeamDisplayName(item, true)} vs ${getTeamDisplayName(item, false)}`
+    : text}
 </span>
-
-
-    {/* DESKTOP */}
-    <span className="hidden md:block whitespace-nowrap overflow-hidden text-ellipsis">
-      {isMatch
-        ? `${normalizeTimeHHMM((item as any).match_time)} ${getTeamDisplayName(item, true)} vs ${getTeamDisplayName(item, false)}`
-        : text}
-    </span>
+ 
+   
+   
+   
   </div>
 )
 
