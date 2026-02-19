@@ -258,6 +258,10 @@ export default function MemberAvailabilityPage() {
   // Lineup (public.match_lineups)
   const [lineupPlayers, setLineupPlayers] = useState<LineupRow[]>([])
   const [savingLineup, setSavingLineup] = useState(false)
+  
+  const [lineupHeader, setLineupHeader] = useState<LineupHeader | null>(null)
+  const [confirmingLineup, setConfirmingLineup] = useState(false)
+
 
   // Team chat (room_id = team_id)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
@@ -386,6 +390,8 @@ export default function MemberAvailabilityPage() {
       setTeamPlayers([])
       setAvailability([])
       setLineupPlayers([])
+	  setLineupHeader(null)
+
     }
   }
 
@@ -549,14 +555,25 @@ export default function MemberAvailabilityPage() {
     }
 
     // Lineup
-    const { data: lu } = await supabase
-      .from("match_lineups")
-      .select("id,player_id,position,is_substitute, club_players:club_players(id,name,photo_url)")
-      .eq("match_id", matchId)
-      .eq("team_id", teamId)
-      .order("position", { ascending: true })
+   const { data: lu } = await supabase
+  .from("match_lineups")
+  .select("id,player_id,position,is_substitute, club_players:club_players(id,name,photo_url)")
+  .eq("match_id", matchId)
+  .eq("team_id", teamId)
+  .order("position", { ascending: true })
 
-    setLineupPlayers(((lu as any) || []) as LineupRow[])
+   setLineupPlayers(((lu as any) || []) as LineupRow[])
+
+// Lineup Header (Status: draft/confirmed + versioning)
+const { data: lh } = await supabase
+  .from("match_lineup_headers")
+  .select("status,current_version,confirmed_version,confirmed_at,confirmed_by")
+  .eq("match_id", matchId)
+  .eq("team_id", teamId)
+  .maybeSingle()
+
+setLineupHeader((lh as any) ?? null)
+
   }
 
   const isCaptainOrCoForTeam = useMemo(() => {
@@ -665,6 +682,11 @@ export default function MemberAvailabilityPage() {
 
     const matchId = dialogMatch.id
     const teamId = selectedTeamId
+	const wasConfirmed =
+  lineupHeader?.status === "confirmed" &&
+  lineupHeader.confirmed_version !== null &&
+  lineupHeader.confirmed_version === lineupHeader.current_version
+
 
     const existing = lineupPlayers.find((p) => p.player_id === playerId)
 
@@ -717,16 +739,85 @@ export default function MemberAvailabilityPage() {
       }
 
       await loadMatchData(matchId, teamId)
+	  if (wasConfirmed) {
+  await fetch("/api/push/lineup", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      authorization: `Bearer ${session?.access_token ?? ""}`,
+    },
+    body: JSON.stringify({
+      team_id: teamId,
+      match_id: matchId,
+      action: "changed",
+      sender_profile_id: profile?.id,
+    }),
+  })
+}
+
     } finally {
       setSavingLineup(false)
     }
   }
+  
+  
+async function confirmLineup() {
+  if (!dialogMatch || !selectedTeamId) return
+  if (!isCaptainOrCoForTeam) return
+  if (isMatchLocked(dialogMatch)) return
+  if (!profile?.id) return
+
+  setConfirmingLineup(true)
+  try {
+    const { error } = await supabase.rpc("confirm_lineup", {
+      p_match_id: dialogMatch.id,
+      p_team_id: selectedTeamId,
+    })
+    if (error) throw error
+
+    // UI refresh
+    await loadMatchData(dialogMatch.id, selectedTeamId)
+
+    // Push senden
+    await fetch("/api/push/lineup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        authorization: `Bearer ${session?.access_token ?? ""}`,
+      },
+      body: JSON.stringify({
+        team_id: selectedTeamId,
+        match_id: dialogMatch.id,
+        action: "confirmed",
+        sender_profile_id: profile.id,
+      }),
+    })
+  } catch (e) {
+    console.error("confirmLineup error", e)
+  } finally {
+    setConfirmingLineup(false)
+  }
+}
+
+
+
 
   const upcomingMatches = matches.filter((m) => m.status !== "completed")
   const completedMatches = matches.filter((m) => m.status === "completed")
 
   const starters = useMemo(() => lineupPlayers.filter((p) => !p.is_substitute).slice().sort((a, b) => a.position - b.position), [lineupPlayers])
   const substitutes = useMemo(() => lineupPlayers.filter((p) => p.is_substitute), [lineupPlayers])
+  
+  const lineupIsConfirmed =
+  lineupHeader?.status === "confirmed" &&
+  lineupHeader.confirmed_version !== null &&
+  lineupHeader.confirmed_version === lineupHeader.current_version
+
+const lineupIsStale =
+  lineupHeader?.status === "confirmed" &&
+  lineupHeader.confirmed_version !== null &&
+  lineupHeader.confirmed_version < lineupHeader.current_version
+
 
   if (authLoading || loading) {
     return (
@@ -1176,7 +1267,14 @@ export default function MemberAvailabilityPage() {
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         Aufstellung
-                        <Badge variant="outline">Entwurf</Badge>
+                        {lineupIsConfirmed ? (
+  <Badge className="bg-green-600 text-white">Bestätigt</Badge>
+) : lineupIsStale ? (
+  <Badge className="bg-yellow-600 text-white">Geändert (neu bestätigen)</Badge>
+) : (
+  <Badge variant="outline">Entwurf</Badge>
+)}
+
                         {dialogIsLocked && (
                           <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
                             Gesperrt
@@ -1218,8 +1316,26 @@ export default function MemberAvailabilityPage() {
                         </>
                       )}
 
-                      {!isCaptainOrCoForTeam ? <div className="text-xs text-gray-500">Nur Captain/Co-Captain kann die Aufstellung ändern.</div> : null}
-                      {isCaptainOrCoForTeam && dialogIsLocked ? <div className="text-xs text-red-700">Aufstellung kann nach Spielbeginn nicht mehr geändert werden.</div> : null}
+                      {!isCaptainOrCoForTeam ? (
+  <div className="text-xs text-gray-500">Nur Captain/Co-Captain kann die Aufstellung ändern.</div>
+) : null}
+
+{isCaptainOrCoForTeam && dialogIsLocked ? (
+  <div className="text-xs text-red-700">Aufstellung kann nach Spielbeginn nicht mehr geändert werden.</div>
+) : null}
+
+{isCaptainOrCoForTeam && !dialogIsLocked && (
+  <Button
+    onClick={confirmLineup}
+    disabled={confirmingLineup || lineupIsConfirmed}
+    className="bg-orange-600 hover:bg-orange-700"
+  >
+    {confirmingLineup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+    Aufstellung bestätigen
+  </Button>
+)}
+
+
                     </CardContent>
                   </Card>
 

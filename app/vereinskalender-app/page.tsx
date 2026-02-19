@@ -1086,7 +1086,8 @@ const normalizeTimeHHMM = (value: any): string => {
                                       🎯 {getTeamDisplayName(match, true)} vs {getTeamDisplayName(match, false)}
                                     </div>
                                     <div className="text-xs text-gray-600 mt-0.5">
-  {formatTimeWithoutSeconds(match.match_time)} Uhr
+  <span>{formatTimeWithoutSeconds(match.match_time)} Uhr</span>
+
   {match.season?.name ? ` • ${match.season.name}` : ""}
 </div>
 
@@ -1754,11 +1755,12 @@ text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awa
                                     })}
                                   </div>
                                   {item?.start_time && (
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <Clock className="h-4 w-4 shrink-0" />
-                                      {formatTimeWithoutSeconds(item?.start_time)} Uhr
-                                    </div>
-                                  )}
+  <div className="flex items-center gap-2 min-w-0">
+    <Clock className="h-4 w-4 shrink-0" />
+    <span>{formatTimeWithoutSeconds(item.start_time)} Uhr</span>
+  </div>
+)}
+
                                   <div className="flex items-center gap-2 min-w-0">
                                     {item.event_type === "Turnier" ? (
                                       <>
@@ -1868,7 +1870,8 @@ text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awa
                                   </div>
                                   <div className="flex items-center gap-2 min-w-0">
                                     <Clock className="h-4 w-4 shrink-0" />
-                                    formatTimeWithoutSeconds(match.match_time)
+<span>{formatTimeWithoutSeconds(match.match_time)} Uhr</span>
+
                                   </div>
                                   <div className="flex items-center gap-2 min-w-0">
                                     <MapPin className="h-4 w-4 shrink-0" />
