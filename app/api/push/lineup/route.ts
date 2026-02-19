@@ -24,21 +24,20 @@ function asBullets(names: string[]) {
   return names.map((n) => `• ${n}`).join("\n")
 }
 
-function formatMatchDateTime(dateString: string, timeString?: string | null) {
-  // dateString expected like: 2025-09-29
+function formatDateDE(dateString: string) {
   const d = new Date(`${dateString}T00:00:00`)
   const weekdays = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
   const wd = weekdays[d.getDay()]
   const day = String(d.getDate()).padStart(2, "0")
   const month = String(d.getMonth() + 1).padStart(2, "0")
+  return `${wd} ${day}.${month}`
+}
 
-  let timePart = ""
-  if (timeString) {
-    const parts = String(timeString).split(":")
-    if (parts.length >= 2) timePart = ` • ${parts[0]}:${parts[1]}`
-  }
-
-  return `${wd} ${day}.${month}${timePart}`
+function formatTimeHHMM(timeString?: string | null) {
+  if (!timeString) return ""
+  const parts = String(timeString).split(":")
+  if (parts.length < 2) return ""
+  return `${parts[0]}:${parts[1]}`
 }
 
 export async function POST(request: NextRequest) {
@@ -147,79 +146,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Match not found" }, { status: 400 })
     }
 
-    const formattedDate = match.match_date
-      ? formatMatchDateTime(String(match.match_date), (match as any).match_time ?? null)
-      : ""
+    const dateLine = match.match_date ? formatDateDE(String(match.match_date)) : ""
+    const timeHHMM = formatTimeHHMM((match as any).match_time ?? null)
+    const timeBadge = timeHHMM ? `🕒 ${timeHHMM}` : "" // "Badge" Style
 
     // ---- Namen auflösen nach team_type ----
     let homeName: string | null = null
     let awayName: string | null = null
 
-    // HOME
     if ((match as any).home_team_type === "own") {
       if ((match as any).home_team_id) {
-        const { data: t } = await supabase
-          .from("teams")
-          .select("name")
-          .eq("id", (match as any).home_team_id)
-          .maybeSingle()
+        const { data: t } = await supabase.from("teams").select("name").eq("id", (match as any).home_team_id).maybeSingle()
         homeName = (t as any)?.name ?? null
       }
     } else if ((match as any).home_team_type === "opponent") {
       if ((match as any).home_opponent_team_id) {
-        const { data: o } = await supabase
-          .from("opponent_teams")
-          .select("name")
-          .eq("id", (match as any).home_opponent_team_id)
-          .maybeSingle()
+        const { data: o } = await supabase.from("opponent_teams").select("name").eq("id", (match as any).home_opponent_team_id).maybeSingle()
         homeName = (o as any)?.name ?? null
-      }
-    } else {
-      // falls du später "club_team" nutzt
-      if ((match as any).home_team_id) {
-        const { data: t } = await supabase
-          .from("teams")
-          .select("name")
-          .eq("id", (match as any).home_team_id)
-          .maybeSingle()
-        homeName = (t as any)?.name ?? null
       }
     }
 
-    // AWAY
     if ((match as any).away_team_type === "own") {
       if ((match as any).away_team_id) {
-        const { data: t } = await supabase
-          .from("teams")
-          .select("name")
-          .eq("id", (match as any).away_team_id)
-          .maybeSingle()
+        const { data: t } = await supabase.from("teams").select("name").eq("id", (match as any).away_team_id).maybeSingle()
         awayName = (t as any)?.name ?? null
       }
     } else if ((match as any).away_team_type === "opponent") {
       if ((match as any).away_opponent_team_id) {
-        const { data: o } = await supabase
-          .from("opponent_teams")
-          .select("name")
-          .eq("id", (match as any).away_opponent_team_id)
-          .maybeSingle()
+        const { data: o } = await supabase.from("opponent_teams").select("name").eq("id", (match as any).away_opponent_team_id).maybeSingle()
         awayName = (o as any)?.name ?? null
-      }
-    } else {
-      if ((match as any).away_team_id) {
-        const { data: t } = await supabase
-          .from("teams")
-          .select("name")
-          .eq("id", (match as any).away_team_id)
-          .maybeSingle()
-        awayName = (t as any)?.name ?? null
       }
     }
 
     homeName = homeName ?? "Heimteam"
     awayName = awayName ?? "Gastteam"
 
-    // ---- Lineup laden: Fix + Ersatz ----
+    // ---- Lineup laden (einmal) ----
     const { data: lu } = await supabase
       .from("match_lineups")
       .select("player_id, position, is_substitute, club_players:club_players(name)")
@@ -241,8 +203,9 @@ export async function POST(request: NextRequest) {
       .map((r) => r.club_players?.name)
       .filter(Boolean) as string[]
 
-    // ---- Push Body (schön untereinander) ----
-    const headerLine = [formattedDate, `${homeName} vs ${awayName}`].filter(Boolean).join("\n")
+    // ---- Header schön: Datum + Badge, darunter Teams ----
+    const headerLine1 = [dateLine, timeBadge].filter(Boolean).join("  ")
+    const headerLine2 = `${homeName} vs ${awayName}`
 
     const statusLine =
       action === "confirmed"
@@ -250,7 +213,7 @@ export async function POST(request: NextRequest) {
         : `${senderName} hat die Aufstellung geändert ⚠️`
 
     const bodyText =
-      `${headerLine}\n\n` +
+      `${headerLine1}\n${headerLine2}\n\n` +
       `${statusLine}\n\n` +
       `🎯 Fix (Stamm):\n${asBullets(starters)}\n\n` +
       `🔁 Ersatz:\n${asBullets(subs)}`
@@ -289,7 +252,7 @@ export async function POST(request: NextRequest) {
     // ---- FCM senden ----
     const admin = getFirebaseAdmin()
 
-    const clickUrl = `/member-availability` // existiert sicher (kein 404)
+    const clickUrl = `/member-availability`
     const tag = makeLineupTag(team_id, match_id, action)
     const notif_id = stableNotifIdFromTag(tag)
 
