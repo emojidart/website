@@ -797,6 +797,9 @@ try {
     }))
 
   const todayHighlights: CalendarItem[] = [...todayMatches, ...todayEvents, ...todayBirthdayEvents, ...todayVacations]
+  
+  
+  
 
   const getTeamDisplayName = (match: Match, isHome: boolean) => {
     if (isHome) {
@@ -826,26 +829,102 @@ try {
     return "event_date" in item
   }
 
-  const getEventTypeBadge = (eventType: string) => {
-    if (eventType === "Geburtstag") {
-      return <Badge className="bg-pink-100 text-pink-800 border-pink-200 text-xs">🎂 Geburtstag</Badge>
-    } else if (eventType === "Turnier") {
-      return <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs">Turnier</Badge>
-    } else if (eventType === "Versammlung") {
-      return <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">Event</Badge>
-    } else if (eventType === "Urlaub") {
-      return <Badge className="bg-sky-100 text-sky-800 border-sky-200 text-xs">🏖️ Urlaub</Badge>
-    } else if (eventType === "Spielfrei") {
-      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">Spielfrei</Badge>
-    } else {
-      return <Badge className="bg-gray-100 text-gray-800 border-gray-200 text-xs">Event</Badge>
+const getEventTypeBadge = (eventType: string) => {
+  if (eventType === "Geburtstag") {
+    return <Badge className="bg-pink-100 text-pink-800 border-pink-200 text-xs">🎂 Geburtstag</Badge>
+  } else if (eventType === "Turnier") {
+    return <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs">Turnier</Badge>
+  } else if (eventType === "Versammlung") {
+    return <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">Event</Badge>
+  } else if (eventType === "Urlaub") {
+    return <Badge className="bg-sky-100 text-sky-800 border-sky-200 text-xs">🏖️ Urlaub</Badge>
+  } else if (eventType === "Spielfrei") {
+    return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">Spielfrei</Badge>
+  } else {
+    return <Badge className="bg-gray-100 text-gray-800 border-gray-200 text-xs">Event</Badge>
+  }
+}
+
+const safeString = (value: any): string => {
+  if (!value) return ""
+
+  if (typeof value === "object") {
+    if (value?.type === "Buffer" && Array.isArray(value?.data)) {
+      try {
+        return new TextDecoder().decode(new Uint8Array(value.data))
+      } catch {
+        return ""
+      }
     }
   }
 
-  const formatTimeWithoutSeconds = (timeString: string) => {
-    if (!timeString) return timeString
-    return timeString.substring(0, 5)
+  return String(value)
+}
+
+
+
+
+  const formatTimeWithoutSeconds = (value: any): string => {
+  if (!value) return ""
+
+  // Falls Supabase / irgendwas als Buffer-Objekt kommt:
+  if (typeof value === "object") {
+    // { type: "Buffer", data: [...] }
+    if (value?.type === "Buffer" && Array.isArray(value?.data)) {
+      try {
+        value = new TextDecoder().decode(new Uint8Array(value.data))
+      } catch {
+        // ignore
+      }
+    } else if (value instanceof Uint8Array) {
+      try {
+        value = new TextDecoder().decode(value)
+      } catch {
+        // ignore
+      }
+    }
   }
+
+  const s = String(value)
+
+  // holt zuverlässig "HH:MM" aus z.B. "19:00:00", "Buffer ... 19:00:00", etc.
+  const m = s.match(/(\d{2}:\d{2})/)
+  if (m) return m[1]
+
+  // Fallback
+  return s.substring(0, 5)
+}
+
+const normalizeTimeHHMM = (value: any): string => {
+  if (!value) return ""
+
+  // Buffer-Objekt (z.B. { type: "Buffer", data: [...] })
+  if (typeof value === "object") {
+    if (value?.type === "Buffer" && Array.isArray(value?.data)) {
+      try {
+        value = new TextDecoder().decode(new Uint8Array(value.data))
+      } catch {
+        return ""
+      }
+    } else if (value instanceof Uint8Array) {
+      try {
+        value = new TextDecoder().decode(value)
+      } catch {
+        return ""
+      }
+    }
+  }
+
+  const s = String(value)
+  const m = s.match(/(\d{1,2}):(\d{2})/)
+  if (!m) return ""
+
+  const hh = m[1].padStart(2, "0")
+  const mm = m[2]
+  return `${hh}:${mm}`
+}
+
+
 
   const handleMobileTileClick = (date: Date, items: CalendarItem[]) => {
     if (items.length === 0) return
@@ -899,10 +978,11 @@ try {
     return (
       <div className="min-h-screen bg-white pb-20">
         <main className="flex-grow pt-4">
-          <div className="container mx-auto px-4 max-w-6xl bg-white">
+          <div className="px-4 py-4 max-w-[1600px] mx-auto overflow-x-hidden">
+
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-sm-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
                 <p className="text-gray-600">Lade Spieldaten...</p>
               </div>
             </div>
@@ -917,7 +997,8 @@ try {
     <div className="min-h-screen bg-white pb-20">
       <Header />
       <main className="flex-grow pt-4">
-        <div className="container mx-auto px-4 py-4 max-w-6xl overflow-x-hidden">
+        <div className="px-2 sm:container sm:mx-auto sm:px-4 py-4 sm:max-w-6xl overflow-x-hidden">
+
           <div className="mb-4">
             <Button
               variant="outline"
@@ -940,7 +1021,7 @@ try {
               <Card className="shadow-lg border-0 bg-white">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-orange-100 rounded-lg">
+                    <div className="p-2 bg-orange-100 rounded-sm-lg">
                       <Star className="h-5 w-5 text-orange-700" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -957,13 +1038,13 @@ try {
                                 onClick={() => openMatchDialog(match)}
                                 className="w-full text-left"
                               >
-                                <div className="flex items-center justify-between gap-3 p-2 rounded-lg border hover:bg-gray-50 transition-colors min-w-0">
+                                <div className="flex items-center justify-between gap-3 p-2 rounded-sm-lg border hover:bg-gray-50 transition-colors min-w-0">
                                   <div className="min-w-0">
                                     <div className="text-sm font-medium text-gray-900 truncate">
                                       🎯 {getTeamDisplayName(match, true)} vs {getTeamDisplayName(match, false)}
                                     </div>
                                     <div className="text-xs text-gray-600 mt-0.5">
-                                      {formatTimeWithoutSeconds(match.match_time)} Uhr
+                                      formatTimeWithoutSeconds(match.match_time)
                                       {match.season?.name ? ` • ${match.season.name}` : ""}
                                     </div>
                                   </div>
@@ -988,7 +1069,7 @@ try {
                                 onClick={() => openEventDialog(ev)}
                                 className="w-full text-left"
                               >
-                                <div className="flex items-center justify-between gap-3 p-2 rounded-lg border hover:bg-gray-50 transition-colors min-w-0">
+                                <div className="flex items-center justify-between gap-3 p-2 rounded-sm-lg border hover:bg-gray-50 transition-colors min-w-0">
                                   <div className="min-w-0">
                                     <div className="text-sm font-medium text-gray-900 truncate">
                                       {ev.event_type === "Geburtstag" ? "🎂" : ev.event_type === "Turnier" ? "🏆" : "📅"}{" "}
@@ -999,7 +1080,8 @@ try {
                                         ? `Urlaub • ${ev.start_date} bis ${ev.end_date}`
                                         : ev.event_type === "Geburtstag"
                                           ? "Geburtstag"
-                                          : `${ev.event_type}${ev.start_time ? ` • ${format(new Date(`2000-01-01T${ev.start_time}`), "HH:mm")} Uhr` : ""}`}
+                                          : `${ev.event_type}${ev.start_time ? ` • ${normalizeTimeHHMM(ev.start_time)} Uhr` : ""}`}
+
                                     </div>
                                   </div>
 
@@ -1026,7 +1108,7 @@ try {
               <Card className="shadow-lg border-0 bg-white">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-pink-100 rounded-lg">
+                    <div className="p-2 bg-pink-100 rounded-sm-lg">
                       <Cake className="h-5 w-5 text-pink-700" />
                     </div>
                     <div className="flex-1">
@@ -1044,7 +1126,7 @@ try {
               <CardContent className="p-3">
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-center">
-                    <div className="flex bg-gray-100 rounded-lg p-1">
+                    <div className="flex bg-gray-100 rounded-sm-lg p-1">
                       <Button
                         variant={viewMode === "month" ? "default" : "outline"}
                         size="sm"
@@ -1194,7 +1276,7 @@ try {
                         setVacationNote("")
                         setIsVacationDialogOpen(true)
                       }}
-                      className="w-full h-11 rounded-2xl text-sm font-semibold shadow-sm"
+                      className="w-full h-11 rounded-sm-2xl text-sm font-semibold shadow-sm"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Urlaub eintragen
@@ -1209,7 +1291,8 @@ try {
           {viewMode === "browse" && (
             <div className="space-y-4">
               <Card className="shadow-lg border-0 bg-white">
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-2 px-2 sm:px-6">
+
                   <CardTitle className="text-base text-gray-900">Kachelübersicht</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
@@ -1223,7 +1306,7 @@ try {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                        className="p-3 rounded-sm-xl border bg-white hover:bg-gray-50 text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-gray-700" />
@@ -1238,7 +1321,7 @@ try {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                        className="p-3 rounded-sm-xl border bg-white hover:bg-gray-50 text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Target className="h-4 w-4 text-orange-600" />
@@ -1253,7 +1336,7 @@ try {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                        className="p-3 rounded-sm-xl border bg-white hover:bg-gray-50 text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Trophy className="h-4 w-4 text-purple-600" />
@@ -1268,7 +1351,7 @@ try {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                        className="p-3 rounded-sm-xl border bg-white hover:bg-gray-50 text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <CalendarDays className="h-4 w-4 text-green-600" />
@@ -1283,7 +1366,7 @@ try {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                        className="p-3 rounded-sm-xl border bg-white hover:bg-gray-50 text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Sun className="h-4 w-4 text-sky-700" />
@@ -1298,7 +1381,7 @@ try {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                        className="p-3 rounded-sm-xl border bg-white hover:bg-gray-50 text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Cake className="h-4 w-4 text-pink-700" />
@@ -1322,7 +1405,7 @@ try {
                               setSelectedItemType("Spiele")
                               setViewMode("list")
                             }}
-                            className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                            className="p-3 rounded-sm-xl border bg-white hover:bg-gray-50 text-left transition-colors"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <Trophy className="h-4 w-4 text-gray-700 shrink-0" />
@@ -1357,7 +1440,7 @@ try {
                               setSelectedItemType("Spiele")
                               setViewMode("list")
                             }}
-                            className="p-3 rounded-xl border bg-white hover:bg-gray-50 text-left transition-colors"
+                            className="p-3 rounded-sm-xl border bg-white hover:bg-gray-50 text-left transition-colors"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <Avatar className="h-6 w-6 shrink-0">
@@ -1378,10 +1461,14 @@ try {
           )}
 
           {viewMode === "month" && (
-            <Card className="shadow-xl border-0 bg-white">
-              <CardHeader className="pb-3">
+  <Card className="shadow-xl border-0 bg-white w-full">
+
+
+              <CardHeader className="pb-3 px-2 sm:px-6">
+
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold">
+                  <CardTitle className="text-xl lg:text-3xl font-bold">
+
                     {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                   </CardTitle>
                   <div className="flex gap-2">
@@ -1397,7 +1484,8 @@ try {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-2 sm:p-6">
+
                 <div className="grid grid-cols-7 gap-1 mb-2">
                   {dayNames.map((day) => (
                     <div key={day} className="text-center text-xs font-medium text-gray-500 p-2">
@@ -1414,10 +1502,11 @@ try {
                     return (
                       <div
                         key={index}
-                        className={`p-1 border border-gray-200 rounded-lg transition-colors overflow-hidden ${
+                        className={`p-1 border border-gray-200 rounded-sm-lg transition-colors overflow-hidden ${
                           isToday ? "bg-orange-50 border-orange-300" : "bg-white hover:bg-gray-50"
                         } 
-                        h-20 cursor-pointer`}
+                        h-24 sm:h-28 lg:h-40
+ cursor-pointer`}
                         onClick={() => {
                           if (day && itemsForDay.length > 0) {
                             if (window.innerWidth < 768) {
@@ -1440,90 +1529,81 @@ try {
 
                         <div className="space-y-1 overflow-hidden">
                           <div className="block">
-                            {itemsForDay.length > 0 && (
-                              <div className="flex flex-wrap gap-1 justify-center">
-                                {(() => {
-                                  const eventTypes = itemsForDay.reduce(
-                                    (acc, item: any) => {
-                                      const type = item.type || "event"
-                                      acc[type] = (acc[type] || 0) + 1
-                                      return acc
-                                    },
-                                    {} as Record<string, number>,
-                                  )
+                      <div className="block">
+  <div className="space-y-1 mt-1">
+    {itemsForDay.slice(0, 3).map((item, idx) => {
+      const isMatch = "match_date" in item
 
-                                  return Object.entries(eventTypes).map(([type, count]) => {
-                                    const getTypeConfig = (eventType: string) => {
-                                      switch (eventType) {
-                                        case "game":
-                                          return {
-                                            label: "🎯",
-                                            bg: "bg-orange-100",
-                                            text: "text-orange-800",
-                                            name: "Spiel",
-                                          }
-                                        case "tournament":
-                                          return {
-                                            label: "🏆",
-                                            bg: "bg-purple-100",
-                                            text: "text-purple-800",
-                                            name: "Turnier",
-                                          }
-                                        case "training":
-                                          return {
-                                            label: "💪",
-                                            bg: "bg-green-100",
-                                            text: "text-green-800",
-                                            name: "Training",
-                                          }
-                                        case "birthday":
-                                          return {
-                                            label: "🎂",
-                                            bg: "bg-pink-100",
-                                            text: "text-pink-800",
-                                            name: "Geburtstag",
-                                          }
-                                        case "vacation":
-                                          return {
-                                            label: "🏖️",
-                                            bg: "bg-sky-100",
-                                            text: "text-sky-800",
-                                            name: "Urlaub",
-                                          }
-                                        case "free":
-                                          return {
-                                            label: "🚫",
-                                            bg: "bg-yellow-100",
-                                            text: "text-yellow-800",
-                                            name: "Spielfrei",
-                                          }
-                                        default:
-                                          return {
-                                            label: "📅",
-                                            bg: "bg-gray-100",
-                                            text: "text-gray-800",
-                                            name: "Event",
-                                          }
-                                      }
-                                    }
+      let bg = "bg-gray-400"
+      let text = ""
 
-                                    const config = getTypeConfig(type)
+      if (isMatch) {
+        bg = "bg-orange-500"
+        const time = formatTimeWithoutSeconds((item as any).match_time)
 
-                                    return (
-                                      <div
-                                        key={type}
-                                        className={`inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 text-xs font-medium rounded-md ${config.bg} ${config.text} shadow-sm`}
-                                        title={`${count} ${config.name}${
-                                          count > 1 ? (type === "game" ? "e" : type === "training" ? "s" : "s") : ""
-                                        }`}
-                                      >
-                                        {count > 1 ? count : config.label}
-                                      </div>
-                                    )
-                                  })
-                                })()}
-                              </div>
-                            )}
+const shortenTeam = (name: string, max = 14) => {
+  const cleaned = (name || "").replace(/\s+/g, " ").trim()
+  if (!cleaned) return "Team"
+  return cleaned.length > max ? cleaned.slice(0, max - 1) + "…" : cleaned
+}
+
+const homeName = getTeamDisplayName(item, true) || "Team"
+const awayName = getTeamDisplayName(item, false) || "Team"
+
+const homeShort = shortenTeam(homeName, 14)
+const awayShort = shortenTeam(awayName, 14)
+
+
+text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awayShort}`
+
+
+
+      } else {
+        const ev: any = item
+        if (ev.event_type === "Urlaub") bg = "bg-red-500"
+        else if (ev.event_type === "Turnier") bg = "bg-purple-500"
+        else if (ev.event_type === "Geburtstag") bg = "bg-pink-500"
+        else bg = "bg-green-500"
+
+        text = ev.name || "Termin"
+      }
+
+     return (
+  <div
+    key={idx}
+    className={`${bg} text-white text-[11px] font-medium px-1 py-0.5 rounded-sm`}
+    title={text}
+  >
+    {/* MOBILE */}
+   <span
+  className="md:hidden block leading-tight overflow-hidden"
+  style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
+>
+
+  {text}
+</span>
+
+
+    {/* DESKTOP */}
+    <span className="hidden md:block whitespace-nowrap overflow-hidden text-ellipsis">
+      {isMatch
+        ? `${normalizeTimeHHMM((item as any).match_time)} ${getTeamDisplayName(item, true)} vs ${getTeamDisplayName(item, false)}`
+        : text}
+    </span>
+  </div>
+)
+
+    })}
+
+    {itemsForDay.length > 3 && (
+      <div className="text-[11px] font-medium text-gray-500 px-0.5">
+        +{itemsForDay.length - 3} mehr
+      </div>
+    )}
+  </div>
+</div>
+
+                            
                           </div>
                         </div>
                       </div>
@@ -1550,7 +1630,8 @@ try {
 
                 if (listItems.length === 0) {
                   return (
-                    <Card className="shadow-lg border-0 bg-white">
+                    <Card className="border bg-white w-full shadow-none rounded-sm-none sm:rounded-sm-xl">
+
                       <CardContent className="p-6 text-center">
                         <Target className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Keine Termine gefunden</h3>
@@ -1569,12 +1650,16 @@ try {
 
                     const timeA =
                       "match_time" in a
-                        ? (a.match_time || "00:00").slice(0, 5)
-                        : ((a.start_time || "00:00").toString().slice(0, 5) || "00:00")
+                        ? normalizeTimeHHMM(a.match_time) || "00:00"
+
+                       : normalizeTimeHHMM((a as any).start_time) || "00:00"
+
                     const timeB =
                       "match_time" in b
-                        ? (b.match_time || "00:00").slice(0, 5)
-                        : ((b.start_time || "00:00").toString().slice(0, 5) || "00:00")
+                        ? normalizeTimeHHMM(b.match_time) || "00:00"
+
+                       : normalizeTimeHHMM((b as any).start_time) || "00:00"
+
 
                     const keyA = `${dateA}T${timeA}`
                     const keyB = `${dateB}T${timeB}`
@@ -1606,7 +1691,7 @@ try {
                                     <img
                                       src={item.photo_url}
                                       alt={item.name}
-                                      className="w-full h-36 object-cover rounded-xl border"
+                                      className="w-full h-36 object-cover rounded-sm-xl border"
                                     />
                                   </div>
                                 )}
@@ -1743,7 +1828,7 @@ try {
                                   </div>
                                   <div className="flex items-center gap-2 min-w-0">
                                     <Clock className="h-4 w-4 shrink-0" />
-                                    {formatTimeWithoutSeconds(match.match_time)} Uhr
+                                    formatTimeWithoutSeconds(match.match_time)
                                   </div>
                                   <div className="flex items-center gap-2 min-w-0">
                                     <MapPin className="h-4 w-4 shrink-0" />
@@ -1829,7 +1914,7 @@ try {
                     </div>
                   </div>
 
-                  <div className="space-y-2 bg-white p-3 rounded-lg border">
+                  <div className="space-y-2 bg-white p-3 rounded-sm-lg border">
                     <div className="flex items-center gap-3 text-sm">
                       <Calendar className="h-5 w-5 text-gray-600 shrink-0" />
                       <span>
@@ -1922,12 +2007,12 @@ try {
                         <img
                           src={selectedEvent.photo_url}
                           alt={selectedEvent.name}
-                          className="w-full h-44 object-cover rounded-xl border"
+                          className="w-full h-44 object-cover rounded-sm-xl border"
                         />
                       </div>
                     )}
                     <div className="mb-4">
-                      <div className="h-16 w-16 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center">
+                      <div className="h-16 w-16 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-orange-200 rounded-sm-full flex items-center justify-center">
                         {selectedEvent.event_type === "Turnier" ? (
                           <Trophy className="h-8 w-8 text-orange-600" />
                         ) : selectedEvent.event_type === "Geburtstag" ? (
@@ -1943,7 +2028,7 @@ try {
                     </div>
                   </div>
 
-                  <div className="space-y-2 bg-white p-3 rounded-lg border">
+                  <div className="space-y-2 bg-white p-3 rounded-sm-lg border">
                     <div className="flex items-center gap-3 text-sm">
                       <Calendar className="h-5 w-5 text-gray-600 shrink-0" />
                       <span>
@@ -2194,9 +2279,9 @@ try {
             <div className="fixed inset-0 z-[999]">
               <div className="absolute inset-0 bg-black/50" onClick={() => setIsMobileBottomSheetOpen(false)} />
 
-              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-xl max-h-[70dvh] overflow-hidden pb-[calc(env(safe-area-inset-bottom)+5rem)]">
+              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-sm-t-xl max-h-[70dvh] overflow-hidden pb-[calc(env(safe-area-inset-bottom)+5rem)]">
                 <div className="flex justify-center py-3">
-                  <div className="w-10 h-1 bg-gray-300 rounded-full" />
+                  <div className="w-10 h-1 bg-gray-300 rounded-sm-full" />
                 </div>
 
                 <div className="px-4 pb-4 border-b">
@@ -2229,7 +2314,7 @@ try {
                             <div className="flex items-center justify-between gap-2 min-w-0">
                               <div className="flex items-center gap-3 min-w-0">
                                 <div
-                                  className={`p-2 rounded-lg ${
+                                  className={`p-2 rounded-sm-lg ${
                                     item.event_type === "Turnier"
                                       ? "bg-purple-100"
                                       : item.event_type === "Geburtstag"
@@ -2257,7 +2342,8 @@ try {
                                       : item.event_type === "Geburtstag"
                                         ? ""
                                         : item?.start_time
-                                          ? `${format(new Date(`2000-01-01T${item?.start_time}`), "HH:mm")} Uhr`
+                                          ? `${normalizeTimeHHMM(item?.start_time)} Uhr`
+
                                           : ""}
                                   </div>
                                 </div>
@@ -2267,7 +2353,7 @@ try {
                           ) : (
                             <div className="flex items-center justify-between gap-2 min-w-0">
                               <div className="flex items-center gap-3 min-w-0">
-                                <div className={`p-2 rounded-lg ${isHomeGame(item) ? "bg-orange-100" : "bg-blue-100"}`}>
+                                <div className={`p-2 rounded-sm-lg ${isHomeGame(item) ? "bg-orange-100" : "bg-blue-100"}`}>
                                   {isHomeGame(item) ? (
                                     <Home className="h-5 w-5 text-orange-600" />
                                   ) : (
@@ -2279,7 +2365,8 @@ try {
                                     {getTeamDisplayName(item, true)} vs {getTeamDisplayName(item, false)}
                                   </div>
                                   <div className="text-sm text-gray-600">
-                                    {item.match_time && format(new Date(`2000-01-01T${item.match_time}`), "HH:mm")} Uhr
+                                    {formatTimeWithoutSeconds((item as any).match_time)} Uhr
+
                                     {item.season?.name && ` • ${item.season.name}`}
                                   </div>
                                 </div>

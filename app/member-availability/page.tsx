@@ -19,7 +19,23 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-import { Calendar, MapPin, Users, Loader2, Crown, ShieldCheck, CheckCircle2, HelpCircle, XCircle, ClipboardList, Eye, MessageCircle, Send, Clock, ArrowLeft } from "lucide-react"
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Loader2,
+  Crown,
+  ShieldCheck,
+  CheckCircle2,
+  HelpCircle,
+  XCircle,
+  ClipboardList,
+  Eye,
+  MessageCircle,
+  Send,
+  Clock,
+  ArrowLeft,
+} from "lucide-react"
 
 type AvailabilityStatus = "yes" | "maybe" | "no"
 
@@ -131,8 +147,6 @@ function leadershipIcon(role: string | null) {
   return null
 }
 
-
-
 function normalizePhoneForLinks(input: string) {
   // Keep + and digits only
   const cleaned = input.replace(/[^\d+]/g, "")
@@ -154,6 +168,21 @@ function getOpponentForMatch(match: Match) {
   return null
 }
 
+function getMatchStartDateTime(match: Match) {
+  // If no time exists, treat as end of day so it doesn't lock too early
+  const t = (match.match_time ? match.match_time.slice(0, 5) : "23:59") + ":00"
+  const dt = new Date(`${match.match_date}T${t}`)
+  return dt
+}
+
+function isMatchLocked(match: Match) {
+  if (match.status === "completed") return true
+  const dt = getMatchStartDateTime(match)
+  const ms = dt.getTime()
+  if (!Number.isFinite(ms)) return false
+  return Date.now() > ms
+}
+
 function InfoCallout() {
   return (
     <div className="rounded-2xl border bg-gradient-to-r from-orange-50 via-white to-indigo-50 p-4 shadow-sm">
@@ -165,7 +194,6 @@ function InfoCallout() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm sm:text-base font-semibold text-gray-900">Kurz erklärt</h2>
-            
           </div>
 
           <p className="mt-1 text-sm text-gray-600">
@@ -175,27 +203,33 @@ function InfoCallout() {
           <div className="mt-3 grid gap-2 text-sm">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <span><span className="font-medium">Ja</span> – sicher dabei</span>
+              <span>
+                <span className="font-medium">Ja</span> – sicher dabei
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <HelpCircle className="h-4 w-4 text-yellow-600" />
-              <span><span className="font-medium">Nur wenn Not am Mann</span> – nur im Engpass einplanen</span>
+              <span>
+                <span className="font-medium">Nur wenn Not am Mann</span> – nur im Engpass einplanen
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <XCircle className="h-4 w-4 text-red-600" />
-              <span><span className="font-medium">Nein</span> – nicht verfügbar</span>
+              <span>
+                <span className="font-medium">Nein</span> – nicht verfügbar
+              </span>
             </div>
           </div>
 
           <div className="mt-3 rounded-xl bg-white/70 p-3 ring-1 ring-black/5 text-sm text-gray-700">
-            <span className="font-medium">Captain/Co-Captain</span> stellt daraus die <span className="font-medium">Fix- und Ersatzspieler</span> zusammen.
+            <span className="font-medium">Captain/Co-Captain</span> stellt daraus die <span className="font-medium">Fix- und Ersatzspieler</span>{" "}
+            zusammen.
           </div>
         </div>
       </div>
     </div>
   )
 }
-
 
 export default function MemberAvailabilityPage() {
   const router = useRouter()
@@ -245,8 +279,7 @@ export default function MemberAvailabilityPage() {
     ;(async () => {
       setLoading(true)
       await fetchUserProfile()
-setLoading(false)
-
+      setLoading(false)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
@@ -271,12 +304,11 @@ setLoading(false)
     setProfile(profileData as any)
 
     if (profileData?.player_id) {
-     const { data: teamData } = await supabase
-  .from("team_members")
-  .select(`id, team_id, role, teams (id, name, logo_url)`)
-  .eq("player_id", profileData.player_id)
-  .is("left_at", null)   // ✅ nur aktive Mitgliedschaften
-
+      const { data: teamData } = await supabase
+        .from("team_members")
+        .select(`id, team_id, role, teams (id, name, logo_url)`)
+        .eq("player_id", profileData.player_id)
+        .is("left_at", null) // ✅ nur aktive Mitgliedschaften
 
       setTeamMemberships((teamData as any) || [])
     }
@@ -292,12 +324,14 @@ setLoading(false)
     const [matchesRes, oppRes] = await Promise.all([
       supabase
         .from("matches")
-        .select(`
+        .select(
+          `
           *,
           home_team:teams!matches_home_team_id_fkey(id, name),
           away_team:teams!matches_away_team_id_fkey(id, name),
           season:seasons(id, name, type)
-        `)
+        `
+        )
         .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
         .order("match_date", { ascending: true }),
       supabase.from("opponent_teams").select("*"),
@@ -355,7 +389,6 @@ setLoading(false)
     }
   }
 
-  
   async function loadTeamChat(teamId: string) {
     if (!teamId) return
     setChatLoading(true)
@@ -379,10 +412,7 @@ setLoading(false)
       // IMPORTANT: chat_messages.user_id is a FK to user_profiles.id in your DB.
       const profileIds = Array.from(new Set(rows.map((r) => r.user_id)))
 
-      const { data: profiles } = await supabase
-        .from("user_profiles")
-        .select("id, player_id")
-        .in("id", profileIds)
+      const { data: profiles } = await supabase.from("user_profiles").select("id, player_id").in("id", profileIds)
 
       const profileToPlayer = new Map<string, string>()
       ;(profiles as any[] | null)?.forEach((p) => {
@@ -391,10 +421,7 @@ setLoading(false)
 
       const playerIds = Array.from(new Set((profiles as any[] | null)?.map((p) => p.player_id).filter(Boolean) ?? []))
 
-      const { data: players } = await supabase
-        .from("club_players")
-        .select("id,name,photo_url")
-        .in("id", playerIds)
+      const { data: players } = await supabase.from("club_players").select("id,name,photo_url").in("id", playerIds)
 
       const playerMap = new Map<string, { name: string; photo_url: string | null }>()
       ;(players as any[] | null)?.forEach((p) => {
@@ -431,20 +458,12 @@ setLoading(false)
           const incoming = payload.new as any
 
           // best effort sender info (incoming.user_id = user_profiles.id)
-          const { data: prof } = await supabase
-            .from("user_profiles")
-            .select("player_id")
-            .eq("id", incoming.user_id)
-            .maybeSingle()
+          const { data: prof } = await supabase.from("user_profiles").select("player_id").eq("id", incoming.user_id).maybeSingle()
 
           let sender: { name: string; photo_url: string | null } | null = null
           const playerId = (prof as any)?.player_id
           if (playerId) {
-            const { data: cp } = await supabase
-              .from("club_players")
-              .select("name,photo_url")
-              .eq("id", playerId)
-              .maybeSingle()
+            const { data: cp } = await supabase.from("club_players").select("name,photo_url").eq("id", playerId).maybeSingle()
             if (cp) sender = { name: (cp as any).name, photo_url: (cp as any).photo_url ?? null }
           }
 
@@ -497,7 +516,7 @@ setLoading(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDialogOpen, selectedTeamId])
 
-async function loadMatchData(matchId: string, teamId: string) {
+  async function loadMatchData(matchId: string, teamId: string) {
     if (!profile?.player_id) return
 
     // Teamspieler
@@ -543,8 +562,7 @@ async function loadMatchData(matchId: string, teamId: string) {
   const isCaptainOrCoForTeam = useMemo(() => {
     if (!selectedTeamId) return false
     const m = teamMemberships.find((t) => t.team_id === selectedTeamId)
-    return (m?.role === "Captain" || m?.role === "Co-Captain" )
-
+    return m?.role === "Captain" || m?.role === "Co-Captain"
   }, [selectedTeamId, teamMemberships])
 
   const availabilityByPlayer = useMemo(() => {
@@ -552,7 +570,6 @@ async function loadMatchData(matchId: string, teamId: string) {
     for (const a of availability) m.set(a.player_id, a)
     return m
   }, [availability])
-
 
   const displayPlayers = useMemo(() => {
     if (teamPlayers.length > 0) return teamPlayers
@@ -572,41 +589,44 @@ async function loadMatchData(matchId: string, teamId: string) {
     return Array.from(m.values())
   }, [teamPlayers, availability, lineupPlayers])
 
+  const dialogIsLocked = useMemo(() => {
+    if (!dialogMatch) return false
+    return isMatchLocked(dialogMatch)
+  }, [dialogMatch])
+
   async function setAvailabilityStatus(status: AvailabilityStatus) {
     if (!dialogMatch || !selectedTeamId || !profile?.player_id) return
+    if (isMatchLocked(dialogMatch)) return
     setMyStatus(status)
 
-    await supabase
-      .from("match_availability")
-      .upsert(
-        {
-          match_id: dialogMatch.id,
-          team_id: selectedTeamId,
-          player_id: profile.player_id,
-          status,
-          note: myNote,
-        },
-        { onConflict: "match_id,player_id" }
-      )
+    await supabase.from("match_availability").upsert(
+      {
+        match_id: dialogMatch.id,
+        team_id: selectedTeamId,
+        player_id: profile.player_id,
+        status,
+        note: myNote,
+      },
+      { onConflict: "match_id,player_id" }
+    )
 
     await loadMatchData(dialogMatch.id, selectedTeamId)
   }
 
   async function saveNote() {
     if (!dialogMatch || !selectedTeamId || !profile?.player_id) return
+    if (isMatchLocked(dialogMatch)) return
 
-    await supabase
-      .from("match_availability")
-      .upsert(
-        {
-          match_id: dialogMatch.id,
-          team_id: selectedTeamId,
-          player_id: profile.player_id,
-          status: myStatus,
-          note: myNote,
-        },
-        { onConflict: "match_id,player_id" }
-      )
+    await supabase.from("match_availability").upsert(
+      {
+        match_id: dialogMatch.id,
+        team_id: selectedTeamId,
+        player_id: profile.player_id,
+        status: myStatus,
+        note: myNote,
+      },
+      { onConflict: "match_id,player_id" }
+    )
 
     await loadMatchData(dialogMatch.id, selectedTeamId)
   }
@@ -641,6 +661,7 @@ async function loadMatchData(matchId: string, teamId: string) {
   async function setLineupPlayer(playerId: string, mode: "remove" | "starter" | "substitute") {
     if (!dialogMatch || !selectedTeamId) return
     if (!isCaptainOrCoForTeam) return
+    if (isMatchLocked(dialogMatch)) return
 
     const matchId = dialogMatch.id
     const teamId = selectedTeamId
@@ -652,10 +673,7 @@ async function loadMatchData(matchId: string, teamId: string) {
     try {
       if (mode === "remove") {
         if (existing) {
-          await supabase
-            .from("match_lineups")
-            .delete()
-            .eq("id", existing.id)
+          await supabase.from("match_lineups").delete().eq("id", existing.id)
 
           await reorderLineup(matchId, teamId)
         }
@@ -664,10 +682,7 @@ async function loadMatchData(matchId: string, teamId: string) {
       if (mode === "substitute") {
         if (existing) {
           // switch to substitute
-          await supabase
-            .from("match_lineups")
-            .update({ is_substitute: true, position: 0 })
-            .eq("id", existing.id)
+          await supabase.from("match_lineups").update({ is_substitute: true, position: 0 }).eq("id", existing.id)
           await reorderLineup(matchId, teamId)
         } else {
           await supabase.from("match_lineups").insert({
@@ -685,10 +700,7 @@ async function loadMatchData(matchId: string, teamId: string) {
           if (existing.is_substitute) {
             // switch from sub to starter -> append at end
             const nextPos = lineupPlayers.filter((p) => !p.is_substitute).length + 1
-            await supabase
-              .from("match_lineups")
-              .update({ is_substitute: false, position: nextPos })
-              .eq("id", existing.id)
+            await supabase.from("match_lineups").update({ is_substitute: false, position: nextPos }).eq("id", existing.id)
           }
           // if already starter, no-op
         } else {
@@ -713,17 +725,14 @@ async function loadMatchData(matchId: string, teamId: string) {
   const upcomingMatches = matches.filter((m) => m.status !== "completed")
   const completedMatches = matches.filter((m) => m.status === "completed")
 
-  const starters = useMemo(
-    () => lineupPlayers.filter((p) => !p.is_substitute).slice().sort((a, b) => a.position - b.position),
-    [lineupPlayers]
-  )
+  const starters = useMemo(() => lineupPlayers.filter((p) => !p.is_substitute).slice().sort((a, b) => a.position - b.position), [lineupPlayers])
   const substitutes = useMemo(() => lineupPlayers.filter((p) => p.is_substitute), [lineupPlayers])
 
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
         <Header />
-        <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8 max-w-6xl">
+        <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8 max-w-6xl overflow-x-hidden">
           <div className="flex items-center justify-center min-h-[60vh] gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
             <span className="text-lg font-medium">Lade Zusagen.</span>
@@ -735,11 +744,11 @@ async function loadMatchData(matchId: string, teamId: string) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col overflow-x-hidden">
       <Header />
 
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8 max-w-6xl">
-                <div className="mb-4">
+      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8 max-w-6xl overflow-x-hidden">
+        <div className="mb-4">
           <Button
             variant="outline"
             onClick={() => router.push("/member-profile-app")}
@@ -750,12 +759,14 @@ async function loadMatchData(matchId: string, teamId: string) {
           </Button>
         </div>
 
-<div className="mb-4">
+        <div className="mb-4">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
             <ClipboardList className="h-6 w-6 text-orange-600" />
             Zusagen & Aufstellung
           </h1>
-          <div className="mt-4"><InfoCallout /></div>
+          <div className="mt-4">
+            <InfoCallout />
+          </div>
         </div>
 
         <Card className="shadow-xl border-0 bg-white">
@@ -784,16 +795,31 @@ async function loadMatchData(matchId: string, teamId: string) {
                   ) : (
                     upcomingMatches.map((m) => {
                       const myTeams = myTeamsForMatch(m)
+                      const locked = isMatchLocked(m)
+
                       return (
-                        <Card key={m.id} className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
+                        <Card
+                          key={m.id}
+                          className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden ${
+                            locked ? "ring-1 ring-red-200 bg-red-50/20" : ""
+                          }`}
+                        >
                           <CardContent className="p-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
                               <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
                                 <div className="font-semibold text-base md:text-lg truncate">
                                   {getTeamDisplayName(m, true)} vs {getTeamDisplayName(m, false)}
                                 </div>
 
-                                <div className="text-sm text-gray-600 mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                                {locked && (
+                                  <div className="mt-2 flex justify-center sm:justify-start">
+                                    <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
+                                      Gesperrt (Spielzeit überschritten)
+                                    </Badge>
+                                  </div>
+                                )}
+
+                                <div className="text-sm text-gray-600 mt-1 flex flex-wrap gap-x-3 gap-y-1 justify-center sm:justify-start">
                                   <span className="inline-flex items-center gap-1">
                                     <Calendar className="h-4 w-4 text-orange-600" />
                                     {formatDate(m.match_date)} {m.match_time ? `• ${formatTime(m.match_time)}` : ""}
@@ -803,6 +829,18 @@ async function loadMatchData(matchId: string, teamId: string) {
                                     {m.venue || "—"}
                                   </span>
                                 </div>
+
+                                {locked && (
+                                  <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800 flex items-start gap-2 text-left">
+                                    <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                      <div className="font-medium">Panel gesperrt</div>
+                                      <div className="text-xs text-red-700 mt-0.5">
+                                        Zusagen & Aufstellung sind ab Spielbeginn gesperrt. Du kannst alles weiterhin ansehen.
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
 
                                 {(() => {
                                   const opp = getOpponentForMatch(m)
@@ -830,16 +868,13 @@ async function loadMatchData(matchId: string, teamId: string) {
                                           </div>
                                           <div className="flex gap-3">
                                             <span className="w-16 shrink-0 text-gray-500">Ort</span>
-                                            <span>{opp.venue || "—"}</span>
+                                            <span className="min-w-0 break-words">{opp.venue || "—"}</span>
                                           </div>
 
                                           {phone && (
                                             <div className="flex gap-3 items-center pt-1">
                                               <span className="w-16 shrink-0 text-gray-500">Kapitän</span>
-                                              <a
-                                                href={`tel:${tel}`}
-                                                className="font-medium underline underline-offset-4"
-                                              >
+                                              <a href={`tel:${tel}`} className="font-medium underline underline-offset-4">
                                                 {phone}
                                               </a>
                                             </div>
@@ -865,7 +900,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                                 })()}
 
                                 {myTeams.length > 0 && (
-                                  <div className="mt-2 flex flex-wrap gap-2">
+                                  <div className="mt-2 flex flex-wrap gap-2 justify-center sm:justify-start">
                                     {myTeams.map((t) => (
                                       <Badge key={t.team_id} variant="outline" className="flex items-center gap-1">
                                         <Users className="h-3 w-3" />
@@ -900,7 +935,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                       .slice()
                       .sort((a, b) => +new Date(b.match_date) - +new Date(a.match_date))
                       .map((m) => (
-                        <Card key={m.id} className="border shadow-sm opacity-90">
+                        <Card key={m.id} className="border shadow-sm opacity-90 overflow-hidden">
                           <CardContent className="p-4">
                             <div className="font-semibold">
                               {getTeamDisplayName(m, true)} vs {getTeamDisplayName(m, false)}
@@ -939,7 +974,19 @@ async function loadMatchData(matchId: string, teamId: string) {
             <div className="space-y-4 min-w-0">
               {!dialogMatch ? null : (
                 <>
-                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
+                  {dialogIsLocked && (
+                    <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800 flex items-start gap-2">
+                      <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="font-medium">Gesperrt (Spielzeit überschritten)</div>
+                        <div className="text-xs text-red-700 mt-0.5">
+                          Ab Spielbeginn sind <span className="font-medium">Zusage</span> und <span className="font-medium">Aufstellung</span> gesperrt.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden">
                     <CardContent className="p-4">
                       <div className="font-semibold text-base">
                         {getTeamDisplayName(dialogMatch, true)} vs {getTeamDisplayName(dialogMatch, false)}
@@ -971,7 +1018,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                               </div>
                               <div className="flex gap-3">
                                 <span className="w-16 shrink-0 text-gray-500">Ort</span>
-                                <span>{opp.venue || "—"}</span>
+                                <span className="min-w-0 break-words">{opp.venue || "—"}</span>
                               </div>
 
                               {phone && tel && (
@@ -1010,9 +1057,16 @@ async function loadMatchData(matchId: string, teamId: string) {
                     </CardContent>
                   </Card>
 
-                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
+                  <Card className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden ${dialogIsLocked ? "opacity-80" : ""}`}>
                     <CardHeader>
-                      <CardTitle className="text-base">Meine Zusage</CardTitle>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        Meine Zusage
+                        {dialogIsLocked && (
+                          <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
+                            Gesperrt
+                          </Badge>
+                        )}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex flex-wrap gap-2">
@@ -1020,6 +1074,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                           variant={myStatus === "yes" ? "default" : "outline"}
                           onClick={() => setAvailabilityStatus("yes")}
                           className={myStatus === "yes" ? "bg-green-600 hover:bg-green-700" : ""}
+                          disabled={dialogIsLocked}
                         >
                           <CheckCircle2 className="h-4 w-4 mr-2" />
                           Ja
@@ -1029,6 +1084,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                           variant={myStatus === "maybe" ? "default" : "outline"}
                           onClick={() => setAvailabilityStatus("maybe")}
                           className={myStatus === "maybe" ? "bg-yellow-600 hover:bg-yellow-700" : ""}
+                          disabled={dialogIsLocked}
                         >
                           <HelpCircle className="h-4 w-4 mr-2" />
                           Nur wenn Not am Mann
@@ -1038,6 +1094,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                           variant={myStatus === "no" ? "default" : "outline"}
                           onClick={() => setAvailabilityStatus("no")}
                           className={myStatus === "no" ? "bg-red-600 hover:bg-red-700" : ""}
+                          disabled={dialogIsLocked}
                         >
                           <XCircle className="h-4 w-4 mr-2" />
                           Nein
@@ -1046,15 +1103,15 @@ async function loadMatchData(matchId: string, teamId: string) {
 
                       <div className="space-y-2">
                         <div className="text-xs text-gray-500">Notiz (optional)</div>
-                        <Textarea value={myNote} onChange={(e) => setMyNote(e.target.value)} placeholder="z.B. komme 5 min später" />
-                        <Button variant="secondary" onClick={saveNote}>
+                        <Textarea value={myNote} onChange={(e) => setMyNote(e.target.value)} placeholder="z.B. komme 5 min später" disabled={dialogIsLocked} />
+                        <Button variant="secondary" onClick={saveNote} disabled={dialogIsLocked}>
                           Notiz speichern
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
+                  <Card className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden ${dialogIsLocked ? "opacity-90" : ""}`}>
                     <CardHeader>
                       <CardTitle className="text-base">Team-Zusagen</CardTitle>
                     </CardHeader>
@@ -1069,7 +1126,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                           const inLineup = Boolean(entry)
 
                           return (
-                            <div key={p.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border p-3 gap-3">
+                            <div key={p.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border p-3 gap-3 min-w-0 overflow-hidden">
                               <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
                                 <div className="font-medium truncate">{p.name}</div>
                                 {a?.note ? <div className="text-xs text-gray-500 truncate">{a.note}</div> : null}
@@ -1082,24 +1139,24 @@ async function loadMatchData(matchId: string, teamId: string) {
                                   <div className="flex flex-wrap gap-1 justify-end">
                                     {!inLineup ? (
                                       <>
-                                        <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "starter")}>
+                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked} onClick={() => setLineupPlayer(p.id, "starter")}>
                                           Fix
                                         </Button>
-                                        <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "substitute")}>
+                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked} onClick={() => setLineupPlayer(p.id, "substitute")}>
                                           Ersatz
                                         </Button>
                                       </>
                                     ) : (
                                       <>
-                                        <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "remove")}>
+                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked} onClick={() => setLineupPlayer(p.id, "remove")}>
                                           Raus
                                         </Button>
                                         {entry?.is_substitute ? (
-                                          <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "starter")}>
+                                          <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked} onClick={() => setLineupPlayer(p.id, "starter")}>
                                             Als Fix
                                           </Button>
                                         ) : (
-                                          <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "substitute")}>
+                                          <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked} onClick={() => setLineupPlayer(p.id, "substitute")}>
                                             Als Ersatz
                                           </Button>
                                         )}
@@ -1115,11 +1172,16 @@ async function loadMatchData(matchId: string, teamId: string) {
                     </CardContent>
                   </Card>
 
-                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
+                  <Card className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden ${dialogIsLocked ? "opacity-90" : ""}`}>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         Aufstellung
                         <Badge variant="outline">Entwurf</Badge>
+                        {dialogIsLocked && (
+                          <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
+                            Gesperrt
+                          </Badge>
+                        )}
                       </CardTitle>
                     </CardHeader>
 
@@ -1131,10 +1193,8 @@ async function loadMatchData(matchId: string, teamId: string) {
                           {starters.map((lp) => {
                             const p = displayPlayers.find((x) => x.id === lp.player_id)
                             return (
-                              <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3">
-                                <div className="font-medium">
-                                  {p?.name ?? lp.club_players?.name ?? lp.player_id}
-                                </div>
+                              <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 min-w-0 overflow-hidden">
+                                <div className="font-medium truncate">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
                               </div>
                             )
                           })}
@@ -1148,8 +1208,8 @@ async function loadMatchData(matchId: string, teamId: string) {
                             {substitutes.map((lp) => {
                               const p = displayPlayers.find((x) => x.id === lp.player_id)
                               return (
-                                <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 opacity-80">
-                                  <div className="font-medium">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
+                                <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 opacity-80 min-w-0 overflow-hidden">
+                                  <div className="font-medium truncate">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
                                   <Badge variant="outline">Ersatz</Badge>
                                 </div>
                               )
@@ -1158,13 +1218,12 @@ async function loadMatchData(matchId: string, teamId: string) {
                         </>
                       )}
 
-                      {!isCaptainOrCoForTeam ? (
-                        <div className="text-xs text-gray-500">Nur Captain/Co-Captain kann die Aufstellung ändern.</div>
-                      ) : null}
+                      {!isCaptainOrCoForTeam ? <div className="text-xs text-gray-500">Nur Captain/Co-Captain kann die Aufstellung ändern.</div> : null}
+                      {isCaptainOrCoForTeam && dialogIsLocked ? <div className="text-xs text-red-700">Aufstellung kann nach Spielbeginn nicht mehr geändert werden.</div> : null}
                     </CardContent>
                   </Card>
 
-                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl">
+                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden">
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         <MessageCircle className="h-4 w-4 text-orange-600" />
@@ -1185,9 +1244,7 @@ async function loadMatchData(matchId: string, teamId: string) {
                                   Lade Chat…
                                 </div>
                               ) : chatMessages.length === 0 ? (
-                                <div className="text-sm text-muted-foreground">
-                                  Noch keine Nachrichten. Schreib die erste Nachricht ins Team!
-                                </div>
+                                <div className="text-sm text-muted-foreground">Noch keine Nachrichten. Schreib die erste Nachricht ins Team!</div>
                               ) : (
                                 <div className="space-y-3">
                                   {chatMessages.map((m) => {
@@ -1196,18 +1253,16 @@ async function loadMatchData(matchId: string, teamId: string) {
                                     const photo = m.sender?.photo_url ?? null
 
                                     return (
-                                      <div key={m.id} className={`flex gap-2 ${isMine ? "flex-row-reverse" : "flex-row"}`}>
+                                      <div key={m.id} className={`flex gap-2 ${isMine ? "flex-row-reverse" : "flex-row"} min-w-0`}>
                                         <Avatar className="w-8 h-8 flex-shrink-0">
                                           <AvatarImage src={photo || "/placeholder.svg"} alt={name} />
-                                          <AvatarFallback className="bg-orange-100 text-orange-700">
-                                            {name.charAt(0).toUpperCase()}
-                                          </AvatarFallback>
+                                          <AvatarFallback className="bg-orange-100 text-orange-700">{name.charAt(0).toUpperCase()}</AvatarFallback>
                                         </Avatar>
 
-                                        <div className={`max-w-[80%] ${isMine ? "items-end" : "items-start"} flex flex-col`}>
-                                          <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-xs font-medium">{isMine ? "Du" : name}</span>
-                                            <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                                        <div className={`max-w-[80%] ${isMine ? "items-end" : "items-start"} flex flex-col min-w-0`}>
+                                          <div className="flex items-center gap-2 mb-1 min-w-0">
+                                            <span className="text-xs font-medium truncate">{isMine ? "Du" : name}</span>
+                                            <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1 flex-shrink-0">
                                               <Clock className="h-3 w-3" />
                                               {new Date(m.created_at).toLocaleTimeString("de-DE", {
                                                 hour: "2-digit",
@@ -1229,12 +1284,12 @@ async function loadMatchData(matchId: string, teamId: string) {
                             </ScrollArea>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 min-w-0">
                             <Input
                               value={chatText}
                               onChange={(e) => setChatText(e.target.value)}
                               placeholder="Nachricht ans Team…"
-                              className="flex-1"
+                              className="flex-1 min-w-0"
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" && !e.shiftKey) {
                                   e.preventDefault()
@@ -1243,16 +1298,10 @@ async function loadMatchData(matchId: string, teamId: string) {
                               }}
                               disabled={chatSending}
                             />
-                            <Button
-                              onClick={sendTeamMessage}
-                              disabled={!chatText.trim() || chatSending}
-                              className="bg-orange-600 hover:bg-orange-700 px-3"
-                            >
+                            <Button onClick={sendTeamMessage} disabled={!chatText.trim() || chatSending} className="bg-orange-600 hover:bg-orange-700 px-3 flex-shrink-0">
                               {chatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                             </Button>
                           </div>
-
-                         
                         </>
                       )}
                     </CardContent>
