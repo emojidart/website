@@ -159,6 +159,11 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [lineupPlayers, setLineupPlayers] = useState<any[]>([])
+const [isLineupDialogOpen, setIsLineupDialogOpen] = useState(false)
+const [loadingLineup, setLoadingLineup] = useState(false)
+
+
 
   // Aktuellen eingeloggten User für Owner-Checks (UI) laden
   useEffect(() => {
@@ -633,9 +638,44 @@ try {
   }
 
   const openMatchDialog = (match: Match) => {
-    setSelectedMatch(match)
-    setIsMatchDialogOpen(true)
+  setSelectedMatch(match)
+  setLineupPlayers([])
+  setIsMatchDialogOpen(true)
+}
+
+  
+const loadLineup = async (matchId: string) => {
+  setLoadingLineup(true)
+  setLineupPlayers([])
+
+  const { data, error } = await supabase
+    .from("match_lineups")
+    .select(`
+      id,
+      position,
+      is_substitute,
+      team_id,
+      player_id,
+      club_players:player_id (
+        id,
+        name
+      )
+    `)
+    .eq("match_id", matchId)
+    .order("team_id", { ascending: true })
+    .order("position", { ascending: true })
+
+  if (error) {
+    console.error("Error loading lineup:", error)
+    setLoadingLineup(false)
+    return
   }
+
+  setLineupPlayers(data || [])
+  setLoadingLineup(false)
+}
+
+
 
   const openEventDialog = (event: Event) => {
     setSelectedEvent(event)
@@ -1980,15 +2020,25 @@ text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awa
                   </div>
 
                   <div className="flex justify-center">
-                    <Button variant="outline" size="sm" className="bg-transparent">
-                      <Users className="h-4 w-4 mr-2" />
-                      Team Details
-                    </Button>
+  <Button
+    variant="outline"
+    size="sm"
+    className="bg-transparent"
+    onClick={async () => {
+      if (!selectedMatch?.id) return
+      await loadLineup(selectedMatch.id)
+      setIsLineupDialogOpen(true)
+    }}
+  >
+    <Users className="h-4 w-4 mr-2" />
+    Aufstellung
+  </Button>
                   </div>
                 </div>
               )}
             </DialogContent>
           </Dialog>
+
 
           <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
             <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md max-h-[80dvh] overflow-y-auto">
@@ -2388,7 +2438,43 @@ text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awa
             </div>
           )}
         </div>
+		
+			  <Dialog open={isLineupDialogOpen} onOpenChange={setIsLineupDialogOpen}>
+  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle className="text-lg">Aufstellung</DialogTitle>
+      <DialogDescription className="text-sm">
+        {selectedMatch ? `${getTeamDisplayName(selectedMatch, true)} vs ${getTeamDisplayName(selectedMatch, false)}` : ""}
+      </DialogDescription>
+    </DialogHeader>
+
+    {loadingLineup ? (
+      <div className="text-sm text-gray-600">Lade Aufstellung...</div>
+    ) : lineupPlayers.length === 0 ? (
+      <div className="text-sm text-gray-600">Noch keine Aufstellung hinterlegt.</div>
+    ) : (
+      <div className="space-y-2">
+        {lineupPlayers.map((p) => (
+          <div key={p.id} className="flex items-center justify-between border rounded-sm-lg p-2">
+            <div className="text-sm font-medium">
+              {p.position}. {p.club_players?.name || "Unbekannter Spieler"}
+            </div>
+
+            {p.is_substitute ? (
+              <Badge className="bg-gray-100 text-gray-700 border-gray-200 text-xs">Ersatz</Badge>
+            ) : (
+              <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">Stamm</Badge>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+  </DialogContent>
+</Dialog>
+
+		
       </main>
+	  
 
       <MobileBottomNav />
     </div>
