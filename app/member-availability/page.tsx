@@ -259,8 +259,31 @@ export default function MemberAvailabilityPage() {
   const [lineupPlayers, setLineupPlayers] = useState<LineupRow[]>([])
   const [savingLineup, setSavingLineup] = useState(false)
   
+  // ✅ Draft: Änderungen erst lokal, nicht sofort DB
+const [draftLineup, setDraftLineup] = useState<LineupRow[]>([])
+const [draftDirty, setDraftDirty] = useState(false)
+
+
+
+  // ✅ UI: bestätigte Aufstellung ist standardmäßig "gesperrt" (read-only)
+const [lineupEditMode, setLineupEditMode] = useState(false)
+
+// ✅ Welche Aufstellung soll UI anzeigen? (Draft im Edit-Mode, sonst DB)
+const effectiveLineup = useMemo(() => {
+  return lineupEditMode ? draftLineup : lineupPlayers
+}, [lineupEditMode, draftLineup, lineupPlayers])
+
+
+
+  
   const [lineupHeader, setLineupHeader] = useState<LineupHeader | null>(null)
   const [confirmingLineup, setConfirmingLineup] = useState(false)
+  
+
+
+// ✅ Push "changed" nur 1x senden pro Bearbeiten-Session
+const [lineupChangedNotified, setLineupChangedNotified] = useState(false)
+
 
 
   // Team chat (room_id = team_id)
@@ -383,6 +406,10 @@ export default function MemberAvailabilityPage() {
     setSelectedTeamId(defaultTeamId)
 
     setIsDialogOpen(true)
+	
+	setLineupEditMode(false)
+setLineupChangedNotified(false)
+
 
     if (defaultTeamId) {
       await loadMatchData(match.id, defaultTeamId)
@@ -562,7 +589,13 @@ export default function MemberAvailabilityPage() {
   .eq("team_id", teamId)
   .order("position", { ascending: true })
 
-   setLineupPlayers(((lu as any) || []) as LineupRow[])
+   const loaded = (((lu as any) || []) as LineupRow[])
+setLineupPlayers(loaded)
+
+// ✅ Draft initial = aktueller Stand aus DB
+setDraftLineup(loaded)
+setDraftDirty(false)
+
 
 // Lineup Header (Status: draft/confirmed + versioning)
 const { data: lh } = await supabase
@@ -574,6 +607,16 @@ const { data: lh } = await supabase
 
 setLineupHeader((lh as any) ?? null)
 
+// ✅ Wenn bestätigt -> standardmäßig sperren (EditMode AUS)
+const isConfirmed =
+  (lh as any)?.status === "confirmed" &&
+  (lh as any)?.confirmed_version != null &&
+  (lh as any)?.confirmed_version === (lh as any)?.current_version
+
+setLineupEditMode(!isConfirmed)
+setLineupChangedNotified(false)
+
+
   }
 
   const isCaptainOrCoForTeam = useMemo(() => {
@@ -581,6 +624,8 @@ setLineupHeader((lh as any) ?? null)
     const m = teamMemberships.find((t) => t.team_id === selectedTeamId)
     return m?.role === "Captain" || m?.role === "Co-Captain"
   }, [selectedTeamId, teamMemberships])
+  
+  
 
   const availabilityByPlayer = useMemo(() => {
     const m = new Map<string, AvailabilityRow>()
@@ -675,90 +720,114 @@ setLineupHeader((lh as any) ?? null)
     }
   }
 
-  async function setLineupPlayer(playerId: string, mode: "remove" | "starter" | "substitute") {
-    if (!dialogMatch || !selectedTeamId) return
-    if (!isCaptainOrCoForTeam) return
-    if (isMatchLocked(dialogMatch)) return
 
-    const matchId = dialogMatch.id
-    const teamId = selectedTeamId
-	const wasConfirmed =
-  lineupHeader?.status === "confirmed" &&
-  lineupHeader.confirmed_version !== null &&
-  lineupHeader.confirmed_version === lineupHeader.current_version
+function setLineupPlayer(playerId: string, mode: "remove" | "starter" | "substitute") {
+  if (!dialogMatch || !selectedTeamId) return
+  if (!isCaptainOrCoForTeam) return
+  if (isMatchLocked(dialogMatch)) return
+  if (lineupIsConfirmed && !lineupEditMode) return
 
+  setDraftLineup((prev) => {
+    const next = [...prev]
+    const idx = next.findIndex((p) => p.player_id === playerId)
+    const startersCount = next.filter((p) => !p.is_substitute).length
 
-    const existing = lineupPlayers.find((p) => p.player_id === playerId)
+    if (mode === "remove") {
+      if (idx !== -1) next.splice(idx, 1)
+    }
 
-    setSavingLineup(true)
-
-    try {
-      if (mode === "remove") {
-        if (existing) {
-          await supabase.from("match_lineups").delete().eq("id", existing.id)
-
-          await reorderLineup(matchId, teamId)
-        }
+    if (mode === "substitute") {
+      if (idx !== -1) {
+        next[idx] = { ...next[idx], is_substitute: true, position: 0 }
+      } else {
+        next.push({
+          id: `draft_${playerId}`,
+          player_id: playerId,
+          position: 0,
+          is_substitute: true,
+        } as any)
       }
+    }
 
-      if (mode === "substitute") {
-        if (existing) {
-          // switch to substitute
-          await supabase.from("match_lineups").update({ is_substitute: true, position: 0 }).eq("id", existing.id)
-          await reorderLineup(matchId, teamId)
-        } else {
-          await supabase.from("match_lineups").insert({
-            match_id: matchId,
-            team_id: teamId,
-            player_id: playerId,
-            position: 0,
-            is_substitute: true,
-          })
+    if (mode === "starter") {
+      if (idx !== -1) {
+        if (next[idx].is_substitute) {
+          next[idx] = { ...next[idx], is_substitute: false, position: startersCount + 1 }
         }
+      } else {
+        next.push({
+          id: `draft_${playerId}`,
+          player_id: playerId,
+          position: startersCount + 1,
+          is_substitute: false,
+        } as any)
       }
+    }
 
-      if (mode === "starter") {
-        if (existing) {
-          if (existing.is_substitute) {
-            // switch from sub to starter -> append at end
-            const nextPos = lineupPlayers.filter((p) => !p.is_substitute).length + 1
-            await supabase.from("match_lineups").update({ is_substitute: false, position: nextPos }).eq("id", existing.id)
-          }
-          // if already starter, no-op
-        } else {
-          const nextPos = lineupPlayers.filter((p) => !p.is_substitute).length + 1
-          await supabase.from("match_lineups").insert({
-            match_id: matchId,
-            team_id: teamId,
-            player_id: playerId,
-            position: nextPos,
-            is_substitute: false,
-          })
-        }
-        await reorderLineup(matchId, teamId)
-      }
+    const starters = next
+      .filter((p) => !p.is_substitute)
+      .slice()
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      .map((p, i) => ({ ...p, position: i + 1 }))
 
-      await loadMatchData(matchId, teamId)
-	  if (wasConfirmed) {
-  await fetch("/api/push/lineup", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      authorization: `Bearer ${session?.access_token ?? ""}`,
-    },
-    body: JSON.stringify({
-      team_id: teamId,
-      match_id: matchId,
-      action: "changed",
-      sender_profile_id: profile?.id,
-    }),
+    const subs = next.filter((p) => p.is_substitute).map((p) => ({ ...p, position: 0 }))
+
+    return [...starters, ...subs]
   })
+
+  setDraftDirty(true)
 }
 
-    } finally {
-      setSavingLineup(false)
+
+
+
+async function saveDraftLineup() {
+  if (!dialogMatch || !selectedTeamId) return
+  if (!isCaptainOrCoForTeam) return
+  if (isMatchLocked(dialogMatch)) return
+  if (!draftDirty) return
+
+  setSavingLineup(true)
+  try {
+    const matchId = dialogMatch.id
+    const teamId = selectedTeamId
+
+    // 1) Alles löschen
+    await supabase.from("match_lineups").delete().eq("match_id", matchId).eq("team_id", teamId)
+
+    // 2) Draft neu einfügen
+    const rowsToInsert = draftLineup.map((p) => ({
+      match_id: matchId,
+      team_id: teamId,
+      player_id: p.player_id,
+      position: p.is_substitute ? 0 : p.position,
+      is_substitute: p.is_substitute,
+    }))
+
+    if (rowsToInsert.length > 0) {
+      const { error } = await supabase.from("match_lineups").insert(rowsToInsert)
+      if (error) throw error
     }
+
+    // 3) Reload
+    await loadMatchData(matchId, teamId)
+
+    setDraftDirty(false)
+    setLineupEditMode(true)
+  } catch (e) {
+    console.error("saveDraftLineup error", e)
+  } finally {
+    setSavingLineup(false)
   }
+}
+
+
+
+
+
+
+
+  
   
   
 async function confirmLineup() {
@@ -775,10 +844,12 @@ async function confirmLineup() {
     })
     if (error) throw error
 
-    // UI refresh
     await loadMatchData(dialogMatch.id, selectedTeamId)
 
-    // Push senden
+    // ✅ Nach Bestätigung wieder sperren
+    setLineupEditMode(false)
+    setLineupChangedNotified(false)
+
     await fetch("/api/push/lineup", {
       method: "POST",
       headers: {
@@ -802,11 +873,21 @@ async function confirmLineup() {
 
 
 
+
   const upcomingMatches = matches.filter((m) => m.status !== "completed")
   const completedMatches = matches.filter((m) => m.status === "completed")
 
-  const starters = useMemo(() => lineupPlayers.filter((p) => !p.is_substitute).slice().sort((a, b) => a.position - b.position), [lineupPlayers])
-  const substitutes = useMemo(() => lineupPlayers.filter((p) => p.is_substitute), [lineupPlayers])
+  const starters = useMemo(
+  () => effectiveLineup.filter((p) => !p.is_substitute).slice().sort((a, b) => a.position - b.position),
+  [effectiveLineup]
+)
+
+const substitutes = useMemo(
+  () => effectiveLineup.filter((p) => p.is_substitute),
+  [effectiveLineup]
+)
+
+
   
   const lineupIsConfirmed =
   lineupHeader?.status === "confirmed" &&
@@ -1213,7 +1294,8 @@ const lineupIsStale =
                         displayPlayers.map((p) => {
                           const a = availabilityByPlayer.get(p.id)
                           const s = a?.status ?? "none"
-                          const entry = lineupPlayers.find((x) => x.player_id === p.id)
+                          const entry = effectiveLineup.find((x) => x.player_id === p.id)
+
                           const inLineup = Boolean(entry)
 
                           return (
@@ -1230,24 +1312,24 @@ const lineupIsStale =
                                   <div className="flex flex-wrap gap-1 justify-end">
                                     {!inLineup ? (
                                       <>
-                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked} onClick={() => setLineupPlayer(p.id, "starter")}>
+                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || (lineupIsConfirmed && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "starter")}>
                                           Fix
                                         </Button>
-                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked} onClick={() => setLineupPlayer(p.id, "substitute")}>
+                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || (lineupIsConfirmed && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "substitute")}>
                                           Ersatz
                                         </Button>
                                       </>
                                     ) : (
                                       <>
-                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked} onClick={() => setLineupPlayer(p.id, "remove")}>
+                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || (lineupIsConfirmed && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "remove")}>
                                           Raus
                                         </Button>
                                         {entry?.is_substitute ? (
-                                          <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked} onClick={() => setLineupPlayer(p.id, "starter")}>
+                                          <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || (lineupIsConfirmed && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "starter")}>
                                             Als Fix
                                           </Button>
                                         ) : (
-                                          <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked} onClick={() => setLineupPlayer(p.id, "substitute")}>
+                                          <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || (lineupIsConfirmed && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "substitute")}>
                                             Als Ersatz
                                           </Button>
                                         )}
@@ -1263,81 +1345,190 @@ const lineupIsStale =
                     </CardContent>
                   </Card>
 
-                  <Card className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden ${dialogIsLocked ? "opacity-90" : ""}`}>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        Aufstellung
-                        {lineupIsConfirmed ? (
-  <Badge className="bg-green-600 text-white">Bestätigt</Badge>
-) : lineupIsStale ? (
-  <Badge className="bg-yellow-600 text-white">Geändert (neu bestätigen)</Badge>
-) : (
-  <Badge variant="outline">Entwurf</Badge>
+                  
+				  <Card className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden ${dialogIsLocked ? "opacity-90" : ""}`}>
+  <CardHeader>
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <CardTitle className="text-base flex items-center gap-2">
+          Aufstellung
+          {lineupIsConfirmed ? (
+            <Badge className="bg-green-600 text-white">Bestätigt</Badge>
+          ) : lineupIsStale ? (
+            <Badge className="bg-yellow-600 text-white">Geändert (neu bestätigen)</Badge>
+          ) : (
+            <Badge variant="outline">Entwurf</Badge>
+          )}
+
+          {dialogIsLocked && (
+            <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
+              Gesperrt
+            </Badge>
+          )}
+        </CardTitle>
+
+        {/* ✅ Datum/Uhrzeit + Teams NICHT gequetscht */}
+        {dialogMatch ? (
+          <div className="mt-2 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="text-xs">
+                {formatDate(dialogMatch.match_date)}
+                {dialogMatch.match_time ? ` • ${formatTime(dialogMatch.match_time)} Uhr` : ""}
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                Spieltag {dialogMatch.week_number}
+              </Badge>
+            </div>
+
+            <div className="text-sm text-gray-700 font-medium break-words">
+              {getTeamDisplayName(dialogMatch, true)} <span className="text-gray-400">vs</span> {getTeamDisplayName(dialogMatch, false)}
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {/* ✅ Rechts oben: Bearbeiten/gesperrt */}
+      {isCaptainOrCoForTeam && !dialogIsLocked && lineupIsConfirmed && !lineupEditMode ? (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+  setLineupEditMode(true)
+  setLineupChangedNotified(false)
+
+  // ✅ Draft = aktueller DB-Stand, damit du "lokal" ändern kannst
+  setDraftLineup(lineupPlayers)
+  setDraftDirty(false)
+}}
+
+          className="shrink-0"
+        >
+          Bearbeiten
+        </Button>
+      ) : null}
+    </div>
+  </CardHeader>
+
+  <CardContent className="space-y-3">
+    {/* ✅ Stammspieler */}
+    <div>
+      <div className="text-xs text-gray-500 mb-2">Stamm</div>
+
+      {starters.length === 0 ? (
+        <div className="text-sm text-muted-foreground">Noch keine Stammspieler ausgewählt.</div>
+      ) : (
+        <div className="grid gap-2">
+          {starters.map((lp) => {
+            const p = displayPlayers.find((x) => x.id === lp.player_id)
+            return (
+              <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 min-w-0 overflow-hidden">
+                <div className="font-medium truncate">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
+                <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">Stamm</Badge>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+
+    {/* ✅ Ersatzspieler */}
+    <div>
+      <div className="text-xs text-gray-500 mb-2">Ersatz</div>
+
+      {substitutes.length === 0 ? (
+        <div className="text-sm text-muted-foreground">Keine Ersatzspieler.</div>
+      ) : (
+        <div className="grid gap-2">
+          {substitutes.map((lp) => {
+            const p = displayPlayers.find((x) => x.id === lp.player_id)
+            return (
+              <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 opacity-90 min-w-0 overflow-hidden">
+                <div className="font-medium truncate">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
+                <Badge variant="outline" className="text-xs">Ersatz</Badge>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+
+    {/* ✅ Hinweise */}
+    {!isCaptainOrCoForTeam ? (
+      <div className="text-xs text-gray-500">Nur Captain/Co-Captain kann die Aufstellung ändern.</div>
+    ) : null}
+
+    {isCaptainOrCoForTeam && dialogIsLocked ? (
+      <div className="text-xs text-red-700">Aufstellung kann nach Spielbeginn nicht mehr geändert werden.</div>
+    ) : null}
+
+    {/* ✅ Bestätigen / Änderungen bestätigen */}
+    {isCaptainOrCoForTeam && !dialogIsLocked ? (
+      <>
+        {/* Wenn bestätigt & nicht im Editmode -> Info */}
+        {lineupIsConfirmed && !lineupEditMode ? (
+          <div className="text-xs text-gray-600">
+            Aufstellung ist bestätigt und gesperrt. Klicke auf <span className="font-medium">Bearbeiten</span>, um Änderungen zu machen.
+          </div>
+        ) : null}
+		
+		
+		{isCaptainOrCoForTeam && !dialogIsLocked && lineupEditMode && (
+  <div className="flex gap-2">
+    <Button
+      variant="outline"
+      onClick={() => {
+        setDraftLineup(lineupPlayers)
+        setDraftDirty(false)
+        setLineupEditMode(false)
+      }}
+      className="w-full"
+    >
+      Abbrechen
+    </Button>
+
+    <Button
+      onClick={saveDraftLineup}
+      disabled={savingLineup || !draftDirty}
+      className="w-full bg-orange-600 hover:bg-orange-700"
+    >
+      {savingLineup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+      Änderungen speichern
+    </Button>
+  </div>
 )}
 
-                        {dialogIsLocked && (
-                          <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
-                            Gesperrt
-                          </Badge>
-                        )}
-                      </CardTitle>
-                    </CardHeader>
-
-                    <CardContent className="space-y-3">
-                      {starters.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">Noch keine Spieler ausgewählt.</div>
-                      ) : (
-                        <div className="grid gap-2">
-                          {starters.map((lp) => {
-                            const p = displayPlayers.find((x) => x.id === lp.player_id)
-                            return (
-                              <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 min-w-0 overflow-hidden">
-                                <div className="font-medium truncate">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-
-                      {substitutes.length > 0 && (
-                        <>
-                          <div className="text-xs text-gray-500 mt-3">Ersatzspieler</div>
-                          <div className="grid gap-2">
-                            {substitutes.map((lp) => {
-                              const p = displayPlayers.find((x) => x.id === lp.player_id)
-                              return (
-                                <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 opacity-80 min-w-0 overflow-hidden">
-                                  <div className="font-medium truncate">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
-                                  <Badge variant="outline">Ersatz</Badge>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </>
-                      )}
-
-                      {!isCaptainOrCoForTeam ? (
-  <div className="text-xs text-gray-500">Nur Captain/Co-Captain kann die Aufstellung ändern.</div>
-) : null}
-
-{isCaptainOrCoForTeam && dialogIsLocked ? (
-  <div className="text-xs text-red-700">Aufstellung kann nach Spielbeginn nicht mehr geändert werden.</div>
-) : null}
-
-{isCaptainOrCoForTeam && !dialogIsLocked && (
-  <Button
-    onClick={confirmLineup}
-    disabled={confirmingLineup || lineupIsConfirmed}
-    className="bg-orange-600 hover:bg-orange-700"
-  >
-    {confirmingLineup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-    Aufstellung bestätigen
-  </Button>
-)}
 
 
-                    </CardContent>
-                  </Card>
+
+        {/* Wenn Editmode aktiv -> Confirm Button */}
+        {(!lineupIsConfirmed || lineupEditMode) ? (
+          <Button
+            onClick={confirmLineup}
+            disabled={confirmingLineup || lineupIsConfirmed === true && !lineupIsStale && !lineupEditMode}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            {confirmingLineup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            {lineupIsStale || lineupEditMode ? "Änderungen bestätigen" : "Aufstellung bestätigen"}
+          </Button>
+        ) : null}
+      </>
+    ) : null}
+  </CardContent>
+</Card>
+
+				  
+				  
+				  
+				  
+				  
+				  
+				  
+				  
+				  
+				  
+				  
+				  
+				  
 
                   <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden">
                     <CardHeader>

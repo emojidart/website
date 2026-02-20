@@ -9,9 +9,7 @@ type LineupAction = "confirmed" | "changed"
 
 function stableNotifIdFromTag(tag: string) {
   let h = 0
-  for (let i = 0; i < tag.length; i++) {
-    h = (h * 31 + tag.charCodeAt(i)) | 0
-  }
+  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) | 0
   return 3000 + Math.abs(h % 100000)
 }
 
@@ -24,20 +22,21 @@ function asBullets(names: string[]) {
   return names.map((n) => `• ${n}`).join("\n")
 }
 
-function formatDateDE(dateString: string) {
+function formatDateBadge(dateString: string) {
+  // "Fr 12.03"
   const d = new Date(`${dateString}T00:00:00`)
   const weekdays = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
   const wd = weekdays[d.getDay()]
   const day = String(d.getDate()).padStart(2, "0")
   const month = String(d.getMonth() + 1).padStart(2, "0")
-  return `${wd} ${day}.${month}`
+  return `【${wd} ${day}.${month}】`
 }
 
-function formatTimeHHMM(timeString?: string | null) {
+function formatTimeBadge(timeString?: string | null) {
   if (!timeString) return ""
   const parts = String(timeString).split(":")
   if (parts.length < 2) return ""
-  return `${parts[0]}:${parts[1]}`
+  return `【${parts[0]}:${parts[1]}】`
 }
 
 export async function POST(request: NextRequest) {
@@ -74,9 +73,7 @@ export async function POST(request: NextRequest) {
             return cookieStore.getAll()
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
+            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
           },
         },
       }
@@ -115,7 +112,7 @@ export async function POST(request: NextRequest) {
       if ((cp as any)?.name) senderName = (cp as any).name
     }
 
-    // ---- Team Infos (Icon) ----
+    // ---- Team Infos (Teamname NICHT in conversation, nur im Body) ----
     const { data: teamRow } = await supabase
       .from("teams")
       .select("id,name,logo_url")
@@ -146,74 +143,93 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Match not found" }, { status: 400 })
     }
 
-    const dateLine = match.match_date ? formatDateDE(String(match.match_date)) : ""
-    const timeHHMM = formatTimeHHMM((match as any).match_time ?? null)
-    const timeBadge = timeHHMM ? `🕒 ${timeHHMM}` : "" // "Badge" Style
+    const dateBadge = match.match_date ? formatDateBadge(String(match.match_date)) : ""
+    const timeBadge = formatTimeBadge((match as any).match_time ?? null)
 
-    // ---- Namen auflösen nach team_type ----
+    // ---- Teamnamen auflösen nach team_type ----
     let homeName: string | null = null
     let awayName: string | null = null
 
-    if ((match as any).home_team_type === "own") {
-      if ((match as any).home_team_id) {
-        const { data: t } = await supabase.from("teams").select("name").eq("id", (match as any).home_team_id).maybeSingle()
-        homeName = (t as any)?.name ?? null
-      }
-    } else if ((match as any).home_team_type === "opponent") {
-      if ((match as any).home_opponent_team_id) {
-        const { data: o } = await supabase.from("opponent_teams").select("name").eq("id", (match as any).home_opponent_team_id).maybeSingle()
-        homeName = (o as any)?.name ?? null
-      }
+    if ((match as any).home_team_type === "own" && (match as any).home_team_id) {
+      const { data: t } = await supabase.from("teams").select("name").eq("id", (match as any).home_team_id).maybeSingle()
+      homeName = (t as any)?.name ?? null
+    }
+    if ((match as any).home_team_type === "opponent" && (match as any).home_opponent_team_id) {
+      const { data: o } = await supabase.from("opponent_teams").select("name").eq("id", (match as any).home_opponent_team_id).maybeSingle()
+      homeName = (o as any)?.name ?? null
     }
 
-    if ((match as any).away_team_type === "own") {
-      if ((match as any).away_team_id) {
-        const { data: t } = await supabase.from("teams").select("name").eq("id", (match as any).away_team_id).maybeSingle()
-        awayName = (t as any)?.name ?? null
-      }
-    } else if ((match as any).away_team_type === "opponent") {
-      if ((match as any).away_opponent_team_id) {
-        const { data: o } = await supabase.from("opponent_teams").select("name").eq("id", (match as any).away_opponent_team_id).maybeSingle()
-        awayName = (o as any)?.name ?? null
-      }
+    if ((match as any).away_team_type === "own" && (match as any).away_team_id) {
+      const { data: t } = await supabase.from("teams").select("name").eq("id", (match as any).away_team_id).maybeSingle()
+      awayName = (t as any)?.name ?? null
+    }
+    if ((match as any).away_team_type === "opponent" && (match as any).away_opponent_team_id) {
+      const { data: o } = await supabase.from("opponent_teams").select("name").eq("id", (match as any).away_opponent_team_id).maybeSingle()
+      awayName = (o as any)?.name ?? null
     }
 
     homeName = homeName ?? "Heimteam"
     awayName = awayName ?? "Gastteam"
 
-    // ---- Lineup laden (einmal) ----
-    const { data: lu } = await supabase
+    // =========================================================
+    // ✅ Lineup sicher: IDs holen -> Namen separat
+    // =========================================================
+    const { data: lu, error: luErr } = await supabase
       .from("match_lineups")
-      .select("player_id, position, is_substitute, club_players:club_players(name)")
+      .select("player_id, position, is_substitute")
       .eq("match_id", match_id)
       .eq("team_id", team_id)
-      .order("is_substitute", { ascending: true })
       .order("position", { ascending: true })
 
-    const rows = (lu as any[]) || []
+    if (luErr) {
+      return NextResponse.json({ success: false, error: "Lineup load failed" }, { status: 500 })
+    }
 
-    const starters = rows
+    const lineupRows = (lu as any[]) || []
+    const starterRows = lineupRows
       .filter((r) => !r.is_substitute)
       .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-      .map((r) => r.club_players?.name)
-      .filter(Boolean) as string[]
+    const subRows = lineupRows.filter((r) => r.is_substitute)
 
-    const subs = rows
-      .filter((r) => r.is_substitute)
-      .map((r) => r.club_players?.name)
-      .filter(Boolean) as string[]
+    const allPlayerIds = Array.from(new Set(lineupRows.map((r) => r.player_id).filter(Boolean)))
 
-    // ---- Header schön: Datum + Badge, darunter Teams ----
-    const headerLine1 = [dateLine, timeBadge].filter(Boolean).join("  ")
-    const headerLine2 = `${homeName} vs ${awayName}`
+    const playerMap = new Map<string, string>()
+    if (allPlayerIds.length > 0) {
+      const { data: players } = await supabase
+        .from("club_players")
+        .select("id,name")
+        .in("id", allPlayerIds)
+
+      ;((players as any[]) || []).forEach((p) => {
+        if (p?.id && p?.name) playerMap.set(p.id, p.name)
+      })
+    }
+
+    const starters = starterRows.map((r) => playerMap.get(r.player_id)).filter(Boolean) as string[]
+    const subs = subRows.map((r) => playerMap.get(r.player_id)).filter(Boolean) as string[]
+
+    // ---- Push Text: schön & kurz oben ----
+    // conversation ABSICHTLICH kurz, damit nix abgeschnitten wird
+    const conversation = "📋 Aufstellung"
+
+    // Header: "【Fr 12.03】 【19:30】" in einer Zeile
+    const whenLine = [dateBadge, timeBadge].filter(Boolean).join(" ")
+
+    // Teams darunter
+    const teamsLine = `${homeName} vs ${awayName}`
+
+    // Teamname separat (damit nix abgeschnitten wird)
+    const teamLine = `Team: ${teamName}`
 
     const statusLine =
       action === "confirmed"
-        ? `${senderName} hat die Aufstellung bestätigt ✅`
-        : `${senderName} hat die Aufstellung geändert ⚠️`
+        ? `${senderName} hat bestätigt ✅`
+        : `${senderName} hat geändert ⚠️`
 
     const bodyText =
-      `${headerLine1}\n${headerLine2}\n\n` +
+      `${whenLine}\n` +
+      `${teamsLine}\n` +
+      `${teamLine}\n\n` +
       `${statusLine}\n\n` +
       `🎯 Fix (Stamm):\n${asBullets(starters)}\n\n` +
       `🔁 Ersatz:\n${asBullets(subs)}`
@@ -225,12 +241,12 @@ export async function POST(request: NextRequest) {
       .eq("team_id", team_id)
       .is("left_at", null)
 
-    const playerIds = Array.from(new Set(((mems as any[]) || []).map((m) => m.player_id).filter(Boolean)))
+    const memberPlayerIds = Array.from(new Set(((mems as any[]) || []).map((m) => m.player_id).filter(Boolean)))
 
     const { data: profs } = await supabase
       .from("user_profiles")
       .select("user_id")
-      .in("player_id", playerIds)
+      .in("player_id", memberPlayerIds)
 
     let targetAuthUserIds = Array.from(new Set(((profs as any[]) || []).map((p) => p.user_id).filter(Boolean)))
     targetAuthUserIds = targetAuthUserIds.filter((uid) => uid !== senderAuthUserId)
@@ -265,7 +281,7 @@ export async function POST(request: NextRequest) {
         match_id: String(match_id),
 
         clickUrl: String(clickUrl),
-        conversation: `📋 Aufstellung • ${teamName}`,
+        conversation: String(conversation),
         body: String(bodyText),
 
         tag: String(tag),
@@ -280,6 +296,7 @@ export async function POST(request: NextRequest) {
       success: true,
       sent: multicast.successCount,
       failed: multicast.failureCount,
+      debug: { starters: starters.length, subs: subs.length },
     })
   } catch (e: any) {
     console.error("[push-lineup-fcm] error:", e)
