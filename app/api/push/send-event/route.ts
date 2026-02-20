@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         type: "event",
         action: String(action),
         event_id: String(event_id),
-        clickUrl: "/events",
+        clickUrl: "/veranstaltungen",
 
         title: String(title),
         body: String(bodyText),
