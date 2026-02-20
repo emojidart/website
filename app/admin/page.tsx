@@ -91,7 +91,7 @@ export default function AdminPage() {
   const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
   const [roleLoading, setRoleLoading] = useState(false)
 
-  // ✅ Lädt User-Seiten-Rechte (user_page_permissions) und filtert die Dashboard-Kacheln.
+
   useEffect(() => {
     const run = async () => {
       if (!user) {
@@ -108,7 +108,7 @@ export default function AdminPage() {
       setRoleLoading(true)
 
       try {
-        // 1) player_id für den eingeloggten Auth-User holen
+       
         const { data: profile, error: profileErr } = await supabase
           .from("user_profiles")
           .select("player_id")
@@ -123,7 +123,7 @@ export default function AdminPage() {
           return
         }
 
-        // 2) Rechte für diesen Player laden
+      
         const { data: permRows, error: permErr } = await supabase
           .from("user_page_permissions")
           .select("page_key, allowed")
@@ -146,7 +146,7 @@ export default function AdminPage() {
     }
 
     run()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [user?.id, isAdmin])
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
@@ -437,7 +437,7 @@ export default function AdminPage() {
     }))
     .filter((section) => section.items.length > 0)
 
-  // Dashboard-Kacheln rechts exakt wie die Navigation links aufteilen
+ 
   const dashboardByNavSection = {
     "Ligabetrieb": visibleDashboardCards.filter((c) => c.view === "leagues"),
     "Turnierbetrieb": visibleDashboardCards.filter((c) =>

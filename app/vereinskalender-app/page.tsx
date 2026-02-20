@@ -121,7 +121,7 @@ interface Vacation {
 
 const DKO_TIMEZONE = "Europe/Berlin"
 
-// Format a timestamptz string (UTC in DB) into local date/time strings for the calendar.
+
 function toDateAndTimeInTZ(iso: string, timeZone: string = DKO_TIMEZONE) {
   const d = new Date(iso)
   const dateParts = new Intl.DateTimeFormat("en-CA", {
@@ -143,7 +143,7 @@ function toDateAndTimeInTZ(iso: string, timeZone: string = DKO_TIMEZONE) {
 
 function sanitizeVacationNote(note?: string | null) {
   if (!note) return ""
-  // Remove birthday references from vacation notes (birthdays are handled separately).
+ 
   const cleaned = note
     .replace(/🎂/g, "")
     .replace(/\bgeburtstag\b/gi, "")
@@ -165,7 +165,7 @@ const [loadingLineup, setLoadingLineup] = useState(false)
 
 
 
-  // Aktuellen eingeloggten User für Owner-Checks (UI) laden
+ 
   useEffect(() => {
     let isMounted = true
     supabase.auth.getUser().then(({ data }) => {
@@ -217,7 +217,7 @@ const [loadingLineup, setLoadingLineup] = useState(false)
     try {
       setLoading(true)
 
-      // Vereins-Teams (nur eigene) laden
+      
       const { data: authData } = await supabase.auth.getUser()
       const uid = authData?.user?.id
       if (uid) {
@@ -361,7 +361,7 @@ try {
 
       setBirthdayPlayers(fetchedBirthdayPlayers)
 
-      // ✅ Urlaube aus vacations (mit user_id -> user_profiles.player_id -> club_players.name)
+      
       let fetchedVacations: Vacation[] = []
       try {
         const vacationResponse = await supabase
@@ -492,8 +492,7 @@ try {
       match.home_opponent_team?.name === selectedTeam ||
       match.away_opponent_team?.name === selectedTeam
 
-    // ✅ Ergebnis-Filter soll auch greifen, wenn z.B. "Alle Termine" gewählt ist,
-    // aber zusätzlich nach Team/Liga gefiltert wird.
+   
     let resultTypeMatch = true
     const shouldFilterByResultType =
       selectedResultType !== "Alle" &&
@@ -519,17 +518,15 @@ try {
     if (selectedItemType === "Geburtstage" || selectedItemType === "Urlaube") return false
     if (selectedItemType === "Spiele") return false
 
-    // ✅ Sauber nach Quelle filtern:
-    // - "event"  => normale Vereins-/Party-Events aus public.events
-    // - "dko"    => Turniere/Spieltage aus dko_series_events
+    
     if (selectedItemType === "Events") return event.type === "event"
     if (selectedItemType === "Turniere") return event.type === "dko"
 
-    // "Alle" oder andere Kombinationen -> alles drin lassen
+   
     return true
   })
 
-  // ✅ robust: kein new Date("YYYY-MM-DD") (timezone bug)
+  
   const isBirthdayOnDate = (birthdate: string, date: Date) => {
     const parts = (birthdate || "").split("-")
     const m = Number(parts[1]) // 1-12
@@ -547,7 +544,7 @@ try {
     const day = String(date.getDate()).padStart(2, "0")
     const dateStr = `${year}-${month}-${day}`
 
-    // ✅ Team-Ansicht: Team-Filter gilt nur für Spiele (keine Events/Geburtstage/Urlaube anzeigen)
+    
     if (selectedTeam !== "Alle Teams") {
       return filteredMatches.filter((match) => match.match_date === dateStr)
     }
@@ -927,7 +924,7 @@ const safeString = (value: any): string => {
 
   const s = String(value)
 
-  // holt zuverlässig "HH:MM" aus z.B. "19:00:00", "Buffer ... 19:00:00", etc.
+
   const m = s.match(/(\d{2}:\d{2})/)
   if (m) return m[1]
 
@@ -1236,7 +1233,7 @@ const normalizeTimeHHMM = (value: any): string => {
                           </div>
                         </SelectItem>
 
-                        {/* ✅ wieder drin */}
+                        {}
                         <SelectItem value="Geburtstage" className="text-sm">
                           <div className="flex items-center gap-2">
                             <Cake className="h-4 w-4 text-pink-700" />
@@ -1314,7 +1311,7 @@ const normalizeTimeHHMM = (value: any): string => {
                       size="sm"
                       onClick={() => {
                         setEditingVacationId(null)
-                        // Name möglichst behalten (auto-fill), daher nicht leeren wenn schon gesetzt
+                       
                         setVacationStart("")
                         setVacationEnd("")
                         setVacationNote("")
@@ -2132,7 +2129,7 @@ text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awa
           setVacationStart(selectedEvent.start_date || "")
           setVacationEnd(selectedEvent.end_date || "")
           setVacationNote((selectedEvent.note || selectedEvent.description || "") as string)
-          // Name bleibt auto-filled; falls leer, versuchen wir aus dem Titel zu ziehen
+          
           if (!vacationName.trim()) {
             const inferred = (selectedEvent.name || "").replace("🏖️ Urlaub:", "").trim()
             if (inferred) setVacationName(inferred)

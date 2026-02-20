@@ -286,12 +286,23 @@ const [lineupChangedNotified, setLineupChangedNotified] = useState(false)
 
 
 
-  // Team chat (room_id = team_id)
+   
+  type ChatMode = "match" | "team"
+  const [chatMode, setChatMode] = useState<ChatMode>("match") // default: Spiel-Chat
+
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatLoading, setChatLoading] = useState(false)
   const [chatSending, setChatSending] = useState(false)
   const [chatText, setChatText] = useState("")
   const chatEndRef = useRef<HTMLDivElement>(null)
+
+  // ✅ je nach Modus: Match-Room oder Team-Room
+  const activeRoomId = useMemo(() => {
+    if (!dialogMatch) return null
+    if (chatMode === "match") return dialogMatch.id // Spiel-Chat
+    return selectedTeamId // Team-Chat (wie bisher)
+  }, [dialogMatch, chatMode, selectedTeamId])
+
 
   useEffect(() => {
     if (!authLoading && !session) router.push("/member-login")
@@ -400,6 +411,9 @@ const [lineupChangedNotified, setLineupChangedNotified] = useState(false)
 
   async function openMatchDialog(match: Match) {
     setDialogMatch(match)
+	
+	    setChatMode("match") 
+
 
     const myTeams = myTeamsForMatch(match)
     const defaultTeamId = myTeams[0]?.team_id ?? null
@@ -422,15 +436,14 @@ setLineupChangedNotified(false)
     }
   }
 
-  async function loadTeamChat(teamId: string) {
-    if (!teamId) return
+    async function loadChat(roomId: string) {
+    if (!roomId) return
     setChatLoading(true)
     try {
-      // last 200 messages for this team
       const { data, error } = await supabase
         .from("chat_messages")
         .select("id,user_id,room_id,message,created_at")
-        .eq("room_id", teamId)
+        .eq("room_id", roomId)
         .order("created_at", { ascending: true })
         .limit(200)
 
@@ -469,29 +482,34 @@ setLineupChangedNotified(false)
         }) as any
       )
     } catch (e) {
-      console.error("loadTeamChat error", e)
+      console.error("loadChat error", e)
       setChatMessages([])
     } finally {
       setChatLoading(false)
     }
   }
 
-  function subscribeToTeamChat(teamId: string) {
+
+    function subscribeToChat(roomId: string) {
     const channel = supabase
-      .channel(`team_chat_${teamId}`)
+      .channel(`chat_${roomId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "chat_messages",
-          filter: `room_id=eq.${teamId}`,
+          filter: `room_id=eq.${roomId}`,
         },
         async (payload) => {
           const incoming = payload.new as any
 
           // best effort sender info (incoming.user_id = user_profiles.id)
-          const { data: prof } = await supabase.from("user_profiles").select("player_id").eq("id", incoming.user_id).maybeSingle()
+          const { data: prof } = await supabase
+            .from("user_profiles")
+            .select("player_id")
+            .eq("id", incoming.user_id)
+            .maybeSingle()
 
           let sender: { name: string; photo_url: string | null } | null = null
           const playerId = (prof as any)?.player_id
@@ -516,9 +534,11 @@ setLineupChangedNotified(false)
     }
   }
 
-  async function sendTeamMessage() {
-    if (!dialogMatch || !selectedTeamId) return
+    async function sendChatMessage() {
+    if (!dialogMatch) return
     if (!profile?.id) return
+    if (!activeRoomId) return
+
     const text = chatText.trim()
     if (!text || chatSending) return
 
@@ -526,28 +546,30 @@ setLineupChangedNotified(false)
     try {
       const { error } = await supabase.from("chat_messages").insert({
         user_id: profile.id,
-        room_id: selectedTeamId,
+        room_id: activeRoomId,
         message: text,
       })
       if (error) throw error
       setChatText("")
     } catch (e) {
-      console.error("sendTeamMessage error", e)
-      // if RLS blocks inserts, you will see 401/403 here; fix via policies on chat_messages
+      console.error("sendChatMessage error", e)
     } finally {
       setChatSending(false)
     }
   }
 
-  useEffect(() => {
+
+    useEffect(() => {
     if (!isDialogOpen) return
-    if (!selectedTeamId) return
-    // load chat + subscribe while dialog open
-    loadTeamChat(selectedTeamId)
-    const unsub = subscribeToTeamChat(selectedTeamId)
+    if (!activeRoomId) return
+
+    loadChat(activeRoomId)
+    const unsub = subscribeToChat(activeRoomId)
+
     return () => unsub()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDialogOpen, selectedTeamId])
+  }, [isDialogOpen, activeRoomId])
+
 
   async function loadMatchData(matchId: string, teamId: string) {
     if (!profile?.player_id) return
@@ -1231,14 +1253,32 @@ const lineupIsStale =
 
                   <Card className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden ${dialogIsLocked ? "opacity-80" : ""}`}>
                     <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        Meine Zusage
-                        {dialogIsLocked && (
-                          <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
-                            Gesperrt
-                          </Badge>
-                        )}
-                      </CardTitle>
+                      <CardTitle className="text-base flex items-center justify-between gap-2">
+  <span className="inline-flex items-center gap-2">
+    <MessageCircle className="h-4 w-4 text-orange-600" />
+    Chat
+  </span>
+
+  <div className="flex gap-1">
+    <Button
+      size="sm"
+      variant={chatMode === "match" ? "default" : "outline"}
+      onClick={() => setChatMode("match")}
+    >
+      Spiel
+    </Button>
+
+    <Button
+      size="sm"
+      variant={chatMode === "team" ? "default" : "outline"}
+      onClick={() => setChatMode("team")}
+      disabled={!selectedTeamId}
+    >
+      Team
+    </Button>
+  </div>
+</CardTitle>
+
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex flex-wrap gap-2">
@@ -1289,7 +1329,7 @@ const lineupIsStale =
                     </CardHeader>
                     <CardContent className="space-y-2">
                       {displayPlayers.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">Keine Teamspieler gefunden.</div>
+                        <div className="text-sm text-muted-foreground">Aktuell keine Rückmeldungen (Zu- oder Absagen).</div>
                       ) : (
                         displayPlayers.map((p) => {
                           const a = availabilityByPlayer.get(p.id)
@@ -1367,7 +1407,7 @@ const lineupIsStale =
           )}
         </CardTitle>
 
-        {/* ✅ Datum/Uhrzeit + Teams NICHT gequetscht */}
+        {}
         {dialogMatch ? (
           <div className="mt-2 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -1396,7 +1436,7 @@ const lineupIsStale =
   setLineupEditMode(true)
   setLineupChangedNotified(false)
 
-  // ✅ Draft = aktueller DB-Stand, damit du "lokal" ändern kannst
+  
   setDraftLineup(lineupPlayers)
   setDraftDirty(false)
 }}
@@ -1539,10 +1579,13 @@ const lineupIsStale =
                     </CardHeader>
 
                     <CardContent className="space-y-3">
-                      {!selectedTeamId ? (
-                        <div className="text-sm text-muted-foreground">Wähle zuerst ein Team aus.</div>
-                      ) : (
-                        <>
+                     {!activeRoomId ? (
+  <div className="text-sm text-muted-foreground">
+    Kein Chat verfügbar (Team wählen oder Spiel öffnen).
+  </div>
+) : (
+  <>
+
                           <div className="rounded-xl border overflow-hidden">
                             <ScrollArea className="h-64 sm:h-72 p-3">
                               {chatLoading ? (
@@ -1598,14 +1641,15 @@ const lineupIsStale =
                               placeholder="Nachricht ans Team…"
                               className="flex-1 min-w-0"
                               onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                  e.preventDefault()
-                                  sendTeamMessage()
-                                }
-                              }}
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault()
+    sendChatMessage()
+  }
+}}
+
                               disabled={chatSending}
                             />
-                            <Button onClick={sendTeamMessage} disabled={!chatText.trim() || chatSending} className="bg-orange-600 hover:bg-orange-700 px-3 flex-shrink-0">
+                            <Button onClick={sendChatMessage} disabled={!chatText.trim() || chatSending} className="bg-orange-600 hover:bg-orange-700 px-3 flex-shrink-0">
                               {chatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                             </Button>
                           </div>
