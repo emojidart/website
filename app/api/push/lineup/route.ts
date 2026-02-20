@@ -1,5 +1,4 @@
 // app/api/push/lineup/route.ts
-
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
@@ -22,21 +21,28 @@ function asBullets(names: string[]) {
   return names.map((n) => `• ${n}`).join("\n")
 }
 
-function formatDateBadge(dateString: string) {
-  // "Fr 12.03"
+function asInline(names: string[]) {
+  if (!names || names.length === 0) return "keiner"
+  return names.join(", ")
+}
+
+// "Fr, 12.03.2026"
+function formatDateWithYear(dateString: string) {
   const d = new Date(`${dateString}T00:00:00`)
   const weekdays = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
   const wd = weekdays[d.getDay()]
   const day = String(d.getDate()).padStart(2, "0")
   const month = String(d.getMonth() + 1).padStart(2, "0")
-  return `【${wd} ${day}.${month}】`
+  const year = String(d.getFullYear())
+  return `${wd}, ${day}.${month}.${year}`
 }
 
-function formatTimeBadge(timeString?: string | null) {
+// "19:30"
+function formatTimePlain(timeString?: string | null) {
   if (!timeString) return ""
   const parts = String(timeString).split(":")
   if (parts.length < 2) return ""
-  return `【${parts[0]}:${parts[1]}】`
+  return `${parts[0]}:${parts[1]}`
 }
 
 export async function POST(request: NextRequest) {
@@ -73,7 +79,9 @@ export async function POST(request: NextRequest) {
             return cookieStore.getAll()
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
           },
         },
       }
@@ -112,7 +120,7 @@ export async function POST(request: NextRequest) {
       if ((cp as any)?.name) senderName = (cp as any).name
     }
 
-    // ---- Team Infos (Teamname NICHT in conversation, nur im Body) ----
+    // ---- Team Infos (Icon fürs Push) ----
     const { data: teamRow } = await supabase
       .from("teams")
       .select("id,name,logo_url")
@@ -122,7 +130,7 @@ export async function POST(request: NextRequest) {
     const teamName = (teamRow as any)?.name ?? "Team"
     const iconUrl: string | null = (teamRow as any)?.logo_url ?? null
 
-    // ---- Match holen (mit team_type + IDs) ----
+    // ---- Match holen ----
     const { data: match, error: matchErr } = await supabase
       .from("matches")
       .select(`
@@ -143,28 +151,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Match not found" }, { status: 400 })
     }
 
-    const dateBadge = match.match_date ? formatDateBadge(String(match.match_date)) : ""
-    const timeBadge = formatTimeBadge((match as any).match_time ?? null)
+    const dateText = match.match_date ? formatDateWithYear(String(match.match_date)) : ""
+    const timeText = formatTimePlain((match as any).match_time ?? null)
 
     // ---- Teamnamen auflösen nach team_type ----
     let homeName: string | null = null
     let awayName: string | null = null
 
     if ((match as any).home_team_type === "own" && (match as any).home_team_id) {
-      const { data: t } = await supabase.from("teams").select("name").eq("id", (match as any).home_team_id).maybeSingle()
+      const { data: t } = await supabase
+        .from("teams")
+        .select("name")
+        .eq("id", (match as any).home_team_id)
+        .maybeSingle()
       homeName = (t as any)?.name ?? null
     }
     if ((match as any).home_team_type === "opponent" && (match as any).home_opponent_team_id) {
-      const { data: o } = await supabase.from("opponent_teams").select("name").eq("id", (match as any).home_opponent_team_id).maybeSingle()
+      const { data: o } = await supabase
+        .from("opponent_teams")
+        .select("name")
+        .eq("id", (match as any).home_opponent_team_id)
+        .maybeSingle()
       homeName = (o as any)?.name ?? null
     }
 
     if ((match as any).away_team_type === "own" && (match as any).away_team_id) {
-      const { data: t } = await supabase.from("teams").select("name").eq("id", (match as any).away_team_id).maybeSingle()
+      const { data: t } = await supabase
+        .from("teams")
+        .select("name")
+        .eq("id", (match as any).away_team_id)
+        .maybeSingle()
       awayName = (t as any)?.name ?? null
     }
     if ((match as any).away_team_type === "opponent" && (match as any).away_opponent_team_id) {
-      const { data: o } = await supabase.from("opponent_teams").select("name").eq("id", (match as any).away_opponent_team_id).maybeSingle()
+      const { data: o } = await supabase
+        .from("opponent_teams")
+        .select("name")
+        .eq("id", (match as any).away_opponent_team_id)
+        .maybeSingle()
       awayName = (o as any)?.name ?? null
     }
 
@@ -172,7 +196,7 @@ export async function POST(request: NextRequest) {
     awayName = awayName ?? "Gastteam"
 
     // =========================================================
-    // ✅ Lineup sicher: IDs holen -> Namen separat
+    // ✅ Lineup: IDs holen -> Namen separat
     // =========================================================
     const { data: lu, error: luErr } = await supabase
       .from("match_lineups")
@@ -186,10 +210,14 @@ export async function POST(request: NextRequest) {
     }
 
     const lineupRows = (lu as any[]) || []
+
     const starterRows = lineupRows
-      .filter((r) => !r.is_substitute)
+      .filter((r) => r.is_substitute === false)
       .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-    const subRows = lineupRows.filter((r) => r.is_substitute)
+
+    const subRows = lineupRows
+      .filter((r) => r.is_substitute === true)
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
 
     const allPlayerIds = Array.from(new Set(lineupRows.map((r) => r.player_id).filter(Boolean)))
 
@@ -208,31 +236,30 @@ export async function POST(request: NextRequest) {
     const starters = starterRows.map((r) => playerMap.get(r.player_id)).filter(Boolean) as string[]
     const subs = subRows.map((r) => playerMap.get(r.player_id)).filter(Boolean) as string[]
 
-    // ---- Push Text: schön & kurz oben ----
-    // conversation ABSICHTLICH kurz, damit nix abgeschnitten wird
+    // ---- Push Text: kompakt, weniger "..." ----
     const conversation = "📋 Aufstellung"
 
-    // Header: "【Fr 12.03】 【19:30】" in einer Zeile
-    const whenLine = [dateBadge, timeBadge].filter(Boolean).join(" ")
+    // "Fr, 12.03.2026 • 19:30"
+    const whenLine = [dateText, timeText].filter(Boolean).join(" • ")
 
-    // Teams darunter
     const teamsLine = `${homeName} vs ${awayName}`
-
-    // Teamname separat (damit nix abgeschnitten wird)
-    const teamLine = `Team: ${teamName}`
 
     const statusLine =
       action === "confirmed"
         ? `${senderName} hat bestätigt ✅`
         : `${senderName} hat geändert ⚠️`
 
+    // Fix = Bullets, Ersatz = 1 Zeile
+    const startersBlock = `🎯 Fix:\n${asBullets(starters)}`
+    const subsLine = subs.length > 0 ? `\n\n🔁 Ersatz: ${asInline(subs)}` : "" // nur wenn vorhanden
+
+    // Teamname-Zeile komplett weg (hast eh oben Team vs Team)
     const bodyText =
       `${whenLine}\n` +
-      `${teamsLine}\n` +
-      `${teamLine}\n\n` +
+      `${teamsLine}\n\n` +
       `${statusLine}\n\n` +
-      `🎯 Fix (Stamm):\n${asBullets(starters)}\n\n` +
-      `🔁 Ersatz:\n${asBullets(subs)}`
+      startersBlock +
+      subsLine
 
     // ---- Targets: Team-Mitglieder (ohne Sender) ----
     const { data: mems } = await supabase
@@ -296,7 +323,7 @@ export async function POST(request: NextRequest) {
       success: true,
       sent: multicast.successCount,
       failed: multicast.failureCount,
-      debug: { starters: starters.length, subs: subs.length },
+      debug: { starters: starters.length, subs: subs.length, teamName }, // teamName nur debug
     })
   } catch (e: any) {
     console.error("[push-lineup-fcm] error:", e)
