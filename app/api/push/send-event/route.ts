@@ -1,7 +1,6 @@
 // app/api/push/send-event/route.ts
 import { NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { createClient } from "@supabase/supabase-js"
 import { getFirebaseAdmin } from "@/lib/firebase-admin"
 
 type EventPushAction = "created" | "updated"
@@ -12,16 +11,6 @@ function stableNotifIdFromTag(tag: string) {
   return 2000 + Math.abs(h % 100000)
 }
 
-function makeEventTag(event_id: string, action: EventPushAction) {
-  return `event:${action}:${event_id}`
-}
-
-function formatDateDE(dateString: string) {
-  // expects YYYY-MM-DD
-  const d = new Date(`${dateString}T00:00:00`)
-  return d.toLocaleDateString("de-DE")
-}
-
 function formatTimePlain(timeString?: string | null) {
   if (!timeString) return ""
   const parts = String(timeString).split(":")
@@ -29,138 +18,63 @@ function formatTimePlain(timeString?: string | null) {
   return `${parts[0]}:${parts[1]}`
 }
 
-function eventTypeLabel(t?: string | null) {
-  const v = (t || "").toLowerCase()
-  if (v === "party") return "Party"
-  if (v === "game_night") return "Spielabend"
-  if (v === "meeting") return "Versammlung"
-  if (v === "tournament") return "Turnier"
-  return "Veranstaltung"
+function trimText(s: string, maxLen: number) {
+  const t = (s || "").trim()
+  if (!t) return ""
+  if (t.length <= maxLen) return t
+  return t.slice(0, maxLen - 1).trimEnd() + "…"
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)
 
-    const event_id: string | null = body?.event_id ?? body?.eventId ?? body?.event_id ?? null
-    const action: EventPushAction | null = body?.action ?? null // "created" | "updated"
-    const sender_profile_id: string | null = body?.sender_profile_id ?? null
+    const event_id: string | null = body?.event_id ?? body?.eventId ?? null
+    const action: EventPushAction = body?.action ?? (body?.updated ? "updated" : "created")
 
-    if (!event_id || !action || !sender_profile_id) {
-      return NextResponse.json({ success: false, error: "Missing params" }, { status: 400 })
+    if (!event_id) {
+      return NextResponse.json({ success: false, error: "Missing event_id/eventId" }, { status: 400 })
     }
 
-    // ---- Bearer Token prüfen ----
-    const authHeader = request.headers.get("authorization") || ""
-    const bearer = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : null
-
-    if (!bearer) {
-      return NextResponse.json({ success: false, error: "Missing bearer token" }, { status: 401 })
-    }
-
-    const cookieStore = await cookies()
-
-    const supabase = createServerClient(
+    const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-          },
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // ---- Token validieren ----
-    const { data: senderAuth, error: authErr } = await supabase.auth.getUser(bearer)
-    if (authErr || !senderAuth?.user?.id) {
-      return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 })
-    }
-    const senderAuthUserId = senderAuth.user.id
-
-    // ---- Sender Profile check ----
-    const { data: senderProfile } = await supabase
-      .from("user_profiles")
-      .select("id,user_id,player_id")
-      .eq("id", sender_profile_id)
-      .maybeSingle()
-
-    if (!senderProfile) {
-      return NextResponse.json({ success: false, error: "Sender profile not found" }, { status: 400 })
-    }
-    if ((senderProfile as any).user_id !== senderAuthUserId) {
-      return NextResponse.json({ success: false, error: "Sender mismatch" }, { status: 403 })
-    }
-
-    // ---- Sender Name ----
-    let senderName = "Jemand"
-    const senderPlayerId = (senderProfile as any).player_id
-    if (senderPlayerId) {
-      const { data: cp } = await supabase.from("club_players").select("name").eq("id", senderPlayerId).maybeSingle()
-      if ((cp as any)?.name) senderName = (cp as any).name
-    }
-
-    // ---- Event holen ----
-    const { data: eventRow, error: eventErr } = await supabase
+    // Event laden (inkl. Foto + Details)
+    const { data: eventRow, error: evErr } = await supabase
       .from("events")
-      .select("id,name,event_type,event_date,event_time,location,photo_url")
+      .select("id,name,event_type,event_date,event_time,location,details,photo_url")
       .eq("id", event_id)
       .maybeSingle()
 
-    if (eventErr || !eventRow) {
+    if (evErr || !eventRow) {
       return NextResponse.json({ success: false, error: "Event not found" }, { status: 400 })
     }
 
-    const eName = (eventRow as any).name ?? "Veranstaltung"
-    const eType = (eventRow as any).event_type ?? null
-    const eDate = (eventRow as any).event_date ? formatDateDE(String((eventRow as any).event_date)) : ""
-    const eTime = formatTimePlain((eventRow as any).event_time ?? null)
-    const eLoc = (eventRow as any).location ? String((eventRow as any).location) : ""
-    const iconUrl: string | null = (eventRow as any).photo_url ?? null
+    const title = action === "created" ? "🎉 Neue Veranstaltung!" : "📢 Veranstaltung aktualisiert!"
 
-    const title =
-      action === "created"
-        ? `🎉 Neu: ${eventTypeLabel(eType)}`
-        : `📢 Update: ${eventTypeLabel(eType)}`
+    const dateStr = eventRow.event_date ? String(eventRow.event_date) : ""
+    const timeStr = formatTimePlain((eventRow as any).event_time ?? null)
+    const when = [dateStr, timeStr].filter(Boolean).join(" • ")
+    const where = eventRow.location ? `📍 ${eventRow.location}` : ""
+    const details = eventRow.details ? `\n\nℹ️ ${trimText(String(eventRow.details), 260)}` : ""
 
-    const whenLine = [eDate, eTime].filter(Boolean).join(" • ")
-    const whereLine = eLoc ? `📍 ${eLoc}` : ""
-    const actionLine =
-      action === "created"
-        ? `${senderName} hat eine neue Veranstaltung erstellt ✅`
-        : `${senderName} hat eine Veranstaltung geändert ⚠️`
+    const bodyText = `${eventRow.name}\n\n${[when, where].filter(Boolean).join("\n")}${details}`
 
-    const bodyText =
-      `${eName}\n\n` +
-      `${whenLine}\n` +
-      `${whereLine}\n\n` +
-      `${actionLine}`
+    // Tokens holen
+    const { data: tokenRows, error: tokErr } = await supabase.from("fcm_tokens").select("token")
+    if (tokErr) return NextResponse.json({ success: false, error: "Token load failed" }, { status: 500 })
 
-    // ---- Targets: ALLE User mit fcm_tokens (ohne Sender) ----
-    const { data: tokenRows, error: tokenErr } = await supabase.from("fcm_tokens").select("token,user_id")
-    if (tokenErr) {
-      return NextResponse.json({ success: false, error: "Token load failed" }, { status: 500 })
-    }
-
-    let targets = ((tokenRows as any[]) || []).filter((r) => r?.token && r?.user_id)
-    targets = targets.filter((r) => r.user_id !== senderAuthUserId)
-
-    const tokens = Array.from(new Set(targets.map((r) => r.token)))
+    const tokens = Array.from(new Set(((tokenRows as any[]) || []).map((r) => r.token).filter(Boolean)))
     if (tokens.length === 0) {
       return NextResponse.json({ success: true, sent: 0 })
     }
 
-    // ---- FCM senden ----
     const admin = getFirebaseAdmin()
 
-    const clickUrl = `/events`
-    const tag = makeEventTag(event_id, action)
+    const tag = `event:${action}:${event_id}`
     const notif_id = stableNotifIdFromTag(tag)
-    const conversation = "📅 Veranstaltungen"
 
     const multicast = await admin.messaging().sendEachForMulticast({
       tokens,
@@ -168,16 +82,14 @@ export async function POST(request: NextRequest) {
         type: "event",
         action: String(action),
         event_id: String(event_id),
-        event_type: String(eType ?? ""),
+        clickUrl: "/events",
 
-        clickUrl: String(clickUrl),
-        conversation: String(conversation),
         title: String(title),
         body: String(bodyText),
 
         tag: String(tag),
         notif_id: String(notif_id),
-        iconUrl: iconUrl || "",
+        iconUrl: eventRow.photo_url || "", // ✅ Foto wird als iconUrl mitgegeben
         ts: String(Date.now()),
       },
       android: { priority: "high" },
@@ -189,7 +101,7 @@ export async function POST(request: NextRequest) {
       failed: multicast.failureCount,
     })
   } catch (e: any) {
-    console.error("[push-send-event-fcm] error:", e)
+    console.error("[push-send-event] error:", e)
     return NextResponse.json({ success: false, error: e?.message || "Failed" }, { status: 500 })
   }
 }
