@@ -59,6 +59,8 @@ interface EventsManagementProps {
   user: User | null
 }
 
+const PUSH_ENDPOINT = "/api/push/send-event"
+
 export function EventsManagement({ user }: EventsManagementProps) {
   const [events, setEvents] = useState<Event[]>([])
   const [form, setForm] = useState<Omit<Event, "id" | "user_id" | "created_at"> & { photo_file: File | null }>({
@@ -88,7 +90,6 @@ export function EventsManagement({ user }: EventsManagementProps) {
   useEffect(() => {
     if (user) fetchEvents()
   }, [user])
-
 
   useEffect(() => {
     return () => {
@@ -126,7 +127,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
     const file = e.target.files?.[0]
     if (file) {
       setForm((prev) => ({ ...prev, photo_file: file }))
-   
+
       if (createdObjectUrlRef.current) {
         URL.revokeObjectURL(createdObjectUrlRef.current)
         createdObjectUrlRef.current = null
@@ -146,7 +147,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
     const fileExtension = file.name.split(".").pop()
     const filePath = `event-photos/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExtension}`
 
-    const { data, error } = await supabase.storage.from("tournament-photos").upload(filePath, file, {
+    const { error } = await supabase.storage.from("tournament-photos").upload(filePath, file, {
       cacheControl: "3600",
       upsert: false,
     })
@@ -157,6 +158,25 @@ export function EventsManagement({ user }: EventsManagementProps) {
 
     const { data: publicUrlData } = supabase.storage.from("tournament-photos").getPublicUrl(filePath)
     return publicUrlData.publicUrl
+  }
+
+  const sendPushToAll = async (payload: { eventId: string; name: string; event_type: string; photo_url: string | null }) => {
+    const res = await fetch(PUSH_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+
+    if (!res.ok) {
+      let msg = `Push-API Fehler (${res.status})`
+      try {
+        const j = await res.json()
+        if (j?.error) msg = `${msg}: ${j.error}`
+      } catch {
+        // ignore
+      }
+      throw new Error(msg)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -193,33 +213,28 @@ export function EventsManagement({ user }: EventsManagementProps) {
       }
 
       if (editingEventId) {
-        const { error } = await supabase.from("events").update(eventData).eq("id", editingEventId)
+  const { error } = await supabase
+    .from("events")
+    .update(eventData)
+    .eq("id", editingEventId)
 
-        if (error) throw error
-        setFormMessage({ type: "success", text: "Veranstaltung erfolgreich aktualisiert!" })
-      } else {
-        const { data: insertedData, error } = await supabase.from("events").insert([eventData]).select()
-        if (error) throw error
+  if (error) throw error
 
-        const newEventId = insertedData?.[0]?.id
-        if (newEventId) {
-          await fetch("/api/push/send-event", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              eventId: newEventId,
-              name: form.name,
-              event_type: form.event_type,
-              photo_url: photoUrl,
-            }),
-          })
-        }
+  // 🔔 PUSH BEI BEARBEITEN
+  await sendPushToAll({
+    eventId: editingEventId,
+    name: form.name,
+    event_type: form.event_type,
+    photo_url: photoUrl,
+    updated: true,
+  })
 
-        setFormMessage({
-          type: "success",
-          text: "Veranstaltung erfolgreich hinzugefügt und Benachrichtigung versendet!",
-        })
-      }
+  setFormMessage({
+    type: "success",
+    text: "Veranstaltung erfolgreich aktualisiert und Benachrichtigung versendet!",
+  })
+}
+
 
       resetForm()
       fetchEvents()
@@ -266,9 +281,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
     const first = await supabase.from("events").delete().eq("id", id)
 
     // 2) If that fails (often because of RLS), retry with user_id filter (if your table uses it)
-    const second = first.error
-      ? await supabase.from("events").delete().eq("id", id).eq("user_id", user.id)
-      : null
+    const second = first.error ? await supabase.from("events").delete().eq("id", id).eq("user_id", user.id) : null
 
     const finalError = second?.error ?? first.error
 
@@ -425,7 +438,6 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   </SelectContent>
                 </Select>
               </div>
-
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -433,15 +445,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                 <label htmlFor="event_date" className="text-sm font-medium text-gray-700">
                   Datum
                 </label>
-                <Input
-                  id="event_date"
-                  name="event_date"
-                  type="date"
-                  value={form.event_date}
-                  onChange={handleInputChange}
-                  required
-                  className="h-11"
-                />
+                <Input id="event_date" name="event_date" type="date" value={form.event_date} onChange={handleInputChange} required className="h-11" />
               </div>
               <div className="space-y-2">
                 <label htmlFor="event_time" className="text-sm font-medium text-gray-700">
@@ -505,7 +509,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                 value={form.max_participants || ""}
                 onChange={handleInputChange}
                 placeholder="Z.B. 50"
-              className="h-11"
+                className="h-11"
               />
             </div>
 
@@ -544,7 +548,6 @@ export function EventsManagement({ user }: EventsManagementProps) {
               </div>
             )}
 
-
             <div className="space-y-2">
               <label htmlFor="details" className="text-sm font-medium text-gray-700">
                 Details (optional)
@@ -565,14 +568,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                 Veranstaltungsfoto (optional)
               </label>
               <div className="flex items-center space-x-3">
-                <Input
-                  id="photo_file"
-                  name="photo_file"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="flex-1 h-11"
-                />
+                <Input id="photo_file" name="photo_file" type="file" accept="image/*" onChange={handleFileChange} className="flex-1 h-11" />
                 {photoPreview && (
                   <div className="w-16 h-12 flex-shrink-0 rounded-md overflow-hidden border border-gray-200">
                     <img
@@ -589,11 +585,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
             </div>
 
             <div className="flex gap-4">
-              <Button
-                type="submit"
-                disabled={isBusy}
-                className="flex-1 h-11"
-              >
+              <Button type="submit" disabled={isBusy} className="flex-1 h-11">
                 {isSaving ? (
                   <div className="flex items-center space-x-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -607,12 +599,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
                 )}
               </Button>
               {editingEventId && (
-                <Button
-                  type="button"
-                  onClick={resetForm}
-                  variant="outline"
-                  className="h-11 px-4"
-                >
+                <Button type="button" onClick={resetForm} variant="outline" className="h-11 px-4">
                   <XCircle className="h-4 w-4 mr-2" />
                   Abbrechen
                 </Button>
@@ -662,9 +649,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
               <span className="ml-3 text-gray-600">Veranstaltungen werden geladen...</span>
             </div>
           ) : events.length === 0 ? (
-            <div className="text-center py-8 text-gray-600">
-              Noch keine Veranstaltungen angelegt. Lege jetzt deine erste Veranstaltung an!
-            </div>
+            <div className="text-center py-8 text-gray-600">Noch keine Veranstaltungen angelegt. Lege jetzt deine erste Veranstaltung an!</div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -710,23 +695,13 @@ export function EventsManagement({ user }: EventsManagementProps) {
                       <TableCell>{event.max_participants ? `Max. ${event.max_participants}` : "Unbegrenzt"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(event)}
-                            className="h-9 w-9 p-0"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(event)} className="h-9 w-9 p-0">
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Bearbeiten</span>
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={isBusy || !user}
-                                className="h-9 w-9 p-0"
-                              >
+                              <Button variant="outline" size="sm" disabled={isBusy || !user} className="h-9 w-9 p-0">
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Löschen</span>
                               </Button>
@@ -741,7 +716,9 @@ export function EventsManagement({ user }: EventsManagementProps) {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                                <AlertDialogAction disabled={isBusy || !user} onClick={() => handleDelete(event.id)}>Löschen</AlertDialogAction>
+                                <AlertDialogAction disabled={isBusy || !user} onClick={() => handleDelete(event.id)}>
+                                  Löschen
+                                </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>

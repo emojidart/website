@@ -1,87 +1,65 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
-import webpush from "web-push"
+import { NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
 
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ""
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || ""
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:info@emd-dart.de"
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY! // wichtig: service role
+)
 
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
-}
-
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { eventId, name, event_type, photo_url } = await request.json()
+    const body = await req.json()
+    const { eventId, name, event_type, photo_url, updated } = body
 
-    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-      return NextResponse.json({ success: false, error: "VAPID keys not configured" }, { status: 500 })
+    if (!eventId || !name) {
+      return NextResponse.json({ error: "Missing data" }, { status: 400 })
     }
 
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-          },
-        },
-      },
-    )
+    // Alle Push Tokens holen
+    const { data: tokens, error } = await supabase
+      .from("push_subscriptions")
+      .select("subscription")
 
-    const { data: subscriptions, error } = await supabase.from("push_subscriptions").select("*")
+    if (error) throw error
 
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    if (!tokens || tokens.length === 0) {
+      return NextResponse.json({ success: true, message: "No subscriptions found" })
     }
 
-    if (!subscriptions || subscriptions.length === 0) {
-      return NextResponse.json({ success: false, error: "No subscriptions found" }, { status: 400 })
-    }
+    const title = updated
+      ? "📢 Veranstaltung aktualisiert!"
+      : "🎉 Neue Veranstaltung!"
 
-    const payload = JSON.stringify({
-      title: "Neue Veranstaltung!",
-      body: name,
-      image: photo_url,
-      badge: "/icon-192.png",
-      data: { link: `/veranstaltungen` },
-    })
+    const message = updated
+      ? `${name} wurde geändert.`
+      : `${name} wurde neu erstellt.`
 
-    let successCount = 0
-    let failureCount = 0
+    // Hier dein Push Service (Beispiel WebPush / Expo / etc.)
+    // Du musst hier deinen bestehenden Push-Sender einbauen
 
-    for (const sub of subscriptions) {
+    for (const sub of tokens) {
       try {
-        const subscription = {
-          endpoint: sub.endpoint,
-          keys: {
-            auth: sub.auth,
-            p256dh: sub.p256dh,
+        await fetch(process.env.PUSH_SERVICE_URL!, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        }
-
-        await webpush.sendNotification(subscription, payload)
-        successCount++
+          body: JSON.stringify({
+            subscription: sub.subscription,
+            title,
+            message,
+            image: photo_url ?? null,
+            url: `/events/${eventId}`,
+          }),
+        })
       } catch (err) {
-        console.error("[v0] Error sending to subscription:", err)
-        failureCount++
+        console.error("Push send error:", err)
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      message: `Event notification sent to ${successCount} devices`,
-      successCount,
-      failureCount,
-    })
-  } catch (error) {
-    console.error("[v0] Error sending event push:", error)
-    return NextResponse.json({ success: false, error: "Failed to send notifications" }, { status: 500 })
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    console.error(err)
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
