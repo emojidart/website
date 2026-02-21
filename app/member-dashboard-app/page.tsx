@@ -501,7 +501,7 @@ export default function DashboardPage() {
           : null,
       )
 
-      await fetchTeamMembers()
+     await fetchMatches()
 
       setPhotoMessage("Foto erfolgreich hochgeladen!")
       setIsPhotoDialogOpen(false)
@@ -554,7 +554,7 @@ export default function DashboardPage() {
           : null,
       )
 
-      await fetchTeamMembers()
+      await fetchMatches()
 
       setPhotoMessage("Foto erfolgreich entfernt!")
       setIsPhotoDialogOpen(false)
@@ -1298,7 +1298,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
       }
 
       // Refresh matches data
-      await fetchTeamMembers()
+     await fetchMatches()
 
       setTeamPhotoMessage("Teamfoto erfolgreich hochgeladen!")
       setIsTeamPhotoDialogOpen(false)

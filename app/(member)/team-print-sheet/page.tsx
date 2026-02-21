@@ -254,6 +254,9 @@ export default function TeamPrintSheetPage() {
   )
 }
 
+
+
+
 function PrintSheet({
   teamName,
   teamLogoUrl,

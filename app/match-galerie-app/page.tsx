@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Camera, Calendar, Trophy, ArrowLeft } from "lucide-react"
+import { Camera, Calendar, Trophy, ArrowLeft, Filter } from "lucide-react"
 import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -15,6 +15,15 @@ import { useRouter } from "next/navigation"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Header } from "@/components/header"
 
+// shadcn Select
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -22,10 +31,7 @@ const supabase = createBrowserClient(
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
 }
 
 const itemVariants = {
@@ -38,38 +44,103 @@ const photoVariants = {
   visible: { opacity: 1, scale: 1 },
 }
 
+type SeasonRow = {
+  id: string
+  name: string
+  year: number | null
+  type: string | null
+}
+
 export default function MatchGalerieAppPage() {
   const { session, loading: authLoading } = useAuth()
   const router = useRouter()
 
   const [matches, setMatches] = useState<any[]>([])
+  const [seasons, setSeasons] = useState<SeasonRow[]>([])
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("") // Filter
   const [loading, setLoading] = useState(true)
+
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
   const [selectedMatch, setSelectedMatch] = useState<any>(null)
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
+
   const isMobile = useIsMobile()
 
   useEffect(() => {
-    if (!authLoading && !session) {
-      router.push("/member-login")
-    }
+    if (!authLoading && !session) router.push("/member-login")
   }, [session, authLoading, router])
 
+  // Saison-Label für Header
+  const selectedSeasonLabel = useMemo(() => {
+    const s = seasons.find((x) => x.id === selectedSeasonId)
+    if (!s) return "Alle Meisterschaften"
+    const year = s.year ? ` ${s.year}` : ""
+    return `${s.name}${year}`
+  }, [seasons, selectedSeasonId])
+
+  // 1) Seasons laden (Meisterschaften)
+  useEffect(() => {
+    const loadSeasons = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("seasons")
+          .select("id,name,year,type")
+          .order("year", { ascending: false })
+          .order("name", { ascending: true })
+
+        if (error) {
+          console.error("Error fetching seasons:", error)
+          setSeasons([])
+          setSelectedSeasonId("")
+          return
+        }
+
+        const rows = (data || []) as SeasonRow[]
+        setSeasons(rows)
+
+        // Default: neueste Saison automatisch auswählen (wenn vorhanden)
+        if (rows.length > 0) {
+          setSelectedSeasonId(rows[0].id)
+        } else {
+          setSelectedSeasonId("")
+        }
+      } catch (e) {
+        console.error("Error loading seasons:", e)
+        setSeasons([])
+        setSelectedSeasonId("")
+      }
+    }
+
+    loadSeasons()
+  }, [])
+
+  // 2) Matches laden (abhängig vom Filter)
   useEffect(() => {
     const loadMatchPhotos = async () => {
+      setLoading(true)
       try {
-        const { data: matchesData, error: matchesError } = await supabase
+        // Base Query
+        let query = supabase
           .from("matches")
           .select(
             `
             *,
             home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
             away_team:teams!matches_away_team_id_fkey(id, name, logo_url),
-            season:seasons(id, name, type)
+            season:seasons!inner(id, name, year, type)
           `
           )
           .not("team_photo_url", "is", null)
           .order("match_date", { ascending: false })
+
+        // Filter: wenn Saison gewählt
+        if (selectedSeasonId) {
+          query = query.eq("season.id", selectedSeasonId)
+          // Alternative (falls du season_id direkt im matches hast):
+          // query = query.eq("season_id", selectedSeasonId)
+        }
+
+        const { data: matchesData, error: matchesError } = await query
 
         if (matchesError) {
           console.error("Error fetching matches with photos:", matchesError)
@@ -87,12 +158,12 @@ export default function MatchGalerieAppPage() {
         }
 
         const enrichedMatches =
-          matchesData?.map((match) => {
+          matchesData?.map((match: any) => {
             const homeOpponentTeam = match.home_opponent_team_id
-              ? opponentTeamsData?.find((team) => team.id === match.home_opponent_team_id)
+              ? opponentTeamsData?.find((team: any) => team.id === match.home_opponent_team_id)
               : null
             const awayOpponentTeam = match.away_opponent_team_id
-              ? opponentTeamsData?.find((team) => team.id === match.away_opponent_team_id)
+              ? opponentTeamsData?.find((team: any) => team.id === match.away_opponent_team_id)
               : null
 
             return {
@@ -111,8 +182,9 @@ export default function MatchGalerieAppPage() {
       }
     }
 
+    // erst laden, wenn seasons geladen wurden (oder selectedSeasonId gesetzt ist/leer bleibt)
     loadMatchPhotos()
-  }, [])
+  }, [selectedSeasonId])
 
   const handlePhotoClick = (photoUrl: string, match: any) => {
     if (isMobile) return
@@ -152,14 +224,11 @@ export default function MatchGalerieAppPage() {
   }
 
   const getMatchTitle = (match: any) => {
-    const homeTeamName =
-      match.home_team?.name || match.home_opponent_team?.name || "Unbekanntes Team"
-    const awayTeamName =
-      match.away_team?.name || match.away_opponent_team?.name || "Unbekanntes Team"
+    const homeTeamName = match.home_team?.name || match.home_opponent_team?.name || "Unbekanntes Team"
+    const awayTeamName = match.away_team?.name || match.away_opponent_team?.name || "Unbekanntes Team"
     return `${homeTeamName} vs ${awayTeamName}`
   }
 
-  // Layout wie Lobby: Header oben + Content im Container + BottomNav unten
   const PageShell = ({ children }: { children: React.ReactNode }) => (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
       <Header />
@@ -205,18 +274,49 @@ export default function MatchGalerieAppPage() {
       </Button>
 
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
+        {/* HEADER */}
         <motion.div variants={itemVariants} className="text-center mb-2">
           <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl shadow-xl border border-purple-200 p-6 text-white">
             <div className="bg-white/10 rounded-full p-3 w-14 h-14 mx-auto mb-4 backdrop-blur-sm">
               <Camera className="h-8 w-8 text-white mx-auto" />
             </div>
+
             <h1 className="text-2xl font-extrabold uppercase leading-none tracking-tighter mb-2">
               <span className="block text-white">MATCH-GALERIE</span>
-              <span className="block text-purple-200 text-lg">Herbstsaison 2025</span>
+              <span className="block text-purple-200 text-lg">{selectedSeasonLabel}</span>
             </h1>
-            <p className="text-sm font-bold uppercase text-purple-100 mb-2">Alle Teamfotos und Spielmomente</p>
-            <div className="flex items-center justify-center gap-4 text-purple-100">
-              <div className="flex items-center gap-2">
+
+            <p className="text-sm font-bold uppercase text-purple-100 mb-4">
+              Alle Teamfotos und Spielmomente
+            </p>
+
+            {/* FILTER */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <div className="flex items-center gap-2 text-purple-100">
+                <Filter className="h-4 w-4" />
+                <span className="text-sm font-medium">Meisterschaft</span>
+              </div>
+
+              <div className="w-full sm:w-[360px]">
+                <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
+                  <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                    <SelectValue placeholder="Meisterschaft auswählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seasons.map((s) => {
+                      const year = s.year ? ` ${s.year}` : ""
+                      return (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                          {year}
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2 text-purple-100">
                 <Camera className="h-4 w-4" />
                 <span className="text-sm font-medium">{matches.length} Fotos</span>
               </div>
@@ -224,6 +324,7 @@ export default function MatchGalerieAppPage() {
           </div>
         </motion.div>
 
+        {/* LISTE */}
         <motion.div variants={itemVariants}>
           <Card className="overflow-hidden shadow-lg">
             <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4">
@@ -355,6 +456,7 @@ export default function MatchGalerieAppPage() {
           </Card>
         </motion.div>
 
+        {/* MODAL */}
         <Dialog open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen}>
           <DialogContent className="w-[95vw] max-w-5xl mx-auto max-h-[95vh] p-0 overflow-hidden">
             <DialogHeader className="p-4 pb-2 border-b">
@@ -436,7 +538,7 @@ export default function MatchGalerieAppPage() {
                         />
                       ) : (
                         <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center">
-                          <Trophy className="h-3 w-3 text-gray-500" />
+                          <Trophy className="h-3 h-3 text-gray-500" />
                         </div>
                       )}
                     </div>

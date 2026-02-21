@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Camera, Calendar, Trophy } from "lucide-react"
+import { Camera, Calendar, Trophy, Filter } from "lucide-react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
@@ -15,16 +15,23 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 
-const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+// shadcn Select
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
 }
 
 const itemVariants = {
@@ -37,11 +44,21 @@ const photoVariants = {
   visible: { opacity: 1, scale: 1 },
 }
 
+type SeasonRow = {
+  id: string
+  name: string
+  year: number | null
+  type: string | null
+}
+
 export default function MatchGaleriePage() {
   const { session, loading: authLoading } = useAuth()
   const router = useRouter()
 
-  const [matches, setMatches] = useState([])
+  const [matches, setMatches] = useState<any[]>([])
+  const [seasons, setSeasons] = useState<SeasonRow[]>([])
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("")
+
   const [loading, setLoading] = useState(true)
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
   const [selectedMatch, setSelectedMatch] = useState<any>(null)
@@ -49,79 +66,121 @@ export default function MatchGaleriePage() {
   const isMobile = useIsMobile()
 
   useEffect(() => {
-    if (!authLoading && !session) {
-      router.push("/member-login")
-    }
+    if (!authLoading && !session) router.push("/member-login")
   }, [session, authLoading, router])
 
+  const selectedSeasonLabel = useMemo(() => {
+    const s = seasons.find((x) => x.id === selectedSeasonId)
+    if (!s) return "Alle Meisterschaften"
+    const year = s.year ? ` ${s.year}` : ""
+    return `${s.name}${year}`
+  }, [seasons, selectedSeasonId])
+
+  // 1) Seasons laden
+  useEffect(() => {
+    const loadSeasons = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("seasons")
+          .select("id,name,year,type")
+          .order("year", { ascending: false })
+          .order("name", { ascending: true })
+
+        if (error) {
+          console.error("Error fetching seasons:", error)
+          setSeasons([])
+          setSelectedSeasonId("")
+          return
+        }
+
+        const rows = (data || []) as SeasonRow[]
+        setSeasons(rows)
+
+        // Default: neueste Saison
+        if (rows.length > 0) setSelectedSeasonId(rows[0].id)
+      } catch (e) {
+        console.error("Error loading seasons:", e)
+        setSeasons([])
+        setSelectedSeasonId("")
+      }
+    }
+
+    loadSeasons()
+  }, [])
+
+  // 2) Matches laden (abhängig vom Filter)
   useEffect(() => {
     const loadMatchPhotos = async () => {
+      setLoading(true)
       try {
-        const { data: matchesData, error: matchesError } = await supabase
+        let query = supabase
           .from("matches")
-          .select(`
+          .select(
+            `
             *,
             home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
             away_team:teams!matches_away_team_id_fkey(id, name, logo_url),
-            season:seasons(id, name, type)
-          `)
+            season:seasons(id, name, year, type)
+          `
+          )
           .not("team_photo_url", "is", null)
           .order("match_date", { ascending: false })
 
+        // ✅ HIER: Filter direkt über matches.season_id (FK)
+        if (selectedSeasonId) {
+          query = query.eq("season_id", selectedSeasonId)
+        }
+
+        const { data: matchesData, error: matchesError } = await query
+
         if (matchesError) {
           console.error("Error fetching matches with photos:", matchesError)
-        } else {
-          const { data: opponentTeamsData, error: opponentError } = await supabase
-            .from("opponent_teams")
-            .select("*")
-            .order("name")
-
-          if (opponentError) {
-            console.error("Error fetching opponent teams:", opponentError)
-          }
-
-          const enrichedMatches =
-            matchesData?.map((match) => {
-              const homeOpponentTeam = match.home_opponent_team_id
-                ? opponentTeamsData?.find((team) => team.id === match.home_opponent_team_id)
-                : null
-              const awayOpponentTeam = match.away_opponent_team_id
-                ? opponentTeamsData?.find((team) => team.id === match.away_opponent_team_id)
-                : null
-
-              return {
-                ...match,
-                home_opponent_team: homeOpponentTeam,
-                away_opponent_team: awayOpponentTeam,
-              }
-            }) || []
-
-          setMatches(enrichedMatches)
+          setMatches([])
+          return
         }
+
+        const { data: opponentTeamsData, error: opponentError } = await supabase
+          .from("opponent_teams")
+          .select("*")
+          .order("name")
+
+        if (opponentError) {
+          console.error("Error fetching opponent teams:", opponentError)
+        }
+
+        const enrichedMatches =
+          matchesData?.map((match: any) => {
+            const homeOpponentTeam = match.home_opponent_team_id
+              ? opponentTeamsData?.find((team: any) => team.id === match.home_opponent_team_id)
+              : null
+            const awayOpponentTeam = match.away_opponent_team_id
+              ? opponentTeamsData?.find((team: any) => team.id === match.away_opponent_team_id)
+              : null
+
+            return {
+              ...match,
+              home_opponent_team: homeOpponentTeam,
+              away_opponent_team: awayOpponentTeam,
+            }
+          }) || []
+
+        setMatches(enrichedMatches)
       } catch (error) {
         console.error("Error loading match photos:", error)
+        setMatches([])
       } finally {
         setLoading(false)
       }
     }
 
     loadMatchPhotos()
-  }, [])
+  }, [selectedSeasonId])
 
   const handlePhotoClick = (photoUrl: string, match: any) => {
-    if (isMobile) {
-      return
-    }
-
+    if (isMobile) return
     setSelectedPhotoUrl(photoUrl)
     setSelectedMatch(match)
     setIsPhotoModalOpen(true)
-  }
-
-  const closePhotoModal = () => {
-    setIsPhotoModalOpen(false)
-    setSelectedPhotoUrl(null)
-    setSelectedMatch(null)
   }
 
   const getMatchResultText = (match: any) => {
@@ -129,26 +188,13 @@ export default function MatchGaleriePage() {
 
     const homeScore = match.home_score || 0
     const awayScore = match.away_score || 0
-
     if (homeScore === awayScore) return "Unentschieden"
 
     const isOurHomeTeam = match.home_team?.id
     const isOurAwayTeam = match.away_team?.id
 
-    if (homeScore > awayScore) {
-      if (isOurHomeTeam) {
-        return "Heimsieg"
-      } else {
-        return "Niederlage"
-      }
-    } else if (awayScore > homeScore) {
-      if (isOurAwayTeam) {
-        return "Auswärtssieg"
-      } else {
-        return "Niederlage"
-      }
-    }
-
+    if (homeScore > awayScore) return isOurHomeTeam ? "Heimsieg" : "Niederlage"
+    if (awayScore > homeScore) return isOurAwayTeam ? "Auswärtssieg" : "Niederlage"
     return "Unentschieden"
   }
 
@@ -157,43 +203,24 @@ export default function MatchGaleriePage() {
 
     const homeScore = match.home_score || 0
     const awayScore = match.away_score || 0
-
     if (homeScore === awayScore) return "bg-yellow-100 text-yellow-700"
 
     const isOurHomeTeam = match.home_team?.id
     const isOurAwayTeam = match.away_team?.id
 
-    if (homeScore > awayScore) {
-      if (isOurHomeTeam) {
-        return "bg-green-100 text-green-700"
-      } else {
-        return "bg-red-100 text-red-700"
-      }
-    } else if (awayScore > homeScore) {
-      if (isOurAwayTeam) {
-        return "bg-green-100 text-green-700"
-      } else {
-        return "bg-red-100 text-red-700"
-      }
-    }
-
+    if (homeScore > awayScore) return isOurHomeTeam ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+    if (awayScore > homeScore) return isOurAwayTeam ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
     return "bg-yellow-100 text-yellow-700"
   }
 
   const getMatchTitle = (match: any) => {
     let homeTeamName = "Unbekanntes Team"
-    if (match.home_team?.name) {
-      homeTeamName = match.home_team.name
-    } else if (match.home_opponent_team?.name) {
-      homeTeamName = match.home_opponent_team.name
-    }
+    if (match.home_team?.name) homeTeamName = match.home_team.name
+    else if (match.home_opponent_team?.name) homeTeamName = match.home_opponent_team.name
 
     let awayTeamName = "Unbekanntes Team"
-    if (match.away_team?.name) {
-      awayTeamName = match.away_team.name
-    } else if (match.away_opponent_team?.name) {
-      awayTeamName = match.away_opponent_team.name
-    }
+    if (match.away_team?.name) awayTeamName = match.away_team.name
+    else if (match.away_opponent_team?.name) awayTeamName = match.away_opponent_team.name
 
     return `${homeTeamName} vs ${awayTeamName}`
   }
@@ -252,14 +279,41 @@ export default function MatchGaleriePage() {
               <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
                 <Camera className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
               </div>
+
               <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
                 <span className="block text-white">MATCH-GALERIE</span>
-                <span className="block text-orange-200">Herbstsaison 2025</span>
+                <span className="block text-orange-200">{selectedSeasonLabel}</span>
               </h1>
-              <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-2 sm:mb-4">
+
+              <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-3 sm:mb-4">
                 Alle Teamfotos und Spielmomente
               </p>
-              <div className="flex items-center justify-center gap-4 text-orange-100">
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 text-orange-100">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <span className="text-sm font-medium">Meisterschaft</span>
+                </div>
+
+                <div className="w-full sm:w-[360px]">
+                  <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Meisterschaft auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {seasons.map((s) => {
+                        const year = s.year ? ` ${s.year}` : ""
+                        return (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name}
+                            {year}
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="flex items-center gap-2">
                   <Camera className="h-4 w-4" />
                   <span className="text-sm font-medium">{matches.length} Fotos</span>
@@ -276,6 +330,7 @@ export default function MatchGaleriePage() {
                   Match-Fotos ({matches.length})
                 </CardTitle>
               </CardHeader>
+
               <CardContent className="p-3 sm:p-6">
                 {matches.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
@@ -299,7 +354,9 @@ export default function MatchGaleriePage() {
                           <div className="relative aspect-square overflow-hidden">
                             <Image
                               src={match.team_photo_url || "/placeholder.svg"}
-                              alt={`Match zwischen ${match.home_team?.name || match.home_opponent_team?.name} und ${match.away_team?.name || match.away_opponent_team?.name}`}
+                              alt={`Match zwischen ${match.home_team?.name || match.home_opponent_team?.name} und ${
+                                match.away_team?.name || match.away_opponent_team?.name
+                              }`}
                               fill
                               className="object-cover transition-transform duration-300 group-hover:scale-110"
                               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
@@ -313,6 +370,7 @@ export default function MatchGaleriePage() {
                               </div>
                             )}
                           </div>
+
                           <CardContent className="p-3 sm:p-4">
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-xs text-gray-500">
@@ -424,6 +482,7 @@ export default function MatchGaleriePage() {
                 </div>
               </div>
             </DialogHeader>
+
             <div className="relative w-full h-[70vh] sm:h-[80vh]">
               {selectedPhotoUrl && (
                 <Image
@@ -435,6 +494,7 @@ export default function MatchGaleriePage() {
                 />
               )}
             </div>
+
             {selectedMatch && selectedMatch.status === "completed" && (
               <div className="p-4 border-t bg-gray-50">
                 <div className="flex items-center justify-center gap-8 text-sm">
@@ -457,7 +517,9 @@ export default function MatchGaleriePage() {
                     </div>
                     <span className="text-xl font-bold">{selectedMatch.home_score || 0}</span>
                   </div>
+
                   <span className="text-xl font-medium text-gray-400">:</span>
+
                   <div className="flex items-center gap-2">
                     <span className="text-xl font-bold">{selectedMatch.away_score || 0}</span>
                     <div className="flex items-center gap-1">

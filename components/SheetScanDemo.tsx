@@ -8,48 +8,69 @@ declare global {
   }
 }
 
-type Roi = {
-  x: number // 0..1
-  y: number // 0..1
-  w: number // 0..1
-  h: number // 0..1
-  rows: number
-  cols: number
-}
-
+type RoiPx = { x: number; y: number; w: number; h: number }
 type Counts = Record<string, any>
 
-const STAT_COLS = ["legs_w", "legs_l", "t20", "t19", "t18", "t17", "t16", "t15"]
-
-// Mini-Grid pro Stat-Zelle (Formularannahme)
-const MINI_COLS = 5
-const MINI_ROWS = 9
-
-// Warp-Zielgröße (für stabilere Geometrie)
+// ======= WARP TARGET (stabile Geometrie) =======
 const WARP_W = 1600
 const WARP_H = 1130
 
-// === Mark-Detection Tuning (gegen Linien-Reste) ===
-const INNER_PAD_RATIO = 0.45 // größer = mehr Rand ignorieren
-const MIN_COMP_AREA = 18 // Mindestfläche eines zusammenhängenden Blobs
-const MIN_BBOX_FILL = 0.18 // area/(bbox_w*bbox_h) -> dünne Linien raus
-const MAX_COMP_AREA_RATIO = 0.55 // zu groß => eher Schatten/Restfläche als X
+// ======= HEADERS (wie PrintSheet) =======
+const HEADERS = [
+  "SPIELER",
+  "LEGS W",
+  "LEGS L",
+  "20",
+  "19",
+  "18",
+  "17",
+  "16",
+  "15",
+  "BULL",
+  "180",
+  "171",
+  "H. TONNE",
+  "TONNE",
+  "SHANG",
+  "95+",
+  "<26",
+  "<30",
+  "SEMP",
+]
+
+function buildColFractions(headers: string[]) {
+  const weights = headers.map((h) => {
+    if (h === "SPIELER") return 18
+    if (h === "LEGS W" || h === "LEGS L") return 5
+    return 4
+  })
+  const sum = weights.reduce((a, b) => a + b, 0)
+  return weights.map((w) => w / sum)
+}
+
+// ======= TUNING (FIX gegen false positives) =======
+const INNER_PAD_RATIO = 0.45 // vorher 0.28 -> mehr Rand ignorieren (Linien/Text!)
+const INK_RATIO_THRESHOLD = 0.06 // vorher 0.02 -> weniger false positives
+const MIN_CELL_AREA_PX = 200
 
 export default function SheetScanDemo() {
   const [cvReady, setCvReady] = useState(false)
   const [imgUrl, setImgUrl] = useState<string | null>(null)
   const [log, setLog] = useState<string>("")
   const [zoom, setZoom] = useState(1.8)
-  const [rows, setRows] = useState(5)
-  const [roi, setRoi] = useState<Roi | null>(null)
+
+  // ✅ Default rows = 8, weil PrintSheet Math.max(..., 8)
+  const [rows, setRows] = useState(8)
+
   const [counts, setCounts] = useState<Counts | null>(null)
   const [debug, setDebug] = useState(true)
 
   const inputRef = useRef<HTMLInputElement | null>(null)
-
   const originalCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const warpedCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null)
+
+  const colFracs = useMemo(() => buildColFractions(HEADERS), [])
 
   // ---------- OpenCV Loader ----------
   useEffect(() => {
@@ -71,32 +92,14 @@ export default function SheetScanDemo() {
       }
       check()
     }
-    script.onerror = () => setLog("Fehler: opencv.js nicht gefunden. Lege /public/opencv/opencv.js ab.")
+    script.onerror = () => setLog("Fehler: /public/opencv/opencv.js fehlt.")
     document.body.appendChild(script)
   }, [])
 
-  // ---------- ROI in Pixeln ----------
-  const roiPx = useMemo(() => {
-    if (!roi) return null
-    const warp = warpedCanvasRef.current
-    if (!warp) return null
-    const W = warp.width
-    const H = warp.height
-    return {
-      x: Math.round(roi.x * W),
-      y: Math.round(roi.y * H),
-      w: Math.round(roi.w * W),
-      h: Math.round(roi.h * H),
-      W,
-      H,
-    }
-  }, [roi])
-
-  // ---------- Overlay redraw ----------
   useEffect(() => {
     drawOverlay()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roi, zoom, imgUrl, debug])
+  }, [zoom, imgUrl, debug, rows])
 
   // ---------- Helpers ----------
   function cleanup(cv: any, ...mats: any[]) {
@@ -104,7 +107,6 @@ export default function SheetScanDemo() {
   }
 
   function orderPoints(pts: { x: number; y: number }[]) {
-    // TL = min(x+y), BR = max(x+y), TR = min(x-y), BL = max(x-y)
     const sum = pts.map((p) => p.x + p.y)
     const diff = pts.map((p) => p.x - p.y)
     const tl = pts[sum.indexOf(Math.min(...sum))]
@@ -114,11 +116,11 @@ export default function SheetScanDemo() {
     return { tl, tr, br, bl }
   }
 
-  function safeRect(cv: any, x: number, y: number, w: number, h: number, cols: number, rows: number) {
+  function safeRect(cv: any, x: number, y: number, w: number, h: number, cols: number, rows_: number) {
     const rx = Math.max(0, Math.min(cols - 1, Math.round(x)))
-    const ry = Math.max(0, Math.min(rows - 1, Math.round(y)))
+    const ry = Math.max(0, Math.min(rows_ - 1, Math.round(y)))
     const rw = Math.max(0, Math.min(cols - rx, Math.round(w)))
-    const rh = Math.max(0, Math.min(rows - ry, Math.round(h)))
+    const rh = Math.max(0, Math.min(rows_ - ry, Math.round(h)))
     if (rw <= 1 || rh <= 1) return null
     return new cv.Rect(rx, ry, rw, rh)
   }
@@ -128,8 +130,7 @@ export default function SheetScanDemo() {
     const url = URL.createObjectURL(file)
     setImgUrl(url)
     setCounts(null)
-    setRoi(null)
-    setLog("Bild geladen. Klicke 'Scannen'.")
+    setLog("Foto geladen ✅ -> 1) Scannen  2) Zählen")
     setTimeout(() => drawImageToCanvas(url), 30)
   }
 
@@ -139,7 +140,7 @@ export default function SheetScanDemo() {
     const ctx = canvas.getContext("2d")!
     const img = new Image()
     img.onload = () => {
-      const maxW = 1400
+      const maxW = 1600
       const scale = Math.min(1, maxW / img.width)
       canvas.width = Math.round(img.width * scale)
       canvas.height = Math.round(img.height * scale)
@@ -157,80 +158,7 @@ export default function SheetScanDemo() {
     img.src = url
   }
 
-  // ---------- AUTO ROI: Find mini checkbox block (bottom-left) ----------
-  // Wichtig: auf dein Blatt/Screenshot getrimmt: Mini-Grid unten links.
-  function autoDetectGridROI(cv: any, warpedMat: any): { x: number; y: number; w: number; h: number } | null {
-    const W = warpedMat.cols
-    const H = warpedMat.rows
-
-    // Suchbereich: unten links
-    const sx = Math.round(W * 0.05)
-    const sy = Math.round(H * 0.45)
-    const sw = Math.round(W * 0.45)
-    const sh = Math.round(H * 0.45)
-
-    const srect = safeRect(cv, sx, sy, sw, sh, W, H)
-    if (!srect) return null
-
-    const search = warpedMat.roi(srect)
-    srect.delete?.()
-
-    if (search.cols <= 2 || search.rows <= 2) {
-      search.delete()
-      return null
-    }
-
-    const g = new cv.Mat()
-    cv.cvtColor(search, g, cv.COLOR_RGBA2GRAY)
-
-    const bin = new cv.Mat()
-    cv.adaptiveThreshold(g, bin, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 21, 5)
-
-    // Close, damit der Block zusammenhängend wird
-    const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3))
-    cv.morphologyEx(bin, bin, cv.MORPH_CLOSE, kernel)
-
-    const contours = new cv.MatVector()
-    const hierarchy = new cv.Mat()
-    cv.findContours(bin, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-
-    let best: { x: number; y: number; w: number; h: number; area: number } | null = null
-
-    for (let i = 0; i < contours.size(); i++) {
-      const cnt = contours.get(i)
-      const r = cv.boundingRect(cnt)
-      const area = r.width * r.height
-
-      if (area > 20000 && r.width > 200 && r.height > 200) {
-        const ar = r.width / r.height
-        if (ar > 0.7 && ar < 2.2) {
-          if (!best || area > best.area) best = { x: r.x, y: r.y, w: r.width, h: r.height, area }
-        }
-      }
-      cnt.delete()
-    }
-
-    cleanup(cv, g, bin, contours, hierarchy, kernel)
-    search.delete()
-
-    if (!best) return null
-
-    // etwas padding rein (gegen Randlinien)
-    const pad = 6
-    const bx = best.x + pad
-    const by = best.y + pad
-    const bw = best.w - pad * 2
-    const bh = best.h - pad * 2
-
-    const frect = safeRect(cv, sx + bx, sy + by, bw, bh, W, H)
-    if (!frect) return null
-    const out = { x: frect.x, y: frect.y, w: frect.width, h: frect.height }
-    frect.delete?.()
-    return out
-  }
-
-  // ---------- Grid mask (aggressiv!) ----------
-  // Ziel: Kästchen-Ränder wirklich komplett maskieren, damit sie nicht als Mark zählen.
+  // ---------- Grid mask ----------
   function buildGridMaskAggressive(cv: any, bin: any) {
     const W = bin.cols
     const H = bin.rows
@@ -238,9 +166,8 @@ export default function SheetScanDemo() {
     const horiz = bin.clone()
     const vert = bin.clone()
 
-    // Größer als vorher => trifft die Kästchenlinien sicherer
-    const hK = Math.max(22, Math.floor(W / 16))
-    const vK = Math.max(22, Math.floor(H / 16))
+    const hK = Math.max(22, Math.floor(W / 14))
+    const vK = Math.max(22, Math.floor(H / 14))
 
     const hKernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(hK, 1))
     const vKernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, vK))
@@ -254,12 +181,11 @@ export default function SheetScanDemo() {
     const grid = new cv.Mat()
     cv.bitwise_or(horiz, vert, grid)
 
-    // Grid dicker machen (kritisch!)
+    // ✅ stärker: 2x dilate, damit Linien wirklich rausgehen
     const dilK = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3))
     cv.dilate(grid, grid, dilK)
     cv.dilate(grid, grid, dilK)
 
-    // Close, um kleine Lücken zu schließen
     const closeK = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5))
     cv.morphologyEx(grid, grid, cv.MORPH_CLOSE, closeK)
 
@@ -267,105 +193,52 @@ export default function SheetScanDemo() {
     return grid
   }
 
-  // ---------- Mark cleanup ----------
-  function cleanupMarks(cv: any, marks: any) {
-    // Entfernt dünne Linienreste
-    const openK = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2))
-    cv.morphologyEx(marks, marks, cv.MORPH_OPEN, openK)
+  // ---------- AUTO: Tabellen-ROI aus Grid bestimmen ----------
+  function findTableRoiFromWarp(cv: any, warpRGBA: any): RoiPx | null {
+    const gray = new cv.Mat()
+    cv.cvtColor(warpRGBA, gray, cv.COLOR_RGBA2GRAY)
 
-    // optional leicht erodieren, damit Linienreste eher verschwinden
-    const erK = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2))
-    cv.erode(marks, marks, erK)
+    const bin = new cv.Mat()
+    cv.adaptiveThreshold(gray, bin, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 31, 9)
 
-    openK.delete()
-    erK.delete()
-  }
+    const gridMask = buildGridMaskAggressive(cv, bin)
 
-  // ---------- Count marks per mini-cell (strenger) ----------
-  function countMiniMarksInCell(cv: any, marksRoi: any, rr: number, cc: number, rowsN: number, colsN: number) {
-    const W = marksRoi.cols
-    const H = marksRoi.rows
+    const contours = new cv.MatVector()
+    const hierarchy = new cv.Mat()
+    cv.findContours(gridMask, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
-    const cellW = W / colsN
-    const cellH = H / rowsN
+    let bestRect: any = null
+    let bestArea = 0
 
-    const x0 = Math.round(cc * cellW)
-    const y0 = Math.round(rr * cellH)
-    const w0 = Math.max(2, Math.round(cellW))
-    const h0 = Math.max(2, Math.round(cellH))
-
-    const miniW = w0 / MINI_COLS
-    const miniH = h0 / MINI_ROWS
-
-    let count = 0
-
-    for (let r = 0; r < MINI_ROWS; r++) {
-      for (let c = 0; c < MINI_COLS; c++) {
-        const mx = Math.round(x0 + c * miniW)
-        const my = Math.round(y0 + r * miniH)
-        const mw = Math.max(2, Math.round(miniW))
-        const mh = Math.max(2, Math.round(miniH))
-
-        // Innenbereich (viel Rand ignorieren!)
-        const padX = Math.max(1, Math.floor(mw * INNER_PAD_RATIO))
-        const padY = Math.max(1, Math.floor(mh * INNER_PAD_RATIO))
-
-        const rx = mx + padX
-        const ry = my + padY
-        const rw = mw - padX * 2
-        const rh = mh - padY * 2
-        if (rw < 4 || rh < 4) continue
-
-        const rect = safeRect(cv, rx, ry, rw, rh, W, H)
-        if (!rect) continue
-
-        const sub = marksRoi.roi(rect)
-        rect.delete?.()
-
-        if (sub.cols <= 3 || sub.rows <= 3) {
-          sub.delete()
-          continue
-        }
-
-        // Connected components
-        const labels = new cv.Mat()
-        const stats = new cv.Mat()
-        const centroids = new cv.Mat()
-        const num = cv.connectedComponentsWithStats(sub, labels, stats, centroids, 8, cv.CV_32S)
-
-        let hasMark = false
-        const maxArea = sub.cols * sub.rows * MAX_COMP_AREA_RATIO
-
-        for (let i = 1; i < num; i++) {
-          const area = stats.intAt(i, cv.CC_STAT_AREA)
-          const bw = stats.intAt(i, cv.CC_STAT_WIDTH)
-          const bh = stats.intAt(i, cv.CC_STAT_HEIGHT)
-
-          if (bw < 3 || bh < 3) continue
-          if (area < MIN_COMP_AREA) continue
-          if (area > maxArea) continue
-
-          const fill = area / (bw * bh) // dünne Linien => sehr kleines fill
-          if (fill < MIN_BBOX_FILL) continue
-
-          // Wenn wir hier sind, ist es sehr wahrscheinlich ein echtes Kreuz/Mark
-          hasMark = true
-          break
-        }
-
-        labels.delete()
-        stats.delete()
-        centroids.delete()
-        sub.delete()
-
-        if (hasMark) count++
+    for (let i = 0; i < contours.size(); i++) {
+      const cnt = contours.get(i)
+      const area = cv.contourArea(cnt)
+      if (area > bestArea) {
+        bestArea = area
+        bestRect = cv.boundingRect(cnt)
       }
+      cnt.delete()
     }
 
-    return count
+    contours.delete()
+    hierarchy.delete()
+
+    if (!bestRect || bestArea < 5000) {
+      cleanup(cv, gray, bin, gridMask)
+      return null
+    }
+
+    const pad = 10
+    const x = Math.max(0, bestRect.x - pad)
+    const y = Math.max(0, bestRect.y - pad)
+    const w = Math.min(warpRGBA.cols - x, bestRect.width + pad * 2)
+    const h = Math.min(warpRGBA.rows - y, bestRect.height + pad * 2)
+
+    cleanup(cv, gray, bin, gridMask)
+    return { x, y, w, h }
   }
 
-  // ---------- SCAN ----------
+  // ---------- Warp Scan (Marker tolerant) ----------
   function scan() {
     if (!cvReady) return setLog("OpenCV noch nicht bereit…")
     const cv = window.cv
@@ -374,15 +247,13 @@ export default function SheetScanDemo() {
     if (!srcCanvas || !warpCanvas) return
 
     try {
-      setLog("Scanne: Marker suchen → entzerren → Mini-Kästchenblock finden…")
+      setLog("Scanne… (Marker erkennen → entzerren)")
       setCounts(null)
-      setRoi(null)
 
       const src = cv.imread(srcCanvas)
       const gray = new cv.Mat()
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY)
 
-      // Marker-Kandidaten (schwarz)
       const bin = new cv.Mat()
       cv.adaptiveThreshold(gray, bin, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 51, 7)
 
@@ -390,39 +261,53 @@ export default function SheetScanDemo() {
       const hierarchy = new cv.Mat()
       cv.findContours(bin, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
-      const candidates: { cx: number; cy: number; area: number; approx: any }[] = []
+      const candidates: { cx: number; cy: number; score: number }[] = []
+
       for (let i = 0; i < contours.size(); i++) {
         const cnt = contours.get(i)
         const area = cv.contourArea(cnt)
-        if (area < 250) {
+        if (area < 200) {
           cnt.delete()
           continue
         }
-        const peri = cv.arcLength(cnt, true)
-        const approx = new cv.Mat()
-        cv.approxPolyDP(cnt, approx, 0.03 * peri, true)
 
-        if (approx.rows === 4) {
-          const rect = cv.boundingRect(cnt)
-          const ar = rect.width / rect.height
-          if (ar > 0.75 && ar < 1.25) {
-            const m = cv.moments(cnt)
-            const cx = m.m10 / m.m00
-            const cy = m.m01 / m.m00
-            candidates.push({ cx, cy, area, approx })
-          } else {
-            approx.delete()
-          }
-        } else {
-          approx.delete()
+        const rect = cv.boundingRect(cnt)
+        const ar = rect.width / rect.height
+        if (ar < 0.6 || ar > 1.4) {
+          cnt.delete()
+          continue
         }
+
+        const boxArea = rect.width * rect.height
+        if (boxArea <= 0) {
+          cnt.delete()
+          continue
+        }
+
+        const solidity = area / boxArea
+        if (solidity < 0.08 || solidity > 1.05) {
+          cnt.delete()
+          continue
+        }
+
+        const m = cv.moments(cnt)
+        if (!m.m00) {
+          cnt.delete()
+          continue
+        }
+        const cx = m.m10 / m.m00
+        const cy = m.m01 / m.m00
+
+        const score = boxArea * (0.6 + Math.min(0.6, solidity))
+        candidates.push({ cx, cy, score })
+
         cnt.delete()
       }
 
       let warpedMat: any = null
 
       if (candidates.length >= 4) {
-        candidates.sort((a, b) => b.area - a.area)
+        candidates.sort((a, b) => b.score - a.score)
         const pts = candidates.slice(0, 4).map((c) => ({ x: c.cx, y: c.cy }))
         const ordered = orderPoints(pts)
 
@@ -441,119 +326,142 @@ export default function SheetScanDemo() {
         const M = cv.getPerspectiveTransform(srcTri, dstTri)
         const dst = new cv.Mat()
         cv.warpPerspective(src, dst, M, new cv.Size(WARP_W, WARP_H), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar())
-
         warpedMat = dst
 
         srcTri.delete()
         dstTri.delete()
         M.delete()
-        candidates.forEach((c) => c.approx.delete())
+
+        setLog("Entzerrt über Marker ✅ -> Jetzt Zählen")
       } else {
-        // Kein Marker: einfach resize
         warpedMat = new cv.Mat()
         cv.resize(src, warpedMat, new cv.Size(WARP_W, WARP_H), 0, 0, cv.INTER_AREA)
+        setLog("Marker nicht sicher erkannt → nur Resize ✅ (druck besser SolidSquare Marker!)")
       }
 
-      // in Canvas schreiben
       warpCanvas.width = WARP_W
       warpCanvas.height = WARP_H
       cv.imshow(warpCanvas, warpedMat)
 
-      // Auto-ROI (unten links)
-      const auto = autoDetectGridROI(cv, warpedMat)
-      if (!auto) {
-        setLog("Entzerrt ✅ Aber Mini-Kästchenblock nicht erkannt. Debug an → Foto gerader/heller.")
-        setRoi(null)
-      } else {
-        const newRoi: Roi = {
-          x: auto.x / WARP_W,
-          y: auto.y / WARP_H,
-          w: auto.w / WARP_W,
-          h: auto.h / WARP_H,
-          rows,
-          cols: STAT_COLS.length,
-        }
-        setRoi(newRoi)
-        setLog("Entzerrt ✅ Mini-Kästchenblock erkannt ✅ Jetzt 'Zählen'.")
-      }
-
       cleanup(cv, src, gray, bin, contours, hierarchy, warpedMat)
       drawOverlay()
     } catch (e) {
-      console.error("OpenCV scan error:", e)
+      console.error(e)
       setLog("OpenCV Fehler in scan(): " + String(e))
     }
   }
 
-  // ---------- COUNT ----------
+  // ---------- Counting ----------
   function countNow() {
     if (!cvReady) return setLog("OpenCV noch nicht bereit…")
     const cv = window.cv
     const warp = warpedCanvasRef.current
     if (!warp) return
-    if (!roiPx || !roi) return setLog("Kein ROI erkannt. Erst 'Scannen'.")
+    if (!imgUrl) return setLog("Bitte erst ein Foto aufnehmen/hochladen.")
 
     try {
-      setLog("Zähle… (Grid aggressiv entfernen → Marks filtern → Components prüfen)")
+      setLog("Zähle… (AUTO Table ROI → Grid entfernen → Ink-Density)")
 
       const src = cv.imread(warp)
 
-      const rect = safeRect(cv, roiPx.x, roiPx.y, roiPx.w, roiPx.h, src.cols, src.rows)
+      const roi = findTableRoiFromWarp(cv, src)
+      if (!roi) {
+        src.delete()
+        setLog("Tabelle nicht gefunden. Tipp: näher ran + gerade + gutes Licht.")
+        return
+      }
+
+      const rect = safeRect(cv, roi.x, roi.y, roi.w, roi.h, src.cols, src.rows)
       if (!rect) {
         src.delete()
-        setLog("ROI ungültig/out of bounds. Bitte erneut scannen.")
+        setLog("AUTO ROI ungültig.")
         return
       }
 
-      const roiMat = src.roi(rect)
+      const table = src.roi(rect)
       rect.delete?.()
 
-      if (roiMat.cols <= 2 || roiMat.rows <= 2) {
-        roiMat.delete()
-        src.delete()
-        setLog("ROI ist leer/zu klein. Bitte erneut scannen.")
-        return
-      }
-
       const gray = new cv.Mat()
-      cv.cvtColor(roiMat, gray, cv.COLOR_RGBA2GRAY)
+      cv.cvtColor(table, gray, cv.COLOR_RGBA2GRAY)
 
-      // Etwas konservativer threshold
       const bin = new cv.Mat()
       cv.adaptiveThreshold(gray, bin, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 31, 9)
 
-      // GridMask (aggressiv)
       const gridMask = buildGridMaskAggressive(cv, bin)
-
-      // marks = bin & ~gridMask
       const invGrid = new cv.Mat()
       cv.bitwise_not(gridMask, invGrid)
-
       const marks = new cv.Mat()
       cv.bitwise_and(bin, invGrid, marks)
 
-      // Marks cleanup gegen Linienreste
-      cleanupMarks(cv, marks)
+      const openK = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2))
+      cv.morphologyEx(marks, marks, cv.MORPH_OPEN, openK)
+      openK.delete()
 
       const out: any = {}
-      const R = roi.rows
-      const C = roi.cols
+      const R = rows
+      const C = HEADERS.length
+
+      const xCuts: number[] = [0]
+      for (let i = 0; i < colFracs.length; i++) xCuts.push(xCuts[i] + colFracs[i])
+      const last = xCuts[xCuts.length - 1]
+      for (let i = 0; i < xCuts.length; i++) xCuts[i] = xCuts[i] / last
+
+      const tableW = marks.cols
+      const tableH = marks.rows
+      const rowH = tableH / R
+
+      const inkRatioInCell = (x: number, y: number, w: number, h: number) => {
+        if (w * h < MIN_CELL_AREA_PX) return 0
+
+        const padX = Math.floor(w * INNER_PAD_RATIO)
+        const padY = Math.floor(h * INNER_PAD_RATIO)
+        const rx = x + padX
+        const ry = y + padY
+        const rw = Math.max(2, w - padX * 2)
+        const rh = Math.max(2, h - padY * 2)
+
+        const r = safeRect(cv, rx, ry, rw, rh, marks.cols, marks.rows)
+        if (!r) return 0
+        const sub = marks.roi(r)
+        r.delete?.()
+
+        const nz = cv.countNonZero(sub)
+        const ratio = nz / (sub.cols * sub.rows)
+        sub.delete()
+        return ratio
+      }
 
       for (let rr = 0; rr < R; rr++) {
         const rowKey = `row_${rr + 1}`
         out[rowKey] = {}
+        const y0 = Math.round(rr * rowH)
+        const h0 = Math.max(2, Math.round(rowH))
+
         for (let cc = 0; cc < C; cc++) {
-          const key = STAT_COLS[cc] ?? `c${cc + 1}`
-          out[rowKey][key] = countMiniMarksInCell(cv, marks, rr, cc, R, C)
+          const x0 = Math.round(xCuts[cc] * tableW)
+          const x1 = Math.round(xCuts[cc + 1] * tableW)
+          const w0 = Math.max(2, x1 - x0)
+
+          const header = HEADERS[cc]
+          if (header === "SPIELER") {
+            out[rowKey]["player"] = null
+            continue
+          }
+
+          const ratio = inkRatioInCell(x0, y0, w0, h0)
+          out[rowKey][header] = {
+            marked: ratio >= INK_RATIO_THRESHOLD ? 1 : 0,
+            ink: Number(ratio.toFixed(4)),
+          }
         }
       }
 
       setCounts(out)
       setLog("Gezählt ✅")
 
-      cleanup(cv, src, roiMat, gray, bin, gridMask, invGrid, marks)
+      cleanup(cv, src, table, gray, bin, gridMask, invGrid, marks)
     } catch (e) {
-      console.error("OpenCV count error:", e)
+      console.error(e)
       setLog("OpenCV Fehler in countNow(): " + String(e))
     }
   }
@@ -572,38 +480,52 @@ export default function SheetScanDemo() {
 
     ctx.drawImage(warp, 0, 0, overlay.width, overlay.height)
 
-    if (!debug || !roi) return
+    // rote Scanner-Ecken
+    const pad = Math.round(Math.min(overlay.width, overlay.height) * 0.045)
+    const x = pad
+    const y = pad
+    const w = overlay.width - pad * 2
+    const h = overlay.height - pad * 2
+    const arm = Math.round(Math.min(w, h) * 0.12)
 
-    const x = roi.x * overlay.width
-    const y = roi.y * overlay.height
-    const w = roi.w * overlay.width
-    const h = roi.h * overlay.height
+    ctx.strokeStyle = "rgba(255,0,0,0.85)"
+    ctx.lineWidth = 6
+    ctx.setLineDash([])
 
-    ctx.strokeStyle = "rgba(0,200,0,0.95)"
-    ctx.lineWidth = 3
-    ctx.strokeRect(x, y, w, h)
+    // TL
+    ctx.beginPath()
+    ctx.moveTo(x, y + arm)
+    ctx.lineTo(x, y)
+    ctx.lineTo(x + arm, y)
+    ctx.stroke()
 
-    // Big grid lines
-    ctx.strokeStyle = "rgba(30,120,255,0.55)"
-    ctx.lineWidth = 2
+    // TR
+    ctx.beginPath()
+    ctx.moveTo(x + w - arm, y)
+    ctx.lineTo(x + w, y)
+    ctx.lineTo(x + w, y + arm)
+    ctx.stroke()
 
-    for (let r = 1; r < roi.rows; r++) {
-      const yy = y + (h * r) / roi.rows
-      ctx.beginPath()
-      ctx.moveTo(x, yy)
-      ctx.lineTo(x + w, yy)
-      ctx.stroke()
-    }
-    for (let c = 1; c < roi.cols; c++) {
-      const xx = x + (w * c) / roi.cols
-      ctx.beginPath()
-      ctx.moveTo(xx, y)
-      ctx.lineTo(xx, y + h)
-      ctx.stroke()
-    }
+    // BL
+    ctx.beginPath()
+    ctx.moveTo(x, y + h - arm)
+    ctx.lineTo(x, y + h)
+    ctx.lineTo(x + arm, y + h)
+    ctx.stroke()
+
+    // BR
+    ctx.beginPath()
+    ctx.moveTo(x + w - arm, y + h)
+    ctx.lineTo(x + w, y + h)
+    ctx.lineTo(x + w, y + h - arm)
+    ctx.stroke()
+
+    if (!debug) return
+    ctx.font = "bold 16px system-ui"
+    ctx.fillStyle = "rgba(0,0,0,0.6)"
+    ctx.fillText("Blatt in die roten Ecken halten", 16, 26)
   }
 
-  // ---------- UI ----------
   return (
     <main style={{ padding: 14, fontFamily: "system-ui" }}>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
@@ -611,6 +533,7 @@ export default function SheetScanDemo() {
           ref={inputRef}
           type="file"
           accept="image/*"
+          capture="environment"
           onChange={(e) => {
             const f = e.target.files?.[0]
             if (f) handleFile(f)
@@ -627,16 +550,16 @@ export default function SheetScanDemo() {
             color: "#fff",
             border: 0,
             cursor: "pointer",
-            fontWeight: 800,
+            fontWeight: 900,
             opacity: !imgUrl || !cvReady ? 0.5 : 1,
           }}
         >
-          Scannen (Auto-ROI)
+          1) Scannen
         </button>
 
         <button
           onClick={countNow}
-          disabled={!imgUrl || !cvReady || !roi}
+          disabled={!imgUrl || !cvReady}
           style={{
             padding: "10px 14px",
             borderRadius: 10,
@@ -645,10 +568,10 @@ export default function SheetScanDemo() {
             border: 0,
             cursor: "pointer",
             fontWeight: 900,
-            opacity: !imgUrl || !cvReady || !roi ? 0.5 : 1,
+            opacity: !imgUrl || !cvReady ? 0.5 : 1,
           }}
         >
-          Zählen
+          2) Zählen
         </button>
 
         <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -662,14 +585,13 @@ export default function SheetScanDemo() {
           <input
             type="number"
             value={rows}
-            min={1}
-            max={10}
+            min={6}
+            max={30}
             onChange={(e) => {
-              const v = Math.max(1, Math.min(10, parseInt(e.target.value || "5", 10)))
+              const v = Math.max(6, Math.min(30, parseInt(e.target.value || "8", 10)))
               setRows(v)
-              setRoi((prev) => (prev ? { ...prev, rows: v } : prev))
             }}
-            style={{ width: 60 }}
+            style={{ width: 70 }}
           />
         </label>
 
@@ -679,18 +601,19 @@ export default function SheetScanDemo() {
         </label>
       </div>
 
-      <div style={{ marginBottom: 10, color: "#333", fontWeight: 700 }}>{log}</div>
+      <div style={{ marginBottom: 10, color: "#333", fontWeight: 800 }}>{log}</div>
 
       <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12, background: "#fafafa", overflow: "auto" }}>
         <canvas ref={originalCanvasRef} style={{ display: "none" }} />
         <canvas ref={warpedCanvasRef} style={{ display: "none" }} />
-
         <canvas
           ref={overlayCanvasRef}
           style={{
-            borderRadius: 10,
+            borderRadius: 12,
             border: "1px solid #ccc",
             background: "#fff",
+            width: "100%",
+            maxWidth: 980,
           }}
         />
       </div>
@@ -703,15 +626,28 @@ export default function SheetScanDemo() {
           padding: 12,
           borderRadius: 12,
           overflowX: "auto",
-          minHeight: 120,
+          minHeight: 140,
         }}
       >
         {counts ? JSON.stringify(counts, null, 2) : "Noch nichts gezählt…"}
       </pre>
 
-      <div style={{ fontSize: 13, opacity: 0.85, marginTop: 8 }}>
-        Wenn noch zu viel gezählt wird: erhöhe <code>INNER_PAD_RATIO</code> leicht (0.48) oder <code>MIN_COMP_AREA</code> (22).
-      </div>
+      {/* ✅ ROW SUMMARY (damit du SOFORT siehst ob es stimmt) */}
+      {counts ? (
+        <div style={{ marginTop: 10, fontSize: 14, fontWeight: 900 }}>
+          {Object.entries(counts).map(([rowKey, rowObj]: any) => {
+            const markedCount = Object.entries(rowObj)
+              .filter(([k]) => k !== "player")
+              .reduce((acc, [, v]: any) => acc + (v?.marked ? 1 : 0), 0)
+
+            return (
+              <div key={rowKey}>
+                {rowKey}: {markedCount} marks
+              </div>
+            )
+          })}
+        </div>
+      ) : null}
     </main>
   )
 }
