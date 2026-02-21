@@ -115,7 +115,6 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
 
           if (reactivateError) throw reactivateError
 
-          // optional log (wie in deinem Code)
           const { error: movementError } = await supabase.from("player_movements").insert([
             {
               player_id: selectedPlayerId,
@@ -193,7 +192,7 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
   }
 
   const removeTeamMember = async (memberId: string) => {
-    if (!confirm("Sind Sie sicher, dass Sie diesen Spieler aus der Mannschaft entfernen möchten?")) return
+    // ✅ confirm entfernt, weil du ein eigenes Modal im UI verwendest
 
     setAssignmentLoading(true)
     setAssignmentMessage("Mitglied wird entfernt...")

@@ -1882,45 +1882,74 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
                                 {(hasLeadershipInTeam(match.home_team_id) ||
                                   hasLeadershipInTeam(match.away_team_id)) && (
                                   <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => {
-                                        const userTeamIds = teamMemberships.map((tm) => tm.team_id)
-                                        const isUserTeamHome = userTeamIds.includes(match.home_team_id)
-                                        const isUserTeamAway = userTeamIds.includes(match.away_team_id)
-                                        const myTeamId = isUserTeamHome
-                                          ? match.home_team_id
-                                          : isUserTeamAway
-                                            ? match.away_team_id
-                                            : null
+                                    
+									{/* ✅ 1) Statistiken */}
+<Button
+  size="sm"
+  variant="outline"
+  onClick={() => {
+    const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+    const isUserTeamHome = userTeamIds.includes(match.home_team_id)
+    const isUserTeamAway = userTeamIds.includes(match.away_team_id)
+    const myTeamId = isUserTeamHome
+      ? match.home_team_id
+      : isUserTeamAway
+        ? match.away_team_id
+        : null
 
-                                        if (myTeamId) {
-                                          router.push(`/statistics/${match.id}?teamId=${myTeamId}`)
-                                        }
-                                      }}
-                                      className="bg-green-600 hover:bg-green-700 text-white border-green-600 w-full h-8"
-                                    >
-                                      <Target className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">Statistiken</span>
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700 w-full h-8"
-                                      onClick={() => {
-                                        setSelectedMatchForResults(match.id)
-                                        setIsResultsDialogOpen(true)
-                                        setEditMatchScores({
-                                          home: match.home_score || 0,
-                                          away: match.away_score || 0,
-                                        })
-                                      }}
-                                    >
-                                      <Edit className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">
-                                        {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
-                                      </span>
-                                    </Button>
+    if (myTeamId) {
+      router.push(`/statistics/${match.id}?teamId=${myTeamId}`)
+    }
+  }}
+  className="bg-green-600 hover:bg-green-700 text-white border-green-600 w-full h-8"
+>
+  <Target className="h-3 w-3 mr-1 flex-shrink-0" />
+  <span className="text-xs">Statistik eingeben </span>
+</Button>
+
+{/* ✅ 2) Live */}
+<Button
+  size="sm"
+  variant="outline"
+  onClick={() => {
+    const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+    const isUserTeamHome = userTeamIds.includes(match.home_team_id)
+    const isUserTeamAway = userTeamIds.includes(match.away_team_id)
+    const myTeamId = isUserTeamHome
+      ? match.home_team_id
+      : isUserTeamAway
+        ? match.away_team_id
+        : null
+
+    if (myTeamId) {
+      router.push(`/live-statistics/${match.id}?teamId=${myTeamId}`)
+    }
+  }}
+  className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 w-full h-8"
+>
+  <Target className="h-3 w-3 mr-1 flex-shrink-0" />
+  <span className="text-xs"> Live erfassen</span>
+</Button>
+
+{/* ✅ 3) Ergebnis */}
+<Button
+  size="sm"
+  className="bg-blue-600 hover:bg-blue-700 w-full h-8"
+  onClick={() => {
+    setSelectedMatchForResults(match.id)
+    setIsResultsDialogOpen(true)
+    setEditMatchScores({
+      home: match.home_score || 0,
+      away: match.away_score || 0,
+    })
+  }}
+>
+  <Edit className="h-3 w-3 mr-1 flex-shrink-0" />
+  <span className="text-xs">
+    {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
+  </span>
+</Button>
+									
                                     <Button
                                       size="sm"
                                       variant="outline"

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -21,6 +22,7 @@ type Props = {
 
   newTeamName: string
   setNewTeamName: (v: string) => void
+
   teamLogoPreview: string | null
   handleTeamLogoChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   clearTeamLogo: () => void
@@ -52,6 +54,34 @@ export function ManageTeamsTab(props: Props) {
     onDeleteTeam,
   } = props
 
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteTeamId, setDeleteTeamId] = useState<string | null>(null)
+  const [deleteTeamName, setDeleteTeamName] = useState<string>("")
+  const [confirmText, setConfirmText] = useState("")
+
+  function openDelete(team: Team) {
+    setDeleteTeamId(team.id)
+    setDeleteTeamName(team.name)
+    setConfirmText("")
+    setDeleteOpen(true)
+  }
+
+  function closeDelete() {
+    setDeleteOpen(false)
+    setDeleteTeamId(null)
+    setDeleteTeamName("")
+    setConfirmText("")
+  }
+
+  async function confirmDelete() {
+    if (!deleteTeamId) return
+    onDeleteTeam(deleteTeamId)
+    closeDelete()
+  }
+
+  const mustType = `LÖSCHEN`
+  const canDelete = confirmText.trim().toUpperCase() === mustType
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-gray-800">
@@ -82,6 +112,7 @@ export function ManageTeamsTab(props: Props) {
               onChange={handleTeamLogoChange}
               className="flex-1 h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
             />
+
             {teamLogoPreview && (
               <div className="relative w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border border-gray-200">
                 <Image
@@ -177,6 +208,7 @@ export function ManageTeamsTab(props: Props) {
                   <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700 text-right">Aktionen</th>
                 </tr>
               </thead>
+
               <tbody>
                 {teams.map((team, idx) => {
                   const memberCount = teamMembers.filter((m) => m.team_id === team.id).length
@@ -212,10 +244,11 @@ export function ManageTeamsTab(props: Props) {
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Bearbeiten</span>
                           </Button>
+
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => onDeleteTeam(team.id)}
+                            onClick={() => openDelete(team)}
                             disabled={teamLoading}
                             className="h-8 px-3"
                           >
@@ -232,6 +265,97 @@ export function ManageTeamsTab(props: Props) {
           </div>
         )}
       </div>
+
+      {deleteOpen && (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
+            onClick={() => !teamLoading && closeDelete()}
+          />
+          <div className="absolute left-1/2 top-1/2 w-[95vw] max-w-md -translate-x-1/2 -translate-y-1/2">
+            <div className="rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden">
+              <div className="p-4 border-b border-gray-100 bg-gray-50">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h5 className="text-base font-semibold text-gray-900">Mannschaft löschen</h5>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Diese Aktion kann nicht rückgängig gemacht werden.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => !teamLoading && closeDelete()}
+                  >
+                    <XCircle className="h-5 w-5 text-gray-500" />
+                    <span className="sr-only">Schließen</span>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-4 space-y-4">
+                <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-800 flex gap-2">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold">Du bist dabei zu löschen:</div>
+                    <div className="mt-1">
+                      <span className="font-medium">{deleteTeamName}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmDelete">
+                    Tippe <span className="font-semibold">LÖSCHEN</span> zum Bestätigen
+                  </Label>
+                  <Input
+                    id="confirmDelete"
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="LÖSCHEN"
+                    className="h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-gray-100 bg-white flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 h-10 border-gray-200 text-gray-700 hover:bg-gray-50"
+                  onClick={() => !teamLoading && closeDelete()}
+                  disabled={teamLoading}
+                >
+                  Abbrechen
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="flex-1 h-10"
+                  onClick={confirmDelete}
+                  disabled={teamLoading || !canDelete}
+                >
+                  {teamLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Wird gelöscht...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      <span>Endgültig löschen</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

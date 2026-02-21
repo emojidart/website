@@ -242,7 +242,7 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
   }
 
   const deletePlayer = async (playerId: string, photoUrl: string | null, afterDelete?: () => void) => {
-    if (!confirm("Sind Sie sicher, dass Sie diesen Spieler löschen möchten?")) return
+    // ✅ confirm entfernt, weil du ein eigenes Modal im UI verwendest
 
     setPlayerLoading(true)
     setPlayerMessage("Spieler wird gelöscht...")
@@ -275,7 +275,6 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
     }
   }
 
-  // ✅ NEU: Eintritt / Austritt speichern (nur Spalten-Update, keine Beziehungen)
   const updateMembershipDates = async (playerId: string, joinedAt: string | null, leftAt: string | null) => {
     setPlayerLoading(true)
     setPlayerMessage("Mitgliedschaft wird gespeichert...")
@@ -363,7 +362,6 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
     submitPlayerForm,
     deletePlayer,
 
-    // ✅ neu
     updateMembershipDates,
   }
 }

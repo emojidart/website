@@ -227,32 +227,32 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
             />
           )}
 
-          {activeSection === "manage-teams" && (
-            <ManageTeamsTab
-              teams={teams.teams}
-              teamMembers={members.teamMembers}
-              teamLoading={teams.teamLoading}
-              teamMessage={teams.teamMessage}
-              teamMessageType={teams.teamMessageType}
-              newTeamName={teams.newTeamName}
-              setNewTeamName={teams.setNewTeamName}
-              teamLogoPreview={teams.teamLogoPreview}
-              onLogoChange={teams.handleTeamLogoChange}
-              onRemoveLogo={() => {
-                teams.setTeamLogoPreview(null)
-                teams.setTeamLogoFile(null)
-              }}
-              editingTeamId={teams.editingTeamId}
-              onSubmit={teams.submitTeamForm}
-              onEditTeam={teams.beginEditTeam}
-              onCancelEdit={teams.cancelTeamEdit}
-              onDeleteTeam={(teamId) =>
-                teams.deleteTeam(teamId, async () => {
-                  await members.fetchTeamMembers()
-                })
-              }
-            />
-          )}
+       {activeSection === "manage-teams" && (
+  <ManageTeamsTab
+    teams={teams.teams}
+    teamMembers={members.teamMembers}
+    teamLoading={teams.teamLoading}
+    teamMessage={teams.teamMessage}
+    teamMessageType={teams.teamMessageType}
+    newTeamName={teams.newTeamName}
+    setNewTeamName={teams.setNewTeamName}
+    teamLogoPreview={teams.teamLogoPreview}
+    handleTeamLogoChange={teams.handleTeamLogoChange}
+    clearTeamLogo={() => {
+      teams.setTeamLogoPreview(null)
+      teams.setTeamLogoFile(null)
+    }}
+    editingTeamId={teams.editingTeamId}
+    submitTeamForm={teams.submitTeamForm}
+    onEditTeam={teams.beginEditTeam}
+    onCancelEdit={teams.cancelTeamEdit}
+    onDeleteTeam={(teamId) =>
+      teams.deleteTeam(teamId, async () => {
+        await members.fetchTeamMembers()
+      })
+    }
+  />
+)}
 
           {activeSection === "assign-player" && (
             <AssignPlayerTab

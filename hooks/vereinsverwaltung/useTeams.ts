@@ -117,9 +117,7 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
         if (error) throw error
         setTeamMessage("Mannschaft erfolgreich aktualisiert!")
       } else {
-        const { error } = await supabase
-          .from("teams")
-          .insert([{ name: newTeamName, logo_url: logoUrl, user_id: user.id }])
+        const { error } = await supabase.from("teams").insert([{ name: newTeamName, logo_url: logoUrl, user_id: user.id }])
         if (error) throw error
         setTeamMessage("Mannschaft erfolgreich erstellt!")
       }
@@ -137,7 +135,7 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
   }
 
   const deleteTeam = async (teamId: string, afterDelete?: () => void) => {
-    if (!confirm("Sind Sie sicher, dass Sie diese Mannschaft löschen möchten?")) return
+    // ✅ confirm entfernt, weil du jetzt dein eigenes Modal im UI hast
 
     setTeamLoading(true)
     setTeamMessage("Mannschaft wird gelöscht...")

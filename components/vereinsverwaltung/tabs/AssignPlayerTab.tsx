@@ -1,10 +1,12 @@
 "use client"
 
+import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, CheckCircle, Crown, Loader2, ShieldCheck, Trash2, UserRoundCog } from "lucide-react"
+import { AlertCircle, CheckCircle, Crown, Loader2, ShieldCheck, Trash2, UserRoundCog, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ClubPlayer, Team, TeamMember } from "@/components/vereinsverwaltung/types"
 
@@ -54,6 +56,37 @@ export function AssignPlayerTab(props: Props) {
     onSubmitAssign,
     onRemoveMember,
   } = props
+
+  const [removeOpen, setRemoveOpen] = useState(false)
+  const [removeMemberId, setRemoveMemberId] = useState<string | null>(null)
+  const [removePlayerName, setRemovePlayerName] = useState<string>("")
+  const [removeTeamName, setRemoveTeamName] = useState<string>("")
+  const [confirmText, setConfirmText] = useState("")
+
+  function openRemove(member: TeamMember, teamName: string) {
+    setRemoveMemberId(member.id)
+    setRemovePlayerName(member.player_name ?? "")
+    setRemoveTeamName(teamName)
+    setConfirmText("")
+    setRemoveOpen(true)
+  }
+
+  function closeRemove() {
+    setRemoveOpen(false)
+    setRemoveMemberId(null)
+    setRemovePlayerName("")
+    setRemoveTeamName("")
+    setConfirmText("")
+  }
+
+  function confirmRemove() {
+    if (!removeMemberId) return
+    onRemoveMember(removeMemberId)
+    closeRemove()
+  }
+
+  const mustType = "ENTFERNEN"
+  const canRemove = confirmText.trim().toUpperCase() === mustType
 
   return (
     <div className="space-y-6">
@@ -209,7 +242,7 @@ export function AssignPlayerTab(props: Props) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => onRemoveMember(member.id)}
+                            onClick={() => openRemove(member, team.name)}
                             disabled={assignmentLoading}
                             className="text-red-500 hover:bg-red-50"
                           >
@@ -226,6 +259,96 @@ export function AssignPlayerTab(props: Props) {
           </div>
         )}
       </div>
+
+      {removeOpen && (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
+            onClick={() => !assignmentLoading && closeRemove()}
+          />
+          <div className="absolute left-1/2 top-1/2 w-[95vw] max-w-md -translate-x-1/2 -translate-y-1/2">
+            <div className="rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden">
+              <div className="p-4 border-b border-gray-100 bg-gray-50">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h5 className="text-base font-semibold text-gray-900">Spieler aus Mannschaft entfernen</h5>
+                    <p className="text-sm text-gray-600 mt-1">Der Spieler wird als „ausgetreten“ markiert.</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => !assignmentLoading && closeRemove()}
+                  >
+                    <XCircle className="h-5 w-5 text-gray-500" />
+                    <span className="sr-only">Schließen</span>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-4 space-y-4">
+                <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-800 flex gap-2">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold">Du bist dabei zu entfernen:</div>
+                    <div className="mt-1">
+                      <span className="font-medium">{removePlayerName}</span>{" "}
+                      <span className="text-xs text-red-700">aus {removeTeamName}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmRemoveMember">
+                    Tippe <span className="font-semibold">ENTFERNEN</span> zum Bestätigen
+                  </Label>
+                  <Input
+                    id="confirmRemoveMember"
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="ENTFERNEN"
+                    className="h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-gray-100 bg-white flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 h-10 border-gray-200 text-gray-700 hover:bg-gray-50"
+                  onClick={() => !assignmentLoading && closeRemove()}
+                  disabled={assignmentLoading}
+                >
+                  Abbrechen
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="flex-1 h-10"
+                  onClick={confirmRemove}
+                  disabled={assignmentLoading || !canRemove}
+                >
+                  {assignmentLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Wird entfernt...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      <span>Endgültig entfernen</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -36,6 +36,7 @@ import {
   Bell,
   CheckCircle,
   Dumbbell,
+  Printer,
 } from "lucide-react"
 import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
 
@@ -623,6 +624,7 @@ export default function MemberProfileAppPage() {
     { title: "Zusagen & Aufstellung", description: "Spieler zusagen verwalten und Teamaufstellung erstellen", icon: CheckCircle, href: "/member-availability", color: "from-green-500 to-emerald-600" },
     { title: "Meine Teams", description: "Teams und Teammitglieder verwalten", icon: Users, href: "/meine-teams-app", color: "from-teal-500 to-teal-600" },
     { title: "Spieler Statistiken", description: "Detaillierte Leistungsanalyse", icon: BarChart3, href: "/member-statistics-app", color: "from-indigo-500 to-indigo-600" },
+    { title: "Statistik Blätter drucken", description: "Statistik-/Spielerblätter auswählen und drucken", icon: Printer, href: "/team-print-sheet", color: "from-orange-500 to-orange-600", requiresLeadership: true },
     { title: "Training", description: "Trainingsübungen und Fortschritt", icon: Dumbbell, href: "/training-app", color: "from-orange-500 to-red-600" },
     { title: "Lobby", description: "Spiele gegen andere Spieler", icon: Target, href: "/lobby-app", color: "from-pink-500 to-pink-600" },
     { title: "Match Galerie", description: "Match-Galerie und Spielfotos", icon: Camera, href: "/match-galerie-app", color: "from-purple-500 to-purple-600" },
@@ -715,23 +717,22 @@ export default function MemberProfileAppPage() {
                 </div>
                 <div className="flex-grow w-full">
                   <h3 className="text-base sm:text-lg font-bold text-red-700 mb-2">Beitrag überfällig</h3>
-                 <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-  Du hast{" "}
-  <b>
-    {myDuesDetail.overdueCount}×{" "}
-    {myDuesDetail.overdueCount === 1 ? "überfälligen Beitrag" : "überfällige Beiträge"}
-  </b>{" "}
-  offen (Summe: <b>{formatCurrencyEUR(myDuesDetail.overdueAmount)}</b>).
-  <br />
-  <span className="font-medium text-red-700">
-    {myDuesDetail.overdueCount === 1
-      ? "Der offene Betrag muss schnellstmöglich beglichen werden."
-      : "Die offenen Beträge müssen schnellstmöglich beglichen werden."}
-  </span>
-  <br />
-  Solltest du Zahlungsschwierigkeiten haben, wende dich bitte an die Vereinsleitung.
-</p>
-
+                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                    Du hast{" "}
+                    <b>
+                      {myDuesDetail.overdueCount}×{" "}
+                      {myDuesDetail.overdueCount === 1 ? "überfälligen Beitrag" : "überfällige Beiträge"}
+                    </b>{" "}
+                    offen (Summe: <b>{formatCurrencyEUR(myDuesDetail.overdueAmount)}</b>).
+                    <br />
+                    <span className="font-medium text-red-700">
+                      {myDuesDetail.overdueCount === 1
+                        ? "Der offene Betrag muss schnellstmöglich beglichen werden."
+                        : "Die offenen Beträge müssen schnellstmöglich beglichen werden."}
+                    </span>
+                    <br />
+                    Solltest du Zahlungsschwierigkeiten haben, wende dich bitte an die Vereinsleitung.
+                  </p>
 
                   {overdueMonthsLabel.length > 0 && (
                     <div className="text-sm text-gray-700 mb-3">
@@ -764,19 +765,17 @@ export default function MemberProfileAppPage() {
                     </div>
                   )}
 
-                <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-  Du hast{" "}
-  <b>
-    {myDuesDetail.dueCount}×{" "}
-    {myDuesDetail.dueCount === 1 ? "fälligen Beitrag" : "fällige Beiträge"}
-  </b>{" "}
-  offen (Summe: <b>{formatCurrencyEUR(myDuesDetail.dueAmount)}</b>).
-  <br />
-  {myDuesDetail.dueCount === 1
-    ? "Der Betrag muss spätestens bis zum 20. des Monats auf unserem Vereinskonto eingegangen sein."
-    : "Die Beträge müssen spätestens bis zum 20. des Monats auf unserem Vereinskonto eingegangen sein."}
-</p>
-
+                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                    Du hast{" "}
+                    <b>
+                      {myDuesDetail.dueCount}× {myDuesDetail.dueCount === 1 ? "fälligen Beitrag" : "fällige Beiträge"}
+                    </b>{" "}
+                    offen (Summe: <b>{formatCurrencyEUR(myDuesDetail.dueAmount)}</b>).
+                    <br />
+                    {myDuesDetail.dueCount === 1
+                      ? "Der Betrag muss spätestens bis zum 20. des Monats auf unserem Vereinskonto eingegangen sein."
+                      : "Die Beträge müssen spätestens bis zum 20. des Monats auf unserem Vereinskonto eingegangen sein."}
+                  </p>
 
                   <Badge className="bg-yellow-500 text-white">{myDuesDetail.dueCount}× fällig</Badge>
                 </div>
@@ -785,65 +784,50 @@ export default function MemberProfileAppPage() {
           </Card>
         )}
 
-		
-		
-		{totalUnread > 0 && (
-  <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-purple-50 to-indigo-50 border-l-4 border-l-purple-500">
-    <CardContent className="p-4 sm:p-6">
-      <div className="flex items-start gap-3 sm:gap-4">
-        <div className="flex-shrink-0">
-          <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl shadow-lg">
-            <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-          </div>
-        </div>
+        {totalUnread > 0 && (
+          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-purple-50 to-indigo-50 border-l-4 border-l-purple-500">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex-shrink-0">
+                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl shadow-lg">
+                    <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  </div>
+                </div>
 
-        <div className="flex-grow w-full">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-            <h3 className="text-base sm:text-lg font-bold text-gray-900">Neue Team-Chat Nachrichten</h3>
-            <Badge className="bg-purple-600 text-white w-fit">{totalUnread}</Badge>
-          </div>
-
-          <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-            Du hast neue Nachrichten in deinen Team-Chats. Tippe auf ein Team, um den Chat zu öffnen.
-          </p>
-
-          <div className="space-y-2">
-            {chatRooms
-              .filter((r) => (unreadCounts[r.id] || 0) > 0)
-              .slice(0, 5)
-              .map((room) => (
-                <div
-                  key={room.id}
-                  className="flex items-center justify-between bg-white/70 rounded-lg p-3 border border-purple-200 cursor-pointer hover:bg-white transition-colors"
-                  onClick={() => router.push(`/chat-app?room_id=${room.id}&scope=${CHAT_SCOPE}`)}
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-900 truncate">{room.name}</div>
-                    <div className="text-xs text-gray-600">Tippen zum Öffnen</div>
+                <div className="flex-grow w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900">Neue Team-Chat Nachrichten</h3>
+                    <Badge className="bg-purple-600 text-white w-fit">{totalUnread}</Badge>
                   </div>
 
-                  <Badge className="bg-red-500 text-white">{unreadCounts[room.id] || 0}</Badge>
-                </div>
-              ))}
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-)}
+                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                    Du hast neue Nachrichten in deinen Team-Chats. Tippe auf ein Team, um den Chat zu öffnen.
+                  </p>
 
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+                  <div className="space-y-2">
+                    {chatRooms
+                      .filter((r) => (unreadCounts[r.id] || 0) > 0)
+                      .slice(0, 5)
+                      .map((room) => (
+                        <div
+                          key={room.id}
+                          className="flex items-center justify-between bg-white/70 rounded-lg p-3 border border-purple-200 cursor-pointer hover:bg-white transition-colors"
+                          onClick={() => router.push(`/chat-app?room_id=${room.id}&scope=${CHAT_SCOPE}`)}
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-gray-900 truncate">{room.name}</div>
+                            <div className="text-xs text-gray-600">Tippen zum Öffnen</div>
+                          </div>
+
+                          <Badge className="bg-red-500 text-white">{unreadCounts[room.id] || 0}</Badge>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Willkommen */}
         <div className="text-center mb-6 sm:mb-8">
@@ -854,10 +838,7 @@ export default function MemberProfileAppPage() {
 
           <div className="text-lg sm:text-xl text-gray-600 px-4">
             Schön dich zu sehen, {profile.club_players?.name || "Vereinsmitglied"}
-           
           </div>
-
-          
         </div>
 
         {/* Profil Card */}
@@ -1045,27 +1026,29 @@ export default function MemberProfileAppPage() {
 
         {/* Navigation */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {navigationItems.map((item, index) => (
-            <Card
-              key={index}
-              className="border-0 shadow-xl bg-white/95 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 cursor-pointer group"
-              onClick={() => router.push(item.href)}
-            >
-              <CardContent className="p-4 sm:p-6">
-                <div
-                  className={`inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br ${item.color} rounded-2xl mb-3 sm:mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}
-                >
-                  <item.icon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">{item.description}</p>
-                <div className="flex items-center text-orange-600 font-semibold group-hover:text-orange-700 transition-colors text-sm sm:text-base">
-                  <span>Öffnen</span>
-                  <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {navigationItems
+            .filter((item: any) => !item.requiresLeadership || isLeadershipRole())
+            .map((item, index) => (
+              <Card
+                key={index}
+                className="border-0 shadow-xl bg-white/95 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+                onClick={() => router.push(item.href)}
+              >
+                <CardContent className="p-4 sm:p-6">
+                  <div
+                    className={`inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br ${item.color} rounded-2xl mb-3 sm:mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <item.icon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
+                  <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">{item.description}</p>
+                  <div className="flex items-center text-orange-600 font-semibold group-hover:text-orange-700 transition-colors text-sm sm:text-base">
+                    <span>Öffnen</span>
+                    <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
         </div>
 
         {/* Stats */}
