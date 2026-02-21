@@ -74,7 +74,7 @@ interface Match {
 
 interface Event {
   vacation_user_id?: string | null;
-  type?: string // "event" | "dko" | "birthday" | "vacation"
+  type?: string // "event" | "dko" | "birthday" | "vacation" | "holiday"
   id: string
   name: string
   event_date: string
@@ -186,6 +186,7 @@ const [loadingLineup, setLoadingLineup] = useState(false)
   const [viewMode, setViewMode] = useState<"month" | "list" | "browse">("month")
   const [matches, setMatches] = useState<Match[]>([])
   const [events, setEvents] = useState<Event[]>([])
+  const [holidayEvents, setHolidayEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [leagues, setLeagues] = useState<string[]>(["Alle Ligen"])
   const [teams, setTeams] = useState<string[]>(["Alle Teams"])
@@ -212,6 +213,27 @@ const [loadingLineup, setLoadingLineup] = useState(false)
   const [editingVacationId, setEditingVacationId] = useState<string | null>(null)
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
   const [confirmDeleteVacationId, setConfirmDeleteVacationId] = useState<string | null>(null)
+  
+  const fetchAustrianHolidays = async (year: number): Promise<Event[]> => {
+  try {
+    const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/AT`)
+    if (!res.ok) return []
+
+    const rows = (await res.json()) as any[]
+    return (rows || []).map((h) => ({
+      type: "holiday",
+      id: `holiday-${year}-${h.date}-${h.localName}`,
+      name: `🇦🇹 Feiertag: ${h.localName}`,
+      event_date: h.date, // YYYY-MM-DD
+      event_type: "Feiertag",
+      description: h.name || h.localName,
+      start_time: "00:00:00",
+    })) as Event[]
+  } catch (e) {
+    console.error("Failed to fetch AT holidays:", e)
+    return []
+  }
+}
 
   const fetchData = async () => {
     try {
@@ -444,6 +466,11 @@ try {
   useEffect(() => {
     fetchData()
   }, [])
+  
+  useEffect(() => {
+  const y = currentDate.getFullYear()
+  fetchAustrianHolidays(y).then(setHolidayEvents)
+}, [currentDate])
 
     useEffect(() => {
     const prefillVacationName = async () => {
@@ -512,7 +539,9 @@ try {
     return leagueMatch && teamMatch && resultTypeMatch
   })
 
-  const filteredEvents = events.filter((event) => {
+ const allEvents = [...events, ...holidayEvents]
+
+const filteredEvents = allEvents.filter((event) => {
     // ✅ Team-Filter gilt nur für Spiele
     if (selectedTeam !== "Alle Teams") return false
     if (selectedItemType === "Geburtstage" || selectedItemType === "Urlaube") return false
@@ -521,6 +550,7 @@ try {
     
     if (selectedItemType === "Events") return event.type === "event"
     if (selectedItemType === "Turniere") return event.type === "dko"
+	if (selectedItemType === "Feiertage") return event.type === "holiday"
 
    
     return true
@@ -874,6 +904,8 @@ const getEventTypeBadge = (eventType: string) => {
   } else if (eventType === "Versammlung") {
     return <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">Event</Badge>
   } else if (eventType === "Urlaub") {
+  } else if (eventType === "Feiertag") {
+  return <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">🇦🇹 Feiertag</Badge>
     return <Badge className="bg-sky-100 text-sky-800 border-sky-200 text-xs">🏖️ Urlaub</Badge>
   } else if (eventType === "Spielfrei") {
     return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">Spielfrei</Badge>
@@ -1225,6 +1257,13 @@ const normalizeTimeHHMM = (value: any): string => {
                             Nur Events
                           </div>
                         </SelectItem>
+						
+						<SelectItem value="Feiertage" className="text-sm">
+  <div className="flex items-center gap-2">
+    <CalendarDays className="h-4 w-4 text-red-700" />
+    Nur Feiertage
+  </div>
+</SelectItem>
 
                         <SelectItem value="Urlaube" className="text-sm">
                           <div className="flex items-center gap-2">
@@ -1601,10 +1640,11 @@ text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awa
 
       } else {
         const ev: any = item
-        if (ev.event_type === "Urlaub") bg = "bg-red-500"
-        else if (ev.event_type === "Turnier") bg = "bg-purple-500"
-        else if (ev.event_type === "Geburtstag") bg = "bg-pink-500"
-        else bg = "bg-green-500"
+        if (ev.event_type === "Feiertag") bg = "bg-red-600"
+else if (ev.event_type === "Urlaub") bg = "bg-sky-500"
+else if (ev.event_type === "Turnier") bg = "bg-purple-500"
+else if (ev.event_type === "Geburtstag") bg = "bg-pink-500"
+else bg = "bg-green-500"
 
         text = ev.name || "Termin"
       }
