@@ -730,53 +730,31 @@ if (tmErr) console.error("team_members error:", tmErr)
   }
   
   async function confirmLineupAsAdmin() {
-  alert("✅ CLICK: confirmLineupAsAdmin gestartet")
-
-  // Debug: Zustand anzeigen
-  alert(
-    `STATE:\n` +
-      `dialogMatch=${!!dialogMatch}\n` +
-      `selectedTeamId=${selectedTeamId ?? "null"}\n` +
-      `isAdmin=${String(isAdmin)}\n` +
-      `myProfileId=${myProfileId ?? "null"}\n` +
-      `token=${session?.access_token ? "OK" : "MISSING"}\n` +
-      `locked=${dialogMatch ? String(isMatchLocked(dialogMatch)) : "n/a"}`
-  )
-
-  if (!dialogMatch) return alert("STOP: dialogMatch fehlt")
-  if (!selectedTeamId) return alert("STOP: selectedTeamId fehlt")
-  if (!isAdmin) return alert("STOP: isAdmin ist FALSE")
-  if (!myProfileId) return alert("STOP: myProfileId fehlt")
-  if (!session?.access_token) return alert("STOP: session.access_token fehlt")
-
-  // WICHTIG: wenn du willst, dass Admin nach Spielbeginn darf -> diese Zeile ENTFERNEN
-  // if (isMatchLocked(dialogMatch)) return alert("STOP: Match ist gesperrt (Spielbeginn)")
+  if (!dialogMatch) return
+  if (!selectedTeamId) return
+  if (!isAdmin) return
+  if (!myProfileId) return
+  if (!session?.access_token) return
 
   const startersNow = lineupPlayers.filter((p) => !p.is_substitute).length
-  if (startersNow === 0) return alert("STOP: 0 Fixspieler -> kann nicht bestätigen")
+  if (startersNow === 0) return
 
   try {
-    alert("➡️ RPC confirm_lineup...")
-
     const { error } = await supabase.rpc("confirm_lineup", {
       p_match_id: dialogMatch.id,
       p_team_id: selectedTeamId,
     })
     if (error) {
       console.error("RPC ERROR", error)
-      return alert("❌ RPC Fehler: " + (error.message ?? "unknown"))
+      return
     }
 
-    alert("✅ RPC ok, reload MatchData...")
     await loadMatchData(dialogMatch.id, selectedTeamId)
-
-    alert("➡️ PUSH fetch /api/push/lineup...")
 
     const res = await fetch("/api/push/lineup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // wichtig: token rein
         Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({
@@ -791,13 +769,11 @@ if (tmErr) console.error("team_members error:", tmErr)
     console.log("ADMIN PUSH RES", res.status, json)
 
     if (!res.ok) {
-      return alert(`❌ Push Fehler ${res.status}: ${json?.error ?? "unknown"}`)
+      console.error("Push Fehler", res.status, json)
+      return
     }
-
-    alert(`✅ Push OK: sent=${json?.sent ?? "?"}, failed=${json?.failed ?? "?"}`)
   } catch (e: any) {
     console.error("confirmLineupAsAdmin error", e)
-    alert("❌ Catch error: " + (e?.message ?? "unknown"))
   }
 }
 
