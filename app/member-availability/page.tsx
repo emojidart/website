@@ -278,6 +278,8 @@ const effectiveLineup = useMemo(() => {
   
   const [lineupHeader, setLineupHeader] = useState<LineupHeader | null>(null)
   const [confirmingLineup, setConfirmingLineup] = useState(false)
+  // ✅ UI Fehler anzeigen (idiotensicher)
+const [lineupError, setLineupError] = useState<string | null>(null)
   
 
 
@@ -858,20 +860,61 @@ async function confirmLineup() {
   if (isMatchLocked(dialogMatch)) return
   if (!profile?.id) return
 
+  // ✅ Reset alte Fehlermeldung
+  setLineupError(null)
+
+  // ✅ Wenn keine Stammspieler ausgewählt sind → nicht bestätigen
+  // (wir nutzen effectiveLineup = Draft wenn Editmode, sonst DB)
+  const startersNow = effectiveLineup.filter((p) => !p.is_substitute).length
+  if (startersNow === 0) {
+    setLineupError("Du musst mindestens 1 Stammspieler auswählen, bevor du bestätigen kannst.")
+    return
+  }
+
   setConfirmingLineup(true)
   try {
+    // ✅ IDIOTENSICHER: Wenn im Edit-Mode und Draft geändert → AUTOMATISCH vorher speichern
+    if (lineupEditMode && draftDirty) {
+      const matchId = dialogMatch.id
+      const teamId = selectedTeamId
+
+      // 1) Alles löschen
+      await supabase.from("match_lineups").delete().eq("match_id", matchId).eq("team_id", teamId)
+
+      // 2) Draft neu einfügen
+      const rowsToInsert = draftLineup.map((p) => ({
+        match_id: matchId,
+        team_id: teamId,
+        player_id: p.player_id,
+        position: p.is_substitute ? 0 : p.position,
+        is_substitute: p.is_substitute,
+      }))
+
+      if (rowsToInsert.length > 0) {
+        const { error } = await supabase.from("match_lineups").insert(rowsToInsert)
+        if (error) throw error
+      }
+
+      // 3) Draft ist jetzt gespeichert
+      setDraftDirty(false)
+    }
+
+    // ✅ Jetzt erst bestätigen (Header-Versionen)
     const { error } = await supabase.rpc("confirm_lineup", {
       p_match_id: dialogMatch.id,
       p_team_id: selectedTeamId,
     })
     if (error) throw error
 
+    // ✅ Reload
     await loadMatchData(dialogMatch.id, selectedTeamId)
 
     // ✅ Nach Bestätigung wieder sperren
     setLineupEditMode(false)
     setLineupChangedNotified(false)
+    setLineupError(null)
 
+    // Push
     await fetch("/api/push/lineup", {
       method: "POST",
       headers: {
@@ -887,6 +930,7 @@ async function confirmLineup() {
     })
   } catch (e) {
     console.error("confirmLineup error", e)
+    setLineupError("Fehler beim Bestätigen. Bitte nochmal versuchen.")
   } finally {
     setConfirmingLineup(false)
   }
@@ -908,6 +952,11 @@ const substitutes = useMemo(
   () => effectiveLineup.filter((p) => p.is_substitute),
   [effectiveLineup]
 )
+
+
+const startersCount = useMemo(() => {
+  return effectiveLineup.filter((p) => !p.is_substitute).length
+}, [effectiveLineup])
 
 
   
@@ -1281,6 +1330,11 @@ const lineupIsStale =
 
                     </CardHeader>
                     <CardContent className="space-y-3">
+					{lineupError ? (
+  <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+    {lineupError}
+  </div>
+) : null}
                       <div className="flex flex-wrap gap-2">
                         <Button
                           variant={myStatus === "yes" ? "default" : "outline"}
@@ -1514,17 +1568,23 @@ const lineupIsStale =
 		
 		{isCaptainOrCoForTeam && !dialogIsLocked && lineupEditMode && (
   <div className="flex gap-2">
-    <Button
-      variant="outline"
-      onClick={() => {
-        setDraftLineup(lineupPlayers)
-        setDraftDirty(false)
-        setLineupEditMode(false)
-      }}
-      className="w-full"
-    >
-      Abbrechen
-    </Button>
+   <Button
+  variant="outline"
+  onClick={() => {
+    // Draft zurück auf DB-Stand
+    setDraftLineup(lineupPlayers)
+    setDraftDirty(false)
+
+    // ❌ NICHT mehr sperren!
+    // setLineupEditMode(false)
+
+    // Fehlermeldung zurücksetzen
+    setLineupError(null)
+  }}
+  className="w-full"
+>
+  Änderungen verwerfen
+</Button>
 
     <Button
       onClick={saveDraftLineup}
@@ -1540,17 +1600,22 @@ const lineupIsStale =
 
 
 
-        {/* Wenn Editmode aktiv -> Confirm Button */}
-        {(!lineupIsConfirmed || lineupEditMode) ? (
-          <Button
-            onClick={confirmLineup}
-            disabled={confirmingLineup || lineupIsConfirmed === true && !lineupIsStale && !lineupEditMode}
-            className="bg-orange-600 hover:bg-orange-700"
-          >
-            {confirmingLineup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            {lineupIsStale || lineupEditMode ? "Änderungen bestätigen" : "Aufstellung bestätigen"}
-          </Button>
-        ) : null}
+       {/* Wenn Editmode aktiv -> Confirm Button */}
+{(!lineupIsConfirmed || lineupEditMode) ? (
+  <Button
+    onClick={confirmLineup}
+    disabled={
+      confirmingLineup ||
+      dialogIsLocked ||
+      startersCount === 0 ||
+      (lineupIsConfirmed === true && !lineupIsStale && !lineupEditMode)
+    }
+    className="bg-orange-600 hover:bg-orange-700"
+  >
+    {confirmingLineup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+    {lineupIsStale || lineupEditMode ? "Änderungen bestätigen" : "Aufstellung bestätigen"}
+  </Button>
+) : null}
       </>
     ) : null}
   </CardContent>

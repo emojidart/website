@@ -63,12 +63,9 @@ export default function MemberAccountRequestPage() {
     const codeOk = normalizeCode(form.code).length >= 8
     const firstOk = form.firstName.trim().length >= 2
     const emailOk = isValidEmail(form.email)
-    // If name was locked from code lookup, allow empty last name (rare single-token names in DB)
     const lastOk = lockedName ? form.lastName.trim().length === 0 || form.lastName.trim().length >= 2 : form.lastName.trim().length >= 2
-
     const pwOk = form.password.length >= 8
     const pwMatch = form.password === form.password2
-
     return codeOk && firstOk && lastOk && emailOk && pwOk && pwMatch && !submitting
   }, [form, lockedName, submitting])
 
@@ -78,7 +75,7 @@ export default function MemberAccountRequestPage() {
     const code = normalizeCode(form.code)
     if (code.length < 8) {
       setLockedName(false)
-      setStatus({ type: "error", message: "Bitte gib deinen Mitglieder‑Code ein (z.B. QR‑T639‑P2D)." })
+      setStatus({ type: "error", message: "Bitte gib deinen Mitglieder-Code ein (z.B. QR-T639-P2D)." })
       return
     }
 
@@ -104,7 +101,7 @@ export default function MemberAccountRequestPage() {
 
       setForm((p) => ({ ...p, code, firstName: first, lastName: last }))
       setLockedName(true)
-      setStatus({ type: "info", message: `Code gefunden: ${fullName}. Bitte E‑Mail & Passwort eintragen.` })
+      setStatus({ type: "info", message: `Code gefunden: ${fullName}. Bitte E-Mail & Passwort eintragen.` })
     } catch (e: any) {
       setLockedName(false)
       setStatus({ type: "error", message: `Code ungültig: ${e?.message || "Unbekannter Fehler"}` })
@@ -123,11 +120,10 @@ export default function MemberAccountRequestPage() {
     const password = form.password
     const password2 = form.password2
 
-    if (code.length < 8) return setStatus({ type: "error", message: "Bitte gib deinen Mitglieder‑Code korrekt an." })
+    if (code.length < 8) return setStatus({ type: "error", message: "Bitte gib deinen Mitglieder-Code korrekt an." })
     if (firstName.length < 2) return setStatus({ type: "error", message: "Vorname ungültig." })
     if (!lockedName && lastName.length < 2) return setStatus({ type: "error", message: "Nachname ungültig." })
-    if (!isValidEmail(email)) return setStatus({ type: "error", message: "E‑Mail ungültig." })
-
+    if (!isValidEmail(email)) return setStatus({ type: "error", message: "E-Mail ungültig." })
     if (password.length < 8) return setStatus({ type: "error", message: "Passwort muss mindestens 8 Zeichen haben." })
     if (password !== password2) return setStatus({ type: "error", message: "Passwörter stimmen nicht überein." })
 
@@ -138,20 +134,32 @@ export default function MemberAccountRequestPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, firstName, lastName, email, password }),
       })
+
       const data = (await res.json().catch(() => null)) as any
-      if (!res.ok) throw new Error(data?.error || "Unbekannter Fehler")
+
+      if (!res.ok) {
+        // ✅ nur die saubere DE-Message vom Backend anzeigen
+        setStatus({
+          type: "error",
+          message: data?.error || "Senden fehlgeschlagen. Bitte versuche es später erneut.",
+        })
+        return
+      }
 
       setStatus({
         type: "success",
         message:
-          "Fast fertig! Wir haben dir eine Bestätigungs‑E‑Mail gesendet. Bitte bestätige die E‑Mail – danach kannst du dich mit deinem Passwort einloggen. Falls du keine Nachricht siehst, überprüfe bitte auch deinen Spam- oder Junk-Ordner.",
+          "Fast fertig! Wir haben dir eine Bestätigungs-E-Mail gesendet. Bitte bestätige die E-Mail – danach kannst du dich mit deinem Passwort einloggen. Falls du keine Nachricht siehst, überprüfe bitte auch deinen Spam- oder Junk-Ordner.",
       })
 
       setForm({ code: "", firstName: "", lastName: "", email: "", password: "", password2: "" })
       setLockedName(false)
       setShowPw(false)
-    } catch (e: any) {
-      setStatus({ type: "error", message: `Senden fehlgeschlagen: ${e?.message || "Unbekannter Fehler"}` })
+    } catch {
+      setStatus({
+        type: "error",
+        message: "Senden fehlgeschlagen. Bitte prüfe deine Internetverbindung und versuche es erneut.",
+      })
     } finally {
       setSubmitting(false)
     }
@@ -169,9 +177,9 @@ export default function MemberAccountRequestPage() {
                 <UserPlus className="w-6 h-6" />
               </div>
               <div className="flex-1">
-                <h1 className="text-2xl font-black leading-tight">Mitglieder‑Konto anfordern</h1>
+                <h1 className="text-2xl font-black leading-tight">Mitglieder-Konto anfordern</h1>
                 <p className="text-sm text-white/90 mt-1">
-                  Code prüfen, dann E‑Mail + Passwort festlegen. Du bekommst eine Bestätigungs‑E‑Mail.
+                  Code prüfen, dann E-Mail + Passwort festlegen. Du bekommst eine Bestätigungs-E-Mail.
                 </p>
               </div>
             </div>
@@ -185,12 +193,12 @@ export default function MemberAccountRequestPage() {
                 </div>
                 <div className="text-sm">
                   <div className="font-bold text-orange-900">Nur für Vereinsmitglieder</div>
-                  <div className="text-orange-800 mt-0.5">Bitte nutze deinen Mitglieder‑Code. Wenn du keinen Code hast, melde dich beim Vorstand.</div>
+                  <div className="text-orange-800 mt-0.5">Bitte nutze deinen Mitglieder-Code. Wenn du keinen Code hast, melde dich beim Vorstand.</div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-900">Mitglieder‑Code</label>
+                <label className="text-sm font-semibold text-gray-900">Mitglieder-Code</label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -200,7 +208,7 @@ export default function MemberAccountRequestPage() {
                         setForm((p) => ({ ...p, code: e.target.value }))
                         setLockedName(false)
                       }}
-                      placeholder="z.B. QR‑T639‑P2D"
+                      placeholder="z.B. QR-T639-P2D"
                       className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
                       autoComplete="off"
                     />
@@ -240,7 +248,7 @@ export default function MemberAccountRequestPage() {
                   <input
                     value={form.lastName}
                     onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))}
-                    placeholder={lockedName ? "(falls im Verein kein Nachname hinterlegt ist)" : ""}
+                    placeholder={lockedName ? "kein Nachname hinterlegt" : ""}
                     className={`w-full px-3 py-2.5 border rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm ${
                       lockedName ? "border-green-200 bg-green-50" : "border-gray-200"
                     }`}
@@ -249,7 +257,7 @@ export default function MemberAccountRequestPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-900">E‑Mail</label>
+                  <label className="text-sm font-semibold text-gray-900">E-Mail</label>
                   <input
                     value={form.email}
                     onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}

@@ -110,6 +110,14 @@ type LineupRow = {
   club_players?: { id: string; name: string; photo_url: string | null } | null
 }
 
+type LineupHeader = {
+  status: "draft" | "confirmed" | string
+  current_version: number | null
+  confirmed_version: number | null
+  confirmed_at: string | null
+  confirmed_by: string | null
+}
+
 type ChatMessage = {
   id: string
   user_id: string
@@ -177,11 +185,46 @@ function getTeamDisplayName(match: Match, isHome: boolean) {
   return "Unbekannt"
 }
 
+function getMatchStartDateTime(match: Match) {
+  const t = (match.match_time ? match.match_time.slice(0, 5) : "23:59") + ":00"
+  const dt = new Date(`${match.match_date}T${t}`)
+  return dt
+}
+
+function isMatchLocked(match: Match) {
+  if (match.status === "completed") return true
+  const dt = getMatchStartDateTime(match)
+  const ms = dt.getTime()
+  if (!Number.isFinite(ms)) return false
+  return Date.now() > ms
+}
+
+function computeLineupState(h: LineupHeader | null) {
+  // Wenn kein Header existiert -> "none" (keine Aufstellung / nicht initialisiert)
+  if (!h) return { kind: "none" as const, confirmed: false, stale: false }
+
+  const confirmed =
+    h.status === "confirmed" &&
+    h.confirmed_version != null &&
+    h.current_version != null &&
+    h.confirmed_version === h.current_version
+
+  const stale =
+    h.status === "confirmed" &&
+    h.confirmed_version != null &&
+    h.current_version != null &&
+    h.confirmed_version < h.current_version
+
+  if (confirmed) return { kind: "confirmed" as const, confirmed: true, stale: false }
+  if (stale) return { kind: "stale" as const, confirmed: true, stale: true }
+  return { kind: "draft" as const, confirmed: false, stale: false }
+}
+
 /**
- * ✅ ADMIN-SEITE:
- * - Alle Teams (eigene Teams) + Matches
- * - Pro Match: Zusagen Übersicht + Aufstellung + Team-Chat
- * - Admin/Board kann Aufstellung bearbeiten (wenn RLS erlaubt)
+ * ✅ ADMIN-SEITE (angepasst):
+ * - Lädt zusätzlich match_lineup_headers (Status/Versioning)
+ * - Zeigt pro Match Badge: Bestätigt / Geändert / Entwurf / Keine Aufstellung
+ * - Dialog: zeigt Status + sperrt nach Spielbeginn
  */
 export default function AdminAvailabilityPage() {
   const router = useRouter()
@@ -199,6 +242,9 @@ export default function AdminAvailabilityPage() {
   const [opponentTeams, setOpponentTeams] = useState<OpponentTeam[]>([])
   const [matches, setMatches] = useState<Match[]>([])
 
+  // ✅ NEW: Header-Map für schnelle Anzeige pro Match
+  const [lineupHeadersByKey, setLineupHeadersByKey] = useState<Map<string, LineupHeader | null>>(new Map())
+
   // UI state
   const [activeTab, setActiveTab] = useState<"upcoming" | "completed">("upcoming")
   const [teamQuery, setTeamQuery] = useState("")
@@ -213,9 +259,10 @@ export default function AdminAvailabilityPage() {
   const [teamPlayers, setTeamPlayers] = useState<TeamPlayer[]>([])
   const [availability, setAvailability] = useState<AvailabilityRow[]>([])
   const [lineupPlayers, setLineupPlayers] = useState<LineupRow[]>([])
+  const [lineupHeader, setLineupHeader] = useState<LineupHeader | null>(null)
   const [savingLineup, setSavingLineup] = useState(false)
 
-  // Team roles (for captain/co icon display)
+  // Team roles (Captain/Co)
   const [teamRolesByPlayer, setTeamRolesByPlayer] = useState<Map<string, string | null>>(new Map())
 
   // Chat (room_id = team_id)
@@ -256,16 +303,10 @@ export default function AdminAvailabilityPage() {
     setMyProfileId(profId)
     setMyPlayerId(playerId)
 
-    // 2) simple admin check (board roles in club_roles)
-    //    Wenn du eine andere Admin-Logik hast (z.B. user_profiles.is_admin), sag kurz – ich bau’s exakt um.
+    // 2) admin check (board roles in club_roles)
     let admin = false
     if (playerId) {
-      const { data: roles } = await supabase
-        .from("club_roles")
-        .select("role")
-        .eq("player_id", playerId)
-        .is("left_at", null)
-
+      const { data: roles } = await supabase.from("club_roles").select("role").eq("player_id", playerId).is("left_at", null)
       const roleList = ((roles as any[]) || []).map((r) => String(r.role || ""))
       const boardRoles = new Set(["Vorstand", "Kassier", "Schriftführer", "Admin", "Obmann", "Obfrau"])
       admin = roleList.some((r) => boardRoles.has(r))
@@ -283,7 +324,6 @@ export default function AdminAvailabilityPage() {
     setTeams(teamRows)
     setOpponentTeams(oppRows)
 
-    // default selected team
     if (!selectedTeamId && teamRows.length > 0) setSelectedTeamId(teamRows[0].id)
 
     const matchesRes = await supabase
@@ -319,20 +359,61 @@ export default function AdminAvailabilityPage() {
 
   const matchesForSelectedTeam = useMemo(() => {
     if (!selectedTeamId) return []
-    const list = (activeTab === "upcoming" ? upcomingMatches : completedMatches).filter(
+    const base = (activeTab === "upcoming" ? upcomingMatches : completedMatches).filter(
       (m) => m.home_team_id === selectedTeamId || m.away_team_id === selectedTeamId
     )
 
     const q = matchQuery.trim().toLowerCase()
-    if (!q) return list
+    if (!q) return base
 
-    return list.filter((m) => {
+    return base.filter((m) => {
       const title = `${getTeamDisplayName(m, true)} vs ${getTeamDisplayName(m, false)}`.toLowerCase()
       const date = `${formatDate(m.match_date)} ${formatTime(m.match_time)}`.toLowerCase()
       const venue = String(m.venue || "").toLowerCase()
       return title.includes(q) || date.includes(q) || venue.includes(q)
     })
   }, [selectedTeamId, activeTab, upcomingMatches, completedMatches, matchQuery])
+
+  // ✅ Header-Lookup pro Match+Team
+  function headerKey(matchId: string, teamId: string) {
+    return `${matchId}__${teamId}`
+  }
+
+  // ✅ Für die Match-Liste: Header für alle sichtbaren Matches laden (ein Query)
+  useEffect(() => {
+    if (!selectedTeamId) return
+    const ids = matchesForSelectedTeam.map((m) => m.id)
+    if (ids.length === 0) {
+      setLineupHeadersByKey(new Map())
+      return
+    }
+
+    ;(async () => {
+      const { data } = await supabase
+        .from("match_lineup_headers")
+        .select("match_id,team_id,status,current_version,confirmed_version,confirmed_at,confirmed_by")
+        .eq("team_id", selectedTeamId)
+        .in("match_id", ids)
+
+      const map = new Map<string, LineupHeader | null>()
+
+      // default: null (keine Aufstellung)
+      for (const mid of ids) map.set(headerKey(mid, selectedTeamId), null)
+
+      ;((data as any[]) || []).forEach((r) => {
+        map.set(headerKey(r.match_id, r.team_id), {
+          status: r.status,
+          current_version: r.current_version,
+          confirmed_version: r.confirmed_version,
+          confirmed_at: r.confirmed_at ?? null,
+          confirmed_by: r.confirmed_by ?? null,
+        })
+      })
+
+      setLineupHeadersByKey(map)
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTeamId, matchesForSelectedTeam])
 
   const starters = useMemo(
     () => lineupPlayers.filter((p) => !p.is_substitute).slice().sort((a, b) => a.position - b.position),
@@ -369,12 +450,11 @@ export default function AdminAvailabilityPage() {
     setDialogMatch(match)
     setIsDialogOpen(true)
     await loadMatchData(match.id, selectedTeamId)
-    // chat
     loadTeamChat(selectedTeamId)
   }
 
   async function loadMatchData(matchId: string, teamId: string) {
-    // Teamspieler + Rolle (Captain/Co)
+    // Teamspieler + Rollen
     const { data: tm } = await supabase
       .from("team_members")
       .select(`player_id, role, club_players:club_players(id, name, photo_url)`)
@@ -408,6 +488,16 @@ export default function AdminAvailabilityPage() {
       .order("position", { ascending: true })
 
     setLineupPlayers(((lu as any) || []) as LineupRow[])
+
+    // ✅ NEW: Header laden (Status/Versioning)
+    const { data: lh } = await supabase
+      .from("match_lineup_headers")
+      .select("status,current_version,confirmed_version,confirmed_at,confirmed_by")
+      .eq("match_id", matchId)
+      .eq("team_id", teamId)
+      .maybeSingle()
+
+    setLineupHeader((lh as any) ?? null)
   }
 
   function subscribeToTeamChat(teamId: string) {
@@ -424,20 +514,12 @@ export default function AdminAvailabilityPage() {
         async (payload) => {
           const incoming = payload.new as any
 
-          const { data: prof } = await supabase
-            .from("user_profiles")
-            .select("player_id")
-            .eq("id", incoming.user_id)
-            .maybeSingle()
+          const { data: prof } = await supabase.from("user_profiles").select("player_id").eq("id", incoming.user_id).maybeSingle()
 
           let sender: { name: string; photo_url: string | null } | null = null
           const playerId = (prof as any)?.player_id
           if (playerId) {
-            const { data: cp } = await supabase
-              .from("club_players")
-              .select("name,photo_url")
-              .eq("id", playerId)
-              .maybeSingle()
+            const { data: cp } = await supabase.from("club_players").select("name,photo_url").eq("id", playerId).maybeSingle()
             if (cp) sender = { name: (cp as any).name, photo_url: (cp as any).photo_url ?? null }
           }
 
@@ -558,9 +640,10 @@ export default function AdminAvailabilityPage() {
 
   async function setLineupPlayer(playerId: string, mode: "remove" | "starter" | "substitute") {
     if (!dialogMatch || !selectedTeamId) return
-
-    // ✅ Admin darf (wenn RLS es zulässt). Sonst bleiben Buttons disabled.
     if (!isAdmin) return
+
+    // ✅ wie Member: nach Spielbeginn nicht mehr ändern
+    if (isMatchLocked(dialogMatch)) return
 
     const matchId = dialogMatch.id
     const teamId = selectedTeamId
@@ -610,6 +693,20 @@ export default function AdminAvailabilityPage() {
       }
 
       await loadMatchData(matchId, teamId)
+
+      // ✅ HeaderMap für Liste refreshen (best-effort)
+      const { data: lh } = await supabase
+        .from("match_lineup_headers")
+        .select("status,current_version,confirmed_version,confirmed_at,confirmed_by")
+        .eq("match_id", matchId)
+        .eq("team_id", teamId)
+        .maybeSingle()
+
+      setLineupHeadersByKey((prev) => {
+        const next = new Map(prev)
+        next.set(headerKey(matchId, teamId), (lh as any) ?? null)
+        return next
+      })
     } finally {
       setSavingLineup(false)
     }
@@ -664,9 +761,7 @@ export default function AdminAvailabilityPage() {
                   )}
                 </Badge>
                 <span className="hidden sm:inline">•</span>
-                <span className="text-xs sm:text-sm">
-                  Team wählen → Match öffnen → Zusagen sehen & (wenn erlaubt) Aufstellung setzen.
-                </span>
+                <span className="text-xs sm:text-sm">Team wählen → Match öffnen → Zusagen/Lineup inkl. Status sehen.</span>
               </div>
             </div>
           </div>
@@ -773,19 +868,42 @@ export default function AdminAvailabilityPage() {
                       matchesForSelectedTeam
                         .slice()
                         .sort((a, b) => {
-                          // upcoming: asc, completed: desc
                           if (activeTab === "upcoming") return +new Date(a.match_date) - +new Date(b.match_date)
                           return +new Date(b.match_date) - +new Date(a.match_date)
                         })
                         .map((m) => {
                           const opp = getOpponentForMatch(m)
+                          const h = selectedTeamId ? lineupHeadersByKey.get(headerKey(m.id, selectedTeamId)) ?? null : null
+                          const st = computeLineupState(h)
+
+                          const lineupBadge =
+                            st.kind === "confirmed" ? (
+                              <Badge className="bg-green-600 text-white">Bestätigt</Badge>
+                            ) : st.kind === "stale" ? (
+                              <Badge className="bg-yellow-600 text-white">Geändert</Badge>
+                            ) : st.kind === "draft" ? (
+                              <Badge variant="outline">Entwurf</Badge>
+                            ) : (
+                              <Badge className="bg-gray-200 text-gray-800">Keine Aufstellung</Badge>
+                            )
+
+                          const locked = isMatchLocked(m)
+
                           return (
                             <Card key={m.id} className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl">
                               <CardContent className="p-4">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                   <div className="min-w-0">
-                                    <div className="font-semibold text-base md:text-lg truncate">
-                                      {getTeamDisplayName(m, true)} vs {getTeamDisplayName(m, false)}
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <div className="font-semibold text-base md:text-lg truncate">
+                                        {getTeamDisplayName(m, true)} vs {getTeamDisplayName(m, false)}
+                                      </div>
+                                      {lineupBadge}
+                                      {locked ? (
+                                        <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
+                                          Gesperrt
+                                        </Badge>
+                                      ) : null}
                                     </div>
 
                                     <div className="mt-1 text-sm text-gray-600 flex flex-wrap gap-x-3 gap-y-1">
@@ -799,9 +917,7 @@ export default function AdminAvailabilityPage() {
                                       </span>
                                       {activeTab === "completed" ? (
                                         <span className="inline-flex items-center gap-1">
-                                          <Badge variant="outline">
-                                            Ergebnis: {m.home_score ?? "-"}:{m.away_score ?? "-"}
-                                          </Badge>
+                                          <Badge variant="outline">Ergebnis: {m.home_score ?? "-"}:{m.away_score ?? "-"}</Badge>
                                         </span>
                                       ) : null}
                                     </div>
@@ -868,6 +984,18 @@ export default function AdminAvailabilityPage() {
                                 {dialogMatch.match_time ? `• ${formatTime(dialogMatch.match_time)}` : ""} • {dialogMatch.venue || "—"}
                               </div>
 
+                              {isMatchLocked(dialogMatch) ? (
+                                <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800 flex items-start gap-2">
+                                  <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <div className="font-medium">Gesperrt</div>
+                                    <div className="text-xs text-red-700 mt-0.5">
+                                      Aufstellung kann nach Spielbeginn nicht mehr geändert werden.
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : null}
+
                               {(() => {
                                 const opp = getOpponentForMatch(dialogMatch)
                                 if (!opp) return null
@@ -918,13 +1046,23 @@ export default function AdminAvailabilityPage() {
                               })()}
                             </div>
 
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-col gap-2 items-end">
                               <Badge variant="outline" className="bg-white">
                                 Team: <span className="ml-1 font-medium">{selectedTeam?.name ?? "—"}</span>
                               </Badge>
+
                               <Badge className={isAdmin ? "bg-orange-600 text-white" : "bg-gray-200 text-gray-800"}>
                                 {isAdmin ? "Bearbeiten möglich" : "Nur Ansicht"}
                               </Badge>
+
+                              {/* ✅ Lineup Status Badge */}
+                              {(() => {
+                                const st = computeLineupState(lineupHeader)
+                                if (st.kind === "confirmed") return <Badge className="bg-green-600 text-white">Bestätigt</Badge>
+                                if (st.kind === "stale") return <Badge className="bg-yellow-600 text-white">Geändert (neu bestätigen)</Badge>
+                                if (st.kind === "draft") return <Badge variant="outline">Entwurf</Badge>
+                                return <Badge className="bg-gray-200 text-gray-800">Keine Aufstellung</Badge>
+                              })()}
                             </div>
                           </div>
                         </CardContent>
@@ -986,6 +1124,8 @@ export default function AdminAvailabilityPage() {
 
                               const role = teamRolesByPlayer.get(p.id) ?? null
 
+                              const locked = dialogMatch ? isMatchLocked(dialogMatch) : false
+
                               return (
                                 <div key={p.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border p-3 gap-3">
                                   <div className="flex items-center gap-3 min-w-0">
@@ -1012,24 +1152,24 @@ export default function AdminAvailabilityPage() {
                                       <div className="flex flex-wrap gap-1">
                                         {!inLineup ? (
                                           <>
-                                            <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "starter")}>
+                                            <Button size="sm" variant="outline" disabled={savingLineup || locked} onClick={() => setLineupPlayer(p.id, "starter")}>
                                               Fix
                                             </Button>
-                                            <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "substitute")}>
+                                            <Button size="sm" variant="outline" disabled={savingLineup || locked} onClick={() => setLineupPlayer(p.id, "substitute")}>
                                               Ersatz
                                             </Button>
                                           </>
                                         ) : (
                                           <>
-                                            <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "remove")}>
+                                            <Button size="sm" variant="outline" disabled={savingLineup || locked} onClick={() => setLineupPlayer(p.id, "remove")}>
                                               Raus
                                             </Button>
                                             {entry?.is_substitute ? (
-                                              <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "starter")}>
+                                              <Button size="sm" variant="outline" disabled={savingLineup || locked} onClick={() => setLineupPlayer(p.id, "starter")}>
                                                 Als Fix
                                               </Button>
                                             ) : (
-                                              <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "substitute")}>
+                                              <Button size="sm" variant="outline" disabled={savingLineup || locked} onClick={() => setLineupPlayer(p.id, "substitute")}>
                                                 Als Ersatz
                                               </Button>
                                             )}
@@ -1054,7 +1194,13 @@ export default function AdminAvailabilityPage() {
                         <CardHeader className="pb-2">
                           <CardTitle className="text-base flex items-center gap-2">
                             Aufstellung
-                            <Badge variant="outline">Entwurf</Badge>
+                            {(() => {
+                              const st = computeLineupState(lineupHeader)
+                              if (st.kind === "confirmed") return <Badge className="bg-green-600 text-white">Bestätigt</Badge>
+                              if (st.kind === "stale") return <Badge className="bg-yellow-600 text-white">Geändert</Badge>
+                              if (st.kind === "draft") return <Badge variant="outline">Entwurf</Badge>
+                              return <Badge className="bg-gray-200 text-gray-800">Keine Aufstellung</Badge>
+                            })()}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-0 space-y-3">
@@ -1149,11 +1295,7 @@ export default function AdminAvailabilityPage() {
                                             </span>
                                           </div>
 
-                                          <div
-                                            className={`rounded-2xl px-3 py-2 text-sm break-words ${
-                                              isMine ? "bg-orange-600 text-white" : "bg-muted"
-                                            }`}
-                                          >
+                                          <div className={`rounded-2xl px-3 py-2 text-sm break-words ${isMine ? "bg-orange-600 text-white" : "bg-muted"}`}>
                                             {m.message}
                                           </div>
                                         </div>
@@ -1210,16 +1352,31 @@ export default function AdminAvailabilityPage() {
                         setAvailability([])
                         setLineupPlayers([])
                         setTeamPlayers([])
+                        setLineupHeader(null)
                       }}
                     >
                       Schließen
                     </Button>
+
                     {dialogMatch && selectedTeamId ? (
                       <Button
                         onClick={async () => {
-                          // quick refresh
                           await loadMatchData(dialogMatch.id, selectedTeamId)
                           await loadTeamChat(selectedTeamId)
+
+                          // Liste-Header aktualisieren
+                          const { data: lh } = await supabase
+                            .from("match_lineup_headers")
+                            .select("status,current_version,confirmed_version,confirmed_at,confirmed_by")
+                            .eq("match_id", dialogMatch.id)
+                            .eq("team_id", selectedTeamId)
+                            .maybeSingle()
+
+                          setLineupHeadersByKey((prev) => {
+                            const next = new Map(prev)
+                            next.set(headerKey(dialogMatch.id, selectedTeamId), (lh as any) ?? null)
+                            return next
+                          })
                         }}
                         className="bg-orange-600 hover:bg-orange-700"
                       >

@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Search,
   Filter,
+  Clock,
 } from "lucide-react"
 
 type TournamentOverviewRow = {
@@ -39,6 +40,7 @@ type KratzerTournamentRow = {
   name: string | null
   status: string | null
   created_at: string | null
+  finished_at: string | null
 }
 
 type KratzerResultRow = {
@@ -79,6 +81,32 @@ const statusBadge = () => (
   </Badge>
 )
 
+const formatDurationMs = (ms: number) => {
+  if (!Number.isFinite(ms) || ms <= 0) return "—"
+
+  const totalMinutes = Math.round(ms / 60000)
+  if (totalMinutes < 60) return `${totalMinutes} min`
+
+  const totalHours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  if (totalHours < 24) {
+    return minutes ? `${totalHours}h ${minutes}m` : `${totalHours}h`
+  }
+
+  const days = Math.floor(totalHours / 24)
+  const hours = totalHours % 24
+  return hours ? `${days}d ${hours}h` : `${days}d`
+}
+
+const getDurationLabel = (r: TournamentOverviewRow) => {
+  const start = r.created_at ? new Date(r.created_at).getTime() : NaN
+  const endRaw = r.last_updated_at ?? r.updated_at ?? r.created_at
+  const end = endRaw ? new Date(endRaw).getTime() : NaN
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return "—"
+  return formatDurationMs(Math.max(0, end - start))
+}
+
 export default function TournamentHistoryPage() {
   const router = useRouter()
 
@@ -86,7 +114,6 @@ export default function TournamentHistoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  
   const [q, setQ] = useState("")
   const [typeFilter, setTypeFilter] = useState<
     "all" | "8er_dko" | "16er_dko" | "32er_dko" | "64er_dko" | "kratzer"
@@ -113,18 +140,16 @@ export default function TournamentHistoryPage() {
 
       let combined = (data ?? []) as TournamentOverviewRow[]
 
-      
       try {
-        
+        // 2) Kratzer Turniere (✅ inkl. finished_at)
         const { data: kt, error: ktErr } = await supabase
           .from("kratzer_tournaments")
-          .select("id,user_id,name,status,created_at")
+          .select("id,user_id,name,status,created_at,finished_at")
           .order("created_at", { ascending: false })
 
         if (ktErr) {
           console.warn("Kratzer tournaments load warning:", ktErr)
         } else {
-          
           const finishedKratzer = (kt ?? []).filter((t: any) => {
             const s = String(t?.status ?? "").toLowerCase()
             return s === "finished"
@@ -132,7 +157,7 @@ export default function TournamentHistoryPage() {
 
           const ids = finishedKratzer.map((t) => t.id).filter(Boolean)
 
-         
+          // Results (Winner / Rounds)
           const resultsById = new Map<string, KratzerResultRow>()
           if (ids.length > 0) {
             const { data: kr, error: krErr } = await supabase
@@ -149,7 +174,7 @@ export default function TournamentHistoryPage() {
             }
           }
 
-          
+          // Participants count
           const participantsById = new Map<string, number>()
           if (ids.length > 0) {
             const { data: kp, error: kpErr } = await supabase
@@ -170,16 +195,19 @@ export default function TournamentHistoryPage() {
           const mappedKratzer: TournamentOverviewRow[] = finishedKratzer.map((t) => {
             const res = resultsById.get(t.id)
             const created = (t.created_at ?? new Date().toISOString()) as string
+            const finishedAt = t.finished_at ?? null
 
             return {
               status_row_id: t.id,
               tournament_id: t.id,
               tournament_type: "kratzer",
               tournament_name: t.name ?? "Kratzer-Turnier",
-              status: "completed", 
+              status: "completed",
               created_at: created,
-              updated_at: created, 
-              last_updated_at: res?.created_at ?? t.created_at ?? null,
+              // ✅ für Dauer: hier Ende setzen, falls vorhanden
+              updated_at: (finishedAt ?? created) as string,
+              // ✅ last_updated_at ist "Ende" (oder results created_at fallback)
+              last_updated_at: finishedAt ?? res?.created_at ?? t.created_at ?? null,
               winner: res?.winner_name ?? null,
               participants: participantsById.get(t.id) ?? 0,
             }
@@ -224,9 +252,7 @@ export default function TournamentHistoryPage() {
 
   const openTournament = (r: TournamentOverviewRow) => {
     router.push(
-      `/tournament-history/${encodeURIComponent(r.tournament_id)}?type=${encodeURIComponent(
-        r.tournament_type,
-      )}`,
+      `/tournament-history/${encodeURIComponent(r.tournament_id)}?type=${encodeURIComponent(r.tournament_type)}`,
     )
   }
 
@@ -243,7 +269,6 @@ export default function TournamentHistoryPage() {
           <p className="text-gray-600">Alle abgeschlossenen Turniere</p>
         </div>
 
-        {}
         <Card className="mb-6 shadow-xl">
           <CardContent className="p-4">
             <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
@@ -323,6 +348,12 @@ export default function TournamentHistoryPage() {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-orange-600" />
                       {formatDateTime(r.created_at)}
+                    </div>
+
+                    {/* ✅ Turnierdauer */}
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-orange-600" />
+                      Dauer: <b>{getDurationLabel(r)}</b>
                     </div>
 
                     <div className="flex items-center gap-2">
