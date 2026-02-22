@@ -549,53 +549,63 @@ const [confirmMsg, setConfirmMsg] = useState<null | { type: "ok" | "err"; text: 
   }
 
   async function loadMatchData(matchId: string, teamId: string) {
-    
-    const { data: tm, error: tmErr } = await supabase
-  .from("team_members")
-  .select(`player_id, role, club_players:club_players!team_members_player_id_fkey(id, name, photo_url)`)
-  .eq("team_id", teamId)
+  // ✅ Teamspieler NUR aktiv (left_at IS NULL)
+  const { data: tm, error: tmErr } = await supabase
+    .from("team_members")
+    .select(`player_id, role, club_players:club_players!team_members_player_id_fkey(id, name, photo_url)`)
+    .eq("team_id", teamId)
+    .is("left_at", null)
 
-if (tmErr) console.error("team_members error:", tmErr)
+  if (tmErr) console.error("team_members error:", tmErr)
 
-    const players: TeamPlayer[] = ((tm as any) || []).map((r: any) => r.club_players).filter(Boolean)
-    setTeamPlayers(players)
+  const activePlayerIds = new Set<string>(((tm as any) || []).map((r: any) => r.player_id).filter(Boolean))
 
-    const roleMap = new Map<string, string | null>()
-    ;((tm as any[]) || []).forEach((r) => {
-      if (r?.player_id) roleMap.set(r.player_id, r.role ?? null)
-    })
-    setTeamRolesByPlayer(roleMap)
+  const players: TeamPlayer[] = ((tm as any) || [])
+    .map((r: any) => r.club_players)
+    .filter(Boolean)
 
-    // Availability
-    const { data: av } = await supabase
-  .from("match_availability")
-  .select("player_id,status,note,updated_at, club_players:club_players(id,name,photo_url)")
-  .eq("match_id", matchId)
-  .eq("team_id", teamId)
-  .order("updated_at", { ascending: false }) // WICHTIG!
+  setTeamPlayers(players)
 
-    setAvailability((((av as any) || []) as AvailabilityRow[]) || [])
+  const roleMap = new Map<string, string | null>()
+  ;((tm as any[]) || []).forEach((r) => {
+    if (r?.player_id) roleMap.set(r.player_id, r.role ?? null)
+  })
+  setTeamRolesByPlayer(roleMap)
 
-    // Lineup
-    const { data: lu } = await supabase
-      .from("match_lineups")
-      .select("id,player_id,position,is_substitute, club_players:club_players(id,name,photo_url)")
-      .eq("match_id", matchId)
-      .eq("team_id", teamId)
-      .order("position", { ascending: true })
+  // ✅ Availability NUR aktive Spieler
+  const { data: av } = await supabase
+    .from("match_availability")
+    .select("player_id,status,note,updated_at, club_players:club_players(id,name,photo_url)")
+    .eq("match_id", matchId)
+    .eq("team_id", teamId)
+    .order("updated_at", { ascending: false }) // WICHTIG!
 
-    setLineupPlayers(((lu as any) || []) as LineupRow[])
+  const avAll = (((av as any) || []) as AvailabilityRow[]) || []
+  const avFiltered = avAll.filter((r) => activePlayerIds.has(r.player_id))
+  setAvailability(avFiltered)
 
-   
-    const { data: lh } = await supabase
-      .from("match_lineup_headers")
-      .select("status,current_version,confirmed_version,confirmed_at,confirmed_by")
-      .eq("match_id", matchId)
-      .eq("team_id", teamId)
-      .maybeSingle()
+  // ✅ Lineup NUR aktive Spieler
+  const { data: lu } = await supabase
+    .from("match_lineups")
+    .select("id,player_id,position,is_substitute, club_players:club_players(id,name,photo_url)")
+    .eq("match_id", matchId)
+    .eq("team_id", teamId)
+    .order("position", { ascending: true })
 
-    setLineupHeader((lh as any) ?? null)
-  }
+  const luAll = (((lu as any) || []) as LineupRow[]) || []
+  const luFiltered = luAll.filter((r) => activePlayerIds.has(r.player_id))
+  setLineupPlayers(luFiltered)
+
+  // Header
+  const { data: lh } = await supabase
+    .from("match_lineup_headers")
+    .select("status,current_version,confirmed_version,confirmed_at,confirmed_by")
+    .eq("match_id", matchId)
+    .eq("team_id", teamId)
+    .maybeSingle()
+
+  setLineupHeader((lh as any) ?? null)
+}
 
   function subscribeToTeamChat(teamId: string) {
     const channel = supabase

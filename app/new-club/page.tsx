@@ -25,14 +25,9 @@ interface TeamMember {
   team_id: string
   player_id: string
   role: string | null
-  club_players: {
-    id: string
-    name: string
-    photo_url: string | null
-    throwing_hand: string | null
-    age: number | null
-    origin: string | null
-  } | null
+  joined_at: string | null
+  left_at: string | null
+  club_players: ClubPlayer | null
 }
 
 export default async function ClubPage() {
@@ -40,13 +35,31 @@ export default async function ClubPage() {
 
   const { data: teamsData, error: teamsError } = await supabase
     .from("teams")
-    .select("*")
+    .select("id, name, logo_url")
     .order("name", { ascending: true })
 
+  // ✅ NUR aktive Mitglieder laden: left_at IS NULL
   const { data: teamMembersData, error: teamMembersError } = await supabase
     .from("team_members")
-    .select(`id, team_id, player_id, role, club_players!team_members_player_id_fkey(id, name, photo_url, throwing_hand, age, origin)`)
-
+    .select(
+      `
+        id,
+        team_id,
+        player_id,
+        role,
+        joined_at,
+        left_at,
+        club_players!team_members_player_id_fkey(
+          id,
+          name,
+          photo_url,
+          throwing_hand,
+          age,
+          origin
+        )
+      `
+    )
+    .is("left_at", null)
 
   if (teamsError || teamMembersError) {
     return (
@@ -64,16 +77,17 @@ export default async function ClubPage() {
     )
   }
 
-  const teams: Team[] = teamsData || []
-  const teamMembers: TeamMember[] = teamMembersData || []
+  const teams: Team[] = teamsData ?? []
+  const teamMembers: TeamMember[] = teamMembersData ?? []
 
   const teamsWithPlayers = teams.map((team) => {
     const playersForTeam = teamMembers
-      .filter((member) => member.team_id === team.id && member.club_players)
+      .filter((member) => member.team_id === team.id && member.club_players && member.left_at === null)
       .map((member) => ({
         ...(member.club_players as ClubPlayer),
         role: member.role,
       }))
+
     return {
       ...team,
       players: playersForTeam,
@@ -95,12 +109,15 @@ export default async function ClubPage() {
               <span className="block text-white">VEREINS</span>
               <span className="block text-orange-200">ÜBERSICHT</span>
             </h1>
-            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">Lerne unsere Teams und Spieler kennen</p>
+            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
+              Lerne unsere Teams und Spieler kennen
+            </p>
           </div>
         </div>
       </section>
 
       <RecruitmentHero />
+
       <main className="pt-8 pb-16">
         <TeamGallery teamsWithPlayers={teamsWithPlayers} />
       </main>

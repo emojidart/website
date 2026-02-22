@@ -576,8 +576,8 @@ setLineupChangedNotified(false)
   async function loadMatchData(matchId: string, teamId: string) {
     if (!profile?.player_id) return
 
-    // Teamspieler
-    const { data: tm, error: tmErr } = await supabase
+   // Teamspieler (NUR aktive Mitglieder)
+const { data: tm, error: tmErr } = await supabase
   .from("team_members")
   .select(`player_id, club_players:club_players!team_members_player_id_fkey(id, name, photo_url)`)
   .eq("team_id", teamId)
@@ -585,18 +585,24 @@ setLineupChangedNotified(false)
 
 if (tmErr) console.error("team_members error:", tmErr)
 
-    const players: TeamPlayer[] = ((tm as any) || []).map((r: any) => r.club_players).filter(Boolean)
-    setTeamPlayers(players)
+const activePlayerIds = new Set<string>(((tm as any) || []).map((r: any) => r.player_id).filter(Boolean))
 
-    // Availability
-    const { data: av } = await supabase
-      .from("match_availability")
-      .select("player_id,status,note,updated_at, club_players:club_players(id,name,photo_url)")
-      .eq("match_id", matchId)
-      .eq("team_id", teamId)
+const players: TeamPlayer[] = ((tm as any) || [])
+  .map((r: any) => r.club_players)
+  .filter(Boolean)
 
-    const rows = ((av as any) || []) as AvailabilityRow[]
-    setAvailability(rows)
+setTeamPlayers(players)
+
+   // Availability (NUR aktive Mitglieder)
+const { data: av } = await supabase
+  .from("match_availability")
+  .select("player_id,status,note,updated_at, club_players:club_players(id,name,photo_url)")
+  .eq("match_id", matchId)
+  .eq("team_id", teamId)
+
+const rowsAll = ((av as any) || []) as AvailabilityRow[]
+const rows = rowsAll.filter((r) => activePlayerIds.has(r.player_id))
+setAvailability(rows)
 
     const mine = rows.find((x) => x.player_id === profile.player_id)
     if (mine) {
@@ -607,15 +613,17 @@ if (tmErr) console.error("team_members error:", tmErr)
       setMyNote("")
     }
 
-    // Lineup
-   const { data: lu } = await supabase
+    // Lineup (NUR aktive Mitglieder)
+const { data: lu } = await supabase
   .from("match_lineups")
   .select("id,player_id,position,is_substitute, club_players:club_players(id,name,photo_url)")
   .eq("match_id", matchId)
   .eq("team_id", teamId)
   .order("position", { ascending: true })
 
-   const loaded = (((lu as any) || []) as LineupRow[])
+const loadedAll = (((lu as any) || []) as LineupRow[])
+const loaded = loadedAll.filter((r) => activePlayerIds.has(r.player_id))
+
 setLineupPlayers(loaded)
 
 // ✅ Draft initial = aktueller Stand aus DB
