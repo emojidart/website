@@ -50,7 +50,7 @@ import { LeagueManagement } from "@/components/league-management"
 import { RolePermissionsManager } from "@/components/role-permissions-manager"
 
 export default function AdminPage() {
-  const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading, clubRoles } = useAuth()
+  const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
 
   const [isPlayerListModalOpen, setIsPlayerListModalOpen] = useState(false)
   const [selectedPlayerName, setSelectedPlayerName] = useState<string | null>(null)
@@ -487,7 +487,28 @@ export default function AdminPage() {
     )
   }
 
-  if (session && !isAdmin && clubRoles.length === 0) {
+  // ✅ Zugriff jetzt über user_page_permissions (allowedViews), nicht mehr über clubRoles
+if (session && !isAdmin) {
+  // solange Berechtigungen laden: Spinner
+  if (roleLoading || allowedViews === null) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="w-full p-4 md:p-8">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Berechtigungen werden geprüft...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  const hasAnyPermission = allowedViews.has("*") || allowedViews.size > 0
+
+  if (!hasAnyPermission) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -517,6 +538,7 @@ export default function AdminPage() {
       </div>
     )
   }
+}
 
   return (
     <div className="min-h-screen bg-gray-50">
