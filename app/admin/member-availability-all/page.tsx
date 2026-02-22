@@ -390,7 +390,7 @@ export default function AdminAvailabilityPage() {
     return `${matchId}__${teamId}`
   }
 
-  // ✅ Für die Match-Liste: Header für alle sichtbaren Matches laden (ein Query)
+ 
   useEffect(() => {
     if (!selectedTeamId) return
     const ids = matchesForSelectedTeam.map((m) => m.id)
@@ -408,7 +408,7 @@ export default function AdminAvailabilityPage() {
 
       const map = new Map<string, LineupHeader | null>()
 
-      // default: null (keine Aufstellung)
+      
       for (const mid of ids) map.set(headerKey(mid, selectedTeamId), null)
 
       ;((data as any[]) || []).forEach((r) => {
@@ -423,7 +423,7 @@ export default function AdminAvailabilityPage() {
 
       setLineupHeadersByKey(map)
     })()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [selectedTeamId, matchesForSelectedTeam])
 
   const starters = useMemo(
@@ -469,7 +469,7 @@ export default function AdminAvailabilityPage() {
   }
 
   async function loadMatchData(matchId: string, teamId: string) {
-    // Teamspieler + Rollen
+    
     const { data: tm, error: tmErr } = await supabase
   .from("team_members")
   .select(`player_id, role, club_players:club_players!team_members_player_id_fkey(id, name, photo_url)`)
@@ -506,7 +506,7 @@ if (tmErr) console.error("team_members error:", tmErr)
 
     setLineupPlayers(((lu as any) || []) as LineupRow[])
 
-    // ✅ NEW: Header laden (Status/Versioning)
+   
     const { data: lh } = await supabase
       .from("match_lineup_headers")
       .select("status,current_version,confirmed_version,confirmed_at,confirmed_by")
@@ -605,7 +605,7 @@ if (tmErr) console.error("team_members error:", tmErr)
     if (!selectedTeamId) return
     const unsub = subscribeToTeamChat(selectedTeamId)
     return () => unsub()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [isDialogOpen, selectedTeamId])
 
   async function sendTeamMessage() {
@@ -659,8 +659,8 @@ if (tmErr) console.error("team_members error:", tmErr)
     if (!dialogMatch || !selectedTeamId) return
     if (!isAdmin) return
 
-    // ✅ wie Member: nach Spielbeginn nicht mehr ändern
-    if (isMatchLocked(dialogMatch)) return
+    
+    
 
     const matchId = dialogMatch.id
     const teamId = selectedTeamId
@@ -728,6 +728,45 @@ if (tmErr) console.error("team_members error:", tmErr)
       setSavingLineup(false)
     }
   }
+  
+  async function confirmLineupAsAdmin() {
+  if (!dialogMatch || !selectedTeamId) return
+  if (!isAdmin) return
+  if (!myProfileId) return
+  
+
+  const startersNow = lineupPlayers.filter((p) => !p.is_substitute).length
+  if (startersNow === 0) {
+    alert("Du musst mindestens 1 Fixspieler auswählen, bevor du bestätigen kannst.")
+    return
+  }
+
+  try {
+    const { error } = await supabase.rpc("confirm_lineup", {
+      p_match_id: dialogMatch.id,
+      p_team_id: selectedTeamId,
+    })
+    if (error) throw error
+
+    await loadMatchData(dialogMatch.id, selectedTeamId)
+
+    const { data: lh } = await supabase
+      .from("match_lineup_headers")
+      .select("status,current_version,confirmed_version,confirmed_at,confirmed_by")
+      .eq("match_id", dialogMatch.id)
+      .eq("team_id", selectedTeamId)
+      .maybeSingle()
+
+    setLineupHeadersByKey((prev) => {
+      const next = new Map(prev)
+      next.set(headerKey(dialogMatch.id, selectedTeamId), (lh as any) ?? null)
+      return next
+    })
+  } catch (e) {
+    console.error("confirmLineupAsAdmin error", e)
+    alert("Fehler beim Bestätigen.")
+  }
+}
 
   const selectedTeam = useMemo(() => teams.find((t) => t.id === selectedTeamId) ?? null, [teams, selectedTeamId])
 
@@ -836,7 +875,7 @@ if (tmErr) console.error("team_members error:", tmErr)
 
                             <div className="min-w-0 flex-1">
                               <div className="font-semibold truncate">{t.name}</div>
-                              <div className="text-xs text-gray-500 truncate">{t.id}</div>
+                              {/* Team-ID ausgeblendet */}
                             </div>
 
                             {active ? <Badge className="bg-orange-600 text-white">aktiv</Badge> : <Badge variant="outline">wählen</Badge>}
@@ -1169,24 +1208,24 @@ if (tmErr) console.error("team_members error:", tmErr)
                                       <div className="flex flex-wrap gap-1">
                                         {!inLineup ? (
                                           <>
-                                            <Button size="sm" variant="outline" disabled={savingLineup || locked} onClick={() => setLineupPlayer(p.id, "starter")}>
+                                            <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "starter")}>
                                               Fix
                                             </Button>
-                                            <Button size="sm" variant="outline" disabled={savingLineup || locked} onClick={() => setLineupPlayer(p.id, "substitute")}>
+                                            <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "substitute")}>
                                               Ersatz
                                             </Button>
                                           </>
                                         ) : (
                                           <>
-                                            <Button size="sm" variant="outline" disabled={savingLineup || locked} onClick={() => setLineupPlayer(p.id, "remove")}>
+                                            <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "remove")}>
                                               Raus
                                             </Button>
                                             {entry?.is_substitute ? (
-                                              <Button size="sm" variant="outline" disabled={savingLineup || locked} onClick={() => setLineupPlayer(p.id, "starter")}>
+                                              <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "starter")}>
                                                 Als Fix
                                               </Button>
                                             ) : (
-                                              <Button size="sm" variant="outline" disabled={savingLineup || locked} onClick={() => setLineupPlayer(p.id, "substitute")}>
+                                              <Button size="sm" variant="outline" disabled={savingLineup} onClick={() => setLineupPlayer(p.id, "substitute")}>
                                                 Als Ersatz
                                               </Button>
                                             )}
@@ -1220,6 +1259,11 @@ if (tmErr) console.error("team_members error:", tmErr)
                             })()}
                           </CardTitle>
                         </CardHeader>
+{isAdmin && dialogMatch && selectedTeamId ? (
+  <Button onClick={confirmLineupAsAdmin} className="bg-orange-600 hover:bg-orange-700 w-full">
+    Aufstellung bestätigen
+  </Button>
+) : null}
                         <CardContent className="pt-0 space-y-3">
                           {starters.length === 0 ? (
                             <div className="text-sm text-muted-foreground">Noch keine Fixspieler ausgewählt.</div>
@@ -1379,6 +1423,20 @@ if (tmErr) console.error("team_members error:", tmErr)
                       <Button
                         onClick={async () => {
                           await loadMatchData(dialogMatch.id, selectedTeamId)
+						  // ✅ Push senden (wie Member)
+await fetch("/api/push/lineup", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    authorization: `Bearer ${session?.access_token ?? ""}`,
+  },
+  body: JSON.stringify({
+    team_id: selectedTeamId,
+    match_id: dialogMatch.id,
+    action: "confirmed",
+    sender_profile_id: myProfileId,
+  }),
+})
                           await loadTeamChat(selectedTeamId)
 
                           // Liste-Header aktualisieren

@@ -86,6 +86,7 @@ export default function AdminPage() {
     | "credit-loader"
     | "lion-cup-settings"
     | "role-permissions"
+	  | "member-availability-all"
   >("dashboard")
 
   const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
@@ -325,6 +326,14 @@ export default function AdminPage() {
       view: "leagues" as const,
       category: "sport" as const,
     },
+	    {
+      title: "Aufstellungen & Zusagen",
+      description: "Spielerverfügbarkeiten / Zusagen verwalten",
+      icon: CalendarCheck,
+      color: "bg-emerald-600",
+      view: "member-availability-all" as const,
+      category: "sport" as const,
+    },
     {
       title: "Turniere starten",
       description: "Turnier-Tools",
@@ -388,9 +397,12 @@ export default function AdminPage() {
       items: [{ key: "dashboard", label: "Dashboard", icon: Home }],
     },
     {
-      label: "Ligabetrieb",
-      items: [{ key: "leagues", label: "Ligaspiele", icon: Target }],
-    },
+  label: "Ligabetrieb",
+  items: [
+    { key: "leagues", label: "Ligaspiele", icon: Target },
+    { key: "member-availability-all", label: "Aufstellungen & Zusagen", icon: CalendarCheck },
+  ],
+},
     {
       label: "Turnierbetrieb",
       items: [
@@ -439,24 +451,26 @@ export default function AdminPage() {
 
  
   const dashboardByNavSection = {
-    "Ligabetrieb": visibleDashboardCards.filter((c) => c.view === "leagues"),
-    "Turnierbetrieb": visibleDashboardCards.filter((c) =>
-      ["tournaments", "tournament-management", "dart-competition", "history", "player-database"].includes(c.view)
-    ),
-    "Verein": visibleDashboardCards.filter((c) =>
-      [
-        "users",
-        "recruitment",
-        "attendance",
-        "events",
-        "club",
-        "support-tickets",
-        "campus-registrations",
-        "credit-loader",
-        "advent-quiz",
-      ].includes(c.view)
-    ),
-  } as const
+  "Ligabetrieb": visibleDashboardCards.filter((c) =>
+    ["leagues", "member-availability-all"].includes(c.view)
+  ),
+  "Turnierbetrieb": visibleDashboardCards.filter((c) =>
+    ["tournaments", "tournament-management", "dart-competition", "history", "player-database"].includes(c.view)
+  ),
+  "Verein": visibleDashboardCards.filter((c) =>
+    [
+      "users",
+      "recruitment",
+      "attendance",
+      "events",
+      "club",
+      "support-tickets",
+      "campus-registrations",
+      "credit-loader",
+      "advent-quiz",
+    ].includes(c.view)
+  ),
+} as const
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -759,6 +773,30 @@ export default function AdminPage() {
                 {currentView === "management" && <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />}
                 {currentView === "attendance" && <AttendanceManagement />}
                 {currentView === "leagues" && <LeagueManagement />}
+				{currentView === "member-availability-all" && (
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <CalendarCheck className="h-5 w-5" />
+          <span>Aufstellungen & Zusagen</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-gray-600 mb-4">
+          Öffnet die Übersicht für Verfügbarkeiten / Zusagen aller Mitglieder.
+        </p>
+
+        <Link href="/admin/member-availability-all">
+          <Button className="w-full">
+            <CalendarCheck className="h-4 w-4 mr-2" />
+            Öffnen
+          </Button>
+        </Link>
+      </CardContent>
+    </Card>
+  </div>
+)}
 
                 {currentView === "support-tickets" && (
                   <div className="space-y-6">
