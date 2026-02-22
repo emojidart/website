@@ -32,6 +32,23 @@ type TournamentOverviewRow = {
   participants: number | null
 }
 
+/** ✅ Kratzer Typen */
+type KratzerTournamentRow = {
+  id: string
+  user_id: string
+  name: string | null
+  status: string | null
+  created_at: string | null
+}
+
+type KratzerResultRow = {
+  kratzer_tournament_id: string
+  winner_id: string | null
+  winner_name: string | null
+  total_rounds: number | null
+  created_at: string | null
+}
+
 const formatDateTime = (value?: string | null) => {
   if (!value) return "—"
   const d = new Date(value)
@@ -47,6 +64,7 @@ const formatDateTime = (value?: string | null) => {
 
 const typeLabel = (t?: string | null) => {
   if (!t) return "—"
+  if (t === "kratzer") return "Kratzer"
   if (t.includes("8")) return "8er"
   if (t.includes("16")) return "16er"
   if (t.includes("32")) return "32er"
@@ -68,10 +86,10 @@ export default function TournamentHistoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Filter (bleiben!)
+  
   const [q, setQ] = useState("")
   const [typeFilter, setTypeFilter] = useState<
-    "all" | "8er_dko" | "16er_dko" | "32er_dko" | "64er_dko"
+    "all" | "8er_dko" | "16er_dko" | "32er_dko" | "64er_dko" | "kratzer"
   >("all")
 
   useEffect(() => {
@@ -79,6 +97,7 @@ export default function TournamentHistoryPage() {
       setLoading(true)
       setError(null)
 
+      // 1) Standard-Historie
       const { data, error } = await supabase
         .from("tournaments_history_overview")
         .select("*")
@@ -92,7 +111,91 @@ export default function TournamentHistoryPage() {
         return
       }
 
-      setRows((data ?? []) as TournamentOverviewRow[])
+      let combined = (data ?? []) as TournamentOverviewRow[]
+
+      
+      try {
+        
+        const { data: kt, error: ktErr } = await supabase
+          .from("kratzer_tournaments")
+          .select("id,user_id,name,status,created_at")
+          .order("created_at", { ascending: false })
+
+        if (ktErr) {
+          console.warn("Kratzer tournaments load warning:", ktErr)
+        } else {
+          
+          const finishedKratzer = (kt ?? []).filter((t: any) => {
+            const s = String(t?.status ?? "").toLowerCase()
+            return s === "finished"
+          }) as KratzerTournamentRow[]
+
+          const ids = finishedKratzer.map((t) => t.id).filter(Boolean)
+
+         
+          const resultsById = new Map<string, KratzerResultRow>()
+          if (ids.length > 0) {
+            const { data: kr, error: krErr } = await supabase
+              .from("kratzer_tournament_results")
+              .select("kratzer_tournament_id,winner_id,winner_name,total_rounds,created_at")
+              .in("kratzer_tournament_id", ids)
+
+            if (krErr) {
+              console.warn("Kratzer results load warning:", krErr)
+            } else {
+              for (const r of (kr ?? []) as KratzerResultRow[]) {
+                resultsById.set(r.kratzer_tournament_id, r)
+              }
+            }
+          }
+
+          
+          const participantsById = new Map<string, number>()
+          if (ids.length > 0) {
+            const { data: kp, error: kpErr } = await supabase
+              .from("kratzer_tournament_players")
+              .select("kratzer_tournament_id")
+              .in("kratzer_tournament_id", ids)
+
+            if (kpErr) {
+              console.warn("Kratzer players count warning:", kpErr)
+            } else {
+              for (const p of (kp ?? []) as { kratzer_tournament_id: string }[]) {
+                const k = p.kratzer_tournament_id
+                participantsById.set(k, (participantsById.get(k) ?? 0) + 1)
+              }
+            }
+          }
+
+          const mappedKratzer: TournamentOverviewRow[] = finishedKratzer.map((t) => {
+            const res = resultsById.get(t.id)
+            const created = (t.created_at ?? new Date().toISOString()) as string
+
+            return {
+              status_row_id: t.id,
+              tournament_id: t.id,
+              tournament_type: "kratzer",
+              tournament_name: t.name ?? "Kratzer-Turnier",
+              status: "completed", 
+              created_at: created,
+              updated_at: created, 
+              last_updated_at: res?.created_at ?? t.created_at ?? null,
+              winner: res?.winner_name ?? null,
+              participants: participantsById.get(t.id) ?? 0,
+            }
+          })
+
+          combined = [...mappedKratzer, ...combined].sort((a, b) => {
+            const ta = new Date(a.created_at).getTime()
+            const tb = new Date(b.created_at).getTime()
+            return tb - ta
+          })
+        }
+      } catch (e) {
+        console.warn("Kratzer merge warning:", e)
+      }
+
+      setRows(combined)
       setLoading(false)
     }
 
@@ -103,7 +206,6 @@ export default function TournamentHistoryPage() {
     const qq = q.trim().toLowerCase()
 
     return rows.filter((r) => {
-      
       const s = (r.status ?? "").toLowerCase()
       if (s !== "completed") return false
 
@@ -169,6 +271,7 @@ export default function TournamentHistoryPage() {
                     <option value="16er_dko">16er DKO</option>
                     <option value="32er_dko">32er DKO</option>
                     <option value="64er_dko">64er DKO</option>
+                    <option value="kratzer">Kratzer</option>
                   </select>
                 </div>
               </div>
