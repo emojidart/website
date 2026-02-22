@@ -730,41 +730,50 @@ if (tmErr) console.error("team_members error:", tmErr)
   }
   
   async function confirmLineupAsAdmin() {
-  if (!dialogMatch || !selectedTeamId) return
-  if (!isAdmin) return
-  if (!myProfileId) return
-  
+  dAlert("✅ CLICK: confirmLineupAsAdmin gestartet")
+
+  if (!dialogMatch || !selectedTeamId || !isAdmin || !myProfileId || !session?.access_token) return
 
   const startersNow = lineupPlayers.filter((p) => !p.is_substitute).length
-  if (startersNow === 0) {
-    alert("Du musst mindestens 1 Fixspieler auswählen, bevor du bestätigen kannst.")
-    return
-  }
+  if (startersNow === 0) return
 
   try {
+    dAlert("➡️ RPC confirm_lineup...")
+
     const { error } = await supabase.rpc("confirm_lineup", {
       p_match_id: dialogMatch.id,
       p_team_id: selectedTeamId,
     })
     if (error) throw error
 
+    dAlert("✅ RPC ok, reload MatchData...")
     await loadMatchData(dialogMatch.id, selectedTeamId)
 
-    const { data: lh } = await supabase
-      .from("match_lineup_headers")
-      .select("status,current_version,confirmed_version,confirmed_at,confirmed_by")
-      .eq("match_id", dialogMatch.id)
-      .eq("team_id", selectedTeamId)
-      .maybeSingle()
+    dAlert("➡️ PUSH fetch /api/push/lineup...")
 
-    setLineupHeadersByKey((prev) => {
-      const next = new Map(prev)
-      next.set(headerKey(dialogMatch.id, selectedTeamId), (lh as any) ?? null)
-      return next
+    const res = await fetch("/api/push/lineup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        team_id: selectedTeamId,
+        match_id: dialogMatch.id,
+        action: "confirmed",
+        sender_profile_id: myProfileId,
+      }),
     })
-  } catch (e) {
+
+    const json = await res.json().catch(() => null)
+    console.log("ADMIN PUSH RES", res.status, json)
+
+    if (!res.ok) throw new Error(json?.error ?? `Push failed (${res.status})`)
+
+    dAlert(`✅ Push OK: sent=${json?.sent ?? "?"}, failed=${json?.failed ?? "?"}`)
+  } catch (e: any) {
     console.error("confirmLineupAsAdmin error", e)
-    alert("Fehler beim Bestätigen.")
+    dAlert("❌ Fehler: " + (e?.message ?? "unknown"))
   }
 }
 
@@ -1425,31 +1434,7 @@ if (tmErr) console.error("team_members error:", tmErr)
                           await loadMatchData(dialogMatch.id, selectedTeamId)
 						  
 						  
-						  
-						  // ✅ DEBUG PUSH (ADMIN)
-const res = await fetch("/api/push/lineup", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${session?.access_token ?? ""}`,
-  },
-  body: JSON.stringify({
-    team_id: selectedTeamId,
-    match_id: dialogMatch.id,
-    action: "confirmed",
-    sender_profile_id: myProfileId,
-  }),
-})
-
-const json = await res.json().catch(() => null)
-console.log("ADMIN PUSH RES", res.status, json)
-
-if (!res.ok) {
-  alert(`Push Fehler ${res.status}: ${json?.error ?? "unknown"}`)
-} else {
-  alert(`Push OK: sent=${json?.sent ?? "?"}, failed=${json?.failed ?? "?"}`)
-}
-						  
+						 					  
 						  
 						  
 						  
