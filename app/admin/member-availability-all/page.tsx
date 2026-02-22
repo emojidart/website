@@ -227,6 +227,52 @@ function computeLineupState(h: LineupHeader | null) {
  * - Dialog: zeigt Status + sperrt nach Spielbeginn
  */
 export default function AdminAvailabilityPage() {
+
+
+
+async function confirmLineupAsAdmin() {
+  if (!dialogMatch) return
+  if (!selectedTeamId) return
+  if (!isAdmin) return
+  if (!myProfileId) return
+
+  // Optional: sperren, wenn Match schon begonnen hat
+  if (isMatchLocked(dialogMatch)) return
+
+  try {
+    // 1) Header auf confirmed setzen (oder RPC benutzen, falls du sowas hast)
+    const { error } = await supabase
+      .from("match_lineup_headers")
+      .update({ status: "confirmed", confirmed_at: new Date().toISOString(), confirmed_by: myProfileId })
+      .eq("match_id", dialogMatch.id)
+      .eq("team_id", selectedTeamId)
+
+    if (error) {
+      console.error("confirmLineupAsAdmin update error:", error)
+      return
+    }
+
+    // 2) Neu laden
+    await loadMatchData(dialogMatch.id, selectedTeamId)
+
+    // 3) Optional Push
+    await fetch("/api/push/lineup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        authorization: `Bearer ${session?.access_token ?? ""}`,
+      },
+      body: JSON.stringify({
+        team_id: selectedTeamId,
+        match_id: dialogMatch.id,
+        action: "confirmed",
+        sender_profile_id: myProfileId,
+      }),
+    })
+  } catch (e) {
+    console.error("confirmLineupAsAdmin error:", e)
+  }
+}
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
 
@@ -729,53 +775,7 @@ if (tmErr) console.error("team_members error:", tmErr)
     }
   }
   
-  async function confirmLineupAsAdmin() {
-  if (!dialogMatch) return
-  if (!selectedTeamId) return
-  if (!isAdmin) return
-  if (!myProfileId) return
-  if (!session?.access_token) return
-
-  const startersNow = lineupPlayers.filter((p) => !p.is_substitute).length
-  if (startersNow === 0) return
-
-  try {
-    const { error } = await supabase.rpc("confirm_lineup", {
-      p_match_id: dialogMatch.id,
-      p_team_id: selectedTeamId,
-    })
-    if (error) {
-      console.error("RPC ERROR", error)
-      return
-    }
-
-    await loadMatchData(dialogMatch.id, selectedTeamId)
-
-    const res = await fetch("/api/push/lineup", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        team_id: selectedTeamId,
-        match_id: dialogMatch.id,
-        action: "confirmed",
-        sender_profile_id: myProfileId,
-      }),
-    })
-
-    const json = await res.json().catch(() => null)
-    console.log("ADMIN PUSH RES", res.status, json)
-
-    if (!res.ok) {
-      console.error("Push Fehler", res.status, json)
-      return
-    }
-  } catch (e: any) {
-    console.error("confirmLineupAsAdmin error", e)
-  }
-}
+  
 
   const selectedTeam = useMemo(() => teams.find((t) => t.id === selectedTeamId) ?? null, [teams, selectedTeamId])
 
@@ -1273,6 +1273,13 @@ if (tmErr) console.error("team_members error:", tmErr)
     Aufstellung bestätigen
   </Button>
 ) : null}
+
+
+
+
+
+
+
                         <CardContent className="pt-0 space-y-3">
                           {starters.length === 0 ? (
                             <div className="text-sm text-muted-foreground">Noch keine Fixspieler ausgewählt.</div>
