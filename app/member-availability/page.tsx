@@ -577,11 +577,13 @@ setLineupChangedNotified(false)
     if (!profile?.player_id) return
 
     // Teamspieler
-    const { data: tm } = await supabase
-      .from("team_members")
-      .select(`player_id, club_players:club_players(id, name, photo_url)`)
-      .eq("team_id", teamId)
-      .is("left_at", null)
+    const { data: tm, error: tmErr } = await supabase
+  .from("team_members")
+  .select(`player_id, club_players:club_players!team_members_player_id_fkey(id, name, photo_url)`)
+  .eq("team_id", teamId)
+  .is("left_at", null)
+
+if (tmErr) console.error("team_members error:", tmErr)
 
     const players: TeamPlayer[] = ((tm as any) || []).map((r: any) => r.club_players).filter(Boolean)
     setTeamPlayers(players)

@@ -143,7 +143,7 @@ function formatTime(timeString: string | null) {
 
 function statusBadge(s: AvailabilityStatus | "none") {
   if (s === "yes") return <Badge className="bg-green-600 text-white">Ja</Badge>
-  if (s === "maybe") return <Badge className="bg-yellow-600 text-white">Vielleicht</Badge>
+  if (s === "maybe") return <Badge className="bg-yellow-600 text-white">Nur wenn Not am Mann</Badge>
   if (s === "no") return <Badge className="bg-red-600 text-white">Nein</Badge>
   return <Badge variant="outline">keine Antwort</Badge>
 }
@@ -291,62 +291,73 @@ export default function AdminAvailabilityPage() {
   }, [session])
 
   async function bootstrap() {
-    // 1) profile
-    const { data: profileData } = await supabase
-      .from("user_profiles")
-      .select(`id, user_id, player_id`)
-      .eq("user_id", session!.user.id)
-      .maybeSingle()
+  // 1) profile (inkl. is_admin!)
+  const { data: profileData, error: profileErr } = await supabase
+    .from("user_profiles")
+    .select("id,user_id,player_id,is_admin")
+    .eq("user_id", session!.user.id)
+    .maybeSingle()
 
-    const profId = (profileData as any)?.id ?? null
-    const playerId = (profileData as any)?.player_id ?? null
-    setMyProfileId(profId)
-    setMyPlayerId(playerId)
+  if (profileErr) {
+    console.error("user_profiles error:", profileErr)
+  }
 
-    // 2) admin check (board roles in club_roles)
-    let admin = false
-    if (playerId) {
-      const { data: roles } = await supabase.from("club_roles").select("role").eq("player_id", playerId).is("left_at", null)
-      const roleList = ((roles as any[]) || []).map((r) => String(r.role || ""))
-      const boardRoles = new Set(["Vorstand", "Kassier", "Schriftführer", "Admin", "Obmann", "Obfrau"])
-      admin = roleList.some((r) => boardRoles.has(r))
-    }
-    setIsAdmin(admin)
+  const profId = (profileData as any)?.id ?? null
+  const playerId = (profileData as any)?.player_id ?? null
+  const isAdminFlag = Boolean((profileData as any)?.is_admin ?? false)
 
-    // 3) teams + opponent teams + matches
-    const [teamsRes, oppRes] = await Promise.all([
-      supabase.from("teams").select("id,name,logo_url").order("name", { ascending: true }),
-      supabase.from("opponent_teams").select("*"),
-    ])
+  setMyProfileId(profId)
+  setMyPlayerId(playerId)
+  setIsAdmin(isAdminFlag)
 
-    const teamRows = ((teamsRes.data as any[]) || []) as Team[]
-    const oppRows = ((oppRes.data as any[]) || []) as OpponentTeam[]
-    setTeams(teamRows)
-    setOpponentTeams(oppRows)
+  // 3) teams + opponent teams
+  const [teamsRes, oppRes] = await Promise.all([
+    supabase.from("teams").select("id,name,logo_url").order("name", { ascending: true }),
+    supabase.from("opponent_teams").select("*"),
+  ])
 
-    if (!selectedTeamId && teamRows.length > 0) setSelectedTeamId(teamRows[0].id)
+  if (teamsRes.error) console.error("teams error:", teamsRes.error)
+  if (oppRes.error) console.error("opponent_teams error:", oppRes.error)
 
-    const matchesRes = await supabase
-      .from("matches")
-      .select(
-        `
+  const teamRows = ((teamsRes.data as any[]) || []) as Team[]
+  const oppRows = ((oppRes.data as any[]) || []) as OpponentTeam[]
+
+  setTeams(teamRows)
+  setOpponentTeams(oppRows)
+
+  // selectedTeamId initial setzen (nur wenn noch leer)
+  if (!selectedTeamId && teamRows.length > 0) {
+    setSelectedTeamId(teamRows[0].id)
+  }
+
+  // matches
+  const matchesRes = await supabase
+    .from("matches")
+    .select(
+      `
         *,
         home_team:teams!matches_home_team_id_fkey(id, name),
         away_team:teams!matches_away_team_id_fkey(id, name),
         season:seasons(id, name, type)
       `
-      )
-      .order("match_date", { ascending: true })
+    )
+    .order("match_date", { ascending: true })
 
-    const enriched =
-      ((matchesRes.data as any) || []).map((m: any) => {
-        const homeOpp = m.home_opponent_team_id ? oppRows.find((x: any) => x.id === m.home_opponent_team_id) : null
-        const awayOpp = m.away_opponent_team_id ? oppRows.find((x: any) => x.id === m.away_opponent_team_id) : null
-        return { ...m, home_opponent_team: homeOpp, away_opponent_team: awayOpp }
-      }) as Match[]
-
-    setMatches(enriched)
+  if (matchesRes.error) {
+    console.error("matches error:", matchesRes.error)
+    setMatches([])
+    return
   }
+
+  const enriched =
+    ((matchesRes.data as any) || []).map((m: any) => {
+      const homeOpp = m.home_opponent_team_id ? oppRows.find((x: any) => x.id === m.home_opponent_team_id) : null
+      const awayOpp = m.away_opponent_team_id ? oppRows.find((x: any) => x.id === m.away_opponent_team_id) : null
+      return { ...m, home_opponent_team: homeOpp, away_opponent_team: awayOpp }
+    }) as Match[]
+
+  setMatches(enriched)
+}
 
   const upcomingMatches = useMemo(() => matches.filter((m) => m.status !== "completed"), [matches])
   const completedMatches = useMemo(() => matches.filter((m) => m.status === "completed"), [matches])
@@ -422,10 +433,14 @@ export default function AdminAvailabilityPage() {
   const substitutes = useMemo(() => lineupPlayers.filter((p) => p.is_substitute), [lineupPlayers])
 
   const availabilityByPlayer = useMemo(() => {
-    const m = new Map<string, AvailabilityRow>()
-    for (const a of availability) m.set(a.player_id, a)
-    return m
-  }, [availability])
+  const m = new Map<string, AvailabilityRow>()
+  for (const a of availability) {
+    if (!m.has(a.player_id)) {
+      m.set(a.player_id, a) // nur erster Eintrag = neuester
+    }
+  }
+  return m
+}, [availability])
 
   const counts = useMemo(() => {
     const all = teamPlayers.length
@@ -455,11 +470,12 @@ export default function AdminAvailabilityPage() {
 
   async function loadMatchData(matchId: string, teamId: string) {
     // Teamspieler + Rollen
-    const { data: tm } = await supabase
-      .from("team_members")
-      .select(`player_id, role, club_players:club_players(id, name, photo_url)`)
-      .eq("team_id", teamId)
-      .is("left_at", null)
+    const { data: tm, error: tmErr } = await supabase
+  .from("team_members")
+  .select(`player_id, role, club_players:club_players!team_members_player_id_fkey(id, name, photo_url)`)
+  .eq("team_id", teamId)
+
+if (tmErr) console.error("team_members error:", tmErr)
 
     const players: TeamPlayer[] = ((tm as any) || []).map((r: any) => r.club_players).filter(Boolean)
     setTeamPlayers(players)
@@ -472,10 +488,11 @@ export default function AdminAvailabilityPage() {
 
     // Availability
     const { data: av } = await supabase
-      .from("match_availability")
-      .select("player_id,status,note,updated_at, club_players:club_players(id,name,photo_url)")
-      .eq("match_id", matchId)
-      .eq("team_id", teamId)
+  .from("match_availability")
+  .select("player_id,status,note,updated_at, club_players:club_players(id,name,photo_url)")
+  .eq("match_id", matchId)
+  .eq("team_id", teamId)
+  .order("updated_at", { ascending: false }) // WICHTIG!
 
     setAvailability((((av as any) || []) as AvailabilityRow[]) || [])
 
