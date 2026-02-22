@@ -20,7 +20,7 @@ type PageKey =
   | "events"
   | "recruitment"
   | "club"
-  | "upcoming-tournaments"
+  | "create-event" // ✅ NEU: Neue Veranstaltung anlegen
   | "tournaments"
   | "tournament-management"
   | "player-database"
@@ -37,7 +37,9 @@ const PAGES: Array<{ key: PageKey; title: string }> = [
   { key: "events", title: "Veranstaltungen" },
   { key: "recruitment", title: "Rekrutierung" },
   { key: "club", title: "Vereinsverwaltung" },
-  { key: "upcoming-tournaments", title: "Bevorstehende Turniere" },
+
+ 
+
   { key: "tournaments", title: "Turniere" },
   { key: "tournament-management", title: "Turnier verwalten" },
   { key: "player-database", title: "Spielerdatenbank" },
@@ -214,7 +216,11 @@ export function RolePermissionsManager() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2 w-full sm:max-w-sm">
           <div className="text-sm font-medium">Teammitglied</div>
-          <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId} disabled={loading || members.length === 0}>
+          <Select
+            value={selectedPlayerId}
+            onValueChange={setSelectedPlayerId}
+            disabled={loading || members.length === 0}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Wähle ein Teammitglied..." />
             </SelectTrigger>
