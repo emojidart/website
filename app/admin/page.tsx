@@ -524,7 +524,7 @@ if (session && !isAdmin) {
               <CardContent className="text-center">
                 <p className="text-gray-600 mb-6">Sie haben keine Berechtigung für diesen Bereich.</p>
                 <div className="space-y-3">
-                  <Link href="/member-dashboard">
+                  <Link href="/member-profile-app">
                     <Button className="w-full">Zum Member-Dashboard</Button>
                   </Link>
                   <Button variant="outline" onClick={handleLogout} className="w-full bg-transparent">
