@@ -14,6 +14,17 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -236,26 +247,41 @@ async function confirmLineupAsAdmin() {
   if (!isAdmin) return
   if (!myProfileId) return
 
-  // Optional: sperren, wenn Match schon begonnen hat
-  if (isMatchLocked(dialogMatch)) return
+  if (isMatchLocked(dialogMatch)) {
+    setConfirmMsg({ type: "err", text: "Gesperrt – nach Spielbeginn nicht mehr änderbar." })
+    return
+  }
+
+  if (confirmingLineup) return
+
+  setConfirmingLineup(true)
+  setConfirmMsg(null)
 
   try {
-    // 1) Header auf confirmed setzen (oder RPC benutzen, falls du sowas hast)
-    const { error } = await supabase
-      .from("match_lineup_headers")
-      .update({ status: "confirmed", confirmed_at: new Date().toISOString(), confirmed_by: myProfileId })
-      .eq("match_id", dialogMatch.id)
-      .eq("team_id", selectedTeamId)
+   const { data: hdr } = await supabase
+  .from("match_lineup_headers")
+  .select("current_version")
+  .eq("match_id", dialogMatch.id)
+  .eq("team_id", selectedTeamId)
+  .maybeSingle()
 
-    if (error) {
-      console.error("confirmLineupAsAdmin update error:", error)
-      return
-    }
+const currentVersion = (hdr as any)?.current_version ?? 0
 
-    // 2) Neu laden
+const { error } = await supabase
+  .from("match_lineup_headers")
+  .update({
+    status: "confirmed",
+    confirmed_at: new Date().toISOString(),
+    confirmed_by: myProfileId,
+    confirmed_version: currentVersion,
+  })
+  .eq("match_id", dialogMatch.id)
+  .eq("team_id", selectedTeamId)
+
+    if (error) throw error
+
     await loadMatchData(dialogMatch.id, selectedTeamId)
 
-    // 3) Optional Push
     await fetch("/api/push/lineup", {
       method: "POST",
       headers: {
@@ -269,8 +295,14 @@ async function confirmLineupAsAdmin() {
         sender_profile_id: myProfileId,
       }),
     })
-  } catch (e) {
+
+    setConfirmMsg({ type: "ok", text: "Gespeichert ✅" })
+    setTimeout(() => setConfirmMsg(null), 2000)
+  } catch (e: any) {
     console.error("confirmLineupAsAdmin error:", e)
+    setConfirmMsg({ type: "err", text: `Fehler ❌ ${e?.message ?? ""}` })
+  } finally {
+    setConfirmingLineup(false)
   }
 }
   const router = useRouter()
@@ -307,6 +339,8 @@ async function confirmLineupAsAdmin() {
   const [lineupPlayers, setLineupPlayers] = useState<LineupRow[]>([])
   const [lineupHeader, setLineupHeader] = useState<LineupHeader | null>(null)
   const [savingLineup, setSavingLineup] = useState(false)
+  const [confirmingLineup, setConfirmingLineup] = useState(false)
+const [confirmMsg, setConfirmMsg] = useState<null | { type: "ok" | "err"; text: string }>(null)
 
   // Team roles (Captain/Co)
   const [teamRolesByPlayer, setTeamRolesByPlayer] = useState<Map<string, string | null>>(new Map())
@@ -1255,76 +1289,97 @@ if (tmErr) console.error("team_members error:", tmErr)
                       </Card>
 
                       {/* Lineup view */}
-                      <Card className="border bg-white shadow-sm rounded-2xl">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base flex items-center gap-2">
-                            Aufstellung
-                            {(() => {
-                              const st = computeLineupState(lineupHeader)
-                              if (st.kind === "confirmed") return <Badge className="bg-green-600 text-white">Bestätigt</Badge>
-                              if (st.kind === "stale") return <Badge className="bg-yellow-600 text-white">Geändert</Badge>
-                              if (st.kind === "draft") return <Badge variant="outline">Entwurf</Badge>
-                              return <Badge className="bg-gray-200 text-gray-800">Keine Aufstellung</Badge>
-                            })()}
-                          </CardTitle>
-                        </CardHeader>
-{isAdmin && dialogMatch && selectedTeamId ? (
-  <Button onClick={confirmLineupAsAdmin} className="bg-orange-600 hover:bg-orange-700 w-full">
-    Aufstellung bestätigen
-  </Button>
-) : null}
+<Card className="border bg-white shadow-sm rounded-2xl">
+  <CardHeader className="pb-2">
+    <CardTitle className="text-base flex items-center gap-2">
+      Aufstellung
+      {(() => {
+        const st = computeLineupState(lineupHeader)
+        if (st.kind === "confirmed") return <Badge className="bg-green-600 text-white">Bestätigt</Badge>
+        if (st.kind === "stale") return <Badge className="bg-yellow-600 text-white">Geändert</Badge>
+        if (st.kind === "draft") return <Badge variant="outline">Entwurf</Badge>
+        return <Badge className="bg-gray-200 text-gray-800">Keine Aufstellung</Badge>
+      })()}
+    </CardTitle>
+  </CardHeader>
 
+  <CardContent className="pt-0 space-y-3">
+    {isAdmin && dialogMatch && selectedTeamId ? (
+      <div className="space-y-2">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button disabled={confirmingLineup} className="bg-orange-600 hover:bg-orange-700 w-full">
+              {confirmingLineup ? "Speichere..." : "Aufstellung bestätigen"}
+            </Button>
+          </AlertDialogTrigger>
 
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Aufstellung bestätigen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Dadurch wird die aktuelle Aufstellung als <b>bestätigt</b> markiert.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
 
+            <AlertDialogFooter>
+              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmLineupAsAdmin}>Bestätigen</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
+        {confirmMsg ? (
+          <div className={`text-sm ${confirmMsg.type === "ok" ? "text-green-700" : "text-red-700"}`}>
+            {confirmMsg.text}
+          </div>
+        ) : null}
+      </div>
+    ) : null}
 
+    {starters.length === 0 ? (
+      <div className="text-sm text-muted-foreground">Noch keine Fixspieler ausgewählt.</div>
+    ) : (
+      <div className="grid gap-2">
+        {starters.map((lp) => {
+          const p = teamPlayers.find((x) => x.id === lp.player_id)
+          return (
+            <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="w-10 justify-center">
+                  {lp.position}
+                </Badge>
+                <div className="font-medium">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )}
 
+    {substitutes.length > 0 ? (
+      <>
+        <div className="text-xs text-gray-500">Ersatzspieler</div>
+        <div className="grid gap-2">
+          {substitutes.map((lp) => {
+            const p = teamPlayers.find((x) => x.id === lp.player_id)
+            return (
+              <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 opacity-90">
+                <div className="font-medium">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
+                <Badge variant="outline">Ersatz</Badge>
+              </div>
+            )
+          })}
+        </div>
+      </>
+    ) : null}
 
-                        <CardContent className="pt-0 space-y-3">
-                          {starters.length === 0 ? (
-                            <div className="text-sm text-muted-foreground">Noch keine Fixspieler ausgewählt.</div>
-                          ) : (
-                            <div className="grid gap-2">
-                              {starters.map((lp) => {
-                                const p = teamPlayers.find((x) => x.id === lp.player_id)
-                                return (
-                                  <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3">
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant="outline" className="w-10 justify-center">
-                                        {lp.position}
-                                      </Badge>
-                                      <div className="font-medium">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          )}
-
-                          {substitutes.length > 0 ? (
-                            <>
-                              <div className="text-xs text-gray-500">Ersatzspieler</div>
-                              <div className="grid gap-2">
-                                {substitutes.map((lp) => {
-                                  const p = teamPlayers.find((x) => x.id === lp.player_id)
-                                  return (
-                                    <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 opacity-90">
-                                      <div className="font-medium">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
-                                      <Badge variant="outline">Ersatz</Badge>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            </>
-                          ) : null}
-
-                          {!isAdmin ? (
-                            <div className="text-xs text-gray-500">
-                              Hinweis: Aufstellung ändern geht hier nur als Admin/Board (oder wenn du die RLS so freigibst).
-                            </div>
-                          ) : null}
-                        </CardContent>
-                      </Card>
+    {!isAdmin ? (
+      <div className="text-xs text-gray-500">
+        Hinweis: Aufstellung ändern geht hier nur als Admin/Board (oder wenn du die RLS so freigibst).
+      </div>
+    ) : null}
+  </CardContent>
+</Card>
 
                       {/* Team chat */}
                       <Card className="border bg-white shadow-sm rounded-2xl">

@@ -634,12 +634,22 @@ const { data: lh } = await supabase
 setLineupHeader((lh as any) ?? null)
 
 // ✅ Wenn bestätigt -> standardmäßig sperren (EditMode AUS)
+// ✅ Wenn bestätigt -> standardmäßig sperren (EditMode AUS)
 const isConfirmed =
   (lh as any)?.status === "confirmed" &&
   (lh as any)?.confirmed_version != null &&
   (lh as any)?.confirmed_version === (lh as any)?.current_version
 
-setLineupEditMode(!isConfirmed)
+// ✅ Wenn "confirmed aber geändert" -> auch erstmal sperren (EditMode AUS)
+const isStale =
+  (lh as any)?.status === "confirmed" &&
+  (lh as any)?.confirmed_version != null &&
+  (lh as any)?.current_version != null &&
+  (lh as any)?.confirmed_version < (lh as any)?.current_version
+
+// ✅ Auto-Edit NUR wenn NICHT confirmed und NICHT stale (also Draft/leer)
+setLineupEditMode(!isConfirmed && !isStale)
+
 setLineupChangedNotified(false)
 
 
@@ -751,7 +761,7 @@ function setLineupPlayer(playerId: string, mode: "remove" | "starter" | "substit
   if (!dialogMatch || !selectedTeamId) return
   if (!isCaptainOrCoForTeam) return
   if (isMatchLocked(dialogMatch)) return
-  if (lineupIsConfirmed && !lineupEditMode) return
+ if ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode) return
 
   setDraftLineup((prev) => {
     const next = [...prev]
@@ -1408,24 +1418,24 @@ const lineupIsStale =
                                   <div className="flex flex-wrap gap-1 justify-end">
                                     {!inLineup ? (
                                       <>
-                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || (lineupIsConfirmed && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "starter")}>
+                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "starter")}>
                                           Fix
                                         </Button>
-                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || (lineupIsConfirmed && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "substitute")}>
+                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "substitute")}>
                                           Ersatz
                                         </Button>
                                       </>
                                     ) : (
                                       <>
-                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || (lineupIsConfirmed && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "remove")}>
+                                        <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "remove")}>
                                           Raus
                                         </Button>
                                         {entry?.is_substitute ? (
-                                          <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || (lineupIsConfirmed && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "starter")}>
+                                          <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "starter")}>
                                             Als Fix
                                           </Button>
                                         ) : (
-                                          <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || (lineupIsConfirmed && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "substitute")}>
+                                          <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "substitute")}>
                                             Als Ersatz
                                           </Button>
                                         )}
@@ -1484,24 +1494,24 @@ const lineupIsStale =
       </div>
 
       {/* ✅ Rechts oben: Bearbeiten/gesperrt */}
-      {isCaptainOrCoForTeam && !dialogIsLocked && lineupIsConfirmed && !lineupEditMode ? (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-  setLineupEditMode(true)
-  setLineupChangedNotified(false)
+      {isCaptainOrCoForTeam && !dialogIsLocked && (lineupIsConfirmed || lineupIsStale) && !lineupEditMode ? (
+  <Button
+    size="sm"
+    variant="outline"
+    onClick={() => {
+      setLineupEditMode(true)
+      setLineupChangedNotified(false)
+      setDraftLineup(lineupPlayers)
+      setDraftDirty(false)
+      setLineupError(null)
+    }}
+    className="shrink-0"
+  >
+    Bearbeiten
+  </Button>
+) : null}
 
-  
-  setDraftLineup(lineupPlayers)
-  setDraftDirty(false)
-}}
 
-          className="shrink-0"
-        >
-          Bearbeiten
-        </Button>
-      ) : null}
     </div>
   </CardHeader>
 
@@ -1568,54 +1578,84 @@ const lineupIsStale =
         ) : null}
 		
 		
-		{isCaptainOrCoForTeam && !dialogIsLocked && lineupEditMode && (
-  <div className="flex gap-2">
-   <Button
-  variant="outline"
-  onClick={() => {
-    // Draft zurück auf DB-Stand
-    setDraftLineup(lineupPlayers)
-    setDraftDirty(false)
+{isCaptainOrCoForTeam && !dialogIsLocked && lineupEditMode && (
+  <div className="space-y-3">
+    {/* ✅ Edit-Mode Hinweis: eigene Zeile, bricht sauber um */}
+    <div className="rounded-xl border bg-gray-50 p-3 text-xs text-gray-700 leading-relaxed">
+      Du bist im <span className="font-medium">Bearbeiten-Modus</span>.
+      <br />
+      <span className="font-medium">Abbrechen</span> = zurück ohne Speichern.
+      <br />
+      <span className="font-medium">Änderungen bestätigen</span> = speichert automatisch + bestätigt.
+    </div>
 
-    // ❌ NICHT mehr sperren!
-    // setLineupEditMode(false)
+    {/* 🔥 Hinweis nur wenn wirklich was geändert wurde */}
+    {draftDirty && (
+      <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900">
+        <div className="font-medium">Änderungen noch nicht bestätigt</div>
+        <div className="text-xs mt-1">
+          Tippe auf <span className="font-semibold">„Änderungen bestätigen“</span>, sonst bleibt die Aufstellung für alle unverändert.
+        </div>
+      </div>
+    )}
 
-    // Fehlermeldung zurücksetzen
-    setLineupError(null)
-  }}
-  className="w-full"
->
-  Änderungen verwerfen
-</Button>
+    {/* ✅ Buttons mobile-friendly: 2 oben, 1 unten */}
+    <div className="grid grid-cols-2 gap-2">
+      <Button
+        variant="outline"
+        onClick={() => {
+          // ✅ Edit-Mode verlassen + Draft zurücksetzen
+          setDraftLineup(lineupPlayers)
+          setDraftDirty(false)
+          setLineupError(null)
+          setLineupEditMode(false)
+        }}
+        className="w-full"
+      >
+        Abbrechen
+      </Button>
 
-    <Button
-      onClick={saveDraftLineup}
-      disabled={savingLineup || !draftDirty}
-      className="w-full bg-orange-600 hover:bg-orange-700"
-    >
-      {savingLineup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-      Änderungen speichern
-    </Button>
+      <Button
+        variant="outline"
+        onClick={() => {
+          // Draft zurück auf DB-Stand, aber im Edit-Mode bleiben
+          setDraftLineup(lineupPlayers)
+          setDraftDirty(false)
+          setLineupError(null)
+        }}
+        className="w-full"
+      >
+        Verwerfen
+      </Button>
+
+      <Button
+        onClick={confirmLineup}
+        disabled={confirmingLineup || dialogIsLocked || startersCount === 0}
+        className="col-span-2 w-full bg-orange-600 hover:bg-orange-700"
+      >
+        {confirmingLineup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        Änderungen bestätigen
+      </Button>
+    </div>
+
+    <div className="text-[11px] text-gray-500 leading-relaxed">
+      „Änderungen bestätigen“ speichert automatisch und setzt die Aufstellung auf <span className="font-medium">Bestätigt</span>.
+    </div>
   </div>
 )}
 
 
 
-
-       {/* Wenn Editmode aktiv -> Confirm Button */}
-{(!lineupIsConfirmed || lineupEditMode) ? (
+       {/* ✅ Confirm-Button ist im Edit-Mode oben bei den Buttons.
+    Hier zeigen wir ihn nur, wenn NICHT im Edit-Mode (z.B. Draft ohne Bearbeiten-UI) */}
+{!lineupEditMode && !lineupIsConfirmed ? (
   <Button
     onClick={confirmLineup}
-    disabled={
-      confirmingLineup ||
-      dialogIsLocked ||
-      startersCount === 0 ||
-      (lineupIsConfirmed === true && !lineupIsStale && !lineupEditMode)
-    }
+    disabled={confirmingLineup || dialogIsLocked || startersCount === 0}
     className="bg-orange-600 hover:bg-orange-700"
   >
     {confirmingLineup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-    {lineupIsStale || lineupEditMode ? "Änderungen bestätigen" : "Aufstellung bestätigen"}
+    Aufstellung bestätigen
   </Button>
 ) : null}
       </>
