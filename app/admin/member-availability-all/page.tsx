@@ -1423,6 +1423,41 @@ if (tmErr) console.error("team_members error:", tmErr)
                       <Button
                         onClick={async () => {
                           await loadMatchData(dialogMatch.id, selectedTeamId)
+						  
+						  
+						  
+						  // ✅ DEBUG PUSH (ADMIN)
+const res = await fetch("/api/push/lineup", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${session?.access_token ?? ""}`,
+  },
+  body: JSON.stringify({
+    team_id: selectedTeamId,
+    match_id: dialogMatch.id,
+    action: "confirmed",
+    sender_profile_id: myProfileId,
+  }),
+})
+
+const json = await res.json().catch(() => null)
+console.log("ADMIN PUSH RES", res.status, json)
+
+if (!res.ok) {
+  alert(`Push Fehler ${res.status}: ${json?.error ?? "unknown"}`)
+} else {
+  alert(`Push OK: sent=${json?.sent ?? "?"}, failed=${json?.failed ?? "?"}`)
+}
+						  
+						  
+						  
+						  
+						  
+						  
+						  
+						  
+						  
 						  // ✅ Push senden (wie Member)
 await fetch("/api/push/lineup", {
   method: "POST",
