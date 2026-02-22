@@ -31,16 +31,22 @@ import { DuesTab } from "@/components/vereinsverwaltung/tabs/DuesTab"
 import { DocumentsTab } from "@/components/vereinsverwaltung/tabs/DocumentsTab"
 
 export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManagementProps) {
+
+  const safeOnDataSaved = () => {
+    try {
+      onDataSaved?.()
+    } catch (e) {
+      console.error("onDataSaved error:", e)
+    }
+  }
   const [activeSection, setActiveSection] = useState<
     "add-player" | "manage-players" | "manage-teams" | "assign-player" | "membership" | "dues" | "documents"
   >("add-player")
 
-  const players = useClubPlayers(user, onDataSaved)
-  const teams = useTeams(user, onDataSaved)
-  const members = useTeamMembers(user, onDataSaved)
-
-  // ✅ NEU: Beiträge Hook
-  const dues = useDues(user, players.clubPlayers, onDataSaved)
+  const players = useClubPlayers(user, safeOnDataSaved)
+const teams = useTeams(user, safeOnDataSaved)
+const members = useTeamMembers(user, safeOnDataSaved)
+const dues = useDues(user, players.clubPlayers, safeOnDataSaved)
 
   useEffect(() => {
     members.syncSelectedPlayerMeta(teams.teams)

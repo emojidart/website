@@ -2,9 +2,8 @@ import type { User } from "@supabase/supabase-js"
 
 export interface ClubPlayerManagementProps {
   user: User | null
-  onDataSaved: () => void
+  onDataSaved?: () => void
 }
-
 export interface ClubPlayer {
   id: string
   name: string
