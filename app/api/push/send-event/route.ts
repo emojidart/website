@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
+    // Event laden
     const { data: eventRow, error: evErr } = await supabase
       .from("events")
       .select("id,name,event_date,event_time,location,details,photo_url")
@@ -51,62 +52,70 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Event not found" }, { status: 400 })
     }
 
+    // Tokens holen
+    const { data: tokenRows, error: tokErr } = await supabase.from("fcm_tokens").select("token")
+    if (tokErr) return NextResponse.json({ success: false, error: "Token load failed" }, { status: 500 })
+
+    const tokens = Array.from(new Set(((tokenRows as any[]) || []).map((r) => r.token).filter(Boolean)))
+    if (tokens.length === 0) {
+      return NextResponse.json({ success: true, sent: 0 })
+    }
+
+    // Push Text bauen
     const title = action === "created" ? "🎉 Neue Veranstaltung!" : "📢 Veranstaltung aktualisiert!"
 
     const dateStr = eventRow.event_date ? String(eventRow.event_date) : ""
     const timeStr = formatTimePlain((eventRow as any).event_time ?? null)
     const when = [dateStr, timeStr].filter(Boolean).join(" • ")
-    const where = eventRow.location ? String(eventRow.location) : ""
-    const details = eventRow.details ? trimText(String(eventRow.details), 220) : ""
+
+    const whereStr = eventRow.location ? `📍 ${String(eventRow.location)}` : ""
+    const detailsStr = eventRow.details ? `ℹ️ ${trimText(String(eventRow.details), 220)}` : ""
 
     // ✅ Flyer / Event-Bild aus DB-Spalte photo_url
     const imageUrl = eventRow.photo_url ? String(eventRow.photo_url) : ""
 
-const titleStr = String(title)
-const eventNameStr = String(eventRow.name)
-const whenStr = String(when)
-const whereStr = eventRow.location ? `📍 ${String(eventRow.location)}` : ""
-const detailsStr = eventRow.details ? `ℹ️ ${trimText(String(eventRow.details), 220)}` : ""
+    const titleStr = String(title)
+    const eventNameStr = String(eventRow.name)
+    const whenStr = String(when)
 
-const bodyText = [eventNameStr, whenStr, whereStr, detailsStr].filter(Boolean).join(" • ")
+    const bodyText = [eventNameStr, whenStr, whereStr, detailsStr].filter(Boolean).join(" • ")
 
-const multicast = await admin.messaging().sendEachForMulticast({
-  tokens,
-  android: { priority: "high" },
+    const tag = `event:${action}:${event_id}`
+    const notif_id = stableNotifIdFromTag(tag)
 
-  data: {
-    // ✅ Event Routing
-    type: "event",
-    action: String(action),
-    event_id: String(event_id),
-    clickUrl: "/veranstaltungen",
+    // ✅ admin korrekt definieren
+    const admin = getFirebaseAdmin()
 
-    // ✅ Neue Keys (dein showEventCard)
-    title: titleStr,
-    eventName: eventNameStr,
-    when: whenStr,
-    where: whereStr,
-    details: detailsStr,
-    imageUrl: imageUrl,
+    // ✅ NUR DATA senden (damit deine Android App transparent + flyer rendert)
+    const multicast = await admin.messaging().sendEachForMulticast({
+      tokens,
+      android: { priority: "high" },
+      data: {
+        type: "event",
+        action: String(action),
+        event_id: String(event_id),
+        clickUrl: "/veranstaltungen",
 
-    // ✅ EXTRA FALLBACK KEYS (falls Android/FCM irgendwas zickt)
-    conversation: titleStr,       // war bei dir im Chat-Teil bekannt
-    senderName: "EMD Vereinsapp",
-    message: bodyText,
-    body: bodyText,
-    iconUrl: imageUrl,            // fallback fürs Bild
+        // Keys für showEventCard()
+        title: titleStr,
+        eventName: eventNameStr,
+        when: whenStr,
+        where: whereStr,
+        details: detailsStr,
+        imageUrl: imageUrl,
 
-    // ✅ Dedupe/ID
-    tag: String(tag),
-    notif_id: String(notif_id),
-    ts: String(Date.now()),
-  },
-})
+        // Extra Fallback Keys (falls du irgendwo noch alte Logik hast)
+        conversation: titleStr,
+        senderName: "EMD Vereinsapp",
+        message: bodyText,
+        body: bodyText,
+        iconUrl: imageUrl,
 
-
-
-
-
+        tag: String(tag),
+        notif_id: String(notif_id),
+        ts: String(Date.now()),
+      },
+    })
 
     return NextResponse.json({
       success: true,
