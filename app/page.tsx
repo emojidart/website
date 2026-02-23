@@ -38,6 +38,8 @@ import { PushNotificationDialog } from "@/components/push-notification-dialog"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
+const APK_URL = "https://puozttepmqkelrzaojys.supabase.co/storage/v1/object/public/downloads/app-debug.apk"
+
 interface Match {
   id: string
   home_team_id: string | null
@@ -290,6 +292,14 @@ export default function Home() {
   const [activeTournament, setActiveTournament] = useState<ActiveTournament | null>(null)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [showInstallButton, setShowInstallButton] = useState(false)
+  const handleApkDownload = () => {
+  const a = document.createElement("a")
+  a.href = APK_URL
+  a.download = "EMD-Vereinsapp.apk"
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+}
 
   // --- DKO Self Registration (Turniertag-Box) ---
   const [authUserId, setAuthUserId] = useState<string | null>(null)
@@ -1785,6 +1795,24 @@ export default function Home() {
               priority
             />
           </a>
+		  
+		<p className="text-sm text-orange-50/90 max-w-md text-center lg:text-left mt-4">
+  Die Android-App befindet sich derzeit im Genehmigungsprozess bei Google Play.
+  Bis zur Veröffentlichung im Play Store stellen wir die aktuelle APK-Version hier zum direkten Download bereit.
+</p>
+
+<p className="text-xs text-orange-50/80 max-w-md text-center lg:text-left mt-2">
+  Hinweis: Bei manueller Installation muss ggf. die Installation aus unbekannten Quellen aktiviert werden.
+</p>
+
+<Button
+  size="lg"
+  className="mt-4 w-full sm:w-auto bg-white text-orange-700 hover:bg-white/90 font-black shadow-xl"
+  onClick={handleApkDownload}
+>
+  <Download className="w-5 h-5 mr-2" />
+  APK herunterladen
+</Button>
 
          
 

@@ -15,28 +15,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
  */
 export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    /**
-     * 🔑 DAS ist der entscheidende Fix:
-     * - detectSessionInUrl: Supabase verarbeitet Recovery/Invite Links automatisch
-     * - flowType: "implicit": verhindert PKCE code_verifier Fehler bei Reset-Links
-     *
-     * Sonst wird NICHTS geändert.
-     */
-    detectSessionInUrl: true,
-    flowType: "implicit",
-
+    // In Hybrid/WebView Apps: Session in localStorage behalten
     persistSession: true,
     autoRefreshToken: true,
 
-    // deine bestehende Cookie-Strategie bleibt erhalten
-    cookieOptions: {
-      name: "sb-session",
-      lifetime: 60 * 60 * 8, // 8h
-      maxAge: 60 * 60 * 8,
-      path: "/",
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    },
+    // Für normale App-Logins brauchst du das meist NICHT.
+    // (Invite/Recovery Links in der App sind selten)
+    detectSessionInUrl: false,
+
+    // optional, aber ok:
+    flowType: "implicit",
   },
 })
 

@@ -31,7 +31,6 @@ import { DuesTab } from "@/components/vereinsverwaltung/tabs/DuesTab"
 import { DocumentsTab } from "@/components/vereinsverwaltung/tabs/DocumentsTab"
 
 export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManagementProps) {
-
   const safeOnDataSaved = () => {
     try {
       onDataSaved?.()
@@ -39,14 +38,15 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
       console.error("onDataSaved error:", e)
     }
   }
+
   const [activeSection, setActiveSection] = useState<
     "add-player" | "manage-players" | "manage-teams" | "assign-player" | "membership" | "dues" | "documents"
   >("add-player")
 
   const players = useClubPlayers(user, safeOnDataSaved)
-const teams = useTeams(user, safeOnDataSaved)
-const members = useTeamMembers(user, safeOnDataSaved)
-const dues = useDues(user, players.clubPlayers, safeOnDataSaved)
+  const teams = useTeams(user, safeOnDataSaved)
+  const members = useTeamMembers(user, safeOnDataSaved)
+  const dues = useDues(user, players.clubPlayers, safeOnDataSaved)
 
   useEffect(() => {
     members.syncSelectedPlayerMeta(teams.teams)
@@ -139,7 +139,6 @@ const dues = useDues(user, players.clubPlayers, safeOnDataSaved)
               Mitgliedschaft
             </Button>
 
-            {/* ✅ NEU */}
             <Button
               variant={activeSection === "dues" ? "default" : "outline"}
               onClick={() => setActiveSection("dues")}
@@ -154,7 +153,6 @@ const dues = useDues(user, players.clubPlayers, safeOnDataSaved)
               Beiträge
             </Button>
 
-            {/* ✅ NEU: Dokumente */}
             <Button
               variant={activeSection === "documents" ? "default" : "outline"}
               onClick={() => setActiveSection("documents")}
@@ -230,35 +228,40 @@ const dues = useDues(user, players.clubPlayers, safeOnDataSaved)
                   await members.fetchTeamMembers()
                 })
               }
+              /** ✅ WICHTIG: damit Link/Unlink sofort sichtbar ist (ohne Seiten-Reload) */
+              onDataChanged={async () => {
+                await players.fetchClubPlayers()
+                await members.fetchTeamMembers()
+              }}
             />
           )}
 
-       {activeSection === "manage-teams" && (
-  <ManageTeamsTab
-    teams={teams.teams}
-    teamMembers={members.teamMembers}
-    teamLoading={teams.teamLoading}
-    teamMessage={teams.teamMessage}
-    teamMessageType={teams.teamMessageType}
-    newTeamName={teams.newTeamName}
-    setNewTeamName={teams.setNewTeamName}
-    teamLogoPreview={teams.teamLogoPreview}
-    handleTeamLogoChange={teams.handleTeamLogoChange}
-    clearTeamLogo={() => {
-      teams.setTeamLogoPreview(null)
-      teams.setTeamLogoFile(null)
-    }}
-    editingTeamId={teams.editingTeamId}
-    submitTeamForm={teams.submitTeamForm}
-    onEditTeam={teams.beginEditTeam}
-    onCancelEdit={teams.cancelTeamEdit}
-    onDeleteTeam={(teamId) =>
-      teams.deleteTeam(teamId, async () => {
-        await members.fetchTeamMembers()
-      })
-    }
-  />
-)}
+          {activeSection === "manage-teams" && (
+            <ManageTeamsTab
+              teams={teams.teams}
+              teamMembers={members.teamMembers}
+              teamLoading={teams.teamLoading}
+              teamMessage={teams.teamMessage}
+              teamMessageType={teams.teamMessageType}
+              newTeamName={teams.newTeamName}
+              setNewTeamName={teams.setNewTeamName}
+              teamLogoPreview={teams.teamLogoPreview}
+              handleTeamLogoChange={teams.handleTeamLogoChange}
+              clearTeamLogo={() => {
+                teams.setTeamLogoPreview(null)
+                teams.setTeamLogoFile(null)
+              }}
+              editingTeamId={teams.editingTeamId}
+              submitTeamForm={teams.submitTeamForm}
+              onEditTeam={teams.beginEditTeam}
+              onCancelEdit={teams.cancelTeamEdit}
+              onDeleteTeam={(teamId) =>
+                teams.deleteTeam(teamId, async () => {
+                  await members.fetchTeamMembers()
+                })
+              }
+            />
+          )}
 
           {activeSection === "assign-player" && (
             <AssignPlayerTab
@@ -291,7 +294,6 @@ const dues = useDues(user, players.clubPlayers, safeOnDataSaved)
             />
           )}
 
-          {/* ✅ NEU: Beiträge */}
           {activeSection === "dues" && (
             <DuesTab
               summaryRows={dues.summaryRows}
@@ -305,7 +307,6 @@ const dues = useDues(user, players.clubPlayers, safeOnDataSaved)
             />
           )}
 
-          {/* ✅ NEU: Dokumente */}
           {activeSection === "documents" && <DocumentsTab user={user} />}
         </CardContent>
       </Card>

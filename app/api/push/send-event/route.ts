@@ -41,10 +41,9 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Event laden (inkl. Foto + Details)
     const { data: eventRow, error: evErr } = await supabase
       .from("events")
-      .select("id,name,event_type,event_date,event_time,location,details,photo_url")
+      .select("id,name,event_date,event_time,location,details,photo_url")
       .eq("id", event_id)
       .maybeSingle()
 
@@ -57,43 +56,57 @@ export async function POST(request: NextRequest) {
     const dateStr = eventRow.event_date ? String(eventRow.event_date) : ""
     const timeStr = formatTimePlain((eventRow as any).event_time ?? null)
     const when = [dateStr, timeStr].filter(Boolean).join(" • ")
-    const where = eventRow.location ? `📍 ${eventRow.location}` : ""
-    const details = eventRow.details ? `\n\nℹ️ ${trimText(String(eventRow.details), 260)}` : ""
+    const where = eventRow.location ? String(eventRow.location) : ""
+    const details = eventRow.details ? trimText(String(eventRow.details), 220) : ""
 
-    const bodyText = `${eventRow.name}\n\n${[when, where].filter(Boolean).join("\n")}${details}`
+    // ✅ Flyer / Event-Bild aus DB-Spalte photo_url
+    const imageUrl = eventRow.photo_url ? String(eventRow.photo_url) : ""
 
-    // Tokens holen
-    const { data: tokenRows, error: tokErr } = await supabase.from("fcm_tokens").select("token")
-    if (tokErr) return NextResponse.json({ success: false, error: "Token load failed" }, { status: 500 })
+const titleStr = String(title)
+const eventNameStr = String(eventRow.name)
+const whenStr = String(when)
+const whereStr = eventRow.location ? `📍 ${String(eventRow.location)}` : ""
+const detailsStr = eventRow.details ? `ℹ️ ${trimText(String(eventRow.details), 220)}` : ""
 
-    const tokens = Array.from(new Set(((tokenRows as any[]) || []).map((r) => r.token).filter(Boolean)))
-    if (tokens.length === 0) {
-      return NextResponse.json({ success: true, sent: 0 })
-    }
+const bodyText = [eventNameStr, whenStr, whereStr, detailsStr].filter(Boolean).join(" • ")
 
-    const admin = getFirebaseAdmin()
+const multicast = await admin.messaging().sendEachForMulticast({
+  tokens,
+  android: { priority: "high" },
 
-    const tag = `event:${action}:${event_id}`
-    const notif_id = stableNotifIdFromTag(tag)
+  data: {
+    // ✅ Event Routing
+    type: "event",
+    action: String(action),
+    event_id: String(event_id),
+    clickUrl: "/veranstaltungen",
 
-    const multicast = await admin.messaging().sendEachForMulticast({
-      tokens,
-      data: {
-        type: "event",
-        action: String(action),
-        event_id: String(event_id),
-        clickUrl: "/veranstaltungen",
+    // ✅ Neue Keys (dein showEventCard)
+    title: titleStr,
+    eventName: eventNameStr,
+    when: whenStr,
+    where: whereStr,
+    details: detailsStr,
+    imageUrl: imageUrl,
 
-        title: String(title),
-        body: String(bodyText),
+    // ✅ EXTRA FALLBACK KEYS (falls Android/FCM irgendwas zickt)
+    conversation: titleStr,       // war bei dir im Chat-Teil bekannt
+    senderName: "EMD Vereinsapp",
+    message: bodyText,
+    body: bodyText,
+    iconUrl: imageUrl,            // fallback fürs Bild
 
-        tag: String(tag),
-        notif_id: String(notif_id),
-        iconUrl: eventRow.photo_url || "", // ✅ Foto wird als iconUrl mitgegeben
-        ts: String(Date.now()),
-      },
-      android: { priority: "high" },
-    })
+    // ✅ Dedupe/ID
+    tag: String(tag),
+    notif_id: String(notif_id),
+    ts: String(Date.now()),
+  },
+})
+
+
+
+
+
 
     return NextResponse.json({
       success: true,

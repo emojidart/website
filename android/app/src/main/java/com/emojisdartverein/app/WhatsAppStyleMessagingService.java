@@ -46,6 +46,16 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
         Map<String, String> data = remoteMessage.getData();
 
+        // ✅ EVENT-CARD: wenn type=event -> eigene Card anzeigen und fertig
+        String type = get(data, "type");
+        if ("event".equals(type)) {
+            showEventCard(remoteMessage);
+            return;
+        }
+
+        // =========================
+        // DEFAULT: CHAT / WHATSAPP STYLE
+        // =========================
         String conversation = get(data, "conversation");
         String senderName   = get(data, "senderName");
         String message      = get(data, "message");
@@ -54,13 +64,8 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         String notifIdStr   = get(data, "notif_id");
 
         String scope        = get(data, "scope");
-
-        // ✅ room_id muss chat_room_id sein
         String roomId       = get(data, "room_id");
-
         String iconUrl      = get(data, "iconUrl");
-
-        // ✅ server soll das mitsenden: "/chat-app?scope=team&room_id=..."
         String clickUrl     = get(data, "clickUrl");
 
         if (TextUtils.isEmpty(conversation)) conversation = "Neue Nachricht";
@@ -84,16 +89,11 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
 
         Intent intent = new Intent(this, MainActivity.class);
-
-        // ✅ EXTREM WICHTIG:
-        // PendingIntents werden sonst recycelt → Extras (path) gehen verloren/alt
         intent.setAction("OPEN_PUSH_" + notifId);
         intent.setData(Uri.parse("emd://push/" + notifId));
-
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-        // ✅ NUR interner Pfad als Extra
         intent.putExtra("path", clickUrl);
+intent.setData(Uri.parse("emd://push" + clickUrl));
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
@@ -104,40 +104,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
         ensureChannel();
 
-        Bitmap raw = fetchBitmap(iconUrl);
-        Bitmap round = null;
-        if (raw != null) {
-            Bitmap scaled = scaleSquareCenterCrop(raw, 128);
-            round = circleWithBorder(scaled, 6, 0xFFFFFFFF);
-        }
 
-        Person user = new Person.Builder().setName("Du").build();
-        Person.Builder senderBuilder = new Person.Builder().setName(senderName);
-        if (round != null) senderBuilder.setIcon(IconCompat.createWithBitmap(round));
-        Person sender = senderBuilder.build();
-
-        NotificationCompat.MessagingStyle style = new NotificationCompat.MessagingStyle(user)
-                .setConversationTitle(conversation)
-                .addMessage(message, System.currentTimeMillis(), sender);
-
-        NotificationCompat.Builder chatBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle(conversation)
-                .setContentText(senderName + ": " + message)
-                .setStyle(style)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent)
-                .setColor(orange)
-                .setColorized(true)
-                .setGroup(GROUP_KEY_CHAT)
-                .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN);
-
-        if (round != null) chatBuilder.setLargeIcon(round);
-
-        if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, chatBuilder.build());
-        else nm.notify(notifId, chatBuilder.build());
 
         int unread = incrementUnreadCounter(getApplicationContext());
         NotificationCompat.Builder summary = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -156,13 +123,134 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         nm.notify(SUMMARY_ID, summary.build());
     }
 
+    // =========================
+    // EVENT CARD NOTIFICATION
+    // =========================
+   
+   
+   
+   
+   
+  private void showEventCard(RemoteMessage remoteMessage) {
+    NotificationManagerCompat nm = NotificationManagerCompat.from(this);
+    if (!nm.areNotificationsEnabled()) return;
+
+    Map<String, String> data = remoteMessage.getData();
+
+    String title     = get(data, "title");
+    String eventName = get(data, "eventName");
+    String when      = get(data, "when");
+    String where     = get(data, "where");
+    String details   = get(data, "details");
+    String imageUrl  = get(data, "imageUrl");
+
+    String tag       = get(data, "tag");
+    String notifIdStr= get(data, "notif_id");
+    String clickUrl  = get(data, "clickUrl");
+
+    int orange = ContextCompat.getColor(this, R.color.emd_orange);
+    int notifId = safeInt(notifIdStr, stableIdFrom(tag));
+
+    if (TextUtils.isEmpty(title)) title = "📢 Veranstaltung";
+    if (TextUtils.isEmpty(eventName)) eventName = "Neue Veranstaltung";
+    if (TextUtils.isEmpty(when)) when = "";
+    if (TextUtils.isEmpty(where)) where = "";
+    if (TextUtils.isEmpty(details)) details = "";
+
+    if (TextUtils.isEmpty(clickUrl)) clickUrl = "/veranstaltungen";
+    if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
+
+    Intent intent = new Intent(this, MainActivity.class);
+    intent.setAction("OPEN_PUSH_" + notifId);
+    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+    intent.putExtra("path", clickUrl);
+    intent.setData(Uri.parse("emd://push" + clickUrl));
+
+    PendingIntent pendingIntent = PendingIntent.getActivity(
+            this,
+            notifId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+    );
+
+    ensureChannel();
+
+    String meta = "";
+    if (!TextUtils.isEmpty(when) && !TextUtils.isEmpty(where)) meta = when + " • " + where;
+    else if (!TextUtils.isEmpty(when)) meta = when;
+    else if (!TextUtils.isEmpty(where)) meta = where;
+
+    Bitmap flyer = fetchBitmap(imageUrl);
+    if (flyer != null) flyer = scaleDownForNotification(flyer, 1000, 600);
+
+    // Small (collapsed)
+    android.widget.RemoteViews small =
+            new android.widget.RemoteViews(getPackageName(), R.layout.notification_event_card);
+
+    small.setTextViewText(R.id.eventTitle, title);
+    small.setTextViewText(R.id.eventName, eventName);
+    small.setTextViewText(R.id.eventMeta, meta);
+    small.setTextViewText(R.id.eventDetails, details);
+
+    // Big (expanded) – braucht notification_event_card_big.xml mit flyerImage
+    android.widget.RemoteViews big =
+            new android.widget.RemoteViews(getPackageName(), R.layout.notification_event_card_big);
+
+    big.setTextViewText(R.id.eventTitle, title);
+    big.setTextViewText(R.id.eventName, eventName);
+    big.setTextViewText(R.id.eventMeta, meta);
+    big.setTextViewText(R.id.eventDetails, details);
+
+    if (flyer != null) {
+        Bitmap thumb = scaleSquareCenterCrop(flyer, 128);
+        Bitmap round = circleWithBorder(thumb, 6, 0xFFFFFFFF);
+
+        small.setImageViewBitmap(R.id.eventImage, round);
+        big.setImageViewBitmap(R.id.eventImage, round);
+
+        big.setImageViewBitmap(R.id.flyerImage, flyer);
+        big.setViewVisibility(R.id.flyerImage, android.view.View.VISIBLE);
+    } else {
+        small.setImageViewResource(R.id.eventImage, android.R.color.transparent);
+        big.setImageViewResource(R.id.eventImage, android.R.color.transparent);
+        big.setViewVisibility(R.id.flyerImage, android.view.View.GONE);
+    }
+
+    NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(eventName)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_EVENT)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setColor(orange)
+            .setColorized(false)
+            .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(small)
+            .setCustomBigContentView(big);
+
+    if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
+    else nm.notify(notifId, builder.build());
+}
+
+
+
+
+
+
+
+
+
+
     @Override
     public void onNewToken(String token) {
         super.onNewToken(token);
 
         // ✅ Token lokal speichern (damit du ihn später easy an Supabase schicken kannst)
         try {
-            android.content.SharedPreferences sp = getApplicationContext().getSharedPreferences("emd_push", MODE_PRIVATE);
+            android.content.SharedPreferences sp = getApplicationContext()
+                    .getSharedPreferences("emd_push", MODE_PRIVATE);
             sp.edit().putString("fcm_token", token).apply();
         } catch (Exception ignored) {}
     }
@@ -231,42 +319,62 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
     }
 
     private static Bitmap scaleSquareCenterCrop(Bitmap src, int size) {
-        int w = src.getWidth();
-        int h = src.getHeight();
-        int min = Math.min(w, h);
+    int w = src.getWidth();
+    int h = src.getHeight();
+    int min = Math.min(w, h);
 
-        int x = (w - min) / 2;
-        int y = (h - min) / 2;
+    int x = (w - min) / 2;
+    int y = (h - min) / 2;
 
-        Bitmap cropped = Bitmap.createBitmap(src, x, y, min, min);
-        return Bitmap.createScaledBitmap(cropped, size, size, true);
+    Bitmap cropped = Bitmap.createBitmap(src, x, y, min, min);
+    return Bitmap.createScaledBitmap(cropped, size, size, true);
+}
+
+// ✅ NEU – Flyer-Bild sauber verkleinern für Notification
+private static Bitmap scaleDownForNotification(Bitmap src, int maxW, int maxH) {
+    int w = src.getWidth();
+    int h = src.getHeight();
+
+    if (w <= maxW && h <= maxH) return src;
+
+    float ratio = Math.min((float) maxW / (float) w,
+                           (float) maxH / (float) h);
+
+    int newW = Math.max(1, Math.round(w * ratio));
+    int newH = Math.max(1, Math.round(h * ratio));
+
+    return Bitmap.createScaledBitmap(src, newW, newH, true);
+}
+
+private static Bitmap circleWithBorder(Bitmap src, int borderPx, int borderColor) {
+    int size = src.getWidth();
+    Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+    Canvas canvas = new Canvas(out);
+
+    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    RectF rect = new RectF(0, 0, size, size);
+
+    canvas.drawARGB(0, 0, 0, 0);
+    paint.setColor(0xFFFFFFFF);
+    canvas.drawOval(rect, paint);
+
+    paint.setXfermode(new android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN));
+    canvas.drawBitmap(src, 0, 0, paint);
+    paint.setXfermode(null);
+
+    if (borderPx > 0) {
+        Paint border = new Paint(Paint.ANTI_ALIAS_FLAG);
+        border.setStyle(Paint.Style.STROKE);
+        border.setStrokeWidth(borderPx);
+        border.setColor(borderColor);
+
+        float half = borderPx / 2f;
+        canvas.drawOval(
+                new RectF(half, half, size - half, size - half),
+                border
+        );
     }
 
-    private static Bitmap circleWithBorder(Bitmap src, int borderPx, int borderColor) {
-        int size = src.getWidth();
-        Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(out);
-
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        RectF rect = new RectF(0, 0, size, size);
-
-        canvas.drawARGB(0, 0, 0, 0);
-        paint.setColor(0xFFFFFFFF);
-        canvas.drawOval(rect, paint);
-
-        paint.setXfermode(new android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN));
-        canvas.drawBitmap(src, 0, 0, paint);
-        paint.setXfermode(null);
-
-        if (borderPx > 0) {
-            Paint b = new Paint(Paint.ANTI_ALIAS_FLAG);
-            b.setStyle(Paint.Style.STROKE);
-            b.setStrokeWidth(borderPx);
-            b.setColor(borderColor);
-            float half = borderPx / 2f;
-            canvas.drawOval(new RectF(half, half, size - half, size - half), b);
-        }
-
-        return out;
-    }
+    return out;
+}
 }

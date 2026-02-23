@@ -8,6 +8,14 @@ import type { ClubPlayer } from "@/components/vereinsverwaltung/types"
 
 type MessageType = "success" | "error" | "info"
 
+/**
+ * DB-Row mit Join (club_players -> spieldatenbank.player_code)
+ * Wichtig: FK club_players.spieldatenbank_id -> spieldatenbank.id muss existieren.
+ */
+type ClubPlayerRow = Omit<ClubPlayer, "player_code"> & {
+  spieldatenbank?: { player_code: string | null } | null
+}
+
 export function useClubPlayers(user: User | null, onDataSaved: () => void) {
   const [playerName, setPlayerName] = useState("")
   const [playerPhotoFile, setPlayerPhotoFile] = useState<File | null>(null)
@@ -42,6 +50,8 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
             p.city ?? "",
             p.street ?? "",
             String(p.player_number ?? ""),
+            // ✅ NEU: player_code auch durchsuchbar
+            String(p.player_code ?? ""),
           ]
             .join(" ")
             .toLowerCase()
@@ -75,14 +85,40 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null)
 
   const fetchClubPlayers = async () => {
-    const { data, error } = await supabase.from("club_players").select("*").order("name", { ascending: true })
+    /**
+     * ✅ Join: club_players.spieldatenbank_id -> spieldatenbank.player_code
+     * Falls deine FK-Relation anders heißt, sag kurz Bescheid, dann passe ich es an.
+     */
+    const { data, error } = await supabase
+      .from("club_players")
+      .select(
+        `
+        *,
+        spieldatenbank:spieldatenbank_id (
+          player_code
+        )
+      `,
+      )
+      .order("name", { ascending: true })
+
     if (error) {
       console.error("Error fetching club players:", error)
       setPlayerMessage("Fehler beim Laden der Spieler.")
       setPlayerMessageType("error")
-    } else {
-      setClubPlayers((data || []) as ClubPlayer[])
+      return
     }
+
+    const rows = (data || []) as ClubPlayerRow[]
+    const mapped: ClubPlayer[] = rows.map((r) => {
+      const { spieldatenbank, ...rest } = r
+      return {
+        ...(rest as ClubPlayer),
+        // ✅ NEU: Player Code direkt am ClubPlayer-Objekt
+        player_code: spieldatenbank?.player_code ?? null,
+      }
+    })
+
+    setClubPlayers(mapped)
   }
 
   useEffect(() => {
@@ -242,8 +278,6 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
   }
 
   const deletePlayer = async (playerId: string, photoUrl: string | null, afterDelete?: () => void) => {
-    // ✅ confirm entfernt, weil du ein eigenes Modal im UI verwendest
-
     setPlayerLoading(true)
     setPlayerMessage("Spieler wird gelöscht...")
     setPlayerMessageType("info")
