@@ -26,17 +26,19 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:paddingLeft="12dp">
+            android:paddingLeft="12dp"
+            android:paddingStart="12dp">
 
             <TextView
                 android:id="@+id/eventTitle"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="🎉 Neue Veranstaltung!"
                 android:textStyle="bold"
                 android:textSize="16sp"
                 android:textColor="@android:color/white"
-                android:maxLines="1"
+                android:maxLines="2"
                 android:ellipsize="end" />
 
             <TextView
@@ -46,7 +48,7 @@
                 android:text="Test Event"
                 android:textSize="14sp"
                 android:textColor="@android:color/white"
-                android:maxLines="1"
+                android:maxLines="2"
                 android:ellipsize="end"
                 android:alpha="0.95" />
 
@@ -62,7 +64,7 @@
         android:textColor="@android:color/white"
         android:alpha="0.85"
         android:paddingTop="8dp"
-        android:maxLines="1"
+        android:maxLines="2"
         android:ellipsize="end" />
 
     <TextView
