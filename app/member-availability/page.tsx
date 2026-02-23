@@ -296,6 +296,13 @@ const [lineupChangedNotified, setLineupChangedNotified] = useState(false)
   const [chatLoading, setChatLoading] = useState(false)
   const [chatSending, setChatSending] = useState(false)
   const [chatText, setChatText] = useState("")
+  const [remindSending, setRemindSending] = useState<Record<string, boolean>>({})
+const [remindOk, setRemindOk] = useState<Record<string, boolean>>({})
+const [remindAllSending, setRemindAllSending] = useState(false)
+const [remindAllResult, setRemindAllResult] = useState<string | null>(null)
+// 🔒 Cooldown Modal
+const [cooldownOpen, setCooldownOpen] = useState(false)
+const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   // ✅ je nach Modus: Match-Room oder Team-Room
@@ -559,6 +566,115 @@ setLineupChangedNotified(false)
       setChatSending(false)
     }
   }
+  
+  
+  async function sendAvailabilityReminder(targetPlayerId: string) {
+  if (!dialogMatch || !selectedTeamId) return
+  if (!isCaptainOrCoForTeam) return
+  if (!profile?.id) return
+  if (dialogIsLocked) return
+  if (targetPlayerId === profile.player_id) return
+
+  setRemindSending((p) => ({ ...p, [targetPlayerId]: true }))
+  setRemindOk((p) => ({ ...p, [targetPlayerId]: false }))
+
+  try {
+    const res = await fetch("/api/push/availability-reminder", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        authorization: `Bearer ${session?.access_token ?? ""}`,
+      },
+      body: JSON.stringify({
+        team_id: selectedTeamId,
+        match_id: dialogMatch.id,
+        target_player_id: targetPlayerId,
+        sender_profile_id: profile.id,
+      }),
+    })
+
+   const json = await res.json().catch(() => null)
+
+if (json?.cooldown) {
+  setCooldownMinutes(json.minutes_left ?? 30)
+  setCooldownOpen(true)
+  return
+}
+
+if (!res.ok || !json?.success) {
+  throw new Error(json?.error || "push failed")
+}
+
+    setRemindOk((p) => ({ ...p, [targetPlayerId]: true }))
+    setTimeout(() => {
+      setRemindOk((p) => ({ ...p, [targetPlayerId]: false }))
+    }, 2000)
+  } catch (e) {
+    console.error("sendAvailabilityReminder error", e)
+  } finally {
+    setRemindSending((p) => ({ ...p, [targetPlayerId]: false }))
+  }
+}
+
+async function sendAvailabilityReminderToAll() {
+  if (!dialogMatch || !selectedTeamId) return
+  if (!isCaptainOrCoForTeam) return
+  if (!profile?.id) return
+  if (dialogIsLocked) return
+
+  if (noAnswerPlayerIds.length === 0) {
+    setRemindAllResult("Niemand offen 🙂")
+    setTimeout(() => setRemindAllResult(null), 2000)
+    return
+  }
+
+  setRemindAllSending(true)
+  setRemindAllResult(null)
+
+  let sent = 0
+  let failed = 0
+
+  for (const pid of noAnswerPlayerIds) {
+    try {
+      const res = await fetch("/api/push/availability-reminder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({
+          team_id: selectedTeamId,
+          match_id: dialogMatch.id,
+          target_player_id: pid,
+          sender_profile_id: profile.id,
+        }),
+      })
+
+      const json = await res.json().catch(() => null)
+
+// 🔒 Cooldown -> einfach überspringen
+if (json?.cooldown) {
+  continue
+}
+
+if (!res.ok || !json?.success) {
+  throw new Error(json?.error || "push failed")
+}
+
+if ((json?.sent ?? 0) > 0) sent += 1
+else failed += 1
+    } catch (e) {
+      failed += 1
+      console.error("remind all: failed for", pid, e)
+    }
+  }
+
+  setRemindAllSending(false)
+  setRemindAllResult(`Erinnert: ${sent} • Fehler: ${failed}`)
+  setTimeout(() => setRemindAllResult(null), 3500)
+}
+  
+  
 
 
     useEffect(() => {
@@ -694,11 +810,19 @@ setLineupChangedNotified(false)
 
     return Array.from(m.values())
   }, [teamPlayers, availability, lineupPlayers])
+  
+  const noAnswerPlayerIds = useMemo(() => {
+  const myId = profile?.player_id ?? null
+  return displayPlayers
+    .map((p) => p.id)
+    .filter((pid) => pid !== myId)
+    .filter((pid) => (availabilityByPlayer.get(pid)?.status ?? "none") === "none")
+}, [displayPlayers, availabilityByPlayer, profile?.player_id])
 
-  const dialogIsLocked = useMemo(() => {
-    if (!dialogMatch) return false
-    return isMatchLocked(dialogMatch)
-  }, [dialogMatch])
+ const dialogIsLocked = useMemo(() => {
+  if (!dialogMatch) return false
+  return isMatchLocked(dialogMatch)
+}, [dialogMatch])
 
   async function setAvailabilityStatus(status: AvailabilityStatus) {
     if (!dialogMatch || !selectedTeamId || !profile?.player_id) return
@@ -1386,6 +1510,34 @@ const lineupIsStale =
                           Nein
                         </Button>
                       </div>
+					  
+					  {isCaptainOrCoForTeam && !dialogIsLocked ? (
+  <div className="mt-2 rounded-xl border bg-gray-50 p-3 flex flex-col gap-2">
+    <div className="text-xs text-gray-600">
+      Offene Rückmeldungen: <span className="font-medium">{noAnswerPlayerIds.length}</span>
+    </div>
+
+    <div className="flex items-center gap-2">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={sendAvailabilityReminderToAll}
+        disabled={remindAllSending || noAnswerPlayerIds.length === 0}
+      >
+        {remindAllSending ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            Sende…
+          </>
+        ) : (
+          "Erinnern (alle ohne Antwort)"
+        )}
+      </Button>
+
+      {remindAllResult ? <span className="text-xs text-gray-700">{remindAllResult}</span> : null}
+    </div>
+  </div>
+) : null}
 
                       <div className="space-y-2">
                         <div className="text-xs text-gray-500">Notiz (optional)</div>
@@ -1421,9 +1573,29 @@ const lineupIsStale =
 
                               <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                                 {statusBadge(s as any)}
+								
+								
+								{isCaptainOrCoForTeam && !dialogIsLocked && s === "none" && p.id !== profile?.player_id ? (
+  <div className="flex items-center gap-2">
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={!!remindSending[p.id]}
+      onClick={() => sendAvailabilityReminder(p.id)}
+    >
+      {remindSending[p.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : "Erinnern"}
+    </Button>
+
+    {remindOk[p.id] ? <span className="text-xs text-green-700">gesendet ✅</span> : null}
+  </div>
+) : null}
+								
+								
 
                                 {isCaptainOrCoForTeam && (
                                   <div className="flex flex-wrap gap-1 justify-end">
+								  
+								  
                                     {!inLineup ? (
                                       <>
                                         <Button size="sm" variant="outline" disabled={savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)} onClick={() => setLineupPlayer(p.id, "starter")}>
@@ -1782,7 +1954,36 @@ const lineupIsStale =
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+</Dialog>
+
+{/* 🔒 Cooldown Info Modal */}
+<Dialog open={cooldownOpen} onOpenChange={setCooldownOpen}>
+  <DialogContent className="max-w-sm rounded-2xl">
+    <DialogHeader>
+      <DialogTitle className="text-base">
+        Erinnerung bereits gesendet
+      </DialogTitle>
+    </DialogHeader>
+
+    <div className="text-sm text-gray-600">
+      Dieser Spieler wurde bereits erinnert.
+      <br />
+      <span className="font-medium">
+        Bitte in {cooldownMinutes ?? 30} Minuten erneut versuchen.
+      </span>
+    </div>
+
+    <DialogFooter className="pt-4">
+      <Button
+        onClick={() => setCooldownOpen(false)}
+        className="bg-orange-600 hover:bg-orange-700"
+      >
+        OK
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+		
       </main>
 
       <MobileBottomNav />

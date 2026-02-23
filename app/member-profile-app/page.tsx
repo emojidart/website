@@ -35,8 +35,9 @@ import {
   AlertTriangle,
   Bell,
   CheckCircle,
-  Dumbbell,
+    Dumbbell,
   Printer,
+  Trash2,
 } from "lucide-react"
 import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
 
@@ -1084,7 +1085,32 @@ export default function MemberProfileAppPage() {
               <div className="text-xs sm:text-sm text-gray-600">Events</div>
             </CardContent>
           </Card>
+		  
         </div>
+		
+		        {/* Konto / Datenschutz */}
+        <Card className="mt-6 sm:mt-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm text-gray-600">Konto</div>
+                <div className="text-lg font-bold text-gray-900">Konto löschen</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  Du kannst eine Löschanfrage stellen. Wir bearbeiten sie anschließend.
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto border-red-200 text-red-700 hover:bg-red-50"
+                onClick={() => router.push("/konto-loeschen")}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Konto löschen
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </main>
 
       {/* Foto Dialog */}

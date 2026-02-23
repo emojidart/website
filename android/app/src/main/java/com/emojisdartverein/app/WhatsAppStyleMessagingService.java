@@ -1,4 +1,3 @@
-// WhatsAppStyleMessagingService.java
 package com.emojisdartverein.app;
 
 import android.app.NotificationChannel;
@@ -38,6 +37,12 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
+
+        // ✅ Wenn Notifications generell deaktiviert sind -> nix machen (Android 13+ safe)
+        NotificationManagerCompat nm = NotificationManagerCompat.from(this);
+        if (!nm.areNotificationsEnabled()) {
+            return;
+        }
 
         Map<String, String> data = remoteMessage.getData();
 
@@ -131,7 +136,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
         if (round != null) chatBuilder.setLargeIcon(round);
 
-        NotificationManagerCompat nm = NotificationManagerCompat.from(this);
         if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, chatBuilder.build());
         else nm.notify(notifId, chatBuilder.build());
 
@@ -150,6 +154,17 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setGroupSummary(true);
 
         nm.notify(SUMMARY_ID, summary.build());
+    }
+
+    @Override
+    public void onNewToken(String token) {
+        super.onNewToken(token);
+
+        // ✅ Token lokal speichern (damit du ihn später easy an Supabase schicken kannst)
+        try {
+            android.content.SharedPreferences sp = getApplicationContext().getSharedPreferences("emd_push", MODE_PRIVATE);
+            sp.edit().putString("fcm_token", token).apply();
+        } catch (Exception ignored) {}
     }
 
     private void ensureChannel() {

@@ -5,13 +5,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => null)
     const token: string | null = body?.token ?? null
-    const platform: string = body?.platform ?? "android"
+    const platform: string = (body?.platform ?? "android").toLowerCase()
 
     if (!token) {
       return NextResponse.json({ success: false, error: "Missing token" }, { status: 400 })
     }
 
-    // ✅ Access Token aus Authorization Header lesen
+    // ✅ Bearer aus Header
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization")
     const bearer =
       authHeader && authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : null
@@ -34,21 +34,44 @@ export async function POST(req: NextRequest) {
 
     const userId = userRes.user.id
 
-    // ✅ 2) Upsert mit SERVICE ROLE (um RLS Stress zu vermeiden)
+    // ✅ 2) Service-Client (RLS umgehen)
     const supabaseService = createClient(url, serviceKey)
 
-    const { error: upsertErr } = await supabaseService.from("fcm_tokens").upsert(
-      {
-        user_id: userId,
-        token,
-        platform,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "token" }
-    )
+    const now = new Date().toISOString()
+
+    /**
+     * Strategie:
+     *  A) Token sicher speichern (falls Token schon existiert -> user_id & platform aktualisieren)
+     *  B) Danach alle anderen Tokens des Users für dieselbe Plattform löschen
+     */
+
+    // A) Upsert nach token (Token ist global unique)
+    const { error: upsertErr } = await supabaseService
+      .from("fcm_tokens")
+      .upsert(
+        {
+          user_id: userId,
+          token,
+          platform,
+          updated_at: now,
+        },
+        { onConflict: "token" }
+      )
 
     if (upsertErr) {
       return NextResponse.json({ success: false, error: upsertErr.message }, { status: 500 })
+    }
+
+    // B) Cleanup: alle anderen Tokens des Users (gleiche Plattform) löschen
+    const { error: cleanupErr } = await supabaseService
+      .from("fcm_tokens")
+      .delete()
+      .eq("user_id", userId)
+      .eq("platform", platform)
+      .neq("token", token)
+
+    if (cleanupErr) {
+      return NextResponse.json({ success: false, error: cleanupErr.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
