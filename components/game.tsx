@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import {
   Dialog,
   DialogContent,
@@ -108,7 +109,7 @@ export function Game({ challengeId }: { challengeId: string }) {
       challenge?.status !== "completed" &&
       challenge?.status !== "cancelled"
     ) {
-      console.log("[v0] Starting polling for game updates (every 2 seconds)")
+      
 
       pollInterval = setInterval(async () => {
         if (!gameState) return
@@ -120,7 +121,7 @@ export function Game({ challengeId }: { challengeId: string }) {
           .single()
 
         if (currentChallenge?.status === "cancelled") {
-          console.log("[v0] Game was cancelled by opponent")
+          
           const cancelledBy =
             currentChallenge.cancelled_by === challenge?.challenger_id
               ? challengerInfo?.username
@@ -148,7 +149,7 @@ export function Game({ challengeId }: { challengeId: string }) {
             currentMatch.status !== gameState.status
 
           if (hasChanged) {
-            console.log("[v0] Game state changed, reloading...")
+            
             loadGame()
           }
         }
@@ -156,7 +157,7 @@ export function Game({ challengeId }: { challengeId: string }) {
     }
 
     return () => {
-      console.log("[v0] Stopping polling")
+      
       if (pollInterval) {
         clearInterval(pollInterval)
       }
@@ -173,7 +174,7 @@ export function Game({ challengeId }: { challengeId: string }) {
       .eq("id", challengeId)
       .single()
 
-    console.log("[v0] Challenge data:", challengeData, challengeError)
+   
 
     if (challengeData) {
       setChallenge(challengeData)
@@ -190,8 +191,7 @@ export function Game({ challengeId }: { challengeId: string }) {
         .eq("user_id", challengeData.opponent_id)
         .single()
 
-      console.log("[v0] Challenger profile:", challengerProfile, challengerError)
-      console.log("[v0] Opponent profile:", opponentProfile, opponentError)
+     
 
       const challengerName = challengerProfile?.club_players?.name || "Spieler 1"
       const opponentName = opponentProfile?.club_players?.name || "Spieler 2"
@@ -206,7 +206,7 @@ export function Game({ challengeId }: { challengeId: string }) {
         username: opponentName,
       }
 
-      console.log("[v0] Final player data:", challengerData, opponentData)
+      
 
       setChallengerInfo(challengerData)
       setOpponentInfo(opponentData)
@@ -229,12 +229,12 @@ export function Game({ challengeId }: { challengeId: string }) {
         .order("created_at", { ascending: true })
         .limit(1)
 
-      console.log("[v0] Existing matches:", existingMatches, matchesError)
+    
 
       const gameData = existingMatches && existingMatches.length > 0 ? existingMatches[0] : null
 
       if (!gameData && !matchesError) {
-        console.log("[v0] No match found, attempting to create one")
+     
         const { data: newGame, error: insertError } = await supabase
           .from("live_matches")
           .insert([
@@ -253,15 +253,15 @@ export function Game({ challengeId }: { challengeId: string }) {
           .single()
 
         if (newGame) {
-          console.log("[v0] New game created:", newGame)
+          
           setGameState(newGame)
           await loadTurns(newGame.id)
           await calculateThrowCounts(newGame.id, challengeData.challenger_id, challengeData.opponent_id)
         } else if (insertError) {
-          console.log("[v0] Error creating game (probably already exists):", insertError)
+          
 
           if (insertError.code === "23505") {
-            console.log("[v0] Loading existing match after conflict...")
+           
             const { data: existingMatch } = await supabase
               .from("live_matches")
               .select("*")
@@ -269,7 +269,7 @@ export function Game({ challengeId }: { challengeId: string }) {
               .single()
 
             if (existingMatch) {
-              console.log("[v0] Found existing match:", existingMatch)
+              
               setGameState(existingMatch)
               await loadTurns(existingMatch.id)
               await calculateThrowCounts(existingMatch.id, challengeData.challenger_id, challengeData.opponent_id)
@@ -339,7 +339,7 @@ export function Game({ challengeId }: { challengeId: string }) {
       const nextPlayerId =
         gameState.current_player_id === challenge.challenger_id ? challenge.opponent_id : challenge.challenger_id
 
-      console.log("[v0] Bust! Switching player from", gameState.current_player_id, "to", nextPlayerId)
+      
 
       await supabase
         .from("live_matches")
@@ -359,7 +359,7 @@ export function Game({ challengeId }: { challengeId: string }) {
 
     const throwNumber = isPlayer1 ? player1ThrowCount + 1 : player2ThrowCount + 1
 
-    console.log("[v0] Submitting throw:", { score, throwNumber, newRemaining })
+    
 
     const { error: throwError } = await supabase.from("match_throws").insert([
       {
@@ -382,7 +382,7 @@ export function Game({ challengeId }: { challengeId: string }) {
     }
 
     if (newRemaining === 0) {
-      console.log("[v0] Game won by", user.id)
+      
 
       await supabase
         .from("live_matches")
@@ -416,7 +416,7 @@ export function Game({ challengeId }: { challengeId: string }) {
     const nextPlayerId =
       gameState.current_player_id === challenge.challenger_id ? challenge.opponent_id : challenge.challenger_id
 
-    console.log("[v0] Switching player from", gameState.current_player_id, "to", nextPlayerId)
+    
 
     const { error: updateError } = await supabase
       .from("live_matches")
@@ -432,7 +432,7 @@ export function Game({ challengeId }: { challengeId: string }) {
       return
     }
 
-    console.log("[v0] Game state updated successfully")
+    
 
     setGameState({
       ...gameState,
@@ -503,7 +503,7 @@ export function Game({ challengeId }: { challengeId: string }) {
       return
     }
 
-    console.log("[v0] Game cancelled by user")
+    
     router.push("/lobby")
   }
 
@@ -528,13 +528,13 @@ export function Game({ challengeId }: { challengeId: string }) {
       .single()
 
     if (error) {
-      console.error("[v0] Error creating revanche:", error)
+      
       alert(`Fehler beim Erstellen der Revanche: ${error.message}`)
       setIsRequestingRevenge(false)
       return
     }
 
-    console.log("[v0] Revanche created:", newChallenge)
+   
     router.push(`/game/${newChallenge.id}`)
   }
 
@@ -746,6 +746,9 @@ export function Game({ challengeId }: { challengeId: string }) {
     <div className="min-h-screen bg-white">
       <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
         <DialogContent className="sm:max-w-md">
+  <VisuallyHidden>
+    <DialogTitle>Spiel abbrechen</DialogTitle>
+  </VisuallyHidden>
           <DialogHeader>
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
@@ -770,6 +773,9 @@ export function Game({ challengeId }: { challengeId: string }) {
 
       <Dialog open={showOpponentCancelledModal} onOpenChange={setShowOpponentCancelledModal}>
         <DialogContent className="sm:max-w-md">
+  <VisuallyHidden>
+  <DialogTitle>Spiel abgebrochen</DialogTitle>
+</VisuallyHidden>
           <DialogHeader>
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center">
@@ -785,65 +791,75 @@ export function Game({ challengeId }: { challengeId: string }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showWinnerModal} onOpenChange={setShowWinnerModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="flex justify-center mb-4">
-              {isWinner ? (
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center animate-pulse">
-                    <Trophy className="w-12 h-12 text-white" />
-                  </div>
-                  <Sparkles className="w-8 h-8 text-yellow-400 absolute -top-2 -right-2 animate-bounce" />
-                  <Sparkles className="w-6 h-6 text-yellow-400 absolute -bottom-1 -left-1 animate-bounce delay-100" />
-                </div>
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
-                  <Target className="w-12 h-12 text-gray-500" />
-                </div>
-              )}
+     <Dialog open={showWinnerModal} onOpenChange={setShowWinnerModal}>
+  <DialogContent className="sm:max-w-md">
+    <VisuallyHidden>
+      <DialogTitle>Spiel Ergebnis</DialogTitle>
+    </VisuallyHidden>
+
+    <DialogHeader>
+      <div className="flex justify-center mb-4">
+        {isWinner ? (
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center animate-pulse">
+              <Trophy className="w-12 h-12 text-white" />
             </div>
-            <DialogTitle className="text-center text-2xl">
-              {isWinner ? "🎯 Glückwunsch! 🎯" : "Spiel beendet"}
-            </DialogTitle>
-            <DialogDescription className="text-center text-lg">
-              {isWinner ? (
-                <>
-                  <span className="font-bold text-primary text-xl">Du hast gewonnen!</span>
-                  <div className="mt-4 p-4 bg-green-50 rounded-lg">
-                    <p className="text-sm text-green-800">
-                      <strong>Dein Average:</strong> {isPlayer1 ? player1Average : player2Average}
-                    </p>
-                    <p className="text-sm text-green-800">
-                      <strong>Würfe:</strong> {isPlayer1 ? player1ThrowCount : player2ThrowCount}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <span className="font-bold text-primary">{winnerName}</span> hat das Spiel gewonnen.
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      <strong>Dein Average:</strong> {isPlayer1 ? player1Average : player2Average}
-                    </p>
-                    <p className="text-sm text-gray-700">
-                      <strong>Würfe:</strong> {isPlayer1 ? player1ThrowCount : player2ThrowCount}
-                    </p>
-                  </div>
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => router.push("/lobby")} variant="default" className="w-full" size="lg">
-              Zurück zur Lobby
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Sparkles className="w-8 h-8 text-yellow-400 absolute -top-2 -right-2 animate-bounce" />
+            <Sparkles className="w-6 h-6 text-yellow-400 absolute -bottom-1 -left-1 animate-bounce delay-100" />
+          </div>
+        ) : (
+          <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
+            <Target className="w-12 h-12 text-gray-500" />
+          </div>
+        )}
+      </div>
+
+      <DialogDescription asChild>
+        <div className="text-center text-lg">
+          {isWinner ? (
+            <>
+              <span className="font-bold text-primary text-xl">Du hast gewonnen!</span>
+
+              <div className="mt-4 p-4 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-800">
+                  <strong>Dein Average:</strong> {isPlayer1 ? player1Average : player2Average}
+                </p>
+                <p className="text-sm text-green-800">
+                  <strong>Würfe:</strong> {isPlayer1 ? player1ThrowCount : player2ThrowCount}
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="font-bold text-primary">{winnerName}</span> hat das Spiel gewonnen.
+
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  <strong>Dein Average:</strong> {isPlayer1 ? player1Average : player2Average}
+                </p>
+                <p className="text-sm text-gray-700">
+                  <strong>Würfe:</strong> {isPlayer1 ? player1ThrowCount : player2ThrowCount}
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      </DialogDescription>
+    </DialogHeader>
+
+    <DialogFooter>
+      <Button onClick={() => router.push("/lobby")} variant="default" className="w-full" size="lg">
+        Zurück zur Lobby
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
       <Dialog open={showBustModal} onOpenChange={setShowBustModal}>
         <DialogContent className="sm:max-w-sm">
+  <VisuallyHidden>
+    <DialogTitle>Bust</DialogTitle>
+  </VisuallyHidden>
           <DialogHeader>
             <div className="flex justify-center mb-4">
               <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center animate-bounce">
@@ -860,6 +876,9 @@ export function Game({ challengeId }: { challengeId: string }) {
 
       <Dialog open={showInvalidScoreModal} onOpenChange={setShowInvalidScoreModal}>
         <DialogContent className="sm:max-w-sm">
+  <VisuallyHidden>
+    <DialogTitle>Ungültige Eingabe</DialogTitle>
+  </VisuallyHidden>
           <DialogHeader>
             <div className="flex justify-center mb-4">
               <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center">
@@ -880,7 +899,10 @@ export function Game({ challengeId }: { challengeId: string }) {
       </Dialog>
 
       <Dialog open={showStatsModal} onOpenChange={setShowStatsModal}>
-        <DialogContent className="sm:max-w-2xl">
+       <DialogContent className="sm:max-w-2xl">
+  <VisuallyHidden>
+    <DialogTitle>Spiel Statistiken</DialogTitle>
+  </VisuallyHidden>
           <DialogHeader>
             <DialogTitle className="text-xl flex items-center gap-2">
               <BarChart3 className="w-6 h-6" />
@@ -956,6 +978,9 @@ export function Game({ challengeId }: { challengeId: string }) {
 
       <Dialog open={showCheckoutModal} onOpenChange={setShowCheckoutModal}>
         <DialogContent className="sm:max-w-md">
+  <VisuallyHidden>
+    <DialogTitle>Checkout Vorschläge</DialogTitle>
+  </VisuallyHidden>
           <DialogHeader>
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">

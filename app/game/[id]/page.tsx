@@ -1,5 +1,11 @@
 import { Game } from "@/components/game"
 
-export default function GamePage({ params }: { params: { id: string } }) {
-  return <Game challengeId={params.id} />
+type Props = {
+  params: Promise<{ id: string }>
+}
+
+export default async function GamePage({ params }: Props) {
+  const { id } = await params
+
+  return <Game challengeId={id} />
 }

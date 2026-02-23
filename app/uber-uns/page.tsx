@@ -118,21 +118,21 @@ export default function UberUnsPage() {
               </h2>
               <div className="grid md:grid-cols-3 gap-8 mb-8">
                 <div className="text-center">
-                  <div className="text-4xl md:text-5xl font-bold text-orange-600 dark:text-orange-400 mb-2">40+</div>
+                  <div className="text-4xl md:text-5xl font-bold text-orange-600 dark:text-orange-400 mb-2">50+</div>
                   <p className="text-lg text-foreground/70">Mitglieder</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-4xl md:text-5xl font-bold text-orange-600 dark:text-orange-400 mb-2">50</div>
+                  <div className="text-4xl md:text-5xl font-bold text-orange-600 dark:text-orange-400 mb-2">60+</div>
                   <p className="text-lg text-foreground/70">Aktive Spieler</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-4xl md:text-5xl font-bold text-orange-600 dark:text-orange-400 mb-2">12+</div>
+                  <div className="text-4xl md:text-5xl font-bold text-orange-600 dark:text-orange-400 mb-2">10+</div>
                   <p className="text-lg text-foreground/70">Mannschaften</p>
                 </div>
               </div>
               <p className="text-center text-foreground/80 leading-relaxed">
-                WIR sind mittlerweile mehr als 40 Mitglieder und gesamt 50 Spieler aktuell auf 7 E-Dart Mannschaften, 5
-                Steeldart Mannschaften und einigen Nebenbewerb-Mannschaften – Tendenz steigend.
+                Mit über 50 Mitgliedern und mehr als 60 aktiven Spielern sind wir einer der wachsenden Dartvereine der Region.
+Aktuell stellen wir 5 E-Dart- und 5 Steeldart-Mannschaften sowie mehrere Teams für Nebenbewerbe – Tendenz weiter steigend.
               </p>
             </section>
 

@@ -452,7 +452,16 @@ export default function MemberProfileAppPage() {
         else if (r.status === "no") counts.no += 1
       }
 
-      const { count: teamMemberCount } = await supabase.from("team_members").select("id", { count: "exact", head: true }).eq("team_id", teamId).is("left_at", null)
+const matchDate = (next as any).match_date as string // "YYYY-MM-DD"
+
+const { count: teamMemberCount, error: teamMemberCountError } = await supabase
+  .from("team_members")
+  .select("id", { count: "exact", head: true })
+  .eq("team_id", teamId)
+  .lte("joined_at", matchDate)
+  .or(`left_at.is.null,left_at.gt.${matchDate}`)
+
+if (teamMemberCountError) throw teamMemberCountError
 
       const total = teamMemberCount ?? rows.length
       const answered = counts.yes + counts.maybe + counts.no

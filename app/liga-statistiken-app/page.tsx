@@ -60,23 +60,27 @@ export default function DartLeaguePage() {
     const loadData = async () => {
       try {
         // ✅ Seasons laden (für Dropdown)
-        const { data: seasonsData, error: seasonsError } = await supabase
-          .from("seasons")
-          .select("id, name, type, year, start_date, end_date, is_active")
-          .order("start_date", { ascending: false })
+const { data: seasonsData, error: seasonsError } = await supabase
+  .from("seasons")
+  .select("id, name, type, year, start_date, end_date, is_active")
+  .order("start_date", { ascending: false })
 
-        if (seasonsError) {
-          console.error("Error fetching seasons:", seasonsError)
-        } else {
-          const seasonList = (seasonsData || []) as Season[]
-          setSeasons(seasonList)
+if (seasonsError) {
+  console.error("Error fetching seasons:", seasonsError)
+  return
+}
 
-          // Default: aktive Saison, sonst die erste (neueste)
-          if (!selectedSeasonId) {
-            const active = seasonList.find((s) => s.is_active) || seasonList[0]
-            if (active?.id) setSelectedSeasonId(active.id)
-          }
-        }
+const seasonList = (seasonsData || []) as Season[]
+setSeasons(seasonList)
+
+
+const resolvedSeasonId =
+  selectedSeasonId || seasonList.find((s) => s.is_active)?.id || seasonList[0]?.id || ""
+
+
+if (!selectedSeasonId && resolvedSeasonId) {
+  setSelectedSeasonId(resolvedSeasonId)
+}
 
         const { data: ownTeamsData, error: teamsError } = await supabase
           .from("teams")
@@ -116,9 +120,9 @@ export default function DartLeaguePage() {
         }
 
         // ✅ Saison-Filter (matches.season_id -> seasons.id)
-        if (selectedSeasonId) {
-          matchQuery = matchQuery.eq("season_id", selectedSeasonId)
-        }
+        if (resolvedSeasonId) {
+  matchQuery = matchQuery.eq("season_id", resolvedSeasonId)
+}
 
         const { data: matchesData, error: matchesError } = await matchQuery
 
@@ -187,12 +191,10 @@ export default function DartLeaguePage() {
           legStatsQuery = legStatsQuery.eq("dart_type", dartTypeFilter)
         }
 
-        // ✅ Saison-Filter für Statistiken:
-        // leg_statistics hat (laut Screenshot) KEINE season_id-Spalte, aber hat match_id.
-        // Daher filtern wir über den Join auf matches.season_id.
-        if (selectedSeasonId) {
-          legStatsQuery = legStatsQuery.eq("match.season_id", selectedSeasonId)
-        }
+        
+        if (resolvedSeasonId) {
+  legStatsQuery = legStatsQuery.eq("match.season_id", resolvedSeasonId)
+}
 
         const { data: legStatsData, error: legStatsError } = await legStatsQuery
 
@@ -214,7 +216,7 @@ export default function DartLeaguePage() {
   const selectedSeasonLabel = useMemo(() => {
     const s = seasons.find((x) => x.id === selectedSeasonId)
     if (!s) return "Saison"
-    // z.B. "Herbstsaison 2025" oder "Wintercup 2026"
+    
     const year = s.year ? ` ${s.year}` : ""
     const name = s.name || s.type || "Saison"
     return `${name}${year}`
