@@ -563,17 +563,18 @@ setLineupChangedNotified(false)
 
     // 2) 🔥 PUSH AUSLÖSEN (Team-Chat + Spiel-Chat)
     await fetch("/api/push/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${session?.access_token ?? ""}`,
-      },
-      body: JSON.stringify({
-        room_id: activeRoomId,        // match.id (Spiel-Chat) ODER team_id (Team-Chat)
-        sender_profile_id: profile.id,
-        message: text,
-      }),
-    })
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    authorization: `Bearer ${session?.access_token ?? ""}`,
+  },
+  body: JSON.stringify({
+    room_id: activeRoomId,
+    scope: chatMode === "team" ? "team" : "team",
+    sender_profile_id: profile.id,
+    message: text,
+  }),
+})
 
     // 3) Input leeren
     setChatText("")
