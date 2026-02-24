@@ -544,28 +544,50 @@ setLineupChangedNotified(false)
   }
 
     async function sendChatMessage() {
-    if (!dialogMatch) return
-    if (!profile?.id) return
-    if (!activeRoomId) return
+  if (!dialogMatch) return
+  if (!profile?.id) return
+  if (!activeRoomId) return
 
-    const text = chatText.trim()
-    if (!text || chatSending) return
+  const text = chatText.trim()
+  if (!text || chatSending) return
 
-    setChatSending(true)
-    try {
-      const { error } = await supabase.from("chat_messages").insert({
-        user_id: profile.id,
-        room_id: activeRoomId,
+  setChatSending(true)
+  try {
+    // 1) Nachricht in Supabase speichern
+    const { error } = await supabase.from("chat_messages").insert({
+      user_id: profile.id,
+      room_id: activeRoomId,
+      message: text,
+    })
+    if (error) throw error
+
+    // 2) 🔥 PUSH AUSLÖSEN (Team-Chat + Spiel-Chat)
+    await fetch("/api/push/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        authorization: `Bearer ${session?.access_token ?? ""}`,
+      },
+      body: JSON.stringify({
+        room_id: activeRoomId,        // match.id (Spiel-Chat) ODER team_id (Team-Chat)
+        sender_profile_id: profile.id,
         message: text,
-      })
-      if (error) throw error
-      setChatText("")
-    } catch (e) {
-      console.error("sendChatMessage error", e)
-    } finally {
-      setChatSending(false)
-    }
+      }),
+    })
+
+    // 3) Input leeren
+    setChatText("")
+  } catch (e) {
+    console.error("sendChatMessage error", e)
+  } finally {
+    setChatSending(false)
   }
+}
+  
+  
+  
+  
+  
   
   
   async function sendAvailabilityReminder(targetPlayerId: string) {
