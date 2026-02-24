@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
@@ -233,6 +233,7 @@ function InfoCallout() {
 
 export default function MemberAvailabilityPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { session, loading: authLoading } = useAuth()
 
   const [loading, setLoading] = useState(true)
@@ -331,13 +332,48 @@ const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
-  useEffect(() => {
-    if (!profile?.player_id || teamMemberships.length === 0) return
-    ;(async () => {
-      await fetchMatches()
-    })()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, teamMemberships])
+ useEffect(() => {
+  if (!profile?.player_id || teamMemberships.length === 0) return
+  ;(async () => {
+    await fetchMatches()
+  })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [profile, teamMemberships])
+
+// 🔥 PUSH-DEEPLINK MATCH AUTO-OPEN
+useEffect(() => {
+  if (!session?.user) return
+  if (!matches || matches.length === 0) return
+
+  const matchId = searchParams.get("match_id")
+  const teamId = searchParams.get("team_id")
+  const chat = searchParams.get("chat")
+
+  if (!matchId) return
+
+  const m = matches.find((x) => x.id === matchId)
+  if (!m) return
+
+  ;(async () => {
+    await openMatchDialog(m)
+
+    if (teamId) {
+      setSelectedTeamId(teamId)
+      await loadMatchData(m.id, teamId)
+    }
+
+    if (chat === "match") setChatMode("match")
+    if (chat === "team") setChatMode("team")
+  })()
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [session?.user, matches])
+  
+  
+  
+  
+  
+  
 
   async function fetchUserProfile() {
     const { data: profileData, error: profileError } = await supabase
@@ -569,11 +605,12 @@ setLineupChangedNotified(false)
     authorization: `Bearer ${session?.access_token ?? ""}`,
   },
   body: JSON.stringify({
-    room_id: activeRoomId,
-    scope: chatMode === "team" ? "team" : "match",
-    sender_profile_id: profile.id,
-    message: text,
-  }),
+  room_id: activeRoomId,                           // match.id ODER team chat_room_id
+  scope: chatMode === "team" ? "team" : "match",   // ✅ richtig!
+  team_id: chatMode === "match" ? selectedTeamId : null, // ✅ bei Match nötig
+  sender_profile_id: profile.id,
+  message: text,
+}),
 })
 
     // 3) Input leeren

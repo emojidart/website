@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
     const scope: ChatScope | null = body?.scope ?? null
     const message: string | null = body?.message ?? null
     const sender_profile_id: string | null = body?.sender_profile_id ?? null
+	const team_id: string | null = body?.team_id ?? null
 
     if (!room_id || !scope || !message || !sender_profile_id) {
       return NextResponse.json({ success: false, error: "Missing params" }, { status: 400 })
@@ -118,51 +119,60 @@ export async function POST(request: NextRequest) {
     let iconUrl: string | null = null
     let teamId: string | null = null
 
-    // 🔥 TEAM CHAT FIX (chat_room_id ist die Wahrheit)
- if (scope === "team" || scope === "match") {
-
-  // 🔎 Versuch 1: Normaler Team-Chat (chat_room_id)
-  let { data: teamRow } = await supabase
+   
+   // ✅ TEAM: room_id ist teams.chat_room_id
+if (scope === "team") {
+  const { data: teamRow } = await supabase
     .from("teams")
     .select("id,name,logo_url")
     .eq("chat_room_id", room_id)
     .maybeSingle()
 
-  // 🔎 Versuch 2: Vielleicht ist es ein Match-Chat?
-  if (!teamRow) {
-    const { data: matchRow } = await supabase
-      .from("matches")
-      .select("team_id")
-      .eq("id", room_id)
-      .maybeSingle()
-
-    if (matchRow?.team_id) {
-      const { data: teamFromMatch } = await supabase
-        .from("teams")
-        .select("id,name,logo_url")
-        .eq("id", matchRow.team_id)
-        .maybeSingle()
-
-      teamRow = teamFromMatch ?? null
-    }
-  }
-
   if (!teamRow) {
     return NextResponse.json(
-      { success: false, error: "No team found for this room_id" },
+      { success: false, error: "Team not found for chat_room_id" },
       { status: 400 }
     )
   }
 
   teamId = teamRow.id
-
   if (teamRow.name) conversation = `🎯 ${teamRow.name}`
   if (teamRow.logo_url) iconUrl = teamRow.logo_url
 }
 
+// ✅ MATCH: room_id ist match.id, ABER team_id muss aus dem Request kommen
+if (scope === "match") {
+  if (!team_id) {
+    return NextResponse.json(
+      { success: false, error: "Missing team_id for match push" },
+      { status: 400 }
+    )
+  }
+
+  const { data: teamRow } = await supabase
+    .from("teams")
+    .select("id,name,logo_url")
+    .eq("id", team_id)
+    .maybeSingle()
+
+  if (!teamRow) {
+    return NextResponse.json(
+      { success: false, error: "Team not found for team_id" },
+      { status: 400 }
+    )
+  }
+
+  teamId = teamRow.id
+  if (teamRow.name) conversation = `🎯 ${teamRow.name}`
+  if (teamRow.logo_url) iconUrl = teamRow.logo_url
+}
+   
+   
+   
+
     let targetAuthUserIds: string[] = []
 
-    if (scope === "team" && teamId) {
+    if ((scope === "team" || scope === "match") && teamId) {
       const { data: mems } = await supabase
         .from("team_members")
         .select("player_id")
@@ -211,9 +221,11 @@ export async function POST(request: NextRequest) {
     const notif_id = stableNotifIdFromTag(tag)
 
     const clickUrl =
-      scope === "team"
-        ? `/chat-app?scope=team&room_id=${encodeURIComponent(room_id)}`
-        : `/chat-app?scope=${encodeURIComponent(scope)}`
+  scope === "team"
+    ? `/chat-app?scope=team&room_id=${encodeURIComponent(room_id)}`
+    : scope === "match"
+      ? `/member-availability-app?match_id=${encodeURIComponent(room_id)}&team_id=${encodeURIComponent(teamId ?? "")}`
+      : `/chat-app?scope=${encodeURIComponent(scope)}`
 
     const admin = getFirebaseAdmin()
 
