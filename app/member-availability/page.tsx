@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { supabase } from "@/lib/supabase"
@@ -233,7 +233,7 @@ function InfoCallout() {
   )
 }
 
-export default function MemberAvailabilityPage() {
+function MemberAvailabilityInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { session, loading: authLoading } = useAuth()
@@ -2048,7 +2048,17 @@ const lineupIsStale =
 		
       </main>
 
-      <MobileBottomNav />
+            <MobileBottomNav />
     </div>
+  )
+}
+
+
+
+export default function MemberAvailabilityPage() {
+  return (
+    <Suspense fallback={null}>
+      <MemberAvailabilityInner />
+    </Suspense>
   )
 }
