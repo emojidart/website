@@ -220,12 +220,15 @@ if (scope === "match") {
     const tag = makeChatTag(scope, room_id)
     const notif_id = stableNotifIdFromTag(tag)
 
-    const clickUrl =
-  scope === "team"
-    ? `/chat-app?scope=team&room_id=${encodeURIComponent(room_id)}`
-    : scope === "match"
-      ? `/member-availability-app?match_id=${encodeURIComponent(room_id)}&team_id=${encodeURIComponent(teamId ?? "")}`
-      : `/chat-app?scope=${encodeURIComponent(scope)}`
+    let clickUrl = "/chat-app" // normaler Chat bleibt wie er ist
+
+if (scope === "match") {
+  clickUrl = `/member-availability?match_id=${encodeURIComponent(room_id)}&team_id=${encodeURIComponent(teamId ?? "")}&chat=match`
+}
+
+if (scope === "team") {
+  clickUrl = `/member-availability?team_id=${encodeURIComponent(teamId ?? "")}&chat=team`
+}
 
     const admin = getFirebaseAdmin()
 
