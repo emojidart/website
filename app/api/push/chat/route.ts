@@ -119,25 +119,46 @@ export async function POST(request: NextRequest) {
     let teamId: string | null = null
 
     // 🔥 TEAM CHAT FIX (chat_room_id ist die Wahrheit)
-    if (scope === "team") {
-      const { data: teamRow } = await supabase
+  if (scope === "team") {
+
+  // 🔎 Versuch 1: Normaler Team-Chat (chat_room_id)
+  let { data: teamRow } = await supabase
+    .from("teams")
+    .select("id,name,logo_url")
+    .eq("chat_room_id", room_id)
+    .maybeSingle()
+
+  // 🔎 Versuch 2: Vielleicht ist es ein Match-Chat?
+  if (!teamRow) {
+    const { data: matchRow } = await supabase
+      .from("matches")
+      .select("team_id")
+      .eq("id", room_id)
+      .maybeSingle()
+
+    if (matchRow?.team_id) {
+      const { data: teamFromMatch } = await supabase
         .from("teams")
         .select("id,name,logo_url")
-        .eq("chat_room_id", room_id)
+        .eq("id", matchRow.team_id)
         .maybeSingle()
 
-      if (!teamRow) {
-        return NextResponse.json(
-          { success: false, error: "Team not found for chat_room_id" },
-          { status: 400 }
-        )
-      }
-
-      teamId = teamRow.id
-
-      if (teamRow.name) conversation = `🎯 ${teamRow.name}`
-      if (teamRow.logo_url) iconUrl = teamRow.logo_url
+      teamRow = teamFromMatch ?? null
     }
+  }
+
+  if (!teamRow) {
+    return NextResponse.json(
+      { success: false, error: "No team found for this room_id" },
+      { status: 400 }
+    )
+  }
+
+  teamId = teamRow.id
+
+  if (teamRow.name) conversation = `🎯 ${teamRow.name}`
+  if (teamRow.logo_url) iconUrl = teamRow.logo_url
+}
 
     let targetAuthUserIds: string[] = []
 
