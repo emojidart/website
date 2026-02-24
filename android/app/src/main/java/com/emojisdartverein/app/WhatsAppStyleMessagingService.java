@@ -32,8 +32,31 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
     private static final String CHANNEL_ID = "chat";
     private static final String CHANNEL_NAME = "Chat";
+
+    // Gruppierung (damit mehrere Nachrichten angezeigt werden statt nur 1)
     private static final String GROUP_KEY_CHAT = "emd_chat_group";
     private static final int SUMMARY_ID = 1001;
+
+    // "MessagingStyle" Historie (in-memory, reicht für Laufzeit der App)
+    private static final int MAX_LINES = 7;
+    private static final java.util.LinkedHashMap<String, java.util.ArrayDeque<ChatLine>> HISTORY =
+            new java.util.LinkedHashMap<String, java.util.ArrayDeque<ChatLine>>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, java.util.ArrayDeque<ChatLine>> eldest) {
+                    return size() > 30; // max 30 Konversationen im RAM
+                }
+            };
+
+    private static class ChatLine {
+        final String sender;
+        final String text;
+        final long ts;
+        ChatLine(String sender, String text, long ts) {
+            this.sender = sender;
+            this.text = text;
+            this.ts = ts;
+        }
+    }
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
@@ -55,11 +78,14 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
         // =========================
         // DEFAULT: CHAT / WHATSAPP STYLE
+        // + LINEUP + REMINDER (ohne Events anzufassen)
         // =========================
-        String conversation = get(data, "conversation");
-        String senderName   = get(data, "senderName");
-        String message      = get(data, "message");
-        String body         = get(data, "body");
+
+        // aus Push Data
+        String conversation = get(data, "conversation"); // z.B. "⏰ Bitte Verfügbarkeit" oder Teamname
+        String senderName   = get(data, "senderName");   // optional
+        String message      = get(data, "message");      // optional
+        String body         = get(data, "body");         // du verwendest das für reminder/lineup text
         String tag          = get(data, "tag");
         String notifIdStr   = get(data, "notif_id");
 
@@ -70,12 +96,15 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
         if (TextUtils.isEmpty(conversation)) conversation = "Neue Nachricht";
         if (TextUtils.isEmpty(senderName)) senderName = "System";
-        if (TextUtils.isEmpty(message)) message = !TextUtils.isEmpty(body) ? body : "";
+
+        // Wichtig: Für Reminder/Lineup kommt Text oft in "body"
+        String textToShow = firstNonEmpty(message, body);
+        if (TextUtils.isEmpty(textToShow)) textToShow = "";
 
         int orange = ContextCompat.getColor(this, R.color.emd_orange);
         int notifId = safeInt(notifIdStr, stableIdFrom(tag));
 
-        // Fallback wenn clickUrl fehlt
+        // Fallback clickUrl
         if (TextUtils.isEmpty(clickUrl)) {
             if (!TextUtils.isEmpty(scope) && "team".equals(scope) && !TextUtils.isEmpty(roomId)) {
                 clickUrl = "/chat-app?scope=team&room_id=" + Uri.encode(roomId);
@@ -85,15 +114,13 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 clickUrl = "/chat-app";
             }
         }
-
         if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
 
         Intent intent = new Intent(this, MainActivity.class);
         intent.setAction("OPEN_PUSH_" + notifId);
-        intent.setData(Uri.parse("emd://push/" + notifId));
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         intent.putExtra("path", clickUrl);
-intent.setData(Uri.parse("emd://push" + clickUrl));
+        intent.setData(Uri.parse("emd://push" + clickUrl));
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
@@ -104,8 +131,54 @@ intent.setData(Uri.parse("emd://push" + clickUrl));
 
         ensureChannel();
 
+        // ====== Konversations-Schlüssel (damit je Chat/Team/Reminder getrennt) ======
+        // Wenn du tag stabil pro match/team/player machst, ist das perfekt für Gruppierung.
+        // Falls tag fehlt, nutze conversation+scope+roomId.
+        String convoKey = !TextUtils.isEmpty(tag)
+                ? tag
+                : (conversation + "|" + nullToEmpty(scope) + "|" + nullToEmpty(roomId));
 
+        // ====== Historie updaten ======
+        long now = System.currentTimeMillis();
+        addLine(convoKey, new ChatLine(senderName, textToShow, now));
+        java.util.ArrayDeque<ChatLine> lines = getLines(convoKey);
 
+        // ====== Personen für MessagingStyle ======
+        Person me = new Person.Builder().setName("Ich").build();
+        Person senderPerson = new Person.Builder().setName(senderName).build();
+
+        NotificationCompat.MessagingStyle style = new NotificationCompat.MessagingStyle(me)
+                .setConversationTitle(conversation)
+                .setGroupConversation(true);
+
+        // letzte MAX_LINES reinrendern
+        for (ChatLine l : lines) {
+            Person p = new Person.Builder().setName(l.sender).build();
+            style.addMessage(l.text, l.ts, p);
+        }
+
+        // Optional: Icon laden (wenn du willst) – aktuell nicht notwendig.
+        // (Du hattest iconUrl drin, lassen wir unkritisch weg, damit's stabil bleibt.)
+
+        // ====== Einzelnotification (zeigt Verlauf) ======
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(conversation)
+                .setContentText(senderName + ": " + firstLine(textToShow))
+                .setStyle(style)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setColor(orange)
+                .setColorized(true)
+                .setGroup(GROUP_KEY_CHAT);
+
+        // Wenn tag gesetzt ist -> stable "thread" notification, sonst notifId
+        if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
+        else nm.notify(notifId, builder.build());
+
+        // ====== Summary (zeigt Zähler + Gruppierung) ======
         int unread = incrementUnreadCounter(getApplicationContext());
         NotificationCompat.Builder summary = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
@@ -125,129 +198,116 @@ intent.setData(Uri.parse("emd://push" + clickUrl));
 
     // =========================
     // EVENT CARD NOTIFICATION
+    // (NICHT ANFASSEN – bleibt wie bei dir)
     // =========================
-   
-   
-   
-   
-   
-  private void showEventCard(RemoteMessage remoteMessage) {
-    NotificationManagerCompat nm = NotificationManagerCompat.from(this);
-    if (!nm.areNotificationsEnabled()) return;
+    private void showEventCard(RemoteMessage remoteMessage) {
+        NotificationManagerCompat nm = NotificationManagerCompat.from(this);
+        if (!nm.areNotificationsEnabled()) return;
 
-    Map<String, String> data = remoteMessage.getData();
+        Map<String, String> data = remoteMessage.getData();
 
-    String title     = get(data, "title");
-    String eventName = get(data, "eventName");
-    String when      = get(data, "when");
-    String where     = get(data, "where");
-    String details   = get(data, "details");
-    String imageUrl  = get(data, "imageUrl");
+        String title     = get(data, "title");
+        String eventName = get(data, "eventName");
+        String when      = get(data, "when");
+        String where     = get(data, "where");
+        String details   = get(data, "details");
+        String imageUrl  = get(data, "imageUrl");
 
-    String tag       = get(data, "tag");
-    String notifIdStr= get(data, "notif_id");
-    String clickUrl  = get(data, "clickUrl");
+        String tag       = get(data, "tag");
+        String notifIdStr= get(data, "notif_id");
+        String clickUrl  = get(data, "clickUrl");
 
-    int orange = ContextCompat.getColor(this, R.color.emd_orange);
-    int notifId = safeInt(notifIdStr, stableIdFrom(tag));
+        int orange = ContextCompat.getColor(this, R.color.emd_orange);
+        int notifId = safeInt(notifIdStr, stableIdFrom(tag));
 
-    if (TextUtils.isEmpty(title)) title = "📢 Veranstaltung";
-    if (TextUtils.isEmpty(eventName)) eventName = "Neue Veranstaltung";
-    if (TextUtils.isEmpty(when)) when = "";
-    if (TextUtils.isEmpty(where)) where = "";
-    if (TextUtils.isEmpty(details)) details = "";
+        if (TextUtils.isEmpty(title)) title = "📢 Veranstaltung";
+        if (TextUtils.isEmpty(eventName)) eventName = "Neue Veranstaltung";
+        if (TextUtils.isEmpty(when)) when = "";
+        if (TextUtils.isEmpty(where)) where = "";
+        if (TextUtils.isEmpty(details)) details = "";
 
-    if (TextUtils.isEmpty(clickUrl)) clickUrl = "/veranstaltungen";
-    if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
+        if (TextUtils.isEmpty(clickUrl)) clickUrl = "/veranstaltungen";
+        if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
 
-    Intent intent = new Intent(this, MainActivity.class);
-    intent.setAction("OPEN_PUSH_" + notifId);
-    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-    intent.putExtra("path", clickUrl);
-    intent.setData(Uri.parse("emd://push" + clickUrl));
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setAction("OPEN_PUSH_" + notifId);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("path", clickUrl);
+        intent.setData(Uri.parse("emd://push" + clickUrl));
 
-    PendingIntent pendingIntent = PendingIntent.getActivity(
-            this,
-            notifId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-    );
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this,
+                notifId,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
 
-    ensureChannel();
+        ensureChannel();
 
-    String meta = "";
-    if (!TextUtils.isEmpty(when) && !TextUtils.isEmpty(where)) meta = when + " • " + where;
-    else if (!TextUtils.isEmpty(when)) meta = when;
-    else if (!TextUtils.isEmpty(where)) meta = where;
+        String meta = "";
+        if (!TextUtils.isEmpty(when) && !TextUtils.isEmpty(where)) meta = when + " • " + where;
+        else if (!TextUtils.isEmpty(when)) meta = when;
+        else if (!TextUtils.isEmpty(where)) meta = where;
 
-    Bitmap flyer = fetchBitmap(imageUrl);
-    if (flyer != null) flyer = scaleDownForNotification(flyer, 1000, 600);
+        Bitmap flyer = fetchBitmap(imageUrl);
+        if (flyer != null) flyer = scaleDownForNotification(flyer, 1000, 600);
 
-    // Small (collapsed)
-    android.widget.RemoteViews small =
-            new android.widget.RemoteViews(getPackageName(), R.layout.notification_event_card);
+        // Small (collapsed)
+        android.widget.RemoteViews small =
+                new android.widget.RemoteViews(getPackageName(), R.layout.notification_event_card);
 
-    small.setTextViewText(R.id.eventTitle, title);
-    small.setTextViewText(R.id.eventName, eventName);
-    small.setTextViewText(R.id.eventMeta, meta);
-    small.setTextViewText(R.id.eventDetails, details);
+        small.setTextViewText(R.id.eventTitle, title);
+        small.setTextViewText(R.id.eventName, eventName);
+        small.setTextViewText(R.id.eventMeta, meta);
+        small.setTextViewText(R.id.eventDetails, details);
 
-    // Big (expanded) – braucht notification_event_card_big.xml mit flyerImage
-    android.widget.RemoteViews big =
-            new android.widget.RemoteViews(getPackageName(), R.layout.notification_event_card_big);
+        // Big (expanded)
+        android.widget.RemoteViews big =
+                new android.widget.RemoteViews(getPackageName(), R.layout.notification_event_card_big);
 
-    big.setTextViewText(R.id.eventTitle, title);
-    big.setTextViewText(R.id.eventName, eventName);
-    big.setTextViewText(R.id.eventMeta, meta);
-    big.setTextViewText(R.id.eventDetails, details);
+        big.setTextViewText(R.id.eventTitle, title);
+        big.setTextViewText(R.id.eventName, eventName);
+        big.setTextViewText(R.id.eventMeta, meta);
+        big.setTextViewText(R.id.eventDetails, details);
 
-    if (flyer != null) {
-        Bitmap thumb = scaleSquareCenterCrop(flyer, 128);
-        Bitmap round = circleWithBorder(thumb, 6, 0xFFFFFFFF);
+        if (flyer != null) {
+            Bitmap thumb = scaleSquareCenterCrop(flyer, 128);
+            Bitmap round = circleWithBorder(thumb, 6, 0xFFFFFFFF);
 
-        small.setImageViewBitmap(R.id.eventImage, round);
-        big.setImageViewBitmap(R.id.eventImage, round);
+            small.setImageViewBitmap(R.id.eventImage, round);
+            big.setImageViewBitmap(R.id.eventImage, round);
 
-        big.setImageViewBitmap(R.id.flyerImage, flyer);
-        big.setViewVisibility(R.id.flyerImage, android.view.View.VISIBLE);
-    } else {
-        small.setImageViewResource(R.id.eventImage, android.R.color.transparent);
-        big.setImageViewResource(R.id.eventImage, android.R.color.transparent);
-        big.setViewVisibility(R.id.flyerImage, android.view.View.GONE);
+            big.setImageViewBitmap(R.id.flyerImage, flyer);
+            big.setViewVisibility(R.id.flyerImage, android.view.View.VISIBLE);
+        } else {
+            small.setImageViewResource(R.id.eventImage, android.R.color.transparent);
+            big.setImageViewResource(R.id.eventImage, android.R.color.transparent);
+            big.setViewVisibility(R.id.flyerImage, android.view.View.GONE);
+        }
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(title)
+                .setContentText(eventName)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_EVENT)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setColor(orange)
+                .setColorized(false)
+                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
+                .setCustomContentView(small)
+                .setCustomBigContentView(big);
+
+        if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
+        else nm.notify(notifId, builder.build());
     }
-
-    NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
-            .setContentText(eventName)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_EVENT)
-            .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
-            .setColor(orange)
-            .setColorized(false)
-            .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(small)
-            .setCustomBigContentView(big);
-
-    if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
-    else nm.notify(notifId, builder.build());
-}
-
-
-
-
-
-
-
-
-
 
     @Override
     public void onNewToken(String token) {
         super.onNewToken(token);
 
-        // ✅ Token lokal speichern (damit du ihn später easy an Supabase schicken kannst)
+        // ✅ Token lokal speichern
         try {
             android.content.SharedPreferences sp = getApplicationContext()
                     .getSharedPreferences("emd_push", MODE_PRIVATE);
@@ -296,6 +356,41 @@ intent.setData(Uri.parse("emd://push" + clickUrl));
         return next;
     }
 
+    // ====== MessagingStyle helpers ======
+    private static synchronized void addLine(String key, ChatLine line) {
+        java.util.ArrayDeque<ChatLine> q = HISTORY.get(key);
+        if (q == null) {
+            q = new java.util.ArrayDeque<>();
+            HISTORY.put(key, q);
+        }
+        q.addLast(line);
+        while (q.size() > MAX_LINES) q.removeFirst();
+    }
+
+    private static synchronized java.util.ArrayDeque<ChatLine> getLines(String key) {
+        java.util.ArrayDeque<ChatLine> q = HISTORY.get(key);
+        if (q == null) return new java.util.ArrayDeque<>();
+        return new java.util.ArrayDeque<>(q); // copy (thread-safe)
+    }
+
+    private static String firstNonEmpty(String a, String b) {
+        if (!TextUtils.isEmpty(a)) return a;
+        if (!TextUtils.isEmpty(b)) return b;
+        return null;
+    }
+
+    private static String nullToEmpty(String s) {
+        return s == null ? "" : s;
+    }
+
+    private static String firstLine(String s) {
+        if (s == null) return "";
+        int i = s.indexOf('\n');
+        if (i >= 0) return s.substring(0, i);
+        return s;
+    }
+
+    // ====== Image helpers (deine bestehenden) ======
     private Bitmap fetchBitmap(String urlStr) {
         try {
             if (TextUtils.isEmpty(urlStr)) return null;
@@ -319,62 +414,62 @@ intent.setData(Uri.parse("emd://push" + clickUrl));
     }
 
     private static Bitmap scaleSquareCenterCrop(Bitmap src, int size) {
-    int w = src.getWidth();
-    int h = src.getHeight();
-    int min = Math.min(w, h);
+        int w = src.getWidth();
+        int h = src.getHeight();
+        int min = Math.min(w, h);
 
-    int x = (w - min) / 2;
-    int y = (h - min) / 2;
+        int x = (w - min) / 2;
+        int y = (h - min) / 2;
 
-    Bitmap cropped = Bitmap.createBitmap(src, x, y, min, min);
-    return Bitmap.createScaledBitmap(cropped, size, size, true);
-}
-
-// ✅ NEU – Flyer-Bild sauber verkleinern für Notification
-private static Bitmap scaleDownForNotification(Bitmap src, int maxW, int maxH) {
-    int w = src.getWidth();
-    int h = src.getHeight();
-
-    if (w <= maxW && h <= maxH) return src;
-
-    float ratio = Math.min((float) maxW / (float) w,
-                           (float) maxH / (float) h);
-
-    int newW = Math.max(1, Math.round(w * ratio));
-    int newH = Math.max(1, Math.round(h * ratio));
-
-    return Bitmap.createScaledBitmap(src, newW, newH, true);
-}
-
-private static Bitmap circleWithBorder(Bitmap src, int borderPx, int borderColor) {
-    int size = src.getWidth();
-    Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-    Canvas canvas = new Canvas(out);
-
-    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    RectF rect = new RectF(0, 0, size, size);
-
-    canvas.drawARGB(0, 0, 0, 0);
-    paint.setColor(0xFFFFFFFF);
-    canvas.drawOval(rect, paint);
-
-    paint.setXfermode(new android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN));
-    canvas.drawBitmap(src, 0, 0, paint);
-    paint.setXfermode(null);
-
-    if (borderPx > 0) {
-        Paint border = new Paint(Paint.ANTI_ALIAS_FLAG);
-        border.setStyle(Paint.Style.STROKE);
-        border.setStrokeWidth(borderPx);
-        border.setColor(borderColor);
-
-        float half = borderPx / 2f;
-        canvas.drawOval(
-                new RectF(half, half, size - half, size - half),
-                border
-        );
+        Bitmap cropped = Bitmap.createBitmap(src, x, y, min, min);
+        return Bitmap.createScaledBitmap(cropped, size, size, true);
     }
 
-    return out;
-}
+    // ✅ Flyer-Bild sauber verkleinern für Notification
+    private static Bitmap scaleDownForNotification(Bitmap src, int maxW, int maxH) {
+        int w = src.getWidth();
+        int h = src.getHeight();
+
+        if (w <= maxW && h <= maxH) return src;
+
+        float ratio = Math.min((float) maxW / (float) w,
+                (float) maxH / (float) h);
+
+        int newW = Math.max(1, Math.round(w * ratio));
+        int newH = Math.max(1, Math.round(h * ratio));
+
+        return Bitmap.createScaledBitmap(src, newW, newH, true);
+    }
+
+    private static Bitmap circleWithBorder(Bitmap src, int borderPx, int borderColor) {
+        int size = src.getWidth();
+        Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(out);
+
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        RectF rect = new RectF(0, 0, size, size);
+
+        canvas.drawARGB(0, 0, 0, 0);
+        paint.setColor(0xFFFFFFFF);
+        canvas.drawOval(rect, paint);
+
+        paint.setXfermode(new android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(src, 0, 0, paint);
+        paint.setXfermode(null);
+
+        if (borderPx > 0) {
+            Paint border = new Paint(Paint.ANTI_ALIAS_FLAG);
+            border.setStyle(Paint.Style.STROKE);
+            border.setStrokeWidth(borderPx);
+            border.setColor(borderColor);
+
+            float half = borderPx / 2f;
+            canvas.drawOval(
+                    new RectF(half, half, size - half, size - half),
+                    border
+            );
+        }
+
+        return out;
+    }
 }
