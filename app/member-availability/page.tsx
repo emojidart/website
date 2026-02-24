@@ -570,7 +570,7 @@ setLineupChangedNotified(false)
   },
   body: JSON.stringify({
     room_id: activeRoomId,
-    scope: chatMode === "team" ? "team" : "team",
+    scope: chatMode === "team" ? "team" : "match",
     sender_profile_id: profile.id,
     message: text,
   }),

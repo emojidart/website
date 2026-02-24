@@ -5,7 +5,7 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { getFirebaseAdmin } from "@/lib/firebase-admin"
 
-type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand"
+type ChatScope = "team" | "match" | "captains" | "club" | "freizeit" | "vorstand"
 
 const ROLE_TABLE = "club_roles"
 const BOARD_ROLES = ["Vorstand", "Kassier", "Schriftführer"]
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     let teamId: string | null = null
 
     // 🔥 TEAM CHAT FIX (chat_room_id ist die Wahrheit)
-  if (scope === "team") {
+ if (scope === "team" || scope === "match") {
 
   // 🔎 Versuch 1: Normaler Team-Chat (chat_room_id)
   let { data: teamRow } = await supabase
