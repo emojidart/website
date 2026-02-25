@@ -115,13 +115,18 @@ function Modal({
 }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-50 p-2 sm:p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className={cn("absolute left-1/2 top-1/2 w-[92vw] -translate-x-1/2 -translate-y-1/2", widthClass)}>
+      <div
+        className={cn(
+          "absolute left-1/2 top-1/2 w-[94vw] max-w-[94vw] -translate-x-1/2 -translate-y-1/2",
+          widthClass,
+        )}
+      >
         <div className="rounded-2xl bg-white shadow-xl border border-gray-200 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b">
-            <div className="font-semibold text-gray-900">{title}</div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+            <div className="font-semibold text-gray-900 truncate pr-2">{title}</div>
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -159,7 +164,7 @@ function ItemMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" disabled={disabled} className="h-8 w-8">
+        <Button variant="ghost" size="icon" disabled={disabled} className="h-9 w-9">
           <MoreVertical className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -473,36 +478,51 @@ export function DocumentsTab({ user }: { user: User | null }) {
 
   return (
     <>
-      <Card className="border-gray-200 shadow-sm rounded-xl overflow-hidden">
-        <CardHeader className="bg-white border-b">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <CardTitle className="text-lg">Dokumentenablage</CardTitle>
-              <CardDescription>
+      <Card className="border-gray-200 shadow-sm rounded-2xl overflow-hidden w-full max-w-full">
+        <CardHeader className="bg-white border-b px-3 sm:px-5 py-4">
+          <div className="flex flex-col gap-3">
+            <div className="min-w-0">
+              <CardTitle className="text-base sm:text-lg">Dokumentenablage</CardTitle>
+              <CardDescription className="text-sm">
                 Vorschau (PDF/Bilder) · Verschieben/Kopieren · Drag&Drop · Grid/Liste · Suche & Sortierung
               </CardDescription>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={docs.listCurrent} disabled={!user || docs.loading}>
+            <div className="flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+              <Button
+                variant="outline"
+                onClick={docs.listCurrent}
+                disabled={!user || docs.loading}
+                className="h-11 flex-none rounded-xl"
+              >
                 <RefreshCcw className="h-4 w-4 mr-2" />
-                Aktualisieren
+                <span className="whitespace-nowrap">Aktualisieren</span>
               </Button>
 
-              <Button variant="outline" onClick={openCreateFolder} disabled={!user || docs.loading}>
+              <Button
+                variant="outline"
+                onClick={openCreateFolder}
+                disabled={!user || docs.loading}
+                className="h-11 flex-none rounded-xl"
+              >
                 <Plus className="h-4 w-4 mr-2" />
-                Neuer Ordner
+                <span className="whitespace-nowrap">Neuer Ordner</span>
               </Button>
 
-              <Button onClick={handleUploadClick} disabled={!user || docs.loading}>
+              <Button
+                onClick={handleUploadClick}
+                disabled={!user || docs.loading}
+                className="h-11 flex-none rounded-xl"
+              >
                 <Upload className="h-4 w-4 mr-2" />
-                Upload
+                <span className="whitespace-nowrap">Upload</span>
               </Button>
 
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
+                accept="*/*"
                 className="hidden"
                 onChange={(e) => handleUploadFiles(e.target.files)}
               />
@@ -517,7 +537,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
                   type="button"
                   onClick={() => docs.goTo(c.path)}
                   className={cn(
-                    "rounded-full px-2 py-1 transition hover:bg-gray-100",
+                    "max-w-full rounded-full px-2.5 py-1.5 transition hover:bg-gray-100 truncate",
                     idx === docs.breadcrumbs.length - 1 ? "font-semibold text-gray-900 bg-gray-100" : "text-gray-600",
                   )}
                 >
@@ -526,43 +546,50 @@ export function DocumentsTab({ user }: { user: User | null }) {
               ))}
 
               {hasParent && (
-                <Button variant="ghost" onClick={docs.goUp} disabled={!user || docs.loading} className="ml-auto h-8">
+                <Button
+                  variant="ghost"
+                  onClick={docs.goUp}
+                  disabled={!user || docs.loading}
+                  className="ml-auto h-10 rounded-xl"
+                >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Hoch
                 </Button>
               )}
             </div>
 
-            <div className="flex flex-col md:flex-row md:items-center gap-2">
-              <div className="relative w-full md:w-[420px]">
+            <div className="flex flex-col gap-2">
+              <div className="relative w-full max-w-full">
                 <Search className="h-4 w-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Suchen nach Name oder Typ…"
-                  className="pl-9"
+                  className="pl-9 h-11 rounded-xl"
                   disabled={!user}
                 />
               </div>
 
-              <div className="flex items-center gap-2 md:ml-auto">
+              <div className="flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
                 <Button
                   variant={viewMode === "list" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setViewMode("list")}
                   disabled={!user}
+                  className="h-10 flex-none rounded-xl"
                 >
                   <List className="h-4 w-4 mr-2" />
-                  Liste
+                  <span className="whitespace-nowrap">Liste</span>
                 </Button>
                 <Button
                   variant={viewMode === "grid" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setViewMode("grid")}
                   disabled={!user}
+                  className="h-10 flex-none rounded-xl"
                 >
                   <LayoutGrid className="h-4 w-4 mr-2" />
-                  Grid
+                  <span className="whitespace-nowrap">Grid</span>
                 </Button>
 
                 <Button
@@ -570,45 +597,56 @@ export function DocumentsTab({ user }: { user: User | null }) {
                   size="sm"
                   disabled={!user}
                   onClick={() => setSortKey((k) => (k === "name" ? "type" : k === "type" ? "size" : "name"))}
+                  className="h-10 flex-none rounded-xl"
                 >
-                  Sort: {sortKey.toUpperCase()}
+                  <span className="whitespace-nowrap">Sort: {sortKey.toUpperCase()}</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={!user}
                   onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                  className="h-10 flex-none rounded-xl"
                 >
-                  {sortDir === "asc" ? "↑" : "↓"}
+                  <span className="whitespace-nowrap">{sortDir === "asc" ? "↑" : "↓"}</span>
                 </Button>
               </div>
             </div>
 
-            <div
+            {/* ✅ MOBILE: Tap öffnet Dateiauswahl. Drag&Drop bleibt für PC. */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!user || docs.loading) return
+                handleUploadClick()
+              }}
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
               onDrop={onDrop}
               className={cn(
-                "rounded-xl border border-dashed p-4 transition",
-                !user ? "bg-gray-50 border-gray-200" : "bg-white border-gray-200",
+                "text-left rounded-2xl border border-dashed p-4 transition w-full max-w-full",
+                !user || docs.loading ? "bg-gray-50 border-gray-200" : "bg-white border-gray-200",
                 dragActive && user ? "border-orange-500 bg-orange-50" : "",
               )}
             >
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+              <div className="flex flex-col gap-2">
                 <div className="text-sm">
-                  <div className="font-medium text-gray-900">Drag & Drop Upload</div>
+                  <div className="font-medium text-gray-900">Upload</div>
                   <div className="text-gray-600">
-                    Zieh Dateien hier rein. (Ordner: <span className="font-medium">{docs.currentPath || "Root"}</span>)
+                    Tippe hier, um Dateien auszuwählen. (Ordner:{" "}
+                    <span className="font-medium">{docs.currentPath || "Root"}</span>)
                   </div>
                 </div>
-                <div className="text-xs text-gray-500">Mehrere Dateien gleichzeitig möglich.</div>
+                <div className="text-xs text-gray-500">
+                  Am PC kannst du auch Dateien hier reinziehen (Drag & Drop).
+                </div>
               </div>
-            </div>
+            </button>
 
             {docs.message && (
               <div
                 className={cn(
-                  "rounded-lg border px-3 py-2 text-sm",
+                  "rounded-xl border px-3 py-2 text-sm w-full max-w-full break-words",
                   docs.messageType === "success"
                     ? "border-green-200 bg-green-50 text-green-800"
                     : "border-red-200 bg-red-50 text-red-800",
@@ -619,22 +657,22 @@ export function DocumentsTab({ user }: { user: User | null }) {
             )}
 
             {jobs.length > 0 && (
-              <div className="rounded-xl border border-gray-200 bg-white p-3">
-                <div className="flex items-center justify-between">
+              <div className="rounded-2xl border border-gray-200 bg-white p-3 w-full max-w-full">
+                <div className="flex items-center justify-between gap-2">
                   <div className="text-sm font-medium text-gray-900">Uploads</div>
-                  <Button variant="ghost" size="sm" onClick={clearFinishedJobs}>
+                  <Button variant="ghost" size="sm" onClick={clearFinishedJobs} className="h-9 rounded-xl">
                     Aufräumen
                   </Button>
                 </div>
                 <div className="mt-2 space-y-2">
                   {jobs.slice(0, 6).map((j) => (
-                    <div key={j.id} className="flex items-center gap-3 rounded-lg border border-gray-100 px-3 py-2">
+                    <div key={j.id} className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2">
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm text-gray-900">{j.name}</div>
                         <div className="text-xs text-gray-500">{formatBytes(j.size)}</div>
-                        {j.status === "error" && <div className="text-xs text-red-600 mt-1">{j.error}</div>}
+                        {j.status === "error" && <div className="text-xs text-red-600 mt-1 break-words">{j.error}</div>}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-none">
                         {j.status === "queued" && <div className="text-xs text-gray-500">wartet…</div>}
                         {j.status === "uploading" && (
                           <>
@@ -665,81 +703,64 @@ export function DocumentsTab({ user }: { user: User | null }) {
         </CardHeader>
 
         <CardContent className="p-0">
-          {!user && <div className="px-4 py-8 text-sm text-gray-600">Bitte einloggen, um Dokumente zu verwalten.</div>}
+          {!user && (
+            <div className="px-4 py-8 text-sm text-gray-600 break-words">Bitte einloggen, um Dokumente zu verwalten.</div>
+          )}
           {user && docs.loading && <div className="px-4 py-8 text-sm text-gray-600">Lade…</div>}
           {user && !docs.loading && filteredSorted.length === 0 && (
             <div className="px-4 py-8 text-sm text-gray-600">Keine Einträge in diesem Ordner.</div>
           )}
 
           {user && !docs.loading && filteredSorted.length > 0 && viewMode === "list" && (
-            <div className="w-full overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600">
-                  <tr className="border-b">
-                    <th className="text-left font-medium px-4 py-3">Name</th>
-                    <th className="text-left font-medium px-4 py-3 hidden md:table-cell">Typ</th>
-                    <th className="text-left font-medium px-4 py-3 hidden lg:table-cell">Größe</th>
-                    <th className="text-right font-medium px-4 py-3">Aktionen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSorted.map((item) => (
-                    <tr key={item.path} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {item.kind === "folder" ? (
-                            <Folder className="h-4 w-4 text-orange-700" />
-                          ) : (
-                            <FileText className="h-4 w-4 text-gray-700" />
-                          )}
-
-                          <button
-                            type="button"
-                            className={cn(
-                              "text-left truncate",
-                              item.kind === "folder" ? "font-medium text-gray-900 hover:underline" : "text-gray-900",
-                            )}
-                            onClick={() => (item.kind === "folder" ? docs.goInto(item.name) : download(item))}
-                          >
+            <div className="w-full max-w-full">
+              <div className="divide-y divide-gray-100">
+                {filteredSorted.map((item) => (
+                  <div key={item.path} className="px-3 sm:px-4 py-3 flex items-center gap-3">
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 text-left"
+                      onClick={() => (item.kind === "folder" ? docs.goInto(item.name) : download(item))}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        {item.kind === "folder" ? (
+                          <Folder className="h-5 w-5 flex-none text-orange-700" />
+                        ) : (
+                          <FileText className="h-5 w-5 flex-none text-gray-700" />
+                        )}
+                        <div className="min-w-0">
+                          <div className={cn("truncate", item.kind === "folder" ? "font-medium text-gray-900" : "text-gray-900")}>
                             {item.name}
-                          </button>
+                          </div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {item.kind === "folder" ? "Ordner" : `${item.contentType || "Datei"} · ${formatBytes(item.size)}`}
+                          </div>
                         </div>
-                      </td>
+                      </div>
+                    </button>
 
-                      <td className="px-4 py-3 hidden md:table-cell">
-                        {item.kind === "folder" ? "Ordner" : item.contentType || "Datei"}
-                      </td>
-
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        {item.kind === "file" ? formatBytes(item.size) : "–"}
-                      </td>
-
-                      <td className="px-4 py-3 text-right">
-                        <ItemMenu
-                          item={item}
-                          disabled={docs.loading}
-                          onOpenFolder={() => docs.goInto(item.name)}
-                          onDownload={() => download(item)}
-                          onPreview={() => openPreview(item)}
-                          onRename={() => promptRename(item)}
-                          onMove={() => openAction("move", item)}
-                          onCopy={() => openAction("copy", item)}
-                          onDelete={() => confirmDelete(item)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                    <ItemMenu
+                      item={item}
+                      disabled={docs.loading}
+                      onOpenFolder={() => docs.goInto(item.name)}
+                      onDownload={() => download(item)}
+                      onPreview={() => openPreview(item)}
+                      onRename={() => promptRename(item)}
+                      onMove={() => openAction("move", item)}
+                      onCopy={() => openAction("copy", item)}
+                      onDelete={() => confirmDelete(item)}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           {user && !docs.loading && filteredSorted.length > 0 && viewMode === "grid" && (
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="p-3 sm:p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
               {filteredSorted.map((item) => (
                 <div
                   key={item.path}
-                  className="group rounded-xl border border-gray-200 bg-white p-3 shadow-sm hover:shadow-md transition"
+                  className="group rounded-2xl border border-gray-200 bg-white p-3 shadow-sm hover:shadow-md transition w-full min-w-0"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <button
@@ -747,22 +768,20 @@ export function DocumentsTab({ user }: { user: User | null }) {
                       className="min-w-0 flex-1 text-left"
                       onClick={() => (item.kind === "folder" ? docs.goInto(item.name) : download(item))}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         {item.kind === "folder" ? (
-                          <Folder className="h-5 w-5 text-orange-700" />
+                          <Folder className="h-5 w-5 flex-none text-orange-700" />
                         ) : (
-                          <FileText className="h-5 w-5 text-gray-700" />
+                          <FileText className="h-5 w-5 flex-none text-gray-700" />
                         )}
                         <div className="truncate font-medium text-gray-900">{item.name}</div>
                       </div>
-                      <div className="mt-1 text-xs text-gray-500">
-                        {item.kind === "folder"
-                          ? "Ordner"
-                          : `${item.contentType || "Datei"} · ${formatBytes(item.size)}`}
+                      <div className="mt-1 text-xs text-gray-500 truncate">
+                        {item.kind === "folder" ? "Ordner" : `${item.contentType || "Datei"} · ${formatBytes(item.size)}`}
                       </div>
                     </button>
 
-                    <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">
+                    <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition flex-none">
                       <ItemMenu
                         item={item}
                         disabled={docs.loading}
@@ -783,20 +802,26 @@ export function DocumentsTab({ user }: { user: User | null }) {
         </CardContent>
       </Card>
 
-      {/* ✅ CREATE FOLDER MODAL (NEU, ersetzt window.prompt) */}
+      {/* Restliche Modals unverändert */}
       <Modal
         open={createFolderOpen}
         title="Neuen Ordner erstellen"
         onClose={closeCreateFolder}
         widthClass="max-w-xl"
         footer={
-          <div className="flex items-center justify-between">
-            <div className="text-xs text-gray-500">Wird im aktuellen Ordner erstellt: {docs.currentPath || "Root"}</div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={closeCreateFolder} disabled={createFolderBusy}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="text-xs text-gray-500 break-words">
+              Wird im aktuellen Ordner erstellt: {docs.currentPath || "Root"}
+            </div>
+            <div className="flex items-center gap-2 justify-end">
+              <Button variant="outline" onClick={closeCreateFolder} disabled={createFolderBusy} className="rounded-xl">
                 Abbrechen
               </Button>
-              <Button onClick={runCreateFolder} disabled={createFolderBusy || !createFolderName.trim()}>
+              <Button
+                onClick={runCreateFolder}
+                disabled={createFolderBusy || !createFolderName.trim()}
+                className="rounded-xl"
+              >
                 {createFolderBusy ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -821,6 +846,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
             placeholder="z.B. Protokolle, Verträge, Sponsoren…"
             disabled={createFolderBusy}
             autoFocus
+            className="h-11 rounded-xl"
             onKeyDown={(e) => {
               if (e.key === "Enter") runCreateFolder()
             }}
@@ -829,30 +855,26 @@ export function DocumentsTab({ user }: { user: User | null }) {
         </div>
       </Modal>
 
-      {/* ✅ PREVIEW MODAL */}
       <Modal
         open={previewOpen}
         title={previewItem ? `Vorschau: ${previewItem.name}` : "Vorschau"}
-        onClose={() => {
-          setPreviewOpen(false)
-          setPreviewItem(null)
-          setPreviewUrl(null)
-          setPreviewLoading(false)
-        }}
+        onClose={closePreview}
         footer={
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
             {previewItem?.kind === "file" && (
-              <Button variant="outline" onClick={() => previewItem && download(previewItem)} disabled={!previewItem}>
+              <Button
+                variant="outline"
+                onClick={() => previewItem && download(previewItem)}
+                disabled={!previewItem}
+                className="rounded-xl"
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Download
               </Button>
             )}
-            <Button onClick={() => {
-              setPreviewOpen(false)
-              setPreviewItem(null)
-              setPreviewUrl(null)
-              setPreviewLoading(false)
-            }}>Schließen</Button>
+            <Button onClick={closePreview} className="rounded-xl">
+              Schließen
+            </Button>
           </div>
         }
         widthClass="max-w-5xl"
@@ -883,7 +905,6 @@ export function DocumentsTab({ user }: { user: User | null }) {
         )}
       </Modal>
 
-      {/* ✅ MOVE/COPY MODAL */}
       <Modal
         open={actionOpen}
         title={
@@ -893,38 +914,15 @@ export function DocumentsTab({ user }: { user: User | null }) {
               ? "Verschieben"
               : "Kopieren"
         }
-        onClose={() => {
-          setActionOpen(false)
-          setActionItem(null)
-          setActionBusy(false)
-        }}
+        onClose={closeAction}
         footer={
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="text-xs text-gray-500">Tipp: Zielordner wählen + optional neuen Namen vergeben.</div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => {
-                setActionOpen(false)
-                setActionItem(null)
-                setActionBusy(false)
-              }} disabled={actionBusy}>
+            <div className="flex items-center gap-2 justify-end">
+              <Button variant="outline" onClick={closeAction} disabled={actionBusy} className="rounded-xl">
                 Abbrechen
               </Button>
-              <Button onClick={async () => {
-                if (!actionItem) return
-                if (!user) return
-                setActionBusy(true)
-                try {
-                  if (actionMode === "move") {
-                    await docs.moveItem(actionItem, targetFolder, targetName)
-                  } else {
-                    await docs.copyItem(actionItem, targetFolder, targetName)
-                  }
-                  setActionOpen(false)
-                  setActionItem(null)
-                } finally {
-                  setActionBusy(false)
-                }
-              }} disabled={actionBusy || !actionItem}>
+              <Button onClick={runAction} disabled={actionBusy || !actionItem} className="rounded-xl">
                 {actionBusy ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -951,7 +949,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
               <select
                 value={targetFolder}
                 onChange={(e) => setTargetFolder(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-200"
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-200"
                 disabled={actionBusy}
               >
                 {folders.map((f) => (
@@ -969,12 +967,13 @@ export function DocumentsTab({ user }: { user: User | null }) {
                 onChange={(e) => setTargetName(e.target.value)}
                 placeholder="Neuer Name (optional)"
                 disabled={actionBusy}
+                className="h-11 rounded-xl"
               />
               <div className="text-xs text-gray-500">Wenn leer: Standardname wird verwendet.</div>
             </div>
 
             {actionItem.kind === "folder" && (
-              <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-900">
+              <div className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-900">
                 Bei Ordnern werden alle Inhalte {actionMode === "move" ? "verschoben" : "kopiert"}.
               </div>
             )}
@@ -982,20 +981,19 @@ export function DocumentsTab({ user }: { user: User | null }) {
         )}
       </Modal>
 
-      {/* ✅ DELETE CONFIRM MODAL */}
       <Modal
         open={deleteOpen}
         title={deleteItem ? `Löschen: ${deleteItem.name}` : "Löschen"}
         onClose={closeDelete}
         widthClass="max-w-xl"
         footer={
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="text-xs text-gray-500">Diese Aktion kann nicht rückgängig gemacht werden.</div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={closeDelete} disabled={deleteBusy}>
+            <div className="flex items-center gap-2 justify-end">
+              <Button variant="outline" onClick={closeDelete} disabled={deleteBusy} className="rounded-xl">
                 Abbrechen
               </Button>
-              <Button variant="destructive" onClick={runDelete} disabled={deleteBusy || !deleteItem}>
+              <Button variant="destructive" onClick={runDelete} disabled={deleteBusy || !deleteItem} className="rounded-xl">
                 {deleteBusy ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1016,7 +1014,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
           <div className="text-sm text-gray-600">Kein Element gewählt.</div>
         ) : (
           <div className="space-y-3">
-            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
               <div className="font-semibold">Achtung</div>
               <div className="text-red-800">
                 {deleteItem.kind === "folder"
@@ -1025,7 +1023,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
               </div>
             </div>
 
-            <div className="text-sm text-gray-700">
+            <div className="text-sm text-gray-700 break-words">
               <span className="font-medium">Element:</span> {deleteItem.name}
             </div>
 

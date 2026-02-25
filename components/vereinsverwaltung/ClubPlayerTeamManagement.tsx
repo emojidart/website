@@ -54,118 +54,120 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   }, [members.selectedPlayerId, members.teamMembers, teams.teams])
 
   return (
-    <div className="w-full mx-auto space-y-6">
-      <Card className="border-gray-200 shadow-md rounded-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-5">
-          <CardTitle className="text-xl font-bold flex items-center gap-2">
+    <div className="w-full mx-auto space-y-4 px-2 sm:px-4">
+      <Card className="border-gray-200 shadow-md rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-4 sm:p-5">
+          <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
             <Users className="h-5 w-5" />
             Vereinsverwaltung: Spieler & Mannschaften
           </CardTitle>
-          <CardDescription className="text-orange-100">
+          <CardDescription className="text-orange-100 text-sm sm:text-base">
             Spieler anlegen, bearbeiten, Mannschaften verwalten und Spieler zuweisen.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="p-5 space-y-6">
+        <CardContent className="p-3 sm:p-5 space-y-4 sm:space-y-6">
           {/* Navigation Buttons */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
-            <Button
-              variant={activeSection === "add-player" ? "default" : "outline"}
-              onClick={() => setActiveSection("add-player")}
-              className={cn(
-                "h-10 rounded-lg font-medium shadow-sm transition",
-                activeSection === "add-player"
-                  ? "bg-orange-600 hover:bg-orange-700 text-white"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
-              )}
-            >
-              <UserRoundPlus className="h-4 w-4 mr-2" />
-              Spieler hinzufügen
-            </Button>
+          <div className="sticky top-0 z-10 -mx-3 sm:-mx-5 px-3 sm:px-5 py-3 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-gray-100">
+            <div className="flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+              <Button
+                variant={activeSection === "add-player" ? "default" : "outline"}
+                onClick={() => setActiveSection("add-player")}
+                className={cn(
+                  "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
+                  activeSection === "add-player"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <UserRoundPlus className="h-4 w-4 mr-2" />
+                <span className="whitespace-nowrap text-sm">Spieler hinzufügen</span>
+              </Button>
 
-            <Button
-              variant={activeSection === "manage-players" ? "default" : "outline"}
-              onClick={() => setActiveSection("manage-players")}
-              className={cn(
-                "h-10 rounded-lg font-medium shadow-sm transition",
-                activeSection === "manage-players"
-                  ? "bg-orange-600 hover:bg-orange-700 text-white"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
-              )}
-            >
-              <ClipboardList className="h-4 w-4 mr-2" />
-              Spieler verwalten
-            </Button>
+              <Button
+                variant={activeSection === "manage-players" ? "default" : "outline"}
+                onClick={() => setActiveSection("manage-players")}
+                className={cn(
+                  "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
+                  activeSection === "manage-players"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <ClipboardList className="h-4 w-4 mr-2" />
+                <span className="whitespace-nowrap text-sm">Spieler verwalten</span>
+              </Button>
 
-            <Button
-              variant={activeSection === "manage-teams" ? "default" : "outline"}
-              onClick={() => setActiveSection("manage-teams")}
-              className={cn(
-                "h-10 rounded-lg font-medium shadow-sm transition",
-                activeSection === "manage-teams"
-                  ? "bg-orange-600 hover:bg-orange-700 text-white"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
-              )}
-            >
-              <Hand className="h-4 w-4 mr-2" />
-              Mannschaften verwalten
-            </Button>
+              <Button
+                variant={activeSection === "manage-teams" ? "default" : "outline"}
+                onClick={() => setActiveSection("manage-teams")}
+                className={cn(
+                  "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
+                  activeSection === "manage-teams"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <Hand className="h-4 w-4 mr-2" />
+                <span className="whitespace-nowrap text-sm">Mannschaften</span>
+              </Button>
 
-            <Button
-              variant={activeSection === "assign-player" ? "default" : "outline"}
-              onClick={() => setActiveSection("assign-player")}
-              className={cn(
-                "h-10 rounded-lg font-medium shadow-sm transition",
-                activeSection === "assign-player"
-                  ? "bg-orange-600 hover:bg-orange-700 text-white"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
-              )}
-            >
-              <UserRoundCog className="h-4 w-4 mr-2" />
-              Spieler zuweisen
-            </Button>
+              <Button
+                variant={activeSection === "assign-player" ? "default" : "outline"}
+                onClick={() => setActiveSection("assign-player")}
+                className={cn(
+                  "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
+                  activeSection === "assign-player"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <UserRoundCog className="h-4 w-4 mr-2" />
+                <span className="whitespace-nowrap text-sm">Zuweisen</span>
+              </Button>
 
-            <Button
-              variant={activeSection === "membership" ? "default" : "outline"}
-              onClick={() => setActiveSection("membership")}
-              className={cn(
-                "h-10 rounded-lg font-medium shadow-sm transition",
-                activeSection === "membership"
-                  ? "bg-orange-600 hover:bg-orange-700 text-white"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
-              )}
-            >
-              <CalendarPlus className="h-4 w-4 mr-2" />
-              Mitgliedschaft
-            </Button>
+              <Button
+                variant={activeSection === "membership" ? "default" : "outline"}
+                onClick={() => setActiveSection("membership")}
+                className={cn(
+                  "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
+                  activeSection === "membership"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <CalendarPlus className="h-4 w-4 mr-2" />
+                <span className="whitespace-nowrap text-sm">Mitgliedschaft</span>
+              </Button>
 
-            <Button
-              variant={activeSection === "dues" ? "default" : "outline"}
-              onClick={() => setActiveSection("dues")}
-              className={cn(
-                "h-10 rounded-lg font-medium shadow-sm transition",
-                activeSection === "dues"
-                  ? "bg-orange-600 hover:bg-orange-700 text-white"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
-              )}
-            >
-              <CreditCard className="h-4 w-4 mr-2" />
-              Beiträge
-            </Button>
+              <Button
+                variant={activeSection === "dues" ? "default" : "outline"}
+                onClick={() => setActiveSection("dues")}
+                className={cn(
+                  "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
+                  activeSection === "dues"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                <span className="whitespace-nowrap text-sm">Beiträge</span>
+              </Button>
 
-            <Button
-              variant={activeSection === "documents" ? "default" : "outline"}
-              onClick={() => setActiveSection("documents")}
-              className={cn(
-                "h-10 rounded-lg font-medium shadow-sm transition",
-                activeSection === "documents"
-                  ? "bg-orange-600 hover:bg-orange-700 text-white"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
-              )}
-            >
-              <FolderOpen className="h-4 w-4 mr-2" />
-              Dokumente
-            </Button>
+              <Button
+                variant={activeSection === "documents" ? "default" : "outline"}
+                onClick={() => setActiveSection("documents")}
+                className={cn(
+                  "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
+                  activeSection === "documents"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <FolderOpen className="h-4 w-4 mr-2" />
+                <span className="whitespace-nowrap text-sm">Dokumente</span>
+              </Button>
+            </div>
           </div>
 
           {/* Tabs */}
