@@ -1,6 +1,8 @@
+// app/api/push/tournament-start/route.ts
+
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import admin from "firebase-admin"
+import { getFirebaseAdmin } from "@/lib/firebase-admin"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -13,27 +15,6 @@ type WebhookPayload = {
   type?: string
   table?: string
   schema?: string
-}
-
-function initFirebase() {
-  if (admin.apps.length > 0) return
-
-  const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_B64
-  const jsonRaw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-
-  let serviceAccount: any
-  if (b64) {
-    const decoded = Buffer.from(b64, "base64").toString("utf8")
-    serviceAccount = JSON.parse(decoded)
-  } else if (jsonRaw) {
-    serviceAccount = JSON.parse(jsonRaw)
-  } else {
-    throw new Error("Missing FIREBASE_SERVICE_ACCOUNT_B64 or FIREBASE_SERVICE_ACCOUNT_JSON")
-  }
-
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  })
 }
 
 function isNullish(v: any) {
@@ -52,15 +33,12 @@ function buildClickUrl(tournamentType: string, tournamentId: string, matchId: nu
   return `/?${params.toString()}`
 }
 
-/**
- * spieldatenbank.id -> club_players.spieldatenbank_id -> club_players.id -> user_profiles.player_id -> user_profiles.user_id(Auth UID)
- */
 async function resolveAuthUserIdBySpielerId(supabase: any, spielerId: string): Promise<string | null> {
   if (!spielerId) return null
 
   const { data: cp, error: cpErr } = await supabase
     .from("club_players")
-    .select("id, spieldatenbank_id")
+    .select("id")
     .eq("spieldatenbank_id", spielerId)
     .limit(1)
     .maybeSingle()
@@ -68,12 +46,10 @@ async function resolveAuthUserIdBySpielerId(supabase: any, spielerId: string): P
   if (cpErr) throw cpErr
   if (!cp?.id) return null
 
-  const clubPlayerId = String(cp.id)
-
   const { data: up, error: upErr } = await supabase
     .from("user_profiles")
     .select("user_id")
-    .eq("player_id", clubPlayerId)
+    .eq("player_id", String(cp.id))
     .not("user_id", "is", null)
     .limit(1)
     .maybeSingle()
@@ -103,48 +79,11 @@ async function tokensForUsers(supabase: any, userIds: string[]) {
     arr.push(String(row.token))
     map.set(uid, arr)
   }
+
   return map
 }
 
-async function sendDataOnlyPush(params: {
-  tokens: string[]
-  title: string
-  body: string
-  clickUrl: string
-  tag: string
-  notifId: string
-  extraData?: Record<string, string>
-}) {
-  const { tokens, title, body, clickUrl, tag, notifId, extraData } = params
-  if (!tokens || tokens.length === 0) {
-    return { successCount: 0, failureCount: 0, responses: [] as any[] }
-  }
-
-  initFirebase()
-
-  const message: admin.messaging.MulticastMessage = {
-    tokens,
-    data: {
-      title,
-      body,
-      clickUrl,
-      path: clickUrl,
-      tag,
-      notif_id: notifId,
-      ...((extraData ?? {}) as any),
-    },
-    android: { priority: "high" },
-  }
-
-  return await admin.messaging().sendEachForMulticast(message)
-}
-
-/**
- * GET ist absichtlich drin, damit du im Browser testen kannst,
- * ob die Route existiert und Logs ankommen.
- */
 export async function GET() {
-  console.log("[tournament-start] HIT GET", new Date().toISOString())
   return NextResponse.json({ ok: true, route: "tournament-start" })
 }
 
@@ -154,22 +93,18 @@ export async function POST(req: Request) {
   const debug: any = {
     stage: "start",
     took_ms: 0,
-    headers: { keys: [] as string[] },
     auth: {},
     record: {},
     resolved: {},
     tokens: {},
-    firebase: {},
-    db_mark_sent: {},
+    fcm: {},
+    mark_sent: {},
     skipped: "",
     error: "",
   }
 
   try {
-    console.log("[tournament-start] HIT POST", new Date().toISOString())
-    debug.headers.keys = Array.from(req.headers.keys())
-
-    // --- Webhook Secret check
+    // --- Secret check
     const secret = process.env.WEBHOOK_SECRET || ""
     const got = req.headers.get("x-webhook-secret") || ""
     debug.auth = { got: got ? "present" : "missing" }
@@ -252,14 +187,14 @@ export async function POST(req: Request) {
 
     const isFreilos = (name: string) => (name ?? "").toLowerCase().trim().startsWith("freilos")
 
-    // ✅ Wichtig: gleiche ENV-Logik wie bei deiner Chat-Route
+    // --- Supabase service client
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ""
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+
     if (!supabaseUrl) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)")
+    if (!supabaseKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY")
 
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-    if (!supabaseServiceKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY")
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
@@ -276,11 +211,11 @@ export async function POST(req: Request) {
     }
 
     const userIds = [p1AuthUid, p2AuthUid].filter(Boolean) as string[]
-
     if (userIds.length === 0) {
       debug.stage = "skipped_no_users"
-      debug.skipped = "No mapped users for this match"
+      debug.skipped = "No mapped users"
 
+      // trotzdem markieren, damit es nicht dauernd triggert
       const { error: markErr } = await supabase
         .from("dko_match_states")
         .update({ push_started_sent_at: new Date().toISOString() })
@@ -288,7 +223,7 @@ export async function POST(req: Request) {
         .eq("tournament_id", tournamentId)
         .eq("match_id", matchId)
 
-      debug.db_mark_sent = { ok: !markErr, error: markErr?.message ?? null }
+      debug.mark_sent = { ok: !markErr, error: markErr?.message ?? null }
       debug.took_ms = Date.now() - started
       return NextResponse.json({ success: true, debug })
     }
@@ -306,52 +241,68 @@ export async function POST(req: Request) {
     const tag = `tournament:${tournamentType}:${tournamentId}:match:${matchId}`
     const notifId = tag
 
-    const pushed: any[] = []
+    const admin = getFirebaseAdmin()
+
     debug.stage = "send_push"
 
+    const pushed: any[] = []
+
+    async function sendTo(uid: string, title: string, body: string, opponent: string) {
+      const tokens = tokenMap.get(uid) ?? []
+      const res = await admin.messaging().sendEachForMulticast({
+        tokens,
+        data: {
+          title,
+          body,
+          clickUrl,
+          path: clickUrl,
+          tag,
+          notif_id: notifId,
+          kind: "tournament_match_start",
+          tournamentType,
+          tournamentId,
+          matchId: String(matchId),
+          machineNumber: machineNo,
+          opponent,
+        },
+        android: { priority: "high" },
+      })
+
+      const errors = (res.responses || [])
+        .filter((r) => !r.success)
+        .map((r) => r.error?.code || r.error?.message)
+
+      pushed.push({
+        user_id: uid,
+        tokens: tokens.length,
+        success: res.successCount,
+        failed: res.failureCount,
+        errors: errors.slice(0, 5),
+      })
+
+      // Optional: ungültige Tokens löschen
+      const badTokens = (res.responses || [])
+        .map((r, i) => (!r.success ? tokens[i] : null))
+        .filter(Boolean) as string[]
+
+      if (badTokens.length > 0) {
+        await supabase.from("fcm_tokens").delete().in("token", badTokens)
+      }
+
+      return res
+    }
+
     if (p1AuthUid) {
-      const tokens = tokenMap.get(p1AuthUid) ?? []
-      const r = await sendDataOnlyPush({
-        tokens,
-        title: "🎯 Match startet",
-        body: `${p1Name} vs. ${p2Name} · Automat ${machineNo}`,
-        clickUrl,
-        tag,
-        notifId,
-        extraData: {
-          kind: "tournament_match_start",
-          tournamentType,
-          tournamentId,
-          matchId: String(matchId),
-          machineNumber: machineNo,
-          opponent: p2Name,
-        },
-      })
-      pushed.push({ user_id: p1AuthUid, tokens: tokens.length, success: r.successCount, failed: r.failureCount })
+      await sendTo(p1AuthUid, "🎯 Match startet", `${p1Name} vs. ${p2Name} · Automat ${machineNo}`, p2Name)
     }
-
     if (p2AuthUid) {
-      const tokens = tokenMap.get(p2AuthUid) ?? []
-      const r = await sendDataOnlyPush({
-        tokens,
-        title: "🎯 Match startet",
-        body: `${p2Name} vs. ${p1Name} · Automat ${machineNo}`,
-        clickUrl,
-        tag,
-        notifId,
-        extraData: {
-          kind: "tournament_match_start",
-          tournamentType,
-          tournamentId,
-          matchId: String(matchId),
-          machineNumber: machineNo,
-          opponent: p1Name,
-        },
-      })
-      pushed.push({ user_id: p2AuthUid, tokens: tokens.length, success: r.successCount, failed: r.failureCount })
+      await sendTo(p2AuthUid, "🎯 Match startet", `${p2Name} vs. ${p1Name} · Automat ${machineNo}`, p1Name)
     }
 
-    debug.firebase = { pushed }
+    debug.fcm = { pushed }
+
+    // ❗ Optional (empfohlen): nur markieren wenn mind. 1 Success
+    const anySuccess = pushed.some((p) => (p.success ?? 0) > 0)
 
     debug.stage = "mark_sent"
     const { error: markErr } = await supabase
@@ -361,7 +312,7 @@ export async function POST(req: Request) {
       .eq("tournament_id", tournamentId)
       .eq("match_id", matchId)
 
-    debug.db_mark_sent = { ok: !markErr, error: markErr?.message ?? null }
+    debug.mark_sent = { ok: !markErr, error: markErr?.message ?? null, anySuccess }
     if (markErr) throw markErr
 
     debug.stage = "done"
