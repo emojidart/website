@@ -15,12 +15,6 @@ type WebhookPayload = {
   schema?: string
 }
 
-function getEnv(name: string): string {
-  const v = process.env[name]
-  if (!v) throw new Error(`Missing env ${name}`)
-  return v
-}
-
 function initFirebase() {
   if (admin.apps.length > 0) return
 
@@ -59,19 +53,11 @@ function buildClickUrl(tournamentType: string, tournamentId: string, matchId: nu
 }
 
 /**
- * ✅ WICHTIG (dein DB-Setup):
- * - dko_match_states.player1_id / player2_id = spieldatenbank.id
- * - club_players.spieldatenbank_id = spieldatenbank.id
- * - club_players.id = "club player id" (interne Spieler-ID im Club)
- * - user_profiles.player_id = club_players.id
- * - user_profiles.user_id = Auth UID
- *
- * => Auflösung: spieldatenbank.id -> club_players.id -> user_profiles.user_id
+ * spieldatenbank.id -> club_players.spieldatenbank_id -> club_players.id -> user_profiles.player_id -> user_profiles.user_id(Auth UID)
  */
 async function resolveAuthUserIdBySpielerId(supabase: any, spielerId: string): Promise<string | null> {
   if (!spielerId) return null
 
-  // 1) club_players finden: spieldatenbank_id == spielerId
   const { data: cp, error: cpErr } = await supabase
     .from("club_players")
     .select("id, spieldatenbank_id")
@@ -84,7 +70,6 @@ async function resolveAuthUserIdBySpielerId(supabase: any, spielerId: string): P
 
   const clubPlayerId = String(cp.id)
 
-  // 2) user_profiles: player_id == club_players.id  => user_id (Auth UID)
   const { data: up, error: upErr } = await supabase
     .from("user_profiles")
     .select("user_id")
@@ -107,7 +92,7 @@ async function tokensForUsers(supabase: any, userIds: string[]) {
     .from("fcm_tokens")
     .select("user_id, token, platform")
     .in("user_id", userIds)
-    .eq("platform", "android") // optional, aber bei dir sinnvoll
+    .eq("platform", "android")
 
   if (error) throw error
 
@@ -154,13 +139,22 @@ async function sendDataOnlyPush(params: {
   return await admin.messaging().sendEachForMulticast(message)
 }
 
+/**
+ * GET ist absichtlich drin, damit du im Browser testen kannst,
+ * ob die Route existiert und Logs ankommen.
+ */
+export async function GET() {
+  console.log("[tournament-start] HIT GET", new Date().toISOString())
+  return NextResponse.json({ ok: true, route: "tournament-start" })
+}
+
 export async function POST(req: Request) {
   const started = Date.now()
 
-  // Debug-Objekt damit du SOFORT siehst wo es hängt
   const debug: any = {
     stage: "start",
     took_ms: 0,
+    headers: { keys: [] as string[] },
     auth: {},
     record: {},
     resolved: {},
@@ -168,9 +162,13 @@ export async function POST(req: Request) {
     firebase: {},
     db_mark_sent: {},
     skipped: "",
+    error: "",
   }
 
   try {
+    console.log("[tournament-start] HIT POST", new Date().toISOString())
+    debug.headers.keys = Array.from(req.headers.keys())
+
     // --- Webhook Secret check
     const secret = process.env.WEBHOOK_SECRET || ""
     const got = req.headers.get("x-webhook-secret") || ""
@@ -178,14 +176,22 @@ export async function POST(req: Request) {
 
     if (!secret) {
       debug.stage = "error_missing_server_secret"
+      debug.took_ms = Date.now() - started
       return NextResponse.json({ success: false, debug, error: "WEBHOOK_SECRET missing" }, { status: 500 })
     }
     if (got !== secret) {
       debug.stage = "error_unauthorized"
+      debug.took_ms = Date.now() - started
       return NextResponse.json({ success: false, debug, error: "Unauthorized webhook" }, { status: 401 })
     }
 
-    const payload = (await req.json()) as WebhookPayload
+    const payload = (await req.json().catch(() => null)) as WebhookPayload | null
+    if (!payload) {
+      debug.stage = "error_bad_json"
+      debug.took_ms = Date.now() - started
+      return NextResponse.json({ success: false, debug, error: "Bad JSON" }, { status: 400 })
+    }
+
     const rec = payload.record ?? payload.new ?? null
     const old = payload.old_record ?? payload.old ?? null
 
@@ -246,9 +252,13 @@ export async function POST(req: Request) {
 
     const isFreilos = (name: string) => (name ?? "").toLowerCase().trim().startsWith("freilos")
 
-    // Supabase service client
-    const supabaseUrl = getEnv("SUPABASE_URL")
-    const supabaseServiceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY")
+    // ✅ Wichtig: gleiche ENV-Logik wie bei deiner Chat-Route
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ""
+    if (!supabaseUrl) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)")
+
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+    if (!supabaseServiceKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY")
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
@@ -269,9 +279,8 @@ export async function POST(req: Request) {
 
     if (userIds.length === 0) {
       debug.stage = "skipped_no_users"
-      debug.skipped = "No users with accounts for this match (mapping missing via club_players -> user_profiles)"
+      debug.skipped = "No mapped users for this match"
 
-      // optional: trotzdem markieren, damit es nicht dauernd triggert
       const { error: markErr } = await supabase
         .from("dko_match_states")
         .update({ push_started_sent_at: new Date().toISOString() })
@@ -298,7 +307,6 @@ export async function POST(req: Request) {
     const notifId = tag
 
     const pushed: any[] = []
-
     debug.stage = "send_push"
 
     if (p1AuthUid) {

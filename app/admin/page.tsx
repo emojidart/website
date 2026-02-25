@@ -1264,7 +1264,7 @@ if (session && !isAdmin) {
                       </CardHeader>
                       <CardContent>
                         <p className="text-gray-600 mb-4">Hier können Sie Gutscheine und Credits verwalten.</p>
-                        <Link href="/kameraerkennung">
+                        <Link href="/admin/credit-loader">
                           <Button className="w-full">
                             <Zap className="h-4 w-4 mr-2" />
                             Zur Credit-Loader Verwaltung
