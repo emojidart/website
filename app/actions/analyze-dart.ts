@@ -1,6 +1,7 @@
 "use server"
 
 import { generateText } from "ai"
+import { openai } from "@ai-sdk/openai"
 
 export interface DartAnalysisResult {
   success: boolean
@@ -11,18 +12,45 @@ export interface DartAnalysisResult {
   message?: string
 }
 
+const FALLBACK: DartAnalysisResult = {
+  success: false,
+  score: 0,
+  multiplier: "Single",
+  segment: 0,
+  confidence: 0,
+  message: "Konnte keine Dartscheibe oder keinen Pfeil erkennen",
+}
+
+function safeJsonParse(text: string): any | null {
+  // versucht das erste JSON-Objekt zu extrahieren
+  const match = text.match(/\{[\s\S]*\}/)
+  if (!match) return null
+  try {
+    return JSON.parse(match[0])
+  } catch {
+    return null
+  }
+}
+
+function clamp01(n: number) {
+  if (Number.isNaN(n)) return 0
+  return Math.max(0, Math.min(1, n))
+}
+
 export async function analyzeDartImage(imageDataUrl: string): Promise<DartAnalysisResult> {
   try {
+    // Basic input guard
+    if (!imageDataUrl?.startsWith("data:image/")) {
+      return { ...FALLBACK, message: "Ungültiges Bildformat (DataURL erwartet)" }
+    }
+
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: openai("gpt-4o-mini"),
       messages: [
         {
           role: "user",
           content: [
-            {
-              type: "image",
-              image: imageDataUrl,
-            },
+            { type: "image", image: imageDataUrl },
             {
               type: "text",
               text: `Analysiere dieses Bild einer Dartscheibe und erkenne wo der Pfeil gelandet ist.
@@ -43,7 +71,7 @@ Regeln:
 - Double = äußerer Ring, Triple = innerer Ring
 - Bull = grüner Ring in der Mitte (25 Punkte)
 - Bullseye = rotes Zentrum (50 Punkte)
-- Confidence sollte deine Sicherheit der Erkennung widerspiegeln (0.0 - 1.0)
+- Confidence sollte deine Sicherheit widerspiegeln (0.0 - 1.0)
 
 Antworte NUR mit dem JSON, ohne zusätzlichen Text!`,
             },
@@ -52,43 +80,42 @@ Antworte NUR mit dem JSON, ohne zusätzlichen Text!`,
       ],
     })
 
-    console.log("[v0] AI Response:", text)
+    const parsed = safeJsonParse(text)
+    if (!parsed) return FALLBACK
 
-    // Parse AI response
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
+    // Normalize + validate
+    const success = !!parsed.success
+    const multiplier = parsed.multiplier as DartAnalysisResult["multiplier"]
+    const segment = Number(parsed.segment ?? 0)
+    const baseScore = Number(parsed.score ?? 0)
+    const confidence = clamp01(Number(parsed.confidence ?? 0))
+    const message = typeof parsed.message === "string" ? parsed.message : undefined
+
+    if (!success) {
       return {
-        success: false,
-        score: 0,
-        multiplier: "Single",
-        segment: 0,
-        confidence: 0,
-        message: "Konnte keine Dartscheibe oder Pfeil erkennen",
+        ...FALLBACK,
+        confidence,
+        message: message || FALLBACK.message,
       }
     }
 
-    const result = JSON.parse(jsonMatch[0]) as DartAnalysisResult
-
-    // Calculate final score based on multiplier
-    let finalScore = result.score
-    if (result.multiplier === "Double") {
-      finalScore = result.score * 2
-    } else if (result.multiplier === "Triple") {
-      finalScore = result.score * 3
-    }
+    // Score calc
+    let finalScore = baseScore
+    if (multiplier === "Double") finalScore = baseScore * 2
+    if (multiplier === "Triple") finalScore = baseScore * 3
 
     return {
-      ...result,
+      success: true,
       score: finalScore,
+      multiplier,
+      segment,
+      confidence,
+      message,
     }
   } catch (error) {
-    console.error("[v0] Error analyzing dart image:", error)
+    console.error("Error analyzing dart image:", error)
     return {
-      success: false,
-      score: 0,
-      multiplier: "Single",
-      segment: 0,
-      confidence: 0,
+      ...FALLBACK,
       message: "Fehler bei der Analyse. Bitte versuche es erneut.",
     }
   }

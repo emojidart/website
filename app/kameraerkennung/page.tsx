@@ -58,6 +58,17 @@ export default function DartTrackingPage() {
     }
   }, [])
 
+  // ✅ ADDED: Sobald isCameraActive true ist UND das <video> existiert, Stream anhängen
+  useEffect(() => {
+    if (!isCameraActive) return
+    if (!videoRef.current) return
+    if (!streamRef.current) return
+
+    videoRef.current.srcObject = streamRef.current
+    // Manche Browser brauchen play() explizit
+    videoRef.current.play().catch(() => {})
+  }, [isCameraActive])
+
   const detectMotion = () => {
     if (!videoRef.current || !canvasRef.current || isProcessing) return false
 
@@ -140,13 +151,13 @@ export default function DartTrackingPage() {
           width: { ideal: 1920 },
           height: { ideal: 1080 },
         },
+        audio: false, // ✅ ADDED (harmlos, verhindert Audio-Permission Zeug)
       })
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        streamRef.current = stream
-        setIsCameraActive(true)
-      }
+      // ✅ CHANGED: stream immer speichern + state setzen (nicht von videoRef abhängig)
+      streamRef.current = stream
+      previousFrameRef.current = null
+      setIsCameraActive(true)
     } catch (error) {
       console.error("[v0] Error accessing camera:", error)
       alert("Kamera-Zugriff fehlgeschlagen. Bitte erlaube den Kamera-Zugriff in deinen Browser-Einstellungen.")
@@ -297,7 +308,8 @@ export default function DartTrackingPage() {
                       </div>
                     ) : (
                       <>
-                        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                        {/* ✅ CHANGED: muted ergänzt */}
+                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                         <canvas ref={canvasRef} className="hidden" />
 
                         <div className="absolute inset-0 pointer-events-none">
