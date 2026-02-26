@@ -157,9 +157,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
             style.addMessage(l.text, l.ts, p);
         }
 
-        // Optional: Icon laden (wenn du willst) – aktuell nicht notwendig.
-        // (Du hattest iconUrl drin, lassen wir unkritisch weg, damit's stabil bleibt.)
-
         // ====== Einzelnotification (zeigt Verlauf) ======
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
@@ -198,13 +195,16 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
     // =========================
     // EVENT CARD NOTIFICATION
-    // (NICHT ANFASSEN – bleibt wie bei dir)
+    // (Events bleiben wie bei dir – erweitert um Premium Turnierstart)
     // =========================
     private void showEventCard(RemoteMessage remoteMessage) {
         NotificationManagerCompat nm = NotificationManagerCompat.from(this);
         if (!nm.areNotificationsEnabled()) return;
 
         Map<String, String> data = remoteMessage.getData();
+
+        // ✅ PREMIUM: unterscheidet "match_start" vs normale Events
+        String cardKind = get(data, "card_kind");
 
         String title     = get(data, "title");
         String eventName = get(data, "eventName");
@@ -270,6 +270,41 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         big.setTextViewText(R.id.eventMeta, meta);
         big.setTextViewText(R.id.eventDetails, details);
 
+        // ✅ PREMIUM MATCH START CARD (nur Turnierstart)
+        // Erwartet im Push: card_kind=match_start, player1, player2, machine
+        if ("match_start".equals(cardKind)) {
+            String p1 = get(data, "player1");
+            String p2 = get(data, "player2");
+            String machine = get(data, "machine");
+
+            // SMALL VIEW
+            small.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
+            small.setViewVisibility(R.id.matchMeta, android.view.View.VISIBLE);
+
+            small.setViewVisibility(R.id.eventName, android.view.View.GONE);
+            small.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
+            small.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
+
+            small.setTextViewText(R.id.player1, p1);
+            small.setTextViewText(R.id.player2, p2);
+            small.setTextViewText(R.id.matchMeta, "🕹 Automat " + machine);
+
+            // BIG VIEW
+            big.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
+            big.setViewVisibility(R.id.matchMeta, android.view.View.VISIBLE);
+
+            big.setViewVisibility(R.id.eventName, android.view.View.GONE);
+            big.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
+            big.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
+
+            big.setTextViewText(R.id.player1, p1);
+            big.setTextViewText(R.id.player2, p2);
+            big.setTextViewText(R.id.matchMeta, "🕹 Automat " + machine);
+
+            // Optional: Flyer in Match-Start NICHT anzeigen (clean)
+            big.setViewVisibility(R.id.flyerImage, android.view.View.GONE);
+        }
+
         if (flyer != null) {
             Bitmap thumb = scaleSquareCenterCrop(flyer, 128);
             Bitmap round = circleWithBorder(thumb, 6, 0xFFFFFFFF);
@@ -277,8 +312,11 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
             small.setImageViewBitmap(R.id.eventImage, round);
             big.setImageViewBitmap(R.id.eventImage, round);
 
-            big.setImageViewBitmap(R.id.flyerImage, flyer);
-            big.setViewVisibility(R.id.flyerImage, android.view.View.VISIBLE);
+            // Flyer nur wenn vorhanden + nicht match_start (falls du magst)
+            if (!"match_start".equals(cardKind)) {
+                big.setImageViewBitmap(R.id.flyerImage, flyer);
+                big.setViewVisibility(R.id.flyerImage, android.view.View.VISIBLE);
+            }
         } else {
             small.setImageViewResource(R.id.eventImage, android.R.color.transparent);
             big.setImageViewResource(R.id.eventImage, android.R.color.transparent);

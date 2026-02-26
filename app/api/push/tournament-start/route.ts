@@ -47,7 +47,6 @@ function initFirebase() {
 function isNullish(v: any) {
   return v === null || v === undefined || v === ""
 }
-
 function normNull(v: any) {
   return v === undefined ? null : v
 }
@@ -60,13 +59,15 @@ function buildClickUrl(tournamentType: string, tournamentId: string, matchId: nu
   return `/?${params.toString()}`
 }
 
-/**
- * ✅ DB Mapping:
- * dko_match_states.player1_id / player2_id = spieldatenbank.id
- * club_players.spieldatenbank_id = spieldatenbank.id
- * user_profiles.player_id = club_players.id
- * user_profiles.user_id = Auth UID
- */
+function prettyTournament(type: string) {
+  const t = String(type || "")
+  return t
+    .replace(/_/g, " ")
+    .replace(/\bdko\b/gi, "DKO")
+    .replace(/\beko\b/gi, "EKO")
+    .trim()
+}
+
 async function resolveAuthUserIdBySpielerId(supabase: any, spielerId: string): Promise<string | null> {
   if (!spielerId) return null
 
@@ -101,8 +102,6 @@ async function tokensForUsers(supabase: any, userIds: string[], platform?: strin
   if (userIds.length === 0) return map
 
   let q = supabase.from("fcm_tokens").select("user_id, token, platform").in("user_id", userIds)
-
-  // ✅ optional platform filter
   if (platform) q = q.eq("platform", platform)
 
   const { data, error } = await q
@@ -116,7 +115,6 @@ async function tokensForUsers(supabase: any, userIds: string[], platform?: strin
     map.set(uid, arr)
   }
 
-  // ✅ dedupe per user
   for (const [uid, arr] of map.entries()) {
     map.set(uid, Array.from(new Set(arr.filter(Boolean))))
   }
@@ -136,7 +134,6 @@ async function sendDataOnlyPush(params: {
   const { tokens, title, body, clickUrl, tag, notifId, extraData } = params
   const cleanTokens = Array.from(new Set((tokens ?? []).filter(Boolean)))
 
-  // ✅ WICHTIG: NICHT senden wenn leer (sonst firebase-admin error)
   if (cleanTokens.length === 0) {
     return { successCount: 0, failureCount: 0, responses: [] as any[], skipped: "no_tokens" as const }
   }
@@ -178,7 +175,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    // --- Webhook Secret check
     const secret = process.env.WEBHOOK_SECRET || ""
     const got = req.headers.get("x-webhook-secret") || ""
     debug.auth = { got: got ? "present" : "missing" }
@@ -219,7 +215,6 @@ export async function POST(req: Request) {
       old_machine_number: old?.machine_number ?? null,
     }
 
-    // --- Start condition
     const newMachine = normNull(rec.machine_number)
     const oldMachine = normNull(old?.machine_number)
     const winnerNew = normNull(rec.winner)
@@ -255,7 +250,6 @@ export async function POST(req: Request) {
 
     const isFreilosName = (name: string) => (name ?? "").toLowerCase().trim().startsWith("freilos")
 
-    // Supabase service client
     const supabaseUrl = getEnv("SUPABASE_URL")
     const supabaseServiceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY")
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -276,7 +270,6 @@ export async function POST(req: Request) {
 
     const userIds = [p1AuthUid, p2AuthUid].filter(Boolean) as string[]
 
-    // ✅ Wenn niemand Account hat: markieren & raus
     if (userIds.length === 0) {
       debug.stage = "skipped_no_users"
       debug.skipped = "No users with accounts for this match"
@@ -294,10 +287,6 @@ export async function POST(req: Request) {
     }
 
     debug.stage = "load_tokens"
-
-    // ✅ platform filter optional:
-    // - NUR Android: "android"
-    // - ALLE: undefined
     const tokenMap = await tokensForUsers(supabase, userIds, "android")
 
     debug.tokens = {
@@ -307,20 +296,18 @@ export async function POST(req: Request) {
 
     const machineNo = String(newMachine)
     const clickUrl = buildClickUrl(tournamentType, tournamentId, matchId)
-
-    // ✅ stabiler Thread-Tag (auch für Event Card ok)
     const tag = `tournament:${tournamentType}:${tournamentId}:match:${matchId}`
     const notifId = tag
 
-    // Optional: Wenn du ein Logo als Bild anzeigen willst (runde mini + ggf. Flyer)
-    // Lass es leer, dann bleibt die Card clean ohne Flyer.
-    const imageUrl = process.env.PUSH_TOURNAMENT_IMAGE_URL || "" // optional
+    const tPretty = prettyTournament(tournamentType)
+
+    // optional (wenn du ein fixes Logo-URL hast)
+    const imageUrl = process.env.PUSH_TOURNAMENT_IMAGE_URL || ""
 
     debug.stage = "send_push"
-
     const pushed: any[] = []
 
-    // ✅ Sende nur an User die Tokens haben
+    // Player 1
     if (p1AuthUid) {
       const tokens = tokenMap.get(p1AuthUid) ?? []
 
@@ -332,19 +319,26 @@ export async function POST(req: Request) {
         tag,
         notifId,
         extraData: {
-          // ✅ TRIGGERT deine Event-Card in Android:
+          // ✅ Event-Card Trigger
           type: "event",
 
-          // ✅ Event-Card content:
+          // ✅ Premium Match-Card Felder
+          card_kind: "match_start",
+          card_title: "🎯 Match startet",
+          player1: p1Name,
+          player2: p2Name,
+          machine: machineNo,
+          tournament: tPretty,
+
+          // ✅ Fallbacks (falls alte Layouts irgendwo noch eventName/meta nutzen)
           title: "🎯 Match startet",
           eventName: `${p1Name} vs. ${p2Name}`,
-          when: `Automat ${machineNo}`,
-          where: `Turnier ${tournamentType}`,
-          details: `Du spielst gegen ${p2Name}. Tippe zum Öffnen.`,
+          when: `🕹 Automat ${machineNo}`,
+          where: `🏆 ${tPretty}`,
+          details: "",
 
           ...(imageUrl ? { imageUrl } : {}),
 
-          // ✅ deine bestehenden Daten bleiben:
           kind: "tournament_match_start",
           tournamentType,
           tournamentId,
@@ -363,6 +357,7 @@ export async function POST(req: Request) {
       })
     }
 
+    // Player 2
     if (p2AuthUid) {
       const tokens = tokenMap.get(p2AuthUid) ?? []
 
@@ -376,11 +371,18 @@ export async function POST(req: Request) {
         extraData: {
           type: "event",
 
+          card_kind: "match_start",
+          card_title: "🎯 Match startet",
+          player1: p2Name,
+          player2: p1Name,
+          machine: machineNo,
+          tournament: tPretty,
+
           title: "🎯 Match startet",
           eventName: `${p2Name} vs. ${p1Name}`,
-          when: `Automat ${machineNo}`,
-          where: `Turnier ${tournamentType}`,
-          details: `Du spielst gegen ${p1Name}. Tippe zum Öffnen.`,
+          when: `🕹 Automat ${machineNo}`,
+          where: `🏆 ${tPretty}`,
+          details: "",
 
           ...(imageUrl ? { imageUrl } : {}),
 
@@ -404,7 +406,6 @@ export async function POST(req: Request) {
 
     debug.firebase = { pushed }
 
-    // ✅ IMMER markieren (auch wenn niemand Tokens hat), sonst triggert es ständig wieder
     debug.stage = "mark_sent"
     const { error: markErr } = await supabase
       .from("dko_match_states")
