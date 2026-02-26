@@ -33,17 +33,15 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
     private static final String CHANNEL_ID = "chat";
     private static final String CHANNEL_NAME = "Chat";
 
-    // Gruppierung (damit mehrere Nachrichten angezeigt werden statt nur 1)
     private static final String GROUP_KEY_CHAT = "emd_chat_group";
     private static final int SUMMARY_ID = 1001;
 
-    // "MessagingStyle" Historie (in-memory, reicht für Laufzeit der App)
     private static final int MAX_LINES = 7;
     private static final java.util.LinkedHashMap<String, java.util.ArrayDeque<ChatLine>> HISTORY =
             new java.util.LinkedHashMap<String, java.util.ArrayDeque<ChatLine>>(16, 0.75f, true) {
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<String, java.util.ArrayDeque<ChatLine>> eldest) {
-                    return size() > 30; // max 30 Konversationen im RAM
+                    return size() > 30;
                 }
             };
 
@@ -61,7 +59,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
 
-        // ✅ Wenn Notifications generell deaktiviert sind -> nix machen (Android 13+ safe)
         NotificationManagerCompat nm = NotificationManagerCompat.from(this);
         if (!nm.areNotificationsEnabled()) {
             return;
@@ -69,7 +66,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
         Map<String, String> data = remoteMessage.getData();
 
-        // ✅ EVENT-CARD: wenn type=event -> eigene Card anzeigen und fertig
         String type = get(data, "type");
         if ("event".equals(type)) {
             showEventCard(remoteMessage);
@@ -78,14 +74,12 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
         // =========================
         // DEFAULT: CHAT / WHATSAPP STYLE
-        // + LINEUP + REMINDER (ohne Events anzufassen)
         // =========================
 
-        // aus Push Data
-        String conversation = get(data, "conversation"); // z.B. "⏰ Bitte Verfügbarkeit" oder Teamname
-        String senderName   = get(data, "senderName");   // optional
-        String message      = get(data, "message");      // optional
-        String body         = get(data, "body");         // du verwendest das für reminder/lineup text
+        String conversation = get(data, "conversation");
+        String senderName   = get(data, "senderName");
+        String message      = get(data, "message");
+        String body         = get(data, "body");
         String tag          = get(data, "tag");
         String notifIdStr   = get(data, "notif_id");
 
@@ -97,14 +91,12 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         if (TextUtils.isEmpty(conversation)) conversation = "Neue Nachricht";
         if (TextUtils.isEmpty(senderName)) senderName = "System";
 
-        // Wichtig: Für Reminder/Lineup kommt Text oft in "body"
         String textToShow = firstNonEmpty(message, body);
         if (TextUtils.isEmpty(textToShow)) textToShow = "";
 
         int orange = ContextCompat.getColor(this, R.color.emd_orange);
         int notifId = safeInt(notifIdStr, stableIdFrom(tag));
 
-        // Fallback clickUrl
         if (TextUtils.isEmpty(clickUrl)) {
             if (!TextUtils.isEmpty(scope) && "team".equals(scope) && !TextUtils.isEmpty(roomId)) {
                 clickUrl = "/chat-app?scope=team&room_id=" + Uri.encode(roomId);
@@ -131,17 +123,14 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
         ensureChannel();
 
-        // ====== Konversations-Schlüssel (damit je Chat/Team/Reminder getrennt) ======
         String convoKey = !TextUtils.isEmpty(tag)
                 ? tag
                 : (conversation + "|" + nullToEmpty(scope) + "|" + nullToEmpty(roomId));
 
-        // ====== Historie updaten ======
         long now = System.currentTimeMillis();
         addLine(convoKey, new ChatLine(senderName, textToShow, now));
         java.util.ArrayDeque<ChatLine> lines = getLines(convoKey);
 
-        // ====== Personen für MessagingStyle ======
         Person me = new Person.Builder().setName("Ich").build();
         Person senderPerson = new Person.Builder().setName(senderName).build();
 
@@ -149,13 +138,11 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setConversationTitle(conversation)
                 .setGroupConversation(true);
 
-        // letzte MAX_LINES reinrendern
         for (ChatLine l : lines) {
             Person p = new Person.Builder().setName(l.sender).build();
             style.addMessage(l.text, l.ts, p);
         }
 
-        // ====== Einzelnotification (zeigt Verlauf) ======
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(conversation)
@@ -169,11 +156,9 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setColorized(true)
                 .setGroup(GROUP_KEY_CHAT);
 
-        // Wenn tag gesetzt ist -> stable "thread" notification, sonst notifId
         if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
         else nm.notify(notifId, builder.build());
 
-        // ====== Summary (zeigt Zähler + Gruppierung) ======
         int unread = incrementUnreadCounter(getApplicationContext());
         NotificationCompat.Builder summary = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
@@ -193,7 +178,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
     // =========================
     // EVENT CARD NOTIFICATION
-    // (Events bleiben wie bei dir – MatchStart als Premium-Card)
     // =========================
     private void showEventCard(RemoteMessage remoteMessage) {
         NotificationManagerCompat nm = NotificationManagerCompat.from(this);
@@ -201,7 +185,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
         Map<String, String> data = remoteMessage.getData();
 
-        // ✅ PREMIUM: unterscheidet "match_start" vs normale Events
         String cardKind = get(data, "card_kind");
 
         String title     = get(data, "title");
@@ -250,48 +233,54 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         Bitmap flyer = fetchBitmap(imageUrl);
         if (flyer != null) flyer = scaleDownForNotification(flyer, 1000, 600);
 
-        // Small (collapsed)
         android.widget.RemoteViews small =
                 new android.widget.RemoteViews(getPackageName(), R.layout.notification_event_card);
 
-        // Default (Event)
+        android.widget.RemoteViews big =
+                new android.widget.RemoteViews(getPackageName(), R.layout.notification_event_card_big);
+
+        // Default Sichtbarkeit (Event)
+        small.setViewVisibility(R.id.headerRow, android.view.View.VISIBLE);
+        big.setViewVisibility(R.id.headerRow, android.view.View.VISIBLE);
+
+        small.setViewVisibility(R.id.matchHeaderRow, android.view.View.GONE);
+        big.setViewVisibility(R.id.matchHeaderRow, android.view.View.GONE);
+
+        small.setViewVisibility(R.id.matchRow, android.view.View.GONE);
+        big.setViewVisibility(R.id.matchRow, android.view.View.GONE);
+
+        // Default Texte (Event)
         small.setTextViewText(R.id.eventTitle, title);
         small.setTextViewText(R.id.eventName, eventName);
         small.setTextViewText(R.id.eventMeta, meta);
         small.setTextViewText(R.id.eventDetails, details);
 
-        // Big (expanded)
-        android.widget.RemoteViews big =
-                new android.widget.RemoteViews(getPackageName(), R.layout.notification_event_card_big);
-
-        // Default (Event)
         big.setTextViewText(R.id.eventTitle, title);
         big.setTextViewText(R.id.eventName, eventName);
         big.setTextViewText(R.id.eventMeta, meta);
         big.setTextViewText(R.id.eventDetails, details);
 
-        // ✅ PREMIUM MATCH START CARD (Automat NUR oben rechts)
-        // Erwartet im Push: card_kind=match_start, player1, player2, machine
+        // ✅ MATCH START
         if ("match_start".equals(cardKind)) {
             String p1 = get(data, "player1");
             String p2 = get(data, "player2");
             String machine = get(data, "machine");
 
-            // TitleRow anzeigen (links Match startet, rechts Automat)
-            small.setViewVisibility(R.id.titleRow, android.view.View.VISIBLE);
-            big.setViewVisibility(R.id.titleRow, android.view.View.VISIBLE);
+            // Header (mit Icon) weg, damit nichts nach rechts verschoben wird
+            small.setViewVisibility(R.id.headerRow, android.view.View.GONE);
+            big.setViewVisibility(R.id.headerRow, android.view.View.GONE);
 
-            // normalen EventTitle ausblenden (sonst doppelt)
-            small.setViewVisibility(R.id.eventTitle, android.view.View.GONE);
-            big.setViewVisibility(R.id.eventTitle, android.view.View.GONE);
+            // Match Header volle Breite an
+            small.setViewVisibility(R.id.matchHeaderRow, android.view.View.VISIBLE);
+            big.setViewVisibility(R.id.matchHeaderRow, android.view.View.VISIBLE);
 
             small.setTextViewText(R.id.matchTitle, "🎯 Match startet");
-            small.setTextViewText(R.id.matchMachine, "ℹ️ Automat " + machine);
+            small.setTextViewText(R.id.matchMachine, "🕹 Automat " + machine);
 
             big.setTextViewText(R.id.matchTitle, "🎯 Match startet");
-            big.setTextViewText(R.id.matchMachine, "ℹ️ Automat " + machine);
+            big.setTextViewText(R.id.matchMachine, "🕹 Automat " + machine);
 
-            // MatchRow einblenden (nur Namen)
+            // Nur Namen anzeigen
             small.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
             big.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
 
@@ -301,36 +290,27 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
             big.setTextViewText(R.id.player1, p1);
             big.setTextViewText(R.id.player2, p2);
 
-            // Alles Event-Zeug aus
-            small.setViewVisibility(R.id.eventName, android.view.View.GONE);
+            // Event-Felder aus
             small.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
             small.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
 
-            big.setViewVisibility(R.id.eventName, android.view.View.GONE);
             big.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
             big.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
 
-            // matchMeta NICHT anzeigen (Automat steht oben)
-            small.setViewVisibility(R.id.matchMeta, android.view.View.GONE);
-            big.setViewVisibility(R.id.matchMeta, android.view.View.GONE);
-
-            // Flyer bei MatchStart clean aus
+            // Flyer bei match_start weg
             big.setViewVisibility(R.id.flyerImage, android.view.View.GONE);
         }
 
-        // Bilder setzen (Event: Logo + Flyer, MatchStart: nur Logo)
-        if (flyer != null) {
+        // Bild setzen (Event Logo / optional Flyer)
+        if (flyer != null && !"match_start".equals(cardKind)) {
             Bitmap thumb = scaleSquareCenterCrop(flyer, 128);
             Bitmap round = circleWithBorder(thumb, 6, 0xFFFFFFFF);
 
             small.setImageViewBitmap(R.id.eventImage, round);
             big.setImageViewBitmap(R.id.eventImage, round);
 
-            // Flyer nur wenn NICHT match_start
-            if (!"match_start".equals(cardKind)) {
-                big.setImageViewBitmap(R.id.flyerImage, flyer);
-                big.setViewVisibility(R.id.flyerImage, android.view.View.VISIBLE);
-            }
+            big.setImageViewBitmap(R.id.flyerImage, flyer);
+            big.setViewVisibility(R.id.flyerImage, android.view.View.VISIBLE);
         } else {
             small.setImageViewResource(R.id.eventImage, android.R.color.transparent);
             big.setImageViewResource(R.id.eventImage, android.R.color.transparent);
@@ -358,8 +338,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
     @Override
     public void onNewToken(String token) {
         super.onNewToken(token);
-
-        // ✅ Token lokal speichern
         try {
             android.content.SharedPreferences sp = getApplicationContext()
                     .getSharedPreferences("emd_push", MODE_PRIVATE);
@@ -408,7 +386,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         return next;
     }
 
-    // ====== MessagingStyle helpers ======
     private static synchronized void addLine(String key, ChatLine line) {
         java.util.ArrayDeque<ChatLine> q = HISTORY.get(key);
         if (q == null) {
@@ -422,7 +399,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
     private static synchronized java.util.ArrayDeque<ChatLine> getLines(String key) {
         java.util.ArrayDeque<ChatLine> q = HISTORY.get(key);
         if (q == null) return new java.util.ArrayDeque<>();
-        return new java.util.ArrayDeque<>(q); // copy (thread-safe)
+        return new java.util.ArrayDeque<>(q);
     }
 
     private static String firstNonEmpty(String a, String b) {
@@ -442,7 +419,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         return s;
     }
 
-    // ====== Image helpers ======
     private Bitmap fetchBitmap(String urlStr) {
         try {
             if (TextUtils.isEmpty(urlStr)) return null;
