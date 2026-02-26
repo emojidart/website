@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { getFirebaseAdmin } from "@/lib/firebase-admin"
+import admin from "firebase-admin"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -15,6 +15,33 @@ type WebhookPayload = {
   type?: string
   table?: string
   schema?: string
+}
+
+function getEnv(name: string): string {
+  const v = process.env[name]
+  if (!v) throw new Error(`Missing env ${name}`)
+  return v
+}
+
+function initFirebase() {
+  if (admin.apps.length > 0) return
+
+  const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_B64
+  const jsonRaw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+
+  let serviceAccount: any
+  if (b64) {
+    const decoded = Buffer.from(b64, "base64").toString("utf8")
+    serviceAccount = JSON.parse(decoded)
+  } else if (jsonRaw) {
+    serviceAccount = JSON.parse(jsonRaw)
+  } else {
+    throw new Error("Missing FIREBASE_SERVICE_ACCOUNT_B64 or FIREBASE_SERVICE_ACCOUNT_JSON")
+  }
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  })
 }
 
 function isNullish(v: any) {
@@ -33,12 +60,19 @@ function buildClickUrl(tournamentType: string, tournamentId: string, matchId: nu
   return `/?${params.toString()}`
 }
 
+/**
+ * ✅ DB Mapping:
+ * dko_match_states.player1_id / player2_id = spieldatenbank.id
+ * club_players.spieldatenbank_id = spieldatenbank.id
+ * user_profiles.player_id = club_players.id
+ * user_profiles.user_id = Auth UID
+ */
 async function resolveAuthUserIdBySpielerId(supabase: any, spielerId: string): Promise<string | null> {
   if (!spielerId) return null
 
   const { data: cp, error: cpErr } = await supabase
     .from("club_players")
-    .select("id")
+    .select("id, spieldatenbank_id")
     .eq("spieldatenbank_id", spielerId)
     .limit(1)
     .maybeSingle()
@@ -46,10 +80,12 @@ async function resolveAuthUserIdBySpielerId(supabase: any, spielerId: string): P
   if (cpErr) throw cpErr
   if (!cp?.id) return null
 
+  const clubPlayerId = String(cp.id)
+
   const { data: up, error: upErr } = await supabase
     .from("user_profiles")
     .select("user_id")
-    .eq("player_id", String(cp.id))
+    .eq("player_id", clubPlayerId)
     .not("user_id", "is", null)
     .limit(1)
     .maybeSingle()
@@ -60,16 +96,19 @@ async function resolveAuthUserIdBySpielerId(supabase: any, spielerId: string): P
   return String(up.user_id)
 }
 
-async function tokensForUsers(supabase: any, userIds: string[]) {
+async function tokensForUsers(supabase: any, userIds: string[], platform?: string) {
   const map = new Map<string, string[]>()
   if (userIds.length === 0) return map
 
-  const { data, error } = await supabase
+  let q = supabase
     .from("fcm_tokens")
     .select("user_id, token, platform")
     .in("user_id", userIds)
-    .eq("platform", "android")
 
+  // ✅ optional platform filter
+  if (platform) q = q.eq("platform", platform)
+
+  const { data, error } = await q
   if (error) throw error
 
   for (const row of data ?? []) {
@@ -80,11 +119,49 @@ async function tokensForUsers(supabase: any, userIds: string[]) {
     map.set(uid, arr)
   }
 
+  // ✅ dedupe per user
+  for (const [uid, arr] of map.entries()) {
+    map.set(uid, Array.from(new Set(arr.filter(Boolean))))
+  }
+
   return map
 }
 
-export async function GET() {
-  return NextResponse.json({ ok: true, route: "tournament-start" })
+async function sendDataOnlyPush(params: {
+  tokens: string[]
+  title: string
+  body: string
+  clickUrl: string
+  tag: string
+  notifId: string
+  extraData?: Record<string, string>
+}) {
+  const { tokens, title, body, clickUrl, tag, notifId, extraData } = params
+  const cleanTokens = Array.from(new Set((tokens ?? []).filter(Boolean)))
+
+  // ✅ WICHTIG: NICHT senden wenn leer (sonst firebase-admin error)
+  if (cleanTokens.length === 0) {
+    return { successCount: 0, failureCount: 0, responses: [] as any[], skipped: "no_tokens" as const }
+  }
+
+  initFirebase()
+
+  const message: admin.messaging.MulticastMessage = {
+    tokens: cleanTokens,
+    data: {
+      title,
+      body,
+      clickUrl,
+      path: clickUrl,
+      tag,
+      notif_id: notifId,
+      ...((extraData ?? {}) as any),
+    },
+    android: { priority: "high" },
+  }
+
+  const r = await admin.messaging().sendEachForMulticast(message)
+  return { ...r, skipped: null as any }
 }
 
 export async function POST(req: Request) {
@@ -97,14 +174,14 @@ export async function POST(req: Request) {
     record: {},
     resolved: {},
     tokens: {},
-    fcm: {},
-    mark_sent: {},
+    firebase: {},
+    db_mark_sent: {},
     skipped: "",
     error: "",
   }
 
   try {
-    // --- Secret check
+    // --- Webhook Secret check
     const secret = process.env.WEBHOOK_SECRET || ""
     const got = req.headers.get("x-webhook-secret") || ""
     debug.auth = { got: got ? "present" : "missing" }
@@ -120,13 +197,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, debug, error: "Unauthorized webhook" }, { status: 401 })
     }
 
-    const payload = (await req.json().catch(() => null)) as WebhookPayload | null
-    if (!payload) {
-      debug.stage = "error_bad_json"
-      debug.took_ms = Date.now() - started
-      return NextResponse.json({ success: false, debug, error: "Bad JSON" }, { status: 400 })
-    }
-
+    const payload = (await req.json()) as WebhookPayload
     const rec = payload.record ?? payload.new ?? null
     const old = payload.old_record ?? payload.old ?? null
 
@@ -185,24 +256,20 @@ export async function POST(req: Request) {
     const p1SpielerId = rec.player1_id ? String(rec.player1_id) : ""
     const p2SpielerId = rec.player2_id ? String(rec.player2_id) : ""
 
-    const isFreilos = (name: string) => (name ?? "").toLowerCase().trim().startsWith("freilos")
+    const isFreilosName = (name: string) => (name ?? "").toLowerCase().trim().startsWith("freilos")
 
-    // --- Supabase service client
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ""
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-
-    if (!supabaseUrl) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)")
-    if (!supabaseKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY")
-
-    const supabase = createClient(supabaseUrl, supabaseKey, {
+    // Supabase service client
+    const supabaseUrl = getEnv("SUPABASE_URL")
+    const supabaseServiceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY")
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
     debug.stage = "resolve_users"
 
     const [p1AuthUid, p2AuthUid] = await Promise.all([
-      !isFreilos(p1Name) && p1SpielerId ? resolveAuthUserIdBySpielerId(supabase, p1SpielerId) : Promise.resolve(null),
-      !isFreilos(p2Name) && p2SpielerId ? resolveAuthUserIdBySpielerId(supabase, p2SpielerId) : Promise.resolve(null),
+      !isFreilosName(p1Name) && p1SpielerId ? resolveAuthUserIdBySpielerId(supabase, p1SpielerId) : Promise.resolve(null),
+      !isFreilosName(p2Name) && p2SpielerId ? resolveAuthUserIdBySpielerId(supabase, p2SpielerId) : Promise.resolve(null),
     ])
 
     debug.resolved = {
@@ -211,11 +278,12 @@ export async function POST(req: Request) {
     }
 
     const userIds = [p1AuthUid, p2AuthUid].filter(Boolean) as string[]
+
+    // ✅ Wenn niemand Account hat: markieren & raus
     if (userIds.length === 0) {
       debug.stage = "skipped_no_users"
-      debug.skipped = "No mapped users"
+      debug.skipped = "No users with accounts for this match"
 
-      // trotzdem markieren, damit es nicht dauernd triggert
       const { error: markErr } = await supabase
         .from("dko_match_states")
         .update({ push_started_sent_at: new Date().toISOString() })
@@ -223,13 +291,17 @@ export async function POST(req: Request) {
         .eq("tournament_id", tournamentId)
         .eq("match_id", matchId)
 
-      debug.mark_sent = { ok: !markErr, error: markErr?.message ?? null }
+      debug.db_mark_sent = { ok: !markErr, error: markErr?.message ?? null }
       debug.took_ms = Date.now() - started
       return NextResponse.json({ success: true, debug })
     }
 
     debug.stage = "load_tokens"
-    const tokenMap = await tokensForUsers(supabase, userIds)
+
+    // ✅ platform filter optional:
+    // - NUR Android: "android"
+    // - ALLE: undefined
+    const tokenMap = await tokensForUsers(supabase, userIds, "android")
 
     debug.tokens = {
       requested_user_ids: userIds,
@@ -241,69 +313,94 @@ export async function POST(req: Request) {
     const tag = `tournament:${tournamentType}:${tournamentId}:match:${matchId}`
     const notifId = tag
 
-    const admin = getFirebaseAdmin()
+    // ✅ WhatsApp-Style: schöner Titel + “Absender”
+    // conversation = Titel oben im MessagingStyle
+    // senderName   = wer “schreibt”
+    const conversation = `🎯 Turnier • Automat ${machineNo}`
+    const senderName = "EMD Turnier"
 
     debug.stage = "send_push"
 
     const pushed: any[] = []
 
-    async function sendTo(uid: string, title: string, body: string, opponent: string) {
-      const tokens = tokenMap.get(uid) ?? []
-      const res = await admin.messaging().sendEachForMulticast({
+    // ✅ Sende nur an User die Tokens haben
+    if (p1AuthUid) {
+      const tokens = tokenMap.get(p1AuthUid) ?? []
+      const body = `${p1Name} vs. ${p2Name} · Automat ${machineNo}`
+      const message = `Dein Match startet! ${body}`
+
+      const r = await sendDataOnlyPush({
         tokens,
-        data: {
-          title,
-          body,
-          clickUrl,
-          path: clickUrl,
-          tag,
-          notif_id: notifId,
+        title: "🎯 Match startet",
+        body, // bleibt für alte Clients / fallback
+        clickUrl,
+        tag,
+        notifId,
+        extraData: {
+          // ✅ NICHT "event", sonst geht’s in showEventCard()
+          type: "tournament",
+
+          // ✅ WhatsApp-Style keys (dein Android liest genau diese!)
+          conversation,
+          senderName,
+          message,
+
+          // bestehende Daten
           kind: "tournament_match_start",
           tournamentType,
           tournamentId,
           matchId: String(matchId),
           machineNumber: machineNo,
-          opponent,
+          opponent: p2Name,
         },
-        android: { priority: "high" },
       })
-
-      const errors = (res.responses || [])
-        .filter((r) => !r.success)
-        .map((r) => r.error?.code || r.error?.message)
-
       pushed.push({
-        user_id: uid,
+        user_id: p1AuthUid,
         tokens: tokens.length,
-        success: res.successCount,
-        failed: res.failureCount,
-        errors: errors.slice(0, 5),
+        success: (r as any).successCount ?? 0,
+        failed: (r as any).failureCount ?? 0,
+        skipped: (r as any).skipped ?? null,
       })
-
-      // Optional: ungültige Tokens löschen
-      const badTokens = (res.responses || [])
-        .map((r, i) => (!r.success ? tokens[i] : null))
-        .filter(Boolean) as string[]
-
-      if (badTokens.length > 0) {
-        await supabase.from("fcm_tokens").delete().in("token", badTokens)
-      }
-
-      return res
     }
 
-    if (p1AuthUid) {
-      await sendTo(p1AuthUid, "🎯 Match startet", `${p1Name} vs. ${p2Name} · Automat ${machineNo}`, p2Name)
-    }
     if (p2AuthUid) {
-      await sendTo(p2AuthUid, "🎯 Match startet", `${p2Name} vs. ${p1Name} · Automat ${machineNo}`, p1Name)
+      const tokens = tokenMap.get(p2AuthUid) ?? []
+      const body = `${p2Name} vs. ${p1Name} · Automat ${machineNo}`
+      const message = `Dein Match startet! ${body}`
+
+      const r = await sendDataOnlyPush({
+        tokens,
+        title: "🎯 Match startet",
+        body,
+        clickUrl,
+        tag,
+        notifId,
+        extraData: {
+          type: "tournament",
+          conversation,
+          senderName,
+          message,
+
+          kind: "tournament_match_start",
+          tournamentType,
+          tournamentId,
+          matchId: String(matchId),
+          machineNumber: machineNo,
+          opponent: p1Name,
+        },
+      })
+      pushed.push({
+        user_id: p2AuthUid,
+        tokens: tokens.length,
+        success: (r as any).successCount ?? 0,
+        failed: (r as any).failureCount ?? 0,
+        skipped: (r as any).skipped ?? null,
+      })
     }
 
-    debug.fcm = { pushed }
+    debug.firebase = { pushed }
 
-    // ❗ Optional (empfohlen): nur markieren wenn mind. 1 Success
-    const anySuccess = pushed.some((p) => (p.success ?? 0) > 0)
-
+    // ✅ IMMER markieren (auch wenn niemand Tokens hat), sonst triggert es ständig wieder
     debug.stage = "mark_sent"
     const { error: markErr } = await supabase
       .from("dko_match_states")
@@ -312,7 +409,7 @@ export async function POST(req: Request) {
       .eq("tournament_id", tournamentId)
       .eq("match_id", matchId)
 
-    debug.mark_sent = { ok: !markErr, error: markErr?.message ?? null, anySuccess }
+    debug.db_mark_sent = { ok: !markErr, error: markErr?.message ?? null }
     if (markErr) throw markErr
 
     debug.stage = "done"
