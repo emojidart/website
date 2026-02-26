@@ -270,40 +270,45 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         big.setTextViewText(R.id.eventMeta, meta);
         big.setTextViewText(R.id.eventDetails, details);
 
-        // ✅ PREMIUM MATCH START CARD (nur Turnierstart)
-        // Erwartet im Push: card_kind=match_start, player1, player2, machine
-        if ("match_start".equals(cardKind)) {
-            String p1 = get(data, "player1");
-            String p2 = get(data, "player2");
-            String machine = get(data, "machine");
+       // ✅ PREMIUM MATCH START CARD (nur Turnierstart)
+// Erwartet im Push: card_kind=match_start, player1, player2, machine
+if ("match_start".equals(cardKind)) {
+    String p1 = get(data, "player1");
+    String p2 = get(data, "player2");
+    String machine = get(data, "machine");
 
-            // SMALL VIEW
-            small.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
-            small.setViewVisibility(R.id.matchMeta, android.view.View.VISIBLE);
+    // Title oben: Match startet + Automat (nur hier!)
+    String topTitle = "🎯 Match startet · 🕹 Automat " + machine;
 
-            small.setViewVisibility(R.id.eventName, android.view.View.GONE);
-            small.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
-            small.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
+    // SMALL VIEW
+    small.setTextViewText(R.id.eventTitle, topTitle);
 
-            small.setTextViewText(R.id.player1, p1);
-            small.setTextViewText(R.id.player2, p2);
-            small.setTextViewText(R.id.matchMeta, "🕹 Automat " + machine);
+    small.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
+    small.setViewVisibility(R.id.matchMeta, android.view.View.GONE); // nicht doppelt!
 
-            // BIG VIEW
-            big.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
-            big.setViewVisibility(R.id.matchMeta, android.view.View.VISIBLE);
+    small.setViewVisibility(R.id.eventName, android.view.View.GONE);
+    small.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
+    small.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
 
-            big.setViewVisibility(R.id.eventName, android.view.View.GONE);
-            big.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
-            big.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
+    small.setTextViewText(R.id.player1, p1);
+    small.setTextViewText(R.id.player2, p2);
 
-            big.setTextViewText(R.id.player1, p1);
-            big.setTextViewText(R.id.player2, p2);
-            big.setTextViewText(R.id.matchMeta, "🕹 Automat " + machine);
+    // BIG VIEW
+    big.setTextViewText(R.id.eventTitle, topTitle);
 
-            // Optional: Flyer in Match-Start NICHT anzeigen (clean)
-            big.setViewVisibility(R.id.flyerImage, android.view.View.GONE);
-        }
+    big.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
+    big.setViewVisibility(R.id.matchMeta, android.view.View.GONE);   // nicht doppelt!
+
+    big.setViewVisibility(R.id.eventName, android.view.View.GONE);
+    big.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
+    big.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
+
+    big.setTextViewText(R.id.player1, p1);
+    big.setTextViewText(R.id.player2, p2);
+
+    // Flyer bei Match-Start clean aus
+    big.setViewVisibility(R.id.flyerImage, android.view.View.GONE);
+}
 
         if (flyer != null) {
             Bitmap thumb = scaleSquareCenterCrop(flyer, 128);

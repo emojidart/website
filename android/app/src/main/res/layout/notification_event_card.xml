@@ -29,16 +29,18 @@
             android:orientation="vertical"
             android:paddingStart="12dp">
 
+            <!-- ✅ Titel mittig -->
             <TextView
                 android:id="@+id/eventTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="🎉 Neue Veranstaltung!"
+                android:text="🎯 Match startet"
                 android:textStyle="bold"
                 android:textSize="16sp"
                 android:textColor="@android:color/white"
-                android:maxLines="2"
-                android:ellipsize="end" />
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:gravity="center" />
 
             <!-- Event-Name bleibt für normale Events -->
             <TextView
@@ -55,13 +57,13 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- ✅ PREMIUM MATCH ROW (volle Breite, NICHT mehr rechts neben Icon) -->
+    <!-- ✅ Match Row mittig -->
     <LinearLayout
         android:id="@+id/matchRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:gravity="center"
         android:paddingTop="10dp"
         android:visibility="gone">
 
@@ -70,10 +72,10 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="14sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:textColor="@android:color/white"
-            android:gravity="end"
+            android:gravity="center"
             android:maxLines="2"
             android:ellipsize="end" />
 
@@ -84,27 +86,28 @@
             android:text="  vs  "
             android:textSize="12sp"
             android:textColor="@android:color/white"
-            android:alpha="0.8" />
+            android:alpha="0.8"
+            android:gravity="center" />
 
         <TextView
             android:id="@+id/player2"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="14sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:textColor="@android:color/white"
-            android:gravity="start"
+            android:gravity="center"
             android:maxLines="2"
             android:ellipsize="end" />
     </LinearLayout>
 
-    <!-- ✅ PREMIUM MATCH META -->
+    <!-- matchMeta bleibt vorhanden, wird aber bei match_start in Java ausgeblendet -->
     <TextView
         android:id="@+id/matchMeta"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="ℹ️ Automat 2"
+        android:text="🕹 Automat 2"
         android:textSize="13sp"
         android:textColor="@android:color/white"
         android:alpha="0.85"
@@ -138,7 +141,6 @@
         android:maxLines="4"
         android:ellipsize="end" />
 
-    <!-- Flyer -->
     <ImageView
         android:id="@+id/flyerImage"
         android:layout_width="match_parent"
