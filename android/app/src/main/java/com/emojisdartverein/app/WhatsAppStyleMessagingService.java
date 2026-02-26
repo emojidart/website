@@ -132,8 +132,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         ensureChannel();
 
         // ====== Konversations-Schlüssel (damit je Chat/Team/Reminder getrennt) ======
-        // Wenn du tag stabil pro match/team/player machst, ist das perfekt für Gruppierung.
-        // Falls tag fehlt, nutze conversation+scope+roomId.
         String convoKey = !TextUtils.isEmpty(tag)
                 ? tag
                 : (conversation + "|" + nullToEmpty(scope) + "|" + nullToEmpty(roomId));
@@ -195,7 +193,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 
     // =========================
     // EVENT CARD NOTIFICATION
-    // (Events bleiben wie bei dir – erweitert um Premium Turnierstart)
+    // (Events bleiben wie bei dir – MatchStart als Premium-Card)
     // =========================
     private void showEventCard(RemoteMessage remoteMessage) {
         NotificationManagerCompat nm = NotificationManagerCompat.from(this);
@@ -256,6 +254,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         android.widget.RemoteViews small =
                 new android.widget.RemoteViews(getPackageName(), R.layout.notification_event_card);
 
+        // Default (Event)
         small.setTextViewText(R.id.eventTitle, title);
         small.setTextViewText(R.id.eventName, eventName);
         small.setTextViewText(R.id.eventMeta, meta);
@@ -265,51 +264,61 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         android.widget.RemoteViews big =
                 new android.widget.RemoteViews(getPackageName(), R.layout.notification_event_card_big);
 
+        // Default (Event)
         big.setTextViewText(R.id.eventTitle, title);
         big.setTextViewText(R.id.eventName, eventName);
         big.setTextViewText(R.id.eventMeta, meta);
         big.setTextViewText(R.id.eventDetails, details);
 
-       // ✅ PREMIUM MATCH START CARD (nur Turnierstart)
-// Erwartet im Push: card_kind=match_start, player1, player2, machine
-if ("match_start".equals(cardKind)) {
-    String p1 = get(data, "player1");
-    String p2 = get(data, "player2");
-    String machine = get(data, "machine");
+        // ✅ PREMIUM MATCH START CARD (Automat NUR oben rechts)
+        // Erwartet im Push: card_kind=match_start, player1, player2, machine
+        if ("match_start".equals(cardKind)) {
+            String p1 = get(data, "player1");
+            String p2 = get(data, "player2");
+            String machine = get(data, "machine");
 
-    // Title oben: Match startet + Automat (nur hier!)
-    String topTitle = "🎯 Match startet · 🕹 Automat " + machine;
+            // TitleRow anzeigen (links Match startet, rechts Automat)
+            small.setViewVisibility(R.id.titleRow, android.view.View.VISIBLE);
+            big.setViewVisibility(R.id.titleRow, android.view.View.VISIBLE);
 
-    // SMALL VIEW
-    small.setTextViewText(R.id.eventTitle, topTitle);
+            // normalen EventTitle ausblenden (sonst doppelt)
+            small.setViewVisibility(R.id.eventTitle, android.view.View.GONE);
+            big.setViewVisibility(R.id.eventTitle, android.view.View.GONE);
 
-    small.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
-    small.setViewVisibility(R.id.matchMeta, android.view.View.GONE); // nicht doppelt!
+            small.setTextViewText(R.id.matchTitle, "🎯 Match startet");
+            small.setTextViewText(R.id.matchMachine, "ℹ️ Automat " + machine);
 
-    small.setViewVisibility(R.id.eventName, android.view.View.GONE);
-    small.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
-    small.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
+            big.setTextViewText(R.id.matchTitle, "🎯 Match startet");
+            big.setTextViewText(R.id.matchMachine, "ℹ️ Automat " + machine);
 
-    small.setTextViewText(R.id.player1, p1);
-    small.setTextViewText(R.id.player2, p2);
+            // MatchRow einblenden (nur Namen)
+            small.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
+            big.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
 
-    // BIG VIEW
-    big.setTextViewText(R.id.eventTitle, topTitle);
+            small.setTextViewText(R.id.player1, p1);
+            small.setTextViewText(R.id.player2, p2);
 
-    big.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
-    big.setViewVisibility(R.id.matchMeta, android.view.View.GONE);   // nicht doppelt!
+            big.setTextViewText(R.id.player1, p1);
+            big.setTextViewText(R.id.player2, p2);
 
-    big.setViewVisibility(R.id.eventName, android.view.View.GONE);
-    big.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
-    big.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
+            // Alles Event-Zeug aus
+            small.setViewVisibility(R.id.eventName, android.view.View.GONE);
+            small.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
+            small.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
 
-    big.setTextViewText(R.id.player1, p1);
-    big.setTextViewText(R.id.player2, p2);
+            big.setViewVisibility(R.id.eventName, android.view.View.GONE);
+            big.setViewVisibility(R.id.eventMeta, android.view.View.GONE);
+            big.setViewVisibility(R.id.eventDetails, android.view.View.GONE);
 
-    // Flyer bei Match-Start clean aus
-    big.setViewVisibility(R.id.flyerImage, android.view.View.GONE);
-}
+            // matchMeta NICHT anzeigen (Automat steht oben)
+            small.setViewVisibility(R.id.matchMeta, android.view.View.GONE);
+            big.setViewVisibility(R.id.matchMeta, android.view.View.GONE);
 
+            // Flyer bei MatchStart clean aus
+            big.setViewVisibility(R.id.flyerImage, android.view.View.GONE);
+        }
+
+        // Bilder setzen (Event: Logo + Flyer, MatchStart: nur Logo)
         if (flyer != null) {
             Bitmap thumb = scaleSquareCenterCrop(flyer, 128);
             Bitmap round = circleWithBorder(thumb, 6, 0xFFFFFFFF);
@@ -317,7 +326,7 @@ if ("match_start".equals(cardKind)) {
             small.setImageViewBitmap(R.id.eventImage, round);
             big.setImageViewBitmap(R.id.eventImage, round);
 
-            // Flyer nur wenn vorhanden + nicht match_start (falls du magst)
+            // Flyer nur wenn NICHT match_start
             if (!"match_start".equals(cardKind)) {
                 big.setImageViewBitmap(R.id.flyerImage, flyer);
                 big.setViewVisibility(R.id.flyerImage, android.view.View.VISIBLE);
@@ -433,7 +442,7 @@ if ("match_start".equals(cardKind)) {
         return s;
     }
 
-    // ====== Image helpers (deine bestehenden) ======
+    // ====== Image helpers ======
     private Bitmap fetchBitmap(String urlStr) {
         try {
             if (TextUtils.isEmpty(urlStr)) return null;
@@ -468,7 +477,6 @@ if ("match_start".equals(cardKind)) {
         return Bitmap.createScaledBitmap(cropped, size, size, true);
     }
 
-    // ✅ Flyer-Bild sauber verkleinern für Notification
     private static Bitmap scaleDownForNotification(Bitmap src, int maxW, int maxH) {
         int w = src.getWidth();
         int h = src.getHeight();
