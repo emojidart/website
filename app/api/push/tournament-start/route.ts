@@ -100,10 +100,7 @@ async function tokensForUsers(supabase: any, userIds: string[], platform?: strin
   const map = new Map<string, string[]>()
   if (userIds.length === 0) return map
 
-  let q = supabase
-    .from("fcm_tokens")
-    .select("user_id, token, platform")
-    .in("user_id", userIds)
+  let q = supabase.from("fcm_tokens").select("user_id, token, platform").in("user_id", userIds)
 
   // ✅ optional platform filter
   if (platform) q = q.eq("platform", platform)
@@ -310,14 +307,14 @@ export async function POST(req: Request) {
 
     const machineNo = String(newMachine)
     const clickUrl = buildClickUrl(tournamentType, tournamentId, matchId)
+
+    // ✅ stabiler Thread-Tag (auch für Event Card ok)
     const tag = `tournament:${tournamentType}:${tournamentId}:match:${matchId}`
     const notifId = tag
 
-    // ✅ WhatsApp-Style: schöner Titel + “Absender”
-    // conversation = Titel oben im MessagingStyle
-    // senderName   = wer “schreibt”
-    const conversation = `🎯 Turnier • Automat ${machineNo}`
-    const senderName = "EMD Turnier"
+    // Optional: Wenn du ein Logo als Bild anzeigen willst (runde mini + ggf. Flyer)
+    // Lass es leer, dann bleibt die Card clean ohne Flyer.
+    const imageUrl = process.env.PUSH_TOURNAMENT_IMAGE_URL || "" // optional
 
     debug.stage = "send_push"
 
@@ -326,26 +323,28 @@ export async function POST(req: Request) {
     // ✅ Sende nur an User die Tokens haben
     if (p1AuthUid) {
       const tokens = tokenMap.get(p1AuthUid) ?? []
-      const body = `${p1Name} vs. ${p2Name} · Automat ${machineNo}`
-      const message = `Dein Match startet! ${body}`
 
       const r = await sendDataOnlyPush({
         tokens,
         title: "🎯 Match startet",
-        body, // bleibt für alte Clients / fallback
+        body: `${p1Name} vs. ${p2Name} · Automat ${machineNo}`,
         clickUrl,
         tag,
         notifId,
         extraData: {
-          // ✅ NICHT "event", sonst geht’s in showEventCard()
-          type: "tournament",
+          // ✅ TRIGGERT deine Event-Card in Android:
+          type: "event",
 
-          // ✅ WhatsApp-Style keys (dein Android liest genau diese!)
-          conversation,
-          senderName,
-          message,
+          // ✅ Event-Card content:
+          title: "🎯 Match startet",
+          eventName: `${p1Name} vs. ${p2Name}`,
+          when: `Automat ${machineNo}`,
+          where: `Turnier ${tournamentType}`,
+          details: `Du spielst gegen ${p2Name}. Tippe zum Öffnen.`,
 
-          // bestehende Daten
+          ...(imageUrl ? { imageUrl } : {}),
+
+          // ✅ deine bestehenden Daten bleiben:
           kind: "tournament_match_start",
           tournamentType,
           tournamentId,
@@ -354,6 +353,7 @@ export async function POST(req: Request) {
           opponent: p2Name,
         },
       })
+
       pushed.push({
         user_id: p1AuthUid,
         tokens: tokens.length,
@@ -365,21 +365,24 @@ export async function POST(req: Request) {
 
     if (p2AuthUid) {
       const tokens = tokenMap.get(p2AuthUid) ?? []
-      const body = `${p2Name} vs. ${p1Name} · Automat ${machineNo}`
-      const message = `Dein Match startet! ${body}`
 
       const r = await sendDataOnlyPush({
         tokens,
         title: "🎯 Match startet",
-        body,
+        body: `${p2Name} vs. ${p1Name} · Automat ${machineNo}`,
         clickUrl,
         tag,
         notifId,
         extraData: {
-          type: "tournament",
-          conversation,
-          senderName,
-          message,
+          type: "event",
+
+          title: "🎯 Match startet",
+          eventName: `${p2Name} vs. ${p1Name}`,
+          when: `Automat ${machineNo}`,
+          where: `Turnier ${tournamentType}`,
+          details: `Du spielst gegen ${p1Name}. Tippe zum Öffnen.`,
+
+          ...(imageUrl ? { imageUrl } : {}),
 
           kind: "tournament_match_start",
           tournamentType,
@@ -389,6 +392,7 @@ export async function POST(req: Request) {
           opponent: p1Name,
         },
       })
+
       pushed.push({
         user_id: p2AuthUid,
         tokens: tokens.length,
