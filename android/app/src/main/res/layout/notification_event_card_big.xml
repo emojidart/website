@@ -7,8 +7,9 @@
     android:background="@android:color/transparent"
     android:padding="12dp">
 
-    <!-- Header -->
+    <!-- Header (Event-Style bleibt) -->
     <LinearLayout
+        android:id="@+id/headerRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -26,14 +27,12 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:paddingLeft="12dp"
             android:paddingStart="12dp">
 
             <TextView
                 android:id="@+id/eventTitle"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:text="🎉 Neue Veranstaltung!"
                 android:textStyle="bold"
                 android:textSize="16sp"
@@ -41,53 +40,7 @@
                 android:maxLines="2"
                 android:ellipsize="end" />
 
-            <!-- ✅ PREMIUM: Turnierstart / Match-Row (standard: aus) -->
-            <LinearLayout
-                android:id="@+id/matchRow"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:paddingTop="6dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/player1"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Player 1"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:gravity="end"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-
-                <TextView
-                    android:id="@+id/vsText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="  vs  "
-                    android:textSize="13sp"
-                    android:textColor="@android:color/white"
-                    android:alpha="0.8" />
-
-                <TextView
-                    android:id="@+id/player2"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Player 2"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:gravity="start"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-            </LinearLayout>
-
-            <!-- Original bleibt (für normale Events) -->
+            <!-- Event-Name bleibt für normale Events -->
             <TextView
                 android:id="@+id/eventName"
                 android:layout_width="match_parent"
@@ -102,21 +55,65 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- ✅ PREMIUM: Turnierstart Meta (standard: aus) -->
+    <!-- ✅ PREMIUM MATCH ROW (volle Breite) -->
+    <LinearLayout
+        android:id="@+id/matchRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="10dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/player1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:gravity="end"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/vsText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="  vs  "
+            android:textSize="12sp"
+            android:textColor="@android:color/white"
+            android:alpha="0.8" />
+
+        <TextView
+            android:id="@+id/player2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:gravity="start"
+            android:maxLines="2"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <!-- ✅ PREMIUM MATCH META -->
     <TextView
         android:id="@+id/matchMeta"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="🕹 Automat 2"
+        android:text="ℹ️ Automat 2"
         android:textSize="13sp"
         android:textColor="@android:color/white"
         android:alpha="0.85"
-        android:paddingTop="8dp"
+        android:paddingTop="6dp"
         android:maxLines="1"
         android:ellipsize="end"
         android:visibility="gone" />
 
-    <!-- Original bleibt (für normale Events) -->
+    <!-- Event Meta bleibt -->
     <TextView
         android:id="@+id/eventMeta"
         android:layout_width="match_parent"
@@ -141,7 +138,7 @@
         android:maxLines="4"
         android:ellipsize="end" />
 
-    <!-- ✅ Flyer-Bild (nur in expanded) -->
+    <!-- Flyer (nur für Events sinnvoll, Match blendet Java aus) -->
     <ImageView
         android:id="@+id/flyerImage"
         android:layout_width="match_parent"
