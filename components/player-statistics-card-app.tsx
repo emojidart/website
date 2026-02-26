@@ -96,19 +96,19 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
 
           {/* Hauptstatistiken */}
           <div className="grid grid-cols-3 gap-2 mb-3">
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-2 text-center">
-              <div className="text-2xl font-bold text-orange-600">{player.total_points.toFixed(1)}</div>
-              <div className="text-xs text-gray-600">Punkte</div>
-            </div>
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-2 text-center">
-              <div className="text-2xl font-bold text-green-600">{player.total_wins}</div>
-              <div className="text-xs text-gray-600">Wins</div>
-            </div>
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-2 text-center">
-              <div className="text-2xl font-bold text-blue-600">{player.win_percentage.toFixed(1)}%</div>
-              <div className="text-xs text-gray-600">Win%</div>
-            </div>
-          </div>
+  <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-2 text-center">
+    <div className="text-xl sm:text-2xl font-bold text-orange-600">{player.total_points.toFixed(1)}</div>
+    <div className="text-xs text-gray-600">Punkte</div>
+  </div>
+  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-2 text-center">
+    <div className="text-xl sm:text-2xl font-bold text-green-600">{player.total_wins}</div>
+    <div className="text-xs text-gray-600">Wins</div>
+  </div>
+  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-2 text-center">
+    <div className="text-xl sm:text-2xl font-bold text-blue-600">{player.win_percentage.toFixed(1)}%</div>
+    <div className="text-xs text-gray-600">Win%</div>
+  </div>
+</div>
 
           {/* Top-Würfe */}
           <div className="flex flex-wrap gap-2">
@@ -174,22 +174,24 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-transparent"
-                      onClick={() => setShowPointsModal(true)}
-                    >
-                      <Trophy className="h-4 w-4 mr-2" />
-                      Punkte-Details
-                    </Button>
-                    <Link href={`/liga-app/player-profile/${player.player_id}`} className="flex-1">
-                      <Button variant="default" size="sm" className="w-full">
-                        Profil ansehen
-                      </Button>
-                    </Link>
-                  </div>
+                 <div className="flex flex-col sm:flex-row gap-2">
+  <Button
+    variant="outline"
+    size="sm"
+    className="w-full sm:flex-1 bg-transparent"
+    onClick={() => setShowPointsModal(true)}
+  >
+    <Trophy className="h-4 w-4 mr-2 shrink-0" />
+    <span className="truncate">Punkte-Details</span>
+  </Button>
+
+  <Link href={`/liga-app/player-profile/${player.player_id}`} className="w-full sm:flex-1">
+    <Button variant="default" size="sm" className="w-full">
+      <span className="truncate">Profil ansehen</span>
+    </Button>
+  </Link>
+</div>
+				 
                 </div>
               </motion.div>
             )}

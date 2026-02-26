@@ -41,6 +41,51 @@ type Season = {
   is_active?: boolean | null
 }
 
+// Datum Helper (für Anzeige in Cards)
+const formatDateDE = (d?: string | null) => {
+  if (!d) return ""
+  return new Date(d).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+}
+
+const formatDateDEShort = (d?: string | null) => {
+  if (!d) return ""
+  return new Date(d).toLocaleDateString("de-DE", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+}
+
+
+// Zeit Helper (für Anzeige)
+const formatTimeDE = (t?: string | null) => {
+  if (!t) return ""
+  // Supabase TIME kommt oft als "19:30:00" -> wir wollen "19:30"
+  return t.length >= 5 ? t.slice(0, 5) : t
+}
+
+
+const toMatchDateTime = (date?: string | null, time?: string | null) => {
+  if (!date) return new Date(0)
+  // Wenn keine Zeit da ist: 00:00
+  const safeTime = time ? time.slice(0, 8) : "00:00:00"
+  // ISO string bauen
+  return new Date(`${date}T${safeTime}`)
+}
+
+const isSameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+
+const isTodayMatch = (match: any) => {
+  const dt = toMatchDateTime(match.match_date, match.match_time)
+  return isSameDay(dt, new Date())
+}
+
 export default function DartLeaguePage() {
   const [matches, setMatches] = useState([])
   const [teams, setTeams] = useState([])
@@ -105,15 +150,32 @@ if (!selectedSeasonId && resolvedSeasonId) {
           setOpponentTeams(opponentTeamsData || [])
         }
 
-        let matchQuery = supabase
-          .from("matches")
-          .select(`
-            *,
-            home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
-            away_team:teams!matches_away_team_id_fkey(id, name, logo_url),
-            season:seasons(id, name, type, year)
-          `)
-          .order("match_date", { ascending: true })
+   let matchQuery = supabase
+  .from("matches")
+  .select(`
+    id,
+    match_date,
+    match_time,
+    original_date,
+    status,
+    home_score,
+    away_score,
+    dart_type,
+    home_team_id,
+    away_team_id,
+    home_opponent_team_id,
+    away_opponent_team_id,
+    home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
+    away_team:teams!matches_away_team_id_fkey(id, name, logo_url),
+    season:seasons(id, name, type, year)
+  `)
+  .order("match_date", { ascending: true })
+   
+   
+   
+   
+   
+   
 
         if (dartTypeFilter !== "gesamt") {
           matchQuery = matchQuery.eq("dart_type", dartTypeFilter)
@@ -424,6 +486,7 @@ if (!selectedSeasonId && resolvedSeasonId) {
   const completedMatches = matches.filter((match) => match.status === "completed")
   const upcomingMatches = matches.filter((match) => match.status === "scheduled")
   const postponedMatches = matches.filter((match) => match.status === "postponed")
+  const todayMatches = upcomingMatches.filter(isTodayMatch)
   const standings = calculateStandings()
   const playerLegStats = playerStatistics
   const totalPages = Math.ceil(playerLegStats.length / playersPerPage)
@@ -502,10 +565,22 @@ if (!selectedSeasonId && resolvedSeasonId) {
               <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
                 <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
               </div>
-              <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
-                <span className="block text-white">EMOJ!'S DARTVEREIN</span>
-                <span className="block text-orange-200">{selectedSeasonLabel}</span>
-              </h1>
+              <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-tight tracking-tighter mb-2 sm:mb-4">
+  <span className="block text-white">EMOJ!'S DARTVEREIN</span>
+
+  <span
+    className={[
+      "block text-orange-200",
+      "max-w-full mx-auto",
+      "whitespace-normal break-words",
+      "leading-tight",
+     
+      selectedSeasonLabel.length > 22 ? "text-lg sm:text-3xl md:text-5xl" : "",
+    ].join(" ")}
+  >
+    {selectedSeasonLabel}
+  </span>
+</h1>
               <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-2 sm:mb-4">
                 Aktuelle Tabellen, Spielergebnisse und Statistiken
               </p>
@@ -575,7 +650,7 @@ if (!selectedSeasonId && resolvedSeasonId) {
                     className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0"
                   >
                     <Target className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                    <span className="truncate">Ergebnisse</span>
+                    <span className="truncate">Ergeb.</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="fixtures"
@@ -788,10 +863,10 @@ if (!selectedSeasonId && resolvedSeasonId) {
                               resultText = "Unentschieden"
                             }
 
-                            return (
+                           return (
                               <div
                                 key={match.id}
-                                className={`${matchColor} border-2 rounded-xl p-3 sm:p-6 shadow-sm hover:shadow-md transition-all`}
+                                className={`${matchColor} border rounded-2xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all`}
                               >
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                                   <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
@@ -809,29 +884,25 @@ if (!selectedSeasonId && resolvedSeasonId) {
                                           </div>
                                         )}
                                       </div>
-                                      <div className="font-bold text-lg sm:text-xl mb-1 text-gray-800">
+                                     <div className="font-semibold text-base sm:text-lg mb-1 text-gray-800 truncate">
                                         {match.home_team?.name ||
                                           match.home_opponent_team?.name ||
                                           "Team nicht gefunden"}
                                       </div>
                                       <div className="text-xs text-gray-500 uppercase tracking-wide">Heim</div>
                                     </div>
-                                    <div className="flex items-center gap-2 sm:gap-4 bg-white rounded-lg px-4 sm:px-6 py-2 sm:py-3 shadow-sm">
+                                    <div className="flex items-center gap-2 bg-white rounded-xl px-3 sm:px-4 py-2 shadow-sm border border-gray-100">
                                       {isPendingResult || isFutureDate ? (
                                         <div className="flex items-center gap-2">
-                                          <div className="text-2xl sm:text-4xl font-bold text-orange-500">?</div>
-                                          <div className="text-xl sm:text-2xl font-medium text-gray-400">:</div>
-                                          <div className="text-2xl sm:text-4xl font-bold text-orange-500">?</div>
+                                          <div className="text-2xl sm:text-3xl font-extrabold text-orange-500">?</div>
+<div className="text-lg sm:text-xl font-semibold text-gray-400">:</div>
+<div className="text-2xl sm:text-3xl font-extrabold text-orange-500">?</div>
                                         </div>
                                       ) : (
                                         <>
-                                          <div className="text-2xl sm:text-4xl font-bold text-gray-800">
-                                            {homeScore}
-                                          </div>
-                                          <div className="text-xl sm:text-2xl font-medium text-gray-400">:</div>
-                                          <div className="text-2xl sm:text-4xl font-bold text-gray-800">
-                                            {awayScore}
-                                          </div>
+                                          <div className="text-2xl sm:text-3xl font-extrabold text-gray-800">{homeScore}</div>
+<div className="text-lg sm:text-xl font-semibold text-gray-400">:</div>
+<div className="text-2xl sm:text-3xl font-extrabold text-gray-800">{awayScore}</div>
                                         </>
                                       )}
                                     </div>
@@ -858,14 +929,21 @@ if (!selectedSeasonId && resolvedSeasonId) {
                                     </div>
                                   </div>
                                   <div className="text-center sm:text-right flex flex-col items-center sm:items-end gap-2">
-                                    <div className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
-                                      {new Date(match.match_date).toLocaleDateString("de-DE", {
-                                        weekday: "short",
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                        year: "numeric",
-                                      })}
+                                    <div className="text-sm sm:text-base font-semibold text-gray-700 mb-1">
+                                      {formatDateDEShort(match.match_date)}
                                     </div>
+									
+									{match.match_time && (
+  <div className="text-xs sm:text-sm text-gray-600">
+    {formatTimeDE(match.match_time)} Uhr
+  </div>
+)}
+									
+									{match.original_date && (
+  <div className="text-xs text-gray-500">
+    Ursprünglich: {formatDateDE(match.original_date)} → Neu: {formatDateDE(match.match_date)}
+  </div>
+)}
                                     <div className="flex items-center gap-2">
                                       <Badge
                                         className={`
@@ -918,218 +996,217 @@ if (!selectedSeasonId && resolvedSeasonId) {
               </TabsContent>
 
               <TabsContent value="fixtures">
-                <div className="space-y-4">
-                  {postponedMatches.length > 0 && (
-                    <Card className="border-red-300 bg-red-50 shadow-lg">
-                      <CardHeader className="bg-gradient-to-r from-red-500 to-red-600 text-white p-3 sm:p-6">
-                        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                          <Calendar className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
-                          Verschobene Spiele ({postponedMatches.length})
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-3 sm:p-6">
-                        <div className="space-y-3 sm:space-y-4">
-                          {postponedMatches
-                            .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
-                            .map((match) => (
-                              <div
-                                key={match.id}
-                                className="border-2 border-red-300 rounded-xl p-3 sm:p-6 bg-white shadow-sm hover:shadow-md transition-all"
-                              >
-                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                  <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
-                                    <div className="text-center min-w-[120px] sm:min-w-[140px]">
-                                      <div className="flex items-center justify-center gap-2 mb-2">
-                                        {match.home_team?.logo_url ? (
-                                          <img
-                                            src={match.home_team.logo_url || "/placeholder.svg"}
-                                            alt={`${match.home_team.name} Logo`}
-                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
-                                          />
-                                        ) : (
-                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <Trophy className="h-4 w-4 text-gray-500" />
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="font-semibold text-base sm:text-lg text-gray-900">
-                                        {match.home_team?.name ||
-                                          match.home_opponent_team?.name ||
-                                          "Team nicht gefunden"}
-                                      </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Heim</div>
-                                    </div>
-                                    <div className="text-xl sm:text-2xl font-bold text-red-500">vs</div>
-                                    <div className="text-center min-w-[120px] sm:min-w-[140px]">
-                                      <div className="flex items-center justify-center gap-2 mb-2">
-                                        {match.away_team?.logo_url ? (
-                                          <img
-                                            src={match.away_team.logo_url || "/placeholder.svg"}
-                                            alt={`${match.away_team.name} Logo`}
-                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
-                                          />
-                                        ) : (
-                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <Trophy className="h-4 w-4 text-gray-500" />
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="font-semibold text-base sm:text-lg text-gray-900">
-                                        {match.away_team?.name ||
-                                          match.away_opponent_team?.name ||
-                                          "Team nicht gefunden"}
-                                      </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
-                                    </div>
-                                  </div>
-                                  <div className="text-center sm:text-right">
-                                    <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
-                                      {new Date(match.match_date).toLocaleDateString("de-DE", {
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                        year: "numeric",
-                                      })}
-                                    </div>
-                                    <div className="text-sm text-gray-600 mb-2">
-                                      {new Date(match.match_date).toLocaleDateString("de-DE", {
-                                        weekday: "long",
-                                      })}
-                                    </div>
-                                    <Badge className="bg-red-500 text-white border-red-600 font-medium text-xs sm:text-sm animate-pulse">
-                                      Verschoben
-                                    </Badge>
-                                  </div>
-                                </div>
-                                <div className="mt-3 pt-3 border-t border-red-200">
-                                  <div className="flex items-center gap-2 text-sm text-red-700">
-                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                                    <span className="font-medium">Dieses Spiel wurde verschoben!</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
+  <div className="space-y-4">
 
-                  <Card>
-                    <CardHeader className="p-3 sm:p-6">
-                      <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                        <Calendar className="h-5 w-5 text-blue-600" />
-                        Kommende Spiele ({upcomingMatches.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-3 sm:p-6">
-                      {upcomingMatches.length === 0 ? (
-                        <p className="text-center text-gray-500 py-8">Keine kommenden Spiele geplant</p>
-                      ) : (
-                        <div className="space-y-3 sm:space-y-4">
-                          {upcomingMatches
-                            .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
-                            .map((match) => {
-                              const matchDate = new Date(match.match_date)
-                              const today = new Date()
-                              const isPastDue = matchDate < today
-                              const hasNoResult =
-                                match.home_score === null ||
-                                match.away_score === null ||
-                                (match.home_score === 0 && match.away_score === 0)
-                              const isOverdue = isPastDue && hasNoResult
+    {/* ===================== HEUTE ===================== */}
+    {todayMatches.length > 0 && (
+      <Card className="border-blue-400 bg-blue-50 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
+            Heute ({todayMatches.length})
+          </CardTitle>
+        </CardHeader>
 
-                              return (
-                                <div
-                                  key={match.id}
-                                  className={`border rounded-lg p-3 sm:p-6 hover:shadow-md transition-shadow ${
-                                    isOverdue ? "border-orange-300 bg-orange-50" : "border-gray-200 bg-white"
-                                  }`}
-                                >
-                                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
-                                      <div className="text-center min-w-[120px] sm:min-w-[140px]">
-                                        <div className="flex items-center justify-center gap-2 mb-2">
-                                          {match.home_team?.logo_url ? (
-                                            <img
-                                              src={match.home_team.logo_url || "/placeholder.svg"}
-                                              alt={`${match.home_team.name} Logo`}
-                                              className="w-8 h-8 rounded-full object-cover border border-gray-300"
-                                            />
-                                          ) : (
-                                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                              <Trophy className="h-4 w-4 text-gray-500" />
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div className="font-semibold text-base sm:text-lg text-gray-900">
-                                          {match.home_team?.name ||
-                                            match.home_opponent_team?.name ||
-                                            "Team nicht gefunden"}
-                                        </div>
-                                        <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Heim</div>
-                                      </div>
-                                      <div className="text-xl sm:text-2xl font-bold text-gray-400">vs</div>
-                                      <div className="text-center min-w-[120px] sm:min-w-[140px]">
-                                        <div className="flex items-center justify-center gap-2 mb-2">
-                                          {match.away_team?.logo_url ? (
-                                            <img
-                                              src={match.away_team.logo_url || "/placeholder.svg"}
-                                              alt={`${match.away_team.name} Logo`}
-                                              className="w-8 h-8 rounded-full object-cover border border-gray-300"
-                                            />
-                                          ) : (
-                                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                              <Trophy className="h-4 w-4 text-gray-500" />
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div className="font-semibold text-base sm:text-lg text-gray-900">
-                                          {match.away_team?.name ||
-                                            match.away_opponent_team?.name ||
-                                            "Team nicht gefunden"}
-                                        </div>
-                                        <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
-                                      </div>
-                                    </div>
-                                    <div className="text-center sm:text-right">
-                                      <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
-                                        {new Date(match.match_date).toLocaleDateString("de-DE", {
-                                          day: "2-digit",
-                                          month: "2-digit",
-                                          year: "numeric",
-                                        })}
-                                      </div>
-                                      <div className="text-sm text-gray-600 mb-2">
-                                        {new Date(match.match_date).toLocaleDateString("de-DE", {
-                                          weekday: "long",
-                                        })}
-                                      </div>
-                                      {isOverdue && (
-                                        <Badge className="bg-orange-100 text-orange-700 border-orange-300 font-medium text-xs sm:text-sm">
-                                          Ergebnis überfällig
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                  {isOverdue && (
-                                    <div className="mt-3 pt-3 border-t border-orange-200">
-                                      <div className="flex items-center gap-2 text-sm text-orange-700">
-                                        <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
-                                        <span className="font-medium">
-                                          Dieses Spiel sollte bereits gespielt worden sein, aber das Ergebnis wurde noch
-                                          nicht eingetragen.
-                                        </span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )
-                            })}
-                        </div>
+        <CardContent className="p-3 sm:p-6">
+          <div className="space-y-3">
+            {todayMatches
+              .sort(
+                (a, b) =>
+                  toMatchDateTime(a.match_date, a.match_time).getTime() -
+                  toMatchDateTime(b.match_date, b.match_time).getTime()
+              )
+              .map((match) => (
+                <div
+                  key={match.id}
+                  className="border border-blue-300 rounded-2xl p-4 bg-white shadow-sm"
+                >
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+
+                    <div className="font-semibold text-gray-900 text-center sm:text-left">
+                      {match.home_team?.name ||
+                        match.home_opponent_team?.name ||
+                        "Team nicht gefunden"}{" "}
+                      <span className="text-gray-400 font-extrabold">vs</span>{" "}
+                      {match.away_team?.name ||
+                        match.away_opponent_team?.name ||
+                        "Team nicht gefunden"}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {match.match_time && (
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-300 font-semibold">
+                          {formatTimeDE(match.match_time)} Uhr
+                        </Badge>
                       )}
-                    </CardContent>
-                  </Card>
+                      <Badge className="bg-blue-600 text-white border-blue-700 font-semibold">
+                        HEUTE
+                      </Badge>
+                    </div>
+
+                  </div>
                 </div>
-              </TabsContent>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
+    )}
+
+    {/* ===================== VERSCHOBENE SPIELE ===================== */}
+    {postponedMatches.length > 0 && (
+      <Card className="border-red-300 bg-red-50 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-red-500 to-red-600 text-white p-3 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
+            Verschobene Spiele ({postponedMatches.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 sm:p-6">
+          <div className="space-y-3 sm:space-y-4">
+            {postponedMatches
+              .sort(
+                (a, b) =>
+                  toMatchDateTime(a.match_date, a.match_time).getTime() -
+                  toMatchDateTime(b.match_date, b.match_time).getTime()
+              )
+              .map((match) => (
+                <div
+                  key={match.id}
+                  className="border border-red-200 rounded-2xl p-3 sm:p-4 bg-white shadow-sm"
+                >
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+
+                    <div className="font-semibold text-gray-900 text-center sm:text-left">
+                      {match.home_team?.name ||
+                        match.home_opponent_team?.name ||
+                        "Team nicht gefunden"}{" "}
+                      <span className="text-gray-400 font-extrabold">vs</span>{" "}
+                      {match.away_team?.name ||
+                        match.away_opponent_team?.name ||
+                        "Team nicht gefunden"}
+                    </div>
+
+                    <div className="text-center sm:text-right">
+  <div className="text-sm font-semibold text-gray-900">
+    {formatDateDE(match.match_date)}
+  </div>
+
+  {match.original_date && (
+    <div className="text-xs text-red-700/80 mt-1">
+      Ursprünglich: {formatDateDE(match.original_date)}
+    </div>
+  )}
+
+  {match.match_time && (
+    <div className="text-sm font-semibold text-blue-700">
+      {formatTimeDE(match.match_time)} Uhr
+    </div>
+  )}
+
+  <Badge className="bg-red-500 text-white border-red-600 font-semibold text-xs px-2 py-1 mt-2">
+    Verschoben
+  </Badge>
+</div>
+
+                  </div>
+                </div>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
+    )}
+
+    {/* ===================== KOMMENDE SPIELE ===================== */}
+    <Card>
+      <CardHeader className="p-3 sm:p-6">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <Calendar className="h-5 w-5 text-blue-600" />
+          Kommende Spiele ({upcomingMatches.length})
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="p-3 sm:p-6">
+        {upcomingMatches.length === 0 ? (
+          <p className="text-center text-gray-500 py-8">
+            Keine kommenden Spiele geplant
+          </p>
+        ) : (
+          <div className="space-y-3 sm:space-y-4">
+            {upcomingMatches
+              .sort(
+                (a, b) =>
+                  toMatchDateTime(a.match_date, a.match_time).getTime() -
+                  toMatchDateTime(b.match_date, b.match_time).getTime()
+              )
+              .map((match) => {
+                const isToday = isTodayMatch(match)
+
+                return (
+                  <div
+                    key={match.id}
+                    className={`border rounded-2xl p-3 sm:p-4 transition-shadow ${
+                      isToday
+                        ? "border-blue-400 bg-blue-50"
+                        : "border-gray-200 bg-white"
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+
+                      <div className="font-semibold text-gray-900 text-center sm:text-left">
+                        {match.home_team?.name ||
+                          match.home_opponent_team?.name ||
+                          "Team nicht gefunden"}{" "}
+                        <span className="text-gray-400 font-extrabold">vs</span>{" "}
+                        {match.away_team?.name ||
+                          match.away_opponent_team?.name ||
+                          "Team nicht gefunden"}
+                      </div>
+
+                      <div className="text-center sm:text-right">
+
+                        <div className="text-sm font-semibold text-gray-900">
+                          {formatDateDE(match.match_date)}
+                        </div>
+
+                        {match.match_time && (
+                          <div className="text-sm font-semibold text-blue-700">
+                            {formatTimeDE(match.match_time)} Uhr
+                          </div>
+                        )}
+
+                        {isToday && (
+                          <Badge className="bg-blue-600 text-white border-blue-700 font-semibold text-xs mt-2">
+                            HEUTE
+                          </Badge>
+                        )}
+
+                      </div>
+
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+  </div>
+</TabsContent>
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  
 
               <TabsContent value="teams">
                 <div className="space-y-4 sm:space-y-6">

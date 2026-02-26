@@ -420,48 +420,71 @@ export default function PlayerProfilePage() {
       <Header showBackButton title="Spieler Profil" />
 
       <div className="container mx-auto px-4 py-8 pb-24">
-        <Button variant="outline" onClick={() => router.push("/liga-statistiken-app")} className="mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Zurück zur Liga Statistik
-        </Button>
+  {/* Sticky Zurück Button (Mobile wie native App) */}
+  <div className="sticky top-[64px] z-40 -mx-4 px-4 py-2 bg-gray-50/90 backdrop-blur border-b border-gray-200 sm:static sm:top-auto sm:z-auto sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:border-0 mb-4 sm:mb-6">
+    <Button
+      variant="outline"
+      onClick={() => router.push("/liga-statistiken-app")}
+      className="w-full sm:w-auto justify-center"
+    >
+      <ArrowLeft className="h-4 w-4 mr-2 shrink-0" />
+      <span className="truncate">Zurück zur Liga Statistik</span>
+    </Button>
+  </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
-                {player.photo_url ? (
-                  <img
-                    src={player.photo_url || "/placeholder.svg"}
-                    alt={player.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none"
-                      e.currentTarget.nextElementSibling.style.display = "flex"
-                    }}
-                  />
-                ) : null}
-                <div
-                  className={`w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center ${player.photo_url ? "hidden" : "flex"}`}
-                >
-                  <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
-                </div>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{player.name}</h1>
-                <div className="flex gap-4">
-                  <Badge className="bg-green-100 text-green-800 text-lg px-3 py-1">{player.total_wins} Siege</Badge>
-                  <Badge variant="outline" className="text-lg px-3 py-1">
-                    {player.win_percentage.toFixed(1)}% Siegquote
-                  </Badge>
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-gray-900">{player.total_legs}</div>
-              <div className="text-sm text-gray-600">Legs gespielt</div>
-            </div>
-          </div>
+  {/* Profil Header */}
+  <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 mb-8">
+    <div className="flex items-center gap-4">
+      <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+        {player.photo_url ? (
+          <img
+            src={player.photo_url || "/placeholder.svg"}
+            alt={player.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none"
+              ;(e.currentTarget.nextElementSibling as any).style.display = "flex"
+            }}
+          />
+        ) : null}
+
+        <div
+          className={`w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center ${
+            player.photo_url ? "hidden" : "flex"
+          }`}
+        >
+          <User className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
         </div>
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 leading-tight line-clamp-2">
+          {player.name}
+        </h1>
+        <div className="text-xs sm:text-sm text-gray-500 mt-1">Spielerprofil</div>
+      </div>
+    </div>
+
+    {/* 3 Stats sauber im Grid */}
+    <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4">
+      <div className="rounded-xl border bg-green-50 border-green-100 p-2 sm:p-3 text-center">
+        <div className="text-lg sm:text-2xl font-extrabold text-green-700">{player.total_wins}</div>
+        <div className="text-[11px] sm:text-xs text-green-800/70">Siege</div>
+      </div>
+
+      <div className="rounded-xl border bg-white border-gray-200 p-2 sm:p-3 text-center">
+        <div className="text-lg sm:text-2xl font-extrabold text-gray-900">
+          {player.win_percentage.toFixed(1)}%
+        </div>
+        <div className="text-[11px] sm:text-xs text-gray-600">Siegquote</div>
+      </div>
+
+      <div className="rounded-xl border bg-gray-50 border-gray-200 p-2 sm:p-3 text-center">
+        <div className="text-lg sm:text-2xl font-extrabold text-gray-900">{player.total_legs}</div>
+        <div className="text-[11px] sm:text-xs text-gray-600">Legs</div>
+      </div>
+    </div>
+  </div>
 
         <Card className="mb-8">
           <CardHeader>
@@ -517,21 +540,23 @@ export default function PlayerProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                <div className="flex justify-between items-center p-2.5 sm:p-3 bg-red-50 rounded-lg">
                   <span className="font-medium">180er</span>
-                  <Badge className="bg-red-100 text-red-800 text-lg">{player.throws_180}</Badge>
+                  <Badge className="bg-red-100 text-red-800 text-sm sm:text-base px-2.5 py-1">
+  {player.throws_180}
+</Badge>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
                   <span className="font-medium">171er</span>
-                  <Badge className="bg-purple-100 text-purple-800 text-lg">{player.throws_171}</Badge>
+                  <Badge className="bg-purple-100 text-purple-800 text-sm sm:text-base px-2.5 py-1">{player.throws_171}</Badge>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
                   <span className="font-medium">High Tonne</span>
-                  <Badge className="bg-orange-100 text-orange-800 text-lg">{player.throws_high_tonne}</Badge>
+                  <Badge className="bg-orange-100 text-orange-800 text-sm sm:text-base px-2.5 py-1">{player.throws_high_tonne}</Badge>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                   <span className="font-medium">Tonne</span>
-                  <Badge className="bg-green-100 text-green-800 text-lg">{player.throws_tonne}</Badge>
+                  <Badge className="bg-green-100 text-green-800 text-sm sm:text-base px-2.5 py-1">{player.throws_tonne}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -545,15 +570,15 @@ export default function PlayerProfilePage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-teal-50 rounded-lg">
                   <span className="font-medium">95+ Punkte</span>
-                  <Badge className="bg-teal-100 text-teal-800 text-lg">{player.throws_95_plus}</Badge>
+                  <Badge className="bg-teal-100 text-teal-800 text-sm sm:text-base px-2.5 py-1">{player.throws_95_plus}</Badge>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg">
                   <span className="font-medium">Shanghai</span>
-                  <Badge className="bg-indigo-100 text-indigo-800 text-lg">{player.throws_shanghai}</Badge>
+                  <Badge className="bg-indigo-100 text-indigo-800 text-sm sm:text-base px-2.5 py-1">{player.throws_shanghai}</Badge>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-pink-50 rounded-lg">
                   <span className="font-medium">Bull</span>
-                  <Badge className="bg-pink-100 text-pink-800 text-lg">{player.throws_bull}</Badge>
+                  <Badge className="bg-pink-100 text-pink-800 text-sm sm:text-base px-2.5 py-1">{player.throws_bull}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -566,27 +591,27 @@ export default function PlayerProfilePage() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">{player.throws_20}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_20}</div>
                   <div className="text-sm text-gray-600">20er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">{player.throws_19}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_19}</div>
                   <div className="text-sm text-gray-600">19er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">{player.throws_18}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_18}</div>
                   <div className="text-sm text-gray-600">18er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">{player.throws_17}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_17}</div>
                   <div className="text-sm text-gray-600">17er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">{player.throws_16}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_16}</div>
                   <div className="text-sm text-gray-600">16er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">{player.throws_15}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_15}</div>
                   <div className="text-sm text-gray-600">15er</div>
                 </div>
               </div>
