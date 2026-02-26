@@ -420,7 +420,7 @@ export default function PlayerProfilePage() {
       <Header showBackButton title="Spieler Profil" />
 
       <div className="container mx-auto px-4 py-8 pb-24">
-  {/* Sticky Zurück Button (Mobile wie native App) */}
+  {}
   <div className="sticky top-[64px] z-40 -mx-4 px-4 py-2 bg-gray-50/90 backdrop-blur border-b border-gray-200 sm:static sm:top-auto sm:z-auto sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:border-0 mb-4 sm:mb-6">
     <Button
       variant="outline"

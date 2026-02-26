@@ -41,7 +41,7 @@ type Season = {
   is_active?: boolean | null
 }
 
-// Datum Helper (für Anzeige in Cards)
+
 const formatDateDE = (d?: string | null) => {
   if (!d) return ""
   return new Date(d).toLocaleDateString("de-DE", {
@@ -62,19 +62,19 @@ const formatDateDEShort = (d?: string | null) => {
 }
 
 
-// Zeit Helper (für Anzeige)
+
 const formatTimeDE = (t?: string | null) => {
   if (!t) return ""
-  // Supabase TIME kommt oft als "19:30:00" -> wir wollen "19:30"
+ 
   return t.length >= 5 ? t.slice(0, 5) : t
 }
 
 
 const toMatchDateTime = (date?: string | null, time?: string | null) => {
   if (!date) return new Date(0)
-  // Wenn keine Zeit da ist: 00:00
+  
   const safeTime = time ? time.slice(0, 8) : "00:00:00"
-  // ISO string bauen
+ 
   return new Date(`${date}T${safeTime}`)
 }
 

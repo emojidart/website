@@ -122,6 +122,34 @@ async function tokensForUsers(supabase: any, userIds: string[], platform?: strin
   return map
 }
 
+/**
+ * ✅ NEW (minimal extension):
+ * Check push preference per user.
+ * - If no row exists: default ENABLED
+ * - If tournament_push_enabled === false: disabled
+ */
+async function tournamentPushEnabledForUsers(supabase: any, userIds: string[]) {
+  const enabled = new Set<string>()
+  if (userIds.length === 0) return enabled
+
+  // default allow
+  for (const uid of userIds) enabled.add(uid)
+
+  const { data, error } = await supabase
+    .from("push_preferences")
+    .select("user_id, tournament_push_enabled")
+    .in("user_id", userIds)
+
+  if (error) throw error
+
+  for (const row of data ?? []) {
+    const uid = String(row.user_id)
+    if (row?.tournament_push_enabled === false) enabled.delete(uid)
+  }
+
+  return enabled
+}
+
 async function sendDataOnlyPush(params: {
   tokens: string[]
   title: string
@@ -286,12 +314,41 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, debug })
     }
 
+    // ✅ NEW: preference filter (default enabled if no row)
+    debug.stage = "check_preferences"
+    const enabledSet = await tournamentPushEnabledForUsers(supabase, userIds)
+    const enabledUserIds = userIds.filter((u) => enabledSet.has(u))
+
+    debug.resolved = {
+      ...debug.resolved,
+      preferences: {
+        requested_user_ids: userIds,
+        enabled_user_ids: enabledUserIds,
+      },
+    }
+
+    if (enabledUserIds.length === 0) {
+      debug.stage = "skipped_all_disabled"
+      debug.skipped = "All users disabled tournament push"
+
+      const { error: markErr } = await supabase
+        .from("dko_match_states")
+        .update({ push_started_sent_at: new Date().toISOString() })
+        .eq("tournament_type", tournamentType)
+        .eq("tournament_id", tournamentId)
+        .eq("match_id", matchId)
+
+      debug.db_mark_sent = { ok: !markErr, error: markErr?.message ?? null }
+      debug.took_ms = Date.now() - started
+      return NextResponse.json({ success: true, debug })
+    }
+
     debug.stage = "load_tokens"
-    const tokenMap = await tokensForUsers(supabase, userIds, "android")
+    const tokenMap = await tokensForUsers(supabase, enabledUserIds, "android")
 
     debug.tokens = {
-      requested_user_ids: userIds,
-      counts: Object.fromEntries(userIds.map((u) => [u, (tokenMap.get(u) ?? []).length])),
+      requested_user_ids: enabledUserIds,
+      counts: Object.fromEntries(enabledUserIds.map((u) => [u, (tokenMap.get(u) ?? []).length])),
     }
 
     const machineNo = String(newMachine)
@@ -308,7 +365,7 @@ export async function POST(req: Request) {
     const pushed: any[] = []
 
     // Player 1
-    if (p1AuthUid) {
+    if (p1AuthUid && enabledSet.has(p1AuthUid)) {
       const tokens = tokenMap.get(p1AuthUid) ?? []
 
       const r = await sendDataOnlyPush({
@@ -355,10 +412,18 @@ export async function POST(req: Request) {
         failed: (r as any).failureCount ?? 0,
         skipped: (r as any).skipped ?? null,
       })
+    } else if (p1AuthUid && !enabledSet.has(p1AuthUid)) {
+      pushed.push({
+        user_id: p1AuthUid,
+        tokens: 0,
+        success: 0,
+        failed: 0,
+        skipped: "disabled_by_user",
+      })
     }
 
     // Player 2
-    if (p2AuthUid) {
+    if (p2AuthUid && enabledSet.has(p2AuthUid)) {
       const tokens = tokenMap.get(p2AuthUid) ?? []
 
       const r = await sendDataOnlyPush({
@@ -401,6 +466,14 @@ export async function POST(req: Request) {
         success: (r as any).successCount ?? 0,
         failed: (r as any).failureCount ?? 0,
         skipped: (r as any).skipped ?? null,
+      })
+    } else if (p2AuthUid && !enabledSet.has(p2AuthUid)) {
+      pushed.push({
+        user_id: p2AuthUid,
+        tokens: 0,
+        success: 0,
+        failed: 0,
+        skipped: "disabled_by_user",
       })
     }
 

@@ -178,6 +178,10 @@ const [loadingLineup, setLoadingLineup] = useState(false)
   }, [])
 
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
+  const [boardAttachments, setBoardAttachments] = useState<
+  { id: string; file_name: string; file_path: string; mime_type: string | null; url: string | null }[]
+>([])
+const [loadingBoardAttachments, setLoadingBoardAttachments] = useState(false)
   const [isMatchDialogOpen, setIsMatchDialogOpen] = useState(false)
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false)
   const [selectedLeague, setSelectedLeague] = useState("Alle Ligen")
@@ -205,6 +209,16 @@ const [loadingLineup, setLoadingLineup] = useState(false)
 
   const [vacations, setVacations] = useState<Vacation[]>([])
   const [isVacationDialogOpen, setIsVacationDialogOpen] = useState(false)
+  const [isBoardDialogOpen, setIsBoardDialogOpen] = useState(false)
+const [isVorstand, setIsVorstand] = useState(false)
+
+const [boardTitle, setBoardTitle] = useState("")
+const [boardDesc, setBoardDesc] = useState("")
+const [boardDate, setBoardDate] = useState("")   // YYYY-MM-DD
+const [boardTime, setBoardTime] = useState("")   // HH:MM
+const [boardFiles, setBoardFiles] = useState<FileList | null>(null)
+
+const [savingBoard, setSavingBoard] = useState(false)
   const [vacationName, setVacationName] = useState("")
   const [vacationStart, setVacationStart] = useState("")
   const [vacationEnd, setVacationEnd] = useState("")
@@ -241,6 +255,17 @@ const [loadingLineup, setLoadingLineup] = useState(false)
 
       
       const { data: authData } = await supabase.auth.getUser()
+	  if (authData?.user?.id) {
+  const { data: roleRows } = await supabase
+    .from("club_roles")
+    .select("role")
+    .eq("user_id", authData.user.id)
+
+  const ok = (roleRows || []).some((r: any) => r.role === "Vorstand")
+  setIsVorstand(ok)
+} else {
+  setIsVorstand(false)
+}
       const uid = authData?.user?.id
       if (uid) {
         const { data: clubTeamsData, error: clubTeamsError } = await supabase
@@ -355,6 +380,28 @@ try {
       const enrichedMatches = matchesResponse.data || []
 
       setMatches(enrichedMatches)
+	  const boardRes = await supabase
+  .from("board_events")
+  .select("id, title, description, starts_at")
+  .order("starts_at", { ascending: true })
+
+if (!boardRes.error) {
+  const boardRows = (boardRes.data || []) as any[]
+  const boardEvents: Event[] = boardRows.map((r) => {
+    const { event_date, start_time } = toDateAndTimeInTZ(r.starts_at)
+    return {
+      type: "board",
+      id: `board_${r.id}`,
+      name: `📌 Vorstand: ${r.title}`,
+      event_date,
+      event_type: "Vorstand",
+      start_time,
+      description: r.description || undefined,
+    } as Event
+  })
+
+  enrichedEvents = [...enrichedEvents, ...boardEvents]
+}
       setEvents(enrichedEvents as Event[])
 
       
@@ -548,7 +595,7 @@ const filteredEvents = allEvents.filter((event) => {
     if (selectedItemType === "Spiele") return false
 
     
-    if (selectedItemType === "Events") return event.type === "event"
+    if (selectedItemType === "Events") return event.type === "event" || event.type === "board"
     if (selectedItemType === "Turniere") return event.type === "dko"
 	if (selectedItemType === "Feiertage") return event.type === "holiday"
 
@@ -704,10 +751,75 @@ const loadLineup = async (matchId: string) => {
 
 
 
-  const openEventDialog = (event: Event) => {
-    setSelectedEvent(event)
-    setIsEventDialogOpen(true)
+  const openEventDialog = async (event: Event) => {
+  setSelectedEvent(event)
+  setIsEventDialogOpen(true)
+  
+  boardAttachments.forEach((a) => {
+  if (a.url?.startsWith("blob:")) URL.revokeObjectURL(a.url)
+})
+
+  
+  setBoardAttachments([])
+  setLoadingBoardAttachments(false)
+
+
+  if (event.type !== "board") return
+
+ 
+  const boardId = (event.id || "").replace("board_", "").trim()
+  if (!boardId) return
+
+  setLoadingBoardAttachments(true)
+
+  const { data: files, error } = await supabase
+    .from("board_event_files")
+    .select("id, file_name, file_path, mime_type")
+    .eq("event_id", boardId)
+    .order("created_at", { ascending: true })
+
+  if (error) {
+    console.error("load board_event_files error:", error)
+    setLoadingBoardAttachments(false)
+    return
   }
+
+  const rows = (files || []) as any[]
+
+  const withUrls = await Promise.all(
+  rows.map(async (f) => {
+    
+    const { data: blob, error: dlErr } = await supabase.storage
+      .from("vorstand-uploads")
+      .download(f.file_path)
+
+    if (dlErr || !blob) {
+      console.log("DOWNLOAD ERR:", dlErr, "PATH:", f.file_path)
+      return {
+        id: f.id,
+        file_name: f.file_name,
+        file_path: f.file_path,
+        mime_type: f.mime_type ?? null,
+        url: null,
+      }
+    }
+
+    const objectUrl = URL.createObjectURL(blob)
+    console.log("BLOB URL:", objectUrl, "FILE:", f.file_name)
+
+    return {
+      id: f.id,
+      file_name: f.file_name,
+      file_path: f.file_path,
+      mime_type: f.mime_type ?? null,
+      url: objectUrl,
+    }
+  })
+)
+
+  setBoardAttachments(withUrls)
+  setLoadingBoardAttachments(false)
+}
 
   const createVacation = async () => {
     if (!vacationName.trim() || !vacationStart || !vacationEnd) return
@@ -754,6 +866,65 @@ const loadLineup = async (matchId: string) => {
       setSavingVacation(false)
     }
   }
+  
+  const createBoardEvent = async () => {
+  if (!boardTitle.trim() || !boardDate || !boardTime) return
+  setSavingBoard(true)
+
+  try {
+    const startsAtIso = new Date(`${boardDate}T${boardTime}:00`).toISOString()
+
+    const { data: ev, error: evErr } = await supabase
+      .from("board_events")
+      .insert({
+        title: boardTitle.trim(),
+        description: boardDesc.trim() ? boardDesc.trim() : null,
+        starts_at: startsAtIso,
+      })
+      .select("id")
+      .single()
+
+    if (evErr || !ev?.id) {
+      console.error("board_events insert error:", evErr)
+      return
+    }
+
+    const eventId = ev.id as string
+
+    if (boardFiles && boardFiles.length > 0) {
+      for (const file of Array.from(boardFiles)) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")
+        const path = `event/${eventId}/${Date.now()}_${safeName}`
+
+        const { error: upErr } = await supabase.storage
+          .from("vorstand-uploads")
+          .upload(path, file, { upsert: false })
+
+        if (upErr) continue
+
+        await supabase.from("board_event_files").insert({
+          event_id: eventId,
+          file_path: path,
+          file_name: file.name,
+          mime_type: file.type || null,
+          file_size: file.size || null,
+        })
+      }
+    }
+
+    setIsBoardDialogOpen(false)
+    setBoardTitle("")
+    setBoardDesc("")
+    setBoardDate("")
+    setBoardTime("")
+    setBoardFiles(null)
+
+    await fetchData()
+  } finally {
+    setSavingBoard(false)
+  }
+}
+  
 
   const deleteVacation = async (vacationId: string) => {
     if (!vacationId) return
@@ -897,6 +1068,9 @@ const loadLineup = async (matchId: string) => {
   }
 
 const getEventTypeBadge = (eventType: string) => {
+if (eventType === "Vorstand") {
+  return <Badge className="bg-black text-white border-black text-xs">📌 Vorstand</Badge>
+}
   if (eventType === "Geburtstag") {
     return <Badge className="bg-pink-100 text-pink-800 border-pink-200 text-xs">🎂 Geburtstag</Badge>
   } else if (eventType === "Turnier") {
@@ -936,7 +1110,7 @@ const safeString = (value: any): string => {
   const formatTimeWithoutSeconds = (value: any): string => {
   if (!value) return ""
 
-  // Falls Supabase / irgendwas als Buffer-Objekt kommt:
+ 
   if (typeof value === "object") {
     // { type: "Buffer", data: [...] }
     if (value?.type === "Buffer" && Array.isArray(value?.data)) {
@@ -967,7 +1141,7 @@ const safeString = (value: any): string => {
 const normalizeTimeHHMM = (value: any): string => {
   if (!value) return ""
 
-  // Buffer-Objekt (z.B. { type: "Buffer", data: [...] })
+
   if (typeof value === "object") {
     if (value?.type === "Buffer" && Array.isArray(value?.data)) {
       try {
@@ -1343,6 +1517,28 @@ const normalizeTimeHHMM = (value: any): string => {
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Zurücksetzen
                     </Button>
+					
+					
+					
+					{isVorstand && (
+  <Button
+    variant="default"
+    size="sm"
+    onClick={() => {
+      setBoardTitle("")
+      setBoardDesc("")
+      setBoardDate("")
+      setBoardTime("")
+      setBoardFiles(null)
+      setIsBoardDialogOpen(true)
+    }}
+    className="w-full h-11 rounded-sm-2xl text-sm font-semibold shadow-sm bg-black hover:bg-black/90"
+  >
+    <Plus className="h-4 w-4 mr-2" />
+    Vorstand Termin
+  </Button>
+)}
+					
 
 
                     <Button
@@ -1745,8 +1941,7 @@ else bg = "bg-green-500"
                     const isUpcomingA = dateA >= todayStr
                     const isUpcomingB = dateB >= todayStr
 
-                    // ✅ Kommende Termine zuerst (nächster Termin ganz oben),
-                    // danach vergangene Termine (neueste Ergebnisse zuerst).
+                 
                     if (isUpcomingA && !isUpcomingB) return -1
                     if (!isUpcomingA && isUpcomingB) return 1
 
@@ -2155,6 +2350,66 @@ else bg = "bg-green-500"
                       )}
                     </div>
                   </div>
+				  
+				  
+				  
+				  
+				  
+				  
+				  
+				  {selectedEvent?.type === "board" && (
+  <div className="space-y-2 bg-white p-3 rounded-sm-lg border">
+    <div className="font-semibold text-sm">Anhänge</div>
+
+    {loadingBoardAttachments ? (
+      <div className="text-sm text-gray-600">Lade Dateien...</div>
+    ) : boardAttachments.length === 0 ? (
+      <div className="text-sm text-gray-600">Keine Dateien hochgeladen.</div>
+    ) : (
+      <div className="space-y-3">
+        {boardAttachments.map((a) => {
+          const url = a.url || ""
+          const isImage =
+            (a.mime_type || "").startsWith("image/") ||
+            a.file_name.toLowerCase().match(/\.(png|jpg|jpeg|webp|gif)$/)
+
+          return (
+            <div key={a.id} className="border rounded-sm-lg p-2">
+              <div className="text-sm font-medium break-words">{a.file_name}</div>
+
+              {a.url ? (
+                isImage ? (
+                  <img
+                    src={url}
+                    alt={a.file_name}
+                    className="mt-2 w-full h-44 object-cover rounded-sm-xl border"
+                  />
+                ) : (
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-block text-sm underline"
+                  >
+                    Dokument öffnen
+                  </a>
+                )
+              ) : (
+                <div className="text-sm text-red-600 mt-2">Link konnte nicht erstellt werden.</div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    )}
+  </div>
+)}
+				  
+				  
+				  
+				  
+				  
+				  
 
                   {selectedEvent?.event_type === "Urlaub" &&
   selectedEvent.vacation_id &&
@@ -2369,6 +2624,56 @@ else bg = "bg-green-500"
               </div>
             </DialogContent>
           </Dialog>
+		  
+		  
+		  
+		  <Dialog open={isBoardDialogOpen} onOpenChange={setIsBoardDialogOpen}>
+  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle className="text-lg">Vorstand Termin eintragen</DialogTitle>
+      <DialogDescription className="text-sm">Nur für Vorstand sichtbar</DialogDescription>
+    </DialogHeader>
+
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Titel</Label>
+        <Input value={boardTitle} onChange={(e) => setBoardTitle(e.target.value)} />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Beschreibung (optional)</Label>
+        <Textarea value={boardDesc} onChange={(e) => setBoardDesc(e.target.value)} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label>Datum</Label>
+          <Input type="date" value={boardDate} onChange={(e) => setBoardDate(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>Uhrzeit</Label>
+          <Input type="time" value={boardTime} onChange={(e) => setBoardTime(e.target.value)} />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Dateien / Bilder</Label>
+        <Input type="file" multiple onChange={(e) => setBoardFiles(e.target.files)} />
+      </div>
+
+      <Button
+        onClick={createBoardEvent}
+        disabled={savingBoard || !boardTitle.trim() || !boardDate || !boardTime}
+        className="w-full bg-black hover:bg-black/90"
+      >
+        {savingBoard ? "Speichern..." : "Termin speichern"}
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
+		  
+		  
+		  
 
           {isMobileBottomSheetOpen && mobileSelectedDate && (
             <div className="fixed inset-0 z-[999]">
