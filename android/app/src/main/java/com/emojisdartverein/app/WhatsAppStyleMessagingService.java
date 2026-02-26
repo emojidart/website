@@ -197,6 +197,11 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         String tag       = get(data, "tag");
         String notifIdStr= get(data, "notif_id");
         String clickUrl  = get(data, "clickUrl");
+		
+		// ✅ Turnierstart (match_start) soll immer auf Live-Seite führen
+if ("match_start".equals(cardKind)) {
+    clickUrl = "/live-all-app";
+}
 
         int orange = ContextCompat.getColor(this, R.color.emd_orange);
         int notifId = safeInt(notifIdStr, stableIdFrom(tag));
