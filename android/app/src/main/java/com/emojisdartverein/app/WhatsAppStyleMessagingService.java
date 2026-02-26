@@ -274,11 +274,11 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
             small.setViewVisibility(R.id.matchHeaderRow, android.view.View.VISIBLE);
             big.setViewVisibility(R.id.matchHeaderRow, android.view.View.VISIBLE);
 
-            small.setTextViewText(R.id.matchTitle, "🎯 Match startet");
-            small.setTextViewText(R.id.matchMachine, "🕹 Automat " + machine);
+            small.setTextViewText(R.id.matchTitle, "ℹ️ Match startet");
+            small.setTextViewText(R.id.matchMachine, "🎯 Automat " + machine);
 
-            big.setTextViewText(R.id.matchTitle, "🎯 Match startet");
-            big.setTextViewText(R.id.matchMachine, "🕹 Automat " + machine);
+            big.setTextViewText(R.id.matchTitle, "ℹ️ Match startet");
+            big.setTextViewText(R.id.matchMachine, "🎯 Automat " + machine);
 
             // Nur Namen anzeigen
             small.setViewVisibility(R.id.matchRow, android.view.View.VISIBLE);
