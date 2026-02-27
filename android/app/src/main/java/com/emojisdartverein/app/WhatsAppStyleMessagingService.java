@@ -200,7 +200,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
 		
 		// ✅ Turnierstart (match_start) soll immer auf Live-Seite führen
 if ("match_start".equals(cardKind)) {
-    clickUrl = "/live-all-app";
+    clickUrl = "/push_preferences";
 }
 
         int orange = ContextCompat.getColor(this, R.color.emd_orange);

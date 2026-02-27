@@ -14,9 +14,10 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-
-import { Bell, BellOff, Loader2, ArrowLeft, Trophy, Clock, Cpu } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+
+import { Bell, Loader2, ArrowLeft, Trophy, Clock, Cpu, BellOff } from "lucide-react"
 
 interface UserProfile {
   id: string
@@ -33,7 +34,7 @@ type PushPrefRow = {
 
 type DkoMatchStateRow = {
   id: number
-  tournament_type: string | null
+  tournament_type: string | null // (wird NICHT angezeigt)
   tournament_id: string | null
   match_id: number
   player1: string | null
@@ -54,6 +55,15 @@ function formatDateTime(input?: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   })
+}
+
+function formatDateTimeCompact(input?: string | null) {
+  if (!input) return "—"
+  const d = new Date(input)
+  if (!Number.isFinite(d.getTime())) return "—"
+  const date = d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
+  const time = d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+  return `${date} • ${time}`
 }
 
 function TournamentPushInner() {
@@ -87,14 +97,13 @@ function TournamentPushInner() {
   useEffect(() => {
     if (!profile?.club_players?.name) return
     ;(async () => {
-      await fetchLastTournamentPushes(profile.club_players!.name)
+      await fetchLastTournamentStarts(profile.club_players!.name)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.club_players?.name])
 
   async function fetchProfileAndPrefs() {
     try {
-      // ✅ Profile OHNE push_enabled (weil Spalte existiert nicht)
       const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
         .select(`id, user_id, player_id, club_players (id, name, photo_url)`)
@@ -109,7 +118,6 @@ function TournamentPushInner() {
 
       setProfile(profileData as any)
 
-      // ✅ Push Prefs aus push_preferences
       const { data: pref, error: prefError } = await supabase
         .from("push_preferences")
         .select("user_id, tournament_push_enabled, updated_at")
@@ -118,14 +126,12 @@ function TournamentPushInner() {
 
       if (prefError) {
         console.error("fetch push_preferences error", prefError)
-        // fallback: enabled
         setPushEnabled(true)
         setPushPrefUpdatedAt(null)
         return
       }
 
       if (!pref) {
-        // Wenn noch kein Row existiert -> default true
         setPushEnabled(true)
         setPushPrefUpdatedAt(null)
       } else {
@@ -138,16 +144,12 @@ function TournamentPushInner() {
     }
   }
 
-  async function fetchLastTournamentPushes(playerName: string) {
+  async function fetchLastTournamentStarts(playerName: string) {
     setLoadingPushRows(true)
     try {
-      // Wir nehmen den Namen (player1/player2 sind Text in dko_match_states)
-      // und holen nur Matches, wo ein Start-Push rausging.
       const { data, error } = await supabase
         .from("dko_match_states")
-        .select(
-          "id, tournament_type, tournament_id, match_id, player1, player2, machine_number, push_started_sent_at, updated_at"
-        )
+        .select("id, tournament_id, match_id, player1, player2, machine_number, push_started_sent_at, updated_at, tournament_type")
         .not("push_started_sent_at", "is", null)
         .or(`player1.eq.${playerName},player2.eq.${playerName}`)
         .order("push_started_sent_at", { ascending: false })
@@ -156,7 +158,7 @@ function TournamentPushInner() {
       if (error) throw error
       setPushRows(((data as any) || []) as DkoMatchStateRow[])
     } catch (e) {
-      console.error("fetchLastTournamentPushes error", e)
+      console.error("fetchLastTournamentStarts error", e)
       setPushRows([])
     } finally {
       setLoadingPushRows(false)
@@ -175,7 +177,7 @@ function TournamentPushInner() {
     })
   }, [pushRows, displayName])
 
-  async function toggleTournamentPush() {
+  async function toggleTournamentNotifications() {
     if (!session?.user?.id) return
     if (savingPref) return
 
@@ -197,8 +199,8 @@ function TournamentPushInner() {
       setPushEnabled(next)
       setPushPrefUpdatedAt(payload.updated_at)
     } catch (e) {
-      console.error("toggleTournamentPush error", e)
-      alert("Konnte Push-Einstellung nicht speichern.")
+      console.error("toggleTournamentNotifications error", e)
+      alert("Konnte Einstellung nicht speichern.")
     } finally {
       setSavingPref(false)
     }
@@ -211,7 +213,7 @@ function TournamentPushInner() {
         <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-6xl">
           <div className="flex items-center justify-center min-h-[60vh] gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-            <span className="text-lg font-medium">Lade Push-Verlauf…</span>
+            <span className="text-lg font-medium">Lade Einstellungen…</span>
           </div>
         </main>
         <MobileBottomNav />
@@ -238,54 +240,75 @@ function TournamentPushInner() {
         <div className="mb-4">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
             <Trophy className="h-6 w-6 text-orange-600" />
-            Turnier Push-Verlauf
+            Turnier-Benachrichtigungen
           </h1>
 
-          <div className="mt-4 rounded-2xl border bg-gradient-to-r from-orange-50 via-white to-indigo-50 p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-sm sm:text-base font-semibold text-gray-900 truncate">
-                    Spieler: <span className="text-orange-700">{displayName}</span>
+          {/* ✅ moderne Box mit ORANGE Verlauf oben */}
+          <div className="mt-4 overflow-hidden rounded-2xl border bg-white shadow-sm">
+            <div className="h-1.5 bg-gradient-to-r from-orange-500 via-orange-400 to-amber-300" />
+            <div className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-xs text-gray-500">Spieler</div>
+                  <div className="mt-0.5 text-base sm:text-lg font-semibold text-gray-900 truncate">
+                    <span className="text-orange-700">{displayName}</span>
                   </div>
-                  <Badge variant="outline" className="bg-white/70">
-                    Turnier-Push: {pushEnabled ? "aktiv" : "deaktiviert"}
-                  </Badge>
-                  {pushPrefUpdatedAt ? (
-                    <span className="text-xs text-gray-500 inline-flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
-                      zuletzt geändert: {formatDateTime(pushPrefUpdatedAt)}
-                    </span>
-                  ) : null}
+
+                  {/* ✅ Badge so, dass es nicht blöd umbrechen muss */}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Badge
+                      className={cn(
+                        "rounded-full px-3 py-1 text-xs sm:text-sm whitespace-nowrap",
+                        pushEnabled ? "bg-green-50 text-green-700 border border-green-200" : "bg-gray-50 text-gray-700 border border-gray-200"
+                      )}
+                    >
+                      {pushEnabled ? "Benachrichtigungen aktiv" : "Benachrichtigungen aus"}
+                    </Badge>
+
+                    {pushPrefUpdatedAt ? (
+                      <span className="text-xs text-gray-500 inline-flex items-center gap-1 whitespace-nowrap">
+                        <Clock className="h-3.5 w-3.5" />
+                        {formatDateTimeCompact(pushPrefUpdatedAt)}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
 
-                <p className="mt-1 text-sm text-gray-600">
-                  Hier siehst du die letzten 20 Pushes, die beim <span className="font-medium">Match-Start</span> rausgingen
-                  (Gegner + Automat).
-                </p>
+                {/* ✅ kleiner Toggle rechts, nicht so ein Riesen-Button */}
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  <Switch checked={pushEnabled} onCheckedChange={() => toggleTournamentNotifications()} disabled={savingPref} />
+                  <div className="text-[11px] text-gray-500 whitespace-nowrap">
+                    {savingPref ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        speichere…
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1">
+                        {pushEnabled ? <Bell className="h-3.5 w-3.5" /> : <BellOff className="h-3.5 w-3.5" />}
+                        Match-Start Hinweise erhalten
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              <Button
-                onClick={toggleTournamentPush}
-                disabled={savingPref}
-                className={cn(
-                  "shrink-0 rounded-xl shadow-sm",
-                  pushEnabled ? "bg-gray-900 hover:bg-gray-800" : "bg-orange-600 hover:bg-orange-700"
-                )}
-              >
-                {savingPref ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                {pushEnabled ? (
-                  <>
-                    <BellOff className="h-4 w-4 mr-2" />
-                    Deaktivieren
-                  </>
-                ) : (
-                  <>
-                    <Bell className="h-4 w-4 mr-2" />
-                    Aktivieren
-                  </>
-                )}
-              </Button>
+              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                Übersicht der letzten 20 Match-Starts mit Gegner und – sofern vorhanden – Automat.
+              </p>
+
+              {/* ✅ Hinweisbox */}
+              <div className="mt-4 rounded-2xl border bg-gray-50 p-4 flex items-start gap-3">
+                <div className="mt-0.5 rounded-xl bg-white p-2 ring-1 ring-black/5">
+                  <Bell className="h-4 w-4 text-orange-600" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-gray-900">Hinweis</div>
+                  <div className="mt-1 text-sm text-gray-600">
+                    Wenn deaktiviert, bekommst du keine Hinweise, sobald dein Match gestartet wird.
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -294,7 +317,7 @@ function TournamentPushInner() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl font-bold">
               <Bell className="h-6 w-6 text-orange-600" />
-              Letzte 20 Match-Start Pushes
+              Letzte 20 Match-Starts
             </CardTitle>
           </CardHeader>
 
@@ -302,11 +325,11 @@ function TournamentPushInner() {
             {loadingPushRows ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
-                Lade Pushes…
+                Lade Einträge…
               </div>
             ) : list.length === 0 ? (
               <div className="text-sm text-muted-foreground">
-                Keine Turnier-Pushes gefunden (noch kein Match gestartet oder noch kein push_started_sent_at gesetzt).
+                Keine Einträge gefunden (noch kein Match gestartet oder noch kein push_started_sent_at gesetzt).
               </div>
             ) : (
               <div className="grid gap-3">
@@ -316,36 +339,33 @@ function TournamentPushInner() {
                     className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl overflow-hidden"
                   >
                     <CardContent className="p-4">
-  <div className="flex flex-col gap-3 min-w-0">
-    <div className="min-w-0">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="font-semibold text-base md:text-lg truncate">
-          vs <span className="text-gray-900">{opponent}</span>
-        </div>
+                      <div className="flex items-start justify-between gap-3 min-w-0">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-base md:text-lg truncate">
+                            vs <span className="text-gray-900">{opponent}</span>
+                          </div>
 
-        {row.machine_number !== null && row.machine_number !== undefined && (
-          <Badge className="bg-orange-100 text-orange-800 border-orange-200">
-            <Cpu className="h-3.5 w-3.5 mr-1" />
-            Automat {row.machine_number}
-          </Badge>
-        )}
+                          {/* ✅ Datum + Uhrzeit sauber in EINER Zeile */}
+                          <div className="mt-2 text-sm text-gray-600 inline-flex items-center gap-2 flex-wrap">
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="h-4 w-4 text-orange-600" />
+                              {formatDateTimeCompact(row.push_started_sent_at)}
+                            </span>
+                            <Badge variant="outline" className="whitespace-nowrap">
+                              Match {row.match_id}
+                            </Badge>
+                          </div>
+                        </div>
 
-        {row.tournament_type ? (
-          <Badge variant="outline">{row.tournament_type}</Badge>
-        ) : null}
-
-        <Badge variant="outline">Match {row.match_id}</Badge>
-      </div>
-
-      <div className="mt-2 text-sm text-gray-600 flex flex-wrap gap-x-3 gap-y-1">
-        <span className="inline-flex items-center gap-1">
-          <Clock className="h-4 w-4 text-orange-600" />
-          Push: {formatDateTime(row.push_started_sent_at)}
-        </span>
-      </div>
-    </div>
-  </div>
-</CardContent>
+                        {/* ✅ Automat nur wenn vorhanden */}
+                        {row.machine_number !== null && row.machine_number !== undefined ? (
+                          <Badge className="shrink-0 bg-orange-100 text-orange-800 border-orange-200 whitespace-nowrap">
+                            <Cpu className="h-3.5 w-3.5 mr-1" />
+                            Automat {row.machine_number}
+                          </Badge>
+                        ) : null}
+                      </div>
+                    </CardContent>
                   </Card>
                 ))}
               </div>

@@ -103,6 +103,7 @@ export default function MemberProfileAppPage() {
   const router = useRouter()
 
   const [profile, setProfile] = useState<UserProfileWithLastSeen | null>(null)
+  const [tournamentPushEnabled, setTournamentPushEnabled] = useState<boolean | null>(null)
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -496,6 +497,15 @@ if (teamMemberCountError) throw teamMemberCountError
 
       if (profileError) throw profileError
       setProfile(profileData as any)
+	  
+	  // Push-Status aus push_preferences laden
+const { data: pushData } = await supabase
+  .from("push_preferences")
+  .select("tournament_push_enabled")
+  .eq("user_id", session.user.id)
+  .single()
+
+setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
 
       if ((profileData as any)?.player_id) {
         const { data: permissionRows, error: permissionErr } = await supabase.from("user_page_permissions").select("page_key, allowed").eq("player_id", (profileData as any).player_id)
@@ -637,7 +647,7 @@ if (teamMemberCountError) throw teamMemberCountError
     { title: "Statistik Blätter drucken", description: "Statistik-/Spielerblätter auswählen und drucken", icon: Printer, href: "/team-print-sheet", color: "from-orange-500 to-orange-600", requiresLeadership: true },
     { title: "Training", description: "Trainingsübungen und Fortschritt", icon: Dumbbell, href: "/training-app", color: "from-orange-500 to-red-600" },
     { title: "Lobby", description: "Spiele gegen andere Spieler", icon: Target, href: "/lobby-app", color: "from-pink-500 to-pink-600" },
-    { title: "Match Galerie", description: "Match-Galerie und Spielfotos", icon: Camera, href: "/match-galerie-app", color: "from-purple-500 to-purple-600" },
+    { title: "Match Galerie", description: "Match-Galerie und Spielfotos", icon: Camera, href: "/match-galerie", color: "from-purple-500 to-purple-600" },
     { title: "Bonusgeld", description: "Bonuspunkte und Belohnungen", icon: Euro, href: "/member-bonus-app", color: "from-yellow-500 to-yellow-600" },
     { title: "Liga Tabellen", description: "Aktuelle Ligastände", icon: Table, href: "/member-league-app", color: "from-emerald-500 to-emerald-600" },
     { title: "Vereinskalender", description: "Termine und Events verwalten", icon: Calendar, href: "/vereinskalender-app", color: "from-green-500 to-green-600" },
@@ -840,262 +850,463 @@ if (teamMemberCountError) throw teamMemberCountError
         )}
 
         {/* Willkommen */}
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl mb-4 sm:mb-6 shadow-xl">
-            <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Willkommen!</h1>
+<div className="mb-5 sm:mb-6">
+  <div className="flex items-center justify-between">
+    <div>
+      <div className="text-[11px] uppercase tracking-wide text-gray-500">
+        Dashboard
+      </div>
+      <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 leading-tight">
+        Willkommen zurück, {profile.club_players?.name || "Spieler"}
+      </h1>
+    </div>
 
-          <div className="text-lg sm:text-xl text-gray-600 px-4">
-            Schön dich zu sehen, {profile.club_players?.name || "Vereinsmitglied"}
-          </div>
-        </div>
+    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
+      <Users className="h-5 w-5 text-white" />
+    </div>
+  </div>
+</div>
 
         {/* Profil Card */}
         <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
-          <CardContent className="p-4 sm:p-6 lg:p-8">
-            <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-6">
-              <div className="relative">
-                <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-orange-200">
-                  <AvatarImage
-                    src={profile.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=dart player avatar"}
-                    alt={profile.club_players?.name || "Spieler"}
-                  />
-                  <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xl sm:text-2xl font-bold">
-                    {(profile.club_players?.name || "U")
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="absolute -bottom-2 -right-2 rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 bg-white shadow-lg"
-                  onClick={() => setIsPhotoDialogOpen(true)}
-                >
-                  <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
-                </Button>
-              </div>
+          <CardContent className="p-0">
+  {/* Cover / Header */}
+  <div className="relative overflow-hidden rounded-t-xl">
+    <div className="h-24 sm:h-28 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500" />
+    <div className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_20%,white,transparent_40%),radial-gradient(circle_at_80%_10%,white,transparent_35%),radial-gradient(circle_at_70%_90%,white,transparent_40%)]" />
+  </div>
 
-              <div className="flex-grow text-center md:text-left">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{profile.club_players?.name || "Vereinsmitglied"}</h2>
+  {/* Content */}
+  <div className="relative px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6">
+    {/* Avatar (overlapping) */}
+    <div className="-mt-10 sm:-mt-12 flex items-end justify-between gap-3">
+      <div className="relative">
+        <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white shadow-xl">
+          <AvatarImage
+            src={profile.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=dart player avatar"}
+            alt={profile.club_players?.name || "Spieler"}
+          />
+          <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xl sm:text-2xl font-bold">
+            {(profile.club_players?.name || "U")
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
 
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 mb-3 sm:mb-4">
-                  <Badge variant="secondary" className="flex items-center gap-2 px-2 sm:px-3 py-1 text-xs sm:text-sm">
-                    {getRoleIcon((primaryTeam as any)?.role)}
-                    {getRoleLabel((primaryTeam as any)?.role)}
-                  </Badge>
-                  {(primaryTeam as any)?.teams && (
-                    <Badge variant="outline" className="px-2 sm:px-3 py-1 text-xs sm:text-sm">
-                      {(primaryTeam as any).teams.name}
-                      {hasMultipleTeams && ` (+${teamMemberships.length - 1} weitere)`}
-                    </Badge>
-                  )}
-                  {profile.club_players?.age && (
-                    <Badge variant="outline" className="px-2 sm:px-3 py-1 text-xs sm:text-sm">
-                      {profile.club_players.age} Jahre
-                    </Badge>
-                  )}
-                </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 bg-white shadow-lg"
+          onClick={() => setIsPhotoDialogOpen(true)}
+        >
+          <Camera className="h-4 w-4" />
+        </Button>
+      </div>
 
-                {(profile as any)?.last_seen_at && (
-                  <p className="text-sm sm:text-base text-gray-600 mb-2">Zuletzt online: {formatLastSeen((profile as any).last_seen_at)}</p>
-                )}
+      {/* Abmelden  */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleLogout}
+        className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 bg-white/90 border-red-200 shadow-sm"
+      >
+        <LogOut className="h-4 w-4" />
+        Abmelden
+      </Button>
+    </div>
 
-                {hasMultipleTeams && (
-                  <div className="mb-2">
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1">Alle Teams:</p>
-                    <div className="flex flex-wrap gap-1 sm:gap-2">
-                      {teamMemberships.map((membership: any) => (
-                        <Badge key={membership.id} variant="outline" className="text-xs">
-                          {membership.teams?.name} ({getRoleLabel(membership.role)})
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+    {/* Name + Meta */}
+    <div className="mt-3">
+      <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
+        {profile.club_players?.name || "Vereinsmitglied"}
+      </h2>
 
-              <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent text-xs sm:text-sm"
-                >
-                  <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Abmelden
-                </Button>
-              </div>
-            </div>
-          </CardContent>
+      {(profile as any)?.last_seen_at && (
+        <div className="mt-1 text-sm text-gray-600">
+          Zuletzt online: {formatLastSeen((profile as any).last_seen_at)}
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        
+
+        {profile.club_players?.age && (
+          <Badge variant="outline" className="px-3 py-1 text-xs sm:text-sm">
+            {profile.club_players.age} Jahre
+          </Badge>
+        )}
+
+        {profile.club_players?.throwing_hand && (
+          <Badge variant="outline" className="px-3 py-1 text-xs sm:text-sm">
+            
+          </Badge>
+        )}
+      </div>
+
+      {/* Willkommen */}
+      <div className="mt-4 rounded-xl border bg-white/70 backdrop-blur-sm p-3 text-sm text-gray-700">
+        Willkommen zurück 👋 Hier findest du alles rund um deine Teams, Spiele und Vereinsinfos.
+      </div>
+	  
+	  
+	  {teamMemberships.length > 1 && (
+  <div className="mt-5">
+    <div className="flex items-center justify-between mb-2">
+      <p className="text-sm font-semibold text-gray-900">Alle Teams</p>
+      <Badge variant="secondary" className="text-xs">
+        {teamMemberships.length}
+      </Badge>
+    </div>
+
+    <div className="flex flex-wrap gap-2">
+      {teamMemberships.map((membership: any) => (
+        <div
+          key={membership.id}
+          className="flex items-center gap-2 rounded-full border bg-white px-2.5 py-1 shadow-sm"
+        >
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100">
+            {membership.role === "Captain" ? (
+              <Crown className="h-3 w-3 text-orange-700" />
+            ) : membership.role === "Co-Captain" ? (
+              <ShieldCheck className="h-3.5 w-3.5 text-orange-700" />
+            ) : (
+              <Target className="h-3.5 w-3.5 text-orange-700" />
+            )}
+          </span>
+
+          <span className="text-[13px] font-semibold text-gray-900">
+            {membership.teams?.name || "Team"}
+          </span>
+
+          <span className="text-[11px] text-gray-600">
+            {getRoleLabel(membership.role)}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+      {/* */}
+    </div>
+  </div>
+</CardContent>
         </Card>
 
         {/* Kommendes Spiel */}
-        <Card className="border shadow-sm bg-white mb-6 sm:mb-8">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-gray-900">Kommendes Spiel</div>
-                {!nextMatchSummary ? (
-                  <div className="text-sm text-muted-foreground mt-1">Kein kommendes Spiel gefunden.</div>
-                ) : (
-                  <>
-                    <div className="font-semibold text-base sm:text-lg truncate mt-1">
-                      {getTeamDisplayName(nextMatchSummary.match, true)} vs {getTeamDisplayName(nextMatchSummary.match, false)}
-                    </div>
+<Card className="border shadow-sm bg-white mb-6 sm:mb-8 rounded-2xl overflow-hidden">
+  <CardContent className="p-0">
+    {/* Header */}
+    <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b bg-gradient-to-r from-gray-50 to-white">
+      <div className="min-w-0">
+        <div className="text-[11px] uppercase tracking-wide text-gray-500">Kommendes Spiel</div>
+        <div className="text-sm font-semibold text-gray-900">
+          {nextMatchSummary ? "Bitte prüfen & zusagen" : "Aktuell nichts geplant"}
+        </div>
+      </div>
 
-                    <div className="text-sm text-gray-600 mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="h-4 w-4 text-orange-600" />
-                        {formatDate((nextMatchSummary.match as any).match_date)}
-                        {(nextMatchSummary.match as any).match_time ? ` • ${formatTime((nextMatchSummary.match as any).match_time)}` : ""}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="h-4 w-4 text-orange-600" />
-                        {(nextMatchSummary.match as any).venue || "—"}
-                      </span>
-                      {countdown && (
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="h-4 w-4 text-orange-600" />
-                          <span className="font-mono">{countdown}</span>
-                        </span>
-                      )}
-                    </div>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => nextMatchSummary && router.push(`/member-availability?matchId=${(nextMatchSummary.match as any).id}`)}
+        className="bg-white hover:bg-gray-50 border-gray-200 rounded-xl"
+        disabled={!nextMatchSummary}
+      >
+        Öffnen
+      </Button>
+    </div>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Badge className="bg-green-600 text-white">Zusagen: {nextMatchSummary.counts.yes}</Badge>
-                      <Badge className="bg-yellow-600 text-white">Vielleicht: {nextMatchSummary.counts.maybe}</Badge>
-                      <Badge className="bg-red-600 text-white">Absagen: {nextMatchSummary.counts.no}</Badge>
-                      <Badge variant="outline">Offen: {nextMatchSummary.counts.none}</Badge>
-                    </div>
+    {/* Body */}
+    <div className="px-4 sm:px-5 py-4">
+      {!nextMatchSummary ? (
+        <div className="text-sm text-muted-foreground">Kein kommendes Spiel gefunden.</div>
+      ) : (
+        <>
+          {/* Title */}
+          <div className="font-extrabold text-lg sm:text-xl text-gray-900 leading-snug">
+            {getTeamDisplayName(nextMatchSummary.match, true)}{" "}
+            <span className="text-gray-400 font-semibold">vs</span>{" "}
+            {getTeamDisplayName(nextMatchSummary.match, false)}
+          </div>
 
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <div className="text-xs text-gray-500">Meine Antwort:</div>
-                      {statusBadge(nextMatchSummary.myStatus)}
-                      <div className="text-xs text-gray-500 ml-0 sm:ml-3">Aufstellung:</div>
-                      {nextMatchSummary.myLineup === "starter" ? (
-                        <Badge className="bg-orange-600 text-white">Stamm</Badge>
-                      ) : nextMatchSummary.myLineup === "substitute" ? (
-                        <Badge variant="secondary">Ersatz</Badge>
-                      ) : (
-                        <Badge variant="outline">Nicht gesetzt</Badge>
-                      )}
-
-                      <div className="mt-3 rounded-lg border bg-gray-50 p-3 text-sm text-gray-700 flex items-start gap-2">
-                        {nextMatchSummary.myStatus === "yes" ? (
-                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
-                        ) : nextMatchSummary.myStatus === "no" ? (
-                          <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
-                        ) : nextMatchSummary.myStatus === "maybe" ? (
-                          <HelpCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                        ) : (
-                          <Bell className="h-4 w-4 text-gray-500 mt-0.5" />
-                        )}
-                        <span className="leading-snug">{getAvailabilityNudge(nextMatchSummary.myStatus, nextMatchSummary.myLineup)}</span>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="flex-shrink-0">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => nextMatchSummary && router.push(`/member-availability?matchId=${(nextMatchSummary.match as any).id}`)}
-                  className="bg-white hover:bg-gray-50 border-gray-200"
-                  disabled={!nextMatchSummary}
-                >
-                  Öffnen
-                </Button>
+          {/* Meta  */}
+          <div className="mt-3 space-y-2 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-2">
+            <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 border border-gray-200">
+              <Calendar className="h-4 w-4 text-orange-600" />
+              <div className="text-sm text-gray-800">
+                {formatDate((nextMatchSummary.match as any).match_date)}
+                {(nextMatchSummary.match as any).match_time ? ` • ${formatTime((nextMatchSummary.match as any).match_time)}` : ""}
               </div>
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 border border-gray-200">
+              <MapPin className="h-4 w-4 text-orange-600" />
+              <div className="text-sm text-gray-800 truncate">
+                {(nextMatchSummary.match as any).venue || "—"}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 border border-gray-200">
+              <Clock className="h-4 w-4 text-orange-600" />
+              <div className="text-sm text-gray-800">
+                {countdown ? <span className="font-mono font-semibold">{countdown}</span> : "—"}
+              </div>
+            </div>
+          </div>
+
+          {/* Team answers  */}
+          <div className="mt-4 grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+            <Badge className="bg-green-600 text-white justify-center rounded-full py-2 text-xs sm:text-sm">
+              Zusagen: {nextMatchSummary.counts.yes}
+            </Badge>
+            <Badge className="bg-yellow-600 text-white justify-center rounded-full py-2 text-xs sm:text-sm">
+              Vielleicht: {nextMatchSummary.counts.maybe}
+            </Badge>
+            <Badge className="bg-red-600 text-white justify-center rounded-full py-2 text-xs sm:text-sm">
+              Absagen: {nextMatchSummary.counts.no}
+            </Badge>
+            <Badge variant="outline" className="justify-center rounded-full py-2 text-xs sm:text-sm">
+              Offen: {nextMatchSummary.counts.none}
+            </Badge>
+          </div>
+
+          {/* My status  */}
+          <div className="mt-4 rounded-2xl border bg-gray-50 p-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-gray-500 w-28">Meine Antwort:</div>
+                {statusBadge(nextMatchSummary.myStatus)}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-gray-500 w-28">Aufstellung:</div>
+                {nextMatchSummary.myLineup === "starter" ? (
+                  <Badge className="bg-orange-600 text-white rounded-full">Stamm</Badge>
+                ) : nextMatchSummary.myLineup === "substitute" ? (
+                  <Badge variant="secondary" className="rounded-full">Ersatz</Badge>
+                ) : (
+                  <Badge variant="outline" className="rounded-full">Nicht gesetzt</Badge>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-3 flex items-start gap-2 text-sm text-gray-700">
+              {nextMatchSummary.myStatus === "yes" ? (
+                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+              ) : nextMatchSummary.myStatus === "no" ? (
+                <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
+              ) : nextMatchSummary.myStatus === "maybe" ? (
+                <HelpCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
+              ) : (
+                <Bell className="h-4 w-4 text-gray-500 mt-0.5" />
+              )}
+              <span className="leading-snug">
+                {getAvailabilityNudge(nextMatchSummary.myStatus, nextMatchSummary.myLineup)}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  </CardContent>
+</Card>
+
+{/* Spiel-Benachrichtigungen */}
+<Card
+  className="mb-6 sm:mb-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm cursor-pointer hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden"
+  onClick={() => router.push("/push_preferences")}
+>
+ <CardContent className="p-0">
+  <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b bg-gradient-to-r from-gray-50 to-white">
+    <div className="min-w-0">
+      <div className="text-[11px] uppercase tracking-wide text-gray-500">Benachrichtigungen</div>
+      <div className="text-sm font-semibold text-gray-900">Spiel-Push (Live)</div>
+    </div>
+
+    <div className="shrink-0">
+      {tournamentPushEnabled ? (
+        <Badge className="bg-green-600 text-white rounded-full">Aktiv</Badge>
+      ) : (
+        <Badge className="bg-red-600 text-white rounded-full">Aus</Badge>
+      )}
+    </div>
+  </div>
+
+  <div className="px-4 sm:px-5 py-4">
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start gap-3 min-w-0">
+        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md shrink-0">
+          <Bell className="h-5 w-5 text-white" />
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-gray-900">Spielstart & Updates</div>
+          <div className="text-sm text-gray-600 mt-1 leading-snug">
+            Erhalte Push-Infos bei Spielstart & Änderungen.
+          </div>
+
+    
+        </div>
+      </div>
+
+      <div className="shrink-0">
+        <div className="w-10 h-10 rounded-xl border bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all">
+          <ArrowRight className="h-5 w-5 text-purple-700" />
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-4 text-xs text-gray-500">
+      Tippe zum Ändern der Einstellungen
+    </div>
+  </div>
+</CardContent>
+</Card>
+
+
 
         {hasClubRole && (
-          <Card
-            className="mb-6 border-0 shadow-2xl cursor-pointer overflow-hidden bg-gradient-to-r from-orange-500 to-orange-600 text-white ring-2 ring-orange-300 hover:ring-4 transition-all hover:shadow-[0_0_25px_rgba(251,146,60,0.8)]"
-            onClick={() => router.push("/admin")}
+  <Card
+    className="mb-6 border-0 cursor-pointer overflow-hidden rounded-2xl text-white shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500"
+    onClick={() => router.push("/admin")}
+  >
+    <CardContent className="p-5 sm:p-6">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-xs uppercase tracking-wide text-white/80">Vereinsbereich</div>
+          <div className="text-xl sm:text-2xl font-extrabold leading-tight truncate">
+            Admin / Verwaltung
+          </div>
+          <div className="mt-1 text-sm text-white/85">
+            Verwaltung, Beiträge, Teams & Einstellungen
+          </div>
+        </div>
+
+        <div className="shrink-0">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 border border-white/20 px-4 py-2 backdrop-blur-sm hover:bg-white/20 transition-colors">
+            <span className="text-sm font-semibold">Öffnen</span>
+            <ArrowRight className="h-4 w-4" />
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+)}
+
+       {/* Navigation */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8">
+  {navigationItems
+    .filter((item: any) => !item.requiresLeadership || isLeadershipRole())
+    .map((item, index) => (
+      <Card
+        key={index}
+        className="border-0 bg-white/95 backdrop-blur-sm shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group rounded-2xl overflow-hidden"
+        onClick={() => router.push(item.href)}
+      >
+        <CardContent className="p-4 sm:p-5 min-h-[170px] flex flex-col">
+          <div
+            className={`inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br ${item.color} rounded-2xl mb-3 shadow-md group-hover:scale-[1.06] transition-transform duration-300`}
           >
-            <CardContent className="p-5 sm:p-6 flex items-center justify-between">
-              <div className="min-w-0">
-                <div className="text-sm opacity-90">Vereinsbereich</div>
-                <div className="text-xl font-extrabold truncate">Admin / Verwaltung</div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="font-semibold">Öffnen</span>
-                <ArrowRight className="h-5 w-5" />
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            <item.icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+          </div>
 
-        {/* Navigation */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {navigationItems
-            .filter((item: any) => !item.requiresLeadership || isLeadershipRole())
-            .map((item, index) => (
-              <Card
-                key={index}
-                className="border-0 shadow-xl bg-white/95 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 cursor-pointer group"
-                onClick={() => router.push(item.href)}
-              >
-                <CardContent className="p-4 sm:p-6">
-                  <div
-                    className={`inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br ${item.color} rounded-2xl mb-3 sm:mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    <item.icon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">{item.description}</p>
-                  <div className="flex items-center text-orange-600 font-semibold group-hover:text-orange-700 transition-colors text-sm sm:text-base">
-                    <span>Öffnen</span>
-                    <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <h3 className="text-lg font-bold text-gray-900 mb-1">
+            {item.title}
+          </h3>
+
+          <p className="text-sm text-gray-600 mb-3">
+            {item.description}
+          </p>
+
+          <div className="mt-auto flex items-center justify-between pt-3">
+            <span className="text-sm font-semibold text-gray-900 group-hover:text-orange-700 transition-colors">
+              Öffnen
+            </span>
+            <div className="w-9 h-9 rounded-xl border bg-white flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
+              <ArrowRight className="h-4 w-4 text-orange-600 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    ))}
+</div>
+
+       {/* Stats */}
+<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+  <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm overflow-hidden">
+    <CardContent className="p-0">
+      <div className="p-3 sm:p-4">
+        <div className="flex items-center justify-between">
+          <div className="text-xs sm:text-sm font-semibold text-gray-600">Siege</div>
+          <div className="w-9 h-9 rounded-2xl bg-yellow-50 flex items-center justify-center">
+            <Trophy className="h-5 w-5 text-yellow-700" />
+          </div>
         </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalWins}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Siege</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <Target className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.winPercentage}%</div>
-              <div className="text-xs sm:text-sm text-gray-600">Siegquote</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalLegs}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Legs gespielt</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalEvents}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Events</div>
-            </CardContent>
-          </Card>
-		  
+        <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
+          {statistics.totalWins}
         </div>
+        <div className="mt-1 text-xs text-gray-500">Gesamt</div>
+      </div>
+      <div className="h-1.5 bg-gradient-to-r from-yellow-400 to-amber-500" />
+    </CardContent>
+  </Card>
+
+  <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm overflow-hidden">
+    <CardContent className="p-0">
+      <div className="p-3 sm:p-4">
+        <div className="flex items-center justify-between">
+          <div className="text-xs sm:text-sm font-semibold text-gray-600">Siegquote</div>
+          <div className="w-9 h-9 rounded-2xl bg-orange-50 flex items-center justify-center">
+            <Target className="h-5 w-5 text-orange-700" />
+          </div>
+        </div>
+        <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
+          {statistics.winPercentage}%
+        </div>
+        <div className="mt-1 text-xs text-gray-500">Quote</div>
+      </div>
+      <div className="h-1.5 bg-gradient-to-r from-orange-400 to-orange-600" />
+    </CardContent>
+  </Card>
+
+  <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm overflow-hidden">
+    <CardContent className="p-0">
+      <div className="p-3 sm:p-4">
+        <div className="flex items-center justify-between">
+          <div className="text-xs sm:text-sm font-semibold text-gray-600">Legs</div>
+          <div className="w-9 h-9 rounded-2xl bg-blue-50 flex items-center justify-center">
+            <Users className="h-5 w-5 text-blue-700" />
+          </div>
+        </div>
+        <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
+          {statistics.totalLegs}
+        </div>
+        <div className="mt-1 text-xs text-gray-500">Gespielt</div>
+      </div>
+      <div className="h-1.5 bg-gradient-to-r from-blue-400 to-indigo-500" />
+    </CardContent>
+  </Card>
+
+  <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm overflow-hidden">
+    <CardContent className="p-0">
+      <div className="p-3 sm:p-4">
+        <div className="flex items-center justify-between">
+          <div className="text-xs sm:text-sm font-semibold text-gray-600">Events</div>
+          <div className="w-9 h-9 rounded-2xl bg-green-50 flex items-center justify-center">
+            <Calendar className="h-5 w-5 text-green-700" />
+          </div>
+        </div>
+        <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
+          {statistics.totalEvents}
+        </div>
+        <div className="mt-1 text-xs text-gray-500">Teilnahmen</div>
+      </div>
+      <div className="h-1.5 bg-gradient-to-r from-green-400 to-emerald-500" />
+    </CardContent>
+  </Card>
+</div>
 		
 		        {/* Konto / Datenschutz */}
         <Card className="mt-6 sm:mt-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
