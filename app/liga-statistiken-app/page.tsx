@@ -86,6 +86,35 @@ const isTodayMatch = (match: any) => {
   return isSameDay(dt, new Date())
 }
 
+const isTomorrowMatch = (match: any) => {
+  const dt = toMatchDateTime(match.match_date, match.match_time)
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  return isSameDay(dt, tomorrow)
+}
+
+
+// ✅ Helfer: Spiel 
+const isPastMatch = (match: any) => {
+  const dt = toMatchDateTime(match.match_date, match.match_time)
+  return dt.getTime() < new Date().getTime()
+}
+
+// ✅ Helfer: Spiel 
+const isMissingResult = (match: any) => {
+  const home = match.home_score
+  const away = match.away_score
+
+  
+  if (home === null || home === undefined) return true
+  if (away === null || away === undefined) return true
+
+  
+  if (Number(home) === 0 && Number(away) === 0) return true
+
+  return false
+}
+
 export default function DartLeaguePage() {
   const [matches, setMatches] = useState([])
   const [teams, setTeams] = useState([])
@@ -483,9 +512,17 @@ if (!selectedSeasonId && resolvedSeasonId) {
     return teamWon ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
   }
 
-  const completedMatches = matches.filter((match) => match.status === "completed")
-  const upcomingMatches = matches.filter((match) => match.status === "scheduled")
-  const postponedMatches = matches.filter((match) => match.status === "postponed")
+ // ✅ "Ergebnisse" 
+const completedMatches = matches.filter((match) => {
+  const isCompleted = match.status === "completed"
+  const isScheduledButPastAndMissing = match.status === "scheduled" && isPastMatch(match) && isMissingResult(match)
+  return isCompleted || isScheduledButPastAndMissing
+})
+
+// ✅ "Kommende Spiele" = scheduled aber NUR Zukunft/Heute
+const upcomingMatches = matches.filter((match) => match.status === "scheduled" && !isPastMatch(match))
+
+const postponedMatches = matches.filter((match) => match.status === "postponed")
   const todayMatches = upcomingMatches.filter(isTodayMatch)
   const standings = calculateStandings()
   const playerLegStats = playerStatistics
@@ -681,27 +718,35 @@ if (!selectedSeasonId && resolvedSeasonId) {
 
                 <Card className="overflow-hidden shadow-lg">
                   <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 sm:p-6">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                        <Target className="h-5 w-5 sm:h-6 sm:w-6" />
-                        Spieler-Statistiken ({playerLegStats.length} Spieler) -{" "}
-                        {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
-                      </CardTitle>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-blue-100">Zeige:</span>
-                        <select
-                          value={playersPerPage}
-                          onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                          className="bg-white text-gray-900 rounded px-2 py-1 text-sm"
-                        >
-                          <option value={10}>10</option>
-                          <option value={25}>25</option>
-                          <option value={50}>50</option>
-                          <option value={playerLegStats.length}>Alle</option>
-                        </select>
-                      </div>
-                    </div>
-                  </CardHeader>
+  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <CardTitle className="flex items-start gap-2 text-base sm:text-xl leading-tight min-w-0">
+      <Target className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 mt-0.5" />
+      <span className="min-w-0">
+        <span className="block font-bold truncate">
+          Spieler-Statistiken
+        </span>
+        <span className="block text-xs sm:text-sm text-blue-100 font-medium">
+          {playerLegStats.length} Spieler ·{" "}
+          {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
+        </span>
+      </span>
+    </CardTitle>
+
+    <div className="flex items-center justify-between sm:justify-end gap-2">
+      <span className="text-xs sm:text-sm text-blue-100 whitespace-nowrap">Zeige:</span>
+      <select
+        value={playersPerPage}
+        onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+        className="bg-white text-gray-900 rounded px-2 py-1 text-sm"
+      >
+        <option value={10}>10</option>
+        <option value={25}>25</option>
+        <option value={50}>50</option>
+        <option value={playerLegStats.length}>Alle</option>
+      </select>
+    </div>
+  </div>
+</CardHeader>
 
                   <CardContent className="p-3 sm:p-6">
                     {playerLegStats.length === 0 ? (
@@ -711,7 +756,7 @@ if (!selectedSeasonId && resolvedSeasonId) {
                       </div>
                     ) : (
                       <>
-                        <div className="grid gap-4">
+                        <div className="grid gap-2 sm:gap-4">
                           {currentPlayers.map((player, index) => (
                             <PlayerStatisticsCardApp
                               key={player.name}
@@ -791,7 +836,7 @@ if (!selectedSeasonId && resolvedSeasonId) {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-3 sm:p-6">
-                    <div className="grid gap-4">
+                    <div className="grid gap-2 sm:gap-4">
                       {standings.map((team, index) => {
                         const teamData = teams.find((t) => t.name === team.team)
                         return <TeamStandingsCardApp key={team.team} team={team} index={index} teamData={teamData} />
@@ -809,7 +854,7 @@ if (!selectedSeasonId && resolvedSeasonId) {
                       Alle Ergebnisse ({completedMatches.length})
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-3 sm:p-6">
+                  <CardContent className="p-3 sm:p-5">
                     {completedMatches.length === 0 ? (
                       <p className="text-center text-gray-500 py-8">Noch keine Ergebnisse verfügbar</p>
                     ) : (
@@ -825,10 +870,7 @@ if (!selectedSeasonId && resolvedSeasonId) {
                             today.setHours(0, 0, 0, 0)
                             const isFutureDate = matchDate > today
 
-                            const isPendingResult =
-                              match.home_score === null ||
-                              match.away_score === null ||
-                              (homeScore === 0 && awayScore === 0)
+                            const isPendingResult = isMissingResult(match)
 
                             const isOurHomeTeam = match.home_team?.id
                             const isOurAwayTeam = match.away_team?.id
@@ -836,156 +878,198 @@ if (!selectedSeasonId && resolvedSeasonId) {
                             let matchColor = "bg-gray-50 border-gray-200"
                             let resultText = "Unentschieden"
 
-                            if (isFutureDate) {
-                              matchColor = "bg-orange-50 border-orange-300"
-                              resultText = "Datum in der Zukunft"
-                            } else if (isPendingResult) {
-                              matchColor = "bg-orange-50 border-orange-300"
-                              resultText = "Ergebnis ausstehend"
-                            } else if (homeScore > awayScore) {
-                              if (isOurHomeTeam) {
-                                matchColor = "bg-green-50 border-green-200"
-                                resultText = "Heimsieg"
-                              } else {
-                                matchColor = "bg-red-50 border-red-200"
-                                resultText = "Niederlage"
-                              }
-                            } else if (awayScore > homeScore) {
-                              if (isOurAwayTeam) {
-                                matchColor = "bg-green-50 border-green-200"
-                                resultText = "Auswärtssieg"
-                              } else {
-                                matchColor = "bg-red-50 border-red-200"
-                                resultText = "Niederlage"
-                              }
-                            } else {
-                              matchColor = "bg-yellow-50 border-yellow-200"
-                              resultText = "Unentschieden"
-                            }
+                            
+matchColor = "bg-white border-gray-200"
+
+if (isFutureDate) {
+  matchColor = "bg-white border-2 border-orange-300"
+  resultText = "Datum in der Zukunft"
+} else if (isPendingResult) {
+  matchColor = "bg-white border-2 border-orange-300"
+  resultText = "Ausstehend"
+} else if (homeScore > awayScore) {
+  if (isOurHomeTeam) {
+    matchColor = "bg-white border-green-200"
+    resultText = "Heimsieg"
+  } else {
+    matchColor = "bg-white border-red-200"
+    resultText = "Niederlage"
+  }
+} else if (awayScore > homeScore) {
+  if (isOurAwayTeam) {
+    matchColor = "bg-white border-green-200"
+    resultText = "Auswärtssieg"
+  } else {
+    matchColor = "bg-white border-red-200"
+    resultText = "Niederlage"
+  }
+} else {
+  matchColor = "bg-white border-yellow-200"
+  resultText = "Unentschieden"
+}
 
                            return (
                               <div
                                 key={match.id}
-                                className={`${matchColor} border rounded-2xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all`}
+                                className={`${matchColor} border rounded-2xl p-3 sm:p-5 shadow-sm hover:shadow-md transition-all`}
                               >
-                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                  <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
-                                    <div className="text-center min-w-[120px] sm:min-w-[140px]">
-                                      <div className="flex items-center justify-center gap-2 mb-2">
-                                        {match.home_team?.logo_url ? (
-                                          <img
-                                            src={match.home_team.logo_url || "/placeholder.svg"}
-                                            alt={`${match.home_team.name} Logo`}
-                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
-                                          />
-                                        ) : (
-                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <Trophy className="h-4 w-4 text-gray-500" />
-                                          </div>
-                                        )}
-                                      </div>
-                                     <div className="font-semibold text-base sm:text-lg mb-1 text-gray-800 truncate">
-                                        {match.home_team?.name ||
-                                          match.home_opponent_team?.name ||
-                                          "Team nicht gefunden"}
-                                      </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide">Heim</div>
-                                    </div>
-                                    <div className="flex items-center gap-2 bg-white rounded-xl px-3 sm:px-4 py-2 shadow-sm border border-gray-100">
-                                      {isPendingResult || isFutureDate ? (
-                                        <div className="flex items-center gap-2">
-                                          <div className="text-2xl sm:text-3xl font-extrabold text-orange-500">?</div>
-<div className="text-lg sm:text-xl font-semibold text-gray-400">:</div>
-<div className="text-2xl sm:text-3xl font-extrabold text-orange-500">?</div>
-                                        </div>
-                                      ) : (
-                                        <>
-                                          <div className="text-2xl sm:text-3xl font-extrabold text-gray-800">{homeScore}</div>
-<div className="text-lg sm:text-xl font-semibold text-gray-400">:</div>
-<div className="text-2xl sm:text-3xl font-extrabold text-gray-800">{awayScore}</div>
-                                        </>
-                                      )}
-                                    </div>
-                                    <div className="text-center min-w-[120px] sm:min-w-[140px]">
-                                      <div className="flex items-center justify-center gap-2 mb-2">
-                                        {match.away_team?.logo_url ? (
-                                          <img
-                                            src={match.away_team.logo_url || "/placeholder.svg"}
-                                            alt={`${match.away_team.name} Logo`}
-                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
-                                          />
-                                        ) : (
-                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <Trophy className="h-4 w-4 text-gray-500" />
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="font-bold text-lg sm:text-xl mb-1 text-gray-800">
-                                        {match.away_team?.name ||
-                                          match.away_opponent_team?.name ||
-                                          "Team nicht gefunden"}
-                                      </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
-                                    </div>
-                                  </div>
-                                  <div className="text-center sm:text-right flex flex-col items-center sm:items-end gap-2">
-                                    <div className="text-sm sm:text-base font-semibold text-gray-700 mb-1">
-                                      {formatDateDEShort(match.match_date)}
-                                    </div>
-									
-									{match.match_time && (
-  <div className="text-xs sm:text-sm text-gray-600">
-    {formatTimeDE(match.match_time)} Uhr
+                                
+								
+								{/* ======  RESULT LAYOUT ====== */}
+<div className="flex gap-3">
+  {/* Left Status Bar */}
+  <div
+    className={[
+      "w-1.5 rounded-full flex-shrink-0",
+      isFutureDate || isPendingResult
+        ? "bg-orange-400"
+        : resultText === "Heimsieg" || resultText === "Auswärtssieg"
+          ? "bg-green-500"
+          : resultText === "Unentschieden"
+            ? "bg-yellow-500"
+            : "bg-red-500",
+    ].join(" ")}
+  />
+
+  <div className="flex-1 min-w-0">
+    {/* Top Row: Teams + Score */}
+    <div className="flex flex-col items-center text-center gap-3">
+
+  {/* Heim */}
+  <div className="flex flex-col items-center gap-1">
+    <span className="text-[11px] uppercase text-gray-500 tracking-wide">Heim</span>
+
+    <div className="flex items-center gap-2">
+      {match.home_team?.logo_url ? (
+        <img
+          src={match.home_team.logo_url}
+          className="w-9 h-9 rounded-lg object-cover border border-gray-200 bg-white"
+        />
+      ) : (
+        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+          <Trophy className="h-4 w-4 text-gray-500" />
+        </div>
+      )}
+
+      <span className="font-semibold text-sm text-gray-900 max-w-[180px] truncate">
+        {match.home_team?.name || match.home_opponent_team?.name}
+      </span>
+    </div>
   </div>
-)}
-									
-									{match.original_date && (
-  <div className="text-xs text-gray-500">
-    Ursprünglich: {formatDateDE(match.original_date)} → Neu: {formatDateDE(match.match_date)}
+
+  {/* Score */}
+  <div className="bg-white border border-gray-200 shadow-md rounded-2xl px-5 py-2 min-w-[100px]">
+    {isPendingResult || isFutureDate ? (
+      <div className="text-lg font-semibold text-orange-500">– : –</div>
+    ) : (
+      <div className="flex items-center justify-center gap-2">
+        <span className="text-2xl font-extrabold text-gray-900">{homeScore}</span>
+        <span className="text-gray-400">:</span>
+        <span className="text-2xl font-extrabold text-gray-900">{awayScore}</span>
+      </div>
+    )}
   </div>
-)}
-                                    <div className="flex items-center gap-2">
-                                      <Badge
-                                        className={`
-                                          ${
-                                            isFutureDate || isPendingResult
-                                              ? "bg-orange-100 text-orange-700 border-orange-300"
-                                              : resultText === "Heimsieg" || resultText === "Auswärtssieg"
-                                                ? "bg-green-100 text-green-700"
-                                                : resultText === "Unentschieden"
-                                                  ? "bg-yellow-100 text-yellow-700"
-                                                  : "bg-red-100 text-red-700"
-                                          }
-                                          font-medium text-xs sm:text-sm
-                                        `}
-                                      >
-                                        {resultText}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </div>
+
+ {/* Gast */}
+<div className="flex flex-col items-center gap-1">
+  <span className="text-[11px] uppercase text-gray-500 tracking-wide">Gast</span>
+
+  <div className="flex items-center gap-2">
+    <span className="font-semibold text-sm text-gray-900 max-w-[180px] truncate text-right">
+  {match.away_team?.name || match.away_opponent_team?.name}
+</span>
+
+    {match.away_team?.logo_url ? (
+      <img
+        src={match.away_team.logo_url}
+        className="w-9 h-9 rounded-lg object-cover border border-gray-200 bg-white"
+        alt="Away team logo"
+      />
+    ) : null}
+  </div>
+</div>
+
+
+      {/* Meta Right (Desktop) */}
+      <div className="hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
+        <div className="text-sm font-semibold text-gray-700">{formatDateDEShort(match.match_date)}</div>
+        {match.match_time && <div className="text-xs text-gray-600">{formatTimeDE(match.match_time)} Uhr</div>}
+        <Badge
+          className={`
+            ${
+              isFutureDate || isPendingResult
+                ? "bg-orange-100 text-orange-700 border-orange-300"
+                : resultText === "Heimsieg" || resultText === "Auswärtssieg"
+                  ? "bg-green-100 text-green-700"
+                  : resultText === "Unentschieden"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-red-100 text-red-700"
+            }
+            font-semibold text-xs
+          `}
+        >
+          {resultText}
+        </Badge>
+      </div>
+    </div>
+
+    {/* Mobile Meta */}
+    <div className="sm:hidden mt-3 flex items-center justify-between gap-2">
+     <div className="text-xs font-semibold text-gray-700 whitespace-nowrap">
+  {formatDateDEShort(match.match_date)}
+  {match.match_time ? ` · ${formatTimeDE(match.match_time)} Uhr` : ""}
+</div>
+
+      <Badge
+        className={`
+          ${
+            isFutureDate || isPendingResult
+              ? "bg-orange-100 text-orange-700 border-orange-300"
+              : resultText === "Heimsieg" || resultText === "Auswärtssieg"
+                ? "bg-green-100 text-green-700"
+                : resultText === "Unentschieden"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-red-100 text-red-700"
+          }
+          font-semibold text-[11px] px-2 py-1
+        `}
+      >
+        {resultText}
+      </Badge>
+    </div>
+
+    {/* Optional: Original Date */}
+    {match.original_date && (
+      <div className="mt-2 text-[10px] text-gray-500">
+        Ursprünglich: {formatDateDE(match.original_date)} → Neu: {formatDateDE(match.match_date)}
+      </div>
+    )}
+  </div>
+</div>
+								
+								
+								
                                 {isFutureDate && (
-                                  <div className="mt-3 pt-3 border-t border-orange-200">
-                                    <div className="flex items-center gap-2 text-sm text-orange-700">
-                                      <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
-                                      <span className="font-medium">
-                                        Achtung: Das Spieldatum liegt in der Zukunft! Möglicherweise wurde das Spiel
-                                        vorverschoben oder das Datum ist noch nicht aktualisiert.
-                                      </span>
-                                    </div>
-                                  </div>
-                                )}
-                                {!isFutureDate && isPendingResult && (
-                                  <div className="mt-3 pt-3 border-t border-orange-200">
-                                    <div className="flex items-center gap-2 text-sm text-orange-700">
-                                      <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
-                                      <span className="font-medium">
-                                        Dieses Spiel wurde noch nicht gespielt oder das Ergebnis wurde noch nicht
-                                        eingetragen.
-                                      </span>
-                                    </div>
-                                  </div>
-                                )}
+  <div className="mt-2 pt-2 border-t border-orange-200">
+    <div className="flex items-start gap-2 text-[11px] text-orange-700 leading-snug">
+      <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse mt-1"></div>
+      <span className="font-medium">
+        Achtung: Datum liegt in der Zukunft – evtl. verschoben / noch nicht aktualisiert.
+      </span>
+    </div>
+  </div>
+)}
+
+{!isFutureDate && isPendingResult && (
+  <div className="mt-2 pt-2 border-t border-orange-200">
+    <div className="flex items-start gap-2 text-[11px] text-orange-700 leading-snug">
+      <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse mt-1"></div>
+      <span className="font-medium">
+        Noch kein Ergebnis eingetragen.
+      </span>
+    </div>
+  </div>
+)}
                               </div>
                             )
                           })}
@@ -1140,15 +1224,18 @@ if (!selectedSeasonId && resolvedSeasonId) {
               )
               .map((match) => {
                 const isToday = isTodayMatch(match)
+				const isTomorrow = isTomorrowMatch(match)
 
                 return (
                   <div
                     key={match.id}
                     className={`border rounded-2xl p-3 sm:p-4 transition-shadow ${
-                      isToday
-                        ? "border-blue-400 bg-blue-50"
-                        : "border-gray-200 bg-white"
-                    }`}
+  isToday
+    ? "border-blue-400 bg-blue-50"
+    : isTomorrow
+      ? "border-orange-400 bg-white"
+      : "border-gray-200 bg-white"
+}`}
                   >
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
 
@@ -1179,7 +1266,11 @@ if (!selectedSeasonId && resolvedSeasonId) {
                             HEUTE
                           </Badge>
                         )}
-
+						{isTomorrow && (
+  <Badge className="bg-orange-600 text-white border-orange-700 font-semibold text-xs mt-2">
+    MORGEN
+  </Badge>
+)}
                       </div>
 
                     </div>

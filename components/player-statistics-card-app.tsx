@@ -75,13 +75,13 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
   return (
     <>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-        <CardContent className="p-4">
+        <CardContent className="p-3 sm:p-4">
           {/* Header mit Rang und Name */}
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center shadow-md">
-                <span className="font-bold text-white text-lg">{index + 1}</span>
-              </div>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+  <span className="font-bold text-white text-sm sm:text-base">{index + 1}</span>
+</div>
               <Link
                 href={`/liga-app/player-profile/${player.player_id}`}
                 className="font-bold text-lg hover:text-primary transition-colors"
@@ -97,21 +97,29 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
           {/* Hauptstatistiken */}
           <div className="grid grid-cols-3 gap-2 mb-3">
   <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-2 text-center">
-    <div className="text-xl sm:text-2xl font-bold text-orange-600">{player.total_points.toFixed(1)}</div>
-    <div className="text-xs text-gray-600">Punkte</div>
+    <div className="text-base sm:text-lg font-bold text-orange-600 leading-none">
+      {player.total_points.toFixed(1)}
+    </div>
+    <div className="text-[11px] text-gray-600">Punkte</div>
   </div>
+
   <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-2 text-center">
-    <div className="text-xl sm:text-2xl font-bold text-green-600">{player.total_wins}</div>
-    <div className="text-xs text-gray-600">Wins</div>
+    <div className="text-base sm:text-lg font-bold text-green-600 leading-none">
+      {player.total_wins}
+    </div>
+    <div className="text-[11px] text-gray-600">Wins</div>
   </div>
+
   <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-2 text-center">
-    <div className="text-xl sm:text-2xl font-bold text-blue-600">{player.win_percentage.toFixed(1)}%</div>
-    <div className="text-xs text-gray-600">Win%</div>
+    <div className="text-base sm:text-lg font-bold text-blue-600 leading-none">
+      {player.win_percentage.toFixed(1)}%
+    </div>
+    <div className="text-[11px] text-gray-600">Win%</div>
   </div>
 </div>
 
           {/* Top-Würfe */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <Badge className="bg-red-100 text-red-700 font-semibold">
               <Target className="h-3 w-3 mr-1" />
               {player.throws_180} × 180
@@ -185,11 +193,12 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
     <span className="truncate">Punkte-Details</span>
   </Button>
 
-  <Link href={`/liga-app/player-profile/${player.player_id}`} className="w-full sm:flex-1">
-    <Button variant="default" size="sm" className="w-full">
-      <span className="truncate">Profil ansehen</span>
-    </Button>
-  </Link>
+  <Link
+  href={`/liga-app/player-profile/${player.player_id}`}
+  className="font-semibold text-sm sm:text-base leading-tight hover:text-primary transition-colors min-w-0 truncate"
+>
+  {player.name}
+</Link>
 </div>
 				 
                 </div>
