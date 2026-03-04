@@ -1,19 +1,10 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { Header } from '@/components/header'
-import Image from '@/components/Image'
-import { MobileBottomNav } from '@/components/mobile-bottom-nav'
-import {
- Trophy,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Target,
-  Award,
-  Star,
-} from 'lucide-react'
+import { useEffect, useMemo, useState } from "react"
+import { supabase } from "@/lib/supabase"
+import { Header } from "@/components/header"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { Calendar, ChevronDown, ChevronUp, Search, Trophy, Target, Award, Loader2 } from "lucide-react"
 
 interface MatchResult {
   id: string
@@ -38,12 +29,41 @@ interface Tournament {
   match_count?: number
 }
 
+function formatDateDE(value: string) {
+  const d = new Date(value)
+  return isNaN(d.getTime()) ? value : d.toLocaleDateString("de-DE")
+}
+
+function cleanPlayerName(name: string) {
+  const n = (name || "").trim()
+  if (!n) return "-"
+  return n
+}
+
+function isValidMatch(m: any) {
+  if (!m) return false
+
+  const p1 = (m.player1 || "").trim()
+  const p2 = (m.player2 || "").trim()
+
+  if (!p1 || !p2) return false
+
+  const p1Freilos = p1.toUpperCase().includes("FREILOS") || p1.toUpperCase() === "EMPTY" || p1 === "NULL"
+  const p2Freilos = p2.toUpperCase().includes("FREILOS") || p2.toUpperCase() === "EMPTY" || p2 === "NULL"
+
+ 
+  if (p1Freilos && p2Freilos) return false
+
+  return true
+}
+
 export default function TournamentsPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null)
   const [matches, setMatches] = useState<Map<string, MatchResult[]>>(new Map())
   const [loading, setLoading] = useState(true)
   const [loadingMatches, setLoadingMatches] = useState<Set<string>>(new Set())
+  const [query, setQuery] = useState("")
 
   useEffect(() => {
     fetchTournaments()
@@ -51,15 +71,17 @@ export default function TournamentsPage() {
 
   const fetchTournaments = async () => {
     try {
+      setLoading(true)
+
       const { data: uniqueTournaments, error: tournamentsError } = await supabase
-        .from('tournament_series_standings')
-        .select('tournament_id, tournament_name, tournament_date, tournament_type')
-        .order('tournament_date', { ascending: false })
+        .from("tournament_series_standings")
+        .select("tournament_id, tournament_name, tournament_date, tournament_type")
+        .order("tournament_date", { ascending: false })
 
       if (tournamentsError) throw tournamentsError
 
       const uniqueTournamentMap = new Map<string, Tournament>()
-      uniqueTournaments?.forEach((t) => {
+      ;(uniqueTournaments || []).forEach((t: any) => {
         if (!uniqueTournamentMap.has(t.tournament_id)) {
           uniqueTournamentMap.set(t.tournament_id, {
             tournament_id: t.tournament_id,
@@ -74,69 +96,55 @@ export default function TournamentsPage() {
 
       for (const tournament of tournamentsArray) {
         const { data: matchData } = await supabase
-          .from('dko_match_states')
-          .select('player1, player2')
-          .eq('tournament_id', tournament.tournament_id)
+          .from("dko_match_states")
+          .select("player1, player2")
+          .eq("tournament_id", tournament.tournament_id)
 
-        const filteredMatches = (matchData || []).filter(
-          (match) =>
-            match.player1 &&
-            match.player2 &&
-            match.player1.trim() !== '' &&
-            match.player2.trim() !== '' &&
-            match.player1.toUpperCase() !== 'EMPTY' &&
-            match.player2.toUpperCase() !== 'EMPTY' &&
-            match.player1 !== 'NULL' &&
-            match.player2 !== 'NULL'
-        )
-
-        tournament.match_count = filteredMatches.length
+        const filtered = (matchData || []).filter((m: any) => isValidMatch(m))
+        tournament.match_count = filtered.length
       }
 
       setTournaments(tournamentsArray)
     } catch (error) {
-      console.error('Error fetching tournaments:', error)
+      console.error("Error fetching tournaments:", error)
+      setTournaments([])
     } finally {
       setLoading(false)
     }
   }
 
   const fetchMatches = async (tournamentId: string) => {
-    if (matches.has(tournamentId)) {
-      return
-    }
+    if (matches.has(tournamentId)) return
 
-    setLoadingMatches((prev) => new Set(prev).add(tournamentId))
+    setLoadingMatches((prev) => {
+      const next = new Set(prev)
+      next.add(tournamentId)
+      return next
+    })
 
     try {
       const { data, error } = await supabase
-        .from('dko_match_states')
-        .select('*')
-        .eq('tournament_id', tournamentId)
-        .order('id', { ascending: true })
+        .from("dko_match_states")
+        .select("*")
+        .eq("tournament_id", tournamentId)
+        .order("id", { ascending: true })
 
       if (error) throw error
 
-      const filteredData = (data || []).filter(
-        (match) =>
-          match.player1 &&
-          match.player2 &&
-          match.player1.trim() !== '' &&
-          match.player2.trim() !== '' &&
-          match.player1.toUpperCase() !== 'EMPTY' &&
-          match.player2.toUpperCase() !== 'EMPTY' &&
-          match.player1 !== 'NULL' &&
-          match.player2 !== 'NULL'
-      )
+      const filteredData = (data || []).filter((m: any) => isValidMatch(m))
 
-      setMatches((prev) => new Map(prev).set(tournamentId, filteredData))
+      setMatches((prev) => {
+        const next = new Map(prev)
+        next.set(tournamentId, filteredData)
+        return next
+      })
     } catch (error) {
-      console.error('Error fetching matches:', error)
+      console.error("Error fetching matches:", error)
     } finally {
       setLoadingMatches((prev) => {
-        const newSet = new Set(prev)
-        newSet.delete(tournamentId)
-        return newSet
+        const next = new Set(prev)
+        next.delete(tournamentId)
+        return next
       })
     }
   }
@@ -144,18 +152,19 @@ export default function TournamentsPage() {
   const handleToggleTournament = (tournamentId: string) => {
     if (expandedTournament === tournamentId) {
       setExpandedTournament(null)
-    } else {
-      setExpandedTournament(tournamentId)
-      fetchMatches(tournamentId)
+      return
     }
+    setExpandedTournament(tournamentId)
+    fetchMatches(tournamentId)
   }
 
   const getTournamentTypeLabel = (type: string) => {
-    if (type.includes('16')) return '16er DKO'
-    if (type.includes('8')) return '8er DKO'
-    if (type.includes('32')) return '32er DKO'
-    if (type.includes('64')) return '64er DKO'
-    return type
+    const t = type || ""
+    if (t.includes("16")) return "16er DKO"
+    if (t.includes("8")) return "8er DKO"
+    if (t.includes("32")) return "32er DKO"
+    if (t.includes("64")) return "64er DKO"
+    return t
   }
 
   const getMatchWinner = (match: MatchResult) => {
@@ -164,304 +173,291 @@ export default function TournamentsPage() {
     return null
   }
 
-  if (loading) {
+  const filteredTournaments = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return tournaments
+    return tournaments.filter((t) => {
+      const name = (t.tournament_name || "").toLowerCase()
+      const type = (t.tournament_type || "").toLowerCase()
+      const date = formatDateDE(t.tournament_date).toLowerCase()
+      return name.includes(q) || type.includes(q) || date.includes(q)
+    })
+  }, [tournaments, query])
+
+  const totalMatches = tournaments.reduce((sum, t) => sum + (t.match_count || 0), 0)
+  const lastDate = tournaments.length > 0 ? formatDateDE(tournaments[0].tournament_date) : "-"
+
+  const CompactMatchCard = ({ match }: { match: MatchResult }) => {
+    const winner = getMatchWinner(match)
+    const p1Win = winner === match.player1
+    const p2Win = winner === match.player2
+
+    const p1IsFreilos = match.player1.toUpperCase().includes("FREILOS")
+    const p2IsFreilos = match.player2.toUpperCase().includes("FREILOS")
+
     return (
-      <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
-        <Header />
-        <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-red-600 to-red-700 p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                <h2 className="text-lg sm:text-2xl font-bold text-white">Lion Cup Turniere</h2>
-              </div>
+      <div className="rounded-2xl border border-gray-200 bg-white p-2.5 shadow-sm">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <span className="rounded-full bg-gray-100 border border-gray-200 px-2 py-1 text-[10px] font-black text-gray-700">
+              ID {match.id}
+            </span>
+            <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-1 text-[10px] font-black text-blue-700">
+              Match {match.match_id}
+            </span>
+            {match.round ? (
+              <span className="rounded-full bg-purple-50 border border-purple-200 px-2 py-1 text-[10px] font-black text-purple-700">
+                Runde {match.round}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="text-[10px] font-bold text-gray-500 flex-shrink-0">{formatDateDE(match.updated_at)}</div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-[42%] rounded-xl border px-2 py-2 ${
+              p1IsFreilos ? "border-gray-200 bg-gray-100" : p1Win ? "border-green-300 bg-green-50" : "border-gray-200 bg-gray-50"
+            }`}
+          >
+            <div className={`text-[11px] font-semibold truncate ${p1IsFreilos ? "text-gray-500" : "text-gray-900"}`}>
+              {cleanPlayerName(match.player1)}
             </div>
-            <div className="p-6 sm:p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-red-600 mx-auto"></div>
-              <p className="mt-4 text-sm sm:text-base text-gray-600">Lade Turniere...</p>
+            <div
+              className={`mt-1 text-base font-black ${
+                p1IsFreilos ? "text-gray-400" : p1Win ? "text-green-700" : "text-gray-700"
+              }`}
+            >
+              {match.score1}
             </div>
           </div>
-        </main>
+
+          <div className="w-[16%] flex flex-col items-center justify-center">
+            <div className="text-[10px] font-black text-gray-300">VS</div>
+            <div className="mt-1 w-7 h-7" />
+          </div>
+
+          <div
+            className={`w-[42%] rounded-xl border px-2 py-2 ${
+              p2IsFreilos ? "border-gray-200 bg-gray-100" : p2Win ? "border-green-300 bg-green-50" : "border-gray-200 bg-gray-50"
+            }`}
+          >
+            <div className={`text-[11px] font-semibold truncate ${p2IsFreilos ? "text-gray-500" : "text-gray-900"}`}>
+              {cleanPlayerName(match.player2)}
+            </div>
+            <div
+              className={`mt-1 text-base font-black ${
+                p2IsFreilos ? "text-gray-400" : p2Win ? "text-green-700" : "text-gray-700"
+              }`}
+            >
+              {match.score2}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
 
+  if (loading) {
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
+    <main className="min-h-screen flex flex-col bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
       <Header />
 
-      <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl space-y-6 sm:space-y-8 pb-24">
-        <a
-          href="/tournament-series-app"
-          className="flex items-center gap-2 text-red-600 hover:text-red-700 font-semibold transition-colors px-4"
-        >
-          <ChevronDown className="h-5 w-5 rotate-90" />
-          Zurück zur Tabelle
-        </a>
-        <div className="px-4">
-          <div className="bg-gradient-to-br from-pink-50 via-red-50 to-pink-50 rounded-2xl shadow-2xl border-2 border-red-200 overflow-hidden">
-            <div className="text-center pt-6 pb-4 px-4">
-              <div className="flex justify-center mb-4">
-                <div className="relative">
-                  <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-4 shadow-xl">
-                    <Trophy className="h-10 w-10 text-white" />
+      <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
+        <div className="animate-in fade-in zoom-in-95 duration-300">
+          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-gray-200">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
+              <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+            </div>
+
+            <div className="text-center">
+              <p className="text-lg font-bold text-gray-900">Turniere werden geladen</p>
+              <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <MobileBottomNav />
+    </main>
+  )
+}
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+      <Header />
+
+      <main className="pt-12 sm:pt-14">
+        <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8 space-y-4">
+          <a href="/tournament-series-app" className="flex items-center gap-2 text-red-600 hover:text-red-700 font-semibold">
+            <ChevronDown className="h-5 w-5 rotate-90" />
+            Zurück zur Tabelle
+          </a>
+
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+            <div className="p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                      <Trophy className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <h1 className="text-base sm:text-lg font-black text-gray-900">Lion Cup Ergebnisse</h1>
+                      <p className="text-xs sm:text-sm text-gray-600 mt-1">Übersicht aller gespielten Matches</p>
+                    </div>
                   </div>
-                  <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full w-4 h-4 border-2 border-white"></div>
+                </div>
+
+                <div className="flex-shrink-0 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black text-gray-700">
+                  {filteredTournaments.length}
                 </div>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-3">
-                <span className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 bg-clip-text text-transparent">
-                  LION CUP TURNIERE
-                </span>
-              </h1>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="rounded-xl border border-gray-200 bg-white p-3">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-orange-600" />
+                    <p className="text-[11px] font-semibold text-gray-700">Turniere</p>
+                  </div>
+                  <p className="text-lg font-black text-gray-900 mt-1">{tournaments.length}</p>
+                </div>
 
-              <p className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">
-                Alle Turniere & Spielergebnisse
-              </p>
-              <p className="text-sm sm:text-base text-gray-500 mb-4">
-                Komplette Übersicht aller gespielten Matches
-              </p>
+                <div className="rounded-xl border border-gray-200 bg-white p-3">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-blue-600" />
+                    <p className="text-[11px] font-semibold text-gray-700">Matches</p>
+                  </div>
+                  <p className="text-lg font-black text-gray-900 mt-1">{totalMatches}</p>
+                </div>
 
-              <div className="flex justify-center items-center gap-4">
-                <div className="h-1 w-12 bg-gradient-to-r from-red-500 to-yellow-500 rounded-full"></div>
-                <Star className="h-4 w-4 text-yellow-500" />
-                <div className="h-1 w-12 bg-gradient-to-r from-yellow-500 to-red-500 rounded-full"></div>
+                <div className="rounded-xl border border-gray-200 bg-white p-3 col-span-2 sm:col-span-1">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-green-600" />
+                    <p className="text-[11px] font-semibold text-gray-700">Letztes</p>
+                  </div>
+                  <p className="text-sm font-black text-gray-900 mt-1">{lastDate}</p>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 px-4">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-red-600 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-gray-600 text-xs sm:text-sm">Turniere</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{tournaments.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <Target className="w-8 h-8 text-blue-600 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-gray-600 text-xs sm:text-sm">Gesamt Matches</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                  {tournaments.reduce((sum, t) => sum + (t.match_count || 0), 0)}
-                </p>
+              <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-3 flex items-center gap-2">
+                <Search className="h-4 w-4 text-gray-500" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Suche Turnier Name, Typ, Datum"
+                  className="w-full bg-transparent outline-none text-sm font-semibold text-gray-800"
+                />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-8 h-8 text-green-600 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-gray-600 text-xs sm:text-sm">Letztes Turnier</p>
-                <p className="text-base sm:text-lg font-bold text-gray-900">
-                  {tournaments.length > 0
-                    ? new Date(tournaments[0].tournament_date).toLocaleDateString('de-DE')
-                    : '-'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
-        <div className="px-4">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-red-600 to-red-700 p-4 sm:p-6">
-              <div className="flex items-center justify-between">
+            <div className="p-4 sm:p-5 border-b border-gray-200">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-5 h-5 text-orange-600" />
+                  </div>
                   <div>
-                    <h2 className="text-lg sm:text-2xl font-bold text-white">Alle Turniere</h2>
-                    <p className="text-xs sm:text-sm text-red-100 mt-1">
-                      Klicke auf ein Turnier um alle Spielergebnisse zu sehen
-                    </p>
+                    <h2 className="text-base sm:text-lg font-black text-gray-900">Turniere</h2>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Tap zum Aufklappen</p>
                   </div>
                 </div>
-                <div className="bg-white/20 rounded-lg px-2 sm:px-3 py-1">
-                  <span className="text-white font-semibold text-sm">{tournaments.length}</span>
+
+                <div className="flex-shrink-0 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black text-gray-700">
+                  {filteredTournaments.length}
                 </div>
               </div>
             </div>
 
-            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-              {tournaments.length > 0 ? (
-                tournaments.map((tournament, index) => {
+            <div className="p-3 sm:p-4 space-y-3">
+              {filteredTournaments.length > 0 ? (
+                filteredTournaments.map((tournament, index) => {
                   const isExpanded = expandedTournament === tournament.tournament_id
                   const tournamentMatches = matches.get(tournament.tournament_id) || []
-                  const isLoadingMatches = loadingMatches.has(tournament.tournament_id)
+                  const isLoading = loadingMatches.has(tournament.tournament_id)
 
                   return (
                     <div
                       key={tournament.tournament_id}
-                      className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden hover:border-red-500 transition-colors"
+                      className="rounded-2xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-md hover:border-orange-400 transition-all duration-300"
                     >
                       <button
+                        type="button"
                         onClick={() => handleToggleTournament(tournament.tournament_id)}
-                        className="w-full p-3 sm:p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
                       >
-                        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                          <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-red-500 text-white rounded-full font-bold text-sm sm:text-base flex-shrink-0">
-                            {tournaments.length - index}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="flex items-center justify-center w-11 h-11 bg-orange-600 text-white rounded-2xl font-black text-sm flex-shrink-0 shadow-sm">
+                            {filteredTournaments.length - index}
                           </div>
+
                           <div className="text-left min-w-0 flex-1">
-                            <h3 className="text-sm sm:text-xl font-bold text-gray-900 truncate">
-                              {tournament.tournament_name}
-                            </h3>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1 text-xs sm:text-sm text-gray-600">
-                              <span className="flex items-center gap-1">
-                                <Award className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                                <span className="truncate">{getTournamentTypeLabel(tournament.tournament_type)}</span>
+                            <div className="text-sm sm:text-base font-black text-gray-900 truncate">{tournament.tournament_name}</div>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-gray-600">
+                              <span className="inline-flex items-center gap-1">
+                                <Award className="w-3.5 h-3.5" />
+                                {getTournamentTypeLabel(tournament.tournament_type)}
                               </span>
-                              <span className="flex items-center gap-1">
-                                <Target className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                                {tournament.match_count || 0} Matches
+                              <span className="inline-flex items-center gap-1">
+                                <Target className="w-3.5 h-3.5" />
+                                {tournament.match_count || 0}
                               </span>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                                {new Date(tournament.tournament_date).toLocaleDateString('de-DE')}
+                              <span className="inline-flex items-center gap-1">
+                                <Calendar className="w-3.5 h-3.5" />
+                                {formatDateDE(tournament.tournament_date)}
                               </span>
                             </div>
                           </div>
                         </div>
+
                         {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0" />
+                          <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0" />
                         ) : (
-                          <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0" />
+                          <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
                         )}
                       </button>
 
-                      {isExpanded && (
-                        <div className="border-t-2 border-gray-200 p-3 sm:p-6 bg-gray-50">
-                          <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">
-                            Spielergebnisse 
-                          </h4>
-
-                          {isLoadingMatches ? (
-                            <div className="text-center py-8">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
-                              <p className="mt-3 text-sm text-gray-600">Lade Spielergebnisse...</p>
+                      {isExpanded ? (
+                        <div className="border-t border-gray-200 bg-gray-50 p-3 sm:p-4">
+                          {isLoading ? (
+                            <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
+                              <Loader2 className="h-8 w-8 animate-spin mx-auto text-gray-500" />
+                              <div className="mt-3 text-sm font-bold text-gray-600">Lade Matches</div>
                             </div>
                           ) : tournamentMatches.length > 0 ? (
                             <div className="space-y-3">
-                              {tournamentMatches.map((match) => {
-                                const winner = getMatchWinner(match)
-                                return (
-                                  <div
-                                    key={match.id}
-                                    className="bg-white rounded-lg border-2 border-gray-200 p-3 sm:p-4 hover:border-red-300 transition-colors"
-                                  >
-                                    <div className="flex items-center justify-between mb-3">
-                                      <div className="flex items-center gap-2">
-                                        <div className="bg-gray-100 rounded-lg px-2 py-1">
-                                          <span className="text-xs font-bold text-gray-600">ID: {match.id}</span>
-                                        </div>
-                                        <div className="bg-blue-100 rounded-lg px-2 py-1">
-                                          <span className="text-xs font-bold text-blue-700">
-                                            Match #{match.match_id}
-                                          </span>
-                                        </div>
-                                        {match.round && (
-                                          <div className="bg-purple-100 rounded-lg px-2 py-1">
-                                            <span className="text-xs font-bold text-purple-700">
-                                              Runde {match.round}
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="text-xs text-gray-500">
-                                        {new Date(match.updated_at).toLocaleDateString('de-DE')}
-                                      </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                      <div
-                                        className={`rounded-lg p-3 border-2 ${
-                                          winner === match.player1
-                                            ? 'bg-green-50 border-green-500'
-                                            : 'bg-gray-50 border-gray-300'
-                                        }`}
-                                      >
-                                        <div className="text-xs text-gray-600 mb-1">Spieler 1</div>
-                                        <div className="font-bold text-gray-900 text-sm sm:text-base truncate">
-                                          {match.player1}
-                                        </div>
-                                        <div
-                                          className={`text-2xl font-black mt-2 ${
-                                            winner === match.player1 ? 'text-green-600' : 'text-gray-600'
-                                          }`}
-                                        >
-                                          {match.score1}
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-center justify-center">
-                                        <div className="text-2xl font-black text-gray-400">VS</div>
-                                      </div>
-
-                                      <div
-                                        className={`rounded-lg p-3 border-2 ${
-                                          winner === match.player2
-                                            ? 'bg-green-50 border-green-500'
-                                            : 'bg-gray-50 border-gray-300'
-                                        }`}
-                                      >
-                                        <div className="text-xs text-gray-600 mb-1">Spieler 2</div>
-                                        <div className="font-bold text-gray-900 text-sm sm:text-base truncate">
-                                          {match.player2}
-                                        </div>
-                                        <div
-                                          className={`text-2xl font-black mt-2 ${
-                                            winner === match.player2 ? 'text-green-600' : 'text-gray-600'
-                                          }`}
-                                        >
-                                          {match.score2}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {match.winner && (
-                                      <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-center gap-2">
-                                        <Trophy className="h-4 w-4 text-yellow-500" />
-                                        <span className="text-sm font-bold text-gray-700">
-                                          Gewinner: <span className="text-green-600">{match.winner}</span>
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )
-                              })}
+                              {tournamentMatches.map((match) => (
+                                <CompactMatchCard key={match.id} match={match} />
+                              ))}
                             </div>
                           ) : (
-                            <div className="text-center py-12 text-gray-600">
-                              <Target className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                              <p>Keine Spielergebnisse gefunden</p>
+                            <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
+                              <Target className="h-10 w-10 mx-auto text-gray-400" />
+                              <div className="mt-3 text-sm font-bold text-gray-600">Keine Matches gefunden</div>
                             </div>
                           )}
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   )
                 })
               ) : (
-                <div className="text-center py-12 text-gray-600">
-                  <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                  <p>Noch keine Turniere vorhanden</p>
+                <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
+                  <Calendar className="h-10 w-10 mx-auto text-gray-400" />
+                  <div className="mt-3 text-sm font-bold text-gray-600">Noch keine Turniere vorhanden</div>
                 </div>
               )}
             </div>
           </div>
         </div>
       </main>
-
-      <footer className="py-4 sm:py-6 bg-gray-200 text-gray-600 text-xs sm:text-sm text-center mt-8 border-t border-gray-300 px-4">
-        <p>&copy; 2025 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>
-      </footer>
 
       <MobileBottomNav />
     </div>

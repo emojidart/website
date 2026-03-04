@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Camera, Calendar, Trophy, Filter, Heart, MessageCircle, Send, X, Users } from "lucide-react"
+import { Camera, Calendar, Trophy, Filter, Heart, MessageCircle, Send, X, Users, Loader2 } from "lucide-react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
@@ -159,13 +159,20 @@ export default function MatchGaleriePage() {
           return
         }
 
-        const { data: opponentTeamsData, error: opponentError } = await supabase.from("opponent_teams").select("*").order("name")
+        const { data: opponentTeamsData, error: opponentError } = await supabase
+          .from("opponent_teams")
+          .select("*")
+          .order("name")
         if (opponentError) console.error("Error fetching opponent teams:", opponentError)
 
         const enrichedMatches =
           matchesData?.map((match: any) => {
-            const homeOpponentTeam = match.home_opponent_team_id ? opponentTeamsData?.find((t: any) => t.id === match.home_opponent_team_id) : null
-            const awayOpponentTeam = match.away_opponent_team_id ? opponentTeamsData?.find((t: any) => t.id === match.away_opponent_team_id) : null
+            const homeOpponentTeam = match.home_opponent_team_id
+              ? opponentTeamsData?.find((t: any) => t.id === match.home_opponent_team_id)
+              : null
+            const awayOpponentTeam = match.away_opponent_team_id
+              ? opponentTeamsData?.find((t: any) => t.id === match.away_opponent_team_id)
+              : null
             return { ...match, home_opponent_team: homeOpponentTeam, away_opponent_team: awayOpponentTeam }
           }) || []
 
@@ -236,10 +243,7 @@ export default function MatchGaleriePage() {
 
   const loadLikedUsersForMatch = async (matchId: string) => {
     try {
-      const { data: likes, error: likeErr } = await supabase
-        .from("match_photo_likes")
-        .select("user_id")
-        .eq("match_id", matchId)
+      const { data: likes, error: likeErr } = await supabase.from("match_photo_likes").select("user_id").eq("match_id", matchId)
 
       if (likeErr) {
         console.error("loadLikedUsersForMatch likeErr:", likeErr)
@@ -542,29 +546,45 @@ export default function MatchGaleriePage() {
                       <div className="flex items-center gap-2 text-sm">
                         <div className="flex items-center gap-1 flex-1 min-w-0">
                           {match.home_team?.logo_url ? (
-                            <img src={match.home_team.logo_url || "/placeholder.svg"} alt={`${match.home_team.name} Logo`} className="w-4 h-4 rounded-full object-cover flex-shrink-0" />
+                            <img
+                              src={match.home_team.logo_url || "/placeholder.svg"}
+                              alt={`${match.home_team.name} Logo`}
+                              className="w-4 h-4 rounded-full object-cover flex-shrink-0"
+                            />
                           ) : (
                             <div className="w-4 h-4 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
                               <Trophy className="h-2 w-2 text-gray-500" />
                             </div>
                           )}
-                          <span className="font-medium text-gray-900 truncate">{match.home_team?.name || match.home_opponent_team?.name || "Team"}</span>
+                          <span className="font-medium text-gray-900 truncate">
+                            {match.home_team?.name || match.home_opponent_team?.name || "Team"}
+                          </span>
                         </div>
-                        {match.status === "completed" && <span className="text-xs font-bold text-gray-600">{match.home_score || 0}</span>}
+                        {match.status === "completed" && (
+                          <span className="text-xs font-bold text-gray-600">{match.home_score || 0}</span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2 text-sm">
                         <div className="flex items-center gap-1 flex-1 min-w-0">
                           {match.away_team?.logo_url ? (
-                            <img src={match.away_team.logo_url || "/placeholder.svg"} alt={`${match.away_team.name} Logo`} className="w-4 h-4 rounded-full object-cover flex-shrink-0" />
+                            <img
+                              src={match.away_team.logo_url || "/placeholder.svg"}
+                              alt={`${match.away_team.name} Logo`}
+                              className="w-4 h-4 rounded-full object-cover flex-shrink-0"
+                            />
                           ) : (
                             <div className="w-4 h-4 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
                               <Trophy className="h-2 w-2 text-gray-500" />
                             </div>
                           )}
-                          <span className="font-medium text-gray-900 truncate">{match.away_team?.name || match.away_opponent_team?.name || "Team"}</span>
+                          <span className="font-medium text-gray-900 truncate">
+                            {match.away_team?.name || match.away_opponent_team?.name || "Team"}
+                          </span>
                         </div>
-                        {match.status === "completed" && <span className="text-xs font-bold text-gray-600">{match.away_score || 0}</span>}
+                        {match.status === "completed" && (
+                          <span className="text-xs font-bold text-gray-600">{match.away_score || 0}</span>
+                        )}
                       </div>
                     </div>
 
@@ -580,7 +600,9 @@ export default function MatchGaleriePage() {
                       <div className="flex items-center gap-4">
                         <button
                           type="button"
-                          className={`inline-flex items-center gap-1 text-sm ${isLiked ? "text-red-600" : "text-gray-600"} hover:text-red-600 transition-colors disabled:opacity-50`}
+                          className={`inline-flex items-center gap-1 text-sm ${
+                            isLiked ? "text-red-600" : "text-gray-600"
+                          } hover:text-red-600 transition-colors disabled:opacity-50`}
                           disabled={isLikeBusy}
                           onClick={(e) => {
                             e.stopPropagation()
@@ -620,36 +642,43 @@ export default function MatchGaleriePage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-white text-gray-900 font-sans">
-        <Header />
-        <main className="pt-8 pb-20">
-          <div className="container mx-auto px-4 md:px-6 py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6 backdrop-blur-sm">
-                <Camera className="h-12 w-12 text-white mx-auto" />
+      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <Header variant="app" title="Match-Galerie" subtitle="Fotos & Momente" backHref="/member-profile-app" />
+
+        <div className="flex-1 flex items-center justify-center px-4 pb-20">
+          <div className="animate-in fade-in zoom-in-95 duration-300">
+            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
+                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
               </div>
-              <p className="mt-4 text-gray-600">Lade Match-Galerie...</p>
+
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-900">Match-Galerie wird geladen</p>
+                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+              </div>
             </div>
           </div>
-        </main>
+        </div>
+
         <MobileBottomNav />
         <FAQChatWidget />
-      </div>
+      </main>
     )
   }
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-white text-gray-900 font-sans">
-        <Header />
-        <main className="pt-8 pb-20">
-          <div className="container mx-auto px-4 md:px-6 py-8">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Anmeldung erforderlich</h1>
-              <p className="text-gray-600 mb-6">Du musst angemeldet sein, um die Match-Galerie zu sehen.</p>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900 font-sans flex flex-col">
+        <Header variant="app" title="Match-Galerie" subtitle="Anmeldung erforderlich" backHref="/member-profile-app" />
+
+        <main className="flex-1 flex items-center justify-center px-4 pb-20">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Anmeldung erforderlich</h1>
+            <p className="text-gray-600 mb-6">Du musst angemeldet sein, um die Match-Galerie zu sehen.</p>
           </div>
         </main>
+
         <MobileBottomNav />
         <FAQChatWidget />
       </div>
@@ -660,11 +689,16 @@ export default function MatchGaleriePage() {
   const currentLikedUsers = currentMatchId ? likedUsers[currentMatchId] || [] : []
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
-      <Header />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900 font-sans flex flex-col overflow-x-hidden">
+      <Header variant="app" title="Match-Galerie" subtitle={selectedSeasonLabel} backHref="/member-profile-app" />
 
-      <main className="pt-8 pb-20">
-        <motion.div className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8" variants={containerVariants} initial="hidden" animate="visible">
+      <main className="pt-4 pb-20 flex-1">
+        <motion.div
+          className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-12">
             <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
               <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
@@ -676,7 +710,9 @@ export default function MatchGaleriePage() {
                 <span className="block text-orange-200">{selectedSeasonLabel}</span>
               </h1>
 
-              <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-3 sm:mb-4">Alle Teamfotos und Spielmomente</p>
+              <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-3 sm:mb-4">
+                Alle Teamfotos und Spielmomente
+              </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 text-orange-100">
                 <div className="flex items-center gap-2">
@@ -749,11 +785,17 @@ export default function MatchGaleriePage() {
                     <Camera className="h-5 w-5 text-orange-600" />
                   </div>
                   <div className="min-w-0">
-                    <DialogTitle className="text-base sm:text-lg font-bold truncate">{selectedMatch && getMatchTitle(selectedMatch)}</DialogTitle>
+                    <DialogTitle className="text-base sm:text-lg font-bold truncate">
+                      {selectedMatch && getMatchTitle(selectedMatch)}
+                    </DialogTitle>
                     {selectedMatch && (
                       <div className="text-xs text-gray-500 mt-0.5">
-                        {new Date(selectedMatch.match_date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })} •{" "}
-                        <span className="font-semibold">{getMatchResultText(selectedMatch)}</span>
+                        {new Date(selectedMatch.match_date).toLocaleDateString("de-DE", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })}{" "}
+                        • <span className="font-semibold">{getMatchResultText(selectedMatch)}</span>
                       </div>
                     )}
                   </div>
@@ -773,7 +815,15 @@ export default function MatchGaleriePage() {
             <div className="grid grid-cols-1 lg:grid-cols-5">
               {/* Image */}
               <div className="relative w-full h-[42vh] sm:h-[60vh] lg:h-[80vh] lg:col-span-3 bg-black">
-                {selectedPhotoUrl && <Image src={selectedPhotoUrl || "/placeholder.svg"} alt="Match-Foto" fill className="object-contain" sizes="95vw" />}
+                {selectedPhotoUrl && (
+                  <Image
+                    src={selectedPhotoUrl || "/placeholder.svg"}
+                    alt="Match-Foto"
+                    fill
+                    className="object-contain"
+                    sizes="95vw"
+                  />
+                )}
               </div>
 
               {/* Right panel */}
@@ -806,7 +856,9 @@ export default function MatchGaleriePage() {
                             disabled={!!likeLoading[String(selectedMatch.id)]}
                             onClick={() => toggleLike(String(selectedMatch.id))}
                           >
-                            <Heart className={`h-4 w-4 ${likedByMe[String(selectedMatch.id)] ? "fill-red-600" : ""}`} />
+                            <Heart
+                              className={`h-4 w-4 ${likedByMe[String(selectedMatch.id)] ? "fill-red-600" : ""}`}
+                            />
                             <span className="text-sm font-bold">{likeCounts[String(selectedMatch.id)] || 0}</span>
                           </button>
 
@@ -824,19 +876,30 @@ export default function MatchGaleriePage() {
                           ) : (
                             <div className="flex flex-wrap gap-2">
                               {currentLikedUsers.slice(0, 20).map((u) => (
-                                <div key={u.user_id} className="flex items-center gap-2 rounded-2xl border bg-gray-50 px-2.5 py-1.5">
+                                <div
+                                  key={u.user_id}
+                                  className="flex items-center gap-2 rounded-2xl border bg-gray-50 px-2.5 py-1.5"
+                                >
                                   {u.photo_url ? (
-                                    <img src={u.photo_url || "/placeholder.svg"} alt={u.name} className="w-6 h-6 rounded-full object-cover border" />
+                                    <img
+                                      src={u.photo_url || "/placeholder.svg"}
+                                      alt={u.name}
+                                      className="w-6 h-6 rounded-full object-cover border"
+                                    />
                                   ) : (
                                     <div className="w-6 h-6 rounded-full bg-white border flex items-center justify-center text-[11px] font-bold text-gray-600">
                                       {u.name.slice(0, 1).toUpperCase()}
                                     </div>
                                   )}
-                                  <div className="text-xs font-semibold text-gray-800 max-w-[140px] truncate">{u.name}</div>
+                                  <div className="text-xs font-semibold text-gray-800 max-w-[140px] truncate">
+                                    {u.name}
+                                  </div>
                                 </div>
                               ))}
                               {currentLikedUsers.length > 20 && (
-                                <div className="text-xs text-gray-500 self-center">+{currentLikedUsers.length - 20} weitere</div>
+                                <div className="text-xs text-gray-500 self-center">
+                                  +{currentLikedUsers.length - 20} weitere
+                                </div>
                               )}
                             </div>
                           )}
@@ -849,13 +912,17 @@ export default function MatchGaleriePage() {
                       <div className="text-sm font-bold text-gray-900 mb-3">Kommentare</div>
 
                       {commentError && (
-                        <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-2xl p-3">{commentError}</div>
+                        <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-2xl p-3">
+                          {commentError}
+                        </div>
                       )}
 
                       {commentsLoading ? (
                         <div className="text-sm text-gray-500">Lade Kommentare…</div>
                       ) : comments.length === 0 ? (
-                        <div className="text-sm text-gray-500 bg-white border rounded-2xl p-4">Noch keine Kommentare. Sei der Erste 🙂</div>
+                        <div className="text-sm text-gray-500 bg-white border rounded-2xl p-4">
+                          Noch keine Kommentare. Sei der Erste 🙂
+                        </div>
                       ) : (
                         <div className="space-y-3">
                           {comments.map((c) => {
@@ -865,10 +932,16 @@ export default function MatchGaleriePage() {
                                 {!isMe && (
                                   <div className="shrink-0">
                                     {c.photo_url ? (
-                                      <img src={c.photo_url || "/placeholder.svg"} alt="Profil" className="w-8 h-8 rounded-full object-cover border" />
+                                      <img
+                                        src={c.photo_url || "/placeholder.svg"}
+                                        alt="Profil"
+                                        className="w-8 h-8 rounded-full object-cover border"
+                                      />
                                     ) : (
                                       <div className="w-8 h-8 rounded-full bg-white border flex items-center justify-center text-xs font-bold text-gray-600">
-                                        {String(c.display_name || "U").slice(0, 1).toUpperCase()}
+                                        {String(c.display_name || "U")
+                                          .slice(0, 1)
+                                          .toUpperCase()}
                                       </div>
                                     )}
                                   </div>
@@ -876,12 +949,19 @@ export default function MatchGaleriePage() {
 
                                 <div className="max-w-[85%] rounded-2xl border px-3 py-2 bg-white">
                                   <div className="flex items-center justify-between gap-3">
-                                    <div className="text-xs font-semibold text-gray-900 truncate">{c.display_name || "User"}</div>
+                                    <div className="text-xs font-semibold text-gray-900 truncate">
+                                      {c.display_name || "User"}
+                                    </div>
                                     <div className="text-[11px] text-gray-400">
-                                      {new Date(c.created_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                                      {new Date(c.created_at).toLocaleTimeString("de-DE", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
                                     </div>
                                   </div>
-                                  <div className="mt-1 text-sm text-gray-800 whitespace-pre-wrap break-words">{c.body}</div>
+                                  <div className="mt-1 text-sm text-gray-800 whitespace-pre-wrap break-words">
+                                    {c.body}
+                                  </div>
                                 </div>
 
                                 {isMe && <div className="shrink-0 w-8" />}

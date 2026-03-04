@@ -25,128 +25,138 @@ const itemVariants = {
 
 export default function SponsoringPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
       <Header />
-      <main className="pt-8 pb-24">
+
+      <main className="pt-12 sm:pt-14">
         <motion.div
-          className="container mx-auto px-4 md:px-6 py-8"
+          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          <motion.div variants={itemVariants} className="text-center mb-12">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
-                <Trophy className="h-12 w-12 text-white mx-auto" />
-              </div>
-              <h1 className="text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-4">
-                <span className="block text-white">SPONSORING</span>
-                <span className="block text-orange-200">PARTNERSCHAFTEN</span>
-              </h1>
-              <p className="text-lg md:text-xl font-bold uppercase text-orange-100 mb-4">
-                Werden Sie Teil unserer Erfolgsgeschichte
-              </p>
-              <div className="bg-orange-600/30 rounded-xl p-4 text-orange-100">
-                <p className="text-sm italic">Hohe Reichweite und Sichtbarkeit in der Region</p>
+          {/* App Header Card */}
+          <motion.div variants={itemVariants} className="mb-6">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="p-4 flex items-start gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                  <Trophy className="w-5 h-5 text-orange-600" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-lg font-black">Sponsoring</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Partnerschaften, Reichweite und Sichtbarkeit – gemeinsam für den Dartsport.
+                  </p>
+                </div>
               </div>
             </div>
           </motion.div>
 
-          <section className="border-y bg-muted/30 py-16 mb-8">
-            <div className="grid gap-8 md:grid-cols-4">
-              <div className="text-center">
-                <div className="mb-2 text-4xl font-bold text-primary">50+</div>
-                <div className="text-sm text-muted-foreground">Aktive Mitglieder</div>
-              </div>
-              <div className="text-center">
-                <div className="mb-2 text-4xl font-bold text-primary">50+</div>
-                <div className="text-sm text-muted-foreground">Turniere pro Jahr</div>
-              </div>
-              <div className="text-center">
-                <div className="mb-2 text-4xl font-bold text-primary">1.000+</div>
-                <div className="text-sm text-muted-foreground">Zuschauer jährlich</div>
-              </div>
-              <div className="text-center">
-                <div className="mb-2 text-4xl font-bold text-primary">10+</div>
-                <div className="text-sm text-muted-foreground">Jahre Tradition</div>
+          {/* Stats */}
+          <motion.section variants={itemVariants} className="mb-6">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5">
+              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-3">Auf einen Blick</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { value: "50+", label: "Aktive Mitglieder" },
+                  { value: "50+", label: "Turniere pro Jahr" },
+                  { value: "1.000+", label: "Zuschauer jährlich" },
+                  { value: "10+", label: "Jahre Tradition" },
+                ].map((s) => (
+                  <div key={s.label} className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-center">
+                    <div className="text-2xl sm:text-3xl font-black text-gray-900">{s.value}</div>
+                    <div className="text-[11px] sm:text-xs text-gray-600 font-semibold mt-1">{s.label}</div>
+                  </div>
+                ))}
               </div>
             </div>
-          </section>
+          </motion.section>
 
-          <section className="mb-20">
-            <div className="mb-12 text-center">
-              <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-primary">Ihre Vorteile</p>
-              <h2 className="mb-4 text-3xl font-bold md:text-4xl">Warum uns sponsern?</h2>
-              <p className="mx-auto max-w-2xl text-muted-foreground leading-relaxed">
-                Als Sponsor profitieren Sie von vielfältigen Möglichkeiten zur Markenpräsentation und erreichen eine
-                engagierte Zielgruppe.
-              </p>
+          {/* Benefits */}
+          <motion.section variants={itemVariants} className="mb-6">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5">
+              <div className="mb-4">
+                <p className="text-xs font-black uppercase tracking-wider text-orange-600">Ihre Vorteile</p>
+                <h2 className="text-base sm:text-lg font-black text-gray-900 mt-1">Warum uns sponsern?</h2>
+                <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+                  Als Sponsor profitieren Sie von vielfältigen Möglichkeiten zur Markenpräsentation und erreichen eine
+                  engagierte Zielgruppe.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Card className="rounded-2xl border border-gray-200 shadow-sm p-4">
+                  <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
+                    <Target className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <h3 className="text-sm font-black text-gray-900 mb-1">Hohe Sichtbarkeit</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Ihr Logo auf Trikots, Bannern und bei allen Veranstaltungen prominent platziert.
+                  </p>
+                </Card>
+
+                <Card className="rounded-2xl border border-gray-200 shadow-sm p-4">
+                  <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
+                    <Users className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <h3 className="text-sm font-black text-gray-900 mb-1">Zielgruppe erreichen</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Direkter Zugang zu einer sportbegeisterten und loyalen Community in der Region.
+                  </p>
+                </Card>
+
+                <Card className="rounded-2xl border border-gray-200 shadow-sm p-4">
+                  <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
+                    <Trophy className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <h3 className="text-sm font-black text-gray-900 mb-1">Prestige & Image</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Verbinden Sie Ihre Marke mit Erfolg, Teamgeist und sportlicher Exzellenz.
+                  </p>
+                </Card>
+
+                <Card className="rounded-2xl border border-gray-200 shadow-sm p-4">
+                  <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
+                    <TrendingUp className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <h3 className="text-sm font-black text-gray-900 mb-1">Wachsende Reichweite</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Profitieren Sie von unserer stetig wachsenden Social-Media-Präsenz und Medienberichterstattung.
+                  </p>
+                </Card>
+              </div>
             </div>
+          </motion.section>
 
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="p-6">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Target className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mb-2 text-xl font-semibold">Hohe Sichtbarkeit</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Ihr Logo auf Trikots, Bannern und bei allen Veranstaltungen prominent platziert.
-                </p>
-              </Card>
-
-              <Card className="p-6">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mb-2 text-xl font-semibold">Zielgruppe erreichen</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Direkter Zugang zu einer sportbegeisterten und loyalen Community in der Region.
-                </p>
-              </Card>
-
-              <Card className="p-6">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Trophy className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mb-2 text-xl font-semibold">Prestige & Image</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Verbinden Sie Ihre Marke mit Erfolg, Teamgeist und sportlicher Exzellenz.
-                </p>
-              </Card>
-
-              <Card className="p-6">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <TrendingUp className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mb-2 text-xl font-semibold">Wachsende Reichweite</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Profitieren Sie von unserer stetig wachsenden Social-Media-Präsenz und Medienberichterstattung.
-                </p>
-              </Card>
-            </div>
-          </section>
-
-          <section>
-            <Card className="overflow-hidden bg-gradient-to-br from-primary/10 via-background to-primary/5">
-              <div className="p-12 text-center md:p-16">
-                <h2 className="mb-4 text-3xl font-bold md:text-4xl">Bereit für eine Partnerschaft?</h2>
-                <p className="mx-auto mb-8 max-w-2xl text-muted-foreground leading-relaxed">
+          {/* CTA */}
+          <motion.section variants={itemVariants}>
+            <div className="rounded-2xl border border-orange-200 bg-orange-50 shadow-sm overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="p-4 sm:p-6 text-center">
+                <h2 className="text-base sm:text-lg font-black text-gray-900">Bereit für eine Partnerschaft?</h2>
+                <p className="text-sm text-gray-700 mt-2 leading-relaxed">
                   Kontaktieren Sie uns noch heute und lassen Sie uns gemeinsam die perfekte Sponsoring-Lösung für Ihr
                   Unternehmen finden.
                 </p>
-                <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-                  <Button size="lg" className="text-base">
+
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                  <Button size="lg" className="bg-orange-600 hover:bg-orange-700 text-white font-black w-full sm:w-auto">
                     <Mail className="mr-2 h-5 w-5" />
                     E-Mail senden
                   </Button>
-                  <Button size="lg" variant="outline" className="text-base bg-transparent">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-black w-full sm:w-auto"
+                  >
                     <Phone className="mr-2 h-5 w-5" />
                     Anrufen
                   </Button>
                 </div>
               </div>
-            </Card>
-          </section>
+            </div>
+          </motion.section>
         </motion.div>
       </main>
 

@@ -23,7 +23,7 @@ export default async function PlayerSearchPage() {
 
   if (recruitmentError) {
     return (
-      <div className="min-h-screen bg-white text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20 md:pb-0">
         <Header />
         <main className="flex-grow flex items-center justify-center p-8">
           <div className="text-center text-destructive">
@@ -32,6 +32,7 @@ export default async function PlayerSearchPage() {
             <p className="text-lg">Bitte versuchen Sie es später erneut.</p>
           </div>
         </main>
+        <MobileBottomNav />
       </div>
     )
   }
@@ -39,30 +40,47 @@ export default async function PlayerSearchPage() {
   const recruitmentNeeds: RecruitmentNeed[] = recruitmentData || []
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans pb-20 md:pb-0">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20 md:pb-0">
       <Header />
 
-      <main className="pt-8 pb-24">
-        <div className="container mx-auto px-4 md:px-6 py-8">
-          <div className="text-center mb-12">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
-                <Users className="h-12 w-12 text-white mx-auto" />
-              </div>
-              <h1 className="text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-4">
-                <span className="block text-white">OFFENE</span>
-                <span className="block text-orange-200">POSITIONEN</span>
-              </h1>
-              <p className="text-lg md:text-xl font-bold uppercase text-orange-100 mb-4">
-                Wir suchen talentierte Darts-Spieler für unsere Teams
-              </p>
-              <div className="bg-orange-600/30 rounded-xl p-4 text-orange-100">
-                <p className="text-sm italic">Bewirb dich jetzt und werde Teil unseres Teams!</p>
+     <main className="pt-16 sm:pt-14 pb-24">
+  <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+          {/* App-like header card */}
+          <div className="mb-4 rounded-2xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-start gap-4">
+                <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
+                  <Users className="w-6 h-6" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-700 border border-orange-100">
+                    Recruitment
+                  </div>
+
+                  <h1 className="mt-2 text-xl sm:text-2xl font-black leading-tight">
+                    Offene Positionen
+                  </h1>
+
+                  <p className="mt-1 text-sm text-gray-600">
+                    Wir suchen Spieler für unsere Teams. Tippe rein und melde dich.
+                  </p>
+
+                  <div className="mt-3 inline-flex items-center gap-2 text-xs text-gray-600">
+                    <span className="font-semibold text-gray-900">{recruitmentNeeds.length}</span>
+                    <span>Eintrag(e) verfügbar</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <RecruitmentGallery recruitmentNeeds={recruitmentNeeds} />
+          {/* Content */}
+          <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm ring-1 ring-black/5">
+            <div className="p-3 sm:p-4">
+              <RecruitmentGallery recruitmentNeeds={recruitmentNeeds} />
+            </div>
+          </div>
         </div>
       </main>
 

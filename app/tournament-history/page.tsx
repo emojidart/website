@@ -5,20 +5,12 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Calendar,
-  Trophy,
-  Users,
-  ArrowRight,
-  CheckCircle2,
-  Search,
-  Filter,
-  Clock,
-} from "lucide-react"
+import { Calendar, Trophy, Users, ArrowRight, CheckCircle2, Search, Filter, Clock, X } from "lucide-react"
+import { motion } from "framer-motion"
 
 type TournamentOverviewRow = {
   status_row_id: number | string
@@ -51,6 +43,23 @@ type KratzerResultRow = {
   created_at: string | null
 }
 
+/* ---------------- motion ---------------- */
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.04 },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 14 },
+  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 14 } },
+}
+
+/* ---------------- helpers ---------------- */
+
 const formatDateTime = (value?: string | null) => {
   if (!value) return "—"
   const d = new Date(value)
@@ -75,10 +84,10 @@ const typeLabel = (t?: string | null) => {
 }
 
 const statusBadge = () => (
-  <Badge className="bg-green-600 text-white inline-flex items-center gap-1">
+  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-800">
     <CheckCircle2 className="h-3.5 w-3.5" />
     Abgeschlossen
-  </Badge>
+  </span>
 )
 
 const formatDurationMs = (ms: number) => {
@@ -90,9 +99,7 @@ const formatDurationMs = (ms: number) => {
   const totalHours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
 
-  if (totalHours < 24) {
-    return minutes ? `${totalHours}h ${minutes}m` : `${totalHours}h`
-  }
+  if (totalHours < 24) return minutes ? `${totalHours}h ${minutes}m` : `${totalHours}h`
 
   const days = Math.floor(totalHours / 24)
   const hours = totalHours % 24
@@ -107,6 +114,33 @@ const getDurationLabel = (r: TournamentOverviewRow) => {
   return formatDurationMs(Math.max(0, end - start))
 }
 
+function Chip({
+  children,
+  tone = "gray",
+}: {
+  children: React.ReactNode
+  tone?: "gray" | "orange" | "blue" | "emerald" | "amber" | "slate"
+}) {
+  const cls =
+    tone === "orange"
+      ? "bg-orange-50 text-orange-900 border-orange-200"
+      : tone === "blue"
+        ? "bg-blue-50 text-blue-900 border-blue-200"
+        : tone === "emerald"
+          ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+          : tone === "amber"
+            ? "bg-amber-50 text-amber-900 border-amber-200"
+            : tone === "slate"
+              ? "bg-slate-50 text-slate-800 border-slate-200"
+              : "bg-gray-50 text-gray-800 border-gray-200"
+
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
+      {children}
+    </span>
+  )
+}
+
 export default function TournamentHistoryPage() {
   const router = useRouter()
 
@@ -115,9 +149,9 @@ export default function TournamentHistoryPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [q, setQ] = useState("")
-  const [typeFilter, setTypeFilter] = useState<
-    "all" | "8er_dko" | "16er_dko" | "32er_dko" | "64er_dko" | "kratzer"
-  >("all")
+  const [typeFilter, setTypeFilter] = useState<"all" | "8er_dko" | "16er_dko" | "32er_dko" | "64er_dko" | "kratzer">(
+    "all",
+  )
 
   useEffect(() => {
     const load = async () => {
@@ -141,7 +175,7 @@ export default function TournamentHistoryPage() {
       let combined = (data ?? []) as TournamentOverviewRow[]
 
       try {
-        // 2) Kratzer Turniere (✅ inkl. finished_at)
+       
         const { data: kt, error: ktErr } = await supabase
           .from("kratzer_tournaments")
           .select("id,user_id,name,status,created_at,finished_at")
@@ -150,12 +184,11 @@ export default function TournamentHistoryPage() {
         if (ktErr) {
           console.warn("Kratzer tournaments load warning:", ktErr)
         } else {
-          const finishedKratzer = (kt ?? []).filter((t: any) => {
-            const s = String(t?.status ?? "").toLowerCase()
-            return s === "finished"
-          }) as KratzerTournamentRow[]
+          const finishedKratzer = (kt ?? []).filter((t: any) => String(t?.status ?? "").toLowerCase() === "finished") as
+            | KratzerTournamentRow[]
+            | any[]
 
-          const ids = finishedKratzer.map((t) => t.id).filter(Boolean)
+          const ids = finishedKratzer.map((t: any) => t.id).filter(Boolean)
 
           // Results (Winner / Rounds)
           const resultsById = new Map<string, KratzerResultRow>()
@@ -168,9 +201,7 @@ export default function TournamentHistoryPage() {
             if (krErr) {
               console.warn("Kratzer results load warning:", krErr)
             } else {
-              for (const r of (kr ?? []) as KratzerResultRow[]) {
-                resultsById.set(r.kratzer_tournament_id, r)
-              }
+              for (const r of (kr ?? []) as KratzerResultRow[]) resultsById.set(r.kratzer_tournament_id, r)
             }
           }
 
@@ -192,7 +223,7 @@ export default function TournamentHistoryPage() {
             }
           }
 
-          const mappedKratzer: TournamentOverviewRow[] = finishedKratzer.map((t) => {
+          const mappedKratzer: TournamentOverviewRow[] = (finishedKratzer as KratzerTournamentRow[]).map((t) => {
             const res = resultsById.get(t.id)
             const created = (t.created_at ?? new Date().toISOString()) as string
             const finishedAt = t.finished_at ?? null
@@ -204,9 +235,7 @@ export default function TournamentHistoryPage() {
               tournament_name: t.name ?? "Kratzer-Turnier",
               status: "completed",
               created_at: created,
-              // ✅ für Dauer: hier Ende setzen, falls vorhanden
               updated_at: (finishedAt ?? created) as string,
-              // ✅ last_updated_at ist "Ende" (oder results created_at fallback)
               last_updated_at: finishedAt ?? res?.created_at ?? t.created_at ?? null,
               winner: res?.winner_name ?? null,
               participants: participantsById.get(t.id) ?? 0,
@@ -237,9 +266,7 @@ export default function TournamentHistoryPage() {
       const s = (r.status ?? "").toLowerCase()
       if (s !== "completed") return false
 
-      if (typeFilter !== "all") {
-        if ((r.tournament_type ?? "") !== typeFilter) return false
-      }
+      if (typeFilter !== "all" && (r.tournament_type ?? "") !== typeFilter) return false
 
       if (qq) {
         const hay = `${r.tournament_name ?? ""} ${r.tournament_type ?? ""} ${r.winner ?? ""}`.toLowerCase()
@@ -251,136 +278,191 @@ export default function TournamentHistoryPage() {
   }, [rows, q, typeFilter])
 
   const openTournament = (r: TournamentOverviewRow) => {
-    router.push(
-      `/tournament-history/${encodeURIComponent(r.tournament_id)}?type=${encodeURIComponent(r.tournament_type)}`,
-    )
+    router.push(`/tournament-history/${encodeURIComponent(r.tournament_id)}?type=${encodeURIComponent(r.tournament_type)}`)
+  }
+
+  const resetFilters = () => {
+    setQ("")
+    setTypeFilter("all")
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
       <Header />
 
-      <main className="flex-grow container mx-auto px-4 py-6 pb-24 max-w-6xl">
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-600 rounded-3xl mb-4 shadow-xl">
-            <Trophy className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold">Turnier Historie</h1>
-          <p className="text-gray-600">Alle abgeschlossenen Turniere</p>
-        </div>
-
-        <Card className="mb-6 shadow-xl">
-          <CardContent className="p-4">
-            <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
-              <div className="flex-1 flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                  <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                  <Input
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder="Suche nach Name, Sieger, Typ…"
-                    className="pl-9"
-                  />
+      {/* fixed header offset */}
+      <main className="pt-12 sm:pt-14">
+        <motion.div
+          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {/* App-Header Card (Kontakt-Style) */}
+          <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="p-4 sm:p-5 flex items-start gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                  <Trophy className="w-5 h-5 text-orange-600" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-lg font-black">Turnier Historie</h1>
+                  <p className="text-sm text-gray-600 mt-1">Alle abgeschlossenen Turniere auf einen Blick</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {loading ? "Lade…" : `${filtered.length} Turnier(e) gefunden`}
+                  </p>
                 </div>
 
-                <div className="flex gap-2 items-center">
-                  <Filter className="h-4 w-4 text-gray-600" />
-                  <select
-                    className="h-10 rounded-md border px-3 text-sm"
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value as any)}
-                    title="Typ"
-                  >
-                    <option value="all">Alle Typen</option>
-                    <option value="8er_dko">8er DKO</option>
-                    <option value="16er_dko">16er DKO</option>
-                    <option value="32er_dko">32er DKO</option>
-                    <option value="64er_dko">64er DKO</option>
-                    <option value="kratzer">Kratzer</option>
-                  </select>
+                <div className="ml-auto hidden sm:flex items-center gap-2">
+                  <Chip tone="emerald">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Completed
+                  </Chip>
+                  {typeFilter !== "all" ? <Chip tone="orange">{typeLabel(typeFilter)}</Chip> : <Chip>Alle Typen</Chip>}
                 </div>
               </div>
+            </div>
+          </motion.div>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setQ("")
-                    setTypeFilter("all")
-                  }}
+          {/* Filter Card (app look) */}
+          <motion.div variants={itemVariants} className="mb-5">
+            <Card className="rounded-2xl border border-gray-200 shadow-sm">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+                  <div className="flex-1 flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                      <Input
+                        value={q}
+                        onChange={(e) => setQ(e.target.value)}
+                        placeholder="Suche nach Name, Sieger, Typ…"
+                        className="pl-9 h-11 rounded-2xl"
+                      />
+                      {q ? (
+                        <button
+                          type="button"
+                          onClick={() => setQ("")}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl hover:bg-gray-100"
+                          aria-label="Suche leeren"
+                        >
+                          <X className="h-4 w-4 text-gray-500" />
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <div className="flex gap-2 items-center">
+                      <div className="w-11 h-11 rounded-2xl border border-gray-200 bg-white flex items-center justify-center">
+                        <Filter className="h-4 w-4 text-gray-600" />
+                      </div>
+
+                      <select
+                        className="h-11 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-200"
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value as any)}
+                        title="Typ"
+                      >
+                        <option value="all">Alle Typen</option>
+                        <option value="8er_dko">8er DKO</option>
+                        <option value="16er_dko">16er DKO</option>
+                        <option value="32er_dko">32er DKO</option>
+                        <option value="64er_dko">64er DKO</option>
+                        <option value="kratzer">Kratzer</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={resetFilters}
+                      className="h-11 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 font-black"
+                    >
+                      Zurücksetzen
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Content */}
+          {loading ? (
+            <motion.div variants={itemVariants} className="flex justify-center py-16">
+              <div className="w-10 h-10 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
+            </motion.div>
+          ) : error ? (
+            <motion.div variants={itemVariants} className="text-red-600 font-semibold">
+              {error}
+            </motion.div>
+          ) : filtered.length === 0 ? (
+            <motion.div variants={itemVariants}>
+              <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 text-gray-700">
+                Keine abgeschlossenen Turniere gefunden.
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+              {filtered.map((r) => (
+                <Card
+                  key={`${r.tournament_id}_${r.tournament_type}`}
+                  className="rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition cursor-pointer overflow-hidden"
+                  onClick={() => openTournament(r)}
                 >
-                  Zurücksetzen
-                </Button>
-              </div>
-            </div>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-black line-clamp-1">{r.tournament_name}</CardTitle>
 
-            <div className="mt-3 text-sm text-gray-600">
-              {loading ? "Lade…" : `${filtered.length} Turnier(e)`}
-            </div>
-          </CardContent>
-        </Card>
+                    <div className="mt-2 flex flex-wrap gap-2 items-center">
+                      <Chip tone="gray">{typeLabel(r.tournament_type)}</Chip>
+                      {statusBadge()}
+                    </div>
+                  </CardHeader>
 
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="w-10 h-10 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : error ? (
-          <div className="text-red-600 font-semibold">{error}</div>
-        ) : filtered.length === 0 ? (
-          <div className="text-gray-700">Keine abgeschlossenen Turniere gefunden.</div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((r) => (
-              <Card
-                key={`${r.tournament_id}_${r.tournament_type}`}
-                className="shadow-xl cursor-pointer hover:shadow-2xl"
-                onClick={() => openTournament(r)}
-              >
-                <CardContent className="p-5">
-                  <h3 className="text-lg font-bold truncate">{r.tournament_name}</h3>
+                  <CardContent className="pt-0 pb-5">
+                    <div className="mt-2 space-y-2 text-sm text-gray-700">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-orange-600" />
+                        <span className="font-medium">{formatDateTime(r.created_at)}</span>
+                      </div>
 
-                  <div className="mt-2 flex gap-2 items-center">
-                    <Badge variant="secondary">{typeLabel(r.tournament_type)}</Badge>
-                    {statusBadge()}
-                  </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-orange-600" />
+                        <span>
+                          Dauer: <span className="font-black text-gray-900">{getDurationLabel(r)}</span>
+                        </span>
+                      </div>
 
-                  <div className="mt-4 space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-orange-600" />
-                      {formatDateTime(r.created_at)}
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-orange-600" />
+                        <span>
+                          Teilnehmer: <span className="font-black text-gray-900">{r.participants ?? 0}</span>
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-4 w-4 text-orange-600" />
+                        <span className="line-clamp-1">
+                          Sieger: <span className="font-black text-gray-900">{r.winner || "—"}</span>
+                        </span>
+                      </div>
                     </div>
 
-                    {/* ✅ Turnierdauer */}
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-orange-600" />
-                      Dauer: <b>{getDurationLabel(r)}</b>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-orange-600" />
-                      Teilnehmer: <b>{r.participants ?? 0}</b>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Trophy className="h-4 w-4 text-orange-600" />
-                      Sieger: <b>{r.winner || "—"}</b>
-                    </div>
-                  </div>
-
-                  <Button
-                    className="w-full mt-4 bg-orange-600 hover:bg-orange-700"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      openTournament(r)
-                    }}
-                  >
-                    Öffnen <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                    <Button
+                      className="w-full mt-4 h-11 rounded-2xl bg-orange-600 hover:bg-orange-700 font-black"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openTournament(r)
+                      }}
+                      type="button"
+                    >
+                      Öffnen <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </motion.div>
+          )}
+        </motion.div>
       </main>
 
       <MobileBottomNav />

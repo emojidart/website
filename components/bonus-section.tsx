@@ -33,6 +33,9 @@ interface BonusSectionProps {
   tempBonusConfig: BonusConfig
   setTempBonusConfig: (config: BonusConfig | ((prev: BonusConfig) => BonusConfig)) => void
   saveBonusConfig: () => void
+
+
+  teamMembers: any[]
 }
 
 export function BonusSection({
@@ -44,31 +47,58 @@ export function BonusSection({
   tempBonusConfig,
   setTempBonusConfig,
   saveBonusConfig,
+  teamMembers,
 }: BonusSectionProps) {
+  
+  const isValidForMatchTeam = (stat: any) => {
+    const match = stat?.matches
+    if (!match) return false
+
+    const playerId = stat?.player_id
+    if (!playerId) return false
+
+    const homeTeamId = match?.home_team_id
+    const awayTeamId = match?.away_team_id
+    if (!homeTeamId && !awayTeamId) return false
+
+    const playerHomeMembership = teamMembers?.find(
+      (m: any) => m.player_id === playerId && m.team_id === homeTeamId
+    )
+    const playerAwayMembership = teamMembers?.find(
+      (m: any) => m.player_id === playerId && m.team_id === awayTeamId
+    )
+
+    // ✅ Spieler muss in genau diesem Match einem der beiden Teams zugeordnet sein
+    return Boolean(playerHomeMembership || playerAwayMembership)
+  }
+
   const getFilteredStatistics = (dartType?: "edart" | "steeldart") => {
-    if (!dartType) return legStatistics
+    // ✅ erst mal Team/Side-validieren (entscheidend!)
+    const validStats = Array.isArray(legStatistics) ? legStatistics.filter(isValidForMatchTeam) : []
 
-    return legStatistics.filter((stat) => {
-      // Check if dart_type exists in the match data
+    if (!dartType) return validStats
+
+    return validStats.filter((stat) => {
       const matchDartType = stat.matches?.dart_type
+      if (!matchDartType) return true
 
-      if (!matchDartType) {
-        // If no dart_type is specified, include in both
-        return true
-      }
-
-      // Normalize the dart type for comparison (handle variations like "e-dart", "eDart", "edart")
-      const normalizedMatchType = matchDartType.toLowerCase().replace(/[-_\s]/g, "")
+      const normalizedMatchType = String(matchDartType).toLowerCase().replace(/[-_\s]/g, "")
       const normalizedFilterType = dartType.toLowerCase().replace(/[-_\s]/g, "")
-
       return normalizedMatchType === normalizedFilterType
     })
   }
 
   const getPenaltyStatistics = (dartType?: "edart" | "steeldart") => {
     const filteredStats = getFilteredStatistics(dartType)
+
     const penaltyStats: {
-      [key: string]: { under26: number; under30: number; semperit: number; playerName: string; matchInfo: any }
+      [key: string]: {
+        under26: number
+        under30: number
+        semperit: number
+        playerName: string
+        photoUrl?: string | null
+      }
     } = {}
 
     filteredStats.forEach((stat) => {
@@ -79,7 +109,7 @@ export function BonusSection({
           under30: 0,
           semperit: 0,
           playerName: stat.player?.name || "Unbekannt",
-          matchInfo: stat.matches,
+          photoUrl: stat.player?.photo_url ?? null,
         }
       }
       penaltyStats[playerId].under26 += stat.throws_under_26 || 0
@@ -90,6 +120,7 @@ export function BonusSection({
     return Object.entries(penaltyStats).map(([playerId, stats]) => ({
       playerId,
       playerName: stats.playerName,
+      photoUrl: stats.photoUrl,
       under26: stats.under26,
       under30: stats.under30,
       semperit: stats.semperit,
@@ -106,101 +137,106 @@ export function BonusSection({
 
     if (penalties.length === 0) {
       return (
-        <div className="text-center py-8 text-gray-500">
-          <Euro className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <p>Keine Bonusgeld gefunden.</p>
-          <p className="text-sm mt-2">
+        <div className="py-10 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
+            <Euro className="h-6 w-6 text-orange-600" />
+          </div>
+          <p className="font-semibold text-gray-900">Keine Bonusgelder gefunden.</p>
+          <p className="mt-1 text-sm text-gray-500">
             {dartType === "edart"
-              ? "Keine eDart-Spiele"
+              ? "Keine eDart-Spiele vorhanden."
               : dartType === "steeldart"
-                ? "Keine Steeldart-Spiele"
-                : "Bonusgelder werden nach dem ersten Spiel angezeigt."}
+                ? "Keine Steeldart-Spiele vorhanden."
+                : "Sobald Spiele vorhanden sind, erscheinen die Bonusgelder hier."}
           </p>
         </div>
       )
     }
 
+    const totalCost = penalties.reduce((total, p) => total + p.totalCost, 0)
+    const totalU26 = penalties.reduce((total, p) => total + p.under26, 0)
+    const totalU30 = penalties.reduce((total, p) => total + p.under30, 0)
+    const totalSemp = penalties.reduce((total, p) => total + p.semperit, 0)
+
     return (
-      <div className="space-y-6">
-        <div className="overflow-x-auto">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="overflow-x-auto rounded-2xl border border-gray-200/70 bg-white ring-1 ring-black/5">
           <UITable className="min-w-full">
             <TableHeader>
-              <TableRow>
-                <TableHead className="font-bold w-[100px] sm:w-auto">Spieler</TableHead>
-                <TableHead className="font-bold text-center text-red-600 w-[60px] sm:w-[80px]">
+              <TableRow className="bg-gray-50">
+                <TableHead className="font-bold text-gray-700 w-[120px] sm:w-auto">Spieler</TableHead>
+                <TableHead className="font-bold text-center text-red-700 w-[64px] sm:w-[90px]">
                   <span className="hidden sm:inline">Unter 26</span>
                   <span className="sm:hidden">U26</span>
                 </TableHead>
-                <TableHead className="font-bold text-center text-red-600 w-[60px] sm:w-[80px]">
+                <TableHead className="font-bold text-center text-red-700 w-[64px] sm:w-[90px]">
                   <span className="hidden sm:inline">Unter 30</span>
                   <span className="sm:hidden">U30</span>
                 </TableHead>
-                <TableHead className="font-bold text-center text-red-600 w-[60px] sm:w-[80px]">
+                <TableHead className="font-bold text-center text-red-700 w-[64px] sm:w-[90px]">
                   <span className="hidden sm:inline">Semperit</span>
                   <span className="sm:hidden">Semp</span>
                 </TableHead>
-                <TableHead className="font-bold text-center w-[70px] sm:w-[100px]">
+                <TableHead className="font-bold text-center text-gray-700 w-[70px] sm:w-[110px]">
                   <span className="hidden sm:inline">Gesamt</span>
                   <span className="sm:hidden">Total</span>
                 </TableHead>
-                <TableHead className="font-bold text-center w-[70px] sm:w-[80px]">
+                <TableHead className="font-bold text-center text-gray-700 w-[70px] sm:w-[110px]">
                   <span className="hidden sm:inline">Kosten (€)</span>
                   <span className="sm:hidden">€</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {penalties
                 .sort((a, b) => b.totalCost - a.totalCost)
                 .map((penalty) => (
-                  <TableRow key={penalty.playerId} className="hover:bg-muted/50">
+                  <TableRow key={penalty.playerId} className="hover:bg-gray-50/70">
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
-                          <AvatarImage src="/darts-player.png" />
-                          <AvatarFallback className="text-xs bg-red-100 text-red-700">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
+                          <AvatarImage src={penalty.photoUrl || "/darts-player.png"} />
+                          <AvatarFallback className="text-xs bg-orange-50 text-orange-700 border border-orange-200">
                             {penalty.playerName.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-xs sm:text-base truncate max-w-[80px] sm:max-w-none">
-                          {penalty.playerName}
-                        </span>
+                        <span className="text-xs sm:text-base truncate">{penalty.playerName}</span>
                       </div>
                     </TableCell>
+
                     <TableCell className="text-center">
                       {penalty.under26 > 0 ? (
-                        <Badge variant="destructive" className="text-xs">
-                          {penalty.under26}
-                        </Badge>
+                        <Badge className="bg-red-600 text-white text-[11px]">{penalty.under26}</Badge>
                       ) : (
-                        <span className="text-green-600 font-medium text-sm">0</span>
+                        <span className="text-emerald-700 font-semibold text-sm">0</span>
                       )}
                     </TableCell>
+
                     <TableCell className="text-center">
                       {penalty.under30 > 0 ? (
-                        <Badge variant="destructive" className="text-xs">
-                          {penalty.under30}
-                        </Badge>
+                        <Badge className="bg-red-600 text-white text-[11px]">{penalty.under30}</Badge>
                       ) : (
-                        <span className="text-green-600 font-medium text-sm">0</span>
+                        <span className="text-emerald-700 font-semibold text-sm">0</span>
                       )}
                     </TableCell>
+
                     <TableCell className="text-center">
                       {penalty.semperit > 0 ? (
-                        <Badge variant="destructive" className="text-xs">
-                          {penalty.semperit}
-                        </Badge>
+                        <Badge className="bg-red-600 text-white text-[11px]">{penalty.semperit}</Badge>
                       ) : (
-                        <span className="text-green-600 font-medium text-sm">0</span>
+                        <span className="text-emerald-700 font-semibold text-sm">0</span>
                       )}
                     </TableCell>
+
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="font-bold text-xs">
+                      <Badge variant="outline" className="text-[11px] border-gray-200 font-bold">
                         {penalty.totalPenalties}
                       </Badge>
                     </TableCell>
+
                     <TableCell className="text-center">
-                      <span className="font-bold text-red-600 text-sm">{penalty.totalCost.toFixed(2)}€</span>
+                      <span className="font-bold text-red-700 text-sm">{penalty.totalCost.toFixed(2)}€</span>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -208,36 +244,32 @@ export function BonusSection({
           </UITable>
         </div>
 
-        {/* Summary Card */}
-        <Card className="bg-red-50 border-red-200">
-          <CardContent className="pt-4 sm:pt-6">
+        <Card className="border border-red-200/70 bg-red-50 shadow-md ring-1 ring-black/5 rounded-2xl">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
               <div className="flex items-center gap-2">
-                <Euro className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
-                <span className="font-bold text-base sm:text-lg">
+                <Euro className="h-5 w-5 text-red-700" />
+                <span className="font-bold text-base sm:text-lg text-gray-900">
                   {dartType === "edart"
-                    ? "eDart Bonusgelder:"
+                    ? "eDart Bonusgelder"
                     : dartType === "steeldart"
-                      ? "Steeldart Bonusgelder:"
-                      : "Gesamte Bonusgelder:"}
+                      ? "Steeldart Bonusgelder"
+                      : "Gesamte Bonusgelder"}
+                  :
                 </span>
               </div>
-              <span className="text-xl sm:text-2xl font-bold text-red-600">
-                {penalties.reduce((total, penalty) => total + penalty.totalCost, 0).toFixed(2)}€
-              </span>
+              <span className="text-xl sm:text-2xl font-extrabold text-red-700">{totalCost.toFixed(2)}€</span>
             </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
               <div>
-                <span className="font-medium">Gesamt Unter 26:</span>{" "}
-                {penalties.reduce((total, penalty) => total + penalty.under26, 0)}
+                <span className="font-semibold text-gray-800">Gesamt Unter 26:</span> {totalU26}
               </div>
               <div>
-                <span className="font-medium">Gesamt Unter 30:</span>{" "}
-                {penalties.reduce((total, penalty) => total + penalty.under30, 0)}
+                <span className="font-semibold text-gray-800">Gesamt Unter 30:</span> {totalU30}
               </div>
               <div>
-                <span className="font-medium">Gesamt Semperit:</span>{" "}
-                {penalties.reduce((total, penalty) => total + penalty.semperit, 0)}
+                <span className="font-semibold text-gray-800">Gesamt Semperit:</span> {totalSemp}
               </div>
             </div>
           </CardContent>
@@ -247,51 +279,82 @@ export function BonusSection({
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      <Card className="shadow-xl border-0 bg-white">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold">
-            <Euro className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
-            Bonusgeld Übersicht
-            <Button variant="outline" size="sm" onClick={() => setIsBonusConfigOpen(true)} className="ml-auto">
+    <div className="space-y-5 sm:space-y-7">
+      <Card className="border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 rounded-2xl">
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-gray-900">
+                <Euro className="h-5 w-5 text-orange-600" />
+                Bonusgeld Übersicht
+              </CardTitle>
+              <p className="mt-1 text-sm text-gray-500">
+                Bonusgeld für Würfe unter 26 ({bonusConfig.under26.toFixed(2)}€), unter 30 ({bonusConfig.under30.toFixed(2)}
+                €) und Semperit ({bonusConfig.semperit.toFixed(2)}€)
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsBonusConfigOpen(true)}
+              className="rounded-xl border-gray-200/70 bg-white shadow-sm"
+            >
               <Settings className="h-4 w-4 mr-2" />
               Konfiguration
             </Button>
-          </CardTitle>
-          <p className="text-muted-foreground text-sm sm:text-base">
-            Bonusgeld für Würfe unter 26 ({bonusConfig.under26.toFixed(2)}€), unter 30 ({bonusConfig.under30.toFixed(2)}
-            €) und Semperit ({bonusConfig.semperit.toFixed(2)}€)
-          </p>
+          </div>
         </CardHeader>
-        <CardContent>
+
+        <CardContent className="p-4 sm:p-6 pt-0">
           {legStatsLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
-              <p className="mt-2 text-muted-foreground">Lade Bonusgeld...</p>
+            <div className="py-10 text-center">
+              <div className="mx-auto h-9 w-9 rounded-full border-4 border-orange-600/20 border-t-orange-600 animate-spin" />
+              <p className="mt-3 text-sm text-gray-500">Lade Bonusgeld...</p>
             </div>
-          ) : legStatistics.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Euro className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>Keine Bonusgeld gefunden.</p>
-              <p className="text-sm mt-2">Bonusgelder werden nach dem ersten Spiel angezeigt.</p>
+          ) : getFilteredStatistics().length === 0 ? (
+            <div className="py-10 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
+                <Euro className="h-6 w-6 text-orange-600" />
+              </div>
+              <p className="font-semibold text-gray-900">Keine Bonusgelder gefunden.</p>
+              <p className="mt-1 text-sm text-gray-500">Sobald Spiele vorhanden sind, erscheinen sie hier.</p>
             </div>
           ) : (
             <Tabs defaultValue="gesamt" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="gesamt">Gesamt</TabsTrigger>
-                <TabsTrigger value="edart">E-Dart</TabsTrigger>
-                <TabsTrigger value="steeldart">Steeldart</TabsTrigger>
+              <TabsList className="flex w-full gap-2 bg-transparent p-0 border-0 shadow-none mb-4 sm:mb-6">
+                <TabsTrigger
+                  value="gesamt"
+                  className="flex-1 h-8 rounded-lg px-2 text-[11px] sm:text-xs font-semibold text-gray-600
+                    data-[state=active]:bg-orange-600 data-[state=active]:text-white"
+                >
+                  Gesamt
+                </TabsTrigger>
+                <TabsTrigger
+                  value="edart"
+                  className="flex-1 h-8 rounded-lg px-2 text-[11px] sm:text-xs font-semibold text-gray-600
+                    data-[state=active]:bg-orange-600 data-[state=active]:text-white"
+                >
+                  E-Dart
+                </TabsTrigger>
+                <TabsTrigger
+                  value="steeldart"
+                  className="flex-1 h-8 rounded-lg px-2 text-[11px] sm:text-xs font-semibold text-gray-600
+                    data-[state=active]:bg-orange-600 data-[state=active]:text-white"
+                >
+                  Steeldart
+                </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="gesamt" className="mt-6">
+              <TabsContent value="gesamt" className="space-y-4 sm:space-y-6">
                 {renderStatisticsTable()}
               </TabsContent>
 
-              <TabsContent value="edart" className="mt-6">
+              <TabsContent value="edart" className="space-y-4 sm:space-y-6">
                 {renderStatisticsTable("edart")}
               </TabsContent>
 
-              <TabsContent value="steeldart" className="mt-6">
+              <TabsContent value="steeldart" className="space-y-4 sm:space-y-6">
                 {renderStatisticsTable("steeldart")}
               </TabsContent>
             </Tabs>
@@ -300,25 +363,29 @@ export function BonusSection({
       </Card>
 
       <Dialog open={isBonusConfigOpen} onOpenChange={setIsBonusConfigOpen}>
-        <DialogContent className="w-[95vw] max-w-sm sm:max-w-md mx-auto">
+        <DialogContent className="w-[95vw] max-w-sm sm:max-w-md mx-auto rounded-2xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg text-gray-900">
+              <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
               Bonusgeld Konfiguration
             </DialogTitle>
-            <DialogDescription className="text-sm">
+            <DialogDescription className="text-sm text-gray-500">
               Passen Sie die Bonusgeld-Beträge für Ihren Verein an.
             </DialogDescription>
           </DialogHeader>
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="under26">Bonusgeld für Würfe unter 26 (€)</Label>
+              <Label htmlFor="under26" className="text-sm font-medium text-gray-700">
+                Bonusgeld für Würfe unter 26 (€)
+              </Label>
               <Input
                 id="under26"
                 type="number"
                 step="0.01"
                 min="0"
                 value={tempBonusConfig.under26}
+                className="rounded-xl border-gray-200/70"
                 onChange={(e) =>
                   setTempBonusConfig((prev) => ({
                     ...prev,
@@ -327,14 +394,18 @@ export function BonusSection({
                 }
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="under30">Bonusgeld für Würfe unter 30 (€)</Label>
+              <Label htmlFor="under30" className="text-sm font-medium text-gray-700">
+                Bonusgeld für Würfe unter 30 (€)
+              </Label>
               <Input
                 id="under30"
                 type="number"
                 step="0.01"
                 min="0"
                 value={tempBonusConfig.under30}
+                className="rounded-xl border-gray-200/70"
                 onChange={(e) =>
                   setTempBonusConfig((prev) => ({
                     ...prev,
@@ -343,14 +414,18 @@ export function BonusSection({
                 }
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="semperit">Bonusgeld für Semperit (€)</Label>
+              <Label htmlFor="semperit" className="text-sm font-medium text-gray-700">
+                Bonusgeld für Semperit (€)
+              </Label>
               <Input
                 id="semperit"
                 type="number"
                 step="0.01"
                 min="0"
                 value={tempBonusConfig.semperit}
+                className="rounded-xl border-gray-200/70"
                 onChange={(e) =>
                   setTempBonusConfig((prev) => ({
                     ...prev,
@@ -360,11 +435,18 @@ export function BonusSection({
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsBonusConfigOpen(false)}>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsBonusConfigOpen(false)}
+              className="rounded-xl border-gray-200/70"
+            >
               Abbrechen
             </Button>
-            <Button onClick={saveBonusConfig}>Speichern</Button>
+            <Button onClick={saveBonusConfig} className="rounded-xl bg-orange-600 text-white hover:bg-orange-700">
+              Speichern
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

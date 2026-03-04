@@ -1,5 +1,6 @@
 "use client"
 
+import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,8 +39,8 @@ import {
   Trash2,
   Users,
   CheckCircle2,
-  ArrowLeft,
 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 interface TrainingSession {
   id: string
@@ -452,9 +453,7 @@ export default function TrainingPage() {
     setThrowHistory((prev) => [...prev, { target: currentTarget, hit: false, time: sessionTime }])
   }
 
-  const toggleTimer = () => {
-    setIsTimerRunning((prev) => !prev)
-  }
+  const toggleTimer = () => setIsTimerRunning((prev) => !prev)
 
   const resetSession = () => {
     setCurrentScore(0)
@@ -510,9 +509,7 @@ export default function TrainingPage() {
     return Math.round((hits / dartsThrown) * 100)
   }
 
-  const getSessionsByType = (typeId: string) => {
-    return sessions.filter((s) => s.type === typeId)
-  }
+  const getSessionsByType = (typeId: string) => sessions.filter((s) => s.type === typeId)
 
   const getBestScore = (typeId: string) => {
     const typeSessions = getSessionsByType(typeId)
@@ -550,44 +547,48 @@ export default function TrainingPage() {
   }
 
   const isTrainingCompleted = () => {
-    if (selectedTraining?.id === "around-the-clock") {
-      return currentTarget === 20 && currentScore >= 20
-    } else if (selectedTraining?.id === "doubles-training") {
-      return currentTarget === 20 && currentScore >= 20
-    } else if (selectedTraining?.id === "triples-training") {
-      return currentTarget === 20 && currentScore >= 20
-    }
+    if (selectedTraining?.id === "around-the-clock") return currentTarget === 20 && currentScore >= 20
+    if (selectedTraining?.id === "doubles-training") return currentTarget === 20 && currentScore >= 20
+    if (selectedTraining?.id === "triples-training") return currentTarget === 20 && currentScore >= 20
     return false
   }
 
+  // ✅ NEU: schönes Loading + App-Header
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-white text-gray-900 font-sans flex flex-col pb-20">
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </main>
+      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <Header variant="app" title="Dart Training" subtitle="Training & Fortschritt" backHref="/member-profile-app" />
+
+        <div className="flex-1 flex items-center justify-center px-4 pb-20">
+          <div className="animate-in fade-in zoom-in-95 duration-300">
+            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
+                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+              </div>
+
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-900">Daten werden geladen</p>
+                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <MobileBottomNav />
-      </div>
+      </main>
     )
   }
 
-  if (!session) {
-    return null
-  }
+  if (!session) return null
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans flex flex-col pb-20">
-      <main className="flex-grow container mx-auto px-4 py-4 max-w-6xl">
-        <Button
-          variant="outline"
-          onClick={() => router.push("/member-profile-app")}
-          className="mb-4 flex items-center gap-2 hover:bg-white hover:shadow-md transition-all"
-          size="sm"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Zurück zum Profil
-        </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900 font-sans flex flex-col overflow-x-hidden">
+      {/* ✅ NEU: App-Header (ersetzt Zurück-Button komplett) */}
+      <Header variant="app" title="Dart Training" subtitle="Training & Fortschritt" backHref="/member-profile-app" />
 
+      <main className="pt-12 sm:pt-14">
+  <div className="mx-auto w-full px-4 py-4 pb-24 md:pb-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
         <div className="text-center mb-4">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl mb-3 shadow-xl">
             <Dumbbell className="h-7 w-7 text-white" />
@@ -1447,6 +1448,7 @@ export default function TrainingPage() {
             </Card>
           </TabsContent>
         </Tabs>
+		</div>
       </main>
 
       <MobileBottomNav />

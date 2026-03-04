@@ -26,53 +26,86 @@ export function RecruitmentGallery({ recruitmentNeeds }: RecruitmentGalleryProps
 
   if (recruitmentNeeds.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-12 text-center">
-        <p className="text-muted-foreground text-lg">Aktuell keine offenen Positionen verfügbar.</p>
+      <div className="mx-auto w-full max-w-2xl px-4 pb-24 pt-6">
+        <Card className="border-0 shadow-md ring-1 ring-black/5">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-700 font-semibold">Aktuell keine offenen Positionen verfügbar.</p>
+            <p className="text-sm text-gray-500 mt-1">Schau später nochmal rein 🙂</p>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold mb-2">Offene Positionen</h2>
-        <p className="text-muted-foreground">Wir suchen motivierte Spieler für folgende Teams</p>
+    <div className="mx-auto w-full max-w-2xl px-4 pb-24 pt-6">
+      {/* Header */}
+      <div className="mb-4">
+        <div className="rounded-2xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5">
+          <div className="p-4 sm:p-5">
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900">Offene Positionen</h2>
+            <p className="text-sm text-gray-500 mt-1">Wir suchen motivierte Spieler für folgende Teams</p>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* List */}
+      <div className="grid grid-cols-1 gap-4">
         {recruitmentNeeds.map((need) => (
           <Card
             key={need.id}
-            className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-orange-500"
+            className="border-0 shadow-md ring-1 ring-black/5 overflow-hidden"
           >
-            <CardHeader className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Badge className="bg-orange-500 hover:bg-orange-600 text-white">{need.league}</Badge>
-                <div className="flex items-center gap-1 text-orange-600">
-                  <Users className="h-4 w-4" />
-                  <TrendingUp className="h-4 w-4" />
+            {/* left accent */}
+            <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 to-orange-600" />
+
+            <CardHeader className="space-y-2 pb-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <CardTitle className="text-lg sm:text-xl font-black leading-tight text-gray-900 truncate">
+                    {need.team_name}
+                  </CardTitle>
+
+                  <CardDescription className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-orange-900 border border-orange-200">
+                      <Calendar className="h-4 w-4 text-orange-600" />
+                      <span className="font-semibold">Start:</span>
+                      {new Date(need.start_date).toLocaleDateString("de-DE")}
+                    </span>
+                  </CardDescription>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Badge className="bg-orange-600 hover:bg-orange-700 text-white font-bold">
+                    {need.league}
+                  </Badge>
                 </div>
               </div>
-              <CardTitle className="text-2xl font-bold leading-tight">{need.team_name}</CardTitle>
-              <CardDescription className="flex items-center gap-2 text-base">
-                <Calendar className="h-4 w-4 text-orange-500" />
-                <span className="font-medium">Start:</span> {new Date(need.start_date).toLocaleDateString("de-DE")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-4">
-              {need.description && (
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <p className="text-sm leading-relaxed">{need.description}</p>
+
+              <div className="flex items-center gap-2 text-orange-700">
+                <div className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-bold">
+                  <Users className="h-4 w-4" />
+                  <TrendingUp className="h-4 w-4" />
+                  Gesucht
                 </div>
-              )}
+              </div>
+            </CardHeader>
+
+            <CardContent className="pt-0 space-y-4">
+              {need.description ? (
+                <div className="rounded-xl border border-gray-200/70 bg-gray-50 p-4">
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{need.description}</p>
+                </div>
+              ) : null}
 
               <Dialog open={openDialogId === need.id} onOpenChange={(open) => setOpenDialogId(open ? need.id : null)}>
                 <DialogTrigger asChild>
-                  <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold shadow-md transition-all duration-200">
+                  <Button className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-lg">
                     <Send className="h-4 w-4 mr-2" />
                     Jetzt bewerben
                   </Button>
                 </DialogTrigger>
+
                 <PlayerApplicationForm
                   onApplicationSuccess={() => {
                     setOpenDialogId(null)

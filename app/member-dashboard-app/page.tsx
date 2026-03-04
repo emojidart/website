@@ -1,5 +1,3 @@
-//member dashboard app
-
 "use client"
 
 import type React from "react"
@@ -184,6 +182,7 @@ export default function DashboardPage() {
   // })
 
   const [matches, setMatches] = useState<Match[]>([])
+
   const [selectedMatchForStats, setSelectedMatchForStats] = useState<Match | null>(null)
   const [isStatsDialogOpen, setIsStatsDialogOpen] = useState(false)
   const [editMatchScores, setEditMatchScores] = useState({ home: 0, away: 0 })
@@ -246,6 +245,7 @@ export default function DashboardPage() {
   const [activeMatchTab, setActiveMatchTab] = useState<"upcoming" | "completed" | "postponed">("upcoming")
 
   const [isPostponeDialogOpen, setIsPostponeDialogOpen] = useState(false)
+  const [showPostponeToast, setShowPostponeToast] = useState(false)
   const [selectedMatchForPostpone, setSelectedMatchForPostpone] = useState<string | null>(null)
   const [postponeData, setPostponeData] = useState({
     newDate: "",
@@ -1467,129 +1467,155 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
     return "Unbekannt"
   }
 
+
+
+
+
   // Helper function to get team name, resolving undeclared variable issue
-  const getTeamName = (match: any, isHome: boolean): string => {
-    if (!match) return "Unbekannt"
-    if (isHome) {
-      if (match.home_team_type === "own" && match.home_team) {
-        return match.home_team.name
-      } else if (match.home_team_type === "opponent" && match.home_opponent_team) {
-        return match.home_opponent_team.name
-      }
-    } else {
-      if (match.away_team_type === "own" && match.away_team) {
-        return match.away_team.name
-      } else if (match.away_team_type === "opponent" && match.away_opponent_team) {
-        return match.away_opponent_team.name
-      }
+const getTeamName = (match: any, isHome: boolean): string => {
+  if (!match) return "Unbekannt"
+
+  if (isHome) {
+    if (match.home_team_type === "own" && match.home_team) {
+      return match.home_team.name
+    } else if (match.home_team_type === "opponent" && match.home_opponent_team) {
+      return match.home_opponent_team.name
     }
-    return "Unbekannt"
+  } else {
+    if (match.away_team_type === "own" && match.away_team) {
+      return match.away_team.name
+    } else if (match.away_team_type === "opponent" && match.away_opponent_team) {
+      return match.away_opponent_team.name
+    }
   }
 
-  // Helper functions to filter matches by status
-  const getUpcomingMatches = () => {
-    return matches.filter((match) => match.status !== "completed" && match.status !== "postponed")
-  }
+  return "Unbekannt"
+}
 
-  const getPostponedMatches = () => {
-    return matches.filter((match) => match.status === "postponed")
-  }
+// Helper functions to filter matches by status
+const getUpcomingMatches = () => {
+  return matches.filter((match) => match.status !== "completed" && match.status !== "postponed")
+}
 
-  const getCompletedMatches = () => {
-    return matches.filter((match) => match.status === "completed")
-  }
+const getPostponedMatches = () => {
+  return matches.filter((match) => match.status === "postponed")
+}
 
-  // const getPenaltyStatistics = () => {
-  //   const penaltyStats: {
-  //     [key: string]: { under26: number; under30: number; semperit: number; playerName: string; matchInfo: any }
-  //   } = {}
-  //
-  //   legStatistics.forEach((stat) => {
-  //     const playerId = stat.player_id
-  //     if (!penaltyStats[playerId]) {
-  //       penaltyStats[playerId] = {
-  //         under26: 0,
-  //         under30: 0,
-  //         semperit: 0,
-  //         playerName: stat.player?.name || "Unbekannt",
-  //         matchInfo: stat.matches,
-  //       }
-  //     }
-  //     penaltyStats[playerId].under26 += stat.throws_under_26 || 0
-  //     penaltyStats[playerId].under30 += stat.throws_under_30 || 0
-  //     penaltyStats[playerId].semperit += stat.semperit_outs || 0
-  //   }
-  //
-  //   return Object.entries(penaltyStats).map(([playerId, stats]) => ({
-  //     playerId,
-  //     playerName: stats.playerName,
-  //     under26: stats.under26,
-  //     under30: stats.under30,
-  //     semperit: stats.semperit,
-  //     totalPenalties: stats.under26 + stats.under30 + stats.semperit,
-  //     totalCost:
-  //       stats.under26 * bonusConfig.under26 +
-  //       stats.under30 * bonusConfig.under30 +
-  //       stats.semperit * bonusConfig.semperit,
-  //   }))
-  // }
+const getCompletedMatches = () => {
+  return matches.filter((match) => match.status === "completed")
+}
 
-  const postponeMatch = async (matchId: string, newDate: string, newTime: string, reason: string) => {
-    try {
-      const { error } = await supabase
-        .from("matches")
-        .update({
-          status: "postponed",
-          original_date: matches.find((m) => m.id === matchId)?.match_date, // Store original date
-          match_date: newDate,
-          match_time: newTime,
-          postponement_reason: reason,
-        })
-        .eq("id", matchId)
-
-      if (!error) {
-        toast({
-          title: "Spiel verschoben",
-          description: "Das Spiel wurde erfolgreich verschoben.",
-        })
-        fetchMatches()
-        setIsPostponeDialogOpen(false)
-        setSelectedMatchForPostpone(null)
-        setPostponeData({ newDate: "", newTime: "", reason: "" })
-      } else {
-        throw error
-      }
-    } catch (error) {
-      console.error("Error postponing match:", error)
-      toast({
-        title: "Fehler",
-        description: "Fehler beim Verschieben des Spiels.",
-        variant: "destructive",
+const postponeMatch = async (
+  matchId: string,
+  newDate: string,
+  newTime: string,
+  reason: string
+) => {
+  try {
+    const { error } = await supabase
+      .from("matches")
+      .update({
+        status: "postponed",
+        original_date: matches.find((m) => m.id === matchId)?.match_date ?? null,
+        match_date: newDate,
+        match_time: newTime,
+        postponement_reason: reason,
       })
-    }
-  }
+      .eq("id", matchId)
 
-  if (authLoading || loading) {
-    return (
-      // Removed Header component for mobile
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-4 pb-20">
-        <Header />
-        {/* Changed py-6 to py-4 for mobile */}
-        <div className="flex-grow flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-            <span className="text-lg font-medium">Lade Dashboard...</span>
-          </div>
-        </div>
-      </main>
-    )
+    if (error) throw error
+
+    
+    await fetchMatches()
+
+    // ✅ Dialog schließen + Form reset
+    setIsPostponeDialogOpen(false)
+    setSelectedMatchForPostpone(null)
+    setPostponeData({
+      newDate: "",
+      newTime: "",
+      reason: "",
+    })
+
+    // ✅ APP-TOAST ANZEIGEN
+    setShowPostponeToast(true)
+
+    // ✅ Toast nach 2.5 Sekunden ausblenden
+    window.setTimeout(() => {
+      setShowPostponeToast(false)
+    }, 2500)
+  } catch (error) {
+    console.error("Error postponing match:", error)
+
+    toast({
+      title: "Fehler",
+      description: "Fehler beim Verschieben des Spiels.",
+      variant: "destructive",
+    })
   }
+}
+  
+  
+  
+  
+  
+  
+  
+
+if (authLoading || loading) {
+  return (
+    <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      
+  <Header
+  variant="app"
+  title="Dashboard"
+  subtitle="Übersicht & Spielplan"
+  backHref="/member-profile-app"
+/>
+
+      {/* Dieser Bereich füllt ALLES unter dem Header */}
+      <div className="flex-1 flex items-center justify-center px-4 pb-20">
+        
+        <div className="animate-in fade-in zoom-in-95 duration-300">
+          
+          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+            
+            {/* Spinner */}
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
+              <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+            </div>
+
+            {/* Text */}
+            <div className="text-center">
+              <p className="text-lg font-bold text-gray-900">
+                Dashboard wird geladen
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Bitte kurz warten…
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  )
+}
+
+
+
+
+
+
 
   if (error) {
     return (
       // Removed Header component for mobile
       <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-4 pb-20">
-        <Header />
+        <Header variant="app" title="Dashboard" subtitle="Statistiken, Ergebnisse und Spielpläne" backHref="/member-profile-app" />
         {/* Changed py-6 to py-4 for mobile */}
         <div className="flex-grow flex items-center justify-center p-4">
           <div className="text-center">
@@ -1630,6 +1656,20 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
     const year = date.getFullYear()
     return `${day}.${month}.${year}`
   }
+  
+  const modalMatch =
+  selectedMatchForResults
+    ? matches.find((m) => m.id === selectedMatchForResults)
+    : null
+
+const modalHomeName = modalMatch
+  ? getTeamDisplayName(modalMatch, true)
+  : "Heim"
+
+const modalAwayName = modalMatch
+  ? getTeamDisplayName(modalMatch, false)
+  : "Auswärts"
+  
 
   const formatMatchTime = (timeString: string | null) => {
     if (!timeString) return ""
@@ -1639,84 +1679,111 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
     return ` um ${timeWithoutSeconds} Uhr`
   }
 
-  return (
-    <>
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-4 pb-20">
-        {/* Changed DashboardTutorial prop name */}
-        <DashboardTutorial role={getUserRole()} />
-        <Header />
+ return (
+  <>
+    <Header
+      variant="app"
+      title="Dashboard"
+      subtitle="Übersicht & Spielplan"
+      backHref="/member-profile-app"
+    />
+
+   <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 pt-15 pb-20">
+      <DashboardTutorial role={getUserRole()} />
+		
+		
+		
+		
+		
 
         {getPostponedMatches().length > 0 && (
-          <Card className="mb-4 sm:mb-6 border-0 shadow-xl bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-l-orange-500">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-xl shadow-lg">
-                    <CalendarX className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
+  <div className="mt-6 sm:mt-4 mb-4 sm:mb-6">
+    <div className="rounded-2xl border border-orange-200 bg-white shadow-xl ring-1 ring-black/5 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-orange-600 to-orange-500">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
+          <CalendarX className="h-5 w-5 text-white" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <div className="text-white text-sm font-extrabold">Verschobene Spiele</div>
+            <span className="inline-flex items-center justify-center rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-bold text-white">
+              {getPostponedMatches().length}
+            </span>
+          </div>
+          <div className="text-white/80 text-xs">
+            Bitte beachte die neuen Termine.
+          </div>
+        </div>
+      </div>
+
+      {/* List */}
+      <div className="p-3 sm:p-4 space-y-2">
+        {getPostponedMatches().slice(0, 3).map((match) => {
+          const homeName = getTeamDisplayNameHelper(match, true)
+          const awayName = getTeamDisplayNameHelper(match, false)
+
+          const oldDate = match.original_date ? formatMatchDate(match.original_date) : null
+          const newDate = formatMatchDate(match.match_date)
+          const newTime = match.match_time ? match.match_time.split(":").slice(0, 2).join(":") : ""
+
+          return (
+            <div
+              key={match.id}
+              className="rounded-2xl border border-orange-200/70 bg-orange-50/40 p-3"
+            >
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-sm">
+                  <AlertTriangle className="h-5 w-5" />
                 </div>
-                <div className="flex-grow w-full">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Verschobene Spiele</h3>
-                    </div>
-                    <Badge className="bg-orange-500 text-white w-fit">{getPostponedMatches().length}</Badge>
+
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-bold text-gray-900">
+                    {homeName} <span className="text-gray-400">vs</span> {awayName}
                   </div>
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    {getPostponedMatches().length === 1
-                      ? "Ein Spiel wurde"
-                      : `${getPostponedMatches().length} Spiele wurden`}{" "}
-                    verschoben. Bitte beachte die neuen Termine.
-                  </p>
-                  <div className="space-y-2 mb-3 sm:mb-4">
-                    {getPostponedMatches()
-                      .slice(0, 3)
-                      .map((match) => (
-                        <div key={match.id} className="bg-white/70 rounded-lg p-3 border border-orange-200">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                              <Users className="h-4 w-4 text-orange-600 flex-shrink-0" />
-                              <span className="font-medium text-xs sm:text-sm">
-                                {getTeamDisplayNameHelper(match, true)} vs {getTeamDisplayNameHelper(match, false)}
-                              </span>
-                            </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs sm:text-sm">
-                              <div className="flex items-center gap-1 text-red-600">
-                                <X className="h-3 w-3" />
-                                <span className="line-through">
-                                  {match.original_date ? formatMatchDate(match.original_date) : "Ursprüngliches Datum"}
-                                </span>
-                              </div>
-                              <ArrowRight className="h-3 w-3 text-gray-400 hidden sm:block" />
-                              <div className="flex items-center gap-1 text-green-600 font-medium">
-                                <Check className="h-3 w-3" />
-                                <span>
-                                  {formatMatchDate(match.match_date)}
-                                  {formatMatchTime(match.match_time)}
-                                </span>
-                              </div>
-                            </div>
-                            {match.postponement_reason && (
-                              <div className="flex items-start gap-1 text-xs text-gray-600 bg-gray-50 rounded p-2">
-                                <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                                <span className="italic">{match.postponement_reason}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    {getPostponedMatches().length > 3 && (
-                      <div className="text-xs sm:text-sm text-gray-600 text-center py-2">
-                        ... und {getPostponedMatches().length - 3} weitere
+
+                  <div className="mt-1 grid gap-1 text-xs">
+                    {oldDate ? (
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-white border border-gray-200">
+                          <X className="h-3 w-3 text-red-500" />
+                        </span>
+                        <span className="line-through">{oldDate}</span>
                       </div>
-                    )}
+                    ) : null}
+
+                    <div className="flex items-center gap-2 text-gray-800">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-white border border-gray-200">
+                        <Check className="h-3 w-3 text-green-600" />
+                      </span>
+                      <span className="font-semibold">
+                        {newDate}{newTime ? ` · ${newTime} Uhr` : ""}
+                      </span>
+                    </div>
+
+                    {match.postponement_reason ? (
+                      <div className="mt-2 rounded-xl border border-orange-200 bg-white px-3 py-2 text-[11px] text-gray-700">
+                        <span className="font-semibold text-orange-700">Grund:</span>{" "}
+                        {match.postponement_reason}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )
+        })}
+
+        {getPostponedMatches().length > 3 ? (
+          <div className="pt-1 text-center text-xs text-gray-500">
+            ... und {getPostponedMatches().length - 3} weitere
+          </div>
+        ) : null}
+      </div>
+    </div>
+  </div>
+)}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
           {/* Placeholder for potential new cards or sections */}
@@ -1755,988 +1822,1135 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
                     onValueChange={(value) => setActiveMatchTab(value as "upcoming" | "completed" | "postponed")}
                     className="w-full"
                   >
-                    <TabsList className="grid w-full grid-cols-3 mb-6 h-auto gap-1 p-1">
-                      <TabsTrigger
-                        value="upcoming"
-                        className="text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight"
-                      >
-                        <span className="block">Kommende</span>
-                        <span className="block">Spiele ({getUpcomingMatches().length})</span>
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="postponed"
-                        className={`text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight ${getPostponedMatches().length > 0 ? "animate-pulse-red" : ""}`}
-                      >
-                        <span className="block">Verschoben</span>
-                        <span className="block">({getPostponedMatches().length})</span>
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="completed"
-                        className="text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight"
-                      >
-                        <span className="block">Abgeschl.</span>
-                        <span className="block">({getCompletedMatches().length})</span>
-                      </TabsTrigger>
-                    </TabsList>
+                   <TabsList className="flex w-full gap-2 bg-transparent p-0 border-0 shadow-none">
+  <TabsTrigger
+    value="upcoming"
+    className="flex-1 h-8 rounded-lg px-2 text-[11px] sm:text-xs font-semibold text-gray-600
+      data-[state=active]:bg-orange-600 data-[state=active]:text-white"
+  >
+    Kommende
+    <span className="ml-1 text-[10px] opacity-70">
+      ({getUpcomingMatches().length})
+    </span>
+  </TabsTrigger>
 
-                    <TabsContent value="upcoming">
-                      {getUpcomingMatches().length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                          <p>Keine kommenden Spiele gefunden.</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {getUpcomingMatches().map((match) => (
-                            <div key={match.id} className={`border rounded-lg p-4 ${getMatchBackgroundColor(match)}`}>
-                              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-3">
-                                <div className="flex flex-col gap-2 flex-1">
-                                  {/* Week and Format badges */}
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <Badge variant="outline" className="font-mono">
-                                      Woche {match.week_number}
-                                    </Badge>
-                                    {match.match_format && (
-                                      <Badge variant="secondary" className="text-xs">
-                                        {match.match_format === "team"
-                                          ? "Team (2er)"
-                                          : match.match_format === "best_of_three"
-                                            ? "1v1 (BoF3)"
-                                            : match.match_format === "individual"
-                                              ? "1v1"
-                                              : "Standard"}
-                                      </Badge>
-                                    )}
-                                    <Badge variant="outline" className="text-xs">
-                                      {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
-                                    </Badge>
-                                  </div>
+  <TabsTrigger
+    value="postponed"
+    className="flex-1 h-8 rounded-lg px-2 text-[11px] sm:text-xs font-semibold text-gray-600
+      data-[state=active]:bg-amber-500 data-[state=active]:text-white"
+  >
+    Verschoben
+    <span className="ml-1 text-[10px] opacity-70">
+      ({getPostponedMatches().length})
+    </span>
+  </TabsTrigger>
 
-                                  {/* Date, Time, and Venue */}
-                                  <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
-                                    <div className="flex items-center gap-2">
-                                      <Calendar className="h-4 w-4 flex-shrink-0" />
-                                      <span className="whitespace-nowrap">
-                                        {formatMatchDate(match.match_date)}
-                                        {formatMatchTime(match.match_time)}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <MapPin className="h-4 w-4 flex-shrink-0" />
-                                      <span className="truncate font-medium">{match.venue}</span>
-                                    </div>
-                                    <OpponentLokalInfo match={match} />
-                                  </div>
-                                </div>
+  <TabsTrigger
+    value="completed"
+    className="flex-1 h-8 rounded-lg px-2 text-[11px] sm:text-xs font-semibold text-gray-600
+      data-[state=active]:bg-green-600 data-[state=active]:text-white"
+  >
+    <span className="sm:hidden">Abgeschl.</span>
+    <span className="hidden sm:inline">Abgeschlossen</span>
+    <span className="ml-1 text-[10px] opacity-70">
+      ({getCompletedMatches().length})
+    </span>
+  </TabsTrigger>
+</TabsList>
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+				{/* Tabs Conten Upcoming */}
+<TabsContent value="upcoming">
+{getUpcomingMatches().length === 0 ? (
+<div className="rounded-2xl border border-orange-200 bg-white p-10 text-center shadow-lg ring-1 ring-black/5">
+<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 shadow-md">
+<Calendar className="h-6 w-6 text-white" />
+</div>
+<p className="font-semibold text-gray-900">Keine kommenden Spiele gefunden.</p>
+<p className="text-sm text-gray-500 mt-1">Sobald Spiele geplant sind, erscheinen sie hier.</p>
+</div>
+) : (
+<div className="space-y-3 sm:space-y-4">
+{getUpcomingMatches().map((match) => {
+const homeName = getTeamDisplayNameHelper(match, true)
+const awayName = getTeamName(match, false) || "Unbekannt"
+    const dateText = formatMatchDate(match.match_date)
+    const timeText = match.match_time ? match.match_time.split(":").slice(0, 2).join(":") : ""
+    const canEdit = hasLeadershipInTeam(match.home_team_id) || hasLeadershipInTeam(match.away_team_id)
 
-                                {/* Status badge - positioned top right */}
-                                <Badge
-                                  variant={match.status === "completed" ? "default" : "secondary"}
-                                  className="text-xs self-start flex-shrink-0"
-                                >
-                                  {match.status === "completed"
-                                    ? "Beendet"
-                                    : match.status === "postponed"
-                                      ? "Verschoben"
-                                      : "Anstehend"}
-                                </Badge>
-                              </div>
+    const isPostponed = match.status === "postponed"
+    const isCompleted = match.status === "completed"
 
-                              {match.status === "postponed" && match.original_date && (
-                                <Alert className="mb-3 bg-orange-50 border-orange-200">
-                                  <AlertCircle className="h-4 w-4 text-orange-600" />
-                                  <AlertDescription className="text-sm text-orange-800">
-                                    <strong>Verschoben:</strong> Ursprünglich am {formatMatchDate(match.original_date)}
-                                    {match.postponement_reason && (
-                                      <span className="block mt-1">Grund: {match.postponement_reason}</span>
-                                    )}
-                                  </AlertDescription>
-                                </Alert>
-                              )}
+    // status
+    let statusLabel = "Anstehend"
+    let statusClasses = "border-orange-200 bg-orange-50 text-orange-800"
+    let barClass = "bg-orange-500"
 
-                              <div className="flex flex-col gap-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-6">
-                                    <div className="text-center">
-                                      <div className="font-semibold text-lg mb-1">
-                                        {getTeamDisplayNameHelper(match, true)}
-                                      </div>
-                                      <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        {match.home_team_type === "own" ? "Heim" : "Heim (Gegner)"}
-                                      </div>
-                                    </div>
-                                    <div className="text-2xl font-bold text-muted-foreground">:</div>
-                                    <div className="text-center">
-                                      <div className="font-semibold text-lg mb-1">
-                                        {getTeamName(match, false) || "Auswärts Team"}
-                                      </div>
-                                      <div className="text-3xl font-bold text-blue-600">{match.away_score ?? "-"}</div>
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        {match.away_team_type === "own" ? "Auswärts" : "Auswärts (Gegner)"}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div className="text-right"></div>
-                                </div>
-
-                                {(hasLeadershipInTeam(match.home_team_id) ||
-                                  hasLeadershipInTeam(match.away_team_id)) && (
-                                  <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
-                                    
-									{/* ✅ 1) Statistiken */}
-<Button
-  size="sm"
-  variant="outline"
-  onClick={() => {
-    const userTeamIds = teamMemberships.map((tm) => tm.team_id)
-    const isUserTeamHome = userTeamIds.includes(match.home_team_id)
-    const isUserTeamAway = userTeamIds.includes(match.away_team_id)
-    const myTeamId = isUserTeamHome
-      ? match.home_team_id
-      : isUserTeamAway
-        ? match.away_team_id
-        : null
-
-    if (myTeamId) {
-      router.push(`/statistics/${match.id}?teamId=${myTeamId}`)
+    if (isPostponed) {
+      statusLabel = "Verschoben"
+      statusClasses = "border-amber-200 bg-amber-50 text-amber-900"
+      barClass = "bg-amber-500"
+    } else if (isCompleted) {
+      statusLabel = "Beendet"
+      statusClasses = "border-gray-200 bg-gray-100 text-gray-700"
+      barClass = "bg-gray-300"
     }
-  }}
-  className="bg-green-600 hover:bg-green-700 text-white border-green-600 w-full h-8"
->
-  <Target className="h-3 w-3 mr-1 flex-shrink-0" />
-  <span className="text-xs">Statistik eingeben </span>
-</Button>
 
-{/* ✅ 2) Live */}
-<Button
-  size="sm"
-  variant="outline"
-  onClick={() => {
-    const userTeamIds = teamMemberships.map((tm) => tm.team_id)
-    const isUserTeamHome = userTeamIds.includes(match.home_team_id)
-    const isUserTeamAway = userTeamIds.includes(match.away_team_id)
-    const myTeamId = isUserTeamHome
-      ? match.home_team_id
-      : isUserTeamAway
-        ? match.away_team_id
-        : null
-
-    if (myTeamId) {
-      router.push(`/live-statistics/${match.id}?teamId=${myTeamId}`)
-    }
-  }}
-  className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 w-full h-8"
->
-  <Target className="h-3 w-3 mr-1 flex-shrink-0" />
-  <span className="text-xs"> Live erfassen</span>
-</Button>
-
-{/* ✅ 3) Ergebnis */}
-<Button
-  size="sm"
-  className="bg-blue-600 hover:bg-blue-700 w-full h-8"
-  onClick={() => {
-    setSelectedMatchForResults(match.id)
-    setIsResultsDialogOpen(true)
-    setEditMatchScores({
-      home: match.home_score || 0,
-      away: match.away_score || 0,
-    })
-  }}
->
-  <Edit className="h-3 w-3 mr-1 flex-shrink-0" />
-  <span className="text-xs">
-    {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
-  </span>
-</Button>
-									
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className={`w-full h-8 flex items-center justify-center ${
-                                        match.team_photo_url
-                                          ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
-                                          : "bg-green-600 hover:bg-green-700 text-white border-green-600"
-                                      }`}
-                                      onClick={() => {
-                                        setSelectedMatchForTeamPhoto(match.id)
-                                        setIsTeamPhotoDialogOpen(true)
-                                        setTeamPhotoFile(null)
-                                        setTeamPhotoPreview(null)
-                                        setTeamPhotoMessage("")
-                                      }}
-                                    >
-                                      <Camera className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">
-                                        {match.team_photo_url ? "Teamfoto" : "Foto Upload"}
-                                      </span>
-                                    </Button>
-
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 w-full h-8"
-                                      onClick={() => {
-                                        setSelectedMatchForPostpone(match.id)
-                                        setPostponeData({
-                                          newDate: match.match_date,
-                                          newTime: match.match_time,
-                                          reason: "",
-                                        })
-                                        setIsPostponeDialogOpen(true)
-                                      }}
-                                    >
-                                      <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">Verschieben</span>
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="postponed">
-                      {getPostponedMatches().length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                          <p>Keine verschobenen Spiele gefunden.</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {getPostponedMatches().map((match) => (
-                            <div key={match.id} className="border rounded-lg p-4 bg-orange-50 border-orange-200">
-                              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-3">
-                                <div className="flex flex-col gap-2 flex-1">
-                                  {/* Week and Format badges */}
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <Badge variant="outline" className="font-mono">
-                                      Woche {match.week_number}
-                                    </Badge>
-                                    {match.match_format && (
-                                      <Badge variant="secondary" className="text-xs">
-                                        {match.match_format === "team"
-                                          ? "Team (2er)"
-                                          : match.match_format === "best_of_three"
-                                            ? "1v1 (BoF3)"
-                                            : match.match_format === "individual"
-                                              ? "1v1"
-                                              : "Standard"}
-                                      </Badge>
-                                    )}
-                                    <Badge variant="outline" className="text-xs">
-                                      {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
-                                    </Badge>
-                                  </div>
-
-                                  {/* Date, Time, and Venue */}
-                                  <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
-                                    <div className="flex items-center gap-2">
-                                      <Calendar className="h-4 w-4 flex-shrink-0" />
-                                      <span className="whitespace-nowrap">
-                                        {formatMatchDate(match.match_date)}
-                                        {formatMatchTime(match.match_time)}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <MapPin className="h-4 w-4 flex-shrink-0" />
-                                      <span className="truncate font-medium">{match.venue}</span>
-                                    </div>
-                                    <OpponentLokalInfo match={match} />
-                                  </div>
-                                </div>
-
-                                {/* Status badge - positioned top right */}
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs bg-orange-100 text-orange-800 border-orange-300 self-start flex-shrink-0"
-                                >
-                                  Verschoben
-                                </Badge>
-                              </div>
-
-                              {match.original_date && (
-                                <Alert className="mb-3 bg-orange-100 border-orange-300">
-                                  <AlertCircle className="h-4 w-4 text-orange-600" />
-                                  <AlertDescription className="text-sm text-orange-900">
-                                    <strong>Ursprünglich:</strong> {formatMatchDate(match.original_date)}
-                                    {match.postponement_reason && (
-                                      <span className="block mt-1">
-                                        <strong>Grund:</strong> {match.postponement_reason}
-                                      </span>
-                                    )}
-                                  </AlertDescription>
-                                </Alert>
-                              )}
-
-                              <div className="flex flex-col gap-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-6">
-                                    <div className="text-center">
-                                      <div className="font-semibold text-lg mb-1">
-                                        {getTeamDisplayNameHelper(match, true)}
-                                      </div>
-                                      <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
-                                    </div>
-                                    <div className="text-2xl font-bold text-gray-400">vs</div>
-                                    <div className="text-center">
-                                      <div className="font-semibold text-lg mb-1">{getTeamName(match, false)}</div>
-                                      <div className="text-3xl font-bold text-red-600">{match.away_score ?? "-"}</div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {hasLeadershipInTeam(match.home_team_id) || hasLeadershipInTeam(match.away_team_id) ? (
-                                  <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => {
-                                        const userTeamIds = teamMemberships.map((tm) => tm.team_id)
-                                        const isUserTeamHome = userTeamIds.includes(match.home_team_id)
-                                        const isUserTeamAway = userTeamIds.includes(match.away_team_id)
-                                        const myTeamId = isUserTeamHome
-                                          ? match.home_team_id
-                                          : isUserTeamAway
-                                            ? match.away_team_id
-                                            : null
-
-                                        if (myTeamId) {
-                                          router.push(`/statistics/${match.id}?teamId=${myTeamId}`)
-                                        }
-                                      }}
-                                      className="bg-green-600 hover:bg-green-700 text-white border-green-600 w-full h-8"
-                                    >
-                                      <Target className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">Statistiken</span>
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700 w-full h-8"
-                                      onClick={() => {
-                                        setSelectedMatchForResults(match.id)
-                                        setIsResultsDialogOpen(true)
-                                        setEditMatchScores({
-                                          home: match.home_score || 0,
-                                          away: match.away_score || 0,
-                                        })
-                                      }}
-                                    >
-                                      <Edit className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">
-                                        {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
-                                      </span>
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className={`w-full h-8 flex items-center justify-center ${
-                                        match.team_photo_url
-                                          ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
-                                          : "bg-green-600 hover:bg-green-700 text-white border-green-600"
-                                      }`}
-                                      onClick={() => {
-                                        setSelectedMatchForTeamPhoto(match.id)
-                                        setIsTeamPhotoDialogOpen(true)
-                                        setTeamPhotoFile(null)
-                                        setTeamPhotoPreview(null)
-                                        setTeamPhotoMessage("")
-                                      }}
-                                    >
-                                      <Camera className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">
-                                        {match.team_photo_url ? "Teamfoto" : "Foto Upload"}
-                                      </span>
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 w-full h-8"
-                                      onClick={() => {
-                                        setSelectedMatchForPostpone(match.id)
-                                        setPostponeData({
-                                          newDate: match.match_date,
-                                          newTime: match.match_time,
-                                          reason: match.postponement_reason || "",
-                                        })
-                                        setIsPostponeDialogOpen(true)
-                                      }}
-                                    >
-                                      <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">Neu planen</span>
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="bg-red-600 hover:bg-red-700 text-white border-red-600 w-full h-8"
-                                      onClick={() => undoPostponement(match.id)}
-                                    >
-                                      <RotateCcw className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">Rückgängig machen</span>
-                                    </Button>
-                                  </div>
-                                ) : null}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="completed">
-                      {getCompletedMatches().length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                          <p>Keine abgeschlossenen Spiele gefunden.</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {getCompletedMatches().map((match) => (
-                            <div key={match.id} className={`border rounded-lg p-4 ${getMatchBackgroundColor(match)}`}>
-                              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-3">
-                                <div className="flex flex-col gap-2 flex-1">
-                                  {/* Week and Format badges */}
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <Badge variant="outline" className="font-mono">
-                                      Woche {match.week_number}
-                                    </Badge>
-                                    {match.match_format && (
-                                      <Badge variant="secondary" className="text-xs">
-                                        {match.match_format === "team"
-                                          ? "Team (2er)"
-                                          : match.match_format === "best_of_three"
-                                            ? "1v1 (BoF3)"
-                                            : match.match_format === "individual"
-                                              ? "1v1"
-                                              : "Standard"}
-                                      </Badge>
-                                    )}
-                                    <Badge variant="outline" className="text-xs">
-                                      {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
-                                    </Badge>
-                                  </div>
-
-                                  {/* Date, Time, and Venue */}
-                                  <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
-                                    <div className="flex items-center gap-2">
-                                      <Calendar className="h-4 w-4 flex-shrink-0" />
-                                      <span className="whitespace-nowrap">
-                                        {formatMatchDate(match.match_date)}
-                                        {formatMatchTime(match.match_time)}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <MapPin className="h-4 w-4 flex-shrink-0" />
-                                      <span className="truncate font-medium">{match.venue}</span>
-                                    </div>
-                                    <OpponentLokalInfo match={match} />
-                                  </div>
-                                </div>
-
-                                {/* Status badge - positioned top right */}
-                                <Badge
-                                  variant={match.status === "completed" ? "default" : "secondary"}
-                                  className="text-xs self-start flex-shrink-0"
-                                >
-                                  {match.status === "completed" ? "Beendet" : "Anstehend"}
-                                </Badge>
-                              </div>
-
-                              <div className="flex flex-col gap-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-6">
-                                    <div className="text-center">
-                                      <div className="font-semibold text-lg mb-1">
-                                        {getTeamDisplayNameHelper(match, true)}
-                                      </div>
-                                      <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        {match.home_team_type === "own" ? "Heim" : "Heim (Gegner)"}
-                                      </div>
-                                    </div>
-                                    <div className="text-2xl font-bold text-muted-foreground">:</div>
-                                    <div className="text-center">
-                                      <div className="font-semibold text-lg mb-1">
-                                        {getTeamName(match, false) || "Auswärts Team"}
-                                      </div>
-                                      <div className="text-3xl font-bold text-blue-600">{match.away_score ?? "-"}</div>
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        {match.away_team_type === "own" ? "Auswärts" : "Auswärts (Gegner)"}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div className="text-right"></div>
-                                </div>
-
-                                {(hasLeadershipInTeam(match.home_team_id) ||
-                                  hasLeadershipInTeam(match.away_team_id)) && (
-                                  <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => {
-                                        const userTeamIds = teamMemberships.map((tm) => tm.team_id)
-                                        const isUserTeamHome = userTeamIds.includes(match.home_team_id)
-                                        const isUserTeamAway = userTeamIds.includes(match.away_team_id)
-                                        const myTeamId = isUserTeamHome
-                                          ? match.home_team_id
-                                          : isUserTeamAway
-                                            ? match.away_team_id
-                                            : null
-
-                                        if (myTeamId) {
-                                          router.push(`/statistics/${match.id}?teamId=${myTeamId}`)
-                                        }
-                                      }}
-                                      className="bg-green-600 hover:bg-green-700 text-white border-green-600 w-full h-8"
-                                    >
-                                      <Target className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">Statistiken</span>
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700 w-full h-8"
-                                      onClick={() => {
-                                        setSelectedMatchForResults(match.id)
-                                        setIsResultsDialogOpen(true)
-                                        setEditMatchScores({
-                                          home: match.home_score || 0,
-                                          away: match.away_score || 0,
-                                        })
-                                      }}
-                                    >
-                                      <Edit className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">
-                                        {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
-                                      </span>
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className={`w-full h-8 flex items-center justify-center ${
-                                        match.team_photo_url
-                                          ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
-                                          : "bg-green-600 hover:bg-green-700 text-white border-green-600"
-                                      }`}
-                                      onClick={() => {
-                                        setSelectedMatchForTeamPhoto(match.id)
-                                        setIsTeamPhotoDialogOpen(true)
-                                        setTeamPhotoFile(null)
-                                        setTeamPhotoPreview(null)
-                                        setTeamPhotoMessage("")
-                                      }}
-                                    >
-                                      <Camera className="h-3 w-3 mr-1 flex-shrink-0" />
-                                      <span className="text-xs">
-                                        {match.team_photo_url ? "Teamfoto" : "Foto Upload"}
-                                      </span>
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-
-        {/* Statistics Section - REMOVED: Now handled by separate page */}
-        {/* {selectedMatchForStats && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4">
-            <div className="w-full h-full max-w-[95vw] max-h-[90vh] sm:max-w-3xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl sm:h-auto overflow-hidden bg-white rounded-lg">
-              <MatchStatistics
-                match={selectedMatchForStats}
-                myTeamId={(() => {
-                  const userTeamIds = teamMemberships.map((tm) => tm.team_id)
-                  const isUserTeamHome = userTeamIds.includes(selectedMatchForStats.home_team_id)
-                  const isUserTeamAway = userTeamIds.includes(selectedMatchForStats.away_team_id)
-                  return isUserTeamHome
-                    ? selectedMatchForStats.home_team_id
-                    : isUserTeamAway
-                      ? selectedMatchForStats.away_team_id
-                      : null
-                })()}
-                onClose={() => {
-                  setSelectedMatchForStats(null)
-                  setIsStatsDialogOpen(false)
-                }}
-                onStatsUpdate={fetchMatches}
-              />
-            </div>
-          </div>
-        )} */}
-      </main>
-      <MobileBottomNav />
-
-      <Dialog
-        open={isResultsDialogOpen && selectedMatchForResults !== null}
-        onOpenChange={(open) => {
-          setIsResultsDialogOpen(open)
-          if (!open) setSelectedMatchForResults(null)
-        }}
+    return (
+      <div
+        key={match.id}
+        className={[
+          "bg-white border border-gray-200/80 ring-1 ring-black/5 shadow-md hover:shadow-lg transition-all",
+          "rounded-2xl p-3 sm:p-4",
+          isPostponed ? "border-amber-200" : "border-gray-200/80",
+        ].join(" ")}
       >
-        <DialogContent className="w-[95vw] max-w-sm mx-auto">
-          <DialogHeader className="text-center pb-2 sm:pb-3">
-            <DialogTitle className="text-sm sm:text-base font-semibold">Spielergebnis eintragen</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 sm:space-y-4">
-            <div className="bg-muted/30 rounded-lg p-2 sm:p-3">
-              <div className="grid grid-cols-3 gap-1 sm:gap-2 items-center">
-                <div className="text-center">
-                  <Label className="text-xs font-medium text-muted-foreground">Heim</Label>
-                  <div className="flex flex-col items-center gap-1 mt-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                      onClick={() =>
-                        setEditMatchScores((prev) => ({
-                          ...prev,
-                          home: Math.min(99, prev.home + 1),
-                        }))
-                      }
-                    >
-                      +
-                    </Button>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="99"
-                      value={editMatchScores.home}
-                      onChange={(e) =>
-                        setEditMatchScores((prev) => ({
-                          ...prev,
-                          home: Number.parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                      onClick={() =>
-                        setEditMatchScores((prev) => ({
-                          ...prev,
-                          home: Math.max(0, prev.home - 1),
-                        }))
-                      }
-                    >
-                      -
-                    </Button>
+        <div className="flex gap-3">
+          {/* left status bar */}
+          <div
+            className={[
+              "w-1.5 rounded-full flex-shrink-0 shadow-[0_0_0_1px_rgba(0,0,0,0.06)]",
+              barClass,
+            ].join(" ")}
+          />
+
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col gap-3">
+              {/* top row: badges + date */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="font-mono border-gray-200 bg-white text-gray-700">
+                    Woche {match.week_number}
+                  </Badge>
+
+                  {match.match_format ? (
+                    <Badge variant="outline" className="border-gray-200 bg-white text-gray-700 text-xs">
+                      {match.match_format === "team"
+                        ? "Team (2er)"
+                        : match.match_format === "best_of_three"
+                          ? "1v1 (BoF3)"
+                          : match.match_format === "individual"
+                            ? "1v1"
+                            : "Standard"}
+                    </Badge>
+                  ) : null}
+
+                  <Badge variant="outline" className="border-gray-200 bg-white text-gray-700 text-xs">
+                    {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
+                  </Badge>
+
+                  <Badge className={["text-[11px] border px-2 py-0.5 font-semibold", statusClasses].join(" ")}>
+                    {statusLabel}
+                  </Badge>
+                </div>
+
+                {/* desktop meta */}
+                <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
+                  <span className="font-semibold text-gray-800">{dateText}</span>
+                  {timeText ? <span className="text-gray-500">· {timeText} Uhr</span> : null}
+                  {match.original_date ? (
+                    <span className="text-[11px] text-gray-400">
+                      Urspr.: <span className="line-through">{formatMatchDate(match.original_date)}</span>
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* teams + score */}
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 items-center">
+                {/* home */}
+                <div className="min-w-0 text-center sm:text-right">
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Heim</div>
+                  <div className="mt-1 font-semibold text-[15px] sm:text-base text-gray-900 truncate">
+                    {homeName}
                   </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-lg sm:text-2xl font-bold text-muted-foreground mt-4 sm:mt-6">:</div>
+
+                {/* score */}
+                <div className="flex items-center justify-center">
+                  <div className="rounded-2xl border border-gray-200 ring-1 ring-black/5 bg-white shadow-md px-5 py-2 min-w-[120px] text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-2xl font-extrabold text-gray-900">{match.home_score ?? "-"}</span>
+                      <span className="text-gray-300">:</span>
+                      <span className="text-2xl font-extrabold text-gray-900">{match.away_score ?? "-"}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <Label className="text-xs font-medium text-muted-foreground">Auswärts</Label>
-                  <div className="flex flex-col items-center gap-1 mt-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                      onClick={() =>
-                        setEditMatchScores((prev) => ({
-                          ...prev,
-                          away: Math.min(99, prev.away + 1),
-                        }))
-                      }
-                    >
-                      +
-                    </Button>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="99"
-                      value={editMatchScores.away}
-                      onChange={(e) =>
-                        setEditMatchScores((prev) => ({
-                          ...prev,
-                          away: Number.parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="text-center text-sm sm:text-lg font-bold h-8 sm:h-12 w-full"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-5 w-5 sm:h-6 sm:w-6 p-0 bg-transparent text-xs"
-                      onClick={() =>
-                        setEditMatchScores((prev) => ({
-                          ...prev,
-                          away: Math.max(0, prev.away - 1),
-                        }))
-                      }
-                    >
-                      -
-                    </Button>
+
+                {/* away */}
+                <div className="min-w-0 text-center sm:text-left">
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Gast</div>
+                  <div className="mt-1 font-semibold text-[15px] sm:text-base text-gray-900 truncate">
+                    {awayName}
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 bg-transparent text-xs sm:text-sm h-8 sm:h-9"
-                onClick={() => {
-                  setIsResultsDialogOpen(false)
-                  setSelectedMatchForResults(null)
-                }}
-              >
-                Abbrechen
-              </Button>
-              <Button
-                className="flex-1 text-xs sm:text-sm h-8 sm:h-9"
-                onClick={() => {
-                  if (selectedMatchForResults) {
-                    updateMatchScore(selectedMatchForResults, editMatchScores.home, editMatchScores.away)
-                  }
-                }}
-              >
-                Speichern
-              </Button>
+
+              {/* mobile meta */}
+              <div className="sm:hidden flex items-center justify-between gap-2 text-xs text-gray-600">
+                <div className="font-semibold text-gray-800 whitespace-nowrap">
+                  {dateText}{timeText ? ` · ${timeText} Uhr` : ""}
+                </div>
+                {match.original_date ? (
+                  <div className="text-[10px] text-gray-400">
+                    Urspr.: <span className="line-through">{formatMatchDate(match.original_date)}</span>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* venue */}
+              <div className="flex items-start gap-2 text-sm text-gray-600">
+                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-orange-500" />
+                <div className="min-w-0">
+                  <div className="font-semibold text-gray-800 truncate">{match.venue}</div>
+                  <OpponentLokalInfo match={match} />
+                </div>
+              </div>
+
+              {/* postponed info */}
+              {isPostponed && match.original_date ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                  <div className="text-[11px] font-semibold text-amber-900">
+                    Verschoben: ursprünglich am {formatMatchDate(match.original_date)}
+                    {match.postponement_reason ? ` · Grund: ${match.postponement_reason}` : ""}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* actions */}
+              {canEdit ? (
+                <div className="pt-3 border-t border-gray-200/70">
+                  <div className="rounded-2xl bg-gray-50 p-2 border border-gray-200/60">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {/* Primary (Orange) */}
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+                          const isUserTeamHome = userTeamIds.includes(match.home_team_id)
+                          const isUserTeamAway = userTeamIds.includes(match.away_team_id)
+                          const myTeamId = isUserTeamHome ? match.home_team_id : isUserTeamAway ? match.away_team_id : null
+                          if (myTeamId) router.push(`/statistics/${match.id}?teamId=${myTeamId}`)
+                        }}
+                        className="h-9 rounded-xl bg-orange-600 text-white hover:bg-orange-700 border border-orange-700 shadow-sm"
+                      >
+                        <Target className="h-4 w-4 mr-2" />
+                        Statistik
+                      </Button>
+
+                      {/* Live (neutral) */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+                          const isUserTeamHome = userTeamIds.includes(match.home_team_id)
+                          const isUserTeamAway = userTeamIds.includes(match.away_team_id)
+                          const myTeamId = isUserTeamHome ? match.home_team_id : isUserTeamAway ? match.away_team_id : null
+                          if (myTeamId) router.push(`/live-statistics/${match.id}?teamId=${myTeamId}`)
+                        }}
+                        className="h-9 rounded-xl border-gray-200 bg-white text-gray-900 hover:bg-gray-50"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Live
+                      </Button>
+
+                      {/* Ergebnis (neutral) */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedMatchForResults(match.id)
+                          setIsResultsDialogOpen(true)
+                          setEditMatchScores({
+                            home: match.home_score || 0,
+                            away: match.away_score || 0,
+                          })
+                        }}
+                        className="h-9 rounded-xl border-gray-200 bg-white text-gray-900 hover:bg-gray-50"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
+                      </Button>
+
+                      {/* Foto (neutral) */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedMatchForTeamPhoto(match.id)
+                          setIsTeamPhotoDialogOpen(true)
+                          setTeamPhotoFile(null)
+                          setTeamPhotoPreview(null)
+                          setTeamPhotoMessage("")
+                        }}
+                        className="h-9 rounded-xl border-gray-200 bg-white text-gray-900 hover:bg-gray-50"
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        {match.team_photo_url ? "Teamfoto" : "Foto"}
+                      </Button>
+
+                      {/* Verschieben (orange soft, full width) */}
+                     {/* Verschieben (orange soft, full width) */}
+<Button
+  size="sm"
+  variant="outline"
+  className="h-9 rounded-xl border-orange-200 bg-orange-50 text-orange-900 hover:bg-orange-100 col-span-2 sm:col-span-2"
+  onClick={() => {
+    router.push(`/matches/${match.id}/postpone?back=/member-profile-app&backLabel=Dashboard`)
+  }}
+>
+  <Calendar className="h-4 w-4 mr-2" />
+  Verschieben
+</Button>
+
+                      {/* spacer desktop */}
+                      <div className="hidden sm:block" />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
+    )
+  })}
+</div>
+)}
+</TabsContent>
 
-      <Dialog
-        open={isTeamPhotoDialogOpen && selectedMatchForTeamPhoto !== null}
-        onOpenChange={(open) => {
-          setIsTeamPhotoDialogOpen(open)
-          if (!open) {
-            setSelectedMatchForTeamPhoto(null)
-            setTeamPhotoFile(null)
-            setTeamPhotoPreview(null)
-            setTeamPhotoMessage("")
-          }
-        }}
-      >
-        <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[85vh] overflow-y-auto">
-          <DialogHeader className="text-center pb-2 sm:pb-3">
-            <DialogTitle className="text-sm sm:text-base font-semibold">Teamfoto hochladen</DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Lade ein Teamfoto für dieses Spiel hoch oder entferne das aktuelle Foto.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {(() => {
-              const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
-              const hasExistingPhoto = currentMatch?.team_photo_url
 
-              return (
-                <>
-                  {hasExistingPhoto && !teamPhotoPreview && (
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Aktuelles Teamfoto</Label>
-                      <div className="flex items-center justify-center">
-                        <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
-                          <Image
-                            src={currentMatch.team_photo_url || "/placeholder.svg"}
-                            alt="Aktuelles Teamfoto"
-                            fill
-                            style={{ objectFit: "cover" }}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex justify-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(currentMatch.team_photo_url, "_blank")}
-                          className="text-green-600 border-green-600 hover:bg-green-50 text-sm"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Vollbild ansehen
-                        </Button>
+
+
+
+
+
+
+
+
+
+{/* Tabs Content Verschoben */}
+<TabsContent value="postponed">
+  {getPostponedMatches().length === 0 ? (
+    <div className="rounded-2xl border border-orange-200 bg-white p-10 text-center shadow-lg ring-1 ring-black/5">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 shadow-md">
+        <Calendar className="h-6 w-6 text-white" />
+      </div>
+      <p className="font-semibold text-gray-900">Keine verschobenen Spiele gefunden.</p>
+      <p className="text-sm text-gray-500 mt-1">Wenn Spiele verschoben werden, erscheinen sie hier.</p>
+    </div>
+  ) : (
+    <div className="space-y-3 sm:space-y-4">
+      {getPostponedMatches().map((match) => {
+        const homeName = getTeamDisplayNameHelper(match, true)
+        const awayName = getTeamName(match, false) || "Unbekannt"
+
+        const dateText = formatMatchDate(match.match_date)
+        const timeText = match.match_time ? match.match_time.split(":").slice(0, 2).join(":") : ""
+
+        const canEdit = hasLeadershipInTeam(match.home_team_id) || hasLeadershipInTeam(match.away_team_id)
+
+        return (
+          <div
+            key={match.id}
+            className={[
+              "bg-white border border-orange-200/60 ring-1 ring-black/5 shadow-md hover:shadow-lg transition-all",
+              "rounded-2xl p-3 sm:p-4",
+            ].join(" ")}
+          >
+            <div className="flex gap-3">
+              {/* left status bar */}
+              <div className="w-1.5 rounded-full flex-shrink-0 bg-orange-500 shadow-[0_0_0_1px_rgba(0,0,0,0.06)]" />
+
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col gap-3">
+                  {/* top row: badges + date */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="font-mono border-gray-200 bg-white text-gray-700">
+                        Woche {match.week_number}
+                      </Badge>
+
+                      {match.match_format ? (
+                        <Badge variant="outline" className="border-gray-200 bg-white text-gray-700 text-xs">
+                          {match.match_format === "team"
+                            ? "Team (2er)"
+                            : match.match_format === "best_of_three"
+                              ? "1v1 (BoF3)"
+                              : match.match_format === "individual"
+                                ? "1v1"
+                                : "Standard"}
+                        </Badge>
+                      ) : null}
+
+                      <Badge variant="outline" className="border-gray-200 bg-white text-gray-700 text-xs">
+                        {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
+                      </Badge>
+
+                      <Badge className="text-[11px] border px-2 py-0.5 font-semibold border-orange-200 bg-orange-50 text-orange-800">
+                        Verschoben
+                      </Badge>
+                    </div>
+
+                    <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
+                      <span className="font-semibold text-gray-800">{dateText}</span>
+                      {timeText ? <span className="text-gray-500">· {timeText} Uhr</span> : null}
+                    </div>
+                  </div>
+
+                  {/* teams + score */}
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 items-center">
+                    {/* home */}
+                    <div className="min-w-0 text-center sm:text-right">
+                      <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Heim</div>
+                      <div className="mt-1 font-semibold text-[15px] sm:text-base text-gray-900 truncate">
+                        {homeName}
                       </div>
                     </div>
-                  )}
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      {hasExistingPhoto ? "Neues Teamfoto auswählen" : "Teamfoto auswählen"}
-                    </Label>
-
-                    <div className="flex flex-col gap-2">
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <input
-                            id="teamPhotoCamera"
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            onChange={handleTeamCameraPhotoChange}
-                            className="hidden"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => document.getElementById("teamPhotoCamera")?.click()}
-                            className="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
-                          >
-                            <Camera className="h-4 w-4 mr-2" />
-                            Kamera
-                          </Button>
+                    {/* score */}
+                    <div className="flex items-center justify-center">
+                      <div className="rounded-2xl border border-gray-200 ring-1 ring-black/5 bg-white shadow-md px-5 py-2 min-w-[120px] text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-2xl font-extrabold text-gray-900">{match.home_score ?? "-"}</span>
+                          <span className="text-gray-300">:</span>
+                          <span className="text-2xl font-extrabold text-gray-900">{match.away_score ?? "-"}</span>
                         </div>
+                      </div>
+                    </div>
 
-                        <div className="flex-1">
-                          <input
-                            id="teamPhotoGallery"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleTeamGalleryPhotoChange}
-                            className="hidden"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => document.getElementById("teamPhotoGallery")?.click()}
-                            className="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
-                          >
-                            <ImageIcon className="h-4 w-4 mr-2" />
-                            Galerie
-                          </Button>
-                        </div>
+                    {/* away */}
+                    <div className="min-w-0 text-center sm:text-left">
+                      <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Gast</div>
+                      <div className="mt-1 font-semibold text-[15px] sm:text-base text-gray-900 truncate">
+                        {awayName}
                       </div>
                     </div>
                   </div>
 
-                  {teamPhotoPreview && (
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Neue Foto Vorschau</Label>
-                      <div className="flex items-center justify-center">
-                        <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border-2 border-green-200">
-                          <Image
-                            src={teamPhotoPreview || "/placeholder.svg"}
-                            alt="Teamfoto Vorschau"
-                            fill
-                            style={{ objectFit: "cover" }}
-                          />
+                  {/* mobile meta */}
+                  <div className="sm:hidden flex items-center justify-between gap-2 text-xs text-gray-600">
+                    <div className="font-semibold text-gray-800 whitespace-nowrap">
+                      {dateText}{timeText ? ` · ${timeText} Uhr` : ""}
+                    </div>
+                    {match.original_date ? (
+                      <div className="text-[10px] text-gray-400">
+                        Urspr.: <span className="line-through">{formatMatchDate(match.original_date)}</span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* original date + reason (nice orange box) */}
+                  {match.original_date ? (
+                    <div className="rounded-2xl border border-orange-200 bg-orange-50 p-3">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-[11px] leading-snug text-orange-900">
+                          <div className="font-semibold">
+                            Ursprünglich: <span className="line-through">{formatMatchDate(match.original_date)}</span>
+                            <span className="mx-1 text-orange-400">→</span>
+                            <span>{formatMatchDate(match.match_date)}{timeText ? ` · ${timeText} Uhr` : ""}</span>
+                          </div>
+
+                          {match.postponement_reason ? (
+                            <div className="mt-1 text-orange-800">
+                              <span className="font-semibold">Grund:</span> {match.postponement_reason}
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     </div>
-                  )}
-                </>
-              )
-            })()}
+                  ) : null}
 
-            {teamPhotoMessage && (
-              <Alert>
-                <AlertDescription className="text-sm">{teamPhotoMessage}</AlertDescription>
-              </Alert>
-            )}
+                  {/* venue */}
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-orange-500" />
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-800 truncate">{match.venue}</div>
+                      <OpponentLokalInfo match={match} />
+                    </div>
+                  </div>
+
+                  {/* actions */}
+                  {canEdit ? (
+                    <div className="pt-3 border-t border-gray-200/70">
+                      <div className="rounded-2xl bg-gray-50 p-2 border border-gray-200/60">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {/* Statistik (Primary orange) */}
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+                              const isUserTeamHome = userTeamIds.includes(match.home_team_id)
+                              const isUserTeamAway = userTeamIds.includes(match.away_team_id)
+                              const myTeamId = isUserTeamHome ? match.home_team_id : isUserTeamAway ? match.away_team_id : null
+                              if (myTeamId) router.push(`/statistics/${match.id}?teamId=${myTeamId}`)
+                            }}
+                            className="h-9 rounded-xl bg-orange-600 text-white hover:bg-orange-700 border border-orange-700 shadow-sm"
+                          >
+                            <Target className="h-4 w-4 mr-2" />
+                            Statistik
+                          </Button>
+
+                          {/* Ergebnis */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedMatchForResults(match.id)
+                              setIsResultsDialogOpen(true)
+                              setEditMatchScores({
+                                home: match.home_score || 0,
+                                away: match.away_score || 0,
+                              })
+                            }}
+                            className="h-9 rounded-xl border-gray-200 bg-white text-gray-900 hover:bg-gray-50"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Ergebnis
+                          </Button>
+
+                          {/* Foto */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedMatchForTeamPhoto(match.id)
+                              setIsTeamPhotoDialogOpen(true)
+                              setTeamPhotoFile(null)
+                              setTeamPhotoPreview(null)
+                              setTeamPhotoMessage("")
+                            }}
+                            className="h-9 rounded-xl border-gray-200 bg-white text-gray-900 hover:bg-gray-50"
+                          >
+                            <Camera className="h-4 w-4 mr-2" />
+                            {match.team_photo_url ? "Teamfoto" : "Foto"}
+                          </Button>
+
+                          {/* Neu planen (wide) */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-9 rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50 col-span-2 sm:col-span-2"
+                            onClick={() => {
+                              setSelectedMatchForPostpone(match.id)
+                              setPostponeData({
+                                newDate: match.match_date,
+                                newTime: match.match_time,
+                                reason: match.postponement_reason || "",
+                              })
+                              setIsPostponeDialogOpen(true)
+                            }}
+                          >
+                            <Calendar className="h-4 w-4 mr-2" />
+                            Neu planen
+                          </Button>
+
+                          {/* Rückgängig */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-9 rounded-xl border-red-200 bg-white text-red-700 hover:bg-red-50"
+                            onClick={() => undoPostponement(match.id)}
+                          >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Rückgängig
+                          </Button>
+
+                          {/* Spacer on desktop for alignment */}
+                          <div className="hidden sm:block" />
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
           </div>
-          <DialogFooter className="flex flex-col gap-2 pt-4">
-            {(() => {
-              const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
-              const hasExistingPhoto = currentMatch?.team_photo_url
+        )
+      })}
+    </div>
+  )}
+</TabsContent>
+                   
+				   
+				   
+				   
+				   
+				   
+				   
+				   
+	{/* Tabs Conten Abgeschlosssen */}
+<TabsContent value="completed">
+  {getCompletedMatches().length === 0 ? (
+    <div className="rounded-2xl border border-orange-200 bg-white p-10 text-center shadow-lg ring-1 ring-black/5">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 shadow-md">
+        <Calendar className="h-6 w-6 text-white" />
+      </div>
+      <p className="font-semibold text-gray-900">Keine abgeschlossenen Spiele gefunden.</p>
+      <p className="mt-1 text-sm text-gray-500">Sobald Ergebnisse eingetragen sind, erscheinen sie hier.</p>
+    </div>
+  ) : (
+    <div className="space-y-3 sm:space-y-4">
+      {getCompletedMatches().map((match) => {
+        const homeName = getTeamDisplayNameHelper(match, true)
+        const awayName = getTeamName(match, false) || "Unbekannt"
 
-              return (
-                <>
-                  {hasExistingPhoto && (
-                    <Button
-                      variant="destructive"
-                      onClick={handleTeamPhotoRemove}
-                      disabled={teamPhotoUploading}
-                      className="w-full text-xs sm:text-sm h-8"
-                    >
-                      <XCircle className="h-3 w-3 mr-1" />
-                      Foto entfernen
-                    </Button>
-                  )}
-                  <Button
-                    onClick={handleTeamPhotoUpload}
-                    disabled={teamPhotoUploading || !teamPhotoFile}
-                    className="w-full bg-green-600 hover:bg-green-700 text-xs sm:text-sm h-8"
-                  >
-                    <Upload className="h-3 w-3 mr-1" />
-                    {teamPhotoUploading ? "Wird hochgeladen..." : hasExistingPhoto ? "Foto ersetzen" : "Hochladen"}
-                  </Button>
-                </>
-              )
-            })()}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        const dateText = formatMatchDate(match.match_date)
+        const timeText = match.match_time ? match.match_time.split(":").slice(0, 2).join(":") : ""
+        const canEdit = hasLeadershipInTeam(match.home_team_id) || hasLeadershipInTeam(match.away_team_id)
 
-      <Dialog open={isPostponeDialogOpen} onOpenChange={setIsPostponeDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Spiel verschieben</DialogTitle>
-            <DialogDescription>
-              Gib das neue Datum, die neue Uhrzeit und den Grund für die Verschiebung ein.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="newDate">Neues Datum</Label>
-              <Input
-                id="newDate"
-                type="date"
-                value={postponeData.newDate}
-                onChange={(e) => setPostponeData({ ...postponeData, newDate: e.target.value })}
+        const result = getMatchResult(match) // "won" | "lost" | "draw" | "pending" | "neutral"
+
+        let resultLabel = "Beendet"
+        let barClass = "bg-gray-300"
+        let badgeClass = "border-gray-200 bg-gray-50 text-gray-700"
+
+        if (result === "won") {
+          resultLabel = "Sieg"
+          barClass = "bg-green-500"
+          badgeClass = "border-green-200 bg-green-50 text-green-700"
+        } else if (result === "lost") {
+          resultLabel = "Niederlage"
+          barClass = "bg-red-500"
+          badgeClass = "border-red-200 bg-red-50 text-red-700"
+        } else if (result === "draw") {
+          resultLabel = "Unentschieden"
+          barClass = "bg-yellow-500"
+          badgeClass = "border-yellow-200 bg-yellow-50 text-yellow-700"
+        } else if (result === "pending") {
+          resultLabel = "Offen"
+          barClass = "bg-orange-500"
+          badgeClass = "border-orange-200 bg-orange-50 text-orange-800"
+        }
+
+        return (
+          <div
+            key={match.id}
+            className={[
+              "bg-white border border-gray-200/80 ring-1 ring-black/5 shadow-md hover:shadow-lg transition-all",
+              "rounded-2xl p-3 sm:p-4",
+            ].join(" ")}
+          >
+            <div className="flex gap-3">
+              {/* left result bar */}
+              <div
+                className={[
+                  "w-1.5 rounded-full flex-shrink-0 shadow-[0_0_0_1px_rgba(0,0,0,0.06)]",
+                  barClass,
+                ].join(" ")}
               />
+
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col gap-3">
+                  {/* top row: badges + date */}
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="font-mono border-gray-200 bg-white text-gray-700">
+                        Woche {match.week_number}
+                      </Badge>
+
+                      {match.match_format ? (
+                        <Badge variant="outline" className="border-gray-200 bg-white text-gray-700 text-xs">
+                          {match.match_format === "team"
+                            ? "Team (2er)"
+                            : match.match_format === "best_of_three"
+                              ? "1v1 (BoF3)"
+                              : match.match_format === "individual"
+                                ? "1v1"
+                                : "Standard"}
+                        </Badge>
+                      ) : null}
+
+                      <Badge variant="outline" className="border-gray-200 bg-white text-gray-700 text-xs">
+                        {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
+                      </Badge>
+
+                      <Badge className={["text-[11px] border px-2 py-0.5 font-semibold", badgeClass].join(" ")}>
+                        {resultLabel}
+                      </Badge>
+                    </div>
+
+                    {/* desktop meta */}
+                    <div className="hidden items-center gap-2 text-sm text-gray-600 sm:flex">
+                      <span className="font-semibold text-gray-800">{dateText}</span>
+                      {timeText ? <span className="text-gray-500">· {timeText} Uhr</span> : null}
+                    </div>
+                  </div>
+
+                  {/* teams + score */}
+                  <div className="grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr] sm:gap-4">
+                    {/* home */}
+                    <div className="min-w-0 text-center sm:text-right">
+                      <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Heim</div>
+                      <div className="mt-1 truncate text-[15px] font-semibold text-gray-900 sm:text-base">{homeName}</div>
+                      <div className="mt-1 text-[11px] text-gray-500">
+                        {match.home_team_type === "own" ? "Heim" : "Heim (Gegner)"}
+                      </div>
+                    </div>
+
+                    {/* score */}
+                    <div className="flex items-center justify-center">
+                      <div className="min-w-[120px] rounded-2xl border border-gray-200 bg-white px-5 py-2 text-center shadow-md ring-1 ring-black/5">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-2xl font-extrabold text-gray-900">{match.home_score ?? "-"}</span>
+                          <span className="text-gray-300">:</span>
+                          <span className="text-2xl font-extrabold text-gray-900">{match.away_score ?? "-"}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* away */}
+                    <div className="min-w-0 text-center sm:text-left">
+                      <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Gast</div>
+                      <div className="mt-1 truncate text-[15px] font-semibold text-gray-900 sm:text-base">{awayName}</div>
+                      <div className="mt-1 text-[11px] text-gray-500">
+                        {match.away_team_type === "own" ? "Auswärts" : "Auswärts (Gegner)"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* mobile meta */}
+                  <div className="flex items-center justify-between gap-2 text-xs text-gray-600 sm:hidden">
+                    <div className="whitespace-nowrap font-semibold text-gray-800">
+                      {dateText}
+                      {timeText ? ` · ${timeText} Uhr` : ""}
+                    </div>
+                  </div>
+
+                  {/* venue (OHNE Gegner-Lokal / Ort / Telefon / Route / WhatsApp) */}
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-500" />
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold text-gray-800">{match.venue}</div>
+                    </div>
+                  </div>
+
+                  {/* actions */}
+                  {canEdit ? (
+                    <div className="border-t border-gray-200/70 pt-3">
+                      <div className="rounded-2xl border border-gray-200/60 bg-gray-50 p-2">
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const userTeamIds = teamMemberships.map((tm) => tm.team_id)
+                              const isUserTeamHome = userTeamIds.includes(match.home_team_id)
+                              const isUserTeamAway = userTeamIds.includes(match.away_team_id)
+                              const myTeamId = isUserTeamHome
+                                ? match.home_team_id
+                                : isUserTeamAway
+                                  ? match.away_team_id
+                                  : null
+                              if (myTeamId) router.push(`/statistics/${match.id}?teamId=${myTeamId}`)
+                            }}
+                            className="h-9 rounded-xl border border-orange-700 bg-orange-600 text-white shadow-sm hover:bg-orange-700"
+                          >
+                            <Target className="mr-2 h-4 w-4" />
+                            Statistik
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedMatchForResults(match.id)
+                              setIsResultsDialogOpen(true)
+                              setEditMatchScores({
+                                home: match.home_score || 0,
+                                away: match.away_score || 0,
+                              })
+                            }}
+                            className="h-9 rounded-xl border-gray-200 bg-white text-gray-900 hover:bg-gray-50"
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Bearbeiten
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedMatchForTeamPhoto(match.id)
+                              setIsTeamPhotoDialogOpen(true)
+                              setTeamPhotoFile(null)
+                              setTeamPhotoPreview(null)
+                              setTeamPhotoMessage("")
+                            }}
+                            className="h-9 rounded-xl border-gray-200 bg-white text-gray-900 hover:bg-gray-50"
+                          >
+                            <Camera className="mr-2 h-4 w-4" />
+                            {match.team_photo_url ? "Teamfoto" : "Foto"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="newTime">Neue Uhrzeit</Label>
-              <Input
-                id="newTime"
-                type="time"
-                value={postponeData.newTime}
-                onChange={(e) => setPostponeData({ ...postponeData, newTime: e.target.value })}
-              />
+          </div>
+        )
+      })}
+    </div>
+  )}
+</TabsContent>			   
+				   
+				   
+				   
+				   
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+		
+  </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  </div>
+</main>
+
+<MobileBottomNav />
+
+{showPostponeToast && (
+  <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] animate-in slide-in-from-top-2 fade-in duration-200">
+    <div className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-white px-4 py-3 shadow-2xl">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-600">
+        <Check className="h-5 w-5 text-white" />
+      </div>
+      <div className="leading-tight">
+        <div className="text-sm font-bold text-gray-900">Spiel verschoben</div>
+        <div className="text-xs text-gray-500">Änderungen gespeichert</div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+     <Dialog
+  open={isResultsDialogOpen && selectedMatchForResults !== null}
+  onOpenChange={(open) => {
+    setIsResultsDialogOpen(open)
+    if (!open) setSelectedMatchForResults(null)
+  }}
+>
+  <DialogContent className="w-[92vw] max-w-xs rounded-2xl border-0 p-0 shadow-xl overflow-hidden">
+    
+    {/* Header klein */}
+    <div className="bg-orange-600 px-4 py-3">
+      <DialogTitle className="text-white text-sm font-bold">
+        Ergebnis eintragen
+      </DialogTitle>
+    </div>
+
+    {/* Body kompakt */}
+    <div className="px-4 py-4 space-y-4">
+
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+
+        {/* Heim */}
+        <div className="text-center space-y-2">
+          <div className="text-[11px] font-semibold text-gray-500 truncate">
+  {modalHomeName}
+</div>
+
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-8 w-8 rounded-xl"
+              onClick={() =>
+                setEditMatchScores(prev => ({
+                  ...prev,
+                  home: Math.max(0, prev.home - 1)
+                }))
+              }
+            >
+              −
+            </Button>
+
+            <div className="min-w-[44px] text-xl font-extrabold text-gray-900">
+              {editMatchScores.home}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="reason">Grund für Verschiebung</Label>
-              <Input
-                id="reason"
-                type="text"
-                placeholder="z.B. Zu wenig Spieler..."
-                value={postponeData.reason}
-                onChange={(e) => setPostponeData({ ...postponeData, reason: e.target.value })}
+
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-8 w-8 rounded-xl"
+              onClick={() =>
+                setEditMatchScores(prev => ({
+                  ...prev,
+                  home: Math.min(99, prev.home + 1)
+                }))
+              }
+            >
+              +
+            </Button>
+          </div>
+        </div>
+
+        <div className="text-xl font-bold text-gray-300">:</div>
+
+        {/* Auswärts */}
+        <div className="text-center space-y-2">
+         <div className="text-[11px] font-semibold text-gray-500 truncate">
+  {modalAwayName}
+</div>
+
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-8 w-8 rounded-xl"
+              onClick={() =>
+                setEditMatchScores(prev => ({
+                  ...prev,
+                  away: Math.max(0, prev.away - 1)
+                }))
+              }
+            >
+              −
+            </Button>
+
+            <div className="min-w-[44px] text-xl font-extrabold text-gray-900">
+              {editMatchScores.away}
+            </div>
+
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-8 w-8 rounded-xl"
+              onClick={() =>
+                setEditMatchScores(prev => ({
+                  ...prev,
+                  away: Math.min(99, prev.away + 1)
+                }))
+              }
+            >
+              +
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Footer kompakt */}
+    <div className="grid grid-cols-2 gap-2 px-4 pb-4">
+      <Button
+        variant="outline"
+        className="h-9 rounded-xl"
+        onClick={() => {
+          setIsResultsDialogOpen(false)
+          setSelectedMatchForResults(null)
+        }}
+      >
+        Abbrechen
+      </Button>
+
+      <Button
+        className="h-9 rounded-xl bg-orange-600 hover:bg-orange-700"
+        onClick={() => {
+          if (selectedMatchForResults) {
+            updateMatchScore(
+              selectedMatchForResults,
+              editMatchScores.home,
+              editMatchScores.away
+            )
+          }
+          // DIREKT SCHLIESSEN
+          setIsResultsDialogOpen(false)
+          setSelectedMatchForResults(null)
+        }}
+      >
+        Speichern
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  {/* Foto Modal */}
+	  
+	  
+	  
+
+     <Dialog
+  open={isTeamPhotoDialogOpen && selectedMatchForTeamPhoto !== null}
+  onOpenChange={(open) => {
+    setIsTeamPhotoDialogOpen(open)
+    if (!open) {
+      setSelectedMatchForTeamPhoto(null)
+      setTeamPhotoFile(null)
+      setTeamPhotoPreview(null)
+      setTeamPhotoMessage("")
+    }
+  }}
+>
+  <DialogContent className="w-[92vw] max-w-sm rounded-2xl border-0 p-0 shadow-2xl overflow-hidden bg-white">
+
+  {(() => {
+    const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
+    const hasExistingPhoto = Boolean(currentMatch?.team_photo_url)
+
+    return (
+      <>
+        {/* Header – dezentes Orange */}
+        <div className="px-4 py-3 bg-orange-600">
+          <DialogTitle className="text-sm font-bold text-white">
+            Teamfoto
+          </DialogTitle>
+          <DialogDescription className="text-xs text-orange-100">
+            Hochladen oder ersetzen
+          </DialogDescription>
+        </div>
+
+        {/* Body */}
+        <div className="px-4 py-4 space-y-4">
+
+          {/* Preview */}
+          <div className="rounded-2xl border border-orange-100 bg-orange-50/40 overflow-hidden">
+            <div className="relative w-full aspect-video">
+              <Image
+                src={
+                  teamPhotoPreview ||
+                  currentMatch?.team_photo_url ||
+                  "/placeholder.svg"
+                }
+                alt="Teamfoto Vorschau"
+                fill
+                style={{ objectFit: "cover" }}
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPostponeDialogOpen(false)}>
+
+          {/* Picker Buttons */}
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              id="teamPhotoCamera"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleTeamCameraPhotoChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => document.getElementById("teamPhotoCamera")?.click()}
+              className="h-10 rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
+            >
+              Kamera
+            </Button>
+
+            <input
+              id="teamPhotoGallery"
+              type="file"
+              accept="image/*"
+              onChange={handleTeamGalleryPhotoChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => document.getElementById("teamPhotoGallery")?.click()}
+              className="h-10 rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
+            >
+              Galerie
+            </Button>
+          </div>
+
+          {teamPhotoMessage && (
+            <Alert className="rounded-xl border-orange-200 bg-orange-50">
+              <AlertDescription className="text-sm text-orange-800">
+                {teamPhotoMessage}
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 pb-4 grid grid-cols-2 gap-2">
+
+          {hasExistingPhoto ? (
+            <Button
+              variant="destructive"
+              onClick={handleTeamPhotoRemove}
+              disabled={teamPhotoUploading}
+              className="h-10 rounded-xl"
+            >
+              Entfernen
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsTeamPhotoDialogOpen(false)
+                setSelectedMatchForTeamPhoto(null)
+              }}
+              className="h-10 rounded-xl"
+            >
               Abbrechen
             </Button>
-            <Button
-              onClick={() => {
-                if (selectedMatchForPostpone) {
-                  postponeMatch(
-                    selectedMatchForPostpone,
-                    postponeData.newDate,
-                    postponeData.newTime,
-                    postponeData.reason,
-                  )
-                }
-              }}
-              disabled={!postponeData.newDate || !postponeData.newTime || !postponeData.reason}
-              className="bg-orange-600 hover:bg-orange-700"
-            >
-              Verschieben
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          )}
+
+          <Button
+            onClick={handleTeamPhotoUpload}
+            disabled={teamPhotoUploading || !teamPhotoFile}
+            className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-md"
+          >
+            {teamPhotoUploading ? "Upload..." : "Speichern"}
+          </Button>
+
+        </div>
+      </>
+    )
+  })()}
+</DialogContent>
+</Dialog>
+
+
+
+
+
+
+
+
+
+
+ 
     </>
   )
 }

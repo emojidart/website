@@ -36,189 +36,170 @@ export function PlayerPointsModalApp({ isOpen, onClose, player, pointsBreakdown 
   const throw16Count = pointsBreakdown.throw16Points / 2
   const throw15Count = pointsBreakdown.throw15Points / 1
 
+  const Row = ({ label, value, badge }: { label: string; value: string; badge: string }) => (
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3">
+      <div className="min-w-0">
+        <div className="text-xs font-black text-gray-900 truncate">{label}</div>
+        <div className="text-[11px] text-gray-600 font-bold truncate">{value}</div>
+      </div>
+      <Badge className="rounded-full bg-white text-gray-900 border border-gray-200 font-black text-xs px-3 py-1 whitespace-nowrap">
+        {badge}
+      </Badge>
+    </div>
+  )
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[calc(100vw-24px)] sm:max-w-md p-0 overflow-hidden rounded-2xl border shadow-2xl">
+      <DialogContent className="w-[calc(100vw-24px)] sm:max-w-md p-0 overflow-hidden rounded-2xl border border-gray-200 shadow-2xl">
+        {/* Top orange bar */}
+        <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+
         {/* Sticky Header */}
-        <DialogHeader className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b px-4 py-3">
+        <DialogHeader className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-200 px-4 py-3">
           <div className="flex items-center justify-between gap-3">
-            <DialogTitle className="min-w-0 flex items-center gap-2 text-base sm:text-lg font-bold">
-              <Trophy className="w-5 h-5 text-amber-500 shrink-0" />
+            <DialogTitle className="min-w-0 flex items-center gap-2 text-base sm:text-lg font-black">
+              <div className="w-9 h-9 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                <Trophy className="w-5 h-5 text-orange-600" />
+              </div>
               <span className="truncate">Punkteübersicht</span>
             </DialogTitle>
 
-            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-9 w-9 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50"
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="text-xs sm:text-sm text-gray-500 truncate">{player?.name}</div>
+          <div className="mt-1 text-xs text-gray-500 font-bold truncate">{player?.name}</div>
         </DialogHeader>
 
         {/* Scroll Area */}
         <div className="max-h-[75vh] sm:max-h-[80vh] overflow-y-auto px-4 py-4">
-          <div className="space-y-4">
-            {/* Total Points */}
-            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-4 border border-amber-200">
-              <div className="flex items-center justify-between">
-                <div className="text-xs sm:text-sm text-gray-600">Gesamtpunkte</div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-amber-600">
+          <div className="space-y-5">
+            {/* Total Points (clean) */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-xs text-gray-500 font-bold">Gesamtpunkte</div>
+                  <div className="text-[11px] text-gray-600 font-semibold truncate">
+                    Summe aus Legs + Sonderwertungen
+                  </div>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black text-orange-700">
                   {pointsBreakdown.totalPoints.toFixed(1)}
                 </div>
-              </div>
-              {/* kleine optische Progress-Leiste (nur Design) */}
-              <div className="mt-2 h-2 w-full bg-amber-100 rounded-full overflow-hidden">
-                <div className="h-full w-3/4 bg-amber-400 rounded-full" />
               </div>
             </div>
 
             {/* Leg Wins */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-700">
-                <Target className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-xs font-black text-gray-700">
+                <Target className="w-4 h-4 text-orange-600" />
                 Leg-Wins
               </div>
-              <div className="bg-green-50 rounded-xl p-3 flex justify-between items-center border border-green-100">
-                <span className="text-xs sm:text-sm text-gray-700">{player.total_wins} Siege × 3 Punkte</span>
-                <Badge className="bg-green-600 text-white font-bold text-xs sm:text-sm px-2.5 py-1">
-                  {pointsBreakdown.legWinPoints} Pkt
-                </Badge>
-              </div>
+
+              <Row
+                label="Siege"
+                value={`${player.total_wins} Siege × 3`}
+                badge={`${pointsBreakdown.legWinPoints} Pkt`}
+              />
             </div>
 
             {/* Special Throws */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-700">
-                <Award className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-xs font-black text-gray-700">
+                <Award className="w-4 h-4 text-orange-600" />
                 Spezielle Würfe
               </div>
 
               <div className="grid grid-cols-1 gap-2">
                 {pointsBreakdown.throw180Points > 0 && (
-                  <div className="bg-red-50 rounded-xl p-3 flex justify-between items-center border border-red-100">
-                    <span className="text-xs sm:text-sm text-gray-700">{player.throws_180} × 180er (25)</span>
-                    <Badge className="bg-red-600 text-white font-bold text-xs sm:text-sm px-2.5 py-1">
-                      {pointsBreakdown.throw180Points} Pkt
-                    </Badge>
-                  </div>
+                  <Row
+                    label="180er"
+                    value={`${player.throws_180} × 180 (25)`}
+                    badge={`${pointsBreakdown.throw180Points} Pkt`}
+                  />
                 )}
 
                 {pointsBreakdown.throw171Points > 0 && (
-                  <div className="bg-purple-50 rounded-xl p-3 flex justify-between items-center border border-purple-100">
-                    <span className="text-xs sm:text-sm text-gray-700">{player.throws_171} × 171er (25)</span>
-                    <Badge className="bg-purple-600 text-white font-bold text-xs sm:text-sm px-2.5 py-1">
-                      {pointsBreakdown.throw171Points} Pkt
-                    </Badge>
-                  </div>
+                  <Row
+                    label="171er"
+                    value={`${player.throws_171} × 171 (25)`}
+                    badge={`${pointsBreakdown.throw171Points} Pkt`}
+                  />
                 )}
 
                 {pointsBreakdown.highTonnePoints > 0 && (
-                  <div className="bg-orange-50 rounded-xl p-3 flex justify-between items-center border border-orange-100">
-                    <span className="text-xs sm:text-sm text-gray-700">
-                      {player.throws_high_tonne} × High Tonne (18)
-                    </span>
-                    <Badge className="bg-orange-600 text-white font-bold text-xs sm:text-sm px-2.5 py-1">
-                      {pointsBreakdown.highTonnePoints} Pkt
-                    </Badge>
-                  </div>
+                  <Row
+                    label="High Tonne"
+                    value={`${player.throws_high_tonne} × HT (18)`}
+                    badge={`${pointsBreakdown.highTonnePoints} Pkt`}
+                  />
                 )}
 
                 {pointsBreakdown.tonnePoints > 0 && (
-                  <div className="bg-green-50 rounded-xl p-3 flex justify-between items-center border border-green-100">
-                    <span className="text-xs sm:text-sm text-gray-700">{player.throws_tonne} × Tonne (15)</span>
-                    <Badge className="bg-green-600 text-white font-bold text-xs sm:text-sm px-2.5 py-1">
-                      {pointsBreakdown.tonnePoints} Pkt
-                    </Badge>
-                  </div>
+                  <Row
+                    label="Tonne"
+                    value={`${player.throws_tonne} × T (15)`}
+                    badge={`${pointsBreakdown.tonnePoints} Pkt`}
+                  />
                 )}
 
                 {pointsBreakdown.throw95PlusPoints > 0 && (
-                  <div className="bg-teal-50 rounded-xl p-3 flex justify-between items-center border border-teal-100">
-                    <span className="text-xs sm:text-sm text-gray-700">{player.throws_95_plus} × 95+ (12)</span>
-                    <Badge className="bg-teal-600 text-white font-bold text-xs sm:text-sm px-2.5 py-1">
-                      {pointsBreakdown.throw95PlusPoints} Pkt
-                    </Badge>
-                  </div>
+                  <Row
+                    label="95+"
+                    value={`${player.throws_95_plus} × 95+ (12)`}
+                    badge={`${pointsBreakdown.throw95PlusPoints} Pkt`}
+                  />
                 )}
 
                 {pointsBreakdown.shanghaiPoints > 0 && (
-                  <div className="bg-indigo-50 rounded-xl p-3 flex justify-between items-center border border-indigo-100">
-                    <span className="text-xs sm:text-sm text-gray-700">{player.throws_shanghai} × Shanghai (10)</span>
-                    <Badge className="bg-indigo-600 text-white font-bold text-xs sm:text-sm px-2.5 py-1">
-                      {pointsBreakdown.shanghaiPoints} Pkt
-                    </Badge>
-                  </div>
+                  <Row
+                    label="Shanghai"
+                    value={`${player.throws_shanghai} × Shanghai (10)`}
+                    badge={`${pointsBreakdown.shanghaiPoints} Pkt`}
+                  />
                 )}
 
-                <div className="bg-pink-50 rounded-xl p-3 flex justify-between items-center border border-pink-100">
-                  <span className="text-xs sm:text-sm text-gray-700">{player.throws_bull || 0} × Bull (8)</span>
-                  <Badge className="bg-pink-600 text-white font-bold text-xs sm:text-sm px-2.5 py-1">
-                    {pointsBreakdown.bullPoints} Pkt
-                  </Badge>
-                </div>
+                {(player.throws_bull || 0) > 0 || pointsBreakdown.bullPoints > 0 ? (
+                  <Row
+                    label="Bull"
+                    value={`${player.throws_bull || 0} × Bull (8)`}
+                    badge={`${pointsBreakdown.bullPoints} Pkt`}
+                  />
+                ) : null}
               </div>
             </div>
 
-            {/* Number Throws */}
+            {/* Standard throws */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-700">
-                <Target className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-xs font-black text-gray-700">
+                <Target className="w-4 h-4 text-orange-600" />
                 Standard-Würfe (15–20)
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 {pointsBreakdown.throw20Points > 0 && (
-                  <div className="bg-yellow-50 rounded-xl p-3 flex justify-between items-center border border-yellow-100">
-                    <span className="text-xs sm:text-sm text-gray-700">{throw20Count} × 20er (6)</span>
-                    <Badge variant="outline" className="text-xs sm:text-sm font-bold px-2.5 py-1">
-                      {pointsBreakdown.throw20Points} Pkt
-                    </Badge>
-                  </div>
+                  <Row label="20er" value={`${throw20Count} × 20 (6)`} badge={`${pointsBreakdown.throw20Points} Pkt`} />
                 )}
-
                 {pointsBreakdown.throw19Points > 0 && (
-                  <div className="bg-yellow-50 rounded-xl p-3 flex justify-between items-center border border-yellow-100">
-                    <span className="text-xs sm:text-sm text-gray-700">{throw19Count} × 19er (5)</span>
-                    <Badge variant="outline" className="text-xs sm:text-sm font-bold px-2.5 py-1">
-                      {pointsBreakdown.throw19Points} Pkt
-                    </Badge>
-                  </div>
+                  <Row label="19er" value={`${throw19Count} × 19 (5)`} badge={`${pointsBreakdown.throw19Points} Pkt`} />
                 )}
-
                 {pointsBreakdown.throw18Points > 0 && (
-                  <div className="bg-yellow-50 rounded-xl p-3 flex justify-between items-center border border-yellow-100">
-                    <span className="text-xs sm:text-sm text-gray-700">{throw18Count} × 18er (4)</span>
-                    <Badge variant="outline" className="text-xs sm:text-sm font-bold px-2.5 py-1">
-                      {pointsBreakdown.throw18Points} Pkt
-                    </Badge>
-                  </div>
+                  <Row label="18er" value={`${throw18Count} × 18 (4)`} badge={`${pointsBreakdown.throw18Points} Pkt`} />
                 )}
-
                 {pointsBreakdown.throw17Points > 0 && (
-                  <div className="bg-yellow-50 rounded-xl p-3 flex justify-between items-center border border-yellow-100">
-                    <span className="text-xs sm:text-sm text-gray-700">{throw17Count} × 17er (3)</span>
-                    <Badge variant="outline" className="text-xs sm:text-sm font-bold px-2.5 py-1">
-                      {pointsBreakdown.throw17Points} Pkt
-                    </Badge>
-                  </div>
+                  <Row label="17er" value={`${throw17Count} × 17 (3)`} badge={`${pointsBreakdown.throw17Points} Pkt`} />
                 )}
-
                 {pointsBreakdown.throw16Points > 0 && (
-                  <div className="bg-yellow-50 rounded-xl p-3 flex justify-between items-center border border-yellow-100">
-                    <span className="text-xs sm:text-sm text-gray-700">{throw16Count} × 16er (2)</span>
-                    <Badge variant="outline" className="text-xs sm:text-sm font-bold px-2.5 py-1">
-                      {pointsBreakdown.throw16Points} Pkt
-                    </Badge>
-                  </div>
+                  <Row label="16er" value={`${throw16Count} × 16 (2)`} badge={`${pointsBreakdown.throw16Points} Pkt`} />
                 )}
-
                 {pointsBreakdown.throw15Points > 0 && (
-                  <div className="bg-yellow-50 rounded-xl p-3 flex justify-between items-center border border-yellow-100">
-                    <span className="text-xs sm:text-sm text-gray-700">{throw15Count} × 15er (1)</span>
-                    <Badge variant="outline" className="text-xs sm:text-sm font-bold px-2.5 py-1">
-                      {pointsBreakdown.throw15Points} Pkt
-                    </Badge>
-                  </div>
+                  <Row label="15er" value={`${throw15Count} × 15 (1)`} badge={`${pointsBreakdown.throw15Points} Pkt`} />
                 )}
               </div>
             </div>

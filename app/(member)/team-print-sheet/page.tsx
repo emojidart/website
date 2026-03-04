@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-import { Users, ArrowLeft, Printer } from "lucide-react"
+import { Users, Printer, Loader2 } from "lucide-react"
 
 type TeamMembership = {
   id: string
@@ -69,17 +69,13 @@ export default function TeamPrintSheetPage() {
       const allMemberships = (mData || []) as TeamMembership[]
       setMemberships(allMemberships)
 
-      const firstManageable = allMemberships.find(
-        (x) => x.role === "Captain" || x.role === "Co-Captain"
-      )
+      const firstManageable = allMemberships.find((x) => x.role === "Captain" || x.role === "Co-Captain")
       if (firstManageable?.team_id) setSelectedTeamId(firstManageable.team_id)
 
       const teamIds = allMemberships.map((x) => x.team_id)
       const { data: memData } = await supabase
         .from("team_members")
-        .select(
-          "id, team_id, player_id, club_players:club_players!team_members_player_id_fkey (id, name)"
-        )
+        .select("id, team_id, player_id, club_players:club_players!team_members_player_id_fkey (id, name)")
         .in("team_id", teamIds)
         .is("left_at", null)
 
@@ -96,8 +92,7 @@ export default function TeamPrintSheetPage() {
   }, [memberships])
 
   const canManage =
-    myRoleByTeamId.get(selectedTeamId) === "Captain" ||
-    myRoleByTeamId.get(selectedTeamId) === "Co-Captain"
+    myRoleByTeamId.get(selectedTeamId) === "Captain" || myRoleByTeamId.get(selectedTeamId) === "Co-Captain"
 
   const manageableTeams = useMemo(() => {
     return memberships.filter((m) => m.role === "Captain" || m.role === "Co-Captain")
@@ -130,17 +125,35 @@ export default function TeamPrintSheetPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <Header variant="app" title="Spielerblatt" subtitle="Drucken" backHref="/member-profile-app" />
+
+        <div className="flex-1 flex items-center justify-center px-4 pb-20">
+          <div className="animate-in fade-in zoom-in-95 duration-300">
+            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-orange-100">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
+                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+              </div>
+
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-900">Seite wird geladen</p>
+                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <MobileBottomNav />
+      </main>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col pb-20">
       {/* Nicht drucken */}
       <div className="no-print">
-        <Header />
+        <Header variant="app" title="Spielerblatt" subtitle="Drucken" backHref="/member-profile-app" />
       </div>
 
       <style jsx global>{`
@@ -163,87 +176,109 @@ export default function TeamPrintSheetPage() {
         }
       `}</style>
 
-      <main className="flex-grow w-full px-6 py-6 max-w-6xl mx-auto">
-        {/* ORANGE HEADER */}
-        <div className="no-print rounded-2xl bg-orange-600 text-white p-6 shadow-lg mb-6">
-          <div className="flex items-center gap-4">
-            <Printer className="h-8 w-8" />
-            <div>
-              <div className="text-2xl font-bold">Spielerblatt drucken</div>
-              <div className="text-sm text-orange-100">Spieler wählen → Drucken</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Auswahl */}
-          <Card className="no-print">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-orange-600" />
-                Auswahl
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button
-                variant="outline"
-                onClick={() => router.push("/member-profile-app")}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Zurück
-              </Button>
-
-              <Select
-                value={selectedTeamId}
-                onValueChange={(v) => {
-                  setSelectedTeamId(v)
-                  setSelectedPlayerIds(new Set())
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Team wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {manageableTeams.map((m) => (
-                    <SelectItem key={m.team_id} value={m.team_id}>
-                      {m.teams?.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <div className="border rounded-xl p-3 max-h-[400px] overflow-auto space-y-2">
-                {membersOfSelectedTeam.map((m) => (
-                  <label key={m.id} className="flex items-center gap-3">
-                    <Checkbox
-                      checked={selectedPlayerIds.has(m.player_id)}
-                      onCheckedChange={(v) => togglePlayer(m.player_id, Boolean(v))}
-                    />
-                    <span>{m.club_players?.name}</span>
-                  </label>
-                ))}
+      {/* ✅ UNDER HEADER: */}
+      <main className="pt-12 sm:pt-14">
+        <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+          {/* TOP WHITE CONTAINER */}
+          <section className="no-print rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden mb-5 sm:mb-6">
+            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+            <div className="p-4 sm:p-5 flex items-start gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                <Printer className="w-5 h-5 text-orange-600" />
               </div>
 
-              <Button
-                className="w-full bg-orange-600 hover:bg-orange-700"
-                onClick={() => window.print()}
-                disabled={!canManage}
-              >
-                <Printer className="h-4 w-4 mr-2" />
-                Drucken
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-lg font-black">Spielerblatt drucken</h1>
+                <p className="text-sm text-gray-600 mt-1">Spieler wählen → Drucken</p>
+                <p className="text-xs text-gray-500 mt-1">Nur Kapitän/Co-Kapitän kann drucken.</p>
+              </div>
+            </div>
+          </section>
 
-        {/* ✅ Nur im Druck sichtbar (nicht am Screen) */}
-        <div className="print-only">
-          <PrintSheet
-            teamName={selectedTeam?.name || ""}
-            teamLogoUrl={selectedTeam?.logo_url || null}
-            playerNames={selectedNames}
-          />
+          {/* CONTENT */}
+          <div className="grid grid-cols-1 gap-4">
+            {/* Auswahl */}
+            <Card className="no-print rounded-2xl border border-gray-200 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base font-black">
+                  <Users className="h-5 w-5 text-orange-600" />
+                  Auswahl
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="text-xs font-bold text-gray-500 mb-2">Team</div>
+                  <Select
+                    value={selectedTeamId}
+                    onValueChange={(v) => {
+                      setSelectedTeamId(v)
+                      setSelectedPlayerIds(new Set())
+                    }}
+                  >
+                    <SelectTrigger className="h-11 rounded-2xl border-gray-200 bg-white">
+                      <SelectValue placeholder="Team wählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {manageableTeams.map((m) => (
+                        <SelectItem key={m.team_id} value={m.team_id}>
+                          {m.teams?.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <div className="text-xs font-bold text-gray-500 mb-2">Spieler</div>
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3 max-h-[360px] overflow-auto space-y-2">
+                    {membersOfSelectedTeam.length === 0 ? (
+                      <div className="text-sm text-gray-500 py-6 text-center">Keine Spieler im Team.</div>
+                    ) : (
+                      membersOfSelectedTeam.map((m) => (
+                        <label
+                          key={m.id}
+                          className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 p-3"
+                        >
+                          <Checkbox
+                            checked={selectedPlayerIds.has(m.player_id)}
+                            onCheckedChange={(v) => togglePlayer(m.player_id, Boolean(v))}
+                          />
+                          <span className="font-semibold text-gray-900">{m.club_players?.name}</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <Button
+                  className="w-full h-11 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm"
+                  onClick={() => window.print()}
+                  disabled={!canManage}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Drucken
+                </Button>
+
+                {!canManage ? (
+                  <div className="text-xs text-gray-500">
+                    Hinweis: Du brauchst Kapitän/Co-Kapitän Rechte für dieses Team.
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ✅ Nur im Druck sichtbar */}
+          <div className="print-only">
+            <PrintSheet
+              teamName={selectedTeam?.name || ""}
+              teamLogoUrl={selectedTeam?.logo_url || null}
+              playerNames={selectedNames}
+            />
+          </div>
+
+          <div className="h-6" aria-hidden="true" />
         </div>
       </main>
 
@@ -253,9 +288,6 @@ export default function TeamPrintSheetPage() {
     </div>
   )
 }
-
-
-
 
 function PrintSheet({
   teamName,
@@ -316,12 +348,7 @@ function PrintSheet({
                   fontSize: 10,
                   padding: 4,
                   textAlign: "center",
-                  width:
-                    h === "SPIELER"
-                      ? "18%"
-                      : h === "LEGS W" || h === "LEGS L"
-                        ? "5%"
-                        : "4%",
+                  width: h === "SPIELER" ? "18%" : h === "LEGS W" || h === "LEGS L" ? "5%" : "4%",
                 }}
               >
                 {h}
@@ -333,9 +360,7 @@ function PrintSheet({
         <tbody>
           {names.map((name, idx) => (
             <tr key={idx} style={{ height: 44 }}>
-              <td style={{ border: "1px solid black", paddingLeft: 6, fontSize: 11 }}>
-                {name}
-              </td>
+              <td style={{ border: "1px solid black", paddingLeft: 6, fontSize: 11 }}>{name}</td>
               {Array.from({ length: headers.length - 1 }).map((_, i) => (
                 <td key={i} style={{ border: "1px solid black" }} />
               ))}

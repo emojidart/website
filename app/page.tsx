@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react"
 import { Header } from "@/components/header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { createBrowserClient } from "@supabase/ssr"
 import {
   Trophy,
@@ -108,8 +108,9 @@ interface CombinedEvent {
   photo_url: string | null
   type: "tournament" | "event"
   eventType?: string
-  entry_fee?: number
-  mode?: string
+  entry_fee?: number | null
+  startgeld_details?: string | null
+  mode?: string | null
   max_participants?: number | null
 }
 
@@ -627,22 +628,23 @@ export default function Home() {
         const combined: CombinedEvent[] = []
 
         if (tournamentsData) {
-          tournamentsData.forEach((tournament: any) => {
-            combined.push({
-              id: tournament.id,
-              name: tournament.name,
-              date: tournament.event_date,
-              time: tournament.event_time,
-              location: tournament.location,
-              details: tournament.details,
-              photo_url: tournament.photo_url,
-              type: "tournament",
-              entry_fee: tournament.entry_fee,
-              max_participants: tournament.max_participants,
-              mode: tournament.mode,
-            })
-          })
-        }
+  tournamentsData.forEach((tournament: any) => {
+    combined.push({
+      id: tournament.id,
+      name: tournament.name,
+      date: tournament.event_date,
+      time: tournament.event_time || "19:00",
+      location: tournament.location || "Ort folgt",
+      details: tournament.details ?? tournament.description ?? null,
+      photo_url: tournament.photo_url,
+      type: "tournament",
+      entry_fee: tournament.entry_fee ?? null,
+      startgeld_details: tournament.startgeld_details ?? null,
+      max_participants: tournament.max_participants ?? null,
+      mode: tournament.mode ?? null,
+    })
+  })
+}
 
         if (eventsData) {
           eventsData.forEach((event: any) => {
@@ -966,178 +968,180 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUserId, liveSelfRegEvent])
 
-  if (loading || lionCupLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center pt-16 lg:pt-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-            <p className="text-gray-600">Lade Daten...</p>
-          </div>
-        </main>
-      </div>
-    )
-  }
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Abstand */}
-      <div className="h-3 sm:h-4" aria-hidden="true" />
+      {/* Abstand für fixed Header */}
+<div className="h-12 sm:h-14" aria-hidden="true" />
 
       <PushNotificationDialog />
 
-      <PushNotificationDialog />
+      
 
       {activeTournament && (
-        <div className="bg-red-600 border-b-4 border-red-700 shadow-md">
-          <div className="container mx-auto px-4 py-3 sm:py-4 mt-4 lg:mt-6">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="relative flex-shrink-0">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-white rounded-full animate-pulse shadow-lg"></div>
+  <div className="sticky top-12 sm:top-14 z-40">
+    <div className="mx-4 sm:mx-6 mt-3">
+      <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
+        {/* Top accent bar */}
+        <div className="h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
+
+        <div className="p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-3">
+            {/* Left */}
+            <div className="flex items-center gap-3 min-w-0">
+              {/* Icon bubble */}
+              <div className="relative flex-shrink-0">
+                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-orange-700" />
                 </div>
-                <div className="text-white flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold bg-white/20 backdrop-blur-sm uppercase tracking-wider">
-                      LIVE
-                    </span>
-                  </div>
-                  <h3 className="text-sm sm:text-lg font-bold leading-tight truncate">{activeTournament.tournament_name}</h3>
-                  <p className="text-xs sm:text-sm text-white/90">
-                    {activeTournament.tournament_type.replace("_", " ").toUpperCase()}
-                  </p>
+                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
+              </div>
+
+              {/* Text */}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-600" />
+                    Live
+                  </span>
+                  <span className="hidden sm:inline text-[11px] font-bold text-gray-500">
+                    Turnier läuft gerade
+                  </span>
+                </div>
+
+                <div className="text-sm sm:text-base font-black text-gray-900 truncate">
+                  {activeTournament.tournament_name}
+                </div>
+
+                <div className="text-[11px] sm:text-xs text-gray-600 truncate">
+                  {activeTournament.tournament_type.replaceAll("_", " ").toUpperCase()}
                 </div>
               </div>
-              <Button
-                size="sm"
-                className="bg-white text-red-600 hover:bg-red-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 flex-shrink-0 text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5"
-                onClick={() => (window.location.href = "/live-all-app")}
-              >
-                <span className="hidden sm:inline">Jetzt Live</span>
-                <span className="sm:hidden">Live</span>
-                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" />
-              </Button>
             </div>
+
+            {/* CTA */}
+            <Button
+              size="sm"
+              className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm px-3 sm:px-4"
+              onClick={() => (window.location.href = "/live-all-app")}
+            >
+             <span className="hidden sm:inline">Live öffnen</span>
+<span className="sm:hidden">Live</span>
+              <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Button>
           </div>
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)}
 
-      {liveSelfRegEvent && (
-        <div className={`border-b shadow-md ${dkoRegistered ? "bg-gradient-to-r from-green-600 to-emerald-700 border-green-800" : "bg-gradient-to-r from-orange-600 to-orange-700 border-orange-800"} border-b-4`}>
-          <div className="container mx-auto px-4 py-3 sm:py-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="relative flex-shrink-0">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <Timer className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-white rounded-full animate-pulse shadow-lg"></div>
-                </div>
+      
+	  
+	  
+	 {liveSelfRegEvent && (
+  <div className="sticky top-12 sm:top-14 z-40">
+    <div className="mx-4 sm:mx-6 mt-3">
+      <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
+        {/* Accent bar */}
+        <div
+          className={`h-1.5 ${
+            dkoRegistered
+              ? "bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-600"
+              : "bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600"
+          }`}
+        />
 
-                <div className="text-white flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-xs font-black backdrop-blur-sm uppercase tracking-wider bg-orange-200 text-orange-950">
-                      LION CUP
-                    </span>
-
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold bg-white/20 backdrop-blur-sm uppercase tracking-wider">
-                      TURNIERTAG
-                    </span>
-
-                    {dkoRegistered && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold bg-white/20 backdrop-blur-sm">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Du bist angemeldet
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-sm sm:text-lg font-black leading-tight truncate">{liveSelfRegEvent.title}</h3>
-
-                  <p className="text-xs sm:text-sm text-white/90 flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {liveDateLabel}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      {liveTimeLabel}
-                    </span>
-                  </p>
-
-                  <div className="mt-2 text-[11px] sm:text-xs text-white/90 flex items-center gap-2">
-                    <Info className="w-3.5 h-3.5" />
-                    {liveRegOpen ? (
-                      <span className="font-semibold">
-                        Anmeldung noch: {formatHoursMinutesSeconds(liveSecondsLeft ?? 0)} (schließt 10 Minuten vor Start)
-                      </span>
-                    ) : (
-                      <span className="font-semibold">Anmeldung geschlossen (10 Minuten vor Start)</span>
-                    )}
-                  </div>
-                  <div className="mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setLiveInfoOpen(true)}
-                      className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-white/90 underline underline-offset-4 hover:text-white"
-                    >
-                      <Info className="w-3.5 h-3.5" />
-                      Infos zu Abmeldung & Rückerstattung
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mobile action (shows below content) */}
-              <div className="sm:hidden mt-3">
-                <Button
-                  size="sm"
-                  disabled={!liveRegOpen || dkoRegLoading}
-                  className={`w-full font-black shadow-lg hover:shadow-xl transition-all duration-200 text-xs px-3 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed ${
-                    dkoRegistered ? "bg-white text-gray-900 hover:bg-white/90" : "bg-orange-200 text-orange-950 hover:bg-orange-100"
+        <div className="p-3 sm:p-4">
+          <div className="flex items-start justify-between gap-3">
+            {/* Left */}
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="relative flex-shrink-0 mt-0.5">
+                <div
+                  className={`w-11 h-11 rounded-2xl border flex items-center justify-center ${
+                    dkoRegistered ? "bg-emerald-50 border-emerald-200" : "bg-orange-50 border-orange-200"
                   }`}
-                  onClick={async () => {
-                    modalOpenedAtRef.current = Date.now()
-
-                    const seriesId = "bae7b8fe-7013-4160-8a85-f46ac765e003"
-                    const startgeld = await ensureStartgeldForSeriesId(seriesId)
-
-                    setDkoModal({
-                      isOpen: true,
-                      title: "LION CUP • Anmeldung",
-                      dateLabel: liveDateLabel,
-                      timeLabel: liveTimeLabel,
-                      seriesId,
-                      startgeld,
-                    })
-                  }}
                 >
-                  {dkoRegLoading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      ...
-                    </span>
-                  ) : dkoRegistered ? (
-                    "Anmeldung verwalten"
-                  ) : liveRegOpen ? (
-                    "Jetzt anmelden"
-                  ) : (
-                    "Anmeldung geschlossen"
-                  )}
-                </Button>
+                  <Timer className={`w-5 h-5 ${dkoRegistered ? "text-emerald-700" : "text-orange-700"}`} />
+                </div>
+
+                <span
+                  className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-white animate-pulse ${
+                    liveRegOpen ? "bg-emerald-500" : "bg-gray-300"
+                  }`}
+                />
               </div>
 
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
+                    LION CUP
+                  </span>
+
+                  <span className="inline-flex items-center rounded-full bg-gray-50 text-gray-800 border border-gray-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
+                    TURNIERTAG
+                  </span>
+
+                  {dkoRegistered && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[11px] font-black">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Angemeldet
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-1 text-sm sm:text-base font-black text-gray-900 truncate">
+                  {liveSelfRegEvent.title}
+                </div>
+
+                <div className="mt-0.5 text-[11px] sm:text-xs text-gray-600 flex flex-wrap items-center gap-3">
+                  <span className="inline-flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                    {liveDateLabel}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-orange-600" />
+                    {liveTimeLabel}
+                  </span>
+                </div>
+
+                <div className="mt-2 text-[11px] sm:text-xs text-gray-700 flex items-center gap-2">
+                  <Info className="w-3.5 h-3.5 text-gray-400" />
+                  {liveRegOpen ? (
+                    <span className="font-bold">
+                      Anmeldung noch: {formatHoursMinutesSeconds(liveSecondsLeft ?? 0)}
+                      <span className="font-semibold text-gray-500"> (schließt 10 Min vor Start)</span>
+                    </span>
+                  ) : (
+                    <span className="font-bold">
+                      Anmeldung geschlossen <span className="font-semibold text-gray-500">(10 Min vor Start)</span>
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setLiveInfoOpen(true)}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] sm:text-xs text-orange-700 font-bold hover:text-orange-800"
+                >
+                  <Info className="w-3.5 h-3.5" />
+                  Infos zu Abmeldung & Rückerstattung
+                </button>
+              </div>
+            </div>
+
+            {/* Right CTA */}
+            <div className="flex-shrink-0">
               <Button
                 size="sm"
                 disabled={!liveRegOpen || dkoRegLoading}
-                className={`hidden sm:inline-flex font-black shadow-lg hover:shadow-xl transition-all duration-200 flex-shrink-0 text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 disabled:opacity-60 disabled:cursor-not-allowed ${
-                  dkoRegistered ? "bg-white text-gray-900 hover:bg-white/90" : "bg-orange-200 text-orange-950 hover:bg-orange-100"
+                className={`rounded-xl font-black shadow-sm px-3 sm:px-4 disabled:opacity-60 disabled:cursor-not-allowed ${
+                  dkoRegistered
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    : "bg-orange-600 hover:bg-orange-700 text-white"
                 }`}
                 onClick={async () => {
                   modalOpenedAtRef.current = Date.now()
@@ -1161,769 +1165,957 @@ export default function Home() {
                     ...
                   </span>
                 ) : dkoRegistered ? (
-                  <span className="flex items-center gap-2">
-                    <LogOut className="w-4 h-4" />
-                    Abmelden
-                  </span>
+                  <>
+                    <span className="hidden sm:inline">Anmeldung verwalten</span>
+                    <span className="sm:hidden">Verwalten</span>
+                  </>
+                ) : liveRegOpen ? (
+                  <>
+                    <span className="hidden sm:inline">Jetzt anmelden</span>
+                    <span className="sm:hidden">Anmelden</span>
+                  </>
                 ) : (
-                  <span className="flex items-center gap-2">
-                    <UserPlus className="w-4 h-4" />
-                    Anmelden
-                  </span>
+                  <>
+                    <span className="hidden sm:inline">Geschlossen</span>
+                    <span className="sm:hidden">Zu</span>
+                  </>
                 )}
               </Button>
             </div>
           </div>
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)} 
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
 
       <section className="container mx-auto px-4 py-8 lg:py-12 overflow-x-hidden">
         <div className="grid lg:grid-cols-2 gap-6">
-          <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white overflow-hidden rounded-2xl shadow-2xl lg:col-span-2">
-            <div className="absolute inset-0 bg-[url('/stadium-crowd-atmosphere.jpg')] bg-cover bg-center opacity-10" />
+  {/* LION CUP CARD */}
+  <div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
+    {/* TOP HERO (ORANGE) */}
+    <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
+      <div className="absolute inset-0 bg-[url('/stadium-crowd-atmosphere.jpg')] bg-cover bg-center opacity-10" />
 
-            <div className="relative p-4 sm:p-6 lg:p-10 flex flex-col min-h-full">
-              <div className="w-full mx-auto flex-1 flex flex-col">
-                <div className="flex items-center justify-center mb-6 sm:mb-8">
-                  <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 flex items-center justify-center">
-                    <Image src="/images/logo1.png" alt="Logo 1" width={96} height={96} className="object-contain p-2" />
+      <div className="relative p-4 sm:p-6 lg:p-10">
+        <div className="w-full mx-auto flex flex-col">
+          {/* Logo */}
+          <div className="flex items-center justify-center mb-5 sm:mb-7">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center">
+              <Image
+                src="/images/logo1.png"
+                alt="Logo 1"
+                width={90}
+                height={90}
+                className="object-contain p-2"
+              />
+            </div>
+          </div>
+
+          {/* Title */}
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-950 px-3 py-1.5 rounded-full font-black text-xs mb-3">
+              <Trophy className="w-3.5 h-3.5" />
+              <span>TURNIERSERIE 2025/26</span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">
+              EMD - LION CUP
+            </h1>
+
+            {/* Spieltag / Spielfrei */}
+            <div className="min-h-[40px] flex items-center justify-center mb-2">
+              {nextTournamentEvent?.matchday ? (
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Trophy className="w-3.5 h-3.5 text-yellow-300" />
+                    <span className="text-orange-100">
+                      Spieltag {nextTournamentEvent.matchday}
+                    </span>
                   </div>
                 </div>
+              ) : null}
 
-                <div className="text-center mb-4 sm:mb-6">
-                  <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-900 px-3 py-1.5 rounded-full font-bold text-xs mb-3">
-                    <Trophy className="w-3.5 h-3.5" />
-                    <span>TURNIERSERIE 2025/26</span>
-                  </div>
-                  <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-1">EMD - LION CUP</h1>
-                  <div className="h-10 flex items-center justify-center mb-1">
-                    {nextTournamentEvent?.matchday && (
-                      <div className="inline-block mr-2">
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20">
-                          <div className="flex items-center gap-2 text-xs">
-                            <Trophy className="w-3.5 h-3.5 text-yellow-400" />
-                            <span className="text-orange-100">Spieltag {nextTournamentEvent.matchday}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {isNextEventSpielfrei && nextEvent && (
-                      <div className="inline-block">
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20">
-                          <div className="flex items-center gap-2 text-xs">
-                            <Calendar className="w-3.5 h-3.5 text-yellow-400" />
-                            <span className="text-orange-100">
-                              Spielfrei am{" "}
-                              {new Date(nextEvent.event_date).toLocaleDateString("de-DE", {
-                                day: "2-digit",
-                                month: "long",
-                              })}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">Nächstes Turnier</p>
-                  <p className="text-sm lg:text-base text-orange-200">
-                    {nextTournamentEvent
-                      ? `${new Date(lionCupNextDate).toLocaleDateString("de-DE", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                        })} • ${nextTournamentEvent.event_time || "19:30"} Uhr`
-                      : "15. November 2025 • 19:30 Uhr"}
-                  </p>
-                </div>
-
-                <div className="flex justify-center mb-4 sm:mb-6">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 sm:px-4 lg:px-8 py-3 sm:py-4 border border-white/20">
-                    <CountdownTimer targetDate={lionCupNextDate} />
+              {isNextEventSpielfrei && nextEvent ? (
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Calendar className="w-3.5 h-3.5 text-yellow-300" />
+                    <span className="text-orange-100">
+                      Spielfrei am{" "}
+                      {new Date(nextEvent.event_date).toLocaleDateString("de-DE", {
+                        day: "2-digit",
+                        month: "long",
+                      })}
+                    </span>
                   </div>
                 </div>
+              ) : null}
+            </div>
 
-                <div className="mb-4 sm:mb-6 flex-1 flex flex-col justify-center">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 lg:p-6 border border-white/20">
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Trophy className="w-4 h-4 text-yellow-300" />
-                          <span className="text-yellow-200 text-xs lg:text-sm font-bold uppercase tracking-wider">
-                            Top 5 aktuell
-                          </span>
-                        </div>
-                        {lionTop5Loading && <span className="text-[10px] sm:text-xs text-orange-200 font-bold">Lade…</span>}
-                      </div>
+            <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
+              Nächstes Turnier
+            </p>
+            <p className="text-sm lg:text-base text-orange-200">
+              {nextTournamentEvent
+                ? `${new Date(lionCupNextDate).toLocaleDateString("de-DE", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                  })} • ${nextTournamentEvent.event_time || "19:30"} Uhr`
+                : "15. November 2025 • 19:30 Uhr"}
+            </p>
+          </div>
 
-                      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/15 overflow-hidden">
-                        {!lionTop5Loading && lionTop5.length === 0 && (
-                          <div className="px-3 py-2 text-xs text-orange-200">Keine Daten verfügbar.</div>
-                        )}
-
-                        {lionTop5.map((p, idx) => (
-                          <div key={p.player_name} className="flex items-center justify-between px-3 py-2 border-b border-white/10 last:border-b-0">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center text-[11px] font-black text-white">
-                                {idx + 1}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="text-xs sm:text-sm font-black text-white truncate max-w-[180px] sm:max-w-[260px]">
-                                  {p.player_name}
-                                </div>
-                                <div className="text-[10px] sm:text-xs text-orange-200">
-                                  Antritte: <span className="font-black text-white">{p.tournaments_played}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="text-right flex-shrink-0">
-                              {lionHalvingActive && p.original_total_points !== p.total_points ? (
-                                <div className="flex flex-col items-end">
-                                  <span className="text-[10px] text-orange-200 line-through">{p.original_total_points}</span>
-                                  <span className="text-xs sm:text-sm font-black text-yellow-200">{p.total_points}</span>
-                                </div>
-                              ) : (
-                                <div className="text-xs sm:text-sm font-black text-yellow-200">{p.total_points}</div>
-                              )}
-                              <div className="text-[10px] text-orange-200">Punkte</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
-                        <span className="text-yellow-300 text-xs lg:text-sm font-bold uppercase tracking-wider">
-                          Aktuelles Preisgeld
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-green-300">
-                        <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                        <span className="text-[10px] sm:text-xs font-bold">+€4 pro Teilnahme</span>
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl sm:text-4xl lg:text-5xl font-black mb-1">€{cupPrizePool.toFixed(2)}</div>
-                      <p className="text-orange-200 text-xs lg:text-sm">Wächst mit jedem Teilnehmer und jeder Teilnahme</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button
-                    size="lg"
-                    className="bg-yellow-400 hover:bg-yellow-500 text-orange-900 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl w-full sm:w-auto"
-                    onClick={() => (window.location.href = "/tournament-series-app")}
-                  >
-                    Zur Gesamtertung
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl backdrop-blur-sm w-full sm:w-auto"
-                    onClick={() => (window.location.href = "/lion-cup-regelwerk")}
-                  >
-                    Regelwerk
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-2xl backdrop-blur-sm w-full sm:w-auto"
-                    onClick={() => (window.location.href = "/upcoming-tournaments-app")}
-                  >
-                    Anmelden
-                  </Button>
-                </div>
-              </div>
+          {/* Countdown (im orange Bereich, aber als Glass Box) */}
+          <div className="mt-5 sm:mt-7 flex justify-center">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 sm:px-6 lg:px-10 py-3 sm:py-4 border border-white/20">
+              <CountdownTimer targetDate={lionCupNextDate} />
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </div>
 
-      <div className="container mx-auto px-4 py-12">
-        <div className="space-y-8">
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Nächste Spiele</h2>
-              <Button variant="ghost" className="text-primary font-semibold" onClick={() => (window.location.href = "/liga-statistiken-app")}>
-                Alle Spiele
-              </Button>
+    {/* BOTTOM CONTENT (WHITE) */}
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
+        {/* TOP 5 */}
+        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-orange-600" />
+              <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
+                Top 5 aktuell
+              </span>
             </div>
+            {lionTop5Loading ? (
+              <span className="text-[10px] sm:text-xs text-gray-500 font-bold">
+                Lade…
+              </span>
+            ) : null}
+          </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {matches.slice(0, 4).map((match) => (
-                <Card key={match.id} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4" />
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            {!lionTop5Loading && lionTop5.length === 0 ? (
+              <div className="px-3 py-3 text-xs text-gray-600">
+                Keine Daten verfügbar.
+              </div>
+            ) : null}
+
+            {lionTop5.map((p, idx) => (
+              <div
+                key={p.player_name}
+                className="flex items-center justify-between px-3 py-2 border-b border-gray-100 last:border-b-0"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-[11px] font-black">
+                    {idx + 1}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs sm:text-sm font-black text-gray-900 truncate max-w-[180px] sm:max-w-[260px]">
+                      {p.player_name}
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-gray-500">
+                      Antritte:{" "}
+                      <span className="font-black text-gray-900">
+                        {p.tournaments_played}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-right flex-shrink-0">
+                  {lionHalvingActive && p.original_total_points !== p.total_points ? (
+                    <div className="flex flex-col items-end">
+                      <span className="text-[10px] text-gray-400 line-through">
+                        {p.original_total_points}
+                      </span>
+                      <span className="text-xs sm:text-sm font-black text-orange-700">
+                        {p.total_points}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="text-xs sm:text-sm font-black text-orange-700">
+                      {p.total_points}
+                    </div>
+                  )}
+                  <div className="text-[10px] text-gray-500">Punkte</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* PRIZE POOL */}
+        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-orange-600" />
+              <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
+                Aktuelles Preisgeld
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-green-700">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span className="text-[10px] sm:text-xs font-bold">
+                +€4 pro Teilnahme
+              </span>
+            </div>
+          </div>
+
+          <div className="text-center rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
+            <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-1">
+              €{cupPrizePool.toFixed(2)}
+            </div>
+            <p className="text-gray-600 text-xs sm:text-sm">
+              Wächst mit jedem Teilnehmer und jeder Teilnahme
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Buttons */}
+      <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+        <Button
+          size="lg"
+          className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
+          onClick={() => (window.location.href = "/tournament-series-app")}
+        >
+          Zur Gesamtwertung
+          <ArrowRight className="w-4 h-4 ml-2" />
+        </Button>
+
+        <Button
+          size="lg"
+          variant="outline"
+          className="border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
+          onClick={() => (window.location.href = "/lion-cup-regelwerk")}
+        >
+          Regelwerk
+        </Button>
+
+        <Button
+          size="lg"
+          variant="outline"
+          className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
+          onClick={() => (window.location.href = "/upcoming-tournaments-app")}
+        >
+          Anmelden
+        </Button>
+      </div>
+    </div>
+  </div>
+</div>
+ </section>
+
+      <div className="container mx-auto px-4 py-6 sm:py-10">
+  <div className="space-y-8">
+    {/* ================= NÄCHSTE SPIELE ================= */}
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h2 className="text-base sm:text-lg font-black text-gray-900">Nächste Spiele</h2>
+          <p className="text-xs sm:text-sm text-gray-500">Die nächsten angesetzten Begegnungen</p>
+        </div>
+
+        <Button
+          variant="ghost"
+          className="h-9 px-3 text-orange-700 hover:text-orange-800 hover:bg-orange-50 font-bold"
+          onClick={() => (window.location.href = "/liga-statistiken-app")}
+        >
+          Alle
+        </Button>
+      </div>
+
+      {/* Mobile: horizontal scroll / Desktop: grid */}
+      {matches.length === 0 ? (
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8 text-center">
+          <p className="text-gray-600 font-semibold">Keine anstehenden Spiele</p>
+        </div>
+      ) : (
+        <div className="-mx-4 px-4 overflow-x-auto">
+          <div className="flex gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
+            {matches.slice(0, 4).map((match) => (
+              <div
+                key={match.id}
+                className="min-w-[280px] sm:min-w-0 rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 text-xs text-gray-600 font-semibold">
+                      <Calendar className="w-4 h-4 text-orange-600" />
                       {new Date(match.match_date).toLocaleDateString("de-DE", {
                         day: "2-digit",
                         month: "2-digit",
                         year: "numeric",
                       })}
                     </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex flex-col items-center flex-1">
-                        {getTeamLogo(match, true) ? (
-                          <img
-                            src={getTeamLogo(match, true) || "/placeholder.svg"}
-                            alt={getTeamName(match, true)}
-                            className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 mb-2"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-2">
-                            <Trophy className="h-8 w-8 text-gray-400" />
-                          </div>
-                        )}
-                        <p className="font-semibold text-sm text-center">{getTeamName(match, true)}</p>
-                      </div>
-                      <div className="text-2xl font-bold text-gray-400">vs</div>
-                      <div className="flex flex-col items-center flex-1">
-                        {getTeamLogo(match, false) ? (
-                          <img
-                            src={getTeamLogo(match, false) || "/placeholder.svg"}
-                            alt={getTeamName(match, false)}
-                            className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 mb-2"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-2">
-                            <Trophy className="h-8 w-8 text-gray-400" />
-                          </div>
-                        )}
-                        <p className="font-semibold text-sm text-center">{getTeamName(match, false)}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
 
-            {matches.length === 0 && (
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-12 text-center">
-                  <p className="text-gray-500">Keine anstehenden Spiele</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                    {match.match_time ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 text-[11px] font-bold">
+                        <Clock className="w-3.5 h-3.5" />
+                        {String(match.match_time).slice(0, 5)}
+                      </span>
+                    ) : null}
+                  </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Turniere & Veranstaltungen</h2>
-              <Button variant="ghost" className="text-primary font-semibold" onClick={() => (window.location.href = "/veranstaltungen")}>
-                Alle Veranstaltungen
-              </Button>
-            </div>
-
-            {combinedEvents.length === 0 ? (
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-12 text-center">
-                  <Info className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-500">Derzeit sind keine weiteren Turniere oder Veranstaltungen geplant.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid md:grid-cols-3 gap-6">
-                {combinedEvents.map((item) => {
-                  const EventIcon = item.type === "event" && item.eventType ? getEventTypeIcon(item.eventType) : Trophy
-
-                  return (
-                    <Dialog key={item.id}>
-                      <DialogTrigger asChild>
-                        <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow overflow-hidden group cursor-pointer">
-                          <div className="relative h-48 bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
-                            {item.photo_url ? (
-                              <Image
-                                src={item.photo_url || "/placeholder.svg"}
-                                alt={item.name}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/40">
-                                <EventIcon className="h-16 w-16 text-primary" />
-                              </div>
-                            )}
-                            <div className="absolute top-4 left-4">
-                              <span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
-                                {item.type === "tournament" ? "TURNIER" : getEventTypeLabel(item.eventType || "").toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-                          <CardContent className="p-4">
-                            <p className="text-xs text-gray-500 mb-2">
-                              {new Date(item.date)
-                                .toLocaleDateString("de-DE", {
-                                  day: "2-digit",
-                                  month: "long",
-                                  year: "numeric",
-                                })
-                                .toUpperCase()}
-                            </p>
-                            <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{item.name}</h3>
-                            <p className="text-sm text-gray-600 line-clamp-2">
-                              {item.details ||
-                                `${
-                                  item.type === "tournament"
-                                    ? `${item.mode === "edart" ? "E-Dart" : item.mode === "steeldart" ? "Steel Dart" : "Beide Modi"} Turnier`
-                                    : getEventTypeLabel(item.eventType || "")
-                                } um ${item.time} Uhr`}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle className="text-2xl sm:text-3xl font-black text-primary">{item.name}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 sm:space-y-6">
-                          {item.photo_url && (
-                            <div
-                              className="relative w-full h-48 sm:h-64 rounded-xl overflow-hidden cursor-pointer group"
-                              onClick={() => setFullscreenPhoto(item.photo_url)}
-                            >
-                              <Image
-                                src={item.photo_url || "/placeholder.svg"}
-                                alt={item.name}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                sizes="(max-width: 768px) 100vw, 800px"
-                              />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-3">
-                                  <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                                    />
-                                  </svg>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 sm:p-6 border border-orange-200">
-                            <div className="flex items-center gap-3 mb-4">
-                              <EventIcon className="w-8 h-8 text-orange-600" />
-                              <div>
-                                <h4 className="text-xl font-bold text-gray-900">
-                                  {item.type === "tournament" ? "Turnierinformationen" : "Info"}
-                                </h4>
-                                <p className="text-sm text-gray-700">Alle wichtigen Details auf einen Blick</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-3">
-                            <div className="flex items-start gap-3">
-                              <Calendar className="w-5 h-5 text-orange-600 mt-1" />
-                              <div>
-                                <p className="font-semibold text-gray-900">Datum</p>
-                                <p className="text-gray-700">
-                                  {new Date(item.date).toLocaleDateString("de-DE", {
-                                    day: "2-digit",
-                                    month: "long",
-                                    year: "numeric",
-                                  })}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                              <Clock className="w-5 h-5 text-orange-600 mt-1" />
-                              <div>
-                                <p className="font-semibold text-gray-900">Uhrzeit</p>
-                                <p className="text-gray-700">{item.time} Uhr</p>
-                              </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                              <MapPin className="w-5 h-5 text-orange-600 mt-1" />
-                              <div>
-                                <p className="font-semibold text-gray-900">Ort</p>
-                                <p className="text-gray-700">{item.location}</p>
-                              </div>
-                            </div>
-
-                            {item.type === "tournament" && (
-                              <>
-                                <div className="flex items-start gap-3">
-                                  {item.mode === "edart" ? (
-                                    <Target className="w-5 h-5 text-orange-600 mt-1" />
-                                  ) : item.mode === "steeldart" ? (
-                                    <Swords className="w-5 h-5 text-orange-600 mt-1" />
-                                  ) : (
-                                    <Users className="w-5 h-5 text-orange-600 mt-1" />
-                                  )}
-                                  <div>
-                                    <p className="font-semibold text-gray-900">Modus</p>
-                                    <p className="text-gray-700">
-                                      {item.mode === "edart" ? "E-Dart" : item.mode === "steeldart" ? "Steel Dart" : "Beide Modi"}
-                                    </p>
-                                  </div>
-                                </div>
-                                {item.entry_fee !== undefined && (
-                                  <div className="flex items-start gap-3">
-                                    <Euro className="w-5 h-5 text-orange-600 mt-1" />
-                                    <div>
-                                      <p className="font-semibold text-gray-900">Startgeld</p>
-                                      <p className="text-gray-700">€{item.entry_fee.toFixed(2)}</p>
-                                    </div>
-                                  </div>
-                                )}
-                              </>
-                            )}
-
-                            {item.type === "event" && item.eventType && (
-                              <div className="flex items-start gap-3">
-                                <EventIcon className="w-5 h-5 text-orange-600 mt-1" />
-                                <div>
-                                  <p className="font-semibold text-gray-900">Art der Veranstaltung</p>
-                                  <p className="text-gray-700">{getEventTypeLabel(item.eventType)}</p>
-                                </div>
-                              </div>
-                            )}
-
-                            {item.max_participants && (
-                              <div className="flex items-start gap-3">
-                                <Users className="w-5 h-5 text-orange-600 mt-1" />
-                                <div>
-                                  <p className="font-semibold text-gray-900">Max. Teilnehmer</p>
-                                  <p className="text-gray-700">{item.max_participants}</p>
-                                </div>
-                              </div>
-                            )}
-
-                            {item.details && (
-                              <div className="flex items-start gap-3">
-                                <Info className="w-5 h-5 text-orange-600 mt-1" />
-                                <div>
-                                  <p className="font-semibold text-gray-900">Details</p>
-                                  <p className="text-gray-700">{item.details}</p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          <Button
-                            className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-base sm:text-lg py-4 sm:py-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={() => {
-                              if (item.type === "tournament") {
-                                window.location.href = `/veranstaltungen/${item.id}/anmeldung`
-                              }
-                            }}
-                            disabled={item.type === "event"}
-                          >
-                            {item.type === "tournament" ? "Jetzt anmelden" : "Nur für Turniere"}
-                            <ArrowRight className="w-5 h-5 ml-2" />
-                          </Button>
+                  <div className="flex items-center justify-between gap-3">
+                    {/* Home */}
+                    <div className="flex flex-col items-center flex-1 min-w-0">
+                      {getTeamLogo(match, true) ? (
+                        <img
+                          src={getTeamLogo(match, true) || "/placeholder.svg"}
+                          alt={getTeamName(match, true)}
+                          className="w-14 h-14 rounded-full object-cover border border-gray-200 shadow-sm mb-2"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-2 border border-gray-200">
+                          <Trophy className="h-6 w-6 text-gray-400" />
                         </div>
-                      </DialogContent>
-                    </Dialog>
-                  )
-                })}
+                      )}
+                      <p className="font-black text-xs text-center text-gray-900 truncate w-full">
+                        {getTeamName(match, true)}
+                      </p>
+                    </div>
+
+                    <div className="text-xs font-black text-gray-400">VS</div>
+
+                    {/* Away */}
+                    <div className="flex flex-col items-center flex-1 min-w-0">
+                      {getTeamLogo(match, false) ? (
+                        <img
+                          src={getTeamLogo(match, false) || "/placeholder.svg"}
+                          alt={getTeamName(match, false)}
+                          className="w-14 h-14 rounded-full object-cover border border-gray-200 shadow-sm mb-2"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-2 border border-gray-200">
+                          <Trophy className="h-6 w-6 text-gray-400" />
+                        </div>
+                      )}
+                      <p className="font-black text-xs text-center text-gray-900 truncate w-full">
+                        {getTeamName(match, false)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-[11px] text-gray-500">
+                      {match.venue ? (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5" />
+                          {match.venue}
+                        </span>
+                      ) : (
+                        "Ort folgt"
+                      )}
+                    </span>
+
+                    <Button
+                      size="sm"
+                      className="h-8 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black"
+                      onClick={() => (window.location.href = "/liga-statistiken-app")}
+                    >
+                      Öffnen
+                      <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
               </div>
-            )}
+            ))}
           </div>
         </div>
+      )}
+    </section>
+
+    {/* ================= EVENTS & TURNIERE ================= */}
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h2 className="text-base sm:text-lg font-black text-gray-900">Turniere & Veranstaltungen</h2>
+          <p className="text-xs sm:text-sm text-gray-500">Alles was als nächstes ansteht</p>
+        </div>
+
+        <Button
+          variant="ghost"
+          className="h-9 px-3 text-orange-700 hover:text-orange-800 hover:bg-orange-50 font-bold"
+          onClick={() => (window.location.href = "/veranstaltungen")}
+        >
+          Alle
+        </Button>
       </div>
 
-      <section className="bg-white py-16 lg:py-24 border-y border-gray-200">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="text-orange-600 font-bold text-sm uppercase tracking-wider mb-3">Unsere Partner</p>
-            <h2 className="text-3xl lg:text-5xl font-black text-gray-900 mb-4">Gemeinsam für den Dartsport</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Wir danken unseren Sponsoren und Partnern für ihre Unterstützung und ihr Vertrauen in EMD Dart
-            </p>
-          </div>
+      {combinedEvents.length === 0 ? (
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8 text-center">
+          <Info className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+          <p className="text-gray-600 font-semibold">Derzeit sind keine weiteren Turniere oder Veranstaltungen geplant.</p>
+        </div>
+      ) : (
+        <div className="-mx-4 px-4 overflow-x-auto">
+          <div className="flex gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
+		  
+		  
+		  
+		  
+		  
+            {combinedEvents.map((item) => {
+  const EventIcon = item.type === "event" && item.eventType ? getEventTypeIcon(item.eventType) : Trophy
+  const badgeText = item.type === "tournament" ? "TURNIER" : getEventTypeLabel(item.eventType || "").toUpperCase()
 
-          <div className="mb-16">
-            <div className="text-center mb-8">
-              <span className="inline-block bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider shadow-lg">
-                Hauptsponsor
-              </span>
-            </div>
-            <div className="max-w-md mx-auto">
-              <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-12 shadow-xl border-2 border-gray-200 hover:shadow-2xl hover:border-orange-300 transition-all duration-500 group hover:scale-105">
-                <div className="relative h-32 flex items-center justify-center">
-                  <Image
-                    src="/images/sponsoren/sponsor1.png"
-                    alt="Hauptsponsor"
-                    width={280}
-                    height={120}
-                    className="object-contain transition-all duration-500 group-hover:scale-110"
-                  />
-                </div>
+  return (
+    <Dialog key={item.id}>
+      <DialogTrigger asChild>
+        <div className="min-w-[300px] sm:min-w-0 rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer active:scale-[0.99]">
+          {/* Image / Header */}
+          <div className="relative h-40 bg-gray-100">
+            {item.photo_url ? (
+              <Image
+                src={item.photo_url || "/placeholder.svg"}
+                alt={item.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
+                <EventIcon className="h-12 w-12 text-orange-600" />
               </div>
-            </div>
-          </div>
+            )}
 
-          <div className="mb-16">
-            <div className="text-center mb-8">
-              <span className="inline-block bg-slate-700 text-white px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider shadow-md">
-                Premium Partner
+            <div className="absolute top-3 left-3">
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-3 py-1 text-[11px] font-black text-gray-900 border border-gray-200">
+                {badgeText}
               </span>
             </div>
-            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {[2, 3, 4].map((num) => (
-                <div
-                  key={num}
-                  className="bg-white rounded-xl p-8 shadow-md border border-gray-200 hover:shadow-xl hover:border-orange-400 hover:-translate-y-1 transition-all duration-300 group"
-                >
-                  <div className="relative h-24 flex items-center justify-center">
-                    <Image
-                      src={`/images/sponsoren/sponsor${num}.png`}
-                      alt={`Premium Partner ${num}`}
-                      width={200}
-                      height={80}
-                      className="object-contain transition-all duration-500 group-hover:scale-105"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
 
-          <div>
-            <div className="text-center mb-8">
-              <span className="inline-block bg-gray-200 text-gray-700 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
-                Offizielle Partner
+          {/* Content */}
+          <div className="p-4">
+            <p className="text-[11px] text-gray-500 font-bold mb-1">
+              {new Date(item.date).toLocaleDateString("de-DE", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              })}
+              {item.time ? ` • ${item.time} Uhr` : ""}
+            </p>
+
+            <h3 className="font-black text-gray-900 mb-1 line-clamp-2">{item.name}</h3>
+
+            <p className="text-sm text-gray-600 line-clamp-2">
+  {item.type === "tournament" ? (
+    <>
+      {item.details && <span>{item.details} • </span>}
+
+      {item.startgeld_details && (
+        <span>Startgeld: {item.startgeld_details} • </span>
+      )}
+
+      {typeof item.entry_fee === "number" && item.entry_fee > 0 && (
+        <span>Eintritt: €{item.entry_fee.toFixed(2)} • </span>
+      )}
+
+      {item.mode === "edart"
+        ? "E-Dart"
+        : item.mode === "steeldart"
+        ? "Steel Dart"
+        : item.mode === "both"
+        ? "Beide Modi"
+        : ""}
+    </>
+  ) : (
+    item.details || `${getEventTypeLabel(item.eventType || "")} • ${item.location}`
+  )}
+</p>
+
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-xs text-gray-500 inline-flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-orange-600" />
+                {item.location || "Wird bekannt gegeben"}
               </span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
-              {[5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
-                <div
-                  key={num}
-                  className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:border-orange-300 hover:-translate-y-0.5 transition-all duration-300 group"
-                >
-                  <div className="relative h-16 flex items-center justify-center">
-                    <Image
-                      src={`/images/sponsoren/sponsor${num}.png`}
-                      alt={`Partner ${num}`}
-                      width={120}
-                      height={60}
-                      className="object-contain transition-all duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="mt-16 text-center">
-            <div className="bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 rounded-2xl p-8 lg:p-12 border-2 border-orange-200 shadow-lg">
-              <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">Werden Sie Teil unserer Erfolgsgeschichte</h3>
-              <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
-                Interessiert an einer Partnerschaft? Kontaktieren Sie uns und profitieren Sie von unserer wachsenden Community.
-              </p>
-              <Button
-                size="lg"
-                className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-8 py-6 text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
-                onClick={() => (window.location.href = "/sponsoring")}
-              >
-                Sponsor werden
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
+              <span className="inline-flex items-center gap-1 text-orange-700 text-xs font-black">
+                Details
+                <ArrowRight className="w-4 h-4" />
+              </span>
             </div>
           </div>
         </div>
-      </section>
+      </DialogTrigger>
 
-      <FAQChatWidget />
+      {/* MOBILE: fullscreen sheet | DESKTOP: card modal */}
+     {/* ✅ ERSATZ: DialogContent-Block (1:1 austauschen) */}
+<DialogContent
+  className={[
+    // Layout / Größe
+    "p-0 gap-0",
+    "w-[calc(100vw-16px)] sm:w-full sm:max-w-3xl",
+    // Wichtig: echte Viewport-Höhe auf Mobile (svh/dvh)
+    "max-h-[90svh] sm:max-h-[92vh]",
+    // Damit nur innen gescrollt wird
+    "overflow-hidden",
+    // Flex-Layout damit Body scrollen kann
+    "flex flex-col",
+    // nice rounding
+    "rounded-3xl",
+  ].join(" ")}
+>
+  {/* Sticky Header */}
+  <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
+    <div className="px-4 sm:px-6 py-4 flex items-start justify-between gap-3">
+      <DialogHeader className="space-y-1">
+        <DialogTitle className="text-lg sm:text-2xl font-black text-gray-900 leading-tight">
+          {item.name}
+        </DialogTitle>
 
+        <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-gray-600 font-semibold">
+          <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5">
+            <EventIcon className="w-3.5 h-3.5" />
+            {badgeText}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 px-2 py-0.5">
+            <Calendar className="w-3.5 h-3.5" />
+            {new Date(item.date).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })}
+          </span>
+          {item.time ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 px-2 py-0.5">
+              <Clock className="w-3.5 h-3.5" />
+              {item.time} Uhr
+            </span>
+          ) : null}
+        </div>
+      </DialogHeader>
 
-
-<section className="relative overflow-hidden py-16 lg:py-24 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700">
-
-  {/* Soft Light Effect */}
-  <div className="absolute inset-0 pointer-events-none">
-    <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-yellow-300/20 blur-[120px] rounded-full"></div>
+      {/* CLOSE: immer sichtbar */}
+      <DialogClose asChild>
+        <button
+          type="button"
+          className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 text-gray-700 active:scale-[0.98]"
+          aria-label="Schließen"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </DialogClose>
+    </div>
   </div>
 
-  <div className="relative container mx-auto px-6">
-    <div className="grid lg:grid-cols-2 gap-16 items-center">
-
-      {/* LEFT SIDE */}
-      <div className="text-white text-center lg:text-left">
-
-        <span className="inline-block mb-6 px-4 py-2 rounded-full bg-white/10 text-sm font-semibold backdrop-blur">
-          Neu: EMD Vereinsapp
-        </span>
-
-        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
-          Die neue <br className="hidden sm:block" />
-          EMD Vereinsapp
-        </h2>
-
-        <p className="mt-6 text-lg text-orange-50/90 max-w-xl mx-auto lg:mx-0">
-          Live-Scores, Turniere, Spielpläne & Vereins-News –
-          modern, schnell und direkt am Handy.
-        </p>
-
-        {/* Features */}
-        <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-3">
-          {["Live-Scores", "Turniere", "Push-Updates", "Spielpläne"].map((item) => (
-            <span
-              key={item}
-              className="px-4 py-2 rounded-full bg-white/10 text-sm font-medium backdrop-blur"
-            >
-              {item}
-            </span>
-          ))}
+  {/* ✅ Scrollbarer Body (fix für „zu groß“ + „nicht scrollbar“) */}
+  <div
+    className={[
+      "flex-1", // nimmt restliche Höhe ein
+      "overflow-y-auto",
+      "overscroll-contain", // verhindert „scroll through“ auf iOS
+      "px-4 sm:px-6 py-4 sm:py-6",
+      "space-y-4 sm:space-y-6",
+      "bg-gray-50",
+      // iOS safe area unten
+      "pb-[max(0.5rem,env(safe-area-inset-bottom))]",
+    ].join(" ")}
+  >
+    {/* Photo */}
+    {item.photo_url ? (
+      <div
+        className="relative w-full h-52 sm:h-72 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm cursor-pointer"
+        onClick={() => setFullscreenPhoto(item.photo_url)}
+      >
+        <Image
+          src={item.photo_url || "/placeholder.svg"}
+          alt={item.name}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 900px"
+        />
+      </div>
+    ) : (
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 flex items-center gap-3">
+        <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
+          <EventIcon className="w-5 h-5 text-orange-700" />
         </div>
+        <div className="min-w-0">
+          <p className="text-sm font-black text-gray-900">Keine Foto-Vorschau</p>
+          <p className="text-xs text-gray-600">Details findest du weiter unten.</p>
+        </div>
+      </div>
+    )}
 
-        {/* Google Badge */}
-        <div className="mt-10 flex flex-col items-center lg:items-start gap-4">
+    {/* Info Cards */}
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Ort</p>
+        <p className="mt-1 text-sm font-bold text-gray-900 line-clamp-2">
+          {item.location || "Wird bekannt gegeben"}
+        </p>
+      </div>
 
-          <a
-            href="https://play.google.com/store/apps/details?id=APP_ID"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-transform duration-300 hover:scale-105"
-          >
-            <Image
-              src="/images/google-play-badge.png"
-              alt="Jetzt bei Google Play herunterladen"
-              width={240}
-              height={72}
-              className="h-16 w-auto drop-shadow-xl"
-              priority
-            />
-          </a>
-		  
-		<p className="text-sm text-orange-50/90 max-w-md text-center lg:text-left mt-4">
-  Die Android-App befindet sich derzeit im Genehmigungsprozess bei Google Play.
-  Bis zur Veröffentlichung im Play Store stellen wir die aktuelle APK-Version hier zum direkten Download bereit.
-</p>
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Typ</p>
+        <p className="mt-1 text-sm font-bold text-gray-900">
+          {item.type === "tournament" ? "Turnier" : getEventTypeLabel(item.eventType || "")}
+        </p>
+      </div>
 
-<p className="text-xs text-orange-50/80 max-w-md text-center lg:text-left mt-2">
-  Hinweis: Bei manueller Installation muss ggf. die Installation aus unbekannten Quellen aktiviert werden.
-</p>
+      {item.type === "tournament" ? (
+  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+    <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Infos</p>
 
-<Button
-  size="lg"
-  className="mt-4 w-full sm:w-auto bg-white text-orange-700 hover:bg-white/90 font-black shadow-xl"
-  onClick={handleApkDownload}
->
-  <Download className="w-5 h-5 mr-2" />
-  APK herunterladen
-</Button>
+    <p className="mt-1 text-sm font-bold text-gray-900">
+      {item.mode === "edart"
+        ? "E-Dart"
+        : item.mode === "steeldart"
+        ? "Steel Dart"
+        : "Beide Modi"}
 
-         
+      {item.startgeld_details
+  ? ` • Startgeld: ${
+      isNaN(Number(item.startgeld_details))
+        ? item.startgeld_details
+        : `€ ${Number(item.startgeld_details).toFixed(2)}`
+    }`
+  : ""}
+    </p>
+  </div>
+) : null}
+    </div>
 
+    {/* Details */}
+    {item.details ? (
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+        <div className="flex items-center gap-2">
+          <Info className="w-4 h-4 text-orange-600" />
+          <p className="text-sm font-black text-gray-900">Beschreibung</p>
+        </div>
+        <p className="mt-2 text-sm text-gray-700 leading-relaxed whitespace-pre-line">{item.details}</p>
+      </div>
+    ) : null}
+
+    {/* Bottom Close Button */}
+    <div className="pt-1">
+      <DialogClose asChild>
+        <Button className="w-full h-12 rounded-2xl bg-gray-900 hover:bg-gray-900/90 text-white font-black">
+          Schließen
+        </Button>
+      </DialogClose>
+    </div>
+  </div>
+</DialogContent>
+    </Dialog>
+  )
+})}
+          </div>
+        </div>
+      )}
+    </section>
+  </div>
+</div>
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+<section className="py-8 sm:py-10">
+  <div className="container mx-auto px-4">
+    {/* Header */}
+    <div className="flex items-end justify-between mb-4">
+      <div>
+        <p className="text-xs font-black uppercase tracking-wider text-orange-600">Unsere Partner</p>
+        <h2 className="text-base sm:text-lg font-black text-gray-900">Gemeinsam für den Dartsport</h2>
+        <p className="text-sm text-gray-600 mt-1">
+          Danke an Sponsoren & Partner für die Unterstützung.
+        </p>
+      </div>
+
+      <Button
+        variant="ghost"
+        className="h-9 px-3 text-orange-700 hover:bg-orange-50 font-bold"
+        onClick={() => (window.location.href = "/sponsoring")}
+      >
+        Sponsor werden
+        <ArrowRight className="w-4 h-4 ml-1" />
+      </Button>
+    </div>
+
+    {/* Hauptsponsor */}
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-7 items-center rounded-full bg-orange-50 text-orange-700 border border-orange-200 px-3 text-xs font-black">
+            Hauptsponsor
+          </span>
         </div>
       </div>
 
-      {/* RIGHT SIDE – APP IMAGE */}
-      <div className="flex justify-center lg:justify-end">
-
-        <div className="relative">
-
-          {/* Shadow Glow */}
-          <div className="absolute inset-0 bg-black/30 blur-3xl scale-90 rounded-[40px]"></div>
-
+      <div className="p-4">
+        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6 flex items-center justify-center">
           <Image
-            src="/images/emd-app.png"
-            alt="EMD Vereinsapp auf Smartphone"
-            width={500}
-            height={1000}
-            className="relative w-[260px] sm:w-[320px] lg:w-[360px] object-contain drop-shadow-2xl"
+            src="/images/sponsoren/sponsor1.png"
+            alt="Hauptsponsor"
+            width={260}
+            height={110}
+            className="object-contain"
             priority
           />
-
         </div>
+      </div>
+    </div>
 
+    {/* Premium Partner (App Carousel) */}
+    <div className="mt-6">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-black text-gray-900">Premium Partner</h3>
+        <span className="text-xs text-gray-500"></span>
       </div>
 
+      <div className="-mx-4 px-4 overflow-x-auto">
+        <div className="flex gap-3">
+          {[2, 3, 4].map((num) => (
+            <div
+              key={num}
+              className="min-w-[170px] rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex items-center justify-center"
+            >
+              <Image
+                src={`/images/sponsoren/sponsor${num}.png`}
+                alt={`Premium Partner ${num}`}
+                width={160}
+                height={70}
+                className="object-contain"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
+
+    {/* */}
+    <div className="mt-6">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-black text-gray-900">Offizielle Partner</h3>
+        <span className="text-xs text-gray-500"></span>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {[5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
+          <div
+            key={num}
+            className="rounded-2xl border border-gray-200 bg-white shadow-sm p-3 flex items-center justify-center"
+          >
+            <Image
+              src={`/images/sponsoren/sponsor${num}.png`}
+              alt={`Partner ${num}`}
+              width={140}
+              height={60}
+              className="object-contain"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/*  */}
+    <div className="mt-8 rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5 shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h4 className="text-sm sm:text-base font-black text-gray-900">Partner werden</h4>
+          <p className="text-sm text-gray-700 mt-1">
+            Interesse an einer Partnerschaft? Schreib uns – wir melden uns schnell.
+          </p>
+        </div>
+
+        <Button
+          className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black px-4"
+          onClick={() => (window.location.href = "/sponsoring")}
+        >
+          Sponsoring
+          <ArrowRight className="w-4 h-4 ml-2" />
+        </Button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<FAQChatWidget />
+
+
+
+
+
+<section className="relative overflow-hidden py-10 sm:py-14 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 rounded-3xl mx-4 sm:mx-6 shadow-2xl">
+
+  {/* Soft Glow */}
+  <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-yellow-300/20 blur-[120px] rounded-full"></div>
+  </div>
+
+  <div className="relative mx-auto max-w-2xl px-4 text-center text-white">
+
+    {/* Badge */}
+    <span className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full bg-white/15 text-xs font-bold backdrop-blur">
+      🚀 Jetzt verfügbar
+    </span>
+
+    {/* Headline */}
+    <h2 className="text-2xl sm:text-3xl font-black leading-tight">
+      EMD Vereinsapp
+    </h2>
+
+    {/* Text */}
+    <p className="mt-4 text-sm sm:text-base text-orange-50/90">
+      Alles rund um Liga, Turniere und Vereinsnews –
+      modern, schnell und direkt auf deinem Smartphone.
+    </p>
+
+    {/* Feature Chips */}
+    <div className="mt-6 flex flex-wrap justify-center gap-2">
+      {["Live-Scores", "Turniere", "Push-News", "Statistiken"].map((item) => (
+        <span
+          key={item}
+          className="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold backdrop-blur"
+        >
+          {item}
+        </span>
+      ))}
+    </div>
+
+    {/* Google Play Badge */}
+    <div className="mt-8 flex justify-center">
+      <a
+        href="https://play.google.com/store/apps/details?id=com.emojisdartverein.app"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="transition-transform duration-300 active:scale-95"
+      >
+        <Image
+          src="/images/google-play-badge.png"
+          alt="Jetzt bei Google Play herunterladen"
+          width={200}
+          height={60}
+          className="h-14 w-auto drop-shadow-xl"
+          priority
+        />
+      </a>
+    </div>
+
+    {/* APK Info */}
+    <div className="mt-6 bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20 text-center">
+      <p className="text-xs sm:text-sm text-orange-50">
+        Android-Version aktuell im Prüfprozess bei Google Play.
+        Bis dahin kannst du die APK hier direkt herunterladen.
+      </p>
+
+      <Button
+        size="sm"
+        className="mt-4 bg-white text-orange-700 hover:bg-white/90 font-black w-full sm:w-auto"
+        onClick={handleApkDownload}
+      >
+        <Download className="w-4 h-4 mr-2" />
+        APK herunterladen
+      </Button>
+
+      <p className="text-[11px] text-orange-50/70 mt-3">
+        Hinweis: Installation aus unbekannten Quellen ggf. aktivieren.
+      </p>
+    </div>
+
   </div>
 </section>
 
 
 
 
-      <footer className="bg-slate-900 text-white mt-16">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <a
-                href="https://www.facebook.com/groups/1902196843213608"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-600 flex items-center justify-center transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-              </a>
-              <a
-                href="https://www.instagram.com/emojsdartverein/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-600 flex items-center justify-center transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                </svg>
-              </a>
-              <a
-                href="https://www.youtube.com/@emojsdartvereinev.9194"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-600 flex items-center justify-center transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                </svg>
-              </a>
-              <a
-                href="https://www.tiktok.com/@emojizyy3md?_t=8ahlStO563y&_r=1"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-600 flex items-center justify-center transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
-                </svg>
-              </a>
-              <a
-                href="https://api.whatsapp.com/send/?phone=436604696464&text&type=phone_number&app_absent=0"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-600 flex items-center justify-center transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-                </svg>
-              </a>
-            </div>
 
-            <div className="flex items-center gap-6 text-sm">
-              <a href="/impressum" className="text-slate-300 hover:text-orange-500 transition-colors">
-                Impressum
-              </a>
-              <a href="/datenschutz" className="text-slate-300 hover:text-orange-500 transition-colors">
-                Datenschutz
-              </a>
-              <a href="/kontakt" className="text-slate-300 hover:text-orange-500 transition-colors">
-                Kontakt
-              </a>
-            </div>
 
-            <div className="text-center md:text-right">
-              <p className="text-sm text-slate-400">
-                &copy; {new Date().getFullYear()} EMD Salzburg – Erstellt von <strong>Grafikguru</strong>.
-              </p>
-              <p className="text-xs text-slate-500">Alle Rechte vorbehalten.</p>
-            </div>
-          </div>
-        </div>
-      </footer>
+
+<footer className="mt-10 border-t border-gray-200 bg-white">
+  <div className="container mx-auto px-4 py-6">
+    {/* Social row */}
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      {[
+        { href: "https://www.facebook.com/groups/1902196843213608", label: "Facebook", icon: (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+          </svg>
+        )},
+        { href: "https://www.instagram.com/emojsdartverein/", label: "Instagram", icon: (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+          </svg>
+        )},
+        { href: "https://www.youtube.com/@emojsdartvereinev.9194", label: "YouTube", icon: (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+          </svg>
+        )},
+        { href: "https://www.tiktok.com/@emojizyy3md?_t=8ahlStO563y&_r=1", label: "TikTok", icon: (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
+          </svg>
+        )},
+        { href: "https://api.whatsapp.com/send/?phone=436604696464&text&type=phone_number&app_absent=0", label: "WhatsApp", icon: (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+          </svg>
+        )},
+      ].map((s) => (
+        <a
+          key={s.href}
+          href={s.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={s.label}
+          className="inline-flex h-10 items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3 text-gray-700 shadow-sm active:scale-[0.98]"
+        >
+          <span className="text-orange-600">{s.icon}</span>
+          <span className="text-xs font-bold">{s.label}</span>
+        </a>
+      ))}
+    </div>
+
+    {/* Links */}
+    <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+      <a href="/impressum" className="text-gray-600 hover:text-orange-700 font-semibold">
+        Impressum
+      </a>
+      <a href="/datenschutz" className="text-gray-600 hover:text-orange-700 font-semibold">
+        Datenschutz
+      </a>
+      <a href="/kontakt" className="text-gray-600 hover:text-orange-700 font-semibold">
+        Kontakt
+      </a>
+    </div>
+
+    {/* Copyright */}
+    <div className="mt-5 text-center">
+      <p className="text-xs text-gray-500">
+        © {new Date().getFullYear()} EMD Salzburg • Erstellt von <span className="font-bold text-gray-700">Grafikguru</span>
+      </p>
+      <p className="text-[11px] text-gray-400 mt-1">Alle Rechte vorbehalten.</p>
+    </div>
+  </div>
+</footer>
+
+
+
+
+
+      
 
       {fullscreenPhoto && (
         <div
@@ -1945,6 +2137,11 @@ export default function Home() {
           </div>
         </div>
       )}
+
+
+
+
+
 
       <Dialog open={liveInfoOpen} onOpenChange={setLiveInfoOpen}>
         <DialogContent className="sm:max-w-lg">

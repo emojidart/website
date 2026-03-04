@@ -9,139 +9,130 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
+    transition: { staggerChildren: 0.05, delayChildren: 0.05 },
   },
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 12 } },
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 15 } },
 }
 
 export default function ImpressumPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
       <Header />
-      <main className="pt-8 pb-24">
-        <motion.div
-          className="container mx-auto px-4 md:px-6 py-8"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={itemVariants} className="text-center mb-12">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
-                <Scale className="h-12 w-12 text-white mx-auto" />
-              </div>
-              <h1 className="text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-4">
-                <span className="block text-white">IMPRESSUM</span>
-              </h1>
-              <p className="text-lg md:text-xl font-bold uppercase text-orange-100 mb-4">
-                Angaben gemäß E-Commerce-Gesetz und Mediengesetz
-              </p>
-              <div className="bg-orange-600/30 rounded-xl p-4 text-orange-100">
-                <p className="text-sm italic">Rechtliche Informationen zum Verein</p>
+
+     <main className="pt-12 sm:pt-14">
+  <motion.div
+    className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+    variants={containerVariants}
+    initial="hidden"
+    animate="visible"
+  >
+          {/* App Header Card */}
+          <motion.div variants={itemVariants} className="mb-6">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="p-4 flex items-start gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                  <Scale className="w-5 h-5 text-orange-600" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-lg font-black">Impressum</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Angaben gemäß E-Commerce-Gesetz und Mediengesetz.
+                  </p>
+                </div>
               </div>
             </div>
           </motion.div>
 
-          <div className="space-y-8 text-foreground/80">
-            <section>
-              <h2 className="text-2xl font-semibold mb-4 text-foreground">
-                Angaben gemäß § 5 E-Commerce-Gesetz (ECG) und Mediengesetz
-              </h2>
-              <p className="leading-relaxed">
-                Emoj!'s Dartverein e.V.
-                <br />
-                Wüstenrotstraße 30
-                <br />
-                5020 Salzburg, Österreich
-              </p>
-            </section>
+          {/* Content */}
+          <div className="space-y-6 text-sm leading-relaxed text-gray-700">
+            <Section title="Angaben gemäß § 5 ECG & Mediengesetz">
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 mt-3 shadow-sm">
+                <p className="font-black text-gray-900">Emoj!'s Dartverein e.V.</p>
+                <p>Wüstenrotstraße 30</p>
+                <p>5020 Salzburg, Österreich</p>
+              </div>
+            </Section>
 
-            <section>
-              <h2 className="text-2xl font-semibold mb-4 text-foreground">Vereinsvorstand</h2>
-              <p className="leading-relaxed">Obmann: Bernhard Gastberger</p>
-            </section>
+            <Section title="Vereinsvorstand">
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 mt-3 shadow-sm">
+                <p className="text-gray-600 text-xs font-bold">Obmann</p>
+                <p className="font-black text-gray-900">Bernhard Gastberger</p>
+              </div>
+            </Section>
 
-            <section>
-              <h2 className="text-2xl font-semibold mb-4 text-foreground">Kontakt</h2>
-              <p className="leading-relaxed">
-                Telefon: +436604696464
-                <br />
-                E-Mail: office@emojisdartverein.com
-              </p>
-            </section>
+            <Section title="Kontakt">
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 mt-3 shadow-sm space-y-2">
+                <p>
+                  <span className="font-bold text-gray-900">Telefon:</span> +43 660 4696464
+                </p>
+                <p className="break-all">
+                  <span className="font-bold text-gray-900">E-Mail:</span>{" "}
+                  <a href="mailto:office@emojisdartverein.com" className="text-orange-600 font-semibold">
+                    office@emojisdartverein.com
+                  </a>
+                </p>
+              </div>
+            </Section>
 
-            <section>
-              <h2 className="text-2xl font-semibold mb-4 text-foreground">
-                Foto- und Videoaufnahmen bei Veranstaltungen
-              </h2>
-              <p className="leading-relaxed mb-4">
+            <Section title="Foto- & Videoaufnahmen bei Veranstaltungen">
+              <p className="mt-2">
                 Bei unseren Turnieren, Trainings und Vereinsveranstaltungen werden regelmäßig Foto- und Videoaufnahmen
                 für Dokumentations- und Werbezwecke erstellt. Diese Aufnahmen können auf unserer Website, in sozialen
                 Medien und in Vereinspublikationen veröffentlicht werden.
               </p>
-              <p className="leading-relaxed mb-4">
+              <p className="mt-3">
                 Mit der Teilnahme an unseren Veranstaltungen erklären sich die Teilnehmer mit der Anfertigung und
-                Veröffentlichung solcher Aufnahmen einverstanden. Sollten Sie mit der Veröffentlichung von Aufnahmen,
-                auf denen Sie zu sehen sind, nicht einverstanden sein, bitten wir um eine kurze Mitteilung an die oben
-                angegebene E-Mail-Adresse. Wir werden die entsprechenden Aufnahmen dann umgehend entfernen.
+                Veröffentlichung solcher Aufnahmen einverstanden. Sollten Sie damit nicht einverstanden sein, bitten
+                wir um eine kurze Mitteilung an die oben angegebene E-Mail-Adresse. Wir entfernen die entsprechenden
+                Inhalte dann umgehend.
               </p>
-              <p className="leading-relaxed">
+              <p className="mt-3">
                 Alle Aufnahmen werden ausschließlich im Zusammenhang mit der Vereinstätigkeit verwendet und nicht an
                 Dritte zu kommerziellen Zwecken weitergegeben.
               </p>
-            </section>
+            </Section>
 
-            <section>
-              <h2 className="text-2xl font-semibold mb-4 text-foreground">Haftungsausschluss</h2>
-
-              <h3 className="text-xl font-semibold mb-2 mt-4 text-foreground">Haftung für Inhalte</h3>
-              <p className="leading-relaxed mb-4">
-                Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit
-                und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. Als Diensteanbieter sind wir für
-                eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Wir sind jedoch nicht
-                verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen.
+            <Section title="Haftungsausschluss">
+              <SubTitle>Haftung für Inhalte</SubTitle>
+              <p>
+                Die Inhalte wurden mit größter Sorgfalt erstellt. Für Richtigkeit, Vollständigkeit und Aktualität kann
+                jedoch keine Gewähr übernommen werden. Als Diensteanbieter sind wir nach den allgemeinen Gesetzen für
+                eigene Inhalte verantwortlich, jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde
+                Informationen zu überwachen.
               </p>
 
-              <h3 className="text-xl font-semibold mb-2 mt-4 text-foreground">Haftung für Links</h3>
-              <p className="leading-relaxed mb-4">
+              <SubTitle>Haftung für Links</SubTitle>
+              <p>
                 Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben.
-                Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der
-                verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich. Die
-                verlinkten Seiten wurden zum Zeitpunkt der Verlinkung auf mögliche Rechtsverstöße überprüft.
-                Rechtswidrige Inhalte waren zum Zeitpunkt der Verlinkung nicht erkennbar.
+                Deshalb können wir für diese fremden Inhalte keine Gewähr übernehmen. Für die Inhalte der verlinkten
+                Seiten ist stets der jeweilige Anbieter/Betreiber verantwortlich.
               </p>
 
-              <h3 className="text-xl font-semibold mb-2 mt-4 text-foreground">Urheberrecht</h3>
-              <p className="leading-relaxed">
-                Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem
-                österreichischen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der
-                Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen
-                Autors bzw. Erstellers. Downloads und Kopien dieser Seite sind nur für den privaten, nicht kommerziellen
-                Gebrauch gestattet.
+              <SubTitle>Urheberrecht</SubTitle>
+              <p>
+                Die erstellten Inhalte und Werke unterliegen dem österreichischen Urheberrecht. Vervielfältigung,
+                Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen
+                der schriftlichen Zustimmung des jeweiligen Autors/Erstellers.
               </p>
-            </section>
+            </Section>
 
-            <section>
-              <h2 className="text-2xl font-semibold mb-4 text-foreground">Datenschutz</h2>
-              <p className="leading-relaxed mb-4">
+            <Section title="Datenschutz">
+              <p>
                 Die Nutzung unserer Webseite ist in der Regel ohne Angabe personenbezogener Daten möglich. Soweit auf
-                unseren Seiten personenbezogene Daten (beispielsweise Name, Anschrift oder E-Mail-Adressen) erhoben
-                werden, erfolgt dies, soweit möglich, stets auf freiwilliger Basis. Diese Daten werden ohne Ihre
-                ausdrückliche Zustimmung nicht an Dritte weitergegeben.
+                unseren Seiten personenbezogene Daten erhoben werden, erfolgt dies – soweit möglich – stets auf
+                freiwilliger Basis. Diese Daten werden ohne ausdrückliche Zustimmung nicht an Dritte weitergegeben.
               </p>
-              <p className="leading-relaxed">
-                Wir weisen darauf hin, dass die Datenübertragung im Internet (z.B. bei der Kommunikation per E-Mail)
-                Sicherheitslücken aufweisen kann. Ein lückenloser Schutz der Daten vor dem Zugriff durch Dritte ist
-                nicht möglich. Weitere Informationen zum Datenschutz finden Sie in unserer Datenschutzerklärung.
+              <p className="mt-3">
+                Wir weisen darauf hin, dass die Datenübertragung im Internet Sicherheitslücken aufweisen kann. Ein
+                lückenloser Schutz vor Zugriffen durch Dritte ist nicht möglich. Weitere Infos findest du in der
+                Datenschutzerklärung.
               </p>
-            </section>
+            </Section>
           </div>
         </motion.div>
       </main>
@@ -149,4 +140,19 @@ export default function ImpressumPage() {
       <MobileBottomNav />
     </div>
   )
+}
+
+/* Helper Components */
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <motion.section variants={itemVariants}>
+      <h2 className="text-base sm:text-lg font-black text-gray-900 mb-2">{title}</h2>
+      <div className="text-gray-700">{children}</div>
+    </motion.section>
+  )
+}
+
+function SubTitle({ children }: { children: React.ReactNode }) {
+  return <h3 className="font-bold text-gray-900 mt-4 mb-1">{children}</h3>
 }

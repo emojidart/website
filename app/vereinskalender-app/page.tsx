@@ -217,6 +217,10 @@ const [boardDesc, setBoardDesc] = useState("")
 const [boardDate, setBoardDate] = useState("")   // YYYY-MM-DD
 const [boardTime, setBoardTime] = useState("")   // HH:MM
 const [boardFiles, setBoardFiles] = useState<FileList | null>(null)
+const [editingBoardId, setEditingBoardId] = useState<string | null>(null)
+const [allClubPlayers, setAllClubPlayers] = useState<{ id: string; name: string }[]>([])
+const [invitePlayerIds, setInvitePlayerIds] = useState<string[]>([])
+const [inviteSearch, setInviteSearch] = useState("")
 
 const [savingBoard, setSavingBoard] = useState(false)
   const [vacationName, setVacationName] = useState("")
@@ -227,6 +231,8 @@ const [savingBoard, setSavingBoard] = useState(false)
   const [editingVacationId, setEditingVacationId] = useState<string | null>(null)
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
   const [confirmDeleteVacationId, setConfirmDeleteVacationId] = useState<string | null>(null)
+  const [isConfirmDeleteBoardOpen, setIsConfirmDeleteBoardOpen] = useState(false)
+const [confirmDeleteBoardId, setConfirmDeleteBoardId] = useState<string | null>(null)
   
   const fetchAustrianHolidays = async (year: number): Promise<Event[]> => {
   try {
@@ -255,6 +261,26 @@ const [savingBoard, setSavingBoard] = useState(false)
 
       
       const { data: authData } = await supabase.auth.getUser()
+	  
+	  // ✅ Spieler-Liste für Einladungen laden
+try {
+  const playersRes = await supabase
+    .from("club_players")
+    .select("id, name")
+    .order("name", { ascending: true })
+
+  if (!playersRes.error) {
+    setAllClubPlayers((playersRes.data || []) as any)
+  } else {
+    console.error("Error loading club_players:", playersRes.error)
+    setAllClubPlayers([])
+  }
+} catch (e) {
+  console.error("club_players fetch failed:", e)
+  setAllClubPlayers([])
+}
+
+
 	  if (authData?.user?.id) {
   const { data: roleRows } = await supabase
     .from("club_roles")
@@ -867,63 +893,128 @@ const loadLineup = async (matchId: string) => {
     }
   }
   
-  const createBoardEvent = async () => {
+  
+  
+  
+
+
+const createBoardEvent = async () => {
   if (!boardTitle.trim() || !boardDate || !boardTime) return
   setSavingBoard(true)
 
   try {
     const startsAtIso = new Date(`${boardDate}T${boardTime}:00`).toISOString()
 
-    const { data: ev, error: evErr } = await supabase
-      .from("board_events")
-      .insert({
-        title: boardTitle.trim(),
-        description: boardDesc.trim() ? boardDesc.trim() : null,
-        starts_at: startsAtIso,
-      })
-      .select("id")
-      .single()
+    // ✅ eventId 
+    let eventId: string | null = editingBoardId
 
-    if (evErr || !ev?.id) {
-      console.error("board_events insert error:", evErr)
-      return
-    }
-
-    const eventId = ev.id as string
-
-    if (boardFiles && boardFiles.length > 0) {
-      for (const file of Array.from(boardFiles)) {
-        const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")
-        const path = `event/${eventId}/${Date.now()}_${safeName}`
-
-        const { error: upErr } = await supabase.storage
-          .from("vorstand-uploads")
-          .upload(path, file, { upsert: false })
-
-        if (upErr) continue
-
-        await supabase.from("board_event_files").insert({
-          event_id: eventId,
-          file_path: path,
-          file_name: file.name,
-          mime_type: file.type || null,
-          file_size: file.size || null,
+    // ✅ UPDATE (bearbeiten)
+    if (editingBoardId) {
+      const { error: updateErr } = await supabase
+        .from("board_events")
+        .update({
+          title: boardTitle.trim(),
+          description: boardDesc.trim() ? boardDesc.trim() : null,
+          starts_at: startsAtIso,
         })
+        .eq("id", editingBoardId)
+
+      if (updateErr) {
+        console.error("board_events update error:", updateErr)
+        return
       }
     }
 
+    // ✅ INSERT 
+    if (!editingBoardId) {
+      const { data: ev, error: evErr } = await supabase
+        .from("board_events")
+        .insert({
+          title: boardTitle.trim(),
+          description: boardDesc.trim() ? boardDesc.trim() : null,
+          starts_at: startsAtIso,
+        })
+        .select("id")
+        .single()
+
+      if (evErr || !ev?.id) {
+        console.error("board_events insert error:", evErr)
+        return
+      }
+
+      
+      eventId = ev.id
+    }
+
+    // ✅ wenn eventId aus irgendeinem Grund fehlt -> stop
+    if (!eventId) return
+	
+	
+	
+	// ✅ Push an alle eingeladenen senden
+try {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const accessToken = sessionData?.session?.access_token
+
+  if (accessToken) {
+    await fetch("/api/push/board-invite", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ event_id: eventId }),
+    })
+  }
+} catch (e) {
+  console.error("board invite push failed:", e)
+}
+	
+	
+	
+
+    // ✅ Einladungen speichern 
+    if (invitePlayerIds.length > 0) {
+      const { data: authData } = await supabase.auth.getUser()
+      const inviter = authData?.user?.id ?? null
+
+      const rows = invitePlayerIds.map((pid) => ({
+        event_id: eventId!,
+        player_id: pid,
+        invited_by: inviter,
+      }))
+
+      const ins = await supabase
+        .from("board_event_invites")
+        .upsert(rows, { onConflict: "event_id,player_id" })
+
+      if (ins.error) console.error("Error saving invites:", ins.error)
+    }
+
+    // ✅ Dialog reset + reload
     setIsBoardDialogOpen(false)
+    setEditingBoardId(null)
     setBoardTitle("")
     setBoardDesc("")
     setBoardDate("")
     setBoardTime("")
     setBoardFiles(null)
+    setInvitePlayerIds([])
+    setInviteSearch("")
 
     await fetchData()
   } finally {
     setSavingBoard(false)
   }
 }
+
+
+
+
+
+
+
+
   
 
   const deleteVacation = async (vacationId: string) => {
@@ -1067,26 +1158,31 @@ const loadLineup = async (matchId: string) => {
     return "event_date" in item
   }
 
-const getEventTypeBadge = (eventType: string) => {
-if (eventType === "Vorstand") {
-  return <Badge className="bg-black text-white border-black text-xs">📌 Vorstand</Badge>
-}
-  if (eventType === "Geburtstag") {
+
+
+function getEventTypeBadge(eventType: string) {
+  if (eventType === "Vorstand") {
+    return <Badge className="bg-black text-white border-black text-xs">📌 Vorstand</Badge>
+  } else if (eventType === "Geburtstag") {
     return <Badge className="bg-pink-100 text-pink-800 border-pink-200 text-xs">🎂 Geburtstag</Badge>
   } else if (eventType === "Turnier") {
     return <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs">Turnier</Badge>
   } else if (eventType === "Versammlung") {
     return <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">Event</Badge>
   } else if (eventType === "Urlaub") {
-  } else if (eventType === "Feiertag") {
-  return <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">🇦🇹 Feiertag</Badge>
     return <Badge className="bg-sky-100 text-sky-800 border-sky-200 text-xs">🏖️ Urlaub</Badge>
+  } else if (eventType === "Feiertag") {
+    return <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">🇦🇹 Feiertag</Badge>
   } else if (eventType === "Spielfrei") {
     return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">Spielfrei</Badge>
   } else {
     return <Badge className="bg-gray-100 text-gray-800 border-gray-200 text-xs">Event</Badge>
   }
 }
+
+
+
+
 
 const safeString = (value: any): string => {
   if (!value) return ""
@@ -1138,6 +1234,9 @@ const safeString = (value: any): string => {
   return s.substring(0, 5)
 }
 
+
+
+
 const normalizeTimeHHMM = (value: any): string => {
   if (!value) return ""
 
@@ -1165,6 +1264,13 @@ const normalizeTimeHHMM = (value: any): string => {
   const hh = m[1].padStart(2, "0")
   const mm = m[2]
   return `${hh}:${mm}`
+}
+
+
+const toggleInvitePlayer = (playerId: string) => {
+  setInvitePlayerIds((prev) =>
+    prev.includes(playerId) ? prev.filter((id) => id !== playerId) : [...prev, playerId],
+  )
 }
 
 
@@ -1237,24 +1343,15 @@ const normalizeTimeHHMM = (value: any): string => {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-20">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900 font-sans flex flex-col pb-20 overflow-x-hidden">
+
       <Header />
-      <main className="flex-grow pt-4">
-       <div className="px-6 py-6 w-full overflow-x-hidden">
+     <main className="pt-12 sm:pt-14">
+      <div className="mx-auto w-full px-4 py-4 sm:py-6 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl overflow-x-hidden">
 
 
 
-          <div className="mb-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/member-profile-app")}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Zurück zum Profil
-            </Button>
-          </div>
+         
 
           <div className="mb-4">
             <h1 className="text-2xl font-extrabold text-gray-900 mb-1 uppercase tracking-wide">Vereinskalender</h1>
@@ -1525,13 +1622,15 @@ const normalizeTimeHHMM = (value: any): string => {
     variant="default"
     size="sm"
     onClick={() => {
-      setBoardTitle("")
-      setBoardDesc("")
-      setBoardDate("")
-      setBoardTime("")
-      setBoardFiles(null)
-      setIsBoardDialogOpen(true)
-    }}
+  setBoardTitle("")
+  setBoardDesc("")
+  setBoardDate("")
+  setBoardTime("")
+  setBoardFiles(null)
+  setInvitePlayerIds([])
+  setInviteSearch("")
+  setIsBoardDialogOpen(true)
+}}
     className="w-full h-11 rounded-sm-2xl text-sm font-semibold shadow-sm bg-black hover:bg-black/90"
   >
     <Plus className="h-4 w-4 mr-2" />
@@ -2349,8 +2448,47 @@ else bg = "bg-green-500"
                         </>
                       )}
                     </div>
-                  </div>
-				  
+</div>
+
+{isVorstand && selectedEvent?.type === "board" && (
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
+    <Button
+      variant="outline"
+      onClick={() => {
+        const boardId = selectedEvent.id.replace("board_", "")
+
+        setEditingBoardId(boardId)
+        setBoardTitle(selectedEvent.name.replace("📌 Vorstand: ", ""))
+        setBoardDesc(selectedEvent.description || "")
+        setBoardDate(selectedEvent.event_date)
+        setBoardTime(selectedEvent.start_time || "")
+
+        setIsEventDialogOpen(false)
+        setIsBoardDialogOpen(true)
+      }}
+    >
+      Bearbeiten
+    </Button>
+
+ <Button
+  variant="destructive"
+  onClick={() => {
+    const boardId = selectedEvent.id.replace("board_", "")
+    setConfirmDeleteBoardId(boardId)
+    setIsConfirmDeleteBoardOpen(true)
+  }}
+>
+  Löschen
+</Button>
+	
+	
+	
+	
+	
+
+  </div>
+)}
 				  
 				  
 				  
@@ -2527,44 +2665,57 @@ else bg = "bg-green-500"
             </DialogContent>
           </Dialog>
 
-          <Dialog open={isConfirmDeleteOpen} onOpenChange={setIsConfirmDeleteOpen}>
-            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-lg">Urlaub wirklich löschen?</DialogTitle>
-                <DialogDescription className="text-sm">
-                  Dieser Eintrag wird dauerhaft entfernt und ist für alle nicht mehr sichtbar.
-                </DialogDescription>
-              </DialogHeader>
+          <Dialog open={isConfirmDeleteBoardOpen} onOpenChange={setIsConfirmDeleteBoardOpen}>
+  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md">
+    <DialogHeader>
+      <DialogTitle className="text-lg">Vorstand-Termin wirklich löschen?</DialogTitle>
+      <DialogDescription className="text-sm">
+        Dieser Termin wird dauerhaft entfernt (inkl. Einladungen & Dateien).
+      </DialogDescription>
+    </DialogHeader>
 
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsConfirmDeleteOpen(false)
-                    setConfirmDeleteVacationId(null)
-                  }}
-                  className="w-full"
-                >
-                  Abbrechen
-                </Button>
+    <div className="flex flex-col sm:flex-row gap-2">
+      <Button
+        variant="outline"
+        onClick={() => {
+          setIsConfirmDeleteBoardOpen(false)
+          setConfirmDeleteBoardId(null)
+        }}
+        className="w-full"
+      >
+        Abbrechen
+      </Button>
 
-                <Button
-                  variant="destructive"
-                  onClick={async () => {
-                    if (!confirmDeleteVacationId) return
-                    setIsConfirmDeleteOpen(false)
-                    const id = confirmDeleteVacationId
-                    setConfirmDeleteVacationId(null)
-                    await deleteVacation(id)
-                  }}
-                  disabled={savingVacation || !confirmDeleteVacationId}
-                  className="w-full"
-                >
-                  Löschen
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+      <Button
+        variant="destructive"
+        onClick={async () => {
+          if (!confirmDeleteBoardId) return
+
+          const id = confirmDeleteBoardId
+          setIsConfirmDeleteBoardOpen(false)
+          setConfirmDeleteBoardId(null)
+
+          const { error } = await supabase
+            .from("board_events")
+            .delete()
+            .eq("id", id)
+
+          if (error) {
+            console.error("board delete error:", error)
+            return
+          }
+
+          setIsEventDialogOpen(false)
+          await fetchData()
+        }}
+        className="w-full"
+        disabled={!confirmDeleteBoardId}
+      >
+        Ja, löschen
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
 
           <Dialog open={isVacationDialogOpen} onOpenChange={setIsVacationDialogOpen}>
             <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
@@ -2660,6 +2811,53 @@ else bg = "bg-green-500"
         <Label>Dateien / Bilder</Label>
         <Input type="file" multiple onChange={(e) => setBoardFiles(e.target.files)} />
       </div>
+	  
+	  
+	  <div className="space-y-2">
+  <Label>Spieler einladen</Label>
+
+  <Input
+    value={inviteSearch}
+    onChange={(e) => setInviteSearch(e.target.value)}
+    placeholder="Spieler suchen…"
+    className="text-sm"
+  />
+
+  <div className="border rounded-sm-lg p-2 max-h-48 overflow-y-auto space-y-1">
+    {allClubPlayers
+      .filter((p) => (p.name || "").toLowerCase().includes(inviteSearch.toLowerCase().trim()))
+      .map((p) => {
+        const checked = invitePlayerIds.includes(p.id)
+        return (
+          <label
+            key={p.id}
+            className="flex items-center gap-2 text-sm p-1 rounded-sm hover:bg-gray-50 cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={() => toggleInvitePlayer(p.id)}
+            />
+            <span className="truncate">{p.name}</span>
+          </label>
+        )
+      })}
+
+    {allClubPlayers.length === 0 && (
+      <div className="text-sm text-gray-600">Keine Spieler gefunden.</div>
+    )}
+  </div>
+
+  <div className="text-xs text-gray-600">
+    Ausgewählt: {invitePlayerIds.length}
+  </div>
+</div>
+	  
+	  
+	  
+	  
+	  
+	  
 
       <Button
         onClick={createBoardEvent}

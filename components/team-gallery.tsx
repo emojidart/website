@@ -33,199 +33,217 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
   const sortPlayersByRole = (players: Player[]) => {
     return [...players].sort((a, b) => {
       const roleOrder: { [key: string]: number } = {
-        'captain': 1,
-        'co-captain': 2,
-        'spieler': 3,
-        'player': 3,
+        captain: 1,
+        "co-captain": 2,
+        spieler: 3,
+        player: 3,
       }
-      
-      const roleA = a.role?.toLowerCase() || 'spieler'
-      const roleB = b.role?.toLowerCase() || 'spieler'
-      
+
+      const roleA = a.role?.toLowerCase() || "spieler"
+      const roleB = b.role?.toLowerCase() || "spieler"
+
       const orderA = roleOrder[roleA] || 3
       const orderB = roleOrder[roleB] || 3
-      
-      if (orderA !== orderB) {
-        return orderA - orderB
-      }
-      
+
+      if (orderA !== orderB) return orderA - orderB
       return a.name.localeCompare(b.name)
     })
   }
 
+  /* =========================
+     TEAM DETAIL VIEW
+  ========================= */
   if (selectedTeam) {
     const sortedPlayers = sortPlayersByRole(selectedTeam.players)
 
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full">
         <Button
           variant="ghost"
           onClick={() => setSelectedTeam(null)}
-          className="mb-12 text-lg hover:text-primary hover:bg-primary/10 transition-all"
+          className="mb-4 -ml-2 gap-2 text-sm font-semibold text-gray-700 hover:text-orange-700 hover:bg-orange-50 rounded-xl"
+          type="button"
         >
-          <ChevronLeft className="mr-2 h-5 w-5" />
+          <ChevronLeft className="h-4 w-4" />
           Alle Teams
         </Button>
 
-        <div className="mb-16">
-          <div className="flex items-center gap-6 mb-6">
-            {selectedTeam.logo_url && (
-              <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-muted shadow-lg">
-                <Image
-                  src={selectedTeam.logo_url || "/placeholder.svg"}
-                  alt={selectedTeam.name}
-                  fill
-                  className="object-contain p-4"
-                />
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6">
+          <div className="flex items-start gap-4">
+            <div className="shrink-0">
+              {selectedTeam.logo_url ? (
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200">
+                  <Image
+                    src={selectedTeam.logo_url || "/placeholder.svg"}
+                    alt={selectedTeam.name}
+                    fill
+                    className="object-contain p-3"
+                  />
+                </div>
+              ) : (
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center">
+                  <Users className="w-7 h-7 text-gray-400" />
+                </div>
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-100 inline-flex px-2.5 py-1 rounded-full">
+                Team
               </div>
-            )}
-            <div>
-              <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-balance mb-2">{selectedTeam.name}</h1>
-              <p className="text-xl text-muted-foreground">
+              <h2 className="mt-2 text-xl sm:text-2xl font-black leading-tight truncate">{selectedTeam.name}</h2>
+              <p className="mt-1 text-sm text-gray-600">
                 {selectedTeam.players.length} {selectedTeam.players.length === 1 ? "Spieler" : "Spieler"}
               </p>
             </div>
           </div>
-          <div className="h-1 w-24 bg-primary rounded-full" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {sortedPlayers.map((player) => (
             <Card
               key={player.id}
-              className="group overflow-hidden bg-card border-2 border-border hover:border-primary transition-all duration-500 hover:shadow-xl hover:-translate-y-2"
+              className="group overflow-hidden bg-white border border-gray-200 hover:border-orange-300 transition-all duration-300 hover:shadow-md"
             >
-              <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-muted to-muted/50">
+              <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                 {player.photo_url ? (
                   <Image
                     src={player.photo_url || "/placeholder.svg"}
                     alt={player.name}
                     fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-700"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Users className="w-24 h-24 text-muted-foreground/30" />
+                    <Users className="w-16 h-16 text-gray-300" />
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
 
-                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                  <h3 className="text-2xl font-bold text-balance mb-1">{player.name}</h3>
-                  {player.role && (
-                    <p className="text-primary font-semibold uppercase tracking-wider text-sm">{player.role}</p>
-                  )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-70" />
+
+                <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                  <h3 className="text-sm sm:text-base font-black leading-tight line-clamp-2">{player.name}</h3>
+                  {player.role ? (
+                    <p className="mt-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-orange-200">
+                      {player.role}
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
-              <div className="p-5 space-y-3 bg-card/50 backdrop-blur-sm">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  {player.age && (
+              <div className="p-3 space-y-2">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {player.age ? (
                     <div>
-                      <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">Alter</p>
-                      <p className="font-semibold text-foreground">{player.age} Jahre</p>
+                      <p className="text-gray-500">Alter</p>
+                      <p className="font-semibold text-gray-900">{player.age}</p>
                     </div>
+                  ) : (
+                    <div />
                   )}
-                  {player.throwing_hand && (
+
+                  {player.throwing_hand ? (
                     <div>
-                      <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">Wurfhand</p>
-                      <p className="font-semibold text-foreground">{player.throwing_hand}</p>
+                      <p className="text-gray-500">Wurfhand</p>
+                      <p className="font-semibold text-gray-900">{player.throwing_hand}</p>
                     </div>
-                  )}
+                  ) : null}
                 </div>
-                {player.origin && (
-                  <div>
-                    <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">Herkunft</p>
-                    <p className="font-semibold text-foreground">{player.origin}</p>
+
+                {player.origin ? (
+                  <div className="text-xs">
+                    <p className="text-gray-500">Herkunft</p>
+                    <p className="font-semibold text-gray-900 line-clamp-1">{player.origin}</p>
                   </div>
-                )}
+                ) : null}
               </div>
             </Card>
           ))}
         </div>
 
-        {selectedTeam.players.length === 0 && (
-          <div className="text-center py-24">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
-              <Users className="w-10 h-10 text-muted-foreground" />
+        {selectedTeam.players.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center">
+              <Users className="w-7 h-7 text-gray-400" />
             </div>
-            <p className="text-2xl font-semibold text-muted-foreground">Noch keine Spieler in diesem Team</p>
+            <p className="text-base font-semibold text-gray-600">Noch keine Spieler in diesem Team</p>
           </div>
-        )}
+        ) : null}
       </div>
     )
   }
 
+  /* =========================
+     TEAM LIST VIEW
+  ========================= */
   return (
-    <div className="container mx-auto px-4">
-      <div className="mb-20 text-center max-w-4xl mx-auto">
-        <div className="inline-block mb-4">
-          <span className="text-primary font-bold uppercase tracking-widest text-sm">Unser Verein</span>
+    <div className="w-full">
+      {/* Compact “App header” */}
+      <div className="mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6">
+        <div className="flex items-start gap-4">
+          <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3">
+            <Users className="w-6 h-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-100 inline-flex px-2.5 py-1 rounded-full">
+              Unser Verein
+            </div>
+            <h2 className="mt-2 text-xl sm:text-2xl font-black leading-tight">Unsere Teams</h2>
+            <p className="mt-1 text-sm text-gray-600">Tippe auf ein Team, um alle Spieler zu sehen.</p>
+          </div>
         </div>
-        <div className="mb-8 overflow-hidden">
-          <h1 className="text-6xl md:text-8xl font-bold tracking-tight mb-6 text-balance leading-none animate-in fade-in slide-in-from-bottom-8 duration-700">
-            UNSERE
-            <br />
-            TEAMS
-          </h1>
-        </div>
-        <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto text-pretty leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-          Entdecke unsere Teams und Spieler
-        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto mb-16">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {teamsWithPlayers.map((team) => (
           <Card
             key={team.id}
-            className="group cursor-pointer overflow-hidden bg-card border-2 border-border hover:border-primary transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2"
+            className="group cursor-pointer overflow-hidden bg-white border border-gray-200 hover:border-orange-300 transition-all duration-300 hover:shadow-md"
             onClick={() => setSelectedTeam(team)}
           >
-            <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-muted via-muted/80 to-muted/60">
+            <div className="relative h-28 bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
               {team.logo_url ? (
                 <Image
                   src={team.logo_url || "/placeholder.svg"}
                   alt={team.name}
                   fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-700"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <Users className="w-32 h-32 text-muted-foreground/20" />
+                  <Users className="w-16 h-16 text-gray-300" />
                 </div>
               )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-70" />
+              <div className="absolute bottom-2 left-3 right-3 text-white">
+                <div className="text-sm font-black line-clamp-1">{team.name}</div>
+                <div className="text-[11px] text-white/90">
+                  {team.players.length} {team.players.length === 1 ? "Spieler" : "Spieler"}
+                </div>
+              </div>
             </div>
 
-            <div className="p-6 bg-gradient-to-b from-card to-card/50 space-y-4">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground text-balance mb-2 leading-tight group-hover:text-primary transition-colors">
-                  {team.name}
-                </h2>
-                <p className="text-muted-foreground text-base font-medium">
-                  {team.players.length} {team.players.length === 1 ? "Spieler" : "Spieler"}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between text-foreground group-hover:text-primary transition-colors pt-2 border-t border-border/50">
-                <span className="font-semibold text-base">Team ansehen</span>
-                <div className="w-8 h-8 rounded-full bg-primary/10 group-hover:bg-primary flex items-center justify-center transition-colors duration-300">
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
+            <div className="p-3 flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-800 group-hover:text-orange-700 transition-colors">
+                Team ansehen
+              </span>
+              <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 group-hover:bg-orange-600 group-hover:border-orange-600 flex items-center justify-center transition-colors">
+                <ArrowRight className="w-4 h-4 text-orange-700 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
               </div>
             </div>
           </Card>
         ))}
       </div>
 
-      {teamsWithPlayers.length === 0 && (
-        <div className="text-center py-24">
-          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
-            <Users className="w-12 h-12 text-muted-foreground" />
+      {teamsWithPlayers.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center">
+            <Users className="w-7 h-7 text-gray-400" />
           </div>
-          <p className="text-3xl font-bold text-muted-foreground mb-2">Noch keine Teams verfügbar</p>
-          <p className="text-lg text-muted-foreground/70">Teams werden bald hinzugefügt</p>
+          <p className="text-base font-semibold text-gray-600">Noch keine Teams verfügbar</p>
+          <p className="text-sm text-gray-500 mt-1">Teams werden bald hinzugefügt</p>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

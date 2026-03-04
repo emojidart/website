@@ -5,6 +5,8 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
+import { Loader2, Pencil} from "lucide-react"
+import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -116,12 +118,13 @@ export default function MemberProfileAppPage() {
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false)
 
   const [statistics, setStatistics] = useState({
-    totalWins: 0,
-    totalLegs: 0,
-    winPercentage: 0,
-    total180s: 0,
-    totalEvents: 0,
-  })
+  legsWon: 0,
+  legsLost: 0,
+  legsPlayed: 0,
+  winPercentage: 0,
+  total180s: 0,
+  total180er: 0,
+})
 
   const clubPlayersForDues = useMemo(() => {
     if (!profile?.club_players) return []
@@ -515,40 +518,84 @@ setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
       } else {
         setUserPagePermissions([])
       }
+	  
+	  
+	  
+	  if ((profileData as any)?.player_id) {
+  const { data: permissionRows, error: permissionErr } = await supabase
+    .from("user_page_permissions")
+    .select("page_key, allowed")
+    .eq("player_id", (profileData as any).player_id)
 
-      if ((profileData as any)?.player_id) {
-        await fetchNotifications((profileData as any).player_id)
+  if (permissionErr) throw permissionErr
+  setUserPagePermissions((permissionRows ?? []) as any)
+} else {
+  setUserPagePermissions([])
+}
 
-        const { data: teamData, error: teamError } = await supabase
-          .from("team_members")
-          .select(`id, team_id, role, teams (id, name, logo_url, chat_room_id)`)
-          .eq("player_id", (profileData as any).player_id)
-          .is("left_at", null)
+if ((profileData as any)?.player_id) {
+  await fetchNotifications((profileData as any).player_id)
 
-        if (teamError) throw teamError
-        setTeamMemberships((teamData || []) as any)
+  const { data: teamData, error: teamError } = await supabase
+    .from("team_members")
+    .select(`id, team_id, role, teams (id, name, logo_url, chat_room_id)`)
+    .eq("player_id", (profileData as any).player_id)
+    .is("left_at", null)
 
-        await fetchNextMatchSummary((profileData as any).player_id, (teamData || []) as any)
+  if (teamError) throw teamError
+  setTeamMemberships((teamData || []) as any)
 
-        // Stats (optional)
-        const { data: legStats } = await supabase.from("leg_statistics").select(`leg_wins, player_legs_won, opponent_legs_won, throws_180, throws_171`).eq("player_id", (profileData as any).player_id)
+  await fetchNextMatchSummary((profileData as any).player_id, (teamData || []) as any)
 
-        if (legStats) {
-          const totalWins = (legStats as any[]).reduce((sum, stat) => sum + (stat.leg_wins || 0), 0)
-          const totalLegs = (legStats as any[]).reduce((sum, stat) => {
-            const actualLegs = (stat.player_legs_won || 0) + (stat.opponent_legs_won || 0)
-            return sum + (actualLegs > 0 ? actualLegs : 1)
-          }, 0)
-          const winPercentage = totalLegs > 0 ? (totalWins / totalLegs) * 100 : 0
+  // ✅ Stats (Legs W/L, Siegquote, 180er, Events)
+  const { data: legStats, error: legStatsError } = await supabase
+    .from("leg_statistics")
+    .select("match_id, player_legs_won, opponent_legs_won, throws_180")
+    .eq("player_id", (profileData as any).player_id)
 
-          setStatistics((prev) => ({
-            ...prev,
-            totalWins,
-            totalLegs,
-            winPercentage: Math.round(winPercentage),
-          }))
-        }
-      }
+  if (legStatsError) throw legStatsError
+
+  if (legStats) {
+    const legsWon = (legStats as any[]).reduce(
+      (sum, s) => sum + (Number(s.player_legs_won) || 0),
+      0
+    )
+
+    const legsLost = (legStats as any[]).reduce(
+      (sum, s) => sum + (Number(s.opponent_legs_won) || 0),
+      0
+    )
+
+    const legsPlayed = legsWon + legsLost
+
+    const winPercentage =
+      legsPlayed > 0 ? Math.round((legsWon / legsPlayed) * 100) : 0
+
+    const total180s = (legStats as any[]).reduce(
+      (sum, s) => sum + (Number(s.throws_180) || 0),
+      0
+    )
+
+    const totalEvents = new Set(
+      (legStats as any[]).map((s) => s.match_id).filter(Boolean)
+    ).size
+
+    setStatistics((prev) => ({
+      ...prev,
+      legsWon,
+      legsLost,
+      legsPlayed,
+      winPercentage,
+      total180s,
+      totalEvents,
+    }))
+  }
+}
+
+     
+	  
+	  
+	  
     } catch (err: any) {
       console.error("Error fetching profile:", err)
       setError("Fehler beim Laden des Profils")
@@ -640,7 +687,7 @@ setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
   const hasClubRole = userPagePermissions.some((p) => p.allowed)
 
   const navigationItems = [
-    { title: "Dashboard", description: "Statistiken, Teams und Verwaltung", icon: BarChart3, href: "/member-dashboard-app", color: "from-blue-500 to-blue-600" },
+    { title: "Dashboard", description: "Statistiken, Ergebnisse und Spielpläne", icon: BarChart3, href: "/member-dashboard-app", color: "from-blue-500 to-blue-600" },
     { title: "Zusagen & Aufstellung", description: "Spieler zusagen verwalten und Teamaufstellung erstellen", icon: CheckCircle, href: "/member-availability", color: "from-green-500 to-emerald-600" },
     { title: "Meine Teams", description: "Teams und Teammitglieder verwalten", icon: Users, href: "/meine-teams-app", color: "from-teal-500 to-teal-600" },
     { title: "Spieler Statistiken", description: "Detaillierte Leistungsanalyse", icon: BarChart3, href: "/member-statistics-app", color: "from-indigo-500 to-indigo-600" },
@@ -692,16 +739,32 @@ setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
     return teamMemberships.some((m: any) => m.role === "Captain" || m.role === "Co-Captain")
   }
 
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </main>
+   // ✅ LOADING VIEW 
+  if (loading) {
+  return (
+    <main className="min-h-screen flex flex-col bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+      <Header />
+
+      <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
+        <div className="animate-in fade-in zoom-in-95 duration-300">
+          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-gray-200">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
+              <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+            </div>
+
+            <div className="text-center">
+              <p className="text-lg font-bold text-gray-900">Profil wird geladen</p>
+              <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+            </div>
+          </div>
+        </div>
       </div>
-    )
-  }
+
+      <MobileBottomNav />
+    </main>
+  )
+}
 
   if (error || !profile) {
     return (
@@ -724,8 +787,29 @@ setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
 
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8 max-w-6xl">
-        {/* ✅ Beiträge: überfällig / fällig inkl. Beträge */}
+      <main className="flex-grow mx-auto w-full px-4 py-6 sm:py-8 pb-24 md:pb-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+       
+
+   
+
+ {/* Willkommen */}
+<div className="mt-8 sm:mt-10 mb-5 sm:mb-6">
+  <div className="flex items-center justify-between">
+    <div>
+      
+      <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 leading-tight">
+        Willkommen, {profile.club_players?.name || "Spieler"}
+      </h1>
+    </div>
+
+    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
+      <Users className="h-5 w-5 text-white" />
+    </div>
+  </div>
+</div>
+
+
+ {/* ✅ Beiträge: überfällig / fällig inkl. Beträge */}
         {myDuesDetail.overdueCount > 0 && (
           <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-500">
             <CardContent className="p-4 sm:p-6">
@@ -804,68 +888,52 @@ setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
           </Card>
         )}
 
-        {totalUnread > 0 && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-purple-50 to-indigo-50 border-l-4 border-l-purple-500">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-start gap-3 sm:gap-4">
-                <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl shadow-lg">
-                    <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+
+
+  {totalUnread > 0 && (
+  <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-orange-50 to-amber-50 border-l-4 border-l-orange-500">
+    <CardContent className="p-4 sm:p-6">
+      <div className="flex items-start gap-3 sm:gap-4">
+        <div className="flex-shrink-0">
+          <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl shadow-lg">
+            <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+          </div>
+        </div>
+
+        <div className="flex-grow w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900">Neue Team-Chat Nachrichten</h3>
+            <Badge className="bg-orange-600 text-white w-fit">{totalUnread}</Badge>
+          </div>
+
+          <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+            Du hast neue Nachrichten in deinen Team-Chats. Tippe auf ein Team, um den Chat zu öffnen.
+          </p>
+
+          <div className="space-y-2">
+            {chatRooms
+              .filter((r) => (unreadCounts[r.id] || 0) > 0)
+              .slice(0, 5)
+              .map((room) => (
+                <div
+                  key={room.id}
+                  className="flex items-center justify-between bg-white/70 rounded-lg p-3 border border-orange-200 cursor-pointer hover:bg-white transition-colors"
+                  onClick={() => router.push(`/chat-app?room_id=${room.id}&scope=${CHAT_SCOPE}`)}
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 truncate">{room.name}</div>
+                    <div className="text-xs text-gray-600">Tippen zum Öffnen</div>
                   </div>
+
+                 <Badge className="bg-orange-600 text-white">{unreadCounts[room.id] || 0}</Badge>
                 </div>
-
-                <div className="flex-grow w-full">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                    <h3 className="text-base sm:text-lg font-bold text-gray-900">Neue Team-Chat Nachrichten</h3>
-                    <Badge className="bg-purple-600 text-white w-fit">{totalUnread}</Badge>
-                  </div>
-
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    Du hast neue Nachrichten in deinen Team-Chats. Tippe auf ein Team, um den Chat zu öffnen.
-                  </p>
-
-                  <div className="space-y-2">
-                    {chatRooms
-                      .filter((r) => (unreadCounts[r.id] || 0) > 0)
-                      .slice(0, 5)
-                      .map((room) => (
-                        <div
-                          key={room.id}
-                          className="flex items-center justify-between bg-white/70 rounded-lg p-3 border border-purple-200 cursor-pointer hover:bg-white transition-colors"
-                          onClick={() => router.push(`/chat-app?room_id=${room.id}&scope=${CHAT_SCOPE}`)}
-                        >
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold text-gray-900 truncate">{room.name}</div>
-                            <div className="text-xs text-gray-600">Tippen zum Öffnen</div>
-                          </div>
-
-                          <Badge className="bg-red-500 text-white">{unreadCounts[room.id] || 0}</Badge>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Willkommen */}
-<div className="mb-5 sm:mb-6">
-  <div className="flex items-center justify-between">
-    <div>
-      <div className="text-[11px] uppercase tracking-wide text-gray-500">
-        Dashboard
+              ))}
+          </div>
+        </div>
       </div>
-      <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 leading-tight">
-        Willkommen zurück, {profile.club_players?.name || "Spieler"}
-      </h1>
-    </div>
-
-    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
-      <Users className="h-5 w-5 text-white" />
-    </div>
-  </div>
-</div>
+    </CardContent>
+  </Card>
+)}
 
         {/* Profil Card */}
         <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
@@ -922,6 +990,20 @@ setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
       <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
         {profile.club_players?.name || "Vereinsmitglied"}
       </h2>
+	  
+	  <div className="mt-3 flex flex-wrap items-center gap-2">
+  <Button
+    asChild
+    variant="outline"
+    size="sm"
+    className="rounded-full bg-orange-600 text-white hover:bg-orange-700"
+  >
+    <Link href="/profil-daten-app">
+      <Pencil className="h-4 w-4 mr-2" />
+      Profil bearbeiten
+    </Link>
+  </Button>
+</div>
 
       {(profile as any)?.last_seen_at && (
         <div className="mt-1 text-sm text-gray-600">
@@ -932,22 +1014,13 @@ setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
       <div className="mt-3 flex flex-wrap items-center gap-2">
         
 
-        {profile.club_players?.age && (
-          <Badge variant="outline" className="px-3 py-1 text-xs sm:text-sm">
-            {profile.club_players.age} Jahre
-          </Badge>
-        )}
 
-        {profile.club_players?.throwing_hand && (
-          <Badge variant="outline" className="px-3 py-1 text-xs sm:text-sm">
-            
-          </Badge>
-        )}
+        
       </div>
 
       {/* Willkommen */}
       <div className="mt-4 rounded-xl border bg-white/70 backdrop-blur-sm p-3 text-sm text-gray-700">
-        Willkommen zurück 👋 Hier findest du alles rund um deine Teams, Spiele und Vereinsinfos.
+        Hier findest du alles rund um deine Teams, Spiele und Vereinsinfos.
       </div>
 	  
 	  
@@ -1239,13 +1312,13 @@ setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
     <CardContent className="p-0">
       <div className="p-3 sm:p-4">
         <div className="flex items-center justify-between">
-          <div className="text-xs sm:text-sm font-semibold text-gray-600">Siege</div>
+          <div className="text-xs sm:text-sm font-semibold text-gray-600">Legs W</div>
           <div className="w-9 h-9 rounded-2xl bg-yellow-50 flex items-center justify-center">
             <Trophy className="h-5 w-5 text-yellow-700" />
           </div>
         </div>
         <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-          {statistics.totalWins}
+          {statistics.legsWon}
         </div>
         <div className="mt-1 text-xs text-gray-500">Gesamt</div>
       </div>
@@ -1281,7 +1354,7 @@ setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
           </div>
         </div>
         <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-          {statistics.totalLegs}
+          {statistics.legsWon} : {statistics.legsLost}
         </div>
         <div className="mt-1 text-xs text-gray-500">Gespielt</div>
       </div>
@@ -1293,15 +1366,15 @@ setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
     <CardContent className="p-0">
       <div className="p-3 sm:p-4">
         <div className="flex items-center justify-between">
-          <div className="text-xs sm:text-sm font-semibold text-gray-600">Events</div>
+          <div className="text-xs sm:text-sm font-semibold text-gray-600">180er</div>
           <div className="w-9 h-9 rounded-2xl bg-green-50 flex items-center justify-center">
             <Calendar className="h-5 w-5 text-green-700" />
           </div>
         </div>
         <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-          {statistics.totalEvents}
+          {statistics.total180s}
         </div>
-        <div className="mt-1 text-xs text-gray-500">Teilnahmen</div>
+        <div className="mt-1 text-xs text-gray-500">Gesamt</div>
       </div>
       <div className="h-1.5 bg-gradient-to-r from-green-400 to-emerald-500" />
     </CardContent>

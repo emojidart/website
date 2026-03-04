@@ -1,7 +1,7 @@
 "use client"
+
 import { BonusSection } from "@/components/bonus-section"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
+import { Header } from "@/components/header"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useEffect, useState } from "react"
@@ -56,7 +56,6 @@ export default function MemberBonusPage() {
   const [teamMembers, setTeamMembers] = useState<any[]>([])
   const [selectedTeamId, setSelectedTeamId] = useState<string>("all")
 
-  // ✅ Saison Filter
   const [seasons, setSeasons] = useState<Season[]>([])
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>("all")
 
@@ -82,7 +81,6 @@ export default function MemberBonusPage() {
     }
   }, [])
 
-  // ✅ Wenn Saison geändert wird: Stats neu laden (sonst nichts)
   useEffect(() => {
     if (teamMemberships.length > 0 && teamMembers.length > 0) {
       const teamIds = teamMemberships.map((t: any) => t.team_id)
@@ -97,17 +95,13 @@ export default function MemberBonusPage() {
     setLegStatsLoading(true)
 
     try {
-      console.log("[v0] Fetching user profile for user:", session.user.id)
-
-      // ✅ Seasons laden (für Dropdown)
+      // ✅ Seasons
       const { data: seasonsData, error: seasonsError } = await supabase
         .from("seasons")
         .select("id, name, type, year, is_active")
         .order("start_date", { ascending: false })
 
-      if (seasonsError) {
-        console.error("[v0] Seasons fetch error:", seasonsError)
-      } else {
+      if (!seasonsError) {
         const list = (seasonsData || []) as Season[]
         setSeasons(list)
 
@@ -115,6 +109,8 @@ export default function MemberBonusPage() {
           const active = list.find((s) => s.is_active) || list[0]
           if (active?.id) setSelectedSeasonId(active.id)
         }
+      } else {
+        console.error("[v0] Seasons fetch error:", seasonsError)
       }
 
       const { data: profileData, error: profileError } = await supabase
@@ -135,10 +131,7 @@ export default function MemberBonusPage() {
         .eq("user_id", session.user.id)
         .single()
 
-      if (profileError) {
-        console.error("[v0] Profile fetch error:", profileError)
-        throw profileError
-      }
+      if (profileError) throw profileError
 
       if (!profileData) {
         setProfile(null)
@@ -148,25 +141,23 @@ export default function MemberBonusPage() {
         return
       }
 
-      console.log("[v0] Profile data:", profileData)
       setProfile(profileData)
 
       if (!profileData.player_id) {
-        console.error("[v0] No player_id found in profile")
         setTeamMemberships([])
         setTeamMembers([])
         setLegStatistics([])
         return
       }
 
-      console.log("[v0] Fetching team memberships for player_id:", profileData.player_id)
-
+      // ✅ Nur aktive Mitgliedschaften
       const { data: teamData, error: teamError } = await supabase
         .from("team_members")
         .select(`
           id,
           team_id,
           role,
+          left_at,
           teams (
             id,
             name,
@@ -174,6 +165,7 @@ export default function MemberBonusPage() {
           )
         `)
         .eq("player_id", profileData.player_id)
+        .is("left_at", null)
 
       if (teamError) {
         console.error("[v0] Team memberships fetch error:", teamError)
@@ -183,11 +175,9 @@ export default function MemberBonusPage() {
         return
       }
 
-      console.log("[v0] Team memberships:", teamData)
       setTeamMemberships(teamData || [])
 
       if (!teamData || teamData.length === 0) {
-        console.log("[v0] No team memberships found")
         setTeamMembers([])
         setLegStatistics([])
         return
@@ -195,11 +185,12 @@ export default function MemberBonusPage() {
 
       const teamIds = teamData.map((t: any) => t.team_id)
 
-      // ✅ FIX: KEIN embed club_players (vermeidet PGRST201 komplett)
+      // ✅ TeamMembers nur aktiv
       const { data: rawMembers, error: membersError } = await supabase
         .from("team_members")
-        .select("id,team_id,player_id,role")
+        .select("id,team_id,player_id,role,left_at")
         .in("team_id", teamIds)
+        .is("left_at", null)
         .order("role", { ascending: false })
 
       if (membersError) {
@@ -219,11 +210,10 @@ export default function MemberBonusPage() {
           .select("id,name,photo_url,throwing_hand,age,origin")
           .in("id", playerIds)
 
-        if (playersErr) {
-          console.error("[v0] Club players fetch error:", playersErr)
-          // Wir können trotzdem weiter machen (dann sind nur Namen/Avatare leer)
-        } else {
+        if (!playersErr) {
           for (const p of playersData || []) playersById.set(p.id, p as ClubPlayer)
+        } else {
+          console.error("[v0] Club players fetch error:", playersErr)
         }
       }
 
@@ -234,7 +224,6 @@ export default function MemberBonusPage() {
 
       setTeamMembers(mergedMembers)
 
-      console.log("[v0] Loading statistics for all team members")
       await fetchAllTeamStatistics(teamIds, mergedMembers)
     } catch (error) {
       console.error("[v0] Error fetching user data:", error)
@@ -249,10 +238,7 @@ export default function MemberBonusPage() {
   const fetchAllTeamStatistics = async (teamIds: string[], members: any[]) => {
     setLegStatsLoading(true)
     try {
-      console.log("[v0] Fetching statistics only for matches involving team IDs:", teamIds)
-
       if (teamIds.length === 0) {
-        console.log("[v0] No teams found")
         setLegStatistics([])
         return
       }
@@ -290,17 +276,12 @@ export default function MemberBonusPage() {
         .order("matches(match_date)", { ascending: false })
         .order("leg_number", { ascending: false })
 
-      // ✅ Saison-Filter (nur wenn gewählt)
       if (selectedSeasonId !== "all" && selectedSeasonId) {
         query = query.eq("matches.season_id", selectedSeasonId)
       }
 
       const { data, error } = await query
-
-      if (error) {
-        console.error("[v0] Error fetching team leg statistics:", error)
-        throw error
-      }
+      if (error) throw error
 
       const filteredData = (data || []).filter((stat: any) => {
         const match = stat.matches
@@ -322,14 +303,6 @@ export default function MemberBonusPage() {
 
         return playerTeamInMatch !== null
       })
-
-      console.log(
-        "[v0] Team leg statistics loaded:",
-        filteredData.length,
-        "records (filtered from",
-        data?.length || 0,
-        ")"
-      )
 
       setLegStatistics(filteredData)
     } catch (err: any) {
@@ -381,59 +354,74 @@ export default function MemberBonusPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
-      <main className="flex-grow container mx-auto px-4 py-4 max-w-7xl">
-        <div className="mb-4">
-          <Button variant="outline" size="sm" onClick={() => router.back()} className="flex items-center gap-2 mb-3">
-            <ArrowLeft className="h-4 w-4" />
-            Zurück zum Profil
-          </Button>
+      {/* */}
+      <Header
+        variant="app"
+        title="Bonusgeld"
+        subtitle="Ihre Bonuspunkte und Belohnungen"
+        backHref="/member-profile-app"
+      />
 
-          <div className="flex flex-col gap-3">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Bonusgeld</h1>
-              <p className="text-sm text-gray-600 mt-1">Ihre Bonuspunkte und Belohnungen</p>
-            </div>
+     <main className="pt-12 sm:pt-14">
+  <div className="mx-auto w-full px-4 py-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+        <div className="mb-4 sm:mb-6">
+          <div className="rounded-2xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5">
+            <div className="p-4 sm:p-6">
+              <div className="flex flex-col gap-4">
+                <div className="hidden sm:block">
+                  <h1 className="text-2xl font-bold text-gray-900">Bonusgeld</h1>
+                  <p className="text-sm text-gray-500 mt-1">Ihre Bonuspunkte und Belohnungen</p>
+                </div>
 
-            {/* ✅ Saison Filter (sonst nichts geändert) */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="season-filter" className="text-sm font-medium whitespace-nowrap">
-                Saison:
-              </label>
-              <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-                <SelectTrigger id="season-filter" className="w-full">
-                  <SelectValue placeholder="Saison auswählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Saisons</SelectItem>
-                  {seasons.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="season-filter" className="text-sm font-medium whitespace-nowrap text-gray-700">
+                      Saison:
+                    </label>
+                    <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
+                      <SelectTrigger
+                        id="season-filter"
+                        className="w-full rounded-xl border-gray-200/70 bg-white shadow-sm"
+                      >
+                        <SelectValue placeholder="Saison auswählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Alle Saisons</SelectItem>
+                        {seasons.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            {teamMemberships.length > 1 && (
-              <div className="flex items-center gap-2">
-                <label htmlFor="team-filter" className="text-sm font-medium whitespace-nowrap">
-                  Team filtern:
-                </label>
-                <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                  <SelectTrigger id="team-filter" className="w-full">
-                    <SelectValue placeholder="Team auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Teams</SelectItem>
-                    {teamMemberships.map((membership: any) => (
-                      <SelectItem key={membership.team_id} value={membership.team_id}>
-                        {membership.teams?.name || "Unbekanntes Team"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {teamMemberships.length > 1 ? (
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="team-filter" className="text-sm font-medium whitespace-nowrap text-gray-700">
+                        Team:
+                      </label>
+                      <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                        <SelectTrigger
+                          id="team-filter"
+                          className="w-full rounded-xl border-gray-200/70 bg-white shadow-sm"
+                        >
+                          <SelectValue placeholder="Team auswählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Alle Teams</SelectItem>
+                          {teamMemberships.map((membership: any) => (
+                            <SelectItem key={membership.team_id} value={membership.team_id}>
+                              {membership.teams?.name || "Unbekanntes Team"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -446,7 +434,9 @@ export default function MemberBonusPage() {
           tempBonusConfig={tempBonusConfig}
           setTempBonusConfig={setTempBonusConfig}
           saveBonusConfig={saveBonusConfig}
+          teamMembers={teamMembers}
         />
+		</div>
       </main>
 
       <MobileBottomNav />

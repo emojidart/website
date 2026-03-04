@@ -508,43 +508,60 @@ if (session && !isAdmin) {
 
   const hasAnyPermission = allowedViews.has("*") || allowedViews.size > 0
 
-  if (!hasAnyPermission) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="w-full p-4 md:p-8">
-          <div className="flex items-center justify-center py-12">
-            <Card className="max-w-md w-full">
-              <CardHeader className="text-center">
-                <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                  <Shield className="h-8 w-8 text-red-600" />
-                </div>
-                <CardTitle className="text-xl text-gray-900">Zugriff verweigert</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-gray-600 mb-6">Sie haben keine Berechtigung für diesen Bereich.</p>
-                <div className="space-y-3">
-                  <Link href="/member-profile-app">
-                    <Button className="w-full">Zum Member-Dashboard</Button>
-                  </Link>
-                  <Button variant="outline" onClick={handleLogout} className="w-full bg-transparent">
-                    Abmelden
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-      </div>
-    )
-  }
-}
-
+if (!hasAnyPermission) {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <main className="w-full p-4 md:p-8">
+      <main className="w-full pt-14 p-4 md:p-8">
+        <div className="flex items-center justify-center py-12">
+          <Card className="max-w-md w-full">
+            <CardHeader className="text-center">
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <Shield className="h-8 w-8 text-red-600" />
+              </div>
+              <CardTitle className="text-xl text-gray-900">
+                Zugriff verweigert
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="text-center">
+              <p className="text-gray-600 mb-6">
+                Sie haben keine Berechtigung für diesen Bereich.
+              </p>
+
+              <div className="space-y-3">
+                <Link href="/member-profile-app">
+                  <Button className="w-full">
+                    Zum Member-Dashboard
+                  </Button>
+                </Link>
+
+                <Button
+                  variant="outline"
+                  onClick={handleLogout}
+                  className="w-full bg-transparent"
+                >
+                  Abmelden
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
+  )
+}
+}
+
+ return (
+  <div className="min-h-screen bg-gray-50">
+    <Header />
+
+    {/* Abstand für fixed Header (damit nix abgeschnitten ist) */}
+    <div className="h-12 sm:h-14" aria-hidden="true" />
+
+    <main className="w-full p-4 md:p-8">
         {!session ? (
           <div className="w-full max-w-none">
             <AuthSection

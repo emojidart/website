@@ -45,6 +45,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PresenceTracker />
           <PushSubscriptionRepair />
           <PushInit />
+
+          {/* ✅ KEIN lg:pl-64 mehr, weil du keine feste Sidebar hast */}
           {children}
         </div>
       </body>

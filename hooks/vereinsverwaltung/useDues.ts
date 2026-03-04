@@ -51,9 +51,6 @@ function cadenceMonths(cadence: DuesCadence) {
 
 /**
  * ✅ "Überfällig" erst ab dem 26. (wenn bis inkl. 25. nicht bezahlt markiert wurde)
- * - Fällig bleibt wie bisher (ab due_on)
- * - Überfällig erst, wenn today > graceDate (25. des Monats)
- *
  * graceDate-Regel:
  * - Standard: 25. des Monats von due_on
  * - Aber: graceDate darf NIE vor due_on liegen (Sicherheit, falls due_on > 25)
@@ -269,7 +266,7 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
     return out
   }, [clubPlayers, settingByPlayer, ledgerByPlayerDue])
 
-  // ✅ NEU: Detail-Counts + Summen pro Spieler (damit du im Profil "x überfällig / y fällig / Betrag" zeigen kannst)
+  // ✅ Detail-Counts + Summen pro Spieler
   const detailByPlayer = useMemo(() => {
     const out = new Map<string, PlayerDuesDetail>()
 
@@ -285,7 +282,6 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
       let dueAmount = 0
       let nextUnpaidDueOn: string | null = null
 
-      // periods sind DESC sortiert (neueste zuerst) – für "nächstes" brauchen wir MIN Datum der offenen
       for (const per of periods) {
         if (per.status_tone === "overdue") {
           overdueCount += 1
@@ -507,6 +503,63 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
     }
   }
 
+  // ✅ NEU: Alle offenen Perioden bis inkl. heute als bezahlt markieren
+  const markPaidAllOpen = async (playerId: string) => {
+    setLoading(true)
+    setMessage("Alle offenen Perioden werden als bezahlt markiert...")
+    setMessageType("info")
+
+    if (!user) {
+      setMessage("Fehler: Nicht authentifiziert.")
+      setMessageType("error")
+      setLoading(false)
+      return
+    }
+
+    try {
+      const s = settingByPlayer.get(playerId)
+      if (!s || !s.is_active) {
+        setMessage("Kein aktiver Beitrag für diesen Spieler.")
+        setMessageType("error")
+        setLoading(false)
+        return
+      }
+
+      const today = todayISO()
+      const periods = periodsByPlayer.get(playerId) || []
+
+      const payload = periods
+        .filter((p) => !p.paid_on && p.due_on <= today)
+        .map((p) => ({
+          player_id: playerId,
+          due_on: p.due_on,
+          amount: Number(s.amount),
+          paid_on: today,
+          note: "Bulk: als bezahlt markiert",
+        }))
+
+      if (payload.length === 0) {
+        setMessage("Keine offenen (bis heute) Perioden gefunden.")
+        setMessageType("info")
+        setLoading(false)
+        return
+      }
+
+      const { error } = await supabase.from("club_dues_ledger").upsert(payload, { onConflict: "player_id,due_on" })
+      if (error) throw error
+
+      setMessage(`Fertig! ${payload.length} Perioden als bezahlt markiert.`)
+      setMessageType("success")
+      await refetchAll()
+      onDataSaved()
+    } catch (e: any) {
+      setMessage(`Fehler: ${e.message}`)
+      setMessageType("error")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const resetPaid = async (playerId: string, dueOn: string) => {
     setLoading(true)
     setMessage("Zahlung wird zurückgesetzt...")
@@ -543,7 +596,7 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
   return {
     summaryRows,
     periodsByPlayer,
-    detailByPlayer, // ✅ NEU
+    detailByPlayer,
 
     loading,
     message,
@@ -551,6 +604,7 @@ export function useDues(user: User | null, clubPlayers: ClubPlayer[], onDataSave
 
     upsertSetting,
     markPaid,
+    markPaidAllOpen, // ✅ NEU
     resetPaid,
     refetchAll,
   }

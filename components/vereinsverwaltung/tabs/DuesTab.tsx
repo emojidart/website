@@ -32,6 +32,7 @@ type Props = {
 
   onSaveSetting: (playerId: string, cadence: DuesCadence, amount: number, startOn: string, isActive: boolean) => void
   onMarkPaid: (playerId: string, dueOn: string) => void
+  onMarkPaidAllOpen: (playerId: string) => void // ✅ NEU
   onResetPaid: (playerId: string, dueOn: string) => void
 }
 
@@ -40,15 +41,12 @@ type FilterKey = "all" | "overdue" | "due" | "paid" | "upcoming" | "no_plan" | "
 function fmtDateISO(d: string | null | undefined) {
   if (!d) return "—"
 
-  // Accept: "YYYY-MM-DD" (from DATE), or ISO strings like "YYYY-MM-DDTHH:mm:ss..."
   const s = String(d)
   const iso = s.includes("T") ? s.split("T")[0] : s
-
-  // If it's not ISO-date, just return as-is
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return s
 
   const [y, m, day] = iso.split("-")
-  return `${day}.${m}.${y}` // dd.mm.yyyy
+  return `${day}.${m}.${y}`
 }
 
 function normalizeISOForInput(d: string | null | undefined) {
@@ -74,36 +72,16 @@ function cadenceLabel(c: DuesCadence) {
 function summaryBadge(summary_tone: PlayerDuesSummaryRow["summary_tone"]) {
   switch (summary_tone) {
     case "overdue":
-      return {
-        cls: "bg-red-50 text-red-700 border border-red-100",
-        icon: <CircleX className="h-3.5 w-3.5" />,
-        label: "Überfällig",
-      }
+      return { cls: "bg-red-50 text-red-700 border border-red-100", icon: <CircleX className="h-3.5 w-3.5" />, label: "Überfällig" }
     case "due":
-      return {
-        cls: "bg-yellow-50 text-yellow-800 border border-yellow-100",
-        icon: <CircleDashed className="h-3.5 w-3.5" />,
-        label: "Fällig",
-      }
+      return { cls: "bg-yellow-50 text-yellow-800 border border-yellow-100", icon: <CircleDashed className="h-3.5 w-3.5" />, label: "Fällig" }
     case "ok":
-      return {
-        cls: "bg-green-50 text-green-700 border border-green-100",
-        icon: <CircleCheck className="h-3.5 w-3.5" />,
-        label: "Alles bezahlt",
-      }
+      return { cls: "bg-green-50 text-green-700 border border-green-100", icon: <CircleCheck className="h-3.5 w-3.5" />, label: "Alles bezahlt" }
     case "inactive":
-      return {
-        cls: "bg-gray-50 text-gray-700 border border-gray-200",
-        icon: <CircleDashed className="h-3.5 w-3.5" />,
-        label: "Inaktiv",
-      }
+      return { cls: "bg-gray-50 text-gray-700 border border-gray-200", icon: <CircleDashed className="h-3.5 w-3.5" />, label: "Inaktiv" }
     case "no_plan":
     default:
-      return {
-        cls: "bg-gray-50 text-gray-700 border border-gray-200",
-        icon: <CircleDashed className="h-3.5 w-3.5" />,
-        label: "Kein Beitrag",
-      }
+      return { cls: "bg-gray-50 text-gray-700 border border-gray-200", icon: <CircleDashed className="h-3.5 w-3.5" />, label: "Kein Beitrag" }
   }
 }
 
@@ -136,8 +114,6 @@ function matchesFilter(row: PlayerDuesSummaryRow, filter: FilterKey) {
     case "inactive":
       return row.summary_tone === "inactive"
     case "upcoming":
-      // upcoming gibt es nur auf Perioden-Ebene; hier: "ok" kann upcoming enthalten
-      // Wir zeigen upcoming sinnvoll nur wenn keine due/overdue existiert und es gibt Perioden in Zukunft
       return row.summary_tone === "ok"
     default:
       return true
@@ -152,6 +128,7 @@ export function DuesTab({
   messageType,
   onSaveSetting,
   onMarkPaid,
+  onMarkPaidAllOpen,
   onResetPaid,
 }: Props) {
   const topRef = useRef<HTMLDivElement | null>(null)
@@ -221,6 +198,11 @@ export function DuesTab({
     })
   }, [summaryRows, filter, search])
 
+  const hasOpenPeriods = useMemo(() => {
+    if (!selectedPlayerId) return false
+    return periods.some((p) => !p.paid_on && (p.status_tone === "due" || p.status_tone === "overdue"))
+  }, [periods, selectedPlayerId])
+
   return (
     <div className="space-y-6">
       <div ref={topRef} className="scroll-mt-24">
@@ -228,11 +210,8 @@ export function DuesTab({
           <CreditCard className="h-5 w-5" />
           Beiträge / Überblick
         </h3>
-        <p className="text-sm text-gray-500">
-          Filtere nach Überfällig/Fällig/Bezahlt und öffne pro Spieler die Periodenliste.
-        </p>
+        <p className="text-sm text-gray-500">Filtere nach Überfällig/Fällig/Bezahlt und öffne pro Spieler die Periodenliste.</p>
 
-        {/* ✅ Hinweistext (UI) */}
         <div className="mt-3 p-3 rounded-lg text-sm font-medium flex items-center space-x-2 bg-orange-50 text-orange-700 border border-orange-100">
           <AlertCircle className="h-4 w-4" />
           <span>
@@ -349,13 +328,7 @@ export function DuesTab({
                   : "bg-gray-50 text-gray-700 border border-gray-100",
             )}
           >
-            {messageType === "error" ? (
-              <AlertCircle className="h-4 w-4" />
-            ) : messageType === "success" ? (
-              <CheckCircle className="h-4 w-4" />
-            ) : (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            )}
+            {messageType === "error" ? <AlertCircle className="h-4 w-4" /> : messageType === "success" ? <CheckCircle className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
             <span>{message}</span>
           </div>
         )}
@@ -392,15 +365,10 @@ export function DuesTab({
                 filteredRows.map((r, idx) => {
                   const b = summaryBadge(r.summary_tone)
                   return (
-                    <tr
-                      key={r.player_id}
-                      className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}
-                    >
+                    <tr key={r.player_id} className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}>
                       <td className="px-3 py-2 lg:px-4 lg:py-3 font-medium text-gray-800">{r.player_name}</td>
                       <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{r.cadence ? cadenceLabel(r.cadence) : "—"}</td>
-                      <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">
-                        {r.amount != null ? `${r.amount.toFixed(2)} ${r.currency ?? "EUR"}` : "—"}
-                      </td>
+                      <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{r.amount != null ? `${r.amount.toFixed(2)} ${r.currency ?? "EUR"}` : "—"}</td>
                       <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{fmtDateISO(r.next_unpaid_due_on)}</td>
                       <td className="px-3 py-2 lg:px-4 lg:py-3">
                         <span className={cn("inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold", b.cls)}>
@@ -418,10 +386,7 @@ export function DuesTab({
                             onClick={() => {
                               setSelectedPlayerId(r.player_id)
                               setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0)
-                              setTimeout(
-                                () => document.getElementById("dues-editor")?.scrollIntoView({ behavior: "smooth", block: "start" }),
-                                150,
-                              )
+                              setTimeout(() => document.getElementById("dues-editor")?.scrollIntoView({ behavior: "smooth", block: "start" }), 150)
                             }}
                           >
                             Öffnen
@@ -488,13 +453,7 @@ export function DuesTab({
               </div>
 
               <div className="flex items-center gap-2">
-                <input
-                  id="isActive"
-                  type="checkbox"
-                  checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                  className="h-4 w-4"
-                />
+                <input id="isActive" type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-4 w-4" />
                 <Label htmlFor="isActive">Beitrag aktiv</Label>
               </div>
 
@@ -519,9 +478,7 @@ export function DuesTab({
                   type="button"
                   variant="outline"
                   className="h-10 border-gray-200"
-                  onClick={() =>
-                    document.getElementById("dues-periods")?.scrollIntoView({ behavior: "smooth", block: "start" })
-                  }
+                  onClick={() => document.getElementById("dues-periods")?.scrollIntoView({ behavior: "smooth", block: "start" })}
                 >
                   <ListChecks className="h-4 w-4 mr-2" />
                   Zu den Perioden
@@ -530,12 +487,23 @@ export function DuesTab({
             </div>
 
             <div id="dues-periods" className="space-y-3 scroll-mt-24">
-              <h4 className="text-md font-semibold text-gray-800">Perioden / Fälligkeiten</h4>
+              <div className="flex items-center justify-between gap-3">
+                <h4 className="text-md font-semibold text-gray-800">Perioden / Fälligkeiten</h4>
+
+                {/* ✅ NEU: Bulk-Button */}
+                <Button
+                  type="button"
+                  className="h-9 bg-orange-600 hover:bg-orange-700 text-white"
+                  disabled={loading || !hasOpenPeriods}
+                  onClick={() => onMarkPaidAllOpen(selectedPlayerId)}
+                  title="Markiert alle offenen Perioden bis inkl. heute als bezahlt"
+                >
+                  Alle offenen Perioden bezahlen
+                </Button>
+              </div>
 
               {periods.length === 0 ? (
-                <p className="text-sm text-gray-500">
-                  Keine Perioden berechnet. Lege zuerst einen aktiven Beitrag (Rhythmus + Startdatum + Betrag) an.
-                </p>
+                <p className="text-sm text-gray-500">Keine Perioden berechnet. Lege zuerst einen aktiven Beitrag (Rhythmus + Startdatum + Betrag) an.</p>
               ) : (
                 <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white">
                   <table className="w-full min-w-[860px] text-sm">
@@ -552,10 +520,7 @@ export function DuesTab({
                       {periods.map((per, idx) => {
                         const b = periodBadge(per)
                         return (
-                          <tr
-                            key={per.due_on}
-                            className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}
-                          >
+                          <tr key={per.due_on} className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}>
                             <td className="px-3 py-2 lg:px-4 lg:py-3 font-medium text-gray-800">{fmtDateISO(per.due_on)}</td>
                             <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">
                               {per.amount.toFixed(2)} {per.currency}

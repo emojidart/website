@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import {
   Home,
   Trophy,
@@ -19,239 +21,269 @@ import {
   X,
   Building2,
   CalendarDays,
+  type LucideIcon,
 } from "lucide-react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
 
 type NavItem = {
+  key: string
   name: string
-  href: string
-  icon: any
+  href?: string
+  icon: LucideIcon
+  requiresLogin?: boolean
+  adminOnly?: boolean
+  danger?: boolean
+  onClick?: () => void
 }
+
+type Section = {
+  title: string
+  variant?: "grid" | "list"
+  items: NavItem[]
+}
+
+/** ---------- CONFIG (klar & zentral) ---------- */
+
+const BOTTOM_BAR: NavItem[] = [
+  { key: "home", name: "Home", href: "/", icon: Home },
+  { key: "events", name: "Events", href: "/veranstaltungen", icon: CalendarDays },
+  { key: "liga", name: "Liga", href: "/liga-statistiken-app", icon: Trophy },
+  { key: "verein", name: "Verein", href: "/new-club", icon: Users },
+]
+
+const QUICK_BASE: Omit<NavItem, "key">[] = [
+  { name: "Lion Cup", href: "/tournament-series-app", icon: Trophy },
+  { name: "Live", href: "/live-all-app", icon: Radio },
+  { name: "History", href: "/tournament-history", icon: History },
+]
+
+const LIVE_ITEMS: NavItem[] = [
+  { key: "liveticker", name: "Liveticker", href: "/live-all-app", icon: Radio },
+  { key: "livestream", name: "Livestream", href: "/livestream", icon: Radio },
+]
+
+const INFO_ITEMS: NavItem[] = [
+  { key: "emd", name: "EMD Campus", href: "/emd-campus", icon: Building2 },
+  { key: "faq", name: "FAQ", href: "/faq", icon: MessageCircle },
+  { key: "about", name: "Über uns", href: "/uber-uns", icon: HelpCircle },
+  { key: "kontakt", name: "Kontakt", href: "/kontakt", icon: MessageCircle },
+]
+
+/** ---------- HELPERS ---------- */
+
+function filterByAuth(items: NavItem[], isLoggedIn: boolean, isAdmin: boolean) {
+  return items.filter((it) => {
+    if (it.requiresLogin && !isLoggedIn) return false
+    if (it.adminOnly && !isAdmin) return false
+    return true
+  })
+}
+
+function NavLink({
+  item,
+  onAfter,
+  className,
+}: {
+  item: NavItem
+  onAfter?: () => void
+  className?: string
+}) {
+  const Icon = item.icon
+  return (
+    <Link
+      href={item.href!}
+      onClick={onAfter}
+      className={cn(
+        "flex items-center gap-3 rounded-xl p-3 border border-transparent",
+        "hover:bg-gray-50 text-gray-900",
+        className,
+      )}
+    >
+      <Icon className="h-5 w-5 text-orange-600" />
+      <span className="font-semibold">{item.name}</span>
+    </Link>
+  )
+}
+
+function NavButton({
+  item,
+  className,
+}: {
+  item: NavItem
+  className?: string
+}) {
+  const Icon = item.icon
+  return (
+    <button
+      onClick={item.onClick}
+      className={cn(
+        "flex items-center gap-3 w-full rounded-xl p-3 border border-transparent font-semibold",
+        item.danger ? "text-red-600 hover:bg-red-50" : "text-gray-900 hover:bg-gray-50",
+        className,
+      )}
+    >
+      <Icon className="h-5 w-5" />
+      {item.name}
+    </button>
+  )
+}
+
+/** ---------- COMPONENT ---------- */
 
 export function MobileBottomNav() {
   const pathname = usePathname()
   const router = useRouter()
   const { user, loading, isAdmin } = useAuth()
+
   const isLoggedIn = !!user
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
+  const [isMoreOpen, setIsMoreOpen] = useState(false)
 
-  const closeMore = () => setIsMoreMenuOpen(false)
+  const closeMore = useCallback(() => setIsMoreOpen(false), [])
+  const toggleMore = useCallback(() => setIsMoreOpen((v) => !v), [])
 
-  useEffect(() => {
-    if (!isMoreMenuOpen) return
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeMore()
-    }
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [isMoreMenuOpen])
-
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await supabase.auth.signOut()
     closeMore()
     router.push("/")
-  }
+  }, [closeMore, router])
 
-  /* ===== MAIN BAR ===== */
-  const staticNavItems: NavItem[] = useMemo(
-    () => [
-      { name: "Home", href: "/", icon: Home },
-      { name: "Events", href: "/veranstaltungen", icon: CalendarDays },
-      { name: "Liga", href: "/liga-statistiken-app", icon: Trophy },
-      { name: "Verein", href: "/new-club", icon: Users },
-    ],
-    [],
-  )
+  useEffect(() => {
+    if (!isMoreOpen) return
+    const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && closeMore()
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [isMoreOpen, closeMore])
 
-  /* ===== QUICK BAR ===== */
-  const quickItems: NavItem[] = useMemo(
-    () => [
-      { name: "Lion Cup", href: "/tournament-series-app", icon: Trophy },
-      { name: "Live", href: "/live-all-app", icon: Radio },
-      { name: "History", href: "/tournament-history", icon: History },
+  const sections: Section[] = useMemo(() => {
+    const quick: NavItem[] = [
+      ...QUICK_BASE.map((x) => ({ ...x, key: `q_${x.name}` })),
       {
+        key: "q_profile",
         name: isLoggedIn ? "Profil" : "Login",
         href: isLoggedIn ? "/member-profile-app" : "/member-login",
         icon: isLoggedIn ? UserCircle : LogIn,
       },
-    ],
-    [isLoggedIn],
-  )
-
-  /* ===== MORE MENU ===== */
-  const moreMenuItems = useMemo(() => {
-    const items: any[] = [
-      {
-        name: isLoggedIn ? "Profil" : "Login",
-        href: isLoggedIn ? "/member-profile-app" : "/member-login",
-        icon: isLoggedIn ? UserCircle : LogIn,
-        action: null,
-      },
-      {
-        name: "Mitgliedskarte",
-        href: "/member-card",
-        icon: CreditCard,
-        action: null,
-        requiresLogin: true,
-      },
-      { name: "Liveticker", href: "/live-all-app", icon: Radio, action: null },
-      { name: "Livestream", href: "/livestream", icon: Radio, action: null },
-      { name: "EMD Campus", href: "/emd-campus", icon: Building2, action: null },
-      { name: "Match Galerie", href: "/match-galerie", icon: Images, action: null, requiresLogin: true },
-      { name: "FAQ", href: "/faq", icon: MessageCircle, action: null },
-      { name: "Über uns", href: "/uber-uns", icon: HelpCircle, action: null },
-      { name: "Kontakt", href: "/kontakt", icon: MessageCircle, action: null },
     ]
 
-    let filtered = items.filter((it) => !(it.requiresLogin && !isLoggedIn))
+    const accountRaw: NavItem[] = [
+      { key: "admin", name: "Admin", href: "/admin", icon: LayoutDashboard, adminOnly: true },
+      { key: "card", name: "Mitgliedskarte", href: "/member-card", icon: CreditCard, requiresLogin: true },
+      { key: "gallery", name: "Match Galerie", href: "/match-galerie", icon: Images, requiresLogin: true },
+      {
+        key: "logout",
+        name: "Abmelden",
+        icon: LogOut,
+        danger: true,
+        requiresLogin: true,
+        onClick: handleLogout,
+      },
+    ]
 
-    if (isAdmin) {
-      filtered.splice(5, 0, { name: "Admin", href: "/admin", icon: LayoutDashboard, action: null })
-    }
+    const account = filterByAuth(accountRaw, isLoggedIn, isAdmin)
+    const live = filterByAuth(LIVE_ITEMS, isLoggedIn, isAdmin)
+    const info = filterByAuth(INFO_ITEMS, isLoggedIn, isAdmin)
 
-    if (isLoggedIn) {
-      filtered.push({ name: "Abmelden", href: "#", icon: LogOut, action: handleLogout, danger: true })
-    }
+    return [
+      { title: "Schnellzugriff", variant: "grid", items: quick },
+      { title: "Account", variant: "list", items: account },
+      { title: "Live", variant: "list", items: live },
+      { title: "Info", variant: "list", items: info },
+    ]
+  }, [isLoggedIn, isAdmin, handleLogout])
 
-    return filtered
-  }, [isLoggedIn, isAdmin])
-
-  /* ===== HELPERS ===== */
-  const QuickLink = ({ href, name, icon }: NavItem) => {
-    const active = pathname === href
-    const Icon = icon
-    return (
-      <Link
-        href={href}
-        className={cn(
-          "flex items-center justify-center gap-1 text-xs font-semibold px-2",
-          active ? "text-orange-600" : "text-gray-700 hover:text-gray-900",
-        )}
-        onClick={closeMore}
-      >
-        <Icon className="h-4 w-4" strokeWidth={active ? 2.5 : 2.3} />
-        <span className="truncate">{name}</span>
-      </Link>
-    )
-  }
-
-  if (loading) return <div className="h-28 md:hidden" />
+  if (loading) return <div className="h-20 md:hidden" />
 
   return (
     <>
-      {/* Spacer damit Content nicht unter der Nav liegt */}
-      <div className="h-28 md:hidden" />
+      <div className="h-20 md:hidden" />
 
-      {/* ===== MORE OVERLAY ===== */}
-      {isMoreMenuOpen && (
+      {/* MORE OVERLAY */}
+      {isMoreOpen && (
         <div className="fixed inset-0 z-[60] md:hidden">
-          {/* Backdrop - klick schließt */}
-          <button aria-label="Schließen" className="absolute inset-0 bg-black/30" onClick={closeMore} />
+          <button aria-label="Schließen" className="absolute inset-0 bg-black/40" onClick={closeMore} />
 
-          {/* Bottom Sheet */}
-          <div className="absolute left-0 right-0 bottom-0 pb-28 safe-pb">
-            <div className="mx-3 rounded-t-2xl bg-white shadow-2xl border overflow-hidden">
-              <div className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-12 h-1 bg-gray-300 rounded-full" />
-                  <h3 className="text-lg font-semibold ml-2">Mehr Optionen</h3>
-                </div>
-                <button
-                  aria-label="Schließen"
-                  onClick={closeMore}
-                  className="p-2 rounded-lg hover:bg-gray-100 text-gray-700"
-                >
-                  <X className="h-5 w-5" />
+          <div className="absolute left-0 right-0 bottom-0 pb-20">
+            <div className="mx-3 overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b bg-white p-4">
+                <h3 className="text-lg font-bold text-gray-900">Mehr Optionen</h3>
+                <button onClick={closeMore} className="rounded-lg p-2 hover:bg-gray-100" aria-label="Schließen">
+                  <X className="h-5 w-5 text-gray-700" />
                 </button>
               </div>
 
-              <div className="max-h-[55vh] overflow-y-auto px-4 pb-4 space-y-2">
-                {moreMenuItems.map((item) => {
-                  const Icon = item.icon
-                  const danger = item.danger
+              <div className="max-h-[60vh] overflow-y-auto p-4 space-y-5">
+                {sections.map((sec) => (
+                  <section key={sec.title}>
+                    <div className="mb-2 text-xs font-bold uppercase text-gray-500">{sec.title}</div>
 
-                  if (item.action) {
-                    return (
-                      <button
-                        key={item.name}
-                        onClick={item.action}
-                        className={cn(
-                          "flex items-center gap-4 p-3 rounded-lg w-full text-left transition-colors",
-                          danger ? "text-red-600 font-semibold hover:bg-red-50" : "hover:bg-gray-100 text-gray-900",
+                    {sec.variant === "grid" ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {sec.items.map((item) => {
+                          // grid items sind links
+                          return (
+                            <NavLink
+                              key={item.key}
+                              item={item}
+                              onAfter={closeMore}
+                              className="bg-white border border-gray-200 hover:bg-gray-50"
+                            />
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {sec.items.map((item) =>
+                          item.onClick ? (
+                            <NavButton key={item.key} item={item} />
+                          ) : (
+                            <NavLink key={item.key} item={item} onAfter={closeMore} />
+                          ),
                         )}
-                      >
-                        <Icon className={cn("h-6 w-6", danger ? "text-red-600" : "text-gray-800")} strokeWidth={2.3} />
-                        <span>{item.name}</span>
-                      </button>
-                    )
-                  }
-
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100 text-gray-900"
-                      onClick={closeMore}
-                    >
-                      <Icon className="h-6 w-6 text-gray-800" strokeWidth={2.3} />
-                      <span>{item.name}</span>
-                    </Link>
-                  )
-                })}
+                      </div>
+                    )}
+                  </section>
+                ))}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ===== NAV ===== */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-pb">
-        {/* Quickbar */}
-        <div className="mx-3 mb-2 rounded-2xl bg-white/90 backdrop-blur border shadow-lg">
-          <div className="grid grid-cols-4 h-10">
-            {quickItems.map((q) => (
-              <QuickLink key={q.href} {...q} />
-            ))}
-          </div>
-        </div>
+      {/* BOTTOM NAV */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-gray-200 bg-white shadow-2xl">
+        <div className="grid h-16 grid-cols-5">
+          {BOTTOM_BAR.map((item) => {
+            const isActive = pathname === item.href
+            const Icon = item.icon
 
-        {/* Main Bar */}
-        <div className="bg-white border-t shadow-lg">
-          <div className="grid grid-cols-5 h-16">
-            {staticNavItems.map((item) => {
-              const isActive = pathname === item.href
-              const Icon = item.icon
+            return (
+              <Link
+                key={item.key}
+                href={item.href!}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 transition-all",
+                  isActive ? "text-orange-600" : "text-gray-500 hover:text-orange-600",
+                )}
+              >
+                <Icon className="h-6 w-6" strokeWidth={isActive ? 2.6 : 2.2} />
+                <span className="text-[10px] font-semibold">{item.name}</span>
+              </Link>
+            )
+          })}
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-1",
-                    isActive ? "text-orange-600" : "text-gray-600 hover:text-gray-900",
-                  )}
-                >
-                  <Icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2.3} />
-                  <span className="text-[10px] font-medium">{item.name}</span>
-                </Link>
-              )
-            })}
-
-            <button
-              onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-              className={cn(
-                "flex flex-col items-center justify-center gap-1",
-                isMoreMenuOpen ? "text-orange-600" : "text-gray-600 hover:text-gray-900",
-              )}
-            >
-              <MoreHorizontal className="h-6 w-6" />
-              <span className="text-[10px] font-medium">Mehr</span>
-            </button>
-          </div>
+          <button
+            onClick={toggleMore}
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 transition-all",
+              isMoreOpen ? "text-orange-600" : "text-gray-500 hover:text-orange-600",
+            )}
+          >
+            <MoreHorizontal className="h-6 w-6" />
+            <span className="text-[10px] font-semibold">Mehr</span>
+          </button>
         </div>
       </nav>
     </>

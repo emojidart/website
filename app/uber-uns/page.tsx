@@ -1,188 +1,231 @@
 "use client"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { Target, Users, Trophy, Heart } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Users, Trophy, Heart, Target, Mail, ExternalLink } from "lucide-react"
 import { motion } from "framer-motion"
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
   },
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 12 } },
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 110, damping: 14 } },
+}
+
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-center">
+      <div className="text-3xl font-black text-orange-700">{value}</div>
+      <div className="text-sm font-bold text-orange-900/80 mt-1">{label}</div>
+    </div>
+  )
+}
+
+function Feature({
+  icon,
+  title,
+  text,
+}: {
+  icon: React.ReactNode
+  title: string
+  text: string
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-black text-gray-900">{title}</p>
+          <p className="text-sm text-gray-600 mt-1 leading-relaxed">{text}</p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function UberUnsPage() {
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
       <Header />
 
-      <motion.div
-        className="container mx-auto px-4 md:px-6 py-8"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <motion.div variants={itemVariants} className="text-center mb-12">
-          <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 text-white">
-            <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
-              <Users className="h-12 w-12 text-white mx-auto" />
+      {/* fixed header offset */}
+      <main className="pt-12 sm:pt-14">
+        <motion.div
+          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {/*  */}
+          <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="p-4 sm:p-5 flex items-start gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                  <Users className="w-5 h-5 text-orange-600" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-lg font-black">Über uns</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    EMOJI&apos;S DARTVEREIN – mehr als ein Verein: <span className="font-semibold">Dart-Familie</span>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Gemeinschaft • Turniere • Liga • Spaß am Spiel</p>
+                </div>
+              </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-4">
-              <span className="block text-white">ÜBER UNS</span>
-              <span className="block text-orange-200">UNSERE DART-FAMILIE</span>
-            </h1>
-            <p className="text-lg md:text-xl font-bold uppercase text-orange-100 mb-4">Lerne unseren Verein kennen</p>
-            <div className="bg-orange-600/30 rounded-xl p-4 text-orange-100">
-              <p className="text-sm italic">Mehr als ein Verein – wir sind eine Familie</p>
+          </motion.div>
+
+          {/* Warum */}
+          <motion.div variants={itemVariants} className="space-y-4">
+            <Card className="rounded-2xl border border-gray-200 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm sm:text-base font-black flex items-center gap-2">
+                  <Target className="w-5 h-5 text-orange-600" />
+                  Warum EMOJI&apos;S DARTVEREIN?
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Feature
+                  icon={<Trophy className="w-5 h-5 text-orange-600" />}
+                  title="Dynamische Liga"
+                  text="Tritt unserer lebhaften Liga bei und miss dich mit E-Dart- und Steel-Dart Spielern."
+                />
+                <Feature
+                  icon={<Heart className="w-5 h-5 text-orange-600" />}
+                  title="Starke Gemeinschaft"
+                  text="Wir sind mehr als ein Verein – wir sind eine Familie. Zusammenhalt und Freundschaft stehen im Fokus."
+                />
+                <Feature
+                  icon={<Target className="w-5 h-5 text-orange-600" />}
+                  title="Spannende Turniere"
+                  text="Nimm an unseren Turnieren teil und kämpfe mit uns um Erfolge – fair, motivierend, respektvoll."
+                />
+                <Feature
+                  icon={<Users className="w-5 h-5 text-orange-600" />}
+                  title="Für alle Niveaus"
+                  text="Egal ob Anfänger oder Profi: Bei uns findest du die passende Herausforderung und Unterstützung."
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Zahlen */}
+          <motion.div variants={itemVariants} className="mt-5">
+            <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm sm:text-base font-black flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-orange-600" />
+                  Unsere Stärke in Zahlen
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <Stat value="50+" label="Mitglieder" />
+                  <Stat value="60+" label="Aktive Spieler" />
+                  <Stat value="10+" label="Teams" />
+                </div>
+
+                <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    Mit über 50 Mitgliedern und mehr als 60 aktiven Spielern sind wir einer der wachsenden Dartvereine
+                    der Region. Aktuell stellen wir 5 E-Dart- und 5 Steeldart-Mannschaften sowie mehrere Teams für
+                    Nebenbewerbe – Tendenz steigend.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Philosophie */}
+          <motion.div variants={itemVariants} className="mt-5">
+            <Card className="rounded-2xl border border-gray-200 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm sm:text-base font-black flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-orange-600" />
+                  Unsere Philosophie
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Dart-Familie</p>
+                  <p className="mt-2 text-sm text-gray-700 leading-relaxed">
+                    Wir sehen uns nicht als „normalen“ Verein. Wir sind eine kleine Dart-Familie – das Soziale steht
+                    bei uns an erster Stelle. Bei uns kommt jeder zu Wort, dem etwas am Herzen liegt.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Herausforderungen & Ziele</p>
+                  <p className="mt-2 text-sm text-gray-700 leading-relaxed">
+                    Wir nehmen Herausforderungen an – dort, wo andere scheitern. Wir setzen uns Ziele und machen das
+                    Unsichtbare sichtbar: Schritt für Schritt.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Gemeinschaft</p>
+                  <p className="mt-2 text-sm text-gray-700 leading-relaxed">
+                    Wir agieren nicht als Einzelne: Turniere, Meisterschaften und Training erleben wir gemeinsam. Auch
+                    neben dem Sport sind wir gern zusammen unterwegs – Ausflüge, Aktivitäten und Vereinsleben.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* CTA */}
+          <motion.div variants={itemVariants} className="mt-5">
+            <div className="rounded-2xl border border-orange-200 bg-white shadow-sm overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="p-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base font-black text-gray-900">Werde Teil unserer Familie!</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Du willst dabei sein, neue Leute kennenlernen und Dart feiern? Schreib uns – wir freuen uns!
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      <Button
+                        className="h-10 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black"
+                        onClick={() => (window.location.href = "mailto:office@emojisdartverein.com")}
+                        type="button"
+                      >
+                        Mail
+                        <ExternalLink className="w-4 h-4 ml-2" />
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="h-10 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 font-black"
+                        onClick={() => (window.location.href = "/kontakt")}
+                        type="button"
+                      >
+                        Kontakt
+                      </Button>
+                    </div>
+
+                    
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
-
-        <main className="container mx-auto px-4 md:px-6 py-8">
-          <div className="space-y-16 text-foreground/80">
-            <section>
-              <h2 className="text-3xl md:text-4xl font-bold mb-12 text-foreground text-center">
-                Warum EMOJI'S DARTVEREIN?
-              </h2>
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="bg-card rounded-lg p-6 border border-border hover:shadow-lg transition-shadow">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-lg flex-shrink-0">
-                      <Trophy className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold mb-2 text-foreground">Dynamische Liga</h3>
-                      <p className="text-foreground/70">
-                        Treten Sie unserer lebhaften Liga bei und messen Sie sich mit E-Dart und Steel-Dart Spielern.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-card rounded-lg p-6 border border-border hover:shadow-lg transition-shadow">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-lg flex-shrink-0">
-                      <Heart className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold mb-2 text-foreground">Starke Gemeinschaft</h3>
-                      <p className="text-foreground/70">
-                        Wir sind mehr als ein Verein – wir sind eine Familie. Erleben Sie Zusammenhalt und Freundschaft.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-card rounded-lg p-6 border border-border hover:shadow-lg transition-shadow">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-lg flex-shrink-0">
-                      <Target className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold mb-2 text-foreground">Spannende Turniere</h3>
-                      <p className="text-foreground/70">
-                        Nehmen Sie an unseren hochkarätigen Turnieren teil und kämpfen Sie um Ruhm und Preise.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-card rounded-lg p-6 border border-border hover:shadow-lg transition-shadow">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-lg flex-shrink-0">
-                      <Users className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold mb-2 text-foreground">Für alle Niveaus</h3>
-                      <p className="text-foreground/70">
-                        Egal ob Anfänger oder Profi, bei uns finden Sie die richtige Herausforderung und Unterstützung.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20 rounded-lg p-8 md:p-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-12 text-foreground text-center">
-                Unsere Stärke in Zahlen
-              </h2>
-              <div className="grid md:grid-cols-3 gap-8 mb-8">
-                <div className="text-center">
-                  <div className="text-4xl md:text-5xl font-bold text-orange-600 dark:text-orange-400 mb-2">50+</div>
-                  <p className="text-lg text-foreground/70">Mitglieder</p>
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl md:text-5xl font-bold text-orange-600 dark:text-orange-400 mb-2">60+</div>
-                  <p className="text-lg text-foreground/70">Aktive Spieler</p>
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl md:text-5xl font-bold text-orange-600 dark:text-orange-400 mb-2">10+</div>
-                  <p className="text-lg text-foreground/70">Mannschaften</p>
-                </div>
-              </div>
-              <p className="text-center text-foreground/80 leading-relaxed">
-                Mit über 50 Mitgliedern und mehr als 60 aktiven Spielern sind wir einer der wachsenden Dartvereine der Region.
-Aktuell stellen wir 5 E-Dart- und 5 Steeldart-Mannschaften sowie mehrere Teams für Nebenbewerbe – Tendenz weiter steigend.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-3xl md:text-4xl font-bold mb-12 text-foreground text-center">Unsere Philosophie</h2>
-              <div className="space-y-8">
-                <div className="border-l-4 border-orange-500 pl-6 py-2">
-                  <h3 className="text-2xl font-semibold mb-3 text-foreground">Dart-Familie</h3>
-                  <p className="text-foreground/80 leading-relaxed">
-                    WIR sehen uns nicht als "normaler" Verein. WIR sehen uns als kleine Dart-Familie, das Soziale steht
-                    bei uns an ERSTER Stelle. WIR sind auch privat eng untereinander verbunden, bei uns kommt jeder zu
-                    Wort, dem etwas am Herzen liegt.
-                  </p>
-                </div>
-
-                <div className="border-l-4 border-orange-500 pl-6 py-2">
-                  <h3 className="text-2xl font-semibold mb-3 text-foreground">Herausforderungen & Ziele</h3>
-                  <p className="text-foreground/80 leading-relaxed">
-                    WIR nehmen Herausforderungen an, diese fangen da an, wo andere scheitern. WIR setzen uns Ziele, dies
-                    ist der erste Weg, um das Unsichtbare ins Sichtbare zu verwandeln.
-                  </p>
-                </div>
-
-                <div className="border-l-4 border-orange-500 pl-6 py-2">
-                  <h3 className="text-2xl font-semibold mb-3 text-foreground">Gemeinschaft</h3>
-                  <p className="text-foreground/80 leading-relaxed">
-                    WIR agieren nicht als einzelne Personen, sondern spielen auf Turnieren, Meisterschaften und im
-                    Training in der Gemeinschaft. Wir sind auch neben dem Sport sehr gerne unterwegs auf Ausflügen oder
-                    anderen Aktivitäten neben dem Dartsport.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-orange-600 dark:bg-orange-700 text-white rounded-lg p-8 md:p-12 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Werde Teil unserer Familie!</h2>
-              <p className="text-lg text-white/90 mb-6 max-w-2xl mx-auto">
-                Interessiert dich Dart? Möchtest du neue Freunde treffen und Teil einer großartigen Gemeinschaft werden?
-                Dann kontaktiere uns noch heute!
-              </p>
-              <a
-                href="mailto:office@emojisdartverein.com"
-                className="inline-block bg-white text-orange-600 dark:text-orange-700 px-8 py-3 rounded-lg font-semibold hover:bg-orange-50 transition-colors"
-              >
-                Kontaktiere uns
-              </a>
-            </section>
-          </div>
-        </main>
-      </motion.div>
+      </main>
 
       <MobileBottomNav />
     </div>

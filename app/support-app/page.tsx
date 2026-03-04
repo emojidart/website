@@ -3,7 +3,8 @@
 import type React from "react"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
-import { useState, useEffect } from "react"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,8 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { AlertCircle, CheckCircle, Clock, Plus, Ticket, MessageCircle, Send, ArrowLeft } from "lucide-react"
+import { AlertCircle, CheckCircle, Clock, Plus, Ticket, MessageCircle, Send, ArrowLeft, Loader2 } from "lucide-react"
 
 interface SupportTicket {
   id: string
@@ -27,23 +27,32 @@ interface SupportTicket {
   admin_response?: string
 }
 
-const priorityColors = {
-  niedrig: "bg-green-100 text-green-800",
-  mittel: "bg-yellow-100 text-yellow-800",
-  hoch: "bg-orange-100 text-orange-800",
-  kritisch: "bg-red-100 text-red-800",
+const priorityColors: Record<SupportTicket["priority"], string> = {
+  niedrig: "bg-green-50 text-green-900 border-green-200",
+  mittel: "bg-amber-50 text-amber-900 border-amber-200",
+  hoch: "bg-orange-50 text-orange-900 border-orange-200",
+  kritisch: "bg-red-50 text-red-900 border-red-200",
 }
 
-const statusColors = {
-  offen: "bg-blue-100 text-blue-800",
-  in_bearbeitung: "bg-yellow-100 text-yellow-800",
-  geschlossen: "bg-green-100 text-green-800",
+const statusColors: Record<SupportTicket["status"], string> = {
+  offen: "bg-blue-50 text-blue-900 border-blue-200",
+  in_bearbeitung: "bg-amber-50 text-amber-900 border-amber-200",
+  geschlossen: "bg-emerald-50 text-emerald-900 border-emerald-200",
 }
 
-const statusIcons = {
+const statusIcons: Record<SupportTicket["status"], any> = {
   offen: AlertCircle,
   in_bearbeitung: Clock,
   geschlossen: CheckCircle,
+}
+
+function PageMain({ children }: { children: React.ReactNode }) {
+  // ✅ 1:1 Container wie deine andere Seite (Campus)
+  return (
+    <main className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl flex-1">
+      {children}
+    </main>
+  )
 }
 
 export default function SupportPage() {
@@ -55,7 +64,7 @@ export default function SupportPage() {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null)
   const [newMessage, setNewMessage] = useState("")
   const [sendingMessage, setSendingMessage] = useState(false)
-  const [messages, setMessages] = useState<string[]>([])
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -65,21 +74,20 @@ export default function SupportPage() {
 
   const router = useRouter()
 
-  const categories = [
-    "Technisches Problem",
-    "Statistiken",
-    "Liga-Verwaltung",
-    "Mitgliedschaft",
-    "Spiele & Matches",
-    "Sonstiges",
-  ]
+  const categories = useMemo(
+    () => ["Technisches Problem", "Statistiken", "Liga-Verwaltung", "Mitgliedschaft", "Spiele & Matches", "Sonstiges"],
+    [],
+  )
 
   useEffect(() => {
     checkUser()
-    if (user) {
-      fetchTickets()
-    }
-  }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (user) fetchTickets()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   const checkUser = async () => {
     try {
@@ -101,13 +109,9 @@ export default function SupportPage() {
 
   const fetchTickets = async () => {
     try {
-      const { data, error } = await supabase
-        .from("support_tickets")
-        .select("*")
-        .order("created_at", { ascending: false })
-
+      const { data, error } = await supabase.from("support_tickets").select("*").order("created_at", { ascending: false })
       if (error) throw error
-      setTickets(data || [])
+      setTickets((data || []) as SupportTicket[])
     } catch (error) {
       console.error("Error fetching tickets:", error)
     }
@@ -139,17 +143,12 @@ export default function SupportPage() {
         category: "",
       })
       setShowForm(false)
-
       await fetchTickets()
     } catch (error) {
       console.error("Error creating ticket:", error)
     } finally {
       setSubmitting(false)
     }
-  }
-
-  const fetchMessages = async (ticketId: string) => {
-    setMessages([])
   }
 
   const sendMessage = async () => {
@@ -162,18 +161,10 @@ export default function SupportPage() {
       const newMessageText = `[${timestamp} - Benutzer]: ${newMessage.trim()}`
       const updatedMessages = currentMessages ? `${currentMessages}\n\n${newMessageText}` : newMessageText
 
-      const { error } = await supabase
-        .from("support_tickets")
-        .update({ admin_response: updatedMessages })
-        .eq("id", selectedTicket.id)
-
+      const { error } = await supabase.from("support_tickets").update({ admin_response: updatedMessages }).eq("id", selectedTicket.id)
       if (error) throw error
 
-      setSelectedTicket({
-        ...selectedTicket,
-        admin_response: updatedMessages,
-      })
-
+      setSelectedTicket({ ...selectedTicket, admin_response: updatedMessages })
       setNewMessage("")
     } catch (error) {
       console.error("Error sending message:", error)
@@ -182,271 +173,344 @@ export default function SupportPage() {
     }
   }
 
-  const handleTicketSelect = (ticket: SupportTicket) => {
-    setSelectedTicket(ticket)
-    fetchMessages(ticket.id)
-  }
+  const openTickets = useMemo(() => tickets.filter((t) => t.status === "offen"), [tickets])
+  const inProgressTickets = useMemo(() => tickets.filter((t) => t.status === "in_bearbeitung"), [tickets])
+  const closedTickets = useMemo(() => tickets.filter((t) => t.status === "geschlossen"), [tickets])
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-lg">Lade...</div>
+      <div className="min-h-screen bg-gray-50 pb-24 flex flex-col">
+        <Header variant="app" title="Support" subtitle="Tickets & Nachrichten" backHref="/member-profile-app" />
+        <div className="h-12 sm:h-14" aria-hidden="true" />
+
+        <PageMain>
+          <div className="w-full flex items-center justify-center py-10">
+            <div className="rounded-3xl border border-orange-200 bg-white shadow-2xl px-10 py-10 flex flex-col items-center gap-6">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-orange-500/25 blur-2xl animate-pulse" />
+                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-black text-gray-900">Support wird geladen</p>
+                <p className="text-sm text-gray-500 mt-1 font-semibold">Bitte kurz warten…</p>
+              </div>
+            </div>
           </div>
-        </div>
+        </PageMain>
+
         <MobileBottomNav />
       </div>
     )
   }
 
-  const openTickets = tickets.filter((t) => t.status === "offen")
-  const inProgressTickets = tickets.filter((t) => t.status === "in_bearbeitung")
-  const closedTickets = tickets.filter((t) => t.status === "geschlossen")
-
+  // ✅ Ticket Detail View
   if (selectedTicket) {
+    const StatusIcon = statusIcons[selectedTicket.status]
     return (
-      <div className="min-h-screen bg-gray-50 pb-20">
-        <div className="container mx-auto px-4 py-4">
+      <div className="min-h-screen bg-gray-50 pb-24 flex flex-col">
+        <Header variant="app" title="Support" subtitle="Ticket-Details" backHref="/member-profile-app" />
+        <div className="h-12 sm:h-14" aria-hidden="true" />
+
+        <PageMain>
           <div className="mb-4">
-            <Button variant="outline" size="sm" onClick={() => setSelectedTicket(null)} className="mb-3">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedTicket(null)}
+              className="mb-4 flex items-center gap-2 bg-white hover:bg-orange-50 text-gray-900 border border-gray-200 rounded-2xl"
+            >
+              <ArrowLeft className="w-4 h-4" />
               Zurück zur Übersicht
             </Button>
 
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Ticket className="w-4 h-4" />
+            <Card className="rounded-3xl border border-orange-200 bg-white shadow-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-black">
+                    <Ticket className="w-5 h-5" />
                     {selectedTicket.title}
                   </CardTitle>
+
                   <div className="flex gap-2 flex-wrap">
-                    <Badge className={priorityColors[selectedTicket.priority]}>{selectedTicket.priority}</Badge>
-                    <Badge className={statusColors[selectedTicket.status]}>
+                    <Badge className={`border ${priorityColors[selectedTicket.priority]} bg-white/90`}>
+                      {selectedTicket.priority}
+                    </Badge>
+                    <Badge className={`border ${statusColors[selectedTicket.status]} bg-white/90`}>
+                      <StatusIcon className="w-3 h-3 mr-1 inline-block" />
                       {selectedTicket.status.replace("_", " ")}
                     </Badge>
                   </div>
                 </div>
-                <CardDescription className="text-sm">
+
+                <CardDescription className="text-white/90 text-sm font-semibold">
                   Kategorie: {selectedTicket.category} • Erstellt:{" "}
                   {new Date(selectedTicket.created_at).toLocaleDateString("de-DE")}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="mb-4">
-                  <h4 className="font-medium mb-2 text-sm">Ursprüngliche Beschreibung:</h4>
-                  <p className="text-gray-600 bg-gray-50 p-3 rounded text-sm">{selectedTicket.description}</p>
-                </div>
 
-                <div className="space-y-3">
-                  <h4 className="font-medium flex items-center gap-2 text-sm">
-                    <MessageCircle className="w-4 h-4" />
-                    Nachrichten
-                  </h4>
-
-                  <div className="max-h-96 overflow-y-auto space-y-2 border rounded p-3 bg-white">
-                    {!selectedTicket.admin_response ? (
-                      <p className="text-gray-500 text-center py-4 text-sm">Noch keine Nachrichten vorhanden.</p>
-                    ) : (
-                      <div className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded">
-                        {selectedTicket.admin_response}
-                      </div>
-                    )}
+              <CardContent className="p-4 sm:p-6 bg-gray-50">
+                <div className="grid lg:grid-cols-5 gap-4">
+                  <div className="lg:col-span-2">
+                    <div className="rounded-3xl border border-gray-200 bg-white shadow-sm p-4">
+                      <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Beschreibung</p>
+                      <p className="mt-2 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedTicket.description}</p>
+                    </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Textarea
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Ihre Nachricht..."
-                      rows={3}
-                      className="flex-1 text-sm"
-                    />
-                    <Button
-                      onClick={sendMessage}
-                      disabled={!newMessage.trim() || sendingMessage}
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
+                  <div className="lg:col-span-3">
+                    <div className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                      <div className="p-4 border-b border-gray-100">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-black text-gray-900 flex items-center gap-2">
+                            <MessageCircle className="w-4 h-4 text-orange-600" />
+                            Nachrichten
+                          </p>
+                          <span className="text-xs font-semibold text-gray-500">
+                            Zuletzt aktualisiert: {new Date(selectedTicket.updated_at).toLocaleDateString("de-DE")}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-gray-50">
+                        <div className="max-h-96 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-3">
+                          {!selectedTicket.admin_response ? (
+                            <p className="text-gray-500 text-center py-6 text-sm font-semibold">Noch keine Nachrichten vorhanden.</p>
+                          ) : (
+                            <div className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
+                              {selectedTicket.admin_response}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-3 flex gap-2 items-end">
+                          <Textarea
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Ihre Nachricht…"
+                            rows={3}
+                            className="flex-1 text-sm rounded-2xl bg-white border-gray-200"
+                          />
+                          <Button
+                            onClick={sendMessage}
+                            disabled={!newMessage.trim() || sendingMessage}
+                            size="sm"
+                            className="h-10 px-4 rounded-2xl bg-orange-600 hover:bg-orange-700"
+                          >
+                            {sendingMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                          </Button>
+                        </div>
+
+                        <p className="mt-2 text-[11px] text-gray-500 font-semibold">
+                          Tipp: Bitte kurz & konkret schreiben – Screenshots/Beschreibung helfen am meisten.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-        </div>
+        </PageMain>
+
         <MobileBottomNav />
       </div>
     )
   }
 
+  // ✅ Overview
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="container mx-auto px-4 py-4">
-        <div className="mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/member-profile-app")}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Zurück zum Profil
-          </Button>
-        </div>
+    <div className="min-h-screen bg-gray-50 pb-24 flex flex-col">
+      <Header variant="app" title="Support" subtitle="Tickets & Nachrichten" backHref="/member-profile-app" />
+      <div className="h-12 sm:h-14" aria-hidden="true" />
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Support</h1>
-            <p className="text-gray-600 mt-1 text-sm">
-              Benötigen Sie Hilfe? Erstellen Sie ein Support-Ticket und wir helfen Ihnen gerne weiter.
-            </p>
+      <PageMain>
+        <div className="rounded-3xl border border-orange-200 bg-white shadow-2xl overflow-hidden">
+          <div className="p-5 sm:p-8 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-wider text-orange-100">Support</p>
+                <h1 className="mt-1 text-2xl sm:text-3xl font-black leading-tight">Tickets & Hilfe</h1>
+                <p className="mt-2 text-sm text-orange-100 font-semibold">
+                  Erstelle ein Ticket und wir helfen dir schnell weiter.
+                </p>
+              </div>
+
+              <Button
+                onClick={() => setShowForm((v) => !v)}
+                className="h-11 px-5 rounded-2xl bg-white text-orange-700 font-black hover:bg-orange-50"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Neues Ticket
+              </Button>
+            </div>
           </div>
-          <Button onClick={() => setShowForm(!showForm)} className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap">
-            <Plus className="w-4 h-4 mr-2" />
-            Neues Ticket
-          </Button>
+
+          <div className="p-4 sm:p-6 bg-gray-50">
+            {showForm && (
+              <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden mb-4 sm:mb-6">
+                <CardHeader className="border-b border-gray-100">
+                  <CardTitle className="flex items-center text-lg font-black">
+                    <Ticket className="w-4 h-4 mr-2 text-orange-600" />
+                    Neues Support-Ticket
+                  </CardTitle>
+                  <CardDescription className="text-sm font-semibold">
+                    Bitte so detailliert wie möglich beschreiben, damit wir schneller helfen können.
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="p-4 sm:p-6">
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-black text-gray-800 mb-1">Titel *</label>
+                        <Input
+                          value={formData.title}
+                          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                          placeholder="Kurze Beschreibung"
+                          required
+                          className="text-sm rounded-2xl bg-white border-gray-200"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-black text-gray-800 mb-1">Kategorie *</label>
+                        <Select
+                          value={formData.category}
+                          onValueChange={(value) => setFormData({ ...formData, category: value })}
+                          required
+                        >
+                          <SelectTrigger className="text-sm rounded-2xl bg-white border-gray-200">
+                            <SelectValue placeholder="Kategorie wählen" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((category) => (
+                              <SelectItem key={category} value={category} className="text-sm">
+                                {category}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-black text-gray-800 mb-1">Priorität</label>
+                        <Select
+                          value={formData.priority}
+                          onValueChange={(value: any) => setFormData({ ...formData, priority: value })}
+                        >
+                          <SelectTrigger className="text-sm rounded-2xl bg-white border-gray-200">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="niedrig" className="text-sm">
+                              Niedrig
+                            </SelectItem>
+                            <SelectItem value="mittel" className="text-sm">
+                              Mittel
+                            </SelectItem>
+                            <SelectItem value="hoch" className="text-sm">
+                              Hoch
+                            </SelectItem>
+                            <SelectItem value="kritisch" className="text-sm">
+                              Kritisch
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex items-end gap-2">
+                        <div className="flex-1">
+                          <label className="block text-sm font-black text-gray-800 mb-1">Status</label>
+                          <div className="h-10 rounded-2xl border border-gray-200 bg-gray-50 px-3 flex items-center text-sm text-gray-600 font-semibold">
+                            Wird automatisch auf “offen” gesetzt
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-black text-gray-800 mb-1">Beschreibung *</label>
+                      <Textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Beschreibe dein Problem…"
+                        rows={5}
+                        required
+                        className="text-sm rounded-2xl bg-white border-gray-200"
+                      />
+                    </div>
+
+                    <div className="flex gap-2 flex-wrap">
+                      <Button type="submit" disabled={submitting} className="h-10 px-5 rounded-2xl bg-orange-600 hover:bg-orange-700">
+                        {submitting ? (
+                          <span className="inline-flex items-center gap-2 font-black">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Wird erstellt…
+                          </span>
+                        ) : (
+                          <span className="font-black">Ticket erstellen</span>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowForm(false)}
+                        className="h-10 px-5 rounded-2xl bg-white border-gray-200"
+                      >
+                        Abbrechen
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <CardHeader className="border-b border-gray-100">
+                <CardTitle className="text-lg font-black">Deine Tickets</CardTitle>
+                <CardDescription className="text-sm font-semibold">
+                  Tippe auf ein Ticket, um Details & Nachrichten zu sehen.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="p-4 sm:p-6">
+                <Tabs defaultValue="alle" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-4 h-11 rounded-2xl bg-gray-50 border border-gray-200 p-1">
+                    <TabsTrigger value="alle" className="rounded-xl text-[11px] sm:text-xs font-black">
+                      Alle <span className="ml-1 opacity-70">({tickets.length})</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="offen" className="rounded-xl text-[11px] sm:text-xs font-black">
+                      Offen <span className="ml-1 opacity-70">({openTickets.length})</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="in_bearbeitung" className="rounded-xl text-[11px] sm:text-xs font-black">
+                      Bearb. <span className="ml-1 opacity-70">({inProgressTickets.length})</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="geschlossen" className="rounded-xl text-[11px] sm:text-xs font-black">
+                      Geschl. <span className="ml-1 opacity-70">({closedTickets.length})</span>
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="alle">
+                    <TicketList tickets={tickets} onTicketSelect={setSelectedTicket} />
+                  </TabsContent>
+                  <TabsContent value="offen">
+                    <TicketList tickets={openTickets} onTicketSelect={setSelectedTicket} />
+                  </TabsContent>
+                  <TabsContent value="in_bearbeitung">
+                    <TicketList tickets={inProgressTickets} onTicketSelect={setSelectedTicket} />
+                  </TabsContent>
+                  <TabsContent value="geschlossen">
+                    <TicketList tickets={closedTickets} onTicketSelect={setSelectedTicket} />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+      </PageMain>
 
-        {showForm && (
-          <Card className="mb-4">
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <Ticket className="w-4 h-4 mr-2" />
-                Neues Support-Ticket erstellen
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Beschreiben Sie Ihr Problem so detailliert wie möglich, damit wir Ihnen schnell helfen können.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Titel *</label>
-                    <Input
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="Kurze Beschreibung des Problems"
-                      required
-                      className="text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Kategorie *</label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => setFormData({ ...formData, category: value })}
-                      required
-                    >
-                      <SelectTrigger className="text-sm">
-                        <SelectValue placeholder="Kategorie wählen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category} className="text-sm">
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Priorität</label>
-                  <Select
-                    value={formData.priority}
-                    onValueChange={(value: any) => setFormData({ ...formData, priority: value })}
-                  >
-                    <SelectTrigger className="text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="niedrig" className="text-sm">
-                        Niedrig
-                      </SelectItem>
-                      <SelectItem value="mittel" className="text-sm">
-                        Mittel
-                      </SelectItem>
-                      <SelectItem value="hoch" className="text-sm">
-                        Hoch
-                      </SelectItem>
-                      <SelectItem value="kritisch" className="text-sm">
-                        Kritisch
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Beschreibung *</label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Beschreiben Sie Ihr Problem detailliert..."
-                    rows={5}
-                    required
-                    className="text-sm"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={submitting} size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    {submitting ? "Wird erstellt..." : "Ticket erstellen"}
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>
-                    Abbrechen
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        <Tabs defaultValue="alle" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 h-auto">
-            <TabsTrigger value="alle" className="text-[10px] sm:text-xs px-1 py-2">
-              <span className="hidden sm:inline">Alle</span>
-              <span className="sm:hidden">Alle</span>
-              <span className="ml-1">({tickets.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="offen" className="text-[10px] sm:text-xs px-1 py-2">
-              <span className="hidden sm:inline">Offen</span>
-              <span className="sm:hidden">Offen</span>
-              <span className="ml-1">({openTickets.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="in_bearbeitung" className="text-[10px] sm:text-xs px-1 py-2">
-              <span className="hidden sm:inline">In Bearbeitung</span>
-              <span className="sm:hidden">Bearb.</span>
-              <span className="ml-1">({inProgressTickets.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="geschlossen" className="text-[10px] sm:text-xs px-1 py-2">
-              <span className="hidden sm:inline">Geschlossen</span>
-              <span className="sm:hidden">Geschl.</span>
-              <span className="ml-1">({closedTickets.length})</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="alle">
-            <TicketList tickets={tickets} onTicketSelect={handleTicketSelect} />
-          </TabsContent>
-
-          <TabsContent value="offen">
-            <TicketList tickets={openTickets} onTicketSelect={handleTicketSelect} />
-          </TabsContent>
-
-          <TabsContent value="in_bearbeitung">
-            <TicketList tickets={inProgressTickets} onTicketSelect={handleTicketSelect} />
-          </TabsContent>
-
-          <TabsContent value="geschlossen">
-            <TicketList tickets={closedTickets} onTicketSelect={handleTicketSelect} />
-          </TabsContent>
-        </Tabs>
-      </div>
       <MobileBottomNav />
     </div>
   )
@@ -455,17 +519,16 @@ export default function SupportPage() {
 function TicketList({
   tickets,
   onTicketSelect,
-}: { tickets: SupportTicket[]; onTicketSelect: (ticket: SupportTicket) => void }) {
+}: {
+  tickets: SupportTicket[]
+  onTicketSelect: (ticket: SupportTicket) => void
+}) {
   if (tickets.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-6">
-          <div className="text-center text-gray-500">
-            <Ticket className="w-10 h-10 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">Keine Tickets gefunden.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-3xl border border-gray-200 bg-gray-50 p-6 text-center">
+        <Ticket className="w-10 h-10 mx-auto mb-3 opacity-50 text-gray-400" />
+        <p className="text-sm text-gray-600 font-semibold">Keine Tickets gefunden.</p>
+      </div>
     )
   }
 
@@ -474,35 +537,45 @@ function TicketList({
       {tickets.map((ticket) => {
         const StatusIcon = statusIcons[ticket.status]
         return (
-          <Card
+          <button
             key={ticket.id}
-            className="hover:shadow-md transition-shadow cursor-pointer"
+            type="button"
             onClick={() => onTicketSelect(ticket)}
+            className="w-full text-left"
           >
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <h3 className="font-semibold text-base">{ticket.title}</h3>
-                    <Badge className={priorityColors[ticket.priority]}>{ticket.priority}</Badge>
-                    <Badge className={statusColors[ticket.status]}>
-                      <StatusIcon className="w-3 h-3 mr-1" />
-                      {ticket.status.replace("_", " ")}
-                    </Badge>
+            <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <h3 className="font-black text-base text-gray-900 truncate">{ticket.title}</h3>
+
+                      <Badge className={`border ${priorityColors[ticket.priority]}`}>{ticket.priority}</Badge>
+
+                      <Badge className={`border ${statusColors[ticket.status]}`}>
+                        <StatusIcon className="w-3 h-3 mr-1 inline-block" />
+                        {ticket.status.replace("_", " ")}
+                      </Badge>
+                    </div>
+
+                    <p className="text-gray-600 mb-2 line-clamp-2 text-sm font-semibold">{ticket.description}</p>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 font-semibold">
+                      <span>Kategorie: {ticket.category}</span>
+                      <span className="opacity-40">•</span>
+                      <span>Erstellt: {new Date(ticket.created_at).toLocaleDateString("de-DE")}</span>
+                      <span className="opacity-40">•</span>
+                      <span>Update: {new Date(ticket.updated_at).toLocaleDateString("de-DE")}</span>
+                    </div>
                   </div>
 
-                  <p className="text-gray-600 mb-2 line-clamp-2 text-sm">{ticket.description}</p>
-
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    <span>Kategorie: {ticket.category}</span>
-                    <span>•</span>
-                    <span>Erstellt: {new Date(ticket.created_at).toLocaleDateString("de-DE")}</span>
+                  <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                    <MessageCircle className="w-4 h-4 text-orange-700" />
                   </div>
                 </div>
-                <MessageCircle className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </button>
         )
       })}
     </div>

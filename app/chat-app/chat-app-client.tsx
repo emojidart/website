@@ -4,6 +4,7 @@ import type React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -40,6 +41,12 @@ type ChatMessage = {
   created_at: string
   sender_player_id?: string | null
   sender?: { name: string; photo_url: string | null } | null
+}
+
+type ChatMessageRead = {
+  message_id: string
+  user_id: string
+  read_at: string
 }
 
 type TeamRoom = {
@@ -168,10 +175,15 @@ export default function TeamChatPage() {
   const [profileLoading, setProfileLoading] = useState(true)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [readByMessage, setReadByMessage] = useState<Record<string, Set<string>>>({})
+  const [readNamesByMessage, setReadNamesByMessage] = useState<Record<string, string[]>>({})
+  const [openReadsFor, setOpenReadsFor] = useState<string | null>(null)
   const [newMessage, setNewMessage] = useState("")
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesRef = useRef<ChatMessage[]>([])
+  const markingRef = useRef(false)
 
   const [chatRooms, setChatRooms] = useState<TeamRoom[]>([])
   const [selectedRoom, setSelectedRoom] = useState<TeamRoom | null>(null)
@@ -268,6 +280,12 @@ export default function TeamChatPage() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+  
+  
+  useEffect(() => {
+  messagesRef.current = messages
+}, [messages])
+ 
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -302,29 +320,33 @@ export default function TeamChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id])
 
+
   // Load messages whenever target changes
-  useEffect(() => {
-    fetchMessages()
-    markCurrentAsVisited()
+useEffect(() => {
+  fetchMessages()
+  markCurrentAsVisited()
 
-    // ✅ Team members brauchen TEAM-ID, nicht room-id
-    if (selectedScope === "team" && selectedRoom?.team_id) fetchTeamMembers(selectedRoom.team_id)
-    if (selectedScope !== "team") setTeamMembers([])
+  // ✅ Team members brauchen TEAM-ID, nicht room-id
+  if (selectedScope === "team" && selectedRoom?.team_id) fetchTeamMembers(selectedRoom.team_id)
+  if (selectedScope !== "team") setTeamMembers([])
 
-    const unsubscribe = subscribeToMessages()
-    return () => unsubscribe()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRoom?.id, selectedRoom?.team_id, selectedScope, canSeeVorstandChat])
+  const unsubMsg = subscribeToMessages()
+  const unsubReads = subscribeToReads()
 
+  return () => {
+    unsubMsg()
+    unsubReads()
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [selectedRoom?.id, selectedRoom?.team_id, selectedScope, canSeeVorstandChat])
+  
   const canSeeCaptainChat = useMemo(() => {
-    // Zugriff auf globalen Captain-Chat, wenn du in irgendeinem Team Captain/Co-Captain bist
-    return chatRooms.some((r) => r.role === "Captain" || r.role === "Co-Captain")
-  }, [chatRooms])
-
-  useEffect(() => {
-    if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) setSelectedScope("team")
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedScope, canSeeCaptainChat, isVorstand])
+  
+  // Zugriff auf globalen Captain-Chat, wenn du in irgendeinem Team Captain/Co-Captain bist
+  return chatRooms.some((r) => r.role === "Captain" || r.role === "Co-Captain")
+}, [chatRooms])
+  
+  
 
   const currentRoomId = useMemo(() => {
     if (selectedScope === "club") return CLUB_ROOM_ID
@@ -333,6 +355,15 @@ export default function TeamChatPage() {
     if (selectedScope === "captains") return CAPTAINS_ROOM_ID
     return selectedRoom?.id ?? null // ✅ chat_rooms.id
   }, [selectedScope, selectedRoom?.id])
+  
+  useEffect(() => {
+  if (loading) return
+  if (!messages.length) return
+  if (document.visibilityState !== "visible") return
+if (!document.hasFocus()) return
+  markMessagesAsRead()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [loading, currentRoomId, selectedScope, messages.length])
 
   const selectedRoomName = useMemo(() => {
     if (selectedScope === "club") return "Vereinsinfo"
@@ -739,6 +770,7 @@ export default function TeamChatPage() {
       })
 
       setMessages(withSender as any)
+	  await loadReadsForMessageIds(withSender.map((m: any) => m.id))
     } catch (error) {
       console.error("Error fetching messages:", error)
       toast({
@@ -750,6 +782,122 @@ export default function TeamChatPage() {
       setLoading(false)
     }
   }
+  
+ const loadReadsForMessageIds = async (messageIds: string[]) => {
+  if (!messageIds.length) {
+    setReadByMessage({})
+    return
+  }
+
+  const { data, error } = await supabase
+    .from("chat_message_reads")
+    .select("message_id,user_id,read_at")
+    .in("message_id", messageIds)
+
+  if (error) {
+    console.error("loadReadsForMessageIds error", error)
+    setReadByMessage({})
+    return
+  }
+
+ const next: Record<string, Set<string>> = {}
+const userIds = new Set<string>()
+
+;((data as any[]) || []).forEach((r) => {
+  if (!next[r.message_id]) next[r.message_id] = new Set()
+  next[r.message_id].add(r.user_id)
+  userIds.add(r.user_id)
+})
+
+setReadByMessage(next)
+
+// ✅ jetzt Namen holen für alle user_ids (user_profiles.id)
+const ids = Array.from(userIds)
+if (ids.length === 0) {
+  setReadNamesByMessage({})
+  return
+}
+
+const { data: profs, error: profErr } = await supabase.from("user_profiles").select("id,player_id").in("id", ids)
+if (profErr) {
+  console.error("loadReads profiles error", profErr)
+  setReadNamesByMessage({})
+  return
+}
+
+const playerIds = Array.from(new Set(((profs as any[]) || []).map((p) => p.player_id).filter(Boolean)))
+const playerMap = new Map<string, string>()
+
+if (playerIds.length > 0) {
+  const { data: players, error: pErr } = await supabase.from("club_players").select("id,name").in("id", playerIds)
+  if (!pErr) {
+    ;((players as any[]) || []).forEach((p) => {
+      if (p?.id) playerMap.set(p.id, p.name)
+    })
+  }
+}
+
+const profileToName = new Map<string, string>()
+;((profs as any[]) || []).forEach((p) => {
+  const name = p?.player_id ? (playerMap.get(p.player_id) ?? "Unbekannt") : "Unbekannt"
+  profileToName.set(p.id, name)
+})
+
+const nextNames: Record<string, string[]> = {}
+Object.entries(next).forEach(([messageId, set]) => {
+  nextNames[messageId] = Array.from(set)
+    .map((uid) => profileToName.get(uid) ?? "Unbekannt")
+    .sort((a, b) => a.localeCompare(b))
+})
+
+setReadNamesByMessage(nextNames)
+}
+
+const markMessagesAsRead = async () => {
+  if (markingRef.current) return
+  markingRef.current = true
+
+  try {
+    if (!profile?.id) return
+
+    // 👇 Nur markieren wenn Tab wirklich aktiv ist
+    if (document.visibilityState !== "visible") return
+    if (!document.hasFocus()) return
+
+    const roomId = currentRoomId
+    if (!roomId) return
+
+    const foreign = messages.filter((m) => m.user_id !== profile.id)
+    if (foreign.length === 0) return
+
+    const slice = foreign.slice(-80)
+
+    const rows = slice.map((m) => ({
+      message_id: m.id,
+      user_id: profile.id,
+    }))
+
+    const { error } = await supabase.from("chat_message_reads").upsert(rows, {
+      onConflict: "message_id,user_id",
+    })
+
+    if (error) {
+      console.error("markMessagesAsRead error", error)
+      return
+    }
+
+    await loadReadsForMessageIds(messages.map((m) => m.id))
+  } finally {
+    markingRef.current = false
+  }
+}
+
+
+
+
+
+
+
 
   const subscribeToMessages = () => {
     const roomId = currentRoomId
@@ -779,6 +927,8 @@ export default function TeamChatPage() {
           }
 
           setMessages((prev) => [...prev, { ...incoming, sender_player_id: playerId ?? null, sender }])
+		  
+		  
 
           if (incoming.user_id !== profile?.id) {
             fetchUnreadCounts(chatRooms)
@@ -791,6 +941,44 @@ export default function TeamChatPage() {
       supabase.removeChannel(channel)
     }
   }
+  
+  
+const subscribeToReads = () => {
+  const roomId = currentRoomId
+  if (!roomId) return () => {}
+
+  const channel = supabase
+    .channel(`chat_reads_${roomId}_${selectedScope}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "chat_message_reads",
+      },
+      (payload) => {
+        const incoming = payload.new as any
+        const mid = incoming?.message_id
+        if (!mid) return
+
+        // ✅ IMMER aktuelle messages benutzen (kein stale state)
+        const currentMsgs = messagesRef.current
+
+        // nur reagieren, wenn die Message gerade im State existiert
+        if (!currentMsgs.some((m) => m.id === mid)) return
+
+        loadReadsForMessageIds(currentMsgs.map((m) => m.id))
+      },
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}
+  
+  
+  
 
   const sendMessage = async () => {
     if (!newMessage.trim() || sending) return
@@ -1000,6 +1188,11 @@ export default function TeamChatPage() {
     if (selectedScope === "vorstand") return vorstandMembers as any
     return []
   }, [selectedScope, teamMembers, globalCaptains, vorstandMembers])
+  
+  const recipientsCount = useMemo(() => {
+  const total = (headerPeople || []).length
+  return Math.max(0, total - 1)
+}, [headerPeople])
 
   const headerPeopleLoading = useMemo(() => {
     if (selectedScope === "team") return membersLoading
@@ -1048,7 +1241,7 @@ export default function TeamChatPage() {
     <div className={`h-[100dvh] flex flex-col overflow-hidden ${WA.appBg}`}>
       {/* ✅ Wichtig: Seite selbst darf nicht scrollen -> nur die Chat-ScrollArea */}
       <main className="flex-1 min-h-0 overflow-hidden pt-3 pb-[env(safe-area-inset-bottom)]">
-        <div className="container mx-auto px-4 max-w-6xl h-full">
+        <div className="mx-auto w-full px-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl h-full">
           <div className="flex flex-col h-full min-h-0">
             <div className="mb-4 shrink-0">
               <Button
@@ -1481,11 +1674,32 @@ export default function TeamChatPage() {
                                           <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.message}</p>
 
                                           <div className="mt-1 flex justify-end">
-                                            <span className={`text-[10px] flex items-center gap-1 ${isOwnMessage ? "text-white/80" : "text-slate-500"}`}>
-                                              {isOwnMessage && <Clock className="h-3 w-3" />}
-                                              {time}
-                                            </span>
-                                          </div>
+  <span className={`text-[10px] flex items-center gap-1 ${isOwnMessage ? "text-white/80" : "text-slate-500"}`}>
+    {isOwnMessage && <Clock className="h-3 w-3" />}
+    {time}
+
+    {isOwnMessage && recipientsCount > 0 && (
+      (() => {
+        const readSet = readByMessage[message.id]
+        const readCount = readSet ? readSet.size : 0
+
+        // falls du irgendwann dich selbst speicherst -> nicht mitzählen
+        const me = profile?.id ?? ""
+        const readCountWithoutMe = readSet?.has(me) ? Math.max(0, readCount - 1) : readCount
+
+        return (
+  <button
+    type="button"
+    className="ml-2 underline decoration-dotted"
+    onClick={() => setOpenReadsFor(message.id)}
+  >
+    {readCountWithoutMe === 0 ? "✓" : "✓✓"} gelesen ({readCountWithoutMe}/{recipientsCount})
+  </button>
+)
+      })()
+    )}
+  </span>
+</div>
                                         </div>
                                       </div>
                                     </div>
@@ -1538,6 +1752,26 @@ export default function TeamChatPage() {
           </div>
         </div>
       </main>
+	  
+	  <Dialog open={!!openReadsFor} onOpenChange={(o) => setOpenReadsFor(o ? openReadsFor : null)}>
+  <DialogContent className="max-w-md">
+    <DialogHeader>
+      <DialogTitle>Gelesen von</DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-2">
+      {openReadsFor && (readNamesByMessage[openReadsFor] || []).length === 0 ? (
+        <p className="text-sm text-muted-foreground">Noch niemand.</p>
+      ) : (
+        (openReadsFor ? readNamesByMessage[openReadsFor] || [] : []).map((n) => (
+          <div key={n} className="text-sm">
+            {n}
+          </div>
+        ))
+      )}
+    </div>
+  </DialogContent>
+</Dialog>
 
       <MobileBottomNav />
     </div>

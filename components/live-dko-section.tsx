@@ -67,7 +67,6 @@ export default function LiveDKOSection() {
   const [scoreDrafts, setScoreDrafts] = useState<Record<number, { score1: string; score2: string }>>({})
   const [savingMatchId, setSavingMatchId] = useState<number | null>(null)
 
-
   const getBracketSize = (): 8 | 16 | 32 | 64 => {
     if (!activeTournament) return 16
     const match = activeTournament.tournament_type.match(/(\d+)er_dko|dko_(\d+)/)
@@ -125,7 +124,6 @@ export default function LiveDKOSection() {
 
     loadCurrentPlayer()
   }, [])
-
 
   useEffect(() => {
     const loadActiveTournament = async () => {
@@ -425,7 +423,6 @@ export default function LiveDKOSection() {
     }
   }
 
-
   const activeMatches = Object.values(matches).filter((m) => m.machineNumber && !m.winner)
   const completedMatches = Object.values(matches)
     .filter((m) => m.winner)
@@ -451,157 +448,180 @@ export default function LiveDKOSection() {
 
   if (loading) {
     return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6">
-          <Trophy className="h-12 w-12 text-white mx-auto" />
-        </div>
-        <p className="mt-4 text-gray-600">Lade DKO Turnier-Daten...</p>
+      <div className="text-center py-10">
+        <div className="mx-auto w-12 h-12 rounded-full border-2 border-orange-200 border-t-orange-600 animate-spin" />
+        <p className="mt-4 text-sm font-semibold text-gray-600">Lade DKO Turnier-Daten…</p>
       </div>
     )
   }
 
   if (!activeTournament) {
     return (
-      <div className="text-center py-12 bg-white rounded-xl shadow-lg">
-        <RefreshCcw className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-        <p className="text-gray-600 text-lg">Aktuell läuft kein DKO Turnier.</p>
-        <p className="text-gray-500 text-sm mt-2">Bitte warten Sie, bis ein Turnier gestartet wird.</p>
+      <div className="text-center py-10">
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8">
+          <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center mx-auto">
+            <RefreshCcw className="h-6 w-6 text-gray-400" />
+          </div>
+          <p className="mt-4 text-gray-900 font-black text-base">Aktuell läuft kein DKO Turnier.</p>
+          <p className="text-gray-500 text-sm mt-1">Bitte warten, bis ein Turnier gestartet wird.</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-12">
-        <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
-          <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
-            <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
-          </div>
-          <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
-            <span className="block text-white">{activeTournament.tournament_name}</span>
-            <span className="block text-orange-200 text-xl sm:text-3xl md:text-4xl mt-2">
-              {activeTournament.tournament_type.replace("_", " ").toUpperCase()}
-            </span>
-          </h2>
-          <div className="flex items-center justify-center gap-2 text-orange-100 mb-4">
-            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-sm sm:text-base font-medium">
-              Gestartet:{" "}
-              {new Date(activeTournament.created_at + "Z").toLocaleString("de-DE", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          </div>
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-sm sm:text-base font-semibold text-white">LIVE</span>
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
+      {/* App-style Header Card */}
+      <motion.div variants={itemVariants} className="text-center">
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+          <div className="p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                <Trophy className="w-5 h-5 text-orange-600" />
+              </div>
+              <div className="min-w-0 flex-1 text-left">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-black text-gray-900 truncate">{activeTournament.tournament_name}</h2>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[11px] font-black text-gray-900">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    LIVE
+                  </span>
+                </div>
+
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  {activeTournament.tournament_type.replace("_", " ").toUpperCase()}
+                </p>
+
+                <div className="mt-2 flex items-center gap-2 text-[11px] sm:text-xs text-gray-600">
+                  <Calendar className="h-4 w-4 text-orange-600" />
+                  <span className="font-semibold">
+                    Gestartet:{" "}
+                    {new Date(activeTournament.created_at + "Z").toLocaleString("de-DE", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>
 
       {isTournamentCompleted && tournamentWinner ? (
         <motion.div variants={itemVariants}>
-          <Card className="overflow-hidden shadow-lg border-2 border-orange-500">
-            <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6">
-              <CardTitle className="flex items-center justify-center gap-3 text-2xl sm:text-3xl">
-                <Trophy className="h-8 w-8 sm:h-10 sm:w-10" />
-                Turniersieger
-              </CardTitle>
+          <Card className="overflow-hidden shadow-sm border border-orange-200 rounded-2xl">
+            <CardHeader className="p-0">
+              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="p-4 sm:p-5">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-black text-gray-900">
+                  <Trophy className="h-5 w-5 text-orange-600" />
+                  Turniersieger
+                </CardTitle>
+              </div>
             </CardHeader>
-            <CardContent className="p-8 text-center">
-              <p className="text-4xl sm:text-6xl font-bold text-orange-600 mb-4">{tournamentWinner}</p>
-              <Badge className="bg-orange-100 text-orange-800 text-lg px-4 py-2">Champion</Badge>
+            <CardContent className="p-4 sm:p-6 text-center">
+              <p className="text-2xl sm:text-3xl font-black text-orange-700">{tournamentWinner}</p>
+              <Badge className="mt-3 bg-orange-50 text-orange-800 border border-orange-200 px-3 py-1 rounded-full">
+                Champion
+              </Badge>
             </CardContent>
           </Card>
         </motion.div>
       ) : (
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="overflow-hidden shadow-lg">
-            <CardContent className="p-6 text-center">
-              <div className="bg-orange-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
-                <Zap className="h-8 w-8 sm:h-10 sm:w-10 text-orange-600 mx-auto" />
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+          <Card className="overflow-hidden shadow-sm rounded-2xl border border-gray-200">
+            <CardContent className="p-4 sm:p-5 text-center">
+              <div className="bg-orange-50 border border-orange-200 rounded-2xl p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                <Zap className="h-5 w-5 text-orange-600" />
               </div>
-              <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{activeMatches.length}</p>
-              <p className="text-sm text-gray-600 font-medium">Aktive Spiele</p>
+              <p className="text-2xl sm:text-3xl font-black text-gray-900">{activeMatches.length}</p>
+              <p className="text-xs sm:text-sm text-gray-600 font-semibold mt-1">Aktive Spiele</p>
             </CardContent>
           </Card>
-          <Card className="overflow-hidden shadow-lg">
-            <CardContent className="p-6 text-center">
-              <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
-                <Clock className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600 mx-auto" />
+
+          <Card className="overflow-hidden shadow-sm rounded-2xl border border-gray-200">
+            <CardContent className="p-4 sm:p-5 text-center">
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-gray-700" />
               </div>
-              <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{upcomingMatches.length}</p>
-              <p className="text-sm text-gray-600 font-medium">Anstehend</p>
+              <p className="text-2xl sm:text-3xl font-black text-gray-900">{upcomingMatches.length}</p>
+              <p className="text-xs sm:text-sm text-gray-600 font-semibold mt-1">Anstehend</p>
             </CardContent>
           </Card>
-          <Card className="overflow-hidden shadow-lg">
-            <CardContent className="p-6 text-center">
-              <div className="bg-green-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
-                <Target className="h-8 w-8 sm:h-10 sm:w-10 text-green-600 mx-auto" />
+
+          <Card className="overflow-hidden shadow-sm rounded-2xl border border-gray-200">
+            <CardContent className="p-4 sm:p-5 text-center">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                <Target className="h-5 w-5 text-emerald-700" />
               </div>
-              <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{completedCount}</p>
-              <p className="text-sm text-gray-600 font-medium">Abgeschlossen</p>
+              <p className="text-2xl sm:text-3xl font-black text-gray-900">{completedCount}</p>
+              <p className="text-xs sm:text-sm text-gray-600 font-semibold mt-1">Abgeschlossen</p>
             </CardContent>
           </Card>
         </motion.div>
       )}
 
       {activeMatches.length > 0 && (
-        <motion.div variants={itemVariants} className="mb-8">
-          <Card className="overflow-hidden shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Zap className="h-5 w-5 sm:h-6 sm:w-6" />
-                Live Spiele
-              </CardTitle>
+        <motion.div variants={itemVariants}>
+          <Card className="overflow-hidden shadow-sm rounded-2xl border border-gray-200">
+            <CardHeader className="p-0">
+              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="p-4 sm:p-5">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-black text-gray-900">
+                  <Zap className="h-5 w-5 text-orange-600" />
+                  Live Spiele
+                </CardTitle>
+              </div>
             </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="grid md:grid-cols-2 gap-4">
+            <CardContent className="p-4 sm:p-5">
+              <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
                 {activeMatches.map((match) => (
-                  <div
-                    key={match.id}
-                    className="border-2 border-orange-500 bg-orange-50 rounded-xl p-4 sm:p-6 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <Badge className="bg-orange-600 text-white">Match {match.id}</Badge>
-                      <Badge variant="outline" className="border-orange-600 text-orange-600">
+                  <div key={match.id} className="rounded-2xl border border-orange-200 bg-orange-50/40 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="inline-flex items-center rounded-full bg-white border border-orange-200 px-3 py-1 text-[11px] font-black text-orange-800">
+                        Match {match.id}
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-white border border-orange-200 px-3 py-1 text-[11px] font-black text-orange-800">
                         Automat {match.machineNumber}
-                      </Badge>
+                      </span>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                        <span className="font-semibold text-gray-900">{match.player1}</span>
-                        <span className="text-2xl font-bold text-orange-600">{match.score1}</span>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200">
+                        <span className="font-black text-gray-900 truncate">{match.player1}</span>
+                        <span className="text-xl font-black text-orange-700">{match.score1}</span>
                       </div>
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                        <span className="font-semibold text-gray-900">{match.player2}</span>
-                        <span className="text-2xl font-bold text-orange-600">{match.score2}</span>
+                      <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200">
+                        <span className="font-black text-gray-900 truncate">{match.player2}</span>
+                        <span className="text-xl font-black text-orange-700">{match.score2}</span>
                       </div>
                     </div>
+
                     {canEditMatch(match) && !match.winner && (
-                      <div className="mt-4 border-t pt-4">
+                      <div className="mt-4 border-t border-orange-200 pt-4">
                         <div className="space-y-4">
                           {/* Mobile-first score entry */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {/* Player 1 */}
-                            <div className="rounded-xl bg-white/70 border border-orange-200 p-3">
-                              <p className="text-xs font-semibold text-gray-700 mb-2 truncate">{match.player1}</p>
+                            <div className="rounded-2xl bg-white border border-gray-200 p-3">
+                              <p className="text-xs font-black text-gray-900 mb-2 truncate">{match.player1}</p>
                               <div className="flex items-center gap-2">
                                 <Button
                                   type="button"
                                   variant="outline"
-                                  className="h-12 w-12 px-0 text-lg"
+                                  className="h-12 w-12 px-0 text-lg rounded-xl"
                                   onClick={() => bumpDraft(match.id, "score1", -1)}
                                   aria-label="Minus"
                                 >
                                   −
                                 </Button>
                                 <Input
-                                  className="h-12 text-center text-lg font-bold"
+                                  className="h-12 text-center text-lg font-black rounded-xl"
                                   inputMode="numeric"
                                   pattern="[0-9]*"
                                   type="tel"
@@ -611,7 +631,7 @@ export default function LiveDKOSection() {
                                 <Button
                                   type="button"
                                   variant="outline"
-                                  className="h-12 w-12 px-0 text-lg"
+                                  className="h-12 w-12 px-0 text-lg rounded-xl"
                                   onClick={() => bumpDraft(match.id, "score1", +1)}
                                   aria-label="Plus"
                                 >
@@ -624,7 +644,7 @@ export default function LiveDKOSection() {
                                     key={v}
                                     type="button"
                                     variant="secondary"
-                                    className="h-9 px-3"
+                                    className="h-9 px-3 rounded-xl font-black"
                                     onClick={() => quickSet(match.id, "score1", v)}
                                   >
                                     {v}
@@ -634,20 +654,20 @@ export default function LiveDKOSection() {
                             </div>
 
                             {/* Player 2 */}
-                            <div className="rounded-xl bg-white/70 border border-orange-200 p-3">
-                              <p className="text-xs font-semibold text-gray-700 mb-2 truncate">{match.player2}</p>
+                            <div className="rounded-2xl bg-white border border-gray-200 p-3">
+                              <p className="text-xs font-black text-gray-900 mb-2 truncate">{match.player2}</p>
                               <div className="flex items-center gap-2">
                                 <Button
                                   type="button"
                                   variant="outline"
-                                  className="h-12 w-12 px-0 text-lg"
+                                  className="h-12 w-12 px-0 text-lg rounded-xl"
                                   onClick={() => bumpDraft(match.id, "score2", -1)}
                                   aria-label="Minus"
                                 >
                                   −
                                 </Button>
                                 <Input
-                                  className="h-12 text-center text-lg font-bold"
+                                  className="h-12 text-center text-lg font-black rounded-xl"
                                   inputMode="numeric"
                                   pattern="[0-9]*"
                                   type="tel"
@@ -657,7 +677,7 @@ export default function LiveDKOSection() {
                                 <Button
                                   type="button"
                                   variant="outline"
-                                  className="h-12 w-12 px-0 text-lg"
+                                  className="h-12 w-12 px-0 text-lg rounded-xl"
                                   onClick={() => bumpDraft(match.id, "score2", +1)}
                                   aria-label="Plus"
                                 >
@@ -670,7 +690,7 @@ export default function LiveDKOSection() {
                                     key={v}
                                     type="button"
                                     variant="secondary"
-                                    className="h-9 px-3"
+                                    className="h-9 px-3 rounded-xl font-black"
                                     onClick={() => quickSet(match.id, "score2", v)}
                                   >
                                     {v}
@@ -681,20 +701,17 @@ export default function LiveDKOSection() {
                           </div>
 
                           <Button
-                            className="w-full h-12 text-base font-semibold"
+                            className="w-full h-12 text-base font-black rounded-xl bg-orange-600 hover:bg-orange-700"
                             onClick={() => saveResult(match)}
                             disabled={savingMatchId === match.id}
                           >
                             {savingMatchId === match.id ? "Speichere..." : "Ergebnis speichern"}
                           </Button>
 
-                          <p className="text-[11px] text-gray-500">
-                            
-                          </p>
+                          <p className="text-[11px] text-gray-500"></p>
                         </div>
                       </div>
                     )}
-
                   </div>
                 ))}
               </div>
@@ -704,53 +721,52 @@ export default function LiveDKOSection() {
       )}
 
       {upcomingMatches.length > 0 && (
-        <motion.div variants={itemVariants} className="mb-8">
-          <Card className="overflow-hidden shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Clock className="h-5 w-5 sm:h-6 sm:w-6" />
-                Als Nächstes
-              </CardTitle>
+        <motion.div variants={itemVariants}>
+          <Card className="overflow-hidden shadow-sm rounded-2xl border border-gray-200">
+            <CardHeader className="p-0">
+              <div className="h-2 bg-gradient-to-r from-gray-300 to-gray-200" />
+              <div className="p-4 sm:p-5">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-black text-gray-900">
+                  <Clock className="h-5 w-5 text-gray-700" />
+                  Als Nächstes
+                </CardTitle>
+              </div>
             </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CardContent className="p-4 sm:p-5">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {upcomingMatches.map((match) => (
-                  <div key={match.id} className="border border-gray-200 rounded-xl p-4 sm:p-6 bg-gray-50">
-                    <Badge variant="outline" className="mb-4">
+                  <div key={match.id} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                    <span className="inline-flex items-center rounded-full bg-white border border-gray-200 px-3 py-1 text-[11px] font-black text-gray-900 mb-3">
                       Match {match.id}
-                    </Badge>
+                    </span>
                     <div className="space-y-2">
                       <div
                         className={cn(
-                          "flex items-center justify-between p-2 rounded text-sm",
+                          "flex items-center justify-between p-2 rounded-xl text-sm border",
                           match.winner === match.player1
-                            ? "bg-green-100 border border-green-500 font-bold"
-                            : "bg-gray-100",
+                            ? "bg-emerald-50 border-emerald-200 font-black"
+                            : "bg-white border-gray-200",
                         )}
                       >
-                        <span className={cn("text-sm", match.winner === match.player1 && "font-bold text-gray-900")}>
+                        <span className={cn("text-sm truncate", match.winner === match.player1 && "text-gray-900")}>
                           {match.player1}
                         </span>
-                        <span
-                          className={cn("text-sm font-semibold", match.winner === match.player1 && "text-green-600")}
-                        >
+                        <span className={cn("text-sm font-black", match.winner === match.player1 && "text-emerald-700")}>
                           {match.score1}
                         </span>
                       </div>
                       <div
                         className={cn(
-                          "flex items-center justify-between p-2 rounded text-sm",
+                          "flex items-center justify-between p-2 rounded-xl text-sm border",
                           match.winner === match.player2
-                            ? "bg-green-100 border border-green-500 font-bold"
-                            : "bg-gray-100",
+                            ? "bg-emerald-50 border-emerald-200 font-black"
+                            : "bg-white border-gray-200",
                         )}
                       >
-                        <span className={cn("text-sm", match.winner === match.player2 && "font-bold text-gray-900")}>
+                        <span className={cn("text-sm truncate", match.winner === match.player2 && "text-gray-900")}>
                           {match.player2}
                         </span>
-                        <span
-                          className={cn("text-sm font-semibold", match.winner === match.player2 && "text-green-600")}
-                        >
+                        <span className={cn("text-sm font-black", match.winner === match.player2 && "text-emerald-700")}>
                           {match.score2}
                         </span>
                       </div>
@@ -764,53 +780,52 @@ export default function LiveDKOSection() {
       )}
 
       {completedMatches.length > 0 && (
-        <motion.div variants={itemVariants} className="mb-8">
-          <Card className="overflow-hidden shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
-                Letzte Ergebnisse
-              </CardTitle>
+        <motion.div variants={itemVariants}>
+          <Card className="overflow-hidden shadow-sm rounded-2xl border border-gray-200">
+            <CardHeader className="p-0">
+              <div className="h-2 bg-gradient-to-r from-emerald-400 to-emerald-600" />
+              <div className="p-4 sm:p-5">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-black text-gray-900">
+                  <Trophy className="h-5 w-5 text-emerald-700" />
+                  Letzte Ergebnisse
+                </CardTitle>
+              </div>
             </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CardContent className="p-4 sm:p-5">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {completedMatches.map((match) => (
-                  <div key={match.id} className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
-                    <Badge variant="secondary" className="text-xs mb-3">
+                  <div key={match.id} className="rounded-2xl border border-gray-200 bg-white p-4">
+                    <Badge variant="secondary" className="text-[11px] font-black mb-3 rounded-full">
                       Match {match.id}
                     </Badge>
                     <div className="space-y-2">
                       <div
                         className={cn(
-                          "flex items-center justify-between p-2 rounded text-sm",
+                          "flex items-center justify-between p-2 rounded-xl text-sm border",
                           match.winner === match.player1
-                            ? "bg-green-100 border border-green-500 font-bold"
-                            : "bg-gray-100",
+                            ? "bg-emerald-50 border-emerald-200 font-black"
+                            : "bg-gray-50 border-gray-200",
                         )}
                       >
-                        <span className={cn("text-sm", match.winner === match.player1 && "font-bold text-gray-900")}>
+                        <span className={cn("text-sm truncate", match.winner === match.player1 && "text-gray-900")}>
                           {match.player1}
                         </span>
-                        <span
-                          className={cn("text-sm font-semibold", match.winner === match.player1 && "text-green-600")}
-                        >
+                        <span className={cn("text-sm font-black", match.winner === match.player1 && "text-emerald-700")}>
                           {match.score1}
                         </span>
                       </div>
                       <div
                         className={cn(
-                          "flex items-center justify-between p-2 rounded text-sm",
+                          "flex items-center justify-between p-2 rounded-xl text-sm border",
                           match.winner === match.player2
-                            ? "bg-green-100 border border-green-500 font-bold"
-                            : "bg-gray-100",
+                            ? "bg-emerald-50 border-emerald-200 font-black"
+                            : "bg-gray-50 border-gray-200",
                         )}
                       >
-                        <span className={cn("text-sm", match.winner === match.player2 && "font-bold text-gray-900")}>
+                        <span className={cn("text-sm truncate", match.winner === match.player2 && "text-gray-900")}>
                           {match.player2}
                         </span>
-                        <span
-                          className={cn("text-sm font-semibold", match.winner === match.player2 && "text-green-600")}
-                        >
+                        <span className={cn("text-sm font-black", match.winner === match.player2 && "text-emerald-700")}>
                           {match.score2}
                         </span>
                       </div>
@@ -824,56 +839,53 @@ export default function LiveDKOSection() {
       )}
 
       {rankings.length > 0 && (
-        <motion.div variants={itemVariants} className="mb-8">
-          <Card className="overflow-hidden shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
-                Aktuelle Rangliste
-              </CardTitle>
+        <motion.div variants={itemVariants}>
+          <Card className="overflow-hidden shadow-sm rounded-2xl border border-gray-200">
+            <CardHeader className="p-0">
+              <div className="h-2 bg-gradient-to-r from-violet-500 to-purple-600" />
+              <div className="p-4 sm:p-5">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-black text-gray-900">
+                  <Trophy className="h-5 w-5 text-purple-700" />
+                  Aktuelle Rangliste
+                </CardTitle>
+              </div>
             </CardHeader>
-            <CardContent className="p-4 sm:p-6">
+            <CardContent className="p-4 sm:p-5">
               <div className="space-y-2">
                 {rankings.map((ranking) => (
                   <div
                     key={`${ranking.placement}-${ranking.player_name}`}
                     className={cn(
-                      "flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all hover:shadow-md",
-                      ranking.placement === 1 && "bg-yellow-50 border-yellow-400",
-                      ranking.placement === 2 && "bg-gray-100 border-gray-400",
-                      ranking.placement === 3 && "bg-orange-50 border-orange-400",
-                      ranking.placement > 3 && "bg-gradient-to-r from-gray-50 to-white border-gray-200",
+                      "flex items-center justify-between p-3 sm:p-4 rounded-2xl border transition-all",
+                      ranking.placement === 1 && "bg-yellow-50 border-yellow-200",
+                      ranking.placement === 2 && "bg-gray-100 border-gray-200",
+                      ranking.placement === 3 && "bg-orange-50 border-orange-200",
+                      ranking.placement > 3 && "bg-white border-gray-200",
                     )}
                   >
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="flex-shrink-0">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-sm sm:text-base font-bold px-2 sm:px-3 py-1",
-                            ranking.placement === 1
-                              ? "bg-yellow-200 text-yellow-800 border-yellow-400"
-                              : ranking.placement === 2
-                                ? "bg-gray-200 text-gray-800 border-gray-400"
-                                : ranking.placement === 3
-                                  ? "bg-orange-100 text-orange-800 border-orange-400"
-                                  : "bg-gray-100 text-gray-700 border-gray-300",
-                          )}
-                        >
-                          {ranking.placement === 1
-                            ? "🥇"
-                            : ranking.placement === 2
-                              ? "🥈"
-                              : ranking.placement === 3
-                                ? "🥉"
-                                : `${ranking.placement}.`}
-                        </Badge>
-                      </div>
-                      <span className="font-semibold text-gray-900 text-sm sm:text-base">{ranking.player_name}</span>
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                      <span
+                        className={cn(
+                          "inline-flex items-center justify-center rounded-xl border px-2.5 py-1 text-[11px] font-black flex-shrink-0",
+                          ranking.placement === 1 && "bg-yellow-100 text-yellow-900 border-yellow-200",
+                          ranking.placement === 2 && "bg-gray-200 text-gray-900 border-gray-300",
+                          ranking.placement === 3 && "bg-orange-100 text-orange-900 border-orange-200",
+                          ranking.placement > 3 && "bg-gray-50 text-gray-900 border-gray-200",
+                        )}
+                      >
+                        {ranking.placement === 1
+                          ? "🥇"
+                          : ranking.placement === 2
+                            ? "🥈"
+                            : ranking.placement === 3
+                              ? "🥉"
+                              : `${ranking.placement}.`}
+                      </span>
+                      <span className="font-black text-gray-900 text-sm sm:text-base truncate">{ranking.player_name}</span>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
+                    <span className="inline-flex items-center rounded-full bg-gray-50 border border-gray-200 px-3 py-1 text-[11px] font-black text-gray-900">
                       Platz {ranking.placement}
-                    </Badge>
+                    </span>
                   </div>
                 ))}
               </div>
@@ -883,11 +895,14 @@ export default function LiveDKOSection() {
       )}
 
       <motion.div variants={itemVariants}>
-        <Card className="overflow-hidden shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-gray-700 to-gray-900 text-white p-4 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl">Kompletter Bracket</CardTitle>
+        <Card className="overflow-hidden shadow-sm rounded-2xl border border-gray-200">
+          <CardHeader className="p-0">
+            <div className="h-2 bg-gradient-to-r from-gray-800 to-gray-600" />
+            <div className="p-4 sm:p-5">
+              <CardTitle className="text-base sm:text-lg font-black text-gray-900">Kompletter Bracket</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6 space-y-6">
+          <CardContent className="p-4 sm:p-5 space-y-6">
             {bracketSize === 8 && (
               <>
                 <BracketRound title="Runde 1" matches={Object.values(matches).filter((m) => m.id >= 1 && m.id <= 4)} />
@@ -904,16 +919,8 @@ export default function LiveDKOSection() {
                   matches={Object.values(matches).filter((m) => m.id >= 10 && m.id <= 11)}
                   isLoser
                 />
-                <BracketRound
-                  title="Verlierer Runde 3"
-                  matches={Object.values(matches).filter((m) => m.id === 12)}
-                  isLoser
-                />
-                <BracketRound
-                  title="Verlierer Runde 4"
-                  matches={Object.values(matches).filter((m) => m.id === 13)}
-                  isLoser
-                />
+                <BracketRound title="Verlierer Runde 3" matches={Object.values(matches).filter((m) => m.id === 12)} isLoser />
+                <BracketRound title="Verlierer Runde 4" matches={Object.values(matches).filter((m) => m.id === 13)} isLoser />
 
                 <BracketRound title="Großes Finale" matches={Object.values(matches).filter((m) => m.id === 14)} />
                 <BracketRound title="Bracket Reset" matches={Object.values(matches).filter((m) => m.id === 15)} />
@@ -927,10 +934,7 @@ export default function LiveDKOSection() {
                   matches={Object.values(matches).filter((m) => m.id >= 9 && m.id <= 12)}
                   isLoser
                 />
-                <BracketRound
-                  title="Runde 2"
-                  matches={Object.values(matches).filter((m) => m.id >= 13 && m.id <= 16)}
-                />
+                <BracketRound title="Runde 2" matches={Object.values(matches).filter((m) => m.id >= 13 && m.id <= 16)} />
                 <BracketRound
                   title="Verlierer Runde 2"
                   matches={Object.values(matches).filter((m) => m.id >= 17 && m.id <= 20)}
@@ -941,26 +945,15 @@ export default function LiveDKOSection() {
                   matches={Object.values(matches).filter((m) => m.id >= 21 && m.id <= 22)}
                   isLoser
                 />
-                <BracketRound
-                  title="Runde 3"
-                  matches={Object.values(matches).filter((m) => m.id >= 23 && m.id <= 24)}
-                />
+                <BracketRound title="Runde 3" matches={Object.values(matches).filter((m) => m.id >= 23 && m.id <= 24)} />
                 <BracketRound
                   title="Verlierer Runde 4"
                   matches={Object.values(matches).filter((m) => m.id >= 25 && m.id <= 26)}
                   isLoser
                 />
                 <BracketRound title="Halbfinale" matches={Object.values(matches).filter((m) => m.id === 28)} />
-                <BracketRound
-                  title="Verlierer Runde 5"
-                  matches={Object.values(matches).filter((m) => m.id === 27)}
-                  isLoser
-                />
-                <BracketRound
-                  title="Verlierer Runde 6"
-                  matches={Object.values(matches).filter((m) => m.id === 29)}
-                  isLoser
-                />
+                <BracketRound title="Verlierer Runde 5" matches={Object.values(matches).filter((m) => m.id === 27)} isLoser />
+                <BracketRound title="Verlierer Runde 6" matches={Object.values(matches).filter((m) => m.id === 29)} isLoser />
                 <BracketRound title="Großes Finale" matches={Object.values(matches).filter((m) => m.id === 30)} />
                 <BracketRound title="Bracket Reset" matches={Object.values(matches).filter((m) => m.id === 31)} />
               </>
@@ -973,10 +966,7 @@ export default function LiveDKOSection() {
                   matches={Object.values(matches).filter((m) => m.id >= 17 && m.id <= 24)}
                   isLoser
                 />
-                <BracketRound
-                  title="Runde 2"
-                  matches={Object.values(matches).filter((m) => m.id >= 25 && m.id <= 32)}
-                />
+                <BracketRound title="Runde 2" matches={Object.values(matches).filter((m) => m.id >= 25 && m.id <= 32)} />
                 <BracketRound
                   title="Verlierer Runde 2"
                   matches={Object.values(matches).filter((m) => m.id >= 33 && m.id <= 40)}
@@ -987,10 +977,7 @@ export default function LiveDKOSection() {
                   matches={Object.values(matches).filter((m) => m.id >= 41 && m.id <= 44)}
                   isLoser
                 />
-                <BracketRound
-                  title="Runde 3"
-                  matches={Object.values(matches).filter((m) => m.id >= 45 && m.id <= 48)}
-                />
+                <BracketRound title="Runde 3" matches={Object.values(matches).filter((m) => m.id >= 45 && m.id <= 48)} />
                 <BracketRound
                   title="Verlierer Runde 4"
                   matches={Object.values(matches).filter((m) => m.id >= 49 && m.id <= 52)}
@@ -1001,26 +988,15 @@ export default function LiveDKOSection() {
                   matches={Object.values(matches).filter((m) => m.id >= 53 && m.id <= 54)}
                   isLoser
                 />
-                <BracketRound
-                  title="Runde 4"
-                  matches={Object.values(matches).filter((m) => m.id >= 55 && m.id <= 56)}
-                />
+                <BracketRound title="Runde 4" matches={Object.values(matches).filter((m) => m.id >= 55 && m.id <= 56)} />
                 <BracketRound
                   title="Verlierer Runde 6"
                   matches={Object.values(matches).filter((m) => m.id >= 57 && m.id <= 58)}
                   isLoser
                 />
-                <BracketRound
-                  title="Verlierer Runde 7"
-                  matches={Object.values(matches).filter((m) => m.id === 59)}
-                  isLoser
-                />
+                <BracketRound title="Verlierer Runde 7" matches={Object.values(matches).filter((m) => m.id === 59)} isLoser />
                 <BracketRound title="Halbfinale" matches={Object.values(matches).filter((m) => m.id === 60)} />
-                <BracketRound
-                  title="Verlierer Runde 8"
-                  matches={Object.values(matches).filter((m) => m.id === 61)}
-                  isLoser
-                />
+                <BracketRound title="Verlierer Runde 8" matches={Object.values(matches).filter((m) => m.id === 61)} isLoser />
                 <BracketRound title="Großes Finale" matches={Object.values(matches).filter((m) => m.id === 62)} />
                 <BracketRound title="Bracket Reset" matches={Object.values(matches).filter((m) => m.id === 63)} />
               </>
@@ -1030,9 +1006,9 @@ export default function LiveDKOSection() {
         </Card>
       </motion.div>
 
-      <div className="text-center text-sm text-gray-600 pt-8 mt-8 border-t border-gray-200">
-        <p className="font-medium">Letzte Aktualisierung: {lastUpdate.toLocaleTimeString("de-DE")}</p>
-        <p className="mt-2">Aktualisiert sich automatisch in Echtzeit</p>
+      <div className="text-center text-xs sm:text-sm text-gray-600 pt-6 mt-2 border-t border-gray-200">
+        <p className="font-semibold">Letzte Aktualisierung: {lastUpdate.toLocaleTimeString("de-DE")}</p>
+        <p className="mt-1">Aktualisiert sich automatisch in Echtzeit</p>
       </div>
     </motion.div>
   )
@@ -1051,8 +1027,8 @@ function BracketRound({ title, matches, isLoser }: BracketRoundProps) {
     <div className="space-y-3">
       <h3
         className={cn(
-          "text-base sm:text-lg font-bold border-b-2 pb-2",
-          isLoser ? "text-red-600 border-red-600" : "text-orange-600 border-orange-600",
+          "text-base sm:text-lg font-black pb-2 border-b",
+          isLoser ? "text-red-600 border-red-200" : "text-orange-700 border-orange-200",
         )}
       >
         {title}
@@ -1074,42 +1050,42 @@ function BracketMatchCard({ match }: { match: Match }) {
   return (
     <Card
       className={cn(
-        "transition-all",
-        isActive && "border-2 border-orange-500 shadow-lg",
-        isCompleted && "border-gray-200",
+        "transition-all rounded-2xl border shadow-sm",
+        isActive && "border-orange-200 bg-orange-50/40",
+        isCompleted && "border-gray-200 bg-white",
         !hasPlayers && "opacity-50 bg-gray-50",
       )}
     >
       <div className="p-3 space-y-2">
         <div className="flex items-center justify-between">
-          <Badge variant="outline" className="text-xs">
+          <span className="inline-flex items-center rounded-full bg-gray-50 border border-gray-200 px-2.5 py-0.5 text-[11px] font-black text-gray-900">
             Match {match.id}
-          </Badge>
+          </span>
           {isActive && (
-            <Badge className="text-xs bg-orange-600">
-              <Zap className="h-3 w-3 mr-1" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-orange-600 text-white px-2.5 py-0.5 text-[11px] font-black">
+              <Zap className="h-3 w-3" />
               Live
-            </Badge>
+            </span>
           )}
         </div>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <div
             className={cn(
-              "flex items-center justify-between p-2 rounded text-sm",
-              match.winner === match.player1 ? "bg-green-100 border border-green-500 font-bold" : "bg-gray-100",
+              "flex items-center justify-between p-2 rounded-xl text-sm border",
+              match.winner === match.player1 ? "bg-emerald-50 border-emerald-200 font-black" : "bg-gray-50 border-gray-200",
             )}
           >
             <span className="truncate">{match.player1 || "Warte auf Spieler..."}</span>
-            {hasPlayers && <span className="ml-2">{match.score1}</span>}
+            {hasPlayers && <span className="ml-2 font-black">{match.score1}</span>}
           </div>
           <div
             className={cn(
-              "flex items-center justify-between p-2 rounded text-sm",
-              match.winner === match.player2 ? "bg-green-100 border border-green-500 font-bold" : "bg-gray-100",
+              "flex items-center justify-between p-2 rounded-xl text-sm border",
+              match.winner === match.player2 ? "bg-emerald-50 border-emerald-200 font-black" : "bg-gray-50 border-gray-200",
             )}
           >
             <span className="truncate">{match.player2 || "Warte auf Spieler..."}</span>
-            {hasPlayers && <span className="ml-2">{match.score2}</span>}
+            {hasPlayers && <span className="ml-2 font-black">{match.score2}</span>}
           </div>
         </div>
       </div>

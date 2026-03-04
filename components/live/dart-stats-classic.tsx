@@ -597,7 +597,7 @@ export default function DartStatsClassicPage({
   }
 
   // UI guards
-  if (effectiveLoadingPlayers) return <div className="text-gray-500 text-sm">Lade Spieler…</div>
+  
   if (!matchId) return <div className="text-red-600 text-sm">matchId fehlt: Route muss /live-statistics/[matchId] sein.</div>
 
   // ✅ NEW: if no confirmed lineup -> show CTA

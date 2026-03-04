@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 
-import { Bell, Loader2, ArrowLeft, Trophy, Clock, Cpu, BellOff } from "lucide-react"
+import { Bell, Loader2, Trophy, Clock, Cpu, BellOff } from "lucide-react"
 
 interface UserProfile {
   id: string
@@ -42,19 +42,6 @@ type DkoMatchStateRow = {
   machine_number: number | null
   push_started_sent_at: string | null
   updated_at: string | null
-}
-
-function formatDateTime(input?: string | null) {
-  if (!input) return "—"
-  const d = new Date(input)
-  if (!Number.isFinite(d.getTime())) return "—"
-  return d.toLocaleString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
 }
 
 function formatDateTimeCompact(input?: string | null) {
@@ -206,41 +193,53 @@ function TournamentPushInner() {
     }
   }
 
+  // ✅ SCHÖNE LADEANIMATION + APP HEADER (wie deine andere Datei) + kein extra padding oben
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-        <Header />
-        <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-6xl">
-          <div className="flex items-center justify-center min-h-[60vh] gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-            <span className="text-lg font-medium">Lade Einstellungen…</span>
+      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <Header
+          variant="app"
+          title="Turnier-Benachrichtigungen"
+          subtitle="Einstellungen"
+          backHref="/member-profile-app"
+        />
+
+        <div className="flex-1 flex items-center justify-center px-4 pb-20">
+          <div className="animate-in fade-in zoom-in-95 duration-300">
+            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
+                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+              </div>
+
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-900">Lade Einstellungen</p>
+                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+              </div>
+            </div>
           </div>
-        </main>
+        </div>
+
         <MobileBottomNav />
-      </div>
+      </main>
     )
   }
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col overflow-x-hidden">
-      <Header />
+      {/* ✅ App Header statt normalem Header */}
+      <Header
+        variant="app"
+        title="Turnier-Benachrichtigungen"
+        subtitle="Einstellungen"
+        backHref="/member-profile-app"
+      />
 
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8 max-w-6xl overflow-x-hidden">
-        <div className="mb-4">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/member-profile-app")}
-            className="flex items-center gap-2 text-sm bg-white hover:bg-gray-50 text-gray-900 border border-gray-200"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Zurück zum Profil
-          </Button>
-        </div>
-
+      <main className="flex-grow mx-auto w-full px-4 sm:px-6 py-4 sm:py-6 pb-24 md:pb-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl overflow-x-hidden">
         <div className="mb-4">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
             <Trophy className="h-6 w-6 text-orange-600" />
-            Turnier-Benachrichtigungen
+            
           </h1>
 
           {/* ✅ moderne Box mit ORANGE Verlauf oben */}
@@ -254,12 +253,13 @@ function TournamentPushInner() {
                     <span className="text-orange-700">{displayName}</span>
                   </div>
 
-                  {/* ✅ Badge so, dass es nicht blöd umbrechen muss */}
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <Badge
                       className={cn(
                         "rounded-full px-3 py-1 text-xs sm:text-sm whitespace-nowrap",
-                        pushEnabled ? "bg-green-50 text-green-700 border border-green-200" : "bg-gray-50 text-gray-700 border border-gray-200"
+                        pushEnabled
+                          ? "bg-green-50 text-green-700 border border-green-200"
+                          : "bg-gray-50 text-gray-700 border border-gray-200"
                       )}
                     >
                       {pushEnabled ? "Benachrichtigungen aktiv" : "Benachrichtigungen aus"}
@@ -274,7 +274,6 @@ function TournamentPushInner() {
                   </div>
                 </div>
 
-                {/* ✅ kleiner Toggle rechts, nicht so ein Riesen-Button */}
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <Switch checked={pushEnabled} onCheckedChange={() => toggleTournamentNotifications()} disabled={savingPref} />
                   <div className="text-[11px] text-gray-500 whitespace-nowrap">
@@ -297,7 +296,6 @@ function TournamentPushInner() {
                 Übersicht der letzten 20 Match-Starts mit Gegner und – sofern vorhanden – Automat.
               </p>
 
-              {/* ✅ Hinweisbox */}
               <div className="mt-4 rounded-2xl border bg-gray-50 p-4 flex items-start gap-3">
                 <div className="mt-0.5 rounded-xl bg-white p-2 ring-1 ring-black/5">
                   <Bell className="h-4 w-4 text-orange-600" />
@@ -345,7 +343,6 @@ function TournamentPushInner() {
                             vs <span className="text-gray-900">{opponent}</span>
                           </div>
 
-                          {/* ✅ Datum + Uhrzeit sauber in EINER Zeile */}
                           <div className="mt-2 text-sm text-gray-600 inline-flex items-center gap-2 flex-wrap">
                             <span className="inline-flex items-center gap-1">
                               <Clock className="h-4 w-4 text-orange-600" />
@@ -357,7 +354,6 @@ function TournamentPushInner() {
                           </div>
                         </div>
 
-                        {/* ✅ Automat nur wenn vorhanden */}
                         {row.machine_number !== null && row.machine_number !== undefined ? (
                           <Badge className="shrink-0 bg-orange-100 text-orange-800 border-orange-200 whitespace-nowrap">
                             <Cpu className="h-3.5 w-3.5 mr-1" />

@@ -230,7 +230,6 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   await members.fetchTeamMembers()
                 })
               }
-              /** ✅ WICHTIG: damit Link/Unlink sofort sichtbar ist (ohne Seiten-Reload) */
               onDataChanged={async () => {
                 await players.fetchClubPlayers()
                 await members.fetchTeamMembers()
@@ -305,6 +304,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
               messageType={dues.messageType}
               onSaveSetting={dues.upsertSetting}
               onMarkPaid={dues.markPaid}
+              onMarkPaidAllOpen={dues.markPaidAllOpen}  // ✅ HIER ist die wichtige Zeile
               onResetPaid={dues.resetPaid}
             />
           )}

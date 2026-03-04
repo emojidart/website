@@ -1177,36 +1177,49 @@ const lineupIsStale =
   lineupHeader.confirmed_version < lineupHeader.current_version
 
 
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-        <Header />
-        <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8 max-w-6xl overflow-x-hidden">
-          <div className="flex items-center justify-center min-h-[60vh] gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-            <span className="text-lg font-medium">Lade Zusagen.</span>
+if (authLoading || loading) {
+  return (
+    <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <Header
+        variant="app"
+        title="Zusagen & Aufstellung"
+        subtitle="Übersicht"
+        backHref="/member-profile-app"
+      />
+
+      {/* Dieser Bereich füllt ALLES unter dem Header */}
+      <div className="flex-1 flex items-center justify-center px-4 pb-20">
+        <div className="animate-in fade-in zoom-in-95 duration-300">
+          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+            {/* Spinner */}
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
+              <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+            </div>
+
+            {/* Text */}
+            <div className="text-center">
+              <p className="text-lg font-bold text-gray-900">Aufstellung wird geladen</p>
+              <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+            </div>
           </div>
-        </main>
-        <MobileBottomNav />
+        </div>
       </div>
-    )
-  }
+    </main>
+  )
+}
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col overflow-x-hidden">
-      <Header />
+      <Header
+  variant="app"
+  title="Zusagen & Aufstellung"
+  subtitle="Übersicht"
+  backHref="/member-profile-app"
+/>
 
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8 max-w-6xl overflow-x-hidden">
-        <div className="mb-4">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/member-profile-app")}
-            className="flex items-center gap-2 text-sm bg-white hover:bg-gray-50 text-gray-900 border border-gray-200"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Zurück zum Profil
-          </Button>
-        </div>
+      <main className="pt-12 sm:pt-14">
+  <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl overflow-x-hidden">
 
         <div className="mb-4">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
@@ -1888,8 +1901,7 @@ const lineupIsStale =
 
 
 
-       {/* ✅ Confirm-Button ist im Edit-Mode oben bei den Buttons.
-    Hier zeigen wir ihn nur, wenn NICHT im Edit-Mode (z.B. Draft ohne Bearbeiten-UI) */}
+       {/*  */}
 {!lineupEditMode && !lineupIsConfirmed ? (
   <Button
     onClick={confirmLineup}
@@ -2045,6 +2057,7 @@ const lineupIsStale =
     </DialogFooter>
   </DialogContent>
 </Dialog>
+  </div>
 		
       </main>
 

@@ -864,16 +864,7 @@ export function Lobby() {
     setIsRefreshing(false)
   }
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Lade Lobby...</p>
-        </div>
-      </div>
-    )
-  }
+ 
 
   if (!user) {
     return null

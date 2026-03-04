@@ -401,3 +401,45 @@ select {
 
 
 }
+/* =========================================================
+   PAGE SHELL (Web breiter, App/Mobile bleibt schmal)
+   ========================================================= */
+   
+   
+   
+
+.page-shell {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+
+  /* Seitenabstand links/rechts */
+  padding-left: 16px;
+  padding-right: 16px;
+
+  /* Mobile Default (ähnlich max-w-2xl) */
+  max-width: 42rem; /* 672px */
+}
+
+/* Tablet */
+@media (min-width: 768px) {
+  .page-shell {
+    padding-left: 24px;
+    padding-right: 24px;
+    max-width: 64rem; /* 1024px */
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .page-shell {
+    max-width: 80rem; /* 1280px */
+  }
+}
+
+/* Sehr große Screens */
+@media (min-width: 1536px) {
+  .page-shell {
+    max-width: 90rem; /* 1440px */
+  }
+}

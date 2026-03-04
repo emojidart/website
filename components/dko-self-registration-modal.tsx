@@ -258,7 +258,11 @@ export function DKOSelfRegistrationModal(props: {
                   paid: row.paid === true,
                   // defensive: in case old rows stored text
                   deducted_from_credit:
-                    row.deducted_from_credit === true || row.deducted_from_credit === "true" || row.deducted_from_credit === "t" || row.deducted_from_credit === 1 || row.deducted_from_credit === "1",
+                    row.deducted_from_credit === true ||
+                    row.deducted_from_credit === "true" ||
+                    row.deducted_from_credit === "t" ||
+                    row.deducted_from_credit === 1 ||
+                    row.deducted_from_credit === "1",
                   payment_method: (row.payment_method as any) ?? null,
                 }
               : null
@@ -314,7 +318,7 @@ export function DKOSelfRegistrationModal(props: {
       if (exErr) throw exErr
       if ((existingRegs?.length ?? 0) > 0) {
         setAlreadyRegistered(true)
-        setMessage({ type: "info", text: "Du bist bereits angemeldet." })
+        setMessage({ type: "info" as any, text: "Du bist bereits angemeldet." })
         props.onRegistrationChanged?.(true)
         return
       }
@@ -340,7 +344,7 @@ export function DKOSelfRegistrationModal(props: {
         const newBalance = currentBalance - fee
 
         // ✅ player_id = clubId UUID
-                const baseRegPayload: any = {
+        const baseRegPayload: any = {
           player_id: registrationPlayerId,
           player_name: (spieldbName || playerName) || null,
           paid: true,
@@ -385,7 +389,7 @@ export function DKOSelfRegistrationModal(props: {
         setMessage({ type: "success", text: "Erfolgreich angemeldet." })
       } else {
         // Vor Ort
-                const baseRegPayload: any = {
+        const baseRegPayload: any = {
           player_id: registrationPlayerId,
           player_name: (spieldbName || playerName) || null,
           paid: false,
@@ -417,7 +421,6 @@ export function DKOSelfRegistrationModal(props: {
         setMessage({ type: "success", text: "Erfolgreich angemeldet." })
       }
     } catch (e: any) {
-      // we will never hit placeholder after we patch below
       console.error(e)
       setMessage({ type: "error", text: e?.message ?? "Fehler bei der Anmeldung." })
     } finally {
@@ -460,7 +463,6 @@ export function DKOSelfRegistrationModal(props: {
       // löschen
       const { error: delErr } = await supabase.from("dko_tournament_registration").delete().eq("id", regRow.id)
       if (delErr) throw delErr
-
 
       setAlreadyRegistered(false)
       props.onRegistrationChanged?.(false)
@@ -516,177 +518,231 @@ export function DKOSelfRegistrationModal(props: {
 
   return (
     <Dialog open={props.isOpen} onOpenChange={(open) => !open && props.onClose()}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            {props.title ?? "Anmeldung"}
-          </DialogTitle>
+      <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden rounded-2xl border border-orange-200">
+        {/* Accent bar */}
+        <div
+          className={`h-1.5 ${
+            alreadyRegistered
+              ? "bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-600"
+              : "bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600"
+          }`}
+        />
 
-          <DialogDescription asChild>
-            <div className="space-y-1">
-              {(datePretty || timePretty) && (
-                <div className="flex flex-col gap-1">
-                  {datePretty && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-600" />
-                      <span>{datePretty}</span>
-                    </div>
-                  )}
-                  {timePretty && (
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-600" />
-                      <span>{timePretty}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </DialogDescription>
-        </DialogHeader>
-
-        {authLoading || initLoading ? (
-          <div className="py-10 flex items-center justify-center gap-3 text-gray-700">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Lade…</span>
-          </div>
-        ) : !user ? (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900 flex items-start gap-3">
-              <Lock className="h-5 w-5 mt-0.5" />
-              <div>
-                <div className="font-semibold">Bitte einloggen</div>
-                <div>Du musst eingeloggt sein, um dich anzumelden.</div>
-              </div>
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={props.onClose}>
-                Schließen
-              </Button>
-              <Button onClick={doLogin}>
-                <LogIn className="h-4 w-4 mr-2" />
-                Login
-              </Button>
-            </DialogFooter>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="rounded-xl border bg-white p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 font-semibold">
-                  <Wallet className="h-4 w-4" />
-                  Startgeld
-                </div>
-                <div className="font-bold">{formatMoney(resolvedStartgeld)} €</div>
-              </div>
-
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 font-semibold">
-                  <Coins className="h-4 w-4" />
-                  Guthaben
-                </div>
-                <div className="font-bold">{formatMoney(creditBalance)} €</div>
-              </div>
-            </div>
-
-            {!alreadyRegistered ? (
-              <div className="rounded-xl border bg-white p-4 space-y-3">
-                <div className="font-semibold">Bezahlung</div>
-
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMode("on_site")}
-                    className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${
-                      paymentMode === "on_site" ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">Vor Ort bezahlen</span>
-                      {paymentMode === "on_site" && <CheckCircle className="h-4 w-4" />}
-                    </div>
-                    <div className="text-gray-600 mt-1">Du zahlst beim Turnierabend.</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMode("credit")}
-                    disabled={!canUseCredit}
-                    className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${
-                      paymentMode === "credit" ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:bg-gray-50"
-                    } ${!canUseCredit ? "opacity-50 cursor-not-allowed" : ""}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">Vom Guthaben abziehen</span>
-                      {paymentMode === "credit" && <CheckCircle className="h-4 w-4" />}
-                    </div>
-                    <div className="text-gray-600 mt-1">Startgeld wird sofort abgezogen.</div>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 flex items-start gap-3">
-                <Info className="h-5 w-5 mt-0.5" />
-                <div>
-                  <div className="font-semibold">Abmeldung</div>
-                  {latestReg?.payment_method === "credit" ? (
-                    <>
-                      <div>Bei Abmeldung wird das abgezogene Startgeld automatisch rückerstattet.</div>
-                      <div className="mt-1 font-semibold">Rückerstattung: {formatMoney(refundAmount)} €</div>
-                    </>
-                  ) : latestReg?.payment_method === "admin" ? (
-                    <div>Du wurdest vor Ort angemeldet. Abmeldung ist nur vor Ort bei der Turnierleitung möglich.</div>
-                  ) : (
-                    <div>Du hast „Vor Ort bezahlen“ gewählt. Bei Abmeldung wird nichts abgebucht und es gibt keine Rückerstattung.</div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {message && (
+        <div className="p-4 sm:p-5">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="flex items-start gap-3">
               <div
-                className={`rounded-xl border p-4 text-sm flex items-start gap-3 ${
-                  message.type === "success"
-                    ? "border-green-200 bg-green-50 text-green-900"
-                    : "border-red-200 bg-red-50 text-red-900"
+                className={`w-11 h-11 rounded-2xl border flex items-center justify-center flex-shrink-0 ${
+                  alreadyRegistered ? "bg-emerald-50 border-emerald-200" : "bg-orange-50 border-orange-200"
                 }`}
               >
-                {message.type === "success" ? (
-                  <CheckCircle className="h-5 w-5 mt-0.5" />
+                <UserPlus className={`h-5 w-5 ${alreadyRegistered ? "text-emerald-700" : "text-orange-700"}`} />
+              </div>
+
+              <div className="min-w-0">
+                <div className="text-base sm:text-lg font-black text-gray-900 truncate">{props.title ?? "Anmeldung"}</div>
+
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
+                    LION CUP
+                  </span>
+
+                  {alreadyRegistered ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[11px] font-black">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      Angemeldet
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-800 border border-gray-200 px-2 py-0.5 text-[11px] font-black">
+                      <Clock className="h-3.5 w-3.5 text-gray-500" />
+                      Anmeldung
+                    </span>
+                  )}
+                </div>
+              </div>
+            </DialogTitle>
+
+            <DialogDescription asChild>
+              <div className="text-sm text-gray-600">
+                {(datePretty || timePretty) ? (
+                  <div className="flex flex-col gap-1">
+                    {datePretty ? (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-orange-600" />
+                        <span className="font-semibold text-gray-800">{datePretty}</span>
+                      </div>
+                    ) : null}
+                    {timePretty ? (
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-orange-600" />
+                        <span className="font-semibold text-gray-800">{timePretty}</span>
+                      </div>
+                    ) : null}
+                  </div>
                 ) : (
-                  <AlertCircle className="h-5 w-5 mt-0.5" />
+                  <span />
                 )}
-                <div className="font-semibold">{message.text}</div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Content */}
+          <div className="mt-4">
+            {authLoading || initLoading ? (
+              <div className="py-10 flex items-center justify-center gap-3 text-gray-700">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="font-semibold">Lade…</span>
+              </div>
+            ) : !user ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900 flex items-start gap-3">
+                  <Lock className="h-5 w-5 mt-0.5 text-orange-700" />
+                  <div>
+                    <div className="font-black">Bitte einloggen</div>
+                    <div className="text-orange-900/80">Du musst eingeloggt sein, um dich anzumelden.</div>
+                  </div>
+                </div>
+
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button variant="outline" onClick={props.onClose} className="rounded-xl">
+                    Schließen
+                  </Button>
+                  <Button onClick={doLogin} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Login
+                  </Button>
+                </DialogFooter>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Wallet cards */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-black text-gray-900">
+                      <Wallet className="h-4 w-4 text-orange-600" />
+                      Startgeld
+                    </div>
+                    <div className="font-black text-gray-900">{formatMoney(resolvedStartgeld)} €</div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-black text-gray-900">
+                      <Coins className="h-4 w-4 text-orange-600" />
+                      Guthaben
+                    </div>
+                    <div className="font-black text-gray-900">{formatMoney(creditBalance)} €</div>
+                  </div>
+                </div>
+
+                {/* Payment selection */}
+                {!alreadyRegistered ? (
+                  <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+                    <div className="font-black text-gray-900">Bezahlung</div>
+
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMode("on_site")}
+                        className={`w-full rounded-2xl border px-3 py-3 text-left text-sm transition ${
+                          paymentMode === "on_site"
+                            ? "border-orange-200 bg-orange-50"
+                            : "border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-black text-gray-900">Vor Ort bezahlen</span>
+                          {paymentMode === "on_site" && <CheckCircle className="h-4 w-4 text-orange-700" />}
+                        </div>
+                        <div className="text-gray-600 mt-1">Du zahlst beim Turnierabend.</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMode("credit")}
+                        disabled={!canUseCredit}
+                        className={`w-full rounded-2xl border px-3 py-3 text-left text-sm transition ${
+                          paymentMode === "credit"
+                            ? "border-orange-200 bg-orange-50"
+                            : "border-gray-200 hover:bg-gray-50"
+                        } ${!canUseCredit ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-black text-gray-900">Vom Guthaben abziehen</span>
+                          {paymentMode === "credit" && <CheckCircle className="h-4 w-4 text-orange-700" />}
+                        </div>
+                        <div className="text-gray-600 mt-1">Startgeld wird sofort abgezogen.</div>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900 flex items-start gap-3">
+                    <Info className="h-5 w-5 mt-0.5 text-orange-700" />
+                    <div>
+                      <div className="font-black">Abmeldung</div>
+                      {latestReg?.payment_method === "credit" ? (
+                        <>
+                          <div className="text-orange-900/80">Bei Abmeldung wird das abgezogene Startgeld automatisch rückerstattet.</div>
+                          <div className="mt-1 font-black">Rückerstattung: {formatMoney(refundAmount)} €</div>
+                        </>
+                      ) : latestReg?.payment_method === "admin" ? (
+                        <div className="text-orange-900/80">Du wurdest vor Ort angemeldet. Abmeldung ist nur vor Ort bei der Turnierleitung möglich.</div>
+                      ) : (
+                        <div className="text-orange-900/80">Du hast „Vor Ort bezahlen“ gewählt. Bei Abmeldung wird nichts abgebucht und es gibt keine Rückerstattung.</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Message */}
+                {message && (
+                  <div
+                    className={`rounded-2xl border p-4 text-sm flex items-start gap-3 ${
+                      message.type === "success"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                        : "border-red-200 bg-red-50 text-red-900"
+                    }`}
+                  >
+                    {message.type === "success" ? (
+                      <CheckCircle className="h-5 w-5 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 mt-0.5" />
+                    )}
+                    <div className="font-semibold">{message.text}</div>
+                  </div>
+                )}
+
+                {/* Footer buttons */}
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button variant="outline" onClick={doLogout} className="rounded-xl">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+
+                  <Button variant="outline" onClick={props.onClose} disabled={busy} className="rounded-xl">
+                    Schließen
+                  </Button>
+
+                  {alreadyRegistered ? (
+                    <Button
+                      variant="destructive"
+                      onClick={doUnregister}
+                      disabled={busy || props.canUnregister === false || latestReg?.payment_method === "admin"}
+                      className="rounded-xl"
+                    >
+                      {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                      Abmelden
+                    </Button>
+                  ) : (
+                    <Button onClick={doRegister} disabled={busy} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black">
+                      {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                      Anmelden
+                    </Button>
+                  )}
+                </DialogFooter>
               </div>
             )}
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={doLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-
-              <Button variant="outline" onClick={props.onClose} disabled={busy}>
-                Schließen
-              </Button>
-
-              {alreadyRegistered ? (
-                <Button variant="destructive" onClick={doUnregister} disabled={busy || props.canUnregister === false || latestReg?.payment_method === "admin"}>
-                  {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                  Abmelden
-                </Button>
-              ) : (
-                <Button
-                  onClick={doRegister}
-                  disabled={busy}
-                >
-                  {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                  Anmelden
-                </Button>
-              )}
-            </DialogFooter>
           </div>
-        )}
+        </div>
       </DialogContent>
     </Dialog>
   )

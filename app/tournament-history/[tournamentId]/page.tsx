@@ -5,10 +5,11 @@ import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Trophy, Tv } from "lucide-react"
+import { ArrowLeft, Trophy, Tv, Calendar, Users, Clock, CheckCircle2, Info } from "lucide-react"
+import { motion } from "framer-motion"
 
 type MatchStateRow = {
   match_id: number
@@ -82,6 +83,23 @@ type KratzerElimEvent = {
   ligastatus: string | null
 }
 
+/* ---------------- motion ---------------- */
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.04 },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 14 },
+  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 14 } },
+}
+
+/* ---------------- helpers ---------------- */
+
 const formatDateTime = (value?: string | null) => {
   if (!value) return "—"
   const d = new Date(value)
@@ -105,12 +123,54 @@ const typeLabel = (t?: string | null) => {
   return t
 }
 
+const statusChip = (status?: string | null) => {
+  const s = String(status ?? "").toLowerCase().trim()
+  const isDone = s === "completed" || s === "finished" || s === "done"
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-black ${
+        isDone ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-gray-200 bg-gray-50 text-gray-800"
+      }`}
+    >
+      <CheckCircle2 className="h-3.5 w-3.5" />
+      {isDone ? "Abgeschlossen" : status || "Status"}
+    </span>
+  )
+}
+
+function Chip({
+  children,
+  tone = "gray",
+}: {
+  children: React.ReactNode
+  tone?: "gray" | "orange" | "blue" | "emerald" | "amber" | "slate"
+}) {
+  const cls =
+    tone === "orange"
+      ? "bg-orange-50 text-orange-900 border-orange-200"
+      : tone === "blue"
+        ? "bg-blue-50 text-blue-900 border-blue-200"
+        : tone === "emerald"
+          ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+          : tone === "amber"
+            ? "bg-amber-50 text-amber-900 border-amber-200"
+            : tone === "slate"
+              ? "bg-slate-50 text-slate-800 border-slate-200"
+              : "bg-gray-50 text-gray-800 border-gray-200"
+
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
+      {children}
+    </span>
+  )
+}
+
 export default function TournamentHistoryDetailPage() {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
 
-  const tournamentId = String(params.tournamentId)
+  const tournamentId = String((params as any).tournamentId)
   const tournamentType = searchParams.get("type") || "16er_dko"
 
   const isKratzer = useMemo(() => {
@@ -133,12 +193,12 @@ export default function TournamentHistoryDetailPage() {
   const [kratzerTotalRounds, setKratzerTotalRounds] = useState<number | null>(null)
   const [kratzerLastUpdate, setKratzerLastUpdate] = useState<string | null>(null)
 
-  // Kratzer extra settings (aus kratzer_tournaments) -> nur falls du es später wieder brauchst
-  const [kBoardCount, setKBoardCount] = useState<number | null>(null)
-  const [kMaxGroupSize, setKMaxGroupSize] = useState<number | null>(null)
-  const [kSuddenDeathEnabled, setKSuddenDeathEnabled] = useState<boolean | null>(null)
-  const [kSuddenDeathTime, setKSuddenDeathTime] = useState<number | null>(null)
-  const [kSpeechEnabled, setKSpeechEnabled] = useState<boolean | null>(null)
+  // Kratzer extra settings (bleiben, aber im UI nicht angezeigt)
+  const [_kBoardCount, setKBoardCount] = useState<number | null>(null)
+  const [_kMaxGroupSize, setKMaxGroupSize] = useState<number | null>(null)
+  const [_kSuddenDeathEnabled, setKSuddenDeathEnabled] = useState<boolean | null>(null)
+  const [_kSuddenDeathTime, setKSuddenDeathTime] = useState<number | null>(null)
+  const [_kSpeechEnabled, setKSpeechEnabled] = useState<boolean | null>(null)
 
   // ✅ Kratzer Verlauf aus results_data
   const [kResultsPlayers, setKResultsPlayers] = useState<KratzerResultPlayer[]>([])
@@ -153,7 +213,6 @@ export default function TournamentHistoryDetailPage() {
         // ✅ KRATZER
         // =========================
         if (isKratzer) {
-          
           const { data: km, error: kmErr } = await supabase
             .from("kratzer_tournaments")
             .select(
@@ -177,7 +236,6 @@ export default function TournamentHistoryDetailPage() {
             setKSpeechEnabled(typeof meta.speech_enabled === "boolean" ? meta.speech_enabled : null)
           }
 
-  
           const { data: kr, error: krErr } = await supabase
             .from("kratzer_tournament_results")
             .select("kratzer_tournament_id,winner_id,winner_name,total_rounds,created_at,results_data")
@@ -194,13 +252,11 @@ export default function TournamentHistoryDetailPage() {
           if (totalRoundsFromResults != null) setKratzerTotalRounds(totalRoundsFromResults)
           if (resultsCreatedAt) setKratzerLastUpdate(resultsCreatedAt)
 
-          // ✅ results_data -> players array
           const rawResults = (kr as KratzerResultRow | null)?.results_data
           const asArray =
             Array.isArray(rawResults) ? rawResults : Array.isArray(rawResults?.players) ? rawResults.players : null
           setKResultsPlayers((asArray ?? []) as KratzerResultPlayer[])
 
-          // 3) ✅ Resultate AUS kratzer_tournament_players (für Lives/Status Anzeige)
           const { data: kp, error: kpErr } = await supabase
             .from("kratzer_tournament_players")
             .select("player_name,ligastatus,lives,is_eliminated,elimination_round,elimination_time")
@@ -212,7 +268,6 @@ export default function TournamentHistoryDetailPage() {
           } else {
             const players = (kp ?? []) as KratzerPlayerRow[]
 
-            // ✅ korrektes Ranking
             const winnerLower = (winnerNameFromResults ?? "").trim().toLowerCase()
 
             const sorted = players.slice().sort((a, b) => {
@@ -265,7 +320,7 @@ export default function TournamentHistoryDetailPage() {
         }
 
         // =========================
-        // ✅ DKO (Original)
+        // ✅ DKO
         // =========================
         const { data: statusRow, error: statusErr } = await supabase
           .from("tournaments_status")
@@ -334,7 +389,6 @@ export default function TournamentHistoryDetailPage() {
     return rankings.find((r) => r.placement === 1)?.player_name ?? null
   }, [rankings, isKratzer, kratzerWinner])
 
- 
   const kratzerElimTimeline = useMemo<KratzerElimEvent[]>(() => {
     if (!isKratzer) return []
     const list = (kResultsPlayers ?? [])
@@ -379,223 +433,305 @@ export default function TournamentHistoryDetailPage() {
   }, [matches])
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
       <Header />
 
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8 max-w-6xl">
-        <div className="flex items-center gap-3 mb-6">
-          <Button variant="outline" onClick={() => router.push("/tournament-history")} className="bg-white">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Zurück
-          </Button>
-        </div>
+      {/* fixed header offset */}
+      <main className="pt-12 sm:pt-14">
+        <motion.div
+          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {/* Top back bar (Kontakt-Style sticky feel) */}
+          <motion.div variants={itemVariants} className="mb-4">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm px-3 py-2 flex items-center justify-between gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/tournament-history")}
+                className="gap-2 rounded-xl"
+                type="button"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Zurück
+              </Button>
 
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl mb-4 sm:mb-6 shadow-xl">
-            <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{tournamentName}</h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Typ: <span className="font-semibold">{typeLabel(tournamentType)}</span>
-            {" • "}
-            Teilnehmer: <span className="font-semibold">{participants}</span>
-            {" • "}
-            Letztes Update: <span className="font-semibold">{formatDateTime(lastUpdate)}</span>
-            {" • "}
-            Sieger: <span className="font-semibold">{winner ?? "—"}</span>
-            {isKratzer && kratzerTotalRounds != null ? (
-              <>
-                {" • "}
-                Runden: <span className="font-semibold">{kratzerTotalRounds}</span>
-              </>
-            ) : null}
-          </p>
-        </div>
+              <div className="flex items-center gap-2">
+                <Chip tone="gray">{typeLabel(tournamentType)}</Chip>
+                {statusChip(status)}
+              </div>
+            </div>
+          </motion.div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-10 h-10 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : error ? (
-          <Card className="border-0 shadow-xl bg-white/95">
-            <CardContent className="p-6">
-              <div className="text-red-600 font-semibold">{error}</div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-            {/* Resultate/Rangliste */}
-            <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm lg:col-span-1">
-              <CardContent className="p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
-                  {isKratzer ? "Resultate" : "Rangliste"}
-                </h2>
+          {/* App-Header Card (Kontakt look) */}
+          <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="p-4 sm:p-5 flex items-start gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                  <Trophy className="w-5 h-5 text-orange-600" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-lg font-black line-clamp-2">{tournamentName}</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Sieger: <span className="font-black text-gray-900">{winner ?? "—"}</span>
+                    {isKratzer && kratzerTotalRounds != null ? (
+                      <>
+                        {" "}
+                        • Runden: <span className="font-black text-gray-900">{kratzerTotalRounds}</span>
+                      </>
+                    ) : null}
+                  </p>
 
-                {rankings.length === 0 ? (
-                  <div className="text-sm text-gray-600">Keine Daten.</div>
-                ) : (
-                  <div className="space-y-2">
-                    {rankings
-                      .slice()
-                      .sort((a, b) => a.placement - b.placement)
-                      .map((r) => (
-                        <div key={`${r.player_name}-${r.placement}`} className="rounded-lg border bg-white p-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="font-semibold text-gray-900 truncate">{r.player_name}</div>
-
-                              {isKratzer ? (
-                                <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-600">
-                                  {r.lives != null ? <Badge variant="secondary">Lives: {r.lives}</Badge> : null}
-
-                                  {r.ligastatus ? (
-                                    <Badge variant="outline" className="font-mono">
-                                      {r.ligastatus}
-                                    </Badge>
-                                  ) : null}
-
-                                  {r.is_eliminated === true ? (
-                                    <Badge className="bg-gray-700 text-white">Eliminiert</Badge>
-                                  ) : r.is_eliminated === false ? (
-                                    <Badge className="bg-green-600 text-white">Aktiv</Badge>
-                                  ) : null}
-
-                                  {r.elimination_round != null ? (
-                                    <Badge variant="outline">Round {r.elimination_round}</Badge>
-                                  ) : null}
-                                </div>
-                              ) : null}
-                            </div>
-
-                            <Badge className="bg-orange-600 text-white">#{r.placement}</Badge>
-                          </div>
-                        </div>
-                      ))}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Chip tone="blue">
+                      <Users className="w-3.5 h-3.5" />
+                      {participants} Teilnehmer
+                    </Chip>
+                    <Chip tone="slate">
+                      <Clock className="w-3.5 h-3.5" />
+                      Update: {formatDateTime(lastUpdate)}
+                    </Chip>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              </div>
+            </div>
+          </motion.div>
 
-            {/* Matches / Info */}
-            <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm lg:col-span-2">
-              <CardContent className="p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
-                  {isKratzer ? "Info" : "Matches"}
-                </h2>
+          {loading ? (
+            <motion.div variants={itemVariants} className="flex items-center justify-center py-16">
+              <div className="w-10 h-10 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
+            </motion.div>
+          ) : error ? (
+            <motion.div variants={itemVariants}>
+              <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white">
+                <CardContent className="p-5 text-red-600 font-semibold">{error}</CardContent>
+              </Card>
+            </motion.div>
+          ) : (
+            <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+              {/* Resultate/Rangliste */}
+              <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white lg:col-span-1 overflow-hidden">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm sm:text-base font-black">
+                    {isKratzer ? "Resultate" : "Rangliste"}
+                  </CardTitle>
+                </CardHeader>
 
-                {isKratzer ? (
-                  <div className="space-y-5 text-sm text-gray-700">
-                    {/* ✅ Nur das was du willst: Sieger + Runden + Status (die Rest-Stats sind entfernt) */}
-                    <div className="flex flex-wrap gap-2">
-                      <Badge className="bg-orange-600 text-white">Sieger: {winner ?? "—"}</Badge>
-                      {kratzerTotalRounds != null ? <Badge variant="secondary">Runden: {kratzerTotalRounds}</Badge> : null}
-                      {status ? <Badge variant="outline">Status: {status}</Badge> : null}
-                    </div>
+                <CardContent className="pt-0 pb-5">
+                  {rankings.length === 0 ? (
+                    <div className="text-sm text-gray-600">Keine Daten.</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {rankings
+                        .slice()
+                        .sort((a, b) => a.placement - b.placement)
+                        .map((r) => (
+                          <div
+                            key={`${r.player_name}-${r.placement}`}
+                            className="rounded-2xl border border-gray-200 bg-white p-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="font-black text-gray-900 truncate">{r.player_name}</div>
 
-                    {/* ✅ Spielverlauf OHNE Scroll, OHNE max-height/overflow */}
-                    <div className="pt-2 border-t">
-                      <h3 className="font-bold text-gray-900 mb-2">Spielverlauf</h3>
-
-                      {kratzerElimTimeline.length === 0 ? (
-                        <div className="text-sm text-gray-600">
-                          Kein Verlauf gefunden (results_data leer oder ohne eliminationRound).
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {kratzerElimTimeline.map((e, idx) => (
-                            <div key={`${e.round}-${e.name}-${idx}`} className="rounded-lg border bg-white p-3">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="min-w-0">
-                                  <div className="font-semibold truncate">{e.name}</div>
-                                  <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-600">
-                                    <Badge variant="outline">Round {e.round}</Badge>
-                                    {e.ligastatus ? (
-                                      <Badge variant="outline" className="font-mono">
-                                        {e.ligastatus}
-                                      </Badge>
+                                {isKratzer ? (
+                                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                                    {r.lives != null ? (
+                                      <Chip tone="gray">
+                                        <span className="font-black">Lives:</span> {r.lives}
+                                      </Chip>
                                     ) : null}
-                                    {e.time ? <Badge variant="secondary">{formatDateTime(e.time)}</Badge> : null}
+
+                                    {r.ligastatus ? (
+                                      <Chip tone="amber">
+                                        <span className="font-mono font-black">{r.ligastatus}</span>
+                                      </Chip>
+                                    ) : null}
+
+                                    {r.is_eliminated === true ? (
+                                      <Chip tone="slate">Eliminiert</Chip>
+                                    ) : r.is_eliminated === false ? (
+                                      <Chip tone="emerald">Aktiv</Chip>
+                                    ) : null}
+
+                                    {r.elimination_round != null ? (
+                                      <Chip tone="gray">Round {r.elimination_round}</Chip>
+                                    ) : null}
                                   </div>
-                                </div>
-
-                                <Badge className="bg-gray-700 text-white">Eliminiert</Badge>
+                                ) : null}
                               </div>
-                            </div>
-                          ))}
 
-                          {winner ? (
-                            <div className="rounded-lg border bg-white p-3">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="min-w-0">
-                                  <div className="font-semibold truncate">{winner}</div>
-                                  <div className="mt-1 text-xs text-gray-600">Turnier gewonnen</div>
-                                </div>
-                                <Badge className="bg-orange-600 text-white">Sieger</Badge>
-                              </div>
-                            </div>
-                          ) : null}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : filteredMatches.length === 0 ? (
-                  <div className="text-sm text-gray-600">Keine Matchdaten gefunden.</div>
-                ) : (
-                  <div className="space-y-2">
-                    {filteredMatches.map((m) => {
-                      const p1 = m.player1 || "—"
-                      const p2 = m.player2 || "—"
-                      const s1 = m.score1 ?? 0
-                      const s2 = m.score2 ?? 0
-                      const finished = Boolean(m.winner)
-
-                      return (
-                        <div
-                          key={m.match_id}
-                          className="rounded-lg border bg-white p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
-                        >
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <Badge variant="outline" className="font-mono">
-                                Match {m.match_id}
-                              </Badge>
-                              {m.machine_number ? (
-                                <Badge variant="secondary" className="inline-flex items-center gap-1">
-                                  <Tv className="h-3.5 w-3.5" />
-                                  Board {m.machine_number}
-                                </Badge>
-                              ) : null}
-                              {finished ? (
-                                <Badge className="bg-green-600 text-white">Fertig</Badge>
-                              ) : (
-                                <Badge variant="outline">Offen</Badge>
-                              )}
-                            </div>
-
-                            <div className="text-sm sm:text-base font-semibold text-gray-900 truncate">
-                              {p1} <span className="text-gray-400 font-normal">vs</span> {p2}
+                              <span className="inline-flex items-center rounded-full bg-orange-600 px-2.5 py-1 text-[11px] font-black text-white">
+                                #{r.placement}
+                              </span>
                             </div>
                           </div>
+                        ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-                          <div className="flex items-center justify-between sm:justify-end gap-3">
-                            <div className="text-lg font-bold tabular-nums">
-                              {s1}:{s2}
-                            </div>
-                            {m.winner ? (
-                              <Badge className="bg-orange-600 text-white max-w-[180px] truncate" title={m.winner}>
-                                Sieger: {m.winner}
-                              </Badge>
+              {/* Matches / Info */}
+              <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white lg:col-span-2 overflow-hidden">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm sm:text-base font-black">{isKratzer ? "Info" : "Matches"}</CardTitle>
+                </CardHeader>
+
+                <CardContent className="pt-0 pb-5">
+                  {isKratzer ? (
+                    <div className="space-y-5 text-sm text-gray-700">
+                      <div className="flex flex-wrap gap-2">
+                        <Chip tone="orange">
+                          <Trophy className="w-3.5 h-3.5" />
+                          Sieger: <span className="font-black">{winner ?? "—"}</span>
+                        </Chip>
+
+                        {kratzerTotalRounds != null ? (
+                          <Chip tone="blue">
+                            <span className="font-black">Runden:</span> {kratzerTotalRounds}
+                          </Chip>
+                        ) : null}
+
+                        {status ? (
+                          <Chip tone="gray">
+                            <Info className="w-3.5 h-3.5" />
+                            Status: <span className="font-black">{status}</span>
+                          </Chip>
+                        ) : null}
+                      </div>
+
+                      <div className="pt-2 border-t border-gray-200">
+                        <h3 className="font-black text-gray-900 mb-2">Spielverlauf</h3>
+
+                        {kratzerElimTimeline.length === 0 ? (
+                          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-gray-700">
+                            Kein Verlauf gefunden (results_data leer oder ohne eliminationRound).
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {kratzerElimTimeline.map((e, idx) => (
+                              <div key={`${e.round}-${e.name}-${idx}`} className="rounded-2xl border border-gray-200 p-3">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <div className="font-black text-gray-900 truncate">{e.name}</div>
+                                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                                      <Chip tone="gray">Round {e.round}</Chip>
+                                      {e.ligastatus ? (
+                                        <Chip tone="amber">
+                                          <span className="font-mono font-black">{e.ligastatus}</span>
+                                        </Chip>
+                                      ) : null}
+                                      {e.time ? <Chip tone="slate">{formatDateTime(e.time)}</Chip> : null}
+                                    </div>
+                                  </div>
+
+                                  <Chip tone="slate">Eliminiert</Chip>
+                                </div>
+                              </div>
+                            ))}
+
+                            {winner ? (
+                              <div className="rounded-2xl border border-orange-200 bg-orange-50 p-3">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <div className="font-black text-gray-900 truncate">{winner}</div>
+                                    <div className="mt-1 text-xs text-gray-600">Turnier gewonnen</div>
+                                  </div>
+                                  <Chip tone="orange">
+                                    <Trophy className="w-3.5 h-3.5" />
+                                    Sieger
+                                  </Chip>
+                                </div>
+                              </div>
                             ) : null}
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                        )}
+                      </div>
+                    </div>
+                  ) : filteredMatches.length === 0 ? (
+                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-gray-700">
+                      Keine Matchdaten gefunden.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredMatches.map((m) => {
+                        const p1 = m.player1 || "—"
+                        const p2 = m.player2 || "—"
+                        const s1 = m.score1 ?? 0
+                        const s2 = m.score2 ?? 0
+                        const finished = Boolean(m.winner)
+
+                        return (
+                          <div
+                            key={m.match_id}
+                            className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-4"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                  <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-black text-gray-700">
+                                    Match {m.match_id}
+                                  </span>
+
+                                  {m.machine_number ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-black text-gray-700">
+                                      <Tv className="h-3.5 w-3.5 text-gray-600" />
+                                      Board {m.machine_number}
+                                    </span>
+                                  ) : null}
+
+                                  {finished ? (
+                                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-800">
+                                      Fertig
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-black text-gray-700">
+                                      Offen
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="text-sm sm:text-base font-black text-gray-900 truncate">
+                                  {p1} <span className="text-gray-400 font-normal">vs</span> {p2}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between sm:justify-end gap-3">
+                                <div className="text-lg font-black tabular-nums text-gray-900">
+                                  {s1}:{s2}
+                                </div>
+
+                                {m.winner ? (
+                                  <span
+                                    className="inline-flex items-center rounded-full bg-orange-600 px-2.5 py-1 text-[11px] font-black text-white max-w-[220px] truncate"
+                                    title={m.winner}
+                                  >
+                                    Sieger: {m.winner}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            {m.updated_at ? (
+                              <div className="mt-2 text-[11px] text-gray-500 flex items-center gap-2">
+                                <Calendar className="h-3.5 w-3.5" />
+                                Letztes Update: <span className="font-semibold">{formatDateTime(m.updated_at)}</span>
+                              </div>
+                            ) : null}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </motion.div>
       </main>
 
       <MobileBottomNav />

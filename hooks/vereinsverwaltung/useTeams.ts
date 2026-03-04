@@ -110,17 +110,55 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
 
     try {
       if (editingTeamId) {
+        // ✅ EDIT TEAM (wie vorher)
         const { error } = await supabase
           .from("teams")
           .update({ name: newTeamName, logo_url: logoUrl, user_id: user.id })
           .eq("id", editingTeamId)
         if (error) throw error
+
+        // ✅ OPTIONAL: Chat-Raum-Titel mit umbenennen (wenn chat_room_id existiert)
+        const { data: tRow, error: tErr } = await supabase
+          .from("teams")
+          .select("chat_room_id")
+          .eq("id", editingTeamId)
+          .single()
+
+        if (!tErr) {
+          const roomId = (tRow as any)?.chat_room_id as string | null
+          if (roomId) {
+            await supabase.from("chat_rooms").update({ title: newTeamName }).eq("id", roomId) // ✅ title, NICHT name
+          }
+        }
+
         setTeamMessage("Mannschaft erfolgreich aktualisiert!")
-      } else {
-        const { error } = await supabase.from("teams").insert([{ name: newTeamName, logo_url: logoUrl, user_id: user.id }])
-        if (error) throw error
-        setTeamMessage("Mannschaft erfolgreich erstellt!")
-      }
+     } else {
+  // ✅ NUR Team erstellen – Chatraum macht der TRIGGER automatisch
+  const { data: teamRow, error: teamErr } = await supabase
+    .from("teams")
+    .insert([{ name: newTeamName, logo_url: logoUrl, user_id: user.id }])
+    .select("id, chat_room_id")
+    .single()
+
+  if (teamErr) throw teamErr
+  if (!teamRow?.id) throw new Error("Team konnte nicht erstellt werden (keine ID).")
+
+  // ✅ Trigger braucht manchmal einen kurzen Moment → chat_room_id nachladen falls noch null
+  let chatRoomId = (teamRow as any).chat_room_id as string | null
+
+  if (!chatRoomId) {
+    const { data: t2, error: t2Err } = await supabase
+      .from("teams")
+      .select("chat_room_id")
+      .eq("id", teamRow.id)
+      .single()
+
+    if (t2Err) throw t2Err
+    chatRoomId = (t2 as any)?.chat_room_id ?? null
+  }
+
+  setTeamMessage("Mannschaft erfolgreich erstellt! (Chatraum per Trigger)")
+}
 
       setTeamMessageType("success")
       cancelTeamEdit()
@@ -135,8 +173,6 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
   }
 
   const deleteTeam = async (teamId: string, afterDelete?: () => void) => {
-    // ✅ confirm entfernt, weil du jetzt dein eigenes Modal im UI hast
-
     setTeamLoading(true)
     setTeamMessage("Mannschaft wird gelöscht...")
     setTeamMessageType("info")
@@ -144,6 +180,14 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
     try {
       const { error: deleteMembersError } = await supabase.from("team_members").delete().eq("team_id", teamId)
       if (deleteMembersError) throw deleteMembersError
+
+      // ✅ OPTIONAL: Chatraum auch löschen (wenn du willst)
+      // Wenn du KEINEN Chatraum löschen willst -> lass den Block weg.
+      const { data: tRow } = await supabase.from("teams").select("chat_room_id").eq("id", teamId).single()
+      const roomId = (tRow as any)?.chat_room_id as string | null
+      if (roomId) {
+        await supabase.from("chat_rooms").delete().eq("id", roomId)
+      }
 
       const { error } = await supabase.from("teams").delete().eq("id", teamId)
       if (error) throw error
@@ -180,7 +224,7 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
     cancelTeamEdit,
     submitTeamForm,
     deleteTeam,
-    setTeamLogoPreview, // für "Logo entfernen" Button
+    setTeamLogoPreview,
     setTeamLogoFile,
   }
 }

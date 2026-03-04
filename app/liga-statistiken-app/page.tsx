@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Target, Calendar, Users } from "lucide-react"
+import { Trophy, Target, Calendar, Users, Loader2 } from "lucide-react"
 import { Header } from "@/components/header"
 import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
@@ -568,176 +568,275 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   const groupedCompletedMatches = groupMatchesByTeam(completedMatches)
   const groupedUpcomingMatches = groupMatchesByTeam(upcomingMatches)
 
+  // ✅ LOADING VIEW 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white text-gray-900 font-sans">
-        <Header />
-        <main className="pt-8 pb-24">
-          <div className="container mx-auto px-4 md:px-6 py-8">
+  return (
+    <main className="min-h-screen flex flex-col bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+      <Header />
+
+      <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
+        <div className="animate-in fade-in zoom-in-95 duration-300">
+          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-gray-200">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
+              <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+            </div>
+
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6 backdrop-blur-sm">
-                <Trophy className="h-12 w-12 text-white mx-auto" />
-              </div>
-              <p className="mt-4 text-gray-600">Lade Liga-Daten...</p>
+              <p className="text-lg font-bold text-gray-900">Statistiken werden geladen</p>
+              <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
             </div>
           </div>
-        </main>
-        <MobileBottomNav />
+        </div>
       </div>
-    )
-  }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Header />
-      <main className="container mx-auto px-4 py-8 pb-24">
-        <motion.div
-          className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-12">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
-                <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
-              </div>
-              <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-tight tracking-tighter mb-2 sm:mb-4">
-  <span className="block text-white">EMOJ!'S DARTVEREIN</span>
+      <MobileBottomNav />
+    </main>
+  )
+}
 
-  <span
-    className={[
-      "block text-orange-200",
-      "max-w-full mx-auto",
-      "whitespace-normal break-words",
-      "leading-tight",
-     
-      selectedSeasonLabel.length > 22 ? "text-lg sm:text-3xl md:text-5xl" : "",
-    ].join(" ")}
+ return (
+  <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+    <Header />
+
+    {/* fixed header offset */}
+    <main className="pt-12 sm:pt-14">
+      <motion.div
+        className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* App-Header Card (wie Kontakt) */}
+       <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
+  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+    <div className="p-4 sm:p-5 flex items-center gap-3">
+      <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+        <Users className="w-5 h-5 text-orange-600" />
+      </div>
+      <div className="min-w-0">
+        <h2 className="text-sm sm:text-base font-black text-gray-900">Teams & Kader</h2>
+        <p className="text-xs text-gray-500 mt-1">
+          {standings.length} Teams · Saison {selectedSeasonLabel}
+        </p>
+      </div>
+    </div>
+  </div>
+</motion.div>
+		
+		
+		
+		
+
+          {/* ✅ Saison + DartType Filter (App-Card wie Kontakt) */}
+<motion.div variants={itemVariants} className="mb-5 sm:mb-6">
+  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+
+    <div className="p-4 sm:p-5 space-y-4">
+      {/* Row 1: Saison (Mobile: untereinander, ab sm: nebeneinander) */}
+<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+  <div className="min-w-0">
+    <p className="text-xs text-gray-500 font-bold">Saison</p>
+    <p className="text-sm font-black text-gray-900 truncate">{selectedSeasonLabel}</p>
+  </div>
+
+  <select
+    value={selectedSeasonId}
+    onChange={(e) => {
+      setSelectedSeasonId(e.target.value)
+      setCurrentPage(1)
+    }}
+    className="h-10 w-full sm:w-auto sm:max-w-[320px] rounded-2xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-900 shadow-sm"
   >
-    {selectedSeasonLabel}
-  </span>
-</h1>
-              <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-2 sm:mb-4">
-                Aktuelle Tabellen, Spielergebnisse und Statistiken
-              </p>
-            </div>
-          </motion.div>
+    {seasons.map((s) => (
+      <option key={s.id} value={s.id}>
+        {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
+      </option>
+    ))}
+  </select>
+</div>
 
-          {/* ✅ Saison + DartType Filter oben */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <div className="flex flex-col gap-3 items-center">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-700">Saison:</span>
-                <select
-                  value={selectedSeasonId}
-                  onChange={(e) => {
-                    setSelectedSeasonId(e.target.value)
-                    setCurrentPage(1)
-                  }}
-                  className="bg-white text-gray-900 rounded px-3 py-2 text-sm border border-gray-200 shadow-sm"
-                >
-                  {seasons.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      {/* Row 2: DartType */}
+      <div>
+        <p className="text-xs text-gray-500 font-bold mb-2">Dart-Typ</p>
 
-              <div className="flex justify-center gap-2">
-                <Button
-                  variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
-                  onClick={() => setDartTypeFilter("gesamt")}
-                  className="flex items-center gap-2"
-                >
-                  Gesamt
-                </Button>
-                <Button
-                  variant={dartTypeFilter === "edart" ? "default" : "outline"}
-                  onClick={() => setDartTypeFilter("edart")}
-                  className="flex items-center gap-2"
-                >
-                  E-Dart
-                </Button>
-                <Button
-                  variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
-                  onClick={() => setDartTypeFilter("steeldart")}
-                  className="flex items-center gap-2"
-                >
-                  Steeldart
-                </Button>
-              </div>
-            </div>
-          </motion.div>
+        <div className="grid grid-cols-3 gap-2">
+          <Button
+            variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
+            onClick={() => setDartTypeFilter("gesamt")}
+            className={[
+              "h-10 rounded-2xl font-semibold",
+              dartTypeFilter === "gesamt"
+                ? "bg-orange-600 hover:bg-orange-700 text-white"
+                : "border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium",
+            ].join(" ")}
+          >
+            Gesamt
+          </Button>
+
+          <Button
+            variant={dartTypeFilter === "edart" ? "default" : "outline"}
+            onClick={() => setDartTypeFilter("edart")}
+            className={[
+              "h-10 rounded-2xl font-semibold",
+              dartTypeFilter === "edart"
+                ? "bg-orange-600 hover:bg-orange-700 text-white"
+                : "border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium",
+            ].join(" ")}
+          >
+            E-Dart
+          </Button>
+
+          <Button
+            variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
+            onClick={() => setDartTypeFilter("steeldart")}
+            className={[
+              "h-10 rounded-2xl font-semibold",
+              dartTypeFilter === "steeldart"
+                ? "bg-orange-600 hover:bg-orange-700 text-white"
+                : "border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium",
+            ].join(" ")}
+          >
+            Steeldart
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+</motion.div>
+		  
+		  
 
           <motion.div variants={itemVariants}>
             <Tabs defaultValue="standings" className="w-full">
-              <div className="mb-4 sm:mb-8">
-                <TabsList className="grid w-full grid-cols-5 h-auto p-1 sm:p-1 lg:grid-cols-5 overflow-x-auto">
-                  <TabsTrigger
-                    value="standings"
-                    className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0"
-                  >
-                    <Trophy className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                    <span className="truncate">Tabelle</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="results"
-                    className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0"
-                  >
-                    <Target className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                    <span className="truncate">Ergeb.</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="fixtures"
-                    className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0"
-                  >
-                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                    <span className="truncate">Termine</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="teams"
-                    className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0"
-                  >
-                    <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                    <span className="truncate">Teams</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="legstats"
-                    className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0"
-                  >
-                    <Target className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                    <span className="truncate">Statistiken</span>
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+             {/* Tabs (App-Style Container wie Kontakt) */}
+<div className="mt-2 mb-4">
+  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+
+    <div className="p-2 sm:p-3">
+     <TabsList className="grid w-full grid-cols-5 gap-1 rounded-2xl bg-transparent p-0">
+        {/* Tabelle */}
+        <TabsTrigger
+          value="standings"
+          className={[
+  "rounded-2xl h-11 sm:h-10 px-2",
+  "text-xs sm:text-sm font-medium",
+  "data-[state=active]:font-semibold",
+  "flex items-center justify-center",
+  "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
+  "data-[state=inactive]:text-gray-600",
+].join(" ")}
+        >
+          <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
+            <Trophy className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="truncate">Tabelle</span>
+          </span>
+        </TabsTrigger>
+
+        {/* Ergebnisse */}
+        <TabsTrigger
+          value="results"
+          className={[
+  "rounded-2xl h-11 sm:h-10 px-2",
+  "text-xs sm:text-sm font-medium",
+  "flex items-center justify-center",
+  "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
+  "data-[state=inactive]:text-gray-600",
+].join(" ")}
+        >
+          <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
+            <Target className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="truncate">Ergeb.</span>
+          </span>
+        </TabsTrigger>
+
+        {/* Termine */}
+        <TabsTrigger
+          value="fixtures"
+          className={[
+  "rounded-2xl h-11 sm:h-10 px-2",
+  "text-xs sm:text-sm font-medium",
+  "flex items-center justify-center",
+  "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
+  "data-[state=inactive]:text-gray-600",
+].join(" ")}
+        >
+          <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
+            <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="truncate">Termine</span>
+          </span>
+        </TabsTrigger>
+
+        {/* Teams */}
+        <TabsTrigger
+          value="teams"
+          className={[
+  "rounded-2xl h-11 sm:h-10 px-2",
+  "text-xs sm:text-sm font-medium",
+  "flex items-center justify-center",
+  "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
+  "data-[state=inactive]:text-gray-600",
+].join(" ")}
+        >
+          <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
+            <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="truncate">Teams</span>
+          </span>
+        </TabsTrigger>
+
+        {/* Statistiken */}
+        <TabsTrigger
+          value="legstats"
+          className={[
+  "rounded-2xl h-11 sm:h-10 px-2",
+  "text-xs sm:text-sm font-medium",
+  "flex items-center justify-center",
+  "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
+  "data-[state=inactive]:text-gray-600",
+].join(" ")}
+        >
+          <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
+            <Target className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="truncate">Stats</span>
+          </span>
+        </TabsTrigger>
+      </TabsList>
+    </div>
+  </div>
+</div>
 
               <TabsContent value="legstats">
-                <PointsInfoBox />
+                
 
-                <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 sm:p-6">
-  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <CardTitle className="flex items-start gap-2 text-base sm:text-xl leading-tight min-w-0">
-      <Target className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 mt-0.5" />
-      <span className="min-w-0">
-        <span className="block font-bold truncate">
+                <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                  <CardHeader className="p-0">
+  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="p-4 sm:p-5 flex items-center justify-between gap-3">
+    <div className="flex items-center gap-3 min-w-0">
+      <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+        <Target className="w-5 h-5 text-orange-600" />
+      </div>
+      <div className="min-w-0">
+        <CardTitle className="text-sm sm:text-base font-black text-gray-900 truncate">
           Spieler-Statistiken
-        </span>
-        <span className="block text-xs sm:text-sm text-blue-100 font-medium">
+        </CardTitle>
+        <p className="text-xs text-gray-500 mt-1">
           {playerLegStats.length} Spieler ·{" "}
           {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
-        </span>
-      </span>
-    </CardTitle>
+        </p>
+      </div>
+    </div>
 
-    <div className="flex items-center justify-between sm:justify-end gap-2">
-      <span className="text-xs sm:text-sm text-blue-100 whitespace-nowrap">Zeige:</span>
+    {/* rechts: Zeige Dropdown */}
+    <div className="flex items-center gap-2 flex-shrink-0">
+      <span className="text-xs text-gray-500 font-bold whitespace-nowrap">Zeige</span>
       <select
         value={playersPerPage}
         onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-        className="bg-white text-gray-900 rounded px-2 py-1 text-sm"
+        className="h-10 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-black text-gray-900 shadow-sm"
       >
         <option value={10}>10</option>
         <option value={25}>25</option>
@@ -747,6 +846,10 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
     </div>
   </div>
 </CardHeader>
+
+ <div className="mt-6 mb-2">
+  <PointsInfoBox />
+</div>
 
                   <CardContent className="p-3 sm:p-6">
                     {playerLegStats.length === 0 ? (
@@ -824,18 +927,34 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
                       </>
                     )}
                   </CardContent>
+				 
                 </Card>
+				
               </TabsContent>
+			  
+	
+			  
+	
 
               <TabsContent value="standings">
-                <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 sm:p-6">
-                    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                      <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
-                      Liga-Tabelle
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 sm:p-6">
+                <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+  <CardHeader className="p-0">
+  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="p-4 sm:p-5 flex items-center gap-3">
+    <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+      <Trophy className="w-5 h-5 text-orange-600" />
+    </div>
+    <div className="min-w-0">
+      <CardTitle className="text-sm sm:text-base font-black text-gray-900">
+        Liga-Tabelle
+      </CardTitle>
+      <p className="text-xs text-gray-500 mt-1">
+        {standings.length} Teams · {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
+      </p>
+    </div>
+  </div>
+</CardHeader>
+                  <CardContent className="p-4 sm:p-5">
                     <div className="grid gap-2 sm:gap-4">
                       {standings.map((team, index) => {
                         const teamData = teams.find((t) => t.name === team.team)
@@ -847,13 +966,24 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
               </TabsContent>
 
               <TabsContent value="results">
-                <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white p-3 sm:p-6">
-                    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                      <Target className="h-5 w-5 sm:h-6 sm:w-6" />
-                      Alle Ergebnisse ({completedMatches.length})
-                    </CardTitle>
-                  </CardHeader>
+                <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                  <CardHeader className="p-0">
+  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="p-4 sm:p-5 flex items-center gap-3">
+    <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+      <Target className="w-5 h-5 text-orange-600" />
+    </div>
+    <div className="min-w-0">
+      <CardTitle className="text-sm sm:text-base font-black text-gray-900">
+        Ergebnisse
+      </CardTitle>
+      <p className="text-xs text-gray-500 mt-1">
+        {completedMatches.length} Spiele ·{" "}
+        {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
+      </p>
+    </div>
+  </div>
+</CardHeader>
                   <CardContent className="p-3 sm:p-5">
                     {completedMatches.length === 0 ? (
                       <p className="text-center text-gray-500 py-8">Noch keine Ergebnisse verfügbar</p>
@@ -1084,13 +1214,23 @@ if (isFutureDate) {
 
     {/* ===================== HEUTE ===================== */}
     {todayMatches.length > 0 && (
-      <Card className="border-blue-400 bg-blue-50 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3 sm:p-6">
-          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
-            Heute ({todayMatches.length})
-          </CardTitle>
-        </CardHeader>
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <CardHeader className="p-0">
+  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="p-4 sm:p-5 flex items-center gap-3">
+    <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+      <Calendar className="w-5 h-5 text-orange-600" />
+    </div>
+    <div className="min-w-0">
+      <CardTitle className="text-sm sm:text-base font-black text-gray-900">
+        Heute
+      </CardTitle>
+      <p className="text-xs text-gray-500 mt-1">
+        {todayMatches.length} Spiele
+      </p>
+    </div>
+  </div>
+</CardHeader>
 
         <CardContent className="p-3 sm:p-6">
           <div className="space-y-3">
@@ -1138,13 +1278,23 @@ if (isFutureDate) {
 
     {/* ===================== VERSCHOBENE SPIELE ===================== */}
     {postponedMatches.length > 0 && (
-      <Card className="border-red-300 bg-red-50 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-red-500 to-red-600 text-white p-3 sm:p-6">
-          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
-            Verschobene Spiele ({postponedMatches.length})
-          </CardTitle>
-        </CardHeader>
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <CardHeader className="p-0">
+  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="p-4 sm:p-5 flex items-center gap-3">
+    <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+      <Calendar className="w-5 h-5 text-orange-600" />
+    </div>
+    <div className="min-w-0">
+      <CardTitle className="text-sm sm:text-base font-black text-gray-900">
+        Verschobene Spiele
+      </CardTitle>
+      <p className="text-xs text-gray-500 mt-1">
+        {postponedMatches.length} Spiele
+      </p>
+    </div>
+  </div>
+</CardHeader>
         <CardContent className="p-3 sm:p-6">
           <div className="space-y-3 sm:space-y-4">
             {postponedMatches
@@ -1201,13 +1351,23 @@ if (isFutureDate) {
     )}
 
     {/* ===================== KOMMENDE SPIELE ===================== */}
-    <Card>
-      <CardHeader className="p-3 sm:p-6">
-        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-          <Calendar className="h-5 w-5 text-blue-600" />
-          Kommende Spiele ({upcomingMatches.length})
-        </CardTitle>
-      </CardHeader>
+    <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <CardHeader className="p-0">
+  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="p-4 sm:p-5 flex items-center gap-3">
+    <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+      <Calendar className="w-5 h-5 text-orange-600" />
+    </div>
+    <div className="min-w-0">
+      <CardTitle className="text-sm sm:text-base font-black text-gray-900">
+        Kommende Spiele
+      </CardTitle>
+      <p className="text-xs text-gray-500 mt-1">
+        {upcomingMatches.length} Spiele
+      </p>
+    </div>
+  </div>
+</CardHeader>
 
       <CardContent className="p-3 sm:p-6">
         {upcomingMatches.length === 0 ? (
@@ -1301,10 +1461,22 @@ if (isFutureDate) {
 
               <TabsContent value="teams">
                 <div className="space-y-4 sm:space-y-6">
-                  <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                    <Users className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Teams & Kader</h2>
-                  </div>
+                  <div className="mb-5 sm:mb-6">
+  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+    <div className="p-4 sm:p-5 flex items-center gap-3">
+      <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+        <Users className="w-5 h-5 text-orange-600" />
+      </div>
+      <div className="min-w-0">
+        <h2 className="text-sm sm:text-base font-black text-gray-900">Teams & Kader</h2>
+        <p className="text-xs text-gray-500 mt-1">
+          {standings.length} Teams · {selectedSeasonLabel}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
 
                   <div className="grid gap-4 sm:gap-8">
                     {teams
@@ -1317,112 +1489,120 @@ if (isFutureDate) {
                         const teamStats = standings.find((s) => s.team === team.name)
 
                         return (
-                          <Card key={team.id} className="overflow-hidden">
-                            <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b p-3 sm:p-6">
-                              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                                <div className="flex items-center gap-3">
-                                  {team.logo_url ? (
-                                    <img
-                                      src={team.logo_url || "/placeholder.svg"}
-                                      alt={`${team.name} Logo`}
-                                      className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-orange-200"
-                                    />
-                                  ) : (
-                                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-orange-100 rounded-full flex items-center justify-center">
-                                      <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
-                                    </div>
-                                  )}
-                                  <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
-                                    {team.name}
-                                  </CardTitle>
-                                </div>
-                                <div className="flex items-center gap-2 sm:gap-4">
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-orange-100 text-orange-800 font-semibold text-xs sm:text-sm"
-                                  >
-                                    {teamPlayers.length} Spieler
-                                  </Badge>
-                                  {teamStats && (
-                                    <Badge className="bg-orange-600 text-white font-semibold text-xs sm:text-sm">
-                                      {teamStats.points} Punkte
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="p-3 sm:p-6">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                                {teamStats && (
-                                  <div>
-                                    <h4 className="font-semibold text-gray-900 mb-3">Saisonstatistik</h4>
-                                    <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center">
-                                        <div className="text-xl sm:text-2xl font-bold text-gray-900">
-                                          {teamStats.played}
-                                        </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Spiele</div>
-                                      </div>
-                                      <div className="bg-green-50 rounded-lg p-2 sm:p-3 text-center">
-                                        <div className="text-xl sm:text-2xl font-bold text-green-600">
-                                          {teamStats.won}
-                                        </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Siege</div>
-                                      </div>
-                                      <div className="bg-yellow-50 rounded-lg p-2 sm:p-3 text-center">
-                                        <div className="text-xl sm:text-2xl font-bold text-yellow-600">
-                                          {teamStats.drawn}
-                                        </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Unentschieden</div>
-                                      </div>
-                                      <div className="bg-red-50 rounded-lg p-2 sm:p-3 text-center">
-                                        <div className="text-xl sm:text-2xl font-bold text-red-600">
-                                          {teamStats.lost}
-                                        </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Niederlagen</div>
-                                      </div>
-                                      <div className="bg-blue-50 rounded-lg p-2 sm:p-3 text-center col-span-2">
-                                        <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                                          {teamStats.legsDifference > 0 ? "+" : ""}
-                                          {teamStats.legsDifference}
-                                        </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Legs-Differenz</div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
+                          <Card key={team.id} className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+						
+  <CardHeader className="p-0">
+  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
-                                <div>
-                                  <h4 className="font-semibold text-gray-900 mb-3">Spielerkader</h4>
-                                  {teamPlayers.length === 0 ? (
-                                    <div className="text-center py-8 text-gray-500">
-                                      <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                                      <p>Keine Spieler zugeordnet</p>
-                                    </div>
-                                  ) : (
-                                    <div className="grid gap-2">
-                                      {teamPlayers.map((player, index) => (
-                                        <div
-                                          key={player.id}
-                                          className="flex items-center gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg"
-                                        >
-                                          <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                                            <span className="text-xs sm:text-sm font-semibold text-orange-600">
-                                              {index + 1}
-                                            </span>
-                                          </div>
-                                          <div className="flex-1">
-                                            <div className="font-medium text-gray-900 text-sm sm:text-base">
-                                              {player.name}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </CardContent>
+  <div className="p-4 sm:p-5">
+    <div className="flex items-start justify-between gap-3">
+      {/* Left: Logo + Name */}
+      <div className="flex items-center gap-3 min-w-0">
+        {team.logo_url ? (
+          <img
+            src={team.logo_url || "/placeholder.svg"}
+            alt={`${team.name} Logo`}
+            className="w-11 h-11 rounded-2xl object-cover border border-gray-200 bg-white flex-shrink-0"
+          />
+        ) : (
+          <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+            <Trophy className="w-5 h-5 text-orange-600" />
+          </div>
+        )}
+
+        <div className="min-w-0">
+          <CardTitle className="text-sm sm:text-base font-black text-gray-900 truncate">
+            {team.name}
+          </CardTitle>
+
+          <p className="text-xs text-gray-500 mt-1">
+            {teamPlayers.length} Spieler
+            {teamStats ? ` · ${teamStats.points} Punkte` : ""}
+          </p>
+        </div>
+      </div>
+
+      {/* Right: Rank pill (optional) */}
+      {teamStats && (
+        <span className="inline-flex items-center rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-[11px] font-black text-orange-700 flex-shrink-0">
+          #{standings.findIndex((s) => s.team === team.name) + 1}
+        </span>
+      )}
+    </div>
+  </div>
+</CardHeader>
+
+<CardContent className="p-4 sm:p-5">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+    {/* Saisonstatistik */}
+    {teamStats && (
+      <div>
+        <h4 className="text-sm font-black text-gray-900 mb-3">Saisonstatistik</h4>
+
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <div className="bg-gray-50 rounded-2xl p-3 text-center border border-gray-200">
+            <div className="text-xl sm:text-2xl font-black text-gray-900">{teamStats.played}</div>
+            <div className="text-xs text-gray-600 font-bold">Spiele</div>
+          </div>
+
+          <div className="bg-green-50 rounded-2xl p-3 text-center border border-green-200">
+            <div className="text-xl sm:text-2xl font-black text-green-700">{teamStats.won}</div>
+            <div className="text-xs text-gray-600 font-bold">Siege</div>
+          </div>
+
+          <div className="bg-yellow-50 rounded-2xl p-3 text-center border border-yellow-200">
+            <div className="text-xl sm:text-2xl font-black text-yellow-700">{teamStats.drawn}</div>
+            <div className="text-xs text-gray-600 font-bold">Unentschieden</div>
+          </div>
+
+          <div className="bg-red-50 rounded-2xl p-3 text-center border border-red-200">
+            <div className="text-xl sm:text-2xl font-black text-red-700">{teamStats.lost}</div>
+            <div className="text-xs text-gray-600 font-bold">Niederlagen</div>
+          </div>
+
+          <div className="bg-blue-50 rounded-2xl p-3 text-center border border-blue-200 col-span-2">
+            <div className="text-xl sm:text-2xl font-black text-blue-700">
+              {teamStats.legsDifference > 0 ? "+" : ""}
+              {teamStats.legsDifference}
+            </div>
+            <div className="text-xs text-gray-600 font-bold">Legs-Differenz</div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Spielerkader */}
+    <div>
+      <h4 className="text-sm font-black text-gray-900 mb-3">Spielerkader</h4>
+
+      {teamPlayers.length === 0 ? (
+        <div className="text-center py-8 text-gray-500 border border-gray-200 rounded-2xl bg-gray-50">
+          <Users className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+          <p className="text-sm font-bold">Keine Spieler zugeordnet</p>
+        </div>
+      ) : (
+        <div className="grid gap-2">
+          {teamPlayers.map((player, index) => (
+            <div
+              key={player.id}
+              className="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-200"
+            >
+              <div className="w-8 h-8 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-black text-orange-700">{index + 1}</span>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="font-mediumtext-gray-900 text-sm truncate">{player.name}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</CardContent>
+  
+  
                           </Card>
                         )
                       })}

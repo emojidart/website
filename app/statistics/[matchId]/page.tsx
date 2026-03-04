@@ -38,6 +38,11 @@ interface Team {
   name: string
 }
 
+// ✅ Wiederverwendbarer Spacer für fixed Header
+function HeaderSpacer() {
+  return <div className="h-12 sm:h-14" aria-hidden="true" />
+}
+
 export default function StatisticsPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -62,6 +67,7 @@ export default function StatisticsPage() {
     if (user && matchId && teamId) {
       fetchMatchData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, matchId, teamId])
 
   const fetchMatchData = async () => {
@@ -70,36 +76,26 @@ export default function StatisticsPage() {
 
       const { data: matchData, error: matchError } = await supabase
         .from("matches")
-        .select(`
+        .select(
+          `
           *,
           home_team:teams!matches_home_team_id_fkey(id, name),
           away_team:teams!matches_away_team_id_fkey(id, name),
           home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
           away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name)
-        `)
+        `,
+        )
         .eq("id", matchId)
         .single()
 
-      if (matchError) {
-        throw new Error("Spiel nicht gefunden")
-      }
-
+      if (matchError) throw new Error("Spiel nicht gefunden")
       setMatch(matchData)
 
-      // Fetch team data
-      const { data: teamData, error: teamError } = await supabase
-        .from("teams")
-        .select("id, name")
-        .eq("id", teamId)
-        .single()
-
-      if (teamError) {
-        throw new Error("Team nicht gefunden")
-      }
-
+      const { data: teamData, error: teamError } = await supabase.from("teams").select("id, name").eq("id", teamId).single()
+      if (teamError) throw new Error("Team nicht gefunden")
       setMyTeam(teamData)
     } catch (err: any) {
-      setError(err.message || "Fehler beim Laden der Daten")
+      setError(err?.message || "Fehler beim Laden der Daten")
     } finally {
       setLoading(false)
     }
@@ -123,7 +119,6 @@ export default function StatisticsPage() {
 
   const getOpponentName = () => {
     if (!match || !teamId) return "Unbekannt"
-
     const isHomeTeam = match.home_team_id === teamId
     return getTeamName(match, !isHomeTeam) || "Unbekannt"
   }
@@ -132,6 +127,8 @@ export default function StatisticsPage() {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
         <Header />
+        <HeaderSpacer />
+
         <main className="flex-grow flex items-center justify-center">
           <div className="flex items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
@@ -146,6 +143,8 @@ export default function StatisticsPage() {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
         <Header />
+        <HeaderSpacer />
+
         <main className="flex-grow flex items-center justify-center p-4">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
@@ -163,15 +162,12 @@ export default function StatisticsPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
+      <HeaderSpacer />
 
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Back Button */}
         <div className="mb-8">
-          <Button
-            onClick={() => router.push("/member-dashboard-app")}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
+          <Button onClick={() => router.push("/member-dashboard-app")} variant="outline" className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
             Zurück zum Dashboard
           </Button>
@@ -185,18 +181,16 @@ export default function StatisticsPage() {
                 <Target className="h-6 w-6 lg:h-7 lg:w-7 text-orange-600" />
                 Spielstatistiken - {myTeam.name}
                 {(match.home_score > 0 || match.away_score > 0) && (
-                  <>
-                    {" "}
-                    <span className="px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-bold text-lg shadow-md">
-                      {match.home_team_id === teamId
-                        ? `${match.home_score || 0}:${match.away_score || 0}`
-                        : `${match.away_score || 0}:${match.home_score || 0}`}
-                    </span>{" "}
-                  </>
+                  <span className="px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-bold text-lg shadow-md">
+                    {match.home_team_id === teamId
+                      ? `${match.home_score || 0}:${match.away_score || 0}`
+                      : `${match.away_score || 0}:${match.home_score || 0}`}
+                  </span>
                 )}
                 {!(match.home_score > 0 || match.away_score > 0) && " vs "}
                 {getOpponentName()}
               </CardTitle>
+
               <p className="text-sm lg:text-base text-muted-foreground">
                 {formatDate(match.match_date)} • {match.match_time} • {match.venue}
               </p>

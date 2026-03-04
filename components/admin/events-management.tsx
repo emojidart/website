@@ -3,6 +3,8 @@
 import type React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import type { User } from "@supabase/supabase-js"
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -35,8 +37,9 @@ import {
   Gamepad2,
   MessageSquare,
   Trophy,
+  ListChecks,
 } from "lucide-react"
-import type { User } from "@supabase/supabase-js"
+import { cn } from "@/lib/utils"
 
 interface Event {
   id: string
@@ -55,14 +58,71 @@ interface Event {
   user_id: string
 }
 
+type ClubPlayer = {
+  id: string
+  name: string
+  birthdate: string | null
+}
+
+type Vacation = {
+  id: string
+  user_name: string
+  start_date: string
+  end_date: string
+}
+
+type Opp = { id: string; name: string }
+
+type MatchLite = {
+  id: string
+  match_date: string
+  match_time: string | null
+  venue: string
+  week_number: number
+  status: string
+  original_date: string | null
+  postponement_reason: string | null
+
+  home_team_id: string
+  away_team_id: string
+
+  home_team_type: "own" | "opponent" | "club_team"
+  away_team_type: "own" | "opponent" | "club_team"
+
+  home_team: { id: string; name: string } | null
+  away_team: { id: string; name: string } | null
+
+  home_opponent_team_id: string | null
+  away_opponent_team_id: string | null
+  home_opponent_team: { id: string; name: string } | null
+  away_opponent_team: { id: string; name: string } | null
+}
+
 interface EventsManagementProps {
   user: User | null
 }
 
 const PUSH_ENDPOINT = "/api/push/send-event"
 
+function formatDE(dateString: string) {
+  if (!dateString) return ""
+  const d = new Date(dateString)
+  const dd = String(d.getDate()).padStart(2, "0")
+  const mm = String(d.getMonth() + 1).padStart(2, "0")
+  const yyyy = d.getFullYear()
+  return `${dd}.${mm}.${yyyy}`
+}
+
+function hhmm(timeString: string | null) {
+  if (!timeString) return "—"
+  const parts = timeString.split(":")
+  return `${parts[0]}:${parts[1]}`
+}
+
 export function EventsManagement({ user }: EventsManagementProps) {
   const [events, setEvents] = useState<Event[]>([])
+  const [vacations, setVacations] = useState<Vacation[]>([])
+  const [players, setPlayers] = useState<ClubPlayer[]>([])
   const [form, setForm] = useState<Omit<Event, "id" | "user_id" | "created_at"> & { photo_file: File | null }>({
     name: "",
     event_type: "party",
@@ -78,18 +138,33 @@ export function EventsManagement({ user }: EventsManagementProps) {
     photo_url: null,
     photo_file: null,
   })
+
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [isFetching, setIsFetching] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [formMessage, setFormMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null)
+
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const createdObjectUrlRef = useRef<string | null>(null)
+
+  // Planung (Matches + interne Events) am ausgewählten Tag
+  const [opponents, setOpponents] = useState<Opp[]>([])
+  const [dayLoading, setDayLoading] = useState(false)
+  const [dayError, setDayError] = useState<string | null>(null)
+  const [dayMatches, setDayMatches] = useState<MatchLite[]>([])
+  const [dayEvents, setDayEvents] = useState<Event[]>([])
 
   const isBusy = useMemo(() => isFetching || isSaving, [isFetching, isSaving])
 
   useEffect(() => {
-    if (user) fetchEvents()
-  }, [user])
+    if (user) {
+      fetchEvents()
+      fetchOpponents()
+	  fetchPlayers()
+	  fetchVacations()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   useEffect(() => {
     return () => {
@@ -99,20 +174,6 @@ export function EventsManagement({ user }: EventsManagementProps) {
       }
     }
   }, [])
-
-  const fetchEvents = async () => {
-    setIsFetching(true)
-    const query = supabase.from("events").select("*").order("event_date", { ascending: true })
-    const { data, error } = await query
-
-    if (error) {
-      console.error("Error fetching events:", error)
-      setFormMessage({ type: "error", text: "Fehler beim Laden der Veranstaltungen." })
-    } else {
-      setEvents(data || [])
-    }
-    setIsFetching(false)
-  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -142,8 +203,6 @@ export function EventsManagement({ user }: EventsManagementProps) {
   }
 
   const uploadPhoto = async (file: File): Promise<string | null> => {
-    if (!file) return null
-
     const fileExtension = file.name.split(".").pop()
     const filePath = `event-photos/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExtension}`
 
@@ -151,10 +210,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
       cacheControl: "3600",
       upsert: false,
     })
-
-    if (error) {
-      throw error
-    }
+    if (error) throw error
 
     const { data: publicUrlData } = supabase.storage.from("tournament-photos").getPublicUrl(filePath)
     return publicUrlData.publicUrl
@@ -172,11 +228,204 @@ export function EventsManagement({ user }: EventsManagementProps) {
       try {
         const j = await res.json()
         if (j?.error) msg = `${msg}: ${j.error}`
-      } catch {
-        // ignore
-      }
+      } catch {}
       throw new Error(msg)
     }
+  }
+
+  const fetchEvents = async () => {
+    setIsFetching(true)
+    setFormMessage(null)
+    const { data, error } = await supabase.from("events").select("*").order("event_date", { ascending: true })
+    if (error) {
+      console.error("Error fetching events:", error)
+      setFormMessage({ type: "error", text: "Fehler beim Laden der Veranstaltungen." })
+      setEvents([])
+    } else {
+      setEvents((data || []) as Event[])
+    }
+    setIsFetching(false)
+  }
+
+  const fetchOpponents = async () => {
+    const { data, error } = await supabase.from("opponent_teams").select("id,name")
+    if (error) {
+      console.error("Error fetching opponents:", error)
+      return
+    }
+    setOpponents((data || []) as Opp[])
+  }
+  
+  const fetchPlayers = async () => {
+  const { data, error } = await supabase
+    .from("club_players")
+    .select("id,name,birthdate")
+    .order("name", { ascending: true })
+
+  if (error) {
+    console.error("Error fetching club_players:", error)
+    setPlayers([])
+    return
+  }
+
+  setPlayers((data || []) as ClubPlayer[])
+}
+
+const fetchVacations = async () => {
+  const { data, error } = await supabase
+    .from("vacations")
+    .select("id,user_name,start_date,end_date")
+    .order("start_date", { ascending: true })
+
+  if (error) {
+    console.error("Error fetching vacations:", error)
+    setVacations([])
+    return
+  }
+
+  setVacations((data || []) as Vacation[])
+}
+
+  const getTeamDisplayName = (m: MatchLite | null, isHome: boolean) => {
+    if (!m) return "Unbekannt"
+    if (isHome) {
+      if (m.home_team_type === "own" && m.home_team) return m.home_team.name
+      if (m.home_team_type === "opponent" && m.home_opponent_team) return m.home_opponent_team.name
+      return m.home_team?.name ?? m.home_opponent_team?.name ?? "Unbekannt"
+    } else {
+      if (m.away_team_type === "own" && m.away_team) return m.away_team.name
+      if (m.away_team_type === "opponent" && m.away_opponent_team) return m.away_opponent_team.name
+      return m.away_team?.name ?? m.away_opponent_team?.name ?? "Unbekannt"
+    }
+  }
+
+  const enrichWithOpponentNames = (m: any, opps: Opp[]): MatchLite => {
+    const homeOpp = m?.home_opponent_team_id ? opps.find((o) => o.id === m.home_opponent_team_id) : null
+    const awayOpp = m?.away_opponent_team_id ? opps.find((o) => o.id === m.away_opponent_team_id) : null
+    return { ...m, home_opponent_team: homeOpp, away_opponent_team: awayOpp }
+  }
+
+  // Matches + interne Events am ausgewählten Datum (form.event_date)
+  useEffect(() => {
+    if (!user) return
+
+    if (!form.event_date) {
+      setDayMatches([])
+      setDayEvents([])
+      setDayError(null)
+      return
+    }
+
+    ;(async () => {
+      setDayLoading(true)
+      setDayError(null)
+      try {
+        const [matchesRes, eventsRes] = await Promise.all([
+          supabase
+            .from("matches")
+            .select(
+              `
+              id,
+              match_date,
+              match_time,
+              venue,
+              week_number,
+              status,
+              original_date,
+              postponement_reason,
+
+              home_team_id,
+              away_team_id,
+
+              home_team_type,
+              away_team_type,
+
+              home_opponent_team_id,
+              away_opponent_team_id,
+
+              home_team:teams!matches_home_team_id_fkey(id,name),
+              away_team:teams!matches_away_team_id_fkey(id,name)
+            `,
+            )
+            .eq("match_date", form.event_date),
+          supabase
+            .from("events")
+            .select("*")
+            .eq("event_date", form.event_date)
+            .eq("source", "internal")
+            .order("event_time", { ascending: true }),
+        ])
+
+        if (matchesRes.error) throw matchesRes.error
+        if (eventsRes.error) throw eventsRes.error
+
+        const rows = (matchesRes.data || []).map((m: any) => enrichWithOpponentNames(m, opponents))
+        setDayMatches(rows as MatchLite[])
+        setDayEvents((eventsRes.data || []) as Event[])
+      } catch (e: any) {
+        console.error(e)
+        setDayError(e?.message ?? "Fehler beim Laden (Spiele/Events).")
+        setDayMatches([])
+        setDayEvents([])
+      } finally {
+        setDayLoading(false)
+      }
+    })()
+  }, [user?.id, form.event_date, opponents])
+
+  const homeGamesThatDay = useMemo(() => dayMatches.filter((m) => m.home_team_type === "own"), [dayMatches])
+
+const vacationsThatDay = useMemo(() => {
+  if (!form.event_date) return []
+
+  // wir vergleichen als Strings "YYYY-MM-DD" -> klappt gut bei date-spalten
+  const day = form.event_date
+
+  return vacations.filter((v) => v.start_date <= day && day <= v.end_date)
+}, [vacations, form.event_date])
+
+
+const birthdaysThatDay = useMemo(() => {
+  if (!form.event_date) return []
+
+  // form.event_date ist "YYYY-MM-DD"
+  const parts = form.event_date.split("-")
+  const m = Number(parts[1])
+  const d = Number(parts[2])
+  if (!m || !d) return []
+
+  return players.filter((p) => {
+    if (!p.birthdate) return false
+    const bd = new Date(p.birthdate)
+    return bd.getMonth() + 1 === m && bd.getDate() === d
+  })
+}, [players, form.event_date])
+
+
+
+  const resetForm = () => {
+    setEditingEventId(null)
+    setForm({
+      name: "",
+      event_type: "party",
+      source: "internal",
+      mode: "both",
+      startgeld_details: "",
+      event_date: "",
+      event_time: "",
+      location: "",
+      entry_fee: 0,
+      max_participants: null,
+      details: "",
+      photo_url: null,
+      photo_file: null,
+    })
+    if (createdObjectUrlRef.current) {
+      URL.revokeObjectURL(createdObjectUrlRef.current)
+      createdObjectUrlRef.current = null
+    }
+    setPhotoPreview(null)
+    setFormMessage(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -192,9 +441,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
 
     let photoUrl: string | null = form.photo_url
     try {
-      if (form.photo_file) {
-        photoUrl = await uploadPhoto(form.photo_file)
-      }
+      if (form.photo_file) photoUrl = await uploadPhoto(form.photo_file)
 
       const eventData = {
         name: form.name,
@@ -215,35 +462,23 @@ export function EventsManagement({ user }: EventsManagementProps) {
       if (editingEventId) {
         const { error } = await supabase.from("events").update(eventData).eq("id", editingEventId)
         if (error) throw error
-
-        // 🔔 Push bei Bearbeiten
         await sendPushToAll({ eventId: editingEventId, action: "updated" })
-
-        setFormMessage({
-          type: "success",
-          text: "Veranstaltung erfolgreich aktualisiert und Benachrichtigung versendet!",
-        })
+        setFormMessage({ type: "success", text: "Veranstaltung aktualisiert + Push versendet!" })
       } else {
         const { data: insertedData, error } = await supabase.from("events").insert([eventData]).select()
         if (error) throw error
 
         const newEventId = insertedData?.[0]?.id
-        if (newEventId) {
-          // 🔔 Push bei Neu
-          await sendPushToAll({ eventId: newEventId, action: "created" })
-        }
+        if (newEventId) await sendPushToAll({ eventId: newEventId, action: "created" })
 
-        setFormMessage({
-          type: "success",
-          text: "Veranstaltung erfolgreich hinzugefügt und Benachrichtigung versendet!",
-        })
+        setFormMessage({ type: "success", text: "Veranstaltung angelegt + Push versendet!" })
       }
 
       resetForm()
       fetchEvents()
     } catch (error: any) {
       console.error("Error saving event:", error)
-      setFormMessage({ type: "error", text: `Fehler beim Speichern der Veranstaltung: ${error.message}` })
+      setFormMessage({ type: "error", text: `Fehler beim Speichern: ${error.message}` })
     } finally {
       setIsSaving(false)
     }
@@ -286,36 +521,12 @@ export function EventsManagement({ user }: EventsManagementProps) {
 
     if (finalError) {
       console.error("Error deleting event:", finalError)
-      setFormMessage({ type: "error", text: `Fehler beim Löschen der Veranstaltung: ${finalError.message}` })
+      setFormMessage({ type: "error", text: `Fehler beim Löschen: ${finalError.message}` })
     } else {
       setFormMessage({ type: "success", text: "Veranstaltung erfolgreich gelöscht!" })
       fetchEvents()
     }
     setIsSaving(false)
-  }
-
-  const resetForm = () => {
-    setEditingEventId(null)
-    setForm({
-      name: "",
-      event_type: "party",
-      source: "internal",
-      mode: "both",
-      startgeld_details: "",
-      event_date: "",
-      event_time: "",
-      location: "",
-      entry_fee: 0,
-      max_participants: null,
-      details: "",
-      photo_url: null,
-      photo_file: null,
-    })
-    if (createdObjectUrlRef.current) {
-      URL.revokeObjectURL(createdObjectUrlRef.current)
-      createdObjectUrlRef.current = null
-    }
-    setPhotoPreview(null)
   }
 
   const getEventTypeIcon = (type: string) => {
@@ -349,26 +560,58 @@ export function EventsManagement({ user }: EventsManagementProps) {
   }
 
   return (
-    <div className="w-full max-w-none space-y-8">
-      <Card className="border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70">
-        <CardHeader className="space-y-2">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background">
-              <PlusCircle className="h-4 w-4" />
+    // ✅ WICHTIG: KEIN Header, KEIN max-w, KEIN main → Admin Page macht Layout.
+    <div className="w-full space-y-6">
+      {/* Header Card (nur innerhalb Admin-Content) */}
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+        <div className="p-4 sm:p-5 flex items-start gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+            <Calendar className="w-5 h-5 text-orange-600" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-black">Events verwalten</h2>
+            <p className="text-sm text-gray-600 mt-1">Anlegen, planen & verwalten.</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-black border",
+                  isBusy ? "border-orange-200 bg-orange-50 text-orange-800" : "border-gray-200 bg-gray-100 text-gray-700",
+                )}
+              >
+                {isBusy ? "Aktiv…" : "Bereit"}
+              </span>
+              {user ? (
+                <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-black border border-green-200 bg-green-50 text-green-800">
+                  Eingeloggt
+                </span>
+              ) : null}
             </div>
-            <div>
-              <CardTitle className="text-lg">
+          </div>
+        </div>
+      </div>
+
+      {/* Form */}
+      <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <CardHeader className="pb-2">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center flex-shrink-0">
+              <PlusCircle className="w-4 h-4 text-gray-800" />
+            </div>
+            <div className="min-w-0">
+              <CardTitle className="text-sm sm:text-base font-black">
                 {editingEventId ? "Veranstaltung bearbeiten" : "Neue Veranstaltung anlegen"}
               </CardTitle>
               <CardDescription>Turniere, Partys und andere Veranstaltungen anlegen.</CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium text-gray-700">
+
+        <CardContent className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              <div className="space-y-2 lg:col-span-2">
+                <label htmlFor="name" className="text-sm font-bold text-gray-700">
                   Veranstaltungsname
                 </label>
                 <Input
@@ -377,47 +620,64 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   type="text"
                   value={form.name}
                   onChange={handleInputChange}
-                  placeholder="Z.B. Kratzer Turnier..."
+                  placeholder="z.B. Kratzer Turnier…"
                   required
-                  className="h-11"
+                  className="h-11 rounded-2xl"
                 />
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="event_type" className="text-sm font-medium text-gray-700">
+                <label htmlFor="source" className="text-sm font-bold text-gray-700">
+                  Quelle
+                </label>
+                <Select value={form.source ?? "internal"} onValueChange={(v) => handleSelectChange("source", v)}>
+                  <SelectTrigger className="h-11 rounded-2xl">
+                    <SelectValue placeholder="Quelle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="internal">Intern</SelectItem>
+                    <SelectItem value="external">Extern</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label htmlFor="event_type" className="text-sm font-bold text-gray-700">
                   Veranstaltungstyp
                 </label>
-                <Select value={form.event_type} onValueChange={(value) => handleSelectChange("event_type", value)}>
-                  <SelectTrigger className="h-11">
+                <Select value={form.event_type} onValueChange={(v) => handleSelectChange("event_type", v)}>
+                  <SelectTrigger className="h-11 rounded-2xl">
                     <SelectValue placeholder="Wähle einen Typ" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="party">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2">
                         <PartyPopper className="h-4 w-4 text-pink-600" />
                         <span>Party</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="game_night">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2">
                         <Gamepad2 className="h-4 w-4 text-blue-600" />
                         <span>Spielabend</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="meeting">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2">
                         <MessageSquare className="h-4 w-4 text-green-600" />
                         <span>Versammlung</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="tournament">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2">
                         <Trophy className="h-4 w-4 text-yellow-600" />
                         <span>Turnier</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="other">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-600" />
                         <span>Sonstiges</span>
                       </div>
@@ -426,57 +686,41 @@ export function EventsManagement({ user }: EventsManagementProps) {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="source" className="text-sm font-medium text-gray-700">
-                  Quelle
-                </label>
-                <Select value={form.source} onValueChange={(value) => handleSelectChange("source", value)}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Wähle eine Quelle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="internal">Intern (eigene Veranstaltung)</SelectItem>
-                    <SelectItem value="external">Extern (Fremdveranstaltung)</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <label htmlFor="event_date" className="text-sm font-bold text-gray-700">
+                    Datum
+                  </label>
+                  <Input
+                    id="event_date"
+                    name="event_date"
+                    type="date"
+                    value={form.event_date}
+                    onChange={handleInputChange}
+                    required
+                    className="h-11 rounded-2xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="event_time" className="text-sm font-bold text-gray-700">
+                    Uhrzeit
+                  </label>
+                  <Input
+                    id="event_time"
+                    name="event_time"
+                    type="time"
+                    value={form.event_time}
+                    onChange={handleInputChange}
+                    required
+                    className="h-11 rounded-2xl"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <label htmlFor="event_date" className="text-sm font-medium text-gray-700">
-                  Datum
-                </label>
-                <Input
-                  id="event_date"
-                  name="event_date"
-                  type="date"
-                  value={form.event_date}
-                  onChange={handleInputChange}
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="event_time" className="text-sm font-medium text-gray-700">
-                  Uhrzeit
-                </label>
-                <Input
-                  id="event_time"
-                  name="event_time"
-                  type="time"
-                  value={form.event_time}
-                  onChange={handleInputChange}
-                  placeholder="19:00"
-                  required
-                  className="h-11"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="location" className="text-sm font-medium text-gray-700">
+                <label htmlFor="location" className="text-sm font-bold text-gray-700">
                   Ort
                 </label>
                 <Input
@@ -485,13 +729,14 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   type="text"
                   value={form.location}
                   onChange={handleInputChange}
-                  placeholder="Z.B. Vereinsheim"
+                  placeholder="z.B. Vereinsheim"
                   required
-                  className="h-11"
+                  className="h-11 rounded-2xl"
                 />
               </div>
+
               <div className="space-y-2">
-                <label htmlFor="entry_fee" className="text-sm font-medium text-gray-700">
+                <label htmlFor="entry_fee" className="text-sm font-bold text-gray-700">
                   Eintritt (€)
                 </label>
                 <Input
@@ -501,37 +746,66 @@ export function EventsManagement({ user }: EventsManagementProps) {
                   step="0.01"
                   value={form.entry_fee}
                   onChange={handleInputChange}
-                  placeholder="Z.B. 5.00"
                   required
-                  className="h-11"
+                  className="h-11 rounded-2xl"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="max_participants" className="text-sm font-medium text-gray-700">
-                Max. Teilnehmer (optional)
-              </label>
-              <Input
-                id="max_participants"
-                name="max_participants"
-                type="number"
-                value={form.max_participants || ""}
-                onChange={handleInputChange}
-                placeholder="Z.B. 50"
-                className="h-11"
-              />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label htmlFor="max_participants" className="text-sm font-bold text-gray-700">
+                  Max. Teilnehmer (optional)
+                </label>
+                <Input
+                  id="max_participants"
+                  name="max_participants"
+                  type="number"
+                  value={form.max_participants || ""}
+                  onChange={handleInputChange}
+                  placeholder="z.B. 50"
+                  className="h-11 rounded-2xl"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="photo_file" className="text-sm font-bold text-gray-700">
+                  Veranstaltungsfoto (optional)
+                </label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    id="photo_file"
+                    name="photo_file"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="flex-1 h-11 rounded-2xl"
+                  />
+                  {photoPreview ? (
+                    <div className="w-16 h-12 flex-shrink-0 rounded-2xl overflow-hidden border border-gray-200 bg-white">
+                      <img
+                        src={photoPreview}
+                        alt="Vorschau"
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          ;(e.currentTarget as HTMLImageElement).src = "/placeholder.svg"
+                        }}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             </div>
 
-            {form.event_type === "tournament" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {form.event_type === "tournament" ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <label htmlFor="mode" className="text-sm font-medium text-gray-700">
+                  <label htmlFor="mode" className="text-sm font-bold text-gray-700">
                     Modus
                   </label>
-                  <Select value={form.mode} onValueChange={(value) => handleSelectChange("mode", value)}>
-                    <SelectTrigger className="h-11">
-                      <SelectValue placeholder="Wähle einen Modus" />
+                  <Select value={form.mode ?? "both"} onValueChange={(v) => handleSelectChange("mode", v)}>
+                    <SelectTrigger className="h-11 rounded-2xl">
+                      <SelectValue placeholder="Modus" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="edart">E-Dart</SelectItem>
@@ -542,24 +816,24 @@ export function EventsManagement({ user }: EventsManagementProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="startgeld_details" className="text-sm font-medium text-gray-700">
+                  <label htmlFor="startgeld_details" className="text-sm font-bold text-gray-700">
                     Startgeld
                   </label>
                   <Textarea
                     id="startgeld_details"
                     name="startgeld_details"
-                    value={form.startgeld_details}
+                    value={form.startgeld_details || ""}
                     onChange={handleInputChange}
-                    placeholder='Z.B. "10"'
+                    placeholder='z.B. "10"'
                     rows={2}
-                    className="resize-none"
+                    className="resize-none rounded-2xl"
                   />
                 </div>
               </div>
-            )}
+            ) : null}
 
             <div className="space-y-2">
-              <label htmlFor="details" className="text-sm font-medium text-gray-700">
+              <label htmlFor="details" className="text-sm font-bold text-gray-700">
                 Details (optional)
               </label>
               <Textarea
@@ -567,72 +841,56 @@ export function EventsManagement({ user }: EventsManagementProps) {
                 name="details"
                 value={form.details || ""}
                 onChange={handleInputChange}
-                placeholder="Zusätzliche Informationen zur Veranstaltung..."
+                placeholder="Zusätzliche Informationen…"
                 rows={4}
-                className="min-h-[110px]"
+                className="min-h-[110px] rounded-2xl"
               />
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="photo_file" className="text-sm font-medium text-gray-700">
-                Veranstaltungsfoto (optional)
-              </label>
-              <div className="flex items-center space-x-3">
-                <Input
-                  id="photo_file"
-                  name="photo_file"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="flex-1 h-11"
-                />
-                {photoPreview && (
-                  <div className="w-16 h-12 flex-shrink-0 rounded-md overflow-hidden border border-gray-200">
-                    <img
-                      src={photoPreview}
-                      alt="Veranstaltungsfoto Vorschau"
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        ;(e.currentTarget as HTMLImageElement).src = "/placeholder.svg"
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <Button type="submit" disabled={isBusy} className="flex-1 h-11">
-                {isSaving ? (
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Speichern...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <Save className="h-4 w-4" />
-                    <span>{editingEventId ? "Änderungen speichern" : "Veranstaltung anlegen"}</span>
-                  </div>
-                )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <Button
+                type="submit"
+                disabled={isBusy}
+                className="h-11 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                {editingEventId ? "Änderungen speichern" : "Veranstaltung anlegen"}
               </Button>
 
-              {editingEventId && (
-                <Button type="button" onClick={resetForm} variant="outline" className="h-11 px-4">
+              {editingEventId ? (
+                <Button
+                  type="button"
+                  onClick={resetForm}
+                  variant="outline"
+                  className="h-11 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 font-black"
+                  disabled={isBusy}
+                >
                   <XCircle className="h-4 w-4 mr-2" />
                   Abbrechen
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={resetForm}
+                  variant="outline"
+                  className="h-11 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 font-black"
+                  disabled={isBusy}
+                >
+                  Zurücksetzen
                 </Button>
               )}
             </div>
 
-            {formMessage && (
+            {formMessage ? (
               <div
-                className={`p-4 rounded-lg text-sm font-medium flex items-center space-x-2 ${
+                className={cn(
+                  "p-4 rounded-2xl text-sm font-medium flex items-center gap-2 border",
                   formMessage.type === "error"
-                    ? "bg-red-50 text-red-700 border border-red-100"
+                    ? "bg-red-50 text-red-700 border-red-100"
                     : formMessage.type === "success"
-                      ? "bg-green-50 text-green-700 border border-green-100"
-                      : "bg-gray-50 text-gray-700 border border-gray-100"
-                }`}
+                      ? "bg-green-50 text-green-700 border-green-100"
+                      : "bg-gray-50 text-gray-700 border-gray-100",
+                )}
               >
                 {formMessage.type === "error" ? (
                   <AlertCircle className="h-4 w-4" />
@@ -641,27 +899,189 @@ export function EventsManagement({ user }: EventsManagementProps) {
                 ) : (
                   <Info className="h-4 w-4" />
                 )}
-                <span>{formMessage.text}</span>
+                <span className="min-w-0">{formMessage.text}</span>
               </div>
-            )}
+            ) : null}
           </form>
         </CardContent>
       </Card>
 
-      <Card className="border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70">
-        <CardHeader className="space-y-2">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background">
-              <Calendar className="h-4 w-4" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Bevorstehende Veranstaltungen</CardTitle>
+      {/* Planung */}
+      <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base font-black">
+            <ListChecks className="w-5 h-5 text-orange-600" />
+            Planung am {form.event_date ? formatDE(form.event_date) : "…"}
+          </CardTitle>
+          <CardDescription>Heimspiele + interne Events am ausgewählten Datum.</CardDescription>
+        </CardHeader>
+
+        <CardContent className="text-sm text-gray-700">
+          {dayLoading ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Lade Spiele/Events…
+            </span>
+          ) : dayError ? (
+            <span className="text-orange-700">{dayError}</span>
+          ) : (
+            <>
+              <div className="mt-1">
+                <span className="font-black">{homeGamesThatDay.length}</span>{" "}
+                {homeGamesThatDay.length === 1 ? "Heimspiel" : "Heimspiele"} an diesem Tag.
+              </div>
+			  
+			  {/* Geburtstage am ausgewählten Tag */}
+<div className="mt-3 flex items-center gap-2">
+  <PartyPopper className="h-4 w-4 text-pink-600" />
+  <div>
+    <span className="font-black">{birthdaysThatDay.length}</span>{" "}
+    {birthdaysThatDay.length === 1 ? "Geburtstag" : "Geburtstage"} an diesem Tag.
+  </div>
+</div>
+
+{birthdaysThatDay.length > 0 ? (
+  <div className="mt-2 space-y-2">
+    {birthdaysThatDay.map((p) => (
+      <div
+        key={p.id}
+        className="flex items-center justify-between rounded-xl border border-pink-200 bg-pink-50/60 px-3 py-2"
+      >
+        <div className="font-black text-gray-900 truncate">{p.name}</div>
+        <div className="ml-3 font-black text-gray-900 tabular-nums">
+          {p.birthdate ? formatDE(p.birthdate) : "—"}
+        </div>
+      </div>
+    ))}
+  </div>
+) : (
+  <div className="mt-2 text-sm text-gray-600">Keine Geburtstage an diesem Datum.</div>
+)}
+
+              {homeGamesThatDay.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {homeGamesThatDay
+                    .slice()
+                    .sort((a, b) => (a.match_time || "").localeCompare(b.match_time || ""))
+                    .map((m) => {
+                      const h = getTeamDisplayName(m, true)
+                      const a = getTeamDisplayName(m, false)
+                      const t = hhmm(m.match_time)
+                      return (
+                        <div
+                          key={m.id}
+                          className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <div className="font-black text-gray-900 truncate">
+                              {h} <span className="text-gray-400">vs</span> {a}
+                            </div>
+                            <div className="text-xs text-gray-600 truncate">{m.venue || "—"}</div>
+                          </div>
+                          <div className="ml-3 font-black text-gray-900 tabular-nums">{t}</div>
+                        </div>
+                      )
+                    })}
+                </div>
+              ) : (
+                <div className="mt-2 text-sm text-gray-600">Keine Heimspiele an diesem Datum gefunden.</div>
+              )}
+			  
+			  {/* Urlaube am ausgewählten Tag */}
+<div className="mt-4 flex items-center gap-2">
+  <Info className="h-4 w-4 text-blue-700" />
+  <div>
+    <span className="font-black">{vacationsThatDay.length}</span>{" "}
+    {vacationsThatDay.length === 1 ? "Person" : "Personen"} im Urlaub an diesem Tag.
+  </div>
+</div>
+
+{vacationsThatDay.length > 0 ? (
+  <div className="mt-2 space-y-2">
+    {vacationsThatDay.map((v) => (
+      <div
+        key={v.id}
+        className="flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50/60 px-3 py-2"
+      >
+        <div className="font-black text-gray-900 truncate">{v.user_name}</div>
+        <div className="ml-3 text-xs font-black text-gray-700 tabular-nums">
+          {formatDE(v.start_date)} – {formatDE(v.end_date)}
+        </div>
+      </div>
+    ))}
+  </div>
+) : (
+  <div className="mt-2 text-sm text-gray-600">Niemand im Urlaub an diesem Datum.</div>
+)}
+
+              <div className="mt-4 flex items-center gap-2">
+                <PartyPopper className="h-4 w-4 text-gray-800" />
+                <div>
+                  <span className="font-black">{dayEvents.length}</span> interne{" "}
+                  {dayEvents.length === 1 ? "Veranstaltung" : "Veranstaltungen"} an diesem Tag.
+                </div>
+              </div>
+
+              {dayEvents.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {dayEvents
+                    .slice()
+                    .sort((a, b) => (a.event_time || "").localeCompare(b.event_time || ""))
+                    .map((ev) => {
+                      const t = hhmm(ev.event_time)
+                      const isThis = editingEventId && ev.id === editingEventId
+                      return (
+                        <div
+                          key={ev.id}
+                          className={cn(
+                            "flex items-center justify-between rounded-xl border px-3 py-2",
+                            isThis ? "border-orange-200 bg-orange-50/60" : "border-gray-200 bg-gray-50/50",
+                          )}
+                        >
+                          <div className="min-w-0">
+                            <div className="font-black text-gray-900 truncate">
+                              {ev.name}
+                              {isThis ? (
+                                <span className="ml-2 text-xs font-black text-orange-700">(dieses Event)</span>
+                              ) : null}
+                            </div>
+                            <div className="text-xs text-gray-600 truncate">{getEventTypeLabel(ev.event_type)}</div>
+                          </div>
+                          <div className="ml-3 font-black text-gray-900 tabular-nums">{t}</div>
+                        </div>
+                      )
+                    })}
+                </div>
+              ) : (
+                <div className="mt-2 text-sm text-gray-600">Keine internen Events.</div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Liste */}
+      <Card className="rounded-2xl border border-gray-200 shadow-sm">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <CardTitle className="text-sm sm:text-base font-black">Bevorstehende Veranstaltungen</CardTitle>
               <CardDescription>Übersicht und Verwaltung aller geplanten Veranstaltungen.</CardDescription>
             </div>
+
+            <Button
+              variant="outline"
+              className="h-10 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 font-black"
+              onClick={() => fetchEvents()}
+              disabled={isBusy}
+            >
+              {isFetching ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Refresh
+            </Button>
           </div>
         </CardHeader>
 
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           {isFetching && events.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
@@ -689,13 +1109,20 @@ export function EventsManagement({ user }: EventsManagementProps) {
                 <TableBody>
                   {events.map((event) => (
                     <TableRow key={event.id}>
-                      <TableCell className="font-medium">{event.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="min-w-[200px]">
+                          <div className="font-black text-gray-900">{event.name}</div>
+                          <div className="text-xs text-gray-500">{event.source === "external" ? "Extern" : "Intern"}</div>
+                        </div>
+                      </TableCell>
+
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           {getEventTypeIcon(event.event_type)}
                           <span>{getEventTypeLabel(event.event_type)}</span>
                         </div>
                       </TableCell>
+
                       <TableCell>
                         {event.photo_url ? (
                           <div className="w-12 h-9 rounded-md overflow-hidden border border-gray-200">
@@ -712,24 +1139,21 @@ export function EventsManagement({ user }: EventsManagementProps) {
                           <span className="text-xs text-gray-500">—</span>
                         )}
                       </TableCell>
+
                       <TableCell>{new Date(event.event_date).toLocaleDateString("de-DE")}</TableCell>
                       <TableCell>{event.location}</TableCell>
                       <TableCell>{event.max_participants ? `Max. ${event.max_participants}` : "Unbegrenzt"}</TableCell>
+
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(event)}
-                            className="h-9 w-9 p-0"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(event)} className="h-9 w-9 p-0 rounded-xl">
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Bearbeiten</span>
                           </Button>
 
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm" disabled={isBusy || !user} className="h-9 w-9 p-0">
+                              <Button variant="outline" size="sm" disabled={isBusy || !user} className="h-9 w-9 p-0 rounded-xl">
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Löschen</span>
                               </Button>

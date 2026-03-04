@@ -28,10 +28,7 @@ import {
 import { FAQChatWidget } from "@/components/faq-chat-widget"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 type TimeFilter = "upcoming" | "past" | "all"
 
@@ -43,16 +40,12 @@ type EventRow = {
   event_time: string | null
   location: string | null
 
-  // ✅ Eintritt (für ALLE Events)
   entry_fee: number | null
-
   max_participants: number | null
   details: string | null
   photo_url: string | null
 
-  // ✅ Turnier
   mode: string | null
-
   startgeld_details: string | null
 
   source: string | null // "internal" | "external"
@@ -87,7 +80,7 @@ function formatTimeDE(time: string | null) {
 
 function toDateTime(e: Pick<EventRow, "event_date" | "event_time">) {
   const raw = (e.event_time || "19:00").toString()
-  const time = raw.length === 5 ? `${raw}:00` : raw // HH:mm oder HH:mm:ss
+  const time = raw.length === 5 ? `${raw}:00` : raw
   return new Date(`${e.event_date}T${time}`)
 }
 
@@ -117,7 +110,6 @@ function formatEuroCompact(n: number) {
 
 function parseStartgeld(details: string | null) {
   if (!details) return null
-  // akzeptiert: "10", "€10", "10€", "10,50", "10.50", "Startgeld: 10"
   const m = details.replace(",", ".").match(/(\d+(\.\d{1,2})?)/)
   if (!m) return null
   const n = Number(m[1])
@@ -126,17 +118,44 @@ function parseStartgeld(details: string | null) {
 
 function DummyCover({ label }: { label?: string }) {
   return (
-    <div className="relative h-40 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700">
-      <div className="absolute inset-0 opacity-20">
+    <div className="relative h-36 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700">
+      <div className="absolute inset-0 opacity-25">
         <div className="w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18),transparent_45%),radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.10),transparent_40%),radial-gradient(circle_at_30%_80%,rgba(255,255,255,0.12),transparent_45%)]" />
       </div>
       <div className="relative h-full flex items-center justify-center text-white">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10">
           <ImageIcon className="w-5 h-5" />
           <span className="text-sm font-semibold">{label || "Event"}</span>
         </div>
       </div>
     </div>
+  )
+}
+
+function Chip({
+  children,
+  tone = "gray",
+}: {
+  children: React.ReactNode
+  tone?: "gray" | "orange" | "blue" | "emerald" | "amber" | "slate"
+}) {
+  const cls =
+    tone === "orange"
+      ? "bg-orange-50 text-orange-900 border-orange-200"
+      : tone === "blue"
+        ? "bg-blue-50 text-blue-900 border-blue-200"
+        : tone === "emerald"
+          ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+          : tone === "amber"
+            ? "bg-amber-50 text-amber-900 border-amber-200"
+            : tone === "slate"
+              ? "bg-slate-50 text-slate-800 border-slate-200"
+              : "bg-gray-50 text-gray-800 border-gray-200"
+
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
+      {children}
+    </span>
   )
 }
 
@@ -160,7 +179,7 @@ export default function VeranstaltungenPage() {
         const { data, error } = await supabase
           .from("events")
           .select(
-            "id,name,event_type,event_date,event_time,location,entry_fee,max_participants,details,photo_url,mode,startgeld_details,source"
+            "id,name,event_type,event_date,event_time,location,entry_fee,max_participants,details,photo_url,mode,startgeld_details,source",
           )
           .order("event_date", { ascending: true })
           .order("event_time", { ascending: true })
@@ -237,209 +256,223 @@ export default function VeranstaltungenPage() {
   }, [events, timeFilter, typeFilter, sourceFilter, query])
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 md:pb-0">
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
       <Header />
 
-      <section className="bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white py-10">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
-            <h1 className="text-3xl sm:text-4xl font-black">Veranstaltungen</h1>
-            <p className="text-orange-100 mt-2">Turniere, Partys und mehr.</p>
+      <main className="pt-12 sm:pt-14">
+        <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+          {/* Page Header Card */}
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+            <div className="p-4 flex items-start gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-5 h-5 text-orange-600" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg font-black">Veranstaltungen</h1>
+                <p className="text-sm text-gray-600 mt-1">Turniere, Partys und mehr – alles auf einen Blick.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters (sticky like app) */}
+          <div className="sticky top-[56px] z-20 mt-4">
+            <Card className="border border-gray-200 shadow-sm rounded-2xl">
+              <CardContent className="p-4">
+                <div className="flex flex-col gap-3">
+                  {/* Segmented Buttons */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      size="sm"
+                      variant={timeFilter === "upcoming" ? "default" : "outline"}
+                      onClick={() => setTimeFilter("upcoming")}
+                      className="rounded-xl"
+                    >
+                      Anstehend
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={timeFilter === "past" ? "default" : "outline"}
+                      onClick={() => setTimeFilter("past")}
+                      className="rounded-xl"
+                    >
+                      Abgelaufen
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={timeFilter === "all" ? "default" : "outline"}
+                      onClick={() => setTimeFilter("all")}
+                      className="rounded-xl"
+                    >
+                      Alle
+                    </Button>
+                  </div>
+
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Suchen (Name, Ort, Details …)"
+                      className="pl-9 rounded-xl"
+                    />
+                  </div>
+
+                  {/* Selects */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-4 h-4 text-gray-500" />
+                      <Select value={typeFilter} onValueChange={setTypeFilter}>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Typ" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Alle Typen</SelectItem>
+                          {distinctTypes.map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {getEventTypeLabel(t)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-4 h-4 text-gray-500" />
+                      <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Quelle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Intern + Extern</SelectItem>
+                          <SelectItem value="internal">Nur intern</SelectItem>
+                          <SelectItem value="external">Nur extern</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-gray-600">
+                    {loading ? "Lade…" : `${filtered.length} Ergebnis(se)`}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* List */}
+          <div className="mt-4">
+            {loading ? (
+              <div className="text-center text-gray-600 py-12">Lade Veranstaltungen…</div>
+            ) : error ? (
+              <div className="text-center text-red-600 py-12">{error}</div>
+            ) : filtered.length === 0 ? (
+              <div className="text-center text-gray-600 py-12">Keine passenden Veranstaltungen gefunden.</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filtered.map((e) => {
+                  const dt = toDateTime(e)
+                  const isPast = dt.getTime() < Date.now()
+                  const isTournament = (e.event_type || "").toLowerCase() === "tournament"
+                  const isExternal = (e.source || "internal").toLowerCase() === "external"
+                  const Icon = getEventTypeIcon(e.event_type)
+
+                  const hasEintritt = (e.entry_fee ?? 0) > 0
+                  const hasStartgeldDetails = Boolean(e.startgeld_details && e.startgeld_details.trim().length > 0)
+                  const startgeldAmount = parseStartgeld(e.startgeld_details)
+
+                  return (
+                    <Card key={e.id} className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
+                      {e.photo_url ? (
+                        <div className="relative h-36 bg-gray-200">
+                          <Image src={e.photo_url} alt={e.name} fill className="object-cover" />
+                        </div>
+                      ) : (
+                        <DummyCover label={getEventTypeLabel(e.event_type)} />
+                      )}
+
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <CardTitle className="text-base font-black leading-snug line-clamp-2">{e.name}</CardTitle>
+
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              <Chip tone="gray">
+                                <Icon className="w-3.5 h-3.5" />
+                                {getEventTypeLabel(e.event_type)}
+                              </Chip>
+
+                              <Chip tone={isExternal ? "amber" : "emerald"}>{isExternal ? "Extern" : "Intern"}</Chip>
+
+                              <Chip tone={isPast ? "slate" : "blue"}>{isPast ? "Abgelaufen" : "Anstehend"}</Chip>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+
+                      <CardContent className="pt-0">
+                        <div className="space-y-2 text-sm text-gray-700">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-gray-500" />
+                            <span className="font-medium">{formatDateDE(e.event_date)}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-gray-500" />
+                            <span>{formatTimeDE(e.event_time)} Uhr</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-gray-500" />
+                            <span className="line-clamp-1">{e.location || "Wird bekannt gegeben"}</span>
+                          </div>
+
+                          {isTournament ? (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              <Chip tone="orange">
+                                <ModeIcon mode={e.mode} />
+                                {modeLabel(e.mode)}
+                              </Chip>
+
+                              {hasStartgeldDetails ? (
+                                <Chip tone="orange">
+                                  <span className="font-bold">Startgeld:</span>{" "}
+                                  {startgeldAmount != null ? formatEuroCompact(startgeldAmount) : e.startgeld_details}
+                                </Chip>
+                              ) : null}
+
+                              {hasEintritt ? (
+                                <Chip tone="gray">
+                                  <span className="font-bold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
+                                </Chip>
+                              ) : null}
+                            </div>
+                          ) : hasEintritt ? (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              <Chip tone="gray">
+                                <span className="font-bold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
+                              </Chip>
+                            </div>
+                          ) : null}
+
+                          {e.details ? <div className="text-sm text-gray-600 line-clamp-3 pt-1">{e.details}</div> : null}
+                        </div>
+
+                        <div className="mt-4">
+                          <Button asChild className="w-full rounded-xl">
+                            <Link href={`/veranstaltungen/${e.id}`}>Details</Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
-      </section>
-
-      <div className="container mx-auto px-4 py-6">
-        <Card className="border-0 shadow-lg">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={timeFilter === "upcoming" ? "default" : "outline"}
-                  onClick={() => setTimeFilter("upcoming")}
-                >
-                  Anstehend
-                </Button>
-                <Button variant={timeFilter === "past" ? "default" : "outline"} onClick={() => setTimeFilter("past")}>
-                  Abgelaufen
-                </Button>
-                <Button variant={timeFilter === "all" ? "default" : "outline"} onClick={() => setTimeFilter("all")}>
-                  Alle
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Suchen (Name, Ort, Details …)"
-                    className="pl-9"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-500" />
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Typ" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Alle Typen</SelectItem>
-                      {distinctTypes.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {getEventTypeLabel(t)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-500" />
-                  <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Quelle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Intern + Extern</SelectItem>
-                      <SelectItem value="internal">Nur intern</SelectItem>
-                      <SelectItem value="external">Nur extern</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="text-sm text-gray-600">{loading ? "Lade…" : `${filtered.length} Ergebnis(se)`}</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="mt-6">
-          {loading ? (
-            <div className="text-center text-gray-600 py-12">Lade Veranstaltungen…</div>
-          ) : error ? (
-            <div className="text-center text-red-600 py-12">{error}</div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center text-gray-600 py-12">Keine passenden Veranstaltungen gefunden.</div>
-          ) : (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filtered.map((e) => {
-                const dt = toDateTime(e)
-                const isPast = dt.getTime() < Date.now()
-                const isTournament = (e.event_type || "").toLowerCase() === "tournament"
-                const isExternal = (e.source || "internal").toLowerCase() === "external"
-                const Icon = getEventTypeIcon(e.event_type)
-
-                const hasEintritt = (e.entry_fee ?? 0) > 0
-                const hasStartgeldDetails = Boolean(e.startgeld_details && e.startgeld_details.trim().length > 0)
-                const startgeldAmount = parseStartgeld(e.startgeld_details)
-
-                return (
-                  <Card key={e.id} className="border-0 shadow-lg overflow-hidden">
-                    {e.photo_url ? (
-                      <div className="relative h-40 bg-gray-200">
-                        <Image src={e.photo_url} alt={e.name} fill className="object-cover" />
-                      </div>
-                    ) : (
-                      <DummyCover label={getEventTypeLabel(e.event_type)} />
-                    )}
-
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <CardTitle className="text-lg font-extrabold leading-snug line-clamp-2">{e.name}</CardTitle>
-
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-800">
-                              <Icon className="w-3.5 h-3.5" />
-                              {getEventTypeLabel(e.event_type)}
-                            </span>
-
-                            <span
-                              className={
-                                "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full " +
-                                (isExternal ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900")
-                              }
-                            >
-                              {isExternal ? "Extern" : "Intern"}
-                            </span>
-
-                            <span
-                              className={
-                                "inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full " +
-                                (isPast ? "bg-slate-100 text-slate-700" : "bg-blue-100 text-blue-900")
-                              }
-                            >
-                              {isPast ? "Abgelaufen" : "Anstehend"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="pt-0">
-                      <div className="space-y-2 text-sm text-gray-700">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium">{formatDateDE(e.event_date)}</span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-gray-500" />
-                          <span>{formatTimeDE(e.event_time)} Uhr</span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-gray-500" />
-                          <span className="line-clamp-1">{e.location || "Wird bekannt gegeben"}</span>
-                        </div>
-
-                        {isTournament ? (
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-900 border border-orange-200">
-                              <ModeIcon mode={e.mode} />
-                              {modeLabel(e.mode)}
-                            </span>
-
-                            {hasStartgeldDetails ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-900 border border-orange-200">
-                                <span className="font-bold">Startgeld:</span>{" "}
-                                {startgeldAmount != null ? formatEuroCompact(startgeldAmount) : e.startgeld_details}
-                              </span>
-                            ) : null}
-
-                            {hasEintritt ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-50 text-slate-900 border border-slate-200">
-                                <span className="font-bold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : hasEintritt ? (
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-50 text-slate-900 border border-slate-200">
-                              <span className="font-bold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
-                            </span>
-                          </div>
-                        ) : null}
-
-                        {e.details ? <div className="text-sm text-gray-600 line-clamp-3 pt-1">{e.details}</div> : null}
-                      </div>
-
-                      <div className="mt-4">
-                        <Button asChild className="w-full">
-                          <Link href={`/veranstaltungen/${e.id}`}>Details</Link>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      </div>
+      </main>
 
       <FAQChatWidget />
       <MobileBottomNav />
