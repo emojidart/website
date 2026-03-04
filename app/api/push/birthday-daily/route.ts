@@ -130,8 +130,11 @@ export async function POST(request: NextRequest) {
       if (tokens.length === 0) continue
 
       // ✅ Push Text: echte Gratulation NUR ans Geburtstagskind
-      const conversation = "🎂 Happy Birthday!"
-      const bodyText = `Alles Gute zum Geburtstag, ${pname}! 🎉🥳\nDein EMD Dartverein ❤️`
+      const conversation = "🎉🎊 Happy Birthday! 🎊🎉"
+const bodyText =
+  `🎊🎉 Alles Gute zum Geburtstag, ${pname}! 🎉🎊\n\n` +
+  `Wir wünschen dir einen mega Tag 🥳🍀\n` +
+  `— Dein EMD Dartverein ❤️`
 
       const tag = `birthday:${year}:${pad2(month)}-${pad2(day)}:${pid}`
       const notif_id = stableNotifIdFromTag(tag)

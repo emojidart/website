@@ -18,7 +18,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.Person;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.drawable.IconCompat;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -69,6 +68,12 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         String type = get(data, "type");
         if ("event".equals(type)) {
             showEventCard(remoteMessage);
+            return;
+        }
+
+        // ✅ BIRTHDAY: NICHT als Chat-History anzeigen (sonst bleiben alte Zeilen drin)
+        if ("birthday_greeting".equals(type) || "birthday".equals(type)) {
+            showBirthdaySimple(remoteMessage);
             return;
         }
 
@@ -177,6 +182,65 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
     }
 
     // =========================
+    // BIRTHDAY SIMPLE NOTIFICATION (NO HISTORY)
+    // =========================
+    private void showBirthdaySimple(RemoteMessage remoteMessage) {
+        NotificationManagerCompat nm = NotificationManagerCompat.from(this);
+        if (!nm.areNotificationsEnabled()) return;
+
+        Map<String, String> data = remoteMessage.getData();
+
+        String conversation = get(data, "conversation");
+        String message      = get(data, "message");
+        String body         = get(data, "body");
+
+        String tag          = get(data, "tag");
+        String notifIdStr   = get(data, "notif_id");
+        String clickUrl     = get(data, "clickUrl");
+
+        if (TextUtils.isEmpty(conversation)) conversation = "🎂 Geburtstag";
+
+        String textToShow = firstNonEmpty(message, body);
+        if (TextUtils.isEmpty(textToShow)) textToShow = "";
+
+        int orange = ContextCompat.getColor(this, R.color.emd_orange);
+        int notifId = safeInt(notifIdStr, stableIdFrom(tag));
+
+        if (TextUtils.isEmpty(clickUrl)) clickUrl = "/vereinskalender-app";
+        if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setAction("OPEN_PUSH_" + notifId);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("path", clickUrl);
+        intent.setData(Uri.parse("emd://push" + clickUrl));
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this,
+                notifId,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        ensureChannel();
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(conversation)
+                .setContentText(firstLine(textToShow))
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(textToShow))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setColor(orange)
+                .setColorized(true);
+
+        if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
+        else nm.notify(notifId, builder.build());
+    }
+
+    // =========================
     // EVENT CARD NOTIFICATION
     // =========================
     private void showEventCard(RemoteMessage remoteMessage) {
@@ -197,11 +261,11 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         String tag       = get(data, "tag");
         String notifIdStr= get(data, "notif_id");
         String clickUrl  = get(data, "clickUrl");
-		
-		// ✅ Turnierstart (match_start) soll immer auf Live-Seite führen
-if ("match_start".equals(cardKind)) {
-    clickUrl = "/push_preferences";
-}
+
+        // ✅ Turnierstart (match_start) soll immer auf Live-Seite führen
+        if ("match_start".equals(cardKind)) {
+            clickUrl = "/push_preferences";
+        }
 
         int orange = ContextCompat.getColor(this, R.color.emd_orange);
         int notifId = safeInt(notifIdStr, stableIdFrom(tag));

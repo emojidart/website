@@ -194,18 +194,23 @@ export function MobileBottomNav() {
     ]
   }, [isLoggedIn, isAdmin, handleLogout])
 
-  if (loading) return <div className="h-20 md:hidden" />
+  // Höhe der BottomNav inkl. Safe-Area (WebView/App Fix)
+  const BOTTOM_SAFE_H = "calc(4.5rem + max(12px, env(safe-area-inset-bottom)))"
+
+  if (loading) return <div className="md:hidden" style={{ height: BOTTOM_SAFE_H }} />
 
   return (
     <>
-      <div className="h-20 md:hidden" />
+      {/* Spacer, damit Content nicht unter die fixed Nav rutscht */}
+      <div className="md:hidden" style={{ height: BOTTOM_SAFE_H }} />
 
       {/* MORE OVERLAY */}
       {isMoreOpen && (
         <div className="fixed inset-0 z-[60] md:hidden">
           <button aria-label="Schließen" className="absolute inset-0 bg-black/40" onClick={closeMore} />
 
-          <div className="absolute left-0 right-0 bottom-0 pb-20">
+          {/* Sheet sitzt über Nav + Safe-Area */}
+          <div className="absolute left-0 right-0 bottom-0" style={{ paddingBottom: BOTTOM_SAFE_H }}>
             <div className="mx-3 overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b bg-white p-4">
                 <h3 className="text-lg font-bold text-gray-900">Mehr Optionen</h3>
@@ -221,17 +226,14 @@ export function MobileBottomNav() {
 
                     {sec.variant === "grid" ? (
                       <div className="grid grid-cols-2 gap-2">
-                        {sec.items.map((item) => {
-                          // grid items sind links
-                          return (
-                            <NavLink
-                              key={item.key}
-                              item={item}
-                              onAfter={closeMore}
-                              className="bg-white border border-gray-200 hover:bg-gray-50"
-                            />
-                          )
-                        })}
+                        {sec.items.map((item) => (
+                          <NavLink
+                            key={item.key}
+                            item={item}
+                            onAfter={closeMore}
+                            className="bg-white border border-gray-200 hover:bg-gray-50"
+                          />
+                        ))}
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -252,9 +254,14 @@ export function MobileBottomNav() {
         </div>
       )}
 
-      {/* BOTTOM NAV */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-gray-200 bg-white shadow-2xl">
-        <div className="grid h-16 grid-cols-5">
+      {/* BOTTOM NAV (WebView/App safe) */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-gray-200 bg-white shadow-2xl"
+        style={{
+          paddingBottom: "max(12px, env(safe-area-inset-bottom))",
+        }}
+      >
+        <div className="grid grid-cols-5" style={{ height: BOTTOM_SAFE_H }}>
           {BOTTOM_BAR.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
