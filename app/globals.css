@@ -44,7 +44,8 @@ select {
 
 /* Safe-Area Helpers (iPhone Notch, Android Gesten) */
 .safe-pt {
-  padding-top: env(safe-area-inset-top);
+  padding-top: max(env(safe-area-inset-top), 24px);
+}
 }
 .safe-pb {
   padding-bottom: env(safe-area-inset-bottom);
