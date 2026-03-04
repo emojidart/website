@@ -170,7 +170,8 @@ export function Header({
     }
 
     return (
-      <header className="fixed top-0 left-0 right-0 z-50 w-full">
+      // ✅ NUR ÄNDERUNG: pt-[env(safe-area-inset-top)]
+      <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[env(safe-area-inset-top)]">
         <div className="bg-white/90 backdrop-blur border-b border-orange-100 shadow-sm">
           <div className="mx-auto w-full max-w-7xl px-4">
             <div className="flex h-14 items-center gap-3">
@@ -324,7 +325,8 @@ export function Header({
       )}
 
       {/* HEADER */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full">
+      {/* ✅ NUR ÄNDERUNG: pt-[env(safe-area-inset-top)] */}
+      <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[env(safe-area-inset-top)]">
         <div className="bg-white/90 backdrop-blur border-b border-orange-100 shadow-sm">
           {/* gleiche Breite wie Seiten */}
           <div className="mx-auto w-full px-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">

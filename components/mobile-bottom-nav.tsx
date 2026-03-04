@@ -108,13 +108,7 @@ function NavLink({
   )
 }
 
-function NavButton({
-  item,
-  className,
-}: {
-  item: NavItem
-  className?: string
-}) {
+function NavButton({ item, className }: { item: NavItem; className?: string }) {
   const Icon = item.icon
   return (
     <button
@@ -194,23 +188,25 @@ export function MobileBottomNav() {
     ]
   }, [isLoggedIn, isAdmin, handleLogout])
 
-  // Höhe der BottomNav inkl. Safe-Area (WebView/App Fix)
-  const BOTTOM_SAFE_H = "calc(4.5rem + max(12px, env(safe-area-inset-bottom)))"
+  // 👉 Offset, damit die Nav in "richtiger App" (WebView) nicht unter der Systemleiste hängt
+  // env(...) ist auf manchen WebViews 0, daher Fallback 12px
+  const BOTTOM_OFFSET = "max(12px, env(safe-area-inset-bottom))"
+  const SPACER_H = `calc(4rem + ${BOTTOM_OFFSET})` // 4rem = h-16
 
-  if (loading) return <div className="md:hidden" style={{ height: BOTTOM_SAFE_H }} />
+  if (loading) return <div className="md:hidden" style={{ height: SPACER_H }} />
 
   return (
     <>
-      {/* Spacer, damit Content nicht unter die fixed Nav rutscht */}
-      <div className="md:hidden" style={{ height: BOTTOM_SAFE_H }} />
+      {/* Spacer: Content hat unten Platz für fixed Nav + Offset */}
+      <div className="md:hidden" style={{ height: SPACER_H }} />
 
       {/* MORE OVERLAY */}
       {isMoreOpen && (
         <div className="fixed inset-0 z-[60] md:hidden">
           <button aria-label="Schließen" className="absolute inset-0 bg-black/40" onClick={closeMore} />
 
-          {/* Sheet sitzt über Nav + Safe-Area */}
-          <div className="absolute left-0 right-0 bottom-0" style={{ paddingBottom: BOTTOM_SAFE_H }}>
+          {/* Sheet sitzt über Nav + Offset */}
+          <div className="absolute left-0 right-0 bottom-0" style={{ paddingBottom: SPACER_H }}>
             <div className="mx-3 overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b bg-white p-4">
                 <h3 className="text-lg font-bold text-gray-900">Mehr Optionen</h3>
@@ -254,14 +250,12 @@ export function MobileBottomNav() {
         </div>
       )}
 
-      {/* BOTTOM NAV (WebView/App safe) */}
+      {/* BOTTOM NAV (normal hoch, nur nach oben versetzt) */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-gray-200 bg-white shadow-2xl"
-        style={{
-          paddingBottom: "max(12px, env(safe-area-inset-bottom))",
-        }}
+        className="fixed left-0 right-0 z-50 md:hidden border-t border-gray-200 bg-white shadow-2xl"
+        style={{ bottom: BOTTOM_OFFSET }}
       >
-        <div className="grid grid-cols-5" style={{ height: BOTTOM_SAFE_H }}>
+        <div className="grid h-16 grid-cols-5">
           {BOTTOM_BAR.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
