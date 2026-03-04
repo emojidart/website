@@ -43,19 +43,10 @@ select {
 }
 
 /* Safe-Area Helpers (iPhone Notch, Android Gesten) */
-.safe-pt {
-  padding-top: max(env(safe-area-inset-top), 24px);
-}
-
-.safe-pb {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-.safe-pl {
-  padding-left: env(safe-area-inset-left);
-}
-.safe-pr {
-  padding-right: env(safe-area-inset-right);
-}
+.safe-pt { padding-top: env(safe-area-inset-top); }
+.safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+.safe-pl { padding-left: env(safe-area-inset-left); }
+.safe-pr { padding-right: env(safe-area-inset-right); }
 
 /* Root wrapper für App */
 .app-root {
