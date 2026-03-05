@@ -1502,7 +1502,18 @@ const getPostponedMatches = () => {
 }
 
 const getCompletedMatches = () => {
-  return matches.filter((match) => match.status === "completed")
+  return matches
+    .filter((match) => match.status === "completed")
+    .sort((a, b) => {
+      // zuerst nach Datum (neueste zuerst)
+      const dateDiff = new Date(b.match_date).getTime() - new Date(a.match_date).getTime()
+      if (dateDiff !== 0) return dateDiff
+
+      // wenn gleiches Datum: nach Uhrzeit (neueste zuerst)
+      const ta = a.match_time ? a.match_time.slice(0, 5) : "00:00"
+      const tb = b.match_time ? b.match_time.slice(0, 5) : "00:00"
+      return tb.localeCompare(ta)
+    })
 }
 
 const postponeMatch = async (

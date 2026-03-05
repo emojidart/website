@@ -4,9 +4,10 @@ import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { PresenceTracker } from "@/components/presence-tracker"
 import { PushSubscriptionRepair } from "@/components/push-subscription-repair"
-import KillServiceWorker from "@/components/KillServiceWorker" // ✅ NEU
+import KillServiceWorker from "@/components/KillServiceWorker"
 import PushInit from "./PushInit"
 import AppPlatformClass from "./AppPlatformClass"
+import SupabaseSessionGuard from "@/components/SupabaseSessionGuard" // ✅ NEU
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -39,18 +40,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="de">
       <body className={`${inter.className} antialiased`}>
-        {/* ✅ killt alte PWA Service Worker */}
+        {/* killt alte PWA Service Worker */}
         <KillServiceWorker />
 
-        {/* ✅ setzt .is-native auf <html> wenn App */}
+        {/* setzt .is-native auf <html> wenn App */}
         <AppPlatformClass />
+
+        {/* 🔐 Supabase Session Guard */}
+        <SupabaseSessionGuard />
 
         <div className="app-root safe-pt safe-pb">
           <PresenceTracker />
           <PushSubscriptionRepair />
           <PushInit />
 
-          {/* ✅ KEIN lg:pl-64 mehr, weil du keine feste Sidebar hast */}
           {children}
         </div>
       </body>

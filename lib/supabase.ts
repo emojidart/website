@@ -1,11 +1,26 @@
 import { createBrowserClient, createServerClient } from "@supabase/ssr"
 import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies"
+import { Preferences } from "@capacitor/preferences"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase environment variables")
+}
+
+// ✅ Capacitor Storage Adapter (stabiler als localStorage)
+const capacitorStorage = {
+  async getItem(key: string) {
+    const { value } = await Preferences.get({ key })
+    return value ?? null
+  },
+  async setItem(key: string, value: string) {
+    await Preferences.set({ key, value })
+  },
+  async removeItem(key: string) {
+    await Preferences.remove({ key })
+  },
 }
 
 /**
@@ -15,15 +30,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
  */
 export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    // In Hybrid/WebView Apps: Session in localStorage behalten
+    storage: capacitorStorage,     // ✅ DAS ist der Fix
     persistSession: true,
     autoRefreshToken: true,
-
-    // Für normale App-Logins brauchst du das meist NICHT.
-    // (Invite/Recovery Links in der App sind selten)
     detectSessionInUrl: false,
-
-    // optional, aber ok:
     flowType: "implicit",
   },
 })
