@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase environment variables")
 }
 
-// ✅ Capacitor Storage Adapter (stabiler als localStorage)
+// ✅ Capacitor Storage Adapter (statt localStorage)
 const capacitorStorage = {
   async getItem(key: string) {
     const { value } = await Preferences.get({ key })
@@ -30,7 +30,7 @@ const capacitorStorage = {
  */
 export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: capacitorStorage,     // ✅ DAS ist der Fix
+    storage: capacitorStorage, // ✅ WICHTIGSTER FIX
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
