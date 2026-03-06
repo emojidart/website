@@ -445,16 +445,15 @@ export function LeagueManagement() {
 
   const createMatch = useCallback(async () => {
     try {
-      const matchData: any = {
-        season_id: selectedSeason,
-        match_date: newMatchState.match_date,
-        match_time: newMatchState.match_time,
-        week_number: newMatchState.week_number,
-        venue: newMatchState.venue,
-        home_team_type: newMatchState.home_team_type,
-        away_team_type: newMatchState.away_team_type,
-        dart_type: newMatchState.dart_type,
-      }
+     const matchData: any = {
+  match_date: editMatchDetails.match_date,
+  match_time: editMatchDetails.match_time,
+  week_number: editMatchDetails.week_number,
+  venue: editMatchDetails.venue,
+  dart_type: editMatchDetails.dart_type,
+  home_team_type: editMatchDetails.home_team_type,
+  away_team_type: editMatchDetails.away_team_type,
+}
 
       if (newMatchState.home_team_type === "own") matchData.home_team_id = newMatchState.home_team_id
       else matchData.home_opponent_team_id = newMatchState.home_team_id
@@ -765,6 +764,39 @@ export function LeagueManagement() {
     },
     [opponentTeams],
   )
+  
+  
+  const handleEditTeamSelection = useCallback(
+  (teamId: string, teamType: "own" | "opponent", position: "home" | "away") => {
+    setEditMatchDetails((prev) => {
+      const updated = { ...prev }
+
+      if (position === "home") {
+        updated.home_team_id = teamId
+        updated.home_team_type = teamType
+      } else {
+        updated.away_team_id = teamId
+        updated.away_team_type = teamType
+      }
+
+      let autoVenue = ""
+      if (updated.home_team_type === "own" && updated.home_team_id) {
+        autoVenue = DEFAULT_HOME_VENUE
+      } else if (updated.home_team_type === "opponent" && updated.home_team_id) {
+        const opp = opponentTeams.find((t) => t.id === updated.home_team_id)
+        if (opp?.venue) autoVenue = opp.venue
+      }
+
+      updated.venue = autoVenue
+      return updated
+    })
+  },
+  [opponentTeams],
+)
+  
+  
+  
+  
 
   // ✅ "App-Layout": Sticky Tabs + mobile friendly spacing
   if (loading) {
@@ -1438,16 +1470,12 @@ export function LeagueManagement() {
                                                       <div className="space-y-2">
                                                         <Label>Heimteam</Label>
                                                         <div className="flex flex-col sm:flex-row gap-2">
-                                                          <Select
-                                                            value={editMatchDetails.home_team_type}
-                                                            onValueChange={(value: "own" | "opponent") =>
-                                                              setEditMatchDetails((prev) => ({
-                                                                ...prev,
-                                                                home_team_type: value,
-                                                                home_team_id: "",
-                                                              }))
-                                                            }
-                                                          >
+                                                        <Select
+  value={editMatchDetails.home_team_type}
+  onValueChange={(value: "own" | "opponent") =>
+    handleEditTeamSelection("", value, "home")
+  }
+>
                                                             <SelectTrigger className="w-full sm:w-40 rounded-xl">
                                                               <SelectValue />
                                                             </SelectTrigger>
@@ -1458,11 +1486,11 @@ export function LeagueManagement() {
                                                           </Select>
 
                                                           <Select
-                                                            value={editMatchDetails.home_team_id}
-                                                            onValueChange={(value) =>
-                                                              setEditMatchDetails((prev) => ({ ...prev, home_team_id: value }))
-                                                            }
-                                                          >
+  value={editMatchDetails.home_team_id}
+  onValueChange={(value) =>
+    handleEditTeamSelection(value, editMatchDetails.home_team_type, "home")
+  }
+>
                                                             <SelectTrigger className="flex-1 rounded-xl">
                                                               <SelectValue placeholder="Team auswählen" />
                                                             </SelectTrigger>
@@ -1486,16 +1514,12 @@ export function LeagueManagement() {
                                                       <div className="space-y-2">
                                                         <Label>Auswärtsteam</Label>
                                                         <div className="flex flex-col sm:flex-row gap-2">
-                                                          <Select
-                                                            value={editMatchDetails.away_team_type}
-                                                            onValueChange={(value: "own" | "opponent") =>
-                                                              setEditMatchDetails((prev) => ({
-                                                                ...prev,
-                                                                away_team_type: value,
-                                                                away_team_id: "",
-                                                              }))
-                                                            }
-                                                          >
+                                                         <Select
+  value={editMatchDetails.away_team_type}
+  onValueChange={(value: "own" | "opponent") =>
+    handleEditTeamSelection("", value, "away")
+  }
+>
                                                             <SelectTrigger className="w-full sm:w-40 rounded-xl">
                                                               <SelectValue />
                                                             </SelectTrigger>
@@ -1506,11 +1530,11 @@ export function LeagueManagement() {
                                                           </Select>
 
                                                           <Select
-                                                            value={editMatchDetails.away_team_id}
-                                                            onValueChange={(value) =>
-                                                              setEditMatchDetails((prev) => ({ ...prev, away_team_id: value }))
-                                                            }
-                                                          >
+  value={editMatchDetails.away_team_id}
+  onValueChange={(value) =>
+    handleEditTeamSelection(value, editMatchDetails.away_team_type, "away")
+  }
+>
                                                             <SelectTrigger className="flex-1 rounded-xl">
                                                               <SelectValue placeholder="Team auswählen" />
                                                             </SelectTrigger>

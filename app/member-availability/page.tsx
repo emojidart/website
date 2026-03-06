@@ -1260,12 +1260,12 @@ if (authLoading || loading) {
                       const locked = isMatchLocked(m)
 
                       return (
-                        <Card
-                          key={m.id}
-                          className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden ${
-                            locked ? "ring-1 ring-red-200 bg-red-50/20" : ""
-                          }`}
-                        >
+                       <Card
+  key={m.id}
+  className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl w-full overflow-hidden ${
+    locked ? "ring-1 ring-red-200 bg-red-50/20" : ""
+  }`}
+>
                           <CardContent className="p-4">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
                               <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
