@@ -154,30 +154,31 @@ function leadershipIcon(role: string | null) {
 }
 
 function trainingTypeLabel(t: TrainingType) {
-  if (t === "training") return "Training"
-  if (t === "double_training") return "Doppeltraining"
-  return "Spezial / Turnier"
+  if (t === "training") return "Team-Training"
+  if (t === "double_training") return "Öffentliches Training"
+  return "Trainingsturnier"
 }
 
 function trainingTypeBadge(t: TrainingType) {
   if (t === "training") {
-    return <Badge variant="outline">Training</Badge>
+    return <Badge variant="outline">Team</Badge>
   }
   if (t === "double_training") {
     return (
       <Badge className="bg-blue-600 text-white">
-        <Users className="h-3 w-3 mr-1" />
-        Doppel
+        <Globe className="h-3 w-3 mr-1" />
+        Öffentlich
       </Badge>
     )
   }
   return (
     <Badge className="bg-purple-600 text-white">
       <Trophy className="h-3 w-3 mr-1" />
-      Spezial
+      Turnier
     </Badge>
   )
 }
+
 function trainingStatusBadge(s: TrainingStatus) {
   if (s === "canceled") return <Badge className="bg-red-600 text-white">Abgesagt</Badge>
   if (s === "completed") return <Badge variant="outline">Erledigt</Badge>
@@ -214,8 +215,8 @@ function InfoCallout() {
           <h2 className="text-sm sm:text-base font-semibold text-gray-900">Kurz erklärt</h2>
 
           <p className="mt-1 text-sm text-gray-600">
-            Hier können Teamtrainings, öffentliche Trainings und Trainingsturniere geplant werden.
-Öffentliche Trainings und Turniere sind für alle Spieler sichtbar.
+            Hier können Team-Trainings, öffentliche Trainings und Trainingsturniere geplant werden.
+            Team-Trainings sind nur für Teammitglieder sichtbar. Öffentliche Trainings und Turniere sind für alle Spieler sichtbar.
           </p>
 
           <div className="mt-3 grid gap-2 text-sm">
@@ -271,8 +272,8 @@ function MemberTrainingsInner() {
   const [savingItem, setSavingItem] = useState(false)
   const [itemError, setItemError] = useState<string | null>(null)
 
- const [fType, setFType] = useState<TrainingType>("training")
-  const [fTitle, setFTitle] = useState<string>("TeamTraining")
+  const [fType, setFType] = useState<TrainingType>("training")
+  const [fTitle, setFTitle] = useState<string>("Team-Training")
   const [fDescription, setFDescription] = useState<string>("")
   const [fMinYes, setFMinYes] = useState<string>("6")
   const [fDate, setFDate] = useState<string>("")
@@ -344,27 +345,15 @@ function MemberTrainingsInner() {
     return teamMemberships.find((t) => t.team_id === selectedTeamId) ?? null
   }, [selectedTeamId, teamMemberships])
 
-  const isCaptainOrCoForSelectedTeam = useMemo(() => {
-    const role = selectedMembership?.role ?? null
-    return role === "Captain" || role === "Co-Captain"
-  }, [selectedMembership])
-
-  const hasLeadershipAnywhere = useMemo(() => {
-    return teamMemberships.some((t) => t.role === "Captain" || t.role === "Co-Captain")
-  }, [teamMemberships])
-
   const canCreateCurrentType = useMemo(() => {
-    if (fType === "training") return isCaptainOrCoForSelectedTeam
-    return hasLeadershipAnywhere
-  }, [fType, isCaptainOrCoForSelectedTeam, hasLeadershipAnywhere])
+    if (!profile?.player_id) return false
+    if (fType === "training") return !!selectedMembership
+    return true
+  }, [profile?.player_id, fType, selectedMembership])
 
   function canEditItem(item: TrainingItem | null) {
     if (!item) return false
-    if (item.type === "training") {
-      const membership = teamMemberships.find((t) => t.team_id === item.team_id)
-      return membership?.role === "Captain" || membership?.role === "Co-Captain"
-    }
-    return hasLeadershipAnywhere
+    return item.created_by === profile?.id
   }
 
   async function fetchUserProfile() {
@@ -395,12 +384,9 @@ function MemberTrainingsInner() {
 
     let all = ((rows as any) || []) as TrainingItem[]
 
-    // Anzeige:
-    // - TeamTraining nur für ausgewähltes Team
-    // - Öffentliches Training + TrainingsTurnier immer anzeigen
     if (selectedTeamId) {
-  all = all.filter((x) => x.type !== "training" || x.team_id === selectedTeamId)
-}
+      all = all.filter((x) => x.type !== "training" || x.team_id === selectedTeamId)
+    }
 
     setItems(all)
 
@@ -441,7 +427,7 @@ function MemberTrainingsInner() {
   async function loadTrainingData(item: TrainingItem) {
     if (!profile?.player_id) return
 
-   if (item.type === "training" && item.team_id) {
+    if (item.type === "training" && item.team_id) {
       const { data: tm, error: tmErr } = await supabase
         .from("team_members")
         .select(`player_id, club_players:club_players!team_members_player_id_fkey(id, name, photo_url)`)
@@ -472,7 +458,6 @@ function MemberTrainingsInner() {
         setMyNote("")
       }
     } else {
-      // Öffentliches Training / TrainingsTurnier -> alle Spieler
       const { data: allPlayers } = await supabase
         .from("club_players")
         .select("id,name,photo_url")
@@ -664,7 +649,7 @@ function MemberTrainingsInner() {
     const now = new Date()
     const today = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`
     setFType("training")
-setFTitle("Training")
+    setFTitle("Team-Training")
     setFDescription("")
     setFMinYes("6")
     setFDate(today)
@@ -673,7 +658,7 @@ setFTitle("Training")
   }
 
   async function openCreateDialog() {
-    if (!hasLeadershipAnywhere) return
+    if (!profile?.player_id) return
     setDialogItem(null)
     setIsDialogOpen(true)
     setEditMode(true)
@@ -683,7 +668,7 @@ setFTitle("Training")
   }
 
   async function loadPlayersForCreate(type: TrainingType) {
-   if (type === "training") {
+    if (type === "training") {
       if (!selectedTeamId) return
       const { data: tm } = await supabase
         .from("team_members")
@@ -697,6 +682,7 @@ setFTitle("Training")
       const { data: allPlayers } = await supabase.from("club_players").select("id,name,photo_url").order("name", { ascending: true })
       setPlayers((((allPlayers as any) || []) as TeamPlayer[]) ?? [])
     }
+
     setAvailability([])
     setMyStatus("maybe")
     setMyNote("")
@@ -715,23 +701,22 @@ setFTitle("Training")
       return
     }
 
-   if (fType === "training" && !selectedTeamId && !dialogItem?.team_id) {
+    if (fType === "training" && !selectedTeamId && !dialogItem?.team_id) {
       setItemError("Bitte zuerst ein Team auswählen.")
       return
     }
 
     const resolvedTeamId = fType === "training" ? dialogItem?.team_id ?? selectedTeamId ?? null : null
 
- const payloadBase = {
-  team_id: resolvedTeamId,
-  type: fType,
-  title: fTitle?.trim() || trainingTypeLabel(fType),
-  notes: fDescription?.trim() || null,
-  min_yes: minYes,
-  start_at: startISO,
-  end_at: endISO,
-end_at: endISO,
-}
+    const payloadBase = {
+      team_id: resolvedTeamId,
+      type: fType,
+      title: fTitle?.trim() || trainingTypeLabel(fType),
+      notes: fDescription?.trim() || null,
+      min_yes: minYes,
+      start_at: startISO,
+      end_at: endISO,
+    }
 
     setSavingItem(true)
     try {
@@ -769,9 +754,11 @@ end_at: endISO,
         }
       }
     } catch (e: any) {
-  console.error("saveTrainingCreateOrUpdate error", e)
-  setItemError(e?.message || e?.details || e?.hint || "Fehler beim Speichern. Bitte nochmal versuchen.")
-}
+      console.error("saveTrainingCreateOrUpdate error", e)
+      setItemError(e?.message || e?.details || e?.hint || "Fehler beim Speichern. Bitte nochmal versuchen.")
+    } finally {
+      setSavingItem(false)
+    }
   }
 
   async function cancelTraining() {
@@ -860,10 +847,10 @@ end_at: endISO,
               <div className="flex items-center justify-between gap-2">
                 <CardTitle className="flex items-center gap-2 text-xl font-bold">
                   <Calendar className="h-6 w-6 text-orange-600" />
-                  TeamTraining / Öffentlich / Turnier
+                  Team-Training / Öffentlich / Turnier
                 </CardTitle>
 
-                {hasLeadershipAnywhere ? (
+                {profile?.player_id ? (
                   <Button onClick={openCreateDialog} className="bg-orange-600 hover:bg-orange-700">
                     <Plus className="h-4 w-4 mr-2" />
                     Neu
@@ -910,11 +897,11 @@ end_at: endISO,
 
                         return (
                           <Card
-  key={item.id}
-  className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl w-full overflow-hidden ${
-    locked ? "ring-1 ring-red-200 bg-red-50/20" : ""
-  }`}
->
+                            key={item.id}
+                            className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl w-full overflow-hidden ${
+                              locked ? "ring-1 ring-red-200 bg-red-50/20" : ""
+                            }`}
+                          >
                             <CardContent className="p-4">
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
                                 <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
@@ -937,7 +924,7 @@ end_at: endISO,
                                     <span className="inline-flex items-center gap-1">
                                       <Calendar className="h-4 w-4 text-orange-600" />
                                       {formatDateTime(item.start_at)}
-                                      {item.end_at ? `–${formatTime(item.end_at)}` : ""}
+                                      {item.end_at ? ` – ${formatTime(item.end_at)}` : ""}
                                     </span>
                                   </div>
 
@@ -1003,7 +990,7 @@ end_at: endISO,
                               </div>
                               <div className="text-sm text-gray-600 mt-1">
                                 {formatDateTime(item.start_at)}
-                                {item.end_at ? `–${formatTime(item.end_at)}` : ""}
+                                {item.end_at ? ` – ${formatTime(item.end_at)}` : ""}
                               </div>
                               {item.notes ? <div className="mt-2 text-sm text-gray-700 break-words">{item.notes}</div> : null}
                               {c ? (
@@ -1074,16 +1061,16 @@ end_at: endISO,
                           <Calendar className="h-4 w-4 text-orange-600" />
                           <span>
                             {formatDateTime(dialogItem.start_at)}
-                            {dialogItem.end_at ? `–${formatTime(dialogItem.end_at)}` : ""}
+                            {dialogItem.end_at ? ` – ${formatTime(dialogItem.end_at)}` : ""}
                           </span>
                         </div>
                       </div>
 
                       {dialogItem.notes ? (
-  <div className="rounded-xl border bg-gray-50 p-3 text-sm text-gray-800 whitespace-pre-wrap break-words">
-    {dialogItem.notes}
-  </div>
-) : null}
+                        <div className="rounded-xl border bg-gray-50 p-3 text-sm text-gray-800 whitespace-pre-wrap break-words">
+                          {dialogItem.notes}
+                        </div>
+                      ) : null}
 
                       {(() => {
                         const c = countsByEvent.get(dialogItem.id) ?? null
@@ -1109,7 +1096,7 @@ end_at: endISO,
                       })()}
                     </>
                   ) : (
-                    <div className="text-sm text-gray-600">Erstelle TeamTraining, Öffentliches Training oder TrainingsTurnier.</div>
+                    <div className="text-sm text-gray-600">Erstelle Team-Training, Öffentliches Training oder Trainingsturnier.</div>
                   )}
 
                   {canEditItem(dialogItem) ? (
@@ -1168,13 +1155,13 @@ end_at: endISO,
                             variant={fType === t ? "default" : "outline"}
                             onClick={async () => {
                               setFType(t)
-                             if (t === "training") {
-  setFTitle("Training")
-} else if (t === "double_training") {
-  setFTitle("Doppeltraining")
-} else {
-  setFTitle("Spezial / Turnier")
-}
+                              if (t === "training") {
+                                setFTitle("Team-Training")
+                              } else if (t === "double_training") {
+                                setFTitle("Öffentliches Training")
+                              } else {
+                                setFTitle("Trainingsturnier")
+                              }
                               await loadPlayersForCreate(t)
                             }}
                           >
@@ -1184,7 +1171,7 @@ end_at: endISO,
                       </div>
                     </div>
 
-                    {fType === "team_training" ? (
+                    {fType === "training" ? (
                       <div className="rounded-xl border bg-gray-50 p-3 text-sm text-gray-700">
                         Gilt nur für Team: <span className="font-medium">{selectedMembership?.teams?.name ?? "Bitte Team wählen"}</span>
                       </div>
@@ -1196,7 +1183,7 @@ end_at: endISO,
 
                     <div className="grid gap-2">
                       <div className="text-xs text-gray-500">Titel</div>
-                      <Input value={fTitle} onChange={(e) => setFTitle(e.target.value)} placeholder="z.B. TeamTraining" />
+                      <Input value={fTitle} onChange={(e) => setFTitle(e.target.value)} placeholder="z. B. Team-Training" />
                     </div>
 
                     <div className="grid gap-2">
@@ -1204,7 +1191,7 @@ end_at: endISO,
                       <Textarea
                         value={fDescription}
                         onChange={(e) => setFDescription(e.target.value)}
-                        placeholder="zbs. Edart - Steeldart - Modus - Trainigseinheit"
+                        placeholder="z. B. E-Dart, Steel-Dart, Modus, Trainingseinheit"
                       />
                     </div>
 
@@ -1214,7 +1201,7 @@ end_at: endISO,
                         inputMode="numeric"
                         value={fMinYes}
                         onChange={(e) => setFMinYes(e.target.value.replace(/[^\d]/g, ""))}
-                        placeholder="z.B. 6"
+                        placeholder="z. B. 6"
                       />
                     </div>
 
@@ -1299,7 +1286,7 @@ end_at: endISO,
                       <Textarea
                         value={myNote}
                         onChange={(e) => setMyNote(e.target.value)}
-                        placeholder="z.B. komme 10 min später"
+                        placeholder="z. B. komme 10 min später"
                         disabled={isTrainingLocked(dialogItem) || dialogItem.status === "canceled"}
                       />
                       <Button variant="secondary" onClick={saveNote} disabled={isTrainingLocked(dialogItem) || dialogItem.status === "canceled"}>
