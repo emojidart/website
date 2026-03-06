@@ -44,7 +44,7 @@ import {
 } from "lucide-react"
 
 type AvailabilityStatus = "yes" | "maybe" | "no"
-type TrainingType = "team_training" | "public_training" | "training_tournament"
+type TrainingType = "training" | "double_training" | "special"
 type TrainingStatus = "draft" | "scheduled" | "canceled" | "completed"
 
 interface UserProfile {
@@ -81,7 +81,7 @@ interface TrainingItem {
   created_by: string | null
   type: TrainingType
   title: string
-  description: string | null
+  notes: string | null
   start_at: string
   end_at: string | null
   min_yes: number
@@ -154,31 +154,30 @@ function leadershipIcon(role: string | null) {
 }
 
 function trainingTypeLabel(t: TrainingType) {
-  if (t === "team_training") return "TeamTraining"
-  if (t === "public_training") return "Öffentliches Training"
-  return "TrainingsTurnier"
+  if (t === "training") return "Training"
+  if (t === "double_training") return "Doppeltraining"
+  return "Spezial / Turnier"
 }
 
 function trainingTypeBadge(t: TrainingType) {
-  if (t === "team_training") {
-    return <Badge variant="outline">TeamTraining</Badge>
+  if (t === "training") {
+    return <Badge variant="outline">Training</Badge>
   }
-  if (t === "public_training") {
+  if (t === "double_training") {
     return (
       <Badge className="bg-blue-600 text-white">
-        <Globe className="h-3 w-3 mr-1" />
-        Öffentlich
+        <Users className="h-3 w-3 mr-1" />
+        Doppel
       </Badge>
     )
   }
   return (
     <Badge className="bg-purple-600 text-white">
       <Trophy className="h-3 w-3 mr-1" />
-      Turnier
+      Spezial
     </Badge>
   )
 }
-
 function trainingStatusBadge(s: TrainingStatus) {
   if (s === "canceled") return <Badge className="bg-red-600 text-white">Abgesagt</Badge>
   if (s === "completed") return <Badge variant="outline">Erledigt</Badge>
@@ -272,7 +271,7 @@ function MemberTrainingsInner() {
   const [savingItem, setSavingItem] = useState(false)
   const [itemError, setItemError] = useState<string | null>(null)
 
-  const [fType, setFType] = useState<TrainingType>("team_training")
+ const [fType, setFType] = useState<TrainingType>("training")
   const [fTitle, setFTitle] = useState<string>("TeamTraining")
   const [fDescription, setFDescription] = useState<string>("")
   const [fMinYes, setFMinYes] = useState<string>("6")
@@ -355,13 +354,13 @@ function MemberTrainingsInner() {
   }, [teamMemberships])
 
   const canCreateCurrentType = useMemo(() => {
-    if (fType === "team_training") return isCaptainOrCoForSelectedTeam
+    if (fType === "training") return isCaptainOrCoForSelectedTeam
     return hasLeadershipAnywhere
   }, [fType, isCaptainOrCoForSelectedTeam, hasLeadershipAnywhere])
 
   function canEditItem(item: TrainingItem | null) {
     if (!item) return false
-    if (item.type === "team_training") {
+    if (item.type === "training") {
       const membership = teamMemberships.find((t) => t.team_id === item.team_id)
       return membership?.role === "Captain" || membership?.role === "Co-Captain"
     }
@@ -400,8 +399,8 @@ function MemberTrainingsInner() {
     // - TeamTraining nur für ausgewähltes Team
     // - Öffentliches Training + TrainingsTurnier immer anzeigen
     if (selectedTeamId) {
-      all = all.filter((x) => x.type !== "team_training" || x.team_id === selectedTeamId)
-    }
+  all = all.filter((x) => x.type !== "training" || x.team_id === selectedTeamId)
+}
 
     setItems(all)
 
@@ -413,7 +412,7 @@ function MemberTrainingsInner() {
   }
 
   function getScopeLabel(item: TrainingItem) {
-    if (item.type === "team_training") {
+    if (item.type === "training") {
       const team = teamMemberships.find((t) => t.team_id === item.team_id)
       return team?.teams?.name ?? "Team"
     }
@@ -430,7 +429,7 @@ function MemberTrainingsInner() {
 
     setFType(item.type)
     setFTitle(item.title ?? trainingTypeLabel(item.type))
-    setFDescription(item.description ?? "")
+    setFDescription(item.notes ?? "")
     setFMinYes(String(item.min_yes ?? 0))
     setFDate(toLocalDateInput(item.start_at))
     setFStart(toLocalTimeInput(item.start_at))
@@ -442,7 +441,7 @@ function MemberTrainingsInner() {
   async function loadTrainingData(item: TrainingItem) {
     if (!profile?.player_id) return
 
-    if (item.type === "team_training" && item.team_id) {
+   if (item.type === "training" && item.team_id) {
       const { data: tm, error: tmErr } = await supabase
         .from("team_members")
         .select(`player_id, club_players:club_players!team_members_player_id_fkey(id, name, photo_url)`)
@@ -664,8 +663,8 @@ function MemberTrainingsInner() {
   function resetCreateForm() {
     const now = new Date()
     const today = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`
-    setFType("team_training")
-    setFTitle("TeamTraining")
+    setFType("training")
+setFTitle("Training")
     setFDescription("")
     setFMinYes("6")
     setFDate(today)
@@ -680,11 +679,11 @@ function MemberTrainingsInner() {
     setEditMode(true)
     setItemError(null)
     resetCreateForm()
-    await loadPlayersForCreate("team_training")
+    await loadPlayersForCreate("training")
   }
 
   async function loadPlayersForCreate(type: TrainingType) {
-    if (type === "team_training") {
+   if (type === "training") {
       if (!selectedTeamId) return
       const { data: tm } = await supabase
         .from("team_members")
@@ -716,22 +715,23 @@ function MemberTrainingsInner() {
       return
     }
 
-    if (fType === "team_training" && !selectedTeamId && !dialogItem?.team_id) {
+   if (fType === "training" && !selectedTeamId && !dialogItem?.team_id) {
       setItemError("Bitte zuerst ein Team auswählen.")
       return
     }
 
-    const resolvedTeamId = fType === "team_training" ? dialogItem?.team_id ?? selectedTeamId ?? null : null
+    const resolvedTeamId = fType === "training" ? dialogItem?.team_id ?? selectedTeamId ?? null : null
 
-    const payloadBase = {
-      team_id: resolvedTeamId,
-      type: fType,
-      title: fTitle?.trim() || trainingTypeLabel(fType),
-      description: fDescription?.trim() || null,
-      min_yes: minYes,
-      start_at: startISO,
-      end_at: endISO,
-    }
+ const payloadBase = {
+  team_id: resolvedTeamId,
+  type: fType,
+  title: fTitle?.trim() || trainingTypeLabel(fType),
+  notes: fDescription?.trim() || null,
+  min_yes: minYes,
+  start_at: startISO,
+  end_at: endISO,
+end_at: endISO,
+}
 
     setSavingItem(true)
     try {
@@ -768,12 +768,10 @@ function MemberTrainingsInner() {
           await loadTrainingData(data as any)
         }
       }
-    } catch (e) {
-      console.error("saveTrainingCreateOrUpdate error", e)
-      setItemError("Fehler beim Speichern. Bitte nochmal versuchen.")
-    } finally {
-      setSavingItem(false)
-    }
+    } catch (e: any) {
+  console.error("saveTrainingCreateOrUpdate error", e)
+  setItemError(e?.message || e?.details || e?.hint || "Fehler beim Speichern. Bitte nochmal versuchen.")
+}
   }
 
   async function cancelTraining() {
@@ -943,7 +941,7 @@ function MemberTrainingsInner() {
                                     </span>
                                   </div>
 
-                                  {item.description ? <div className="mt-2 text-sm text-gray-700 break-words">{item.description}</div> : null}
+                                  {item.notes ? <div className="mt-2 text-sm text-gray-700 break-words">{item.notes}</div> : null}
 
                                   <div className="mt-3 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                                     <Badge variant="outline" className="text-xs">
@@ -1007,7 +1005,7 @@ function MemberTrainingsInner() {
                                 {formatDateTime(item.start_at)}
                                 {item.end_at ? `–${formatTime(item.end_at)}` : ""}
                               </div>
-                              {item.description ? <div className="mt-2 text-sm text-gray-700 break-words">{item.description}</div> : null}
+                              {item.notes ? <div className="mt-2 text-sm text-gray-700 break-words">{item.notes}</div> : null}
                               {c ? (
                                 <div className="mt-2 text-xs text-gray-600">
                                   Ja: {c.yes_count ?? 0} • Vielleicht: {c.maybe_count ?? 0} • Nein: {c.no_count ?? 0}
@@ -1081,11 +1079,11 @@ function MemberTrainingsInner() {
                         </div>
                       </div>
 
-                      {dialogItem.description ? (
-                        <div className="rounded-xl border bg-gray-50 p-3 text-sm text-gray-800 whitespace-pre-wrap break-words">
-                          {dialogItem.description}
-                        </div>
-                      ) : null}
+                      {dialogItem.notes ? (
+  <div className="rounded-xl border bg-gray-50 p-3 text-sm text-gray-800 whitespace-pre-wrap break-words">
+    {dialogItem.notes}
+  </div>
+) : null}
 
                       {(() => {
                         const c = countsByEvent.get(dialogItem.id) ?? null
@@ -1126,7 +1124,7 @@ function MemberTrainingsInner() {
                             setItemError(null)
                             setFType(item.type)
                             setFTitle(item.title ?? trainingTypeLabel(item.type))
-                            setFDescription(item.description ?? "")
+                            setFDescription(item.notes ?? "")
                             setFMinYes(String(item.min_yes ?? 0))
                             setFDate(toLocalDateInput(item.start_at))
                             setFStart(toLocalTimeInput(item.start_at))
@@ -1163,20 +1161,20 @@ function MemberTrainingsInner() {
                     <div className="grid gap-2">
                       <div className="text-xs text-gray-500">Typ</div>
                       <div className="flex flex-wrap gap-2">
-                        {(["team_training", "public_training", "training_tournament"] as TrainingType[]).map((t) => (
+                        {(["training", "double_training", "special"] as TrainingType[]).map((t) => (
                           <Button
                             key={t}
                             size="sm"
                             variant={fType === t ? "default" : "outline"}
                             onClick={async () => {
                               setFType(t)
-                              if (t === "team_training") {
-                                setFTitle("TeamTraining")
-                              } else if (t === "public_training") {
-                                setFTitle("Öffentliches Training")
-                              } else {
-                                setFTitle("TrainingsTurnier")
-                              }
+                             if (t === "training") {
+  setFTitle("Training")
+} else if (t === "double_training") {
+  setFTitle("Doppeltraining")
+} else {
+  setFTitle("Spezial / Turnier")
+}
                               await loadPlayersForCreate(t)
                             }}
                           >
