@@ -142,7 +142,7 @@ function buildISOFromLocal(dateStr: string, timeStr: string) {
 
 function statusBadge(s: AvailabilityStatus | "none") {
   if (s === "yes") return <Badge className="bg-green-600 text-white">Ja</Badge>
-  if (s === "maybe") return <Badge className="bg-yellow-600 text-white">Nur wenn Not am Mann</Badge>
+  if (s === "maybe") return <Badge className="bg-yellow-600 text-white">Vielleicht</Badge>
   if (s === "no") return <Badge className="bg-red-600 text-white">Nein</Badge>
   return <Badge variant="outline">keine Antwort</Badge>
 }
@@ -215,7 +215,8 @@ function InfoCallout() {
           <h2 className="text-sm sm:text-base font-semibold text-gray-900">Kurz erklärt</h2>
 
           <p className="mt-1 text-sm text-gray-600">
-            Hier kannst du TeamTraining, Öffentliches Training und TrainingsTurnier planen. Öffentlich und Turnier sind für alle Spieler sichtbar.
+            Hier können Teamtrainings, öffentliche Trainings und Trainingsturniere geplant werden.
+Öffentliche Trainings und Turniere sind für alle Spieler sichtbar.
           </p>
 
           <div className="mt-3 grid gap-2 text-sm">
@@ -228,7 +229,7 @@ function InfoCallout() {
             <div className="flex items-center gap-2">
               <HelpCircle className="h-4 w-4 text-yellow-600" />
               <span>
-                <span className="font-medium">Nur wenn Not am Mann</span> – nur im Engpass
+                <span className="font-medium">Vielleicht</span>
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -1205,7 +1206,7 @@ function MemberTrainingsInner() {
                       <Textarea
                         value={fDescription}
                         onChange={(e) => setFDescription(e.target.value)}
-                        placeholder="z.B. Doppel 501, warmup 18:45, Trikot mitnehmen ..."
+                        placeholder="zbs. Edart - Steeldart - Modus - Trainigseinheit"
                       />
                     </div>
 
@@ -1281,7 +1282,7 @@ function MemberTrainingsInner() {
                         disabled={isTrainingLocked(dialogItem) || dialogItem.status === "canceled"}
                       >
                         <HelpCircle className="h-4 w-4 mr-2" />
-                        Nur wenn Not am Mann
+                        Vielleicht
                       </Button>
 
                       <Button
