@@ -687,6 +687,39 @@ function MemberTrainingsInner() {
     setMyStatus("maybe")
     setMyNote("")
   }
+  
+  
+    async function sendTrainingPush(eventId: string, action: "created" | "updated" | "canceled", teamId?: string | null) {
+    try {
+      if (!session?.access_token || !profile?.id) return
+
+      const response = await fetch("/api/push/team-event", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          team_id: teamId ?? null,
+          event_id: eventId,
+          action,
+          sender_profile_id: profile.id,
+        }),
+      })
+
+      const result = await response.json().catch(() => null)
+      console.log("[team-event-push]", action, result)
+
+      if (!response.ok) {
+        console.error("[team-event-push] failed", result)
+      }
+    } catch (err) {
+      console.error("[team-event-push] error", err)
+    }
+  }
+  
+  
+  
 
   async function saveTrainingCreateOrUpdate() {
     if (!canCreateCurrentType && !canEditItem(dialogItem)) return
@@ -735,9 +768,11 @@ if (endISO) {
 
     setSavingItem(true)
     try {
-      if (dialogItem) {
+            if (dialogItem) {
         const { error } = await supabase.from("team_events").update(payloadBase).eq("id", dialogItem.id)
         if (error) throw error
+
+        await sendTrainingPush(dialogItem.id, "updated", payloadBase.team_id)
 
         await fetchTrainings()
 
@@ -747,7 +782,7 @@ if (endISO) {
           await loadTrainingData(fresh as any)
         }
         setEditMode(false)
-      } else {
+            } else {
         const { data, error } = await supabase
           .from("team_events")
           .insert({
@@ -760,6 +795,10 @@ if (endISO) {
 
         if (error) throw error
 
+        if (data?.id) {
+          await sendTrainingPush(data.id, "created", data.team_id)
+        }
+
         await fetchTrainings()
 
         if (data) {
@@ -768,6 +807,10 @@ if (endISO) {
           await loadTrainingData(data as any)
         }
       }
+	  
+	  
+	  
+	  
     } catch (e: any) {
       console.error("saveTrainingCreateOrUpdate error", e)
       setItemError(e?.message || e?.details || e?.hint || "Fehler beim Speichern. Bitte nochmal versuchen.")
@@ -781,9 +824,11 @@ if (endISO) {
     if (!canEditItem(dialogItem)) return
     setSavingItem(true)
     setItemError(null)
-    try {
+        try {
       const { error } = await supabase.from("team_events").update({ status: "canceled" }).eq("id", dialogItem.id)
       if (error) throw error
+
+      await sendTrainingPush(dialogItem.id, "canceled", dialogItem.team_id)
 
       await fetchTrainings()
 

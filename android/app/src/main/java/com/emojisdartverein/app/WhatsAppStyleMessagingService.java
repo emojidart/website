@@ -71,6 +71,12 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
             return;
         }
 
+        // ✅ NEU: TEAM EVENT / TRAINING PUSH
+        if ("team_event".equals(type)) {
+            showTeamEventSimple(remoteMessage);
+            return;
+        }
+
         // ✅ BIRTHDAY: NICHT als Chat-History anzeigen (sonst bleiben alte Zeilen drin)
         if ("birthday_greeting".equals(type) || "birthday".equals(type)) {
             showBirthdaySimple(remoteMessage);
@@ -179,6 +185,61 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setGroupSummary(true);
 
         nm.notify(SUMMARY_ID, summary.build());
+    }
+
+    // =========================
+    // TEAM EVENT / TRAINING SIMPLE NOTIFICATION
+    // =========================
+    private void showTeamEventSimple(RemoteMessage remoteMessage) {
+        NotificationManagerCompat nm = NotificationManagerCompat.from(this);
+        if (!nm.areNotificationsEnabled()) return;
+
+        Map<String, String> data = remoteMessage.getData();
+
+        String conversation = get(data, "conversation");
+        String body         = get(data, "body");
+        String tag          = get(data, "tag");
+        String notifIdStr   = get(data, "notif_id");
+        String clickUrl     = get(data, "clickUrl");
+
+        if (TextUtils.isEmpty(conversation)) conversation = "📅 Training";
+        if (TextUtils.isEmpty(body)) body = "Es gibt ein neues Training.";
+
+        int orange = ContextCompat.getColor(this, R.color.emd_orange);
+        int notifId = safeInt(notifIdStr, stableIdFrom(tag));
+
+        if (TextUtils.isEmpty(clickUrl)) clickUrl = "/training_event";
+        if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setAction("OPEN_PUSH_" + notifId);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("path", clickUrl);
+        intent.setData(Uri.parse("emd://push" + clickUrl));
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this,
+                notifId,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        ensureChannel();
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(conversation)
+                .setContentText(firstLine(body))
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_EVENT)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setColor(orange)
+                .setColorized(true);
+
+        if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
+        else nm.notify(notifId, builder.build());
     }
 
     // =========================

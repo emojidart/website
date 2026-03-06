@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { createClient } from "@supabase/supabase-js"
 import { getFirebaseAdmin } from "@/lib/firebase-admin"
 
 function stableNotifIdFromTag(tag: string) {
@@ -34,7 +33,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)
 
-    const team_id: string | null = body?.team_id ?? null
     const event_id: string | null = body?.event_id ?? null
     const action: "created" | "updated" | "canceled" | null = body?.action ?? null
     const sender_profile_id: string | null = body?.sender_profile_id ?? null
@@ -52,23 +50,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing bearer token" }, { status: 401 })
     }
 
-    const cookieStore = await cookies()
-
-    const supabase = createServerClient(
+    const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          },
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
     const { data: senderAuth, error: authErr } = await supabase.auth.getUser(bearer)
@@ -147,7 +131,7 @@ export async function POST(request: NextRequest) {
         new Set(((members as any[]) || []).map((m) => m.player_id).filter(Boolean))
       )
 
-      if (memberPlayerIds.length === 0) {
+      if (memberPlayerIds.length == 0) {
         return NextResponse.json({ success: true, sent: 0, reason: "No members" })
       }
 
@@ -252,11 +236,9 @@ export async function POST(request: NextRequest) {
         action: String(action),
         team_id: String(eventTeamId ?? ""),
         event_id: String(event_id),
-
         clickUrl: String(clickUrl),
         conversation: String(conversation),
         body: String(bodyText),
-
         tag: String(tag),
         notif_id: String(notif_id),
         ts: String(Date.now()),
