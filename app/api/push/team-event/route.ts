@@ -23,8 +23,9 @@ function formatDateTimeDE(iso: string) {
 }
 
 function eventTypeLabel(t: string | null) {
-  if (t === "double_training") return "Doppeltraining"
-  if (t === "training") return "Training"
+  if (t === "double_training") return "Öffentliches Training"
+  if (t === "training") return "Team-Training"
+  if (t === "special") return "Trainingsturnier"
   if (t === "match") return "Spiel"
   return "Event"
 }
@@ -38,11 +39,10 @@ export async function POST(request: NextRequest) {
     const action: "created" | "updated" | "canceled" | null = body?.action ?? null
     const sender_profile_id: string | null = body?.sender_profile_id ?? null
 
-    if (!team_id || !event_id || !action || !sender_profile_id) {
+    if (!event_id || !action || !sender_profile_id) {
       return NextResponse.json({ success: false, error: "Missing params" }, { status: 400 })
     }
 
-    // ---- Bearer Token prüfen ----
     const authHeader = request.headers.get("authorization") || ""
     const bearer = authHeader.toLowerCase().startsWith("bearer ")
       ? authHeader.slice(7).trim()
@@ -71,14 +71,12 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // ---- Token validieren ----
     const { data: senderAuth, error: authErr } = await supabase.auth.getUser(bearer)
     if (authErr || !senderAuth?.user?.id) {
       return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 })
     }
     const senderAuthUserId = senderAuth.user.id
 
-    // ---- Sender Profile check ----
     const { data: senderProfile } = await supabase
       .from("user_profiles")
       .select("id,user_id,player_id")
@@ -88,6 +86,7 @@ export async function POST(request: NextRequest) {
     if (!senderProfile) {
       return NextResponse.json({ success: false, error: "Sender profile not found" }, { status: 400 })
     }
+
     if ((senderProfile as any).user_id !== senderAuthUserId) {
       return NextResponse.json({ success: false, error: "Sender mismatch" }, { status: 403 })
     }
@@ -97,31 +96,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Sender has no player_id" }, { status: 400 })
     }
 
-    // ---- Nur Captain / Co-Captain darf pushen ----
-    const { data: senderMembership } = await supabase
-      .from("team_members")
-      .select("role")
-      .eq("team_id", team_id)
-      .eq("player_id", senderPlayerId)
-      .is("left_at", null)
-      .maybeSingle()
-
-    const role = (senderMembership as any)?.role ?? null
-    const isCaptainOrCo = role === "Captain" || role === "Co-Captain"
-    if (!isCaptainOrCo) {
-      return NextResponse.json({ success: false, error: "Not allowed" }, { status: 403 })
-    }
-
-    // ---- Sender Name ----
-    let senderName = "Captain"
+    let senderName = "Spieler"
     const { data: senderCp } = await supabase
       .from("club_players")
       .select("name")
       .eq("id", senderPlayerId)
       .maybeSingle()
+
     if ((senderCp as any)?.name) senderName = (senderCp as any).name
 
-    // ---- Event holen ----
     const { data: ev, error: evErr } = await supabase
       .from("team_events")
       .select("id, team_id, type, title, start_at, end_at, slot2_start_at, slot2_end_at, venue_name, venue, status, min_yes")
@@ -132,47 +115,76 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Event not found" }, { status: 400 })
     }
 
-    // Sicherheitscheck: event muss zu team_id passen
-    if ((ev as any).team_id !== team_id) {
-      return NextResponse.json({ success: false, error: "Team mismatch" }, { status: 403 })
-    }
+    const eventType = ((ev as any).type ?? null) as string | null
+    const eventTeamId = ((ev as any).team_id ?? null) as string | null
 
-    // ---- Empfänger: alle aktiven Teamspieler ----
-    const { data: members } = await supabase
-      .from("team_members")
-      .select("player_id")
-      .eq("team_id", team_id)
-      .is("left_at", null)
+    let userIds: string[] = []
 
-    const memberPlayerIds = Array.from(
-      new Set(((members as any[]) || []).map((m) => m.player_id).filter(Boolean))
-    )
+    if (eventType === "training") {
+      if (!eventTeamId) {
+        return NextResponse.json({ success: false, error: "Team-Training without team_id" }, { status: 400 })
+      }
 
-    if (memberPlayerIds.length === 0) {
-      return NextResponse.json({ success: true, sent: 0, reason: "No members" })
-    }
+      const { data: senderMembership } = await supabase
+        .from("team_members")
+        .select("id")
+        .eq("team_id", eventTeamId)
+        .eq("player_id", senderPlayerId)
+        .is("left_at", null)
+        .maybeSingle()
 
-    // ---- Player -> user_id (user_profiles) ----
-    const { data: profs } = await supabase
-      .from("user_profiles")
-      .select("user_id, player_id")
-      .in("player_id", memberPlayerIds)
+      if (!senderMembership) {
+        return NextResponse.json({ success: false, error: "Sender is not member of this team" }, { status: 403 })
+      }
 
-    const userIds = Array.from(
-      new Set(
-        ((profs as any[]) || [])
-          .map((p) => p.user_id)
-          .filter(Boolean)
-          // Sender raus:
-          .filter((uid) => uid !== senderAuthUserId)
+      const { data: members } = await supabase
+        .from("team_members")
+        .select("player_id")
+        .eq("team_id", eventTeamId)
+        .is("left_at", null)
+
+      const memberPlayerIds = Array.from(
+        new Set(((members as any[]) || []).map((m) => m.player_id).filter(Boolean))
       )
-    )
+
+      if (memberPlayerIds.length === 0) {
+        return NextResponse.json({ success: true, sent: 0, reason: "No members" })
+      }
+
+      const { data: profs } = await supabase
+        .from("user_profiles")
+        .select("user_id, player_id")
+        .in("player_id", memberPlayerIds)
+
+      userIds = Array.from(
+        new Set(
+          ((profs as any[]) || [])
+            .map((p) => p.user_id)
+            .filter(Boolean)
+            .filter((uid) => uid !== senderAuthUserId)
+        )
+      )
+    } else if (eventType === "double_training" || eventType === "special") {
+      const { data: profs } = await supabase
+        .from("user_profiles")
+        .select("user_id")
+
+      userIds = Array.from(
+        new Set(
+          ((profs as any[]) || [])
+            .map((p) => p.user_id)
+            .filter(Boolean)
+            .filter((uid) => uid !== senderAuthUserId)
+        )
+      )
+    } else {
+      return NextResponse.json({ success: false, error: "Unsupported event type" }, { status: 400 })
+    }
 
     if (userIds.length === 0) {
       return NextResponse.json({ success: true, sent: 0, reason: "No recipients" })
     }
 
-    // ---- FCM Tokens holen (dein Schema: fcm_tokens) ----
     const { data: tokenRows } = await supabase
       .from("fcm_tokens")
       .select("token,user_id")
@@ -186,12 +198,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, sent: 0, reason: "No tokens" })
     }
 
-    // ---- Push Text bauen ----
-    const typeLabel = eventTypeLabel((ev as any).type ?? null)
+    const typeLabel = eventTypeLabel(eventType)
     const title = (ev as any).title || typeLabel
 
     const when1 = (ev as any).start_at ? formatDateTimeDE(String((ev as any).start_at)) : ""
-    const loc = ((ev as any).venue_name || (ev as any).venue) ? `📍 ${(ev as any).venue_name || (ev as any).venue}` : ""
+    const loc = ((ev as any).venue_name || (ev as any).venue)
+      ? `📍 ${(ev as any).venue_name || (ev as any).venue}`
+      : ""
 
     let when2 = ""
     if ((ev as any).type === "double_training" && (ev as any).slot2_start_at) {
@@ -201,25 +214,35 @@ export async function POST(request: NextRequest) {
     const minYes = (ev as any).min_yes ?? 0
 
     const conversation =
-      action === "created" ? "📅 Neues Training" :
-      action === "updated" ? "🔄 Training geändert" :
-      "❌ Training abgesagt"
+      action === "created"
+        ? "📅 Neues Training"
+        : action === "updated"
+          ? "🔄 Training geändert"
+          : "❌ Training abgesagt"
+
+    const actionText =
+      action === "created"
+        ? "hat ein Training erstellt."
+        : action === "updated"
+          ? "hat ein Training aktualisiert."
+          : "hat ein Training abgesagt."
 
     const bodyText =
-      `${senderName}: ${action === "canceled" ? "hat ein Training abgesagt." : "hat ein Training erstellt/aktualisiert."}\n\n` +
+      `${senderName} ${actionText}\n\n` +
       `${title}\n` +
       `${when1}${when2}\n` +
       `${loc}\n` +
       (minYes > 0 ? `\nMindest-Ja: ${minYes}` : "") +
-      `\n\nÖffne „Training & Zusagen“ und sag bitte zu/ab.`
+      `\n\nÖffne „Trainingstreff“ und sag bitte zu/ab.`
 
-    // Deep link in deine neue Seite
-    const clickUrl = `/member-trainings?event_id=${event_id}&team_id=${team_id}`
+    const clickUrl =
+      eventType === "training"
+        ? `/training_event?event_id=${event_id}&team_id=${eventTeamId}`
+        : `/training_event?event_id=${event_id}`
 
-    const tag = `team_event:${action}:${team_id}:${event_id}`
+    const tag = `team_event:${action}:${event_id}`
     const notif_id = stableNotifIdFromTag(tag)
 
-    // ---- Firebase Push ----
     const admin = getFirebaseAdmin()
 
     const multicast = await admin.messaging().sendEachForMulticast({
@@ -227,7 +250,7 @@ export async function POST(request: NextRequest) {
       data: {
         type: "team_event",
         action: String(action),
-        team_id: String(team_id),
+        team_id: String(eventTeamId ?? ""),
         event_id: String(event_id),
 
         clickUrl: String(clickUrl),

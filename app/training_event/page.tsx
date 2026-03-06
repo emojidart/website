@@ -700,6 +700,21 @@ function MemberTrainingsInner() {
       setItemError("Bitte Datum & Startzeit angeben.")
       return
     }
+	
+	const startMs = new Date(startISO).getTime()
+if (Number.isFinite(startMs) && startMs < Date.now()) {
+  setItemError("Startzeit darf nicht in der Vergangenheit liegen.")
+  return
+}
+
+
+if (endISO) {
+  const endMs = new Date(endISO).getTime()
+  if (Number.isFinite(endMs) && endMs <= startMs) {
+    setItemError("Endzeit muss nach der Startzeit liegen.")
+    return
+  }
+}
 
     if (fType === "training" && !selectedTeamId && !dialogItem?.team_id) {
       setItemError("Bitte zuerst ein Team auswählen.")
