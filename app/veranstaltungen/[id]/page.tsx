@@ -115,9 +115,9 @@ function formatTimeDE(time: string | null) {
 
 function toEventEndDateTime(e: Pick<EventRow, "end_date" | "event_date" | "event_time">) {
   const raw = (e.event_time || "23:59").toString()
-  const time = raw.length === 5 ? `${raw}:00` : raw
+  const time = raw.length >= 5 ? raw.slice(0, 5) : raw
   const date = e.end_date || e.event_date
-  return new Date(`${date}T${time}`)
+  return new Date(`${date}T${time}:00`)
 }
 
 function parseStartgeld(details: string | null) {
@@ -403,23 +403,15 @@ export default function VeranstaltungDetailPage() {
     return participants.find((p) => p.user_id === currentUserId) || null
   }, [participants, currentUserId])
 
-  const goingParticipants = useMemo(() => {
-    return participants.filter((p) => p.status === "going")
-  }, [participants])
-
-  const maybeParticipants = useMemo(() => {
-    return participants.filter((p) => p.status === "maybe")
-  }, [participants])
-
-  const declinedParticipants = useMemo(() => {
-    return participants.filter((p) => p.status === "declined")
-  }, [participants])
+  const goingParticipants = useMemo(() => participants.filter((p) => p.status === "going"), [participants])
+  const maybeParticipants = useMemo(() => participants.filter((p) => p.status === "maybe"), [participants])
+  const declinedParticipants = useMemo(() => participants.filter((p) => p.status === "declined"), [participants])
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-28 overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-900 overflow-x-hidden">
       <Header />
 
-      <main className="pt-12 sm:pt-14">
+      <main className="pt-12 sm:pt-14 pb-44 sm:pb-36">
         <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
           <div className="sticky top-[56px] z-20 mb-4">
             <div className="rounded-2xl border border-gray-200 bg-white/90 backdrop-blur shadow-sm px-3 py-2 flex items-center justify-between gap-2">
@@ -448,16 +440,17 @@ export default function VeranstaltungDetailPage() {
             <div className="py-16 text-center text-gray-600">Nicht gefunden.</div>
           ) : (
             <>
-              <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <Card className="rounded-3xl border border-gray-200 shadow-sm overflow-hidden bg-white">
                 {event.photo_url ? (
                   <button
                     type="button"
-                    className="relative h-52 bg-gray-200 w-full group"
+                    className="relative h-56 sm:h-64 bg-gray-200 w-full group"
                     onClick={() => setOpenImg(true)}
                     aria-label="Flyer vergrößern"
                   >
                     <Image src={event.photo_url} alt={event.name} fill className="object-cover" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-80" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition" />
 
                     <div className="absolute right-3 top-3 inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-full bg-black/55 text-white">
                       <ZoomIn className="w-4 h-4" />
@@ -469,7 +462,7 @@ export default function VeranstaltungDetailPage() {
                 )}
 
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xl sm:text-2xl font-black leading-tight">{event.name}</CardTitle>
+                  <CardTitle className="text-2xl sm:text-3xl font-black leading-tight">{event.name}</CardTitle>
 
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Chip tone="gray">
@@ -500,24 +493,24 @@ export default function VeranstaltungDetailPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="pt-2 pb-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                      <div className="space-y-2 text-sm text-gray-700">
+                <CardContent className="pt-2 pb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                      <div className="space-y-3 text-sm text-gray-700">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-500" />
+                          <Calendar className="w-4 h-4 text-orange-600" />
                           <span className="font-medium">
                             {formatDateRangeDE(event.start_date, event.end_date, event.event_date)}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-gray-500" />
+                          <Clock className="w-4 h-4 text-orange-600" />
                           <span>{formatTimeDE(event.event_time)} Uhr</span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-gray-500" />
+                          <MapPin className="w-4 h-4 text-orange-600" />
                           <span className="line-clamp-2">{event.location || "Wird bekannt gegeben"}</span>
                         </div>
 
@@ -532,7 +525,7 @@ export default function VeranstaltungDetailPage() {
 
                         {event.max_participants ? (
                           <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-gray-500" />
+                            <Users className="w-4 h-4 text-orange-600" />
                             <span>
                               <span className="font-semibold">Max. Teilnehmer:</span> {event.max_participants}
                             </span>
@@ -541,53 +534,53 @@ export default function VeranstaltungDetailPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                       <div className="text-sm font-semibold text-gray-900 mb-2">Details</div>
-                      <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                      <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
                         {event.details?.trim() ? event.details : "Keine weiteren Details."}
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                      <div className="text-sm font-semibold text-gray-900 mb-3">Teilnahme</div>
+                  <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="text-sm font-semibold text-gray-900">Teilnahme</div>
+                        <div className="text-xs text-gray-500">
+                          {goingParticipants.length + maybeParticipants.length + declinedParticipants.length} Antwort(en)
+                        </div>
+                      </div>
 
-                     {!currentUserId ? (
-  <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4 shadow-sm">
-    <div className="flex items-start gap-3">
+                      {!currentUserId ? (
+                        <div className="rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 px-4 py-4 shadow-sm">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-100 shadow-sm">
+                              <Info className="h-5 w-5 text-orange-700" />
+                            </div>
 
-      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-100">
-        <Info className="h-5 w-5 text-orange-700" />
-      </div>
+                            <div className="min-w-0">
+                              <div className="text-base font-black text-orange-900">Login erforderlich</div>
+                              <div className="mt-1 text-sm text-orange-800 leading-relaxed">
+                                Bitte einloggen, um für dieses Event zuzusagen, vielleicht anzugeben oder abzusagen.
+                              </div>
 
-      <div className="min-w-0">
-        <div className="text-base font-black text-orange-900">
-          Login erforderlich
-        </div>
-
-        <div className="mt-1 text-sm text-orange-800">
-          Bitte einloggen, um für dieses Event zuzusagen oder abzusagen.
-        </div>
-
-        <div className="mt-3">
-          <Button asChild className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white">
-            <Link href="/member-login">
-              Jetzt einloggen
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-) : (
+                              <div className="mt-3">
+                                <Button asChild className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-sm">
+                                  <Link href="/member-login">Jetzt einloggen</Link>
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
                         <>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <Button
                               type="button"
                               variant={myParticipation?.status === "going" ? "default" : "outline"}
-                              className="rounded-xl"
+                              className={`rounded-xl font-semibold ${
+                                myParticipation?.status === "going" ? "bg-green-600 hover:bg-green-700 text-white" : ""
+                              }`}
                               disabled={savingStatus || !!view?.isPast}
                               onClick={() => saveParticipation("going")}
                             >
@@ -597,7 +590,9 @@ export default function VeranstaltungDetailPage() {
                             <Button
                               type="button"
                               variant={myParticipation?.status === "maybe" ? "default" : "outline"}
-                              className="rounded-xl"
+                              className={`rounded-xl font-semibold ${
+                                myParticipation?.status === "maybe" ? "bg-amber-500 hover:bg-amber-600 text-white" : ""
+                              }`}
                               disabled={savingStatus || !!view?.isPast}
                               onClick={() => saveParticipation("maybe")}
                             >
@@ -607,7 +602,9 @@ export default function VeranstaltungDetailPage() {
                             <Button
                               type="button"
                               variant={myParticipation?.status === "declined" ? "default" : "outline"}
-                              className="rounded-xl"
+                              className={`rounded-xl font-semibold ${
+                                myParticipation?.status === "declined" ? "bg-red-600 hover:bg-red-700 text-white" : ""
+                              }`}
                               disabled={savingStatus || !!view?.isPast}
                               onClick={() => saveParticipation("declined")}
                             >
@@ -615,7 +612,7 @@ export default function VeranstaltungDetailPage() {
                             </Button>
                           </div>
 
-                          <div className="mt-3 text-sm text-gray-600">
+                          <div className="mt-3 rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-700">
                             Dein Status:{" "}
                             <span className="font-semibold text-gray-900">
                               {myParticipation ? getParticipantStatusLabel(myParticipation.status) : "Noch keine Antwort"}
@@ -631,21 +628,25 @@ export default function VeranstaltungDetailPage() {
                       )}
                     </div>
 
-                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                       <div className="text-sm font-semibold text-gray-900 mb-3">Teilnehmer</div>
 
                       <div className="space-y-4">
                         <div>
-                          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                          <div className="inline-flex items-center rounded-full bg-green-50 text-green-800 border border-green-200 px-2.5 py-1 text-xs font-bold mb-2">
                             Dabei ({goingParticipants.length})
                           </div>
+
                           {goingParticipants.length === 0 ? (
                             <div className="text-sm text-gray-500">Noch niemand.</div>
                           ) : (
                             <div className="space-y-2">
                               {goingParticipants.map((p) => (
-                                <div key={p.id} className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2">
-                                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                                <div
+                                  key={p.id}
+                                  className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2 bg-gray-50/60"
+                                >
+                                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
                                     {p.club_players?.photo_url ? (
                                       <img
                                         src={p.club_players.photo_url}
@@ -666,16 +667,20 @@ export default function VeranstaltungDetailPage() {
                         </div>
 
                         <div>
-                          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                          <div className="inline-flex items-center rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 text-xs font-bold mb-2">
                             Vielleicht ({maybeParticipants.length})
                           </div>
+
                           {maybeParticipants.length === 0 ? (
                             <div className="text-sm text-gray-500">Niemand.</div>
                           ) : (
                             <div className="space-y-2">
                               {maybeParticipants.map((p) => (
-                                <div key={p.id} className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2">
-                                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                                <div
+                                  key={p.id}
+                                  className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2 bg-gray-50/60"
+                                >
+                                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
                                     {p.club_players?.photo_url ? (
                                       <img
                                         src={p.club_players.photo_url}
@@ -696,16 +701,20 @@ export default function VeranstaltungDetailPage() {
                         </div>
 
                         <div>
-                          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                          <div className="inline-flex items-center rounded-full bg-red-50 text-red-800 border border-red-200 px-2.5 py-1 text-xs font-bold mb-2">
                             Abgesagt ({declinedParticipants.length})
                           </div>
+
                           {declinedParticipants.length === 0 ? (
                             <div className="text-sm text-gray-500">Niemand.</div>
                           ) : (
                             <div className="space-y-2">
                               {declinedParticipants.map((p) => (
-                                <div key={p.id} className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2">
-                                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                                <div
+                                  key={p.id}
+                                  className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2 bg-gray-50/60"
+                                >
+                                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
                                     {p.club_players?.photo_url ? (
                                       <img
                                         src={p.club_players.photo_url}
@@ -730,24 +739,37 @@ export default function VeranstaltungDetailPage() {
                 </CardContent>
               </Card>
 
-              <div className="fixed left-0 right-0 bottom-16 z-30 px-4">
+              <div className="fixed inset-x-0 z-30 px-3 sm:px-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] sm:bottom-6">
                 <div className="mx-auto max-w-2xl">
-                  <div className="rounded-2xl border border-gray-200 bg-white/90 backdrop-blur shadow-lg p-3 flex gap-2">
-                    <Button asChild variant="outline" className="w-full rounded-xl">
-                      <Link href="/veranstaltungen">Zur Übersicht</Link>
-                    </Button>
+                  <div className="rounded-3xl border border-gray-200/80 bg-white/95 backdrop-blur-xl shadow-2xl p-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button asChild variant="outline" className="h-12 rounded-2xl font-semibold bg-white">
+                        <Link href="/veranstaltungen">
+                          <ArrowLeft className="w-4 h-4 mr-2" />
+                          Übersicht
+                        </Link>
+                      </Button>
 
-                    {event.photo_url ? (
-                      <Button className="w-full rounded-xl" onClick={() => setOpenImg(true)} type="button">
-                        <ZoomIn className="w-4 h-4 mr-2" />
-                        Flyer
-                      </Button>
-                    ) : (
-                      <Button className="w-full rounded-xl" onClick={() => router.back()} type="button">
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Zurück
-                      </Button>
-                    )}
+                      {event.photo_url ? (
+                        <Button
+                          className="h-12 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+                          onClick={() => setOpenImg(true)}
+                          type="button"
+                        >
+                          <ZoomIn className="w-4 h-4 mr-2" />
+                          Flyer
+                        </Button>
+                      ) : (
+                        <Button
+                          className="h-12 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+                          onClick={() => router.back()}
+                          type="button"
+                        >
+                          <ArrowLeft className="w-4 h-4 mr-2" />
+                          Zurück
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

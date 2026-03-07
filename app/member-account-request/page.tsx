@@ -5,7 +5,18 @@ import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Loader2, Shield, UserPlus, KeyRound, Search, Lock, Eye, EyeOff } from "lucide-react"
+import {
+  CheckCircle2,
+  Loader2,
+  UserPlus,
+  KeyRound,
+  Search,
+  Lock,
+  Eye,
+  EyeOff,
+  Mail,
+  Shield,
+} from "lucide-react"
 
 type FormState = {
   code: string
@@ -20,13 +31,6 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
 }
 
-/**
- * Accepts:
- *  - QR-T639-P2D
- *  - QRT639P2D
- *  - qr t639 p2d
- * Returns canonical: QR-T639-P2D
- */
 function normalizeCode(v: string) {
   const raw = String(v || "")
     .trim()
@@ -37,6 +41,7 @@ function normalizeCode(v: string) {
   if (/^QR[A-Z0-9]{7}$/.test(raw)) {
     return `QR-${raw.slice(2, 6)}-${raw.slice(6)}`
   }
+
   return raw
 }
 
@@ -49,12 +54,16 @@ export default function MemberAccountRequestPage() {
     password: "",
     password2: "",
   })
+
   const [submitting, setSubmitting] = useState(false)
   const [lookingUp, setLookingUp] = useState(false)
   const [lockedName, setLockedName] = useState(false)
   const [showPw, setShowPw] = useState(false)
 
-  const [status, setStatus] = useState<{ type: "success" | "error" | "info" | null; message: string }>({
+  const [status, setStatus] = useState<{
+    type: "success" | "error" | "info" | null
+    message: string
+  }>({
     type: null,
     message: "",
   })
@@ -63,9 +72,12 @@ export default function MemberAccountRequestPage() {
     const codeOk = normalizeCode(form.code).length >= 8
     const firstOk = form.firstName.trim().length >= 2
     const emailOk = isValidEmail(form.email)
-    const lastOk = lockedName ? form.lastName.trim().length === 0 || form.lastName.trim().length >= 2 : form.lastName.trim().length >= 2
+    const lastOk = lockedName
+      ? form.lastName.trim().length === 0 || form.lastName.trim().length >= 2
+      : form.lastName.trim().length >= 2
     const pwOk = form.password.length >= 8
     const pwMatch = form.password === form.password2
+
     return codeOk && firstOk && lastOk && emailOk && pwOk && pwMatch && !submitting
   }, [form, lockedName, submitting])
 
@@ -75,13 +87,20 @@ export default function MemberAccountRequestPage() {
     const code = normalizeCode(form.code)
     if (code.length < 8) {
       setLockedName(false)
-      setStatus({ type: "error", message: "Bitte gib deinen Mitglieder-Code ein (z.B. QR-T639-P2D)." })
+      setStatus({
+        type: "error",
+        message: "Bitte gib deinen Mitglieder-Code ein (z.B. QR-T639-P2D).",
+      })
       return
     }
 
     setLookingUp(true)
+
     try {
-      const res = await fetch(`/api/member-account-request?code=${encodeURIComponent(code)}`, { method: "GET" })
+      const res = await fetch(`/api/member-account-request?code=${encodeURIComponent(code)}`, {
+        method: "GET",
+      })
+
       const data = (await res.json().catch(() => null)) as any
       if (!res.ok) throw new Error(data?.error || "Code nicht gefunden")
 
@@ -99,12 +118,24 @@ export default function MemberAccountRequestPage() {
         last = parts.slice(-1).join(" ")
       }
 
-      setForm((p) => ({ ...p, code, firstName: first, lastName: last }))
+      setForm((p) => ({
+        ...p,
+        code,
+        firstName: first,
+        lastName: last,
+      }))
       setLockedName(true)
-      setStatus({ type: "info", message: `Code gefunden: ${fullName}. Bitte E-Mail & Passwort eintragen.` })
+
+      setStatus({
+        type: "info",
+        message: `Code gefunden: ${fullName}. Bitte E-Mail und Passwort eintragen.`,
+      })
     } catch (e: any) {
       setLockedName(false)
-      setStatus({ type: "error", message: `Code ungültig: ${e?.message || "Unbekannter Fehler"}` })
+      setStatus({
+        type: "error",
+        message: `Code ungültig: ${e?.message || "Unbekannter Fehler"}`,
+      })
     } finally {
       setLookingUp(false)
     }
@@ -120,14 +151,38 @@ export default function MemberAccountRequestPage() {
     const password = form.password
     const password2 = form.password2
 
-    if (code.length < 8) return setStatus({ type: "error", message: "Bitte gib deinen Mitglieder-Code korrekt an." })
-    if (firstName.length < 2) return setStatus({ type: "error", message: "Vorname ungültig." })
-    if (!lockedName && lastName.length < 2) return setStatus({ type: "error", message: "Nachname ungültig." })
-    if (!isValidEmail(email)) return setStatus({ type: "error", message: "E-Mail ungültig." })
-    if (password.length < 8) return setStatus({ type: "error", message: "Passwort muss mindestens 8 Zeichen haben." })
-    if (password !== password2) return setStatus({ type: "error", message: "Passwörter stimmen nicht überein." })
+    if (code.length < 8) {
+      setStatus({ type: "error", message: "Bitte gib deinen Mitglieder-Code korrekt an." })
+      return
+    }
+
+    if (firstName.length < 2) {
+      setStatus({ type: "error", message: "Vorname ungültig." })
+      return
+    }
+
+    if (!lockedName && lastName.length < 2) {
+      setStatus({ type: "error", message: "Nachname ungültig." })
+      return
+    }
+
+    if (!isValidEmail(email)) {
+      setStatus({ type: "error", message: "E-Mail ungültig." })
+      return
+    }
+
+    if (password.length < 8) {
+      setStatus({ type: "error", message: "Passwort muss mindestens 8 Zeichen haben." })
+      return
+    }
+
+    if (password !== password2) {
+      setStatus({ type: "error", message: "Passwörter stimmen nicht überein." })
+      return
+    }
 
     setSubmitting(true)
+
     try {
       const res = await fetch("/api/member-account-request", {
         method: "POST",
@@ -138,7 +193,6 @@ export default function MemberAccountRequestPage() {
       const data = (await res.json().catch(() => null)) as any
 
       if (!res.ok) {
-        // ✅ nur die saubere DE-Message vom Backend anzeigen
         setStatus({
           type: "error",
           message: data?.error || "Senden fehlgeschlagen. Bitte versuche es später erneut.",
@@ -149,10 +203,17 @@ export default function MemberAccountRequestPage() {
       setStatus({
         type: "success",
         message:
-          "Fast fertig! Wir haben dir eine Bestätigungs-E-Mail gesendet. Bitte bestätige die E-Mail – danach kannst du dich mit deinem Passwort einloggen. Falls du keine Nachricht siehst, überprüfe bitte auch deinen Spam- oder Junk-Ordner.",
+          "Fast fertig! Wir haben dir eine Bestätigungs-E-Mail gesendet. Bitte bestätige die E-Mail. Falls du keine Nachricht siehst, prüfe bitte auch deinen Spam-Ordner.",
       })
 
-      setForm({ code: "", firstName: "", lastName: "", email: "", password: "", password2: "" })
+      setForm({
+        code: "",
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        password2: "",
+      })
       setLockedName(false)
       setShowPw(false)
     } catch {
@@ -166,42 +227,54 @@ export default function MemberAccountRequestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col text-gray-900">
       <Header />
 
-      <section className="container mx-auto px-4 pt-6 pb-8">
-        <div className="max-w-xl mx-auto space-y-4">
-          <div className="rounded-2xl bg-gradient-to-br from-orange-600 to-amber-500 text-white p-5 shadow-xl">
-            <div className="flex items-start gap-3">
-              <div className="rounded-xl bg-white/15 p-2">
-                <UserPlus className="w-6 h-6" />
-              </div>
-              <div className="flex-1">
-                <h1 className="text-2xl font-black leading-tight">Mitglieder-Konto anfordern</h1>
-                <p className="text-sm text-white/90 mt-1">
-                  Code prüfen, dann E-Mail + Passwort festlegen. Du bekommst eine Bestätigungs-E-Mail.
-                </p>
+      <main className="flex-grow px-4 pt-20 pb-28">
+        <div className="mx-auto w-full max-w-md">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
+                <UserPlus className="w-8 h-8 text-white" />
               </div>
             </div>
+
+            <h1 className="text-3xl font-black text-gray-900">Konto anfordern</h1>
+
+            <p className="text-gray-600 mt-2">
+              Mitglieder-Code prüfen und danach E-Mail + Passwort festlegen
+            </p>
           </div>
 
-          <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
-            <CardContent className="p-5 sm:p-6 space-y-5">
-              <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 flex gap-3">
-                <div className="mt-0.5">
-                  <Shield className="w-4 h-4 text-orange-700" />
-                </div>
-                <div className="text-sm">
-                  <div className="font-bold text-orange-900">Nur für Vereinsmitglieder</div>
-                  <div className="text-orange-800 mt-0.5">Bitte nutze deinen Mitglieder-Code. Wenn du keinen Code hast, melde dich beim Vorstand.</div>
+          <Card className="rounded-3xl shadow-xl border border-gray-200 bg-white">
+            <CardContent className="p-6 space-y-5">
+              <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-100">
+                    <Shield className="h-5 w-5 text-orange-700" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="text-base font-black text-orange-900">
+                      Nur für Vereinsmitglieder
+                    </div>
+
+                    <div className="mt-1 text-sm text-orange-800">
+                      Bitte nutze deinen Mitglieder-Code. Wenn du keinen Code hast,
+                      melde dich beim Vorstand.
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-900">Mitglieder-Code</label>
-                <div className="flex gap-2">
+              <div>
+                <label className="text-sm font-bold text-gray-700 uppercase">
+                  Mitglieder-Code
+                </label>
+
+                <div className="mt-1 flex gap-2">
                   <div className="relative flex-1">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       value={form.code}
                       onChange={(e) => {
@@ -209,128 +282,170 @@ export default function MemberAccountRequestPage() {
                         setLockedName(false)
                       }}
                       placeholder="z.B. QR-T639-P2D"
-                      className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
+                      className="w-full pl-12 pr-3 h-12 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none bg-white"
                       autoComplete="off"
                     />
                   </div>
-                  <Button type="button" onClick={lookupByCode} disabled={lookingUp} className="rounded-xl bg-gray-900 hover:bg-gray-800 font-extrabold h-11 px-4">
+
+                  <Button
+                    type="button"
+                    onClick={lookupByCode}
+                    disabled={lookingUp}
+                    className="h-12 rounded-xl bg-gray-900 hover:bg-gray-800 px-4"
+                  >
                     {lookingUp ? (
-                      <span className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
                         Prüfen
-                      </span>
+                      </>
                     ) : (
-                      <span className="flex items-center gap-2">
-                        <Search className="w-4 h-4" />
+                      <>
+                        <Search className="w-4 h-4 mr-2" />
                         Prüfen
-                      </span>
+                      </>
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500">Tipp: Du kannst den Code mit oder ohne Bindestriche eingeben – wir erkennen beides.</p>
+
+                <p className="text-xs text-gray-500 mt-2">
+                  Du kannst den Code mit oder ohne Bindestriche eingeben.
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-900">Vorname</label>
-                  <input
-                    value={form.firstName}
-                    onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))}
-                    className={`w-full px-3 py-2.5 border rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm ${
-                      lockedName ? "border-green-200 bg-green-50" : "border-gray-200"
-                    }`}
-                    disabled={lockedName}
-                  />
-                </div>
+              <div>
+                <label className="text-sm font-bold text-gray-700 uppercase">
+                  Vorname
+                </label>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-900">Nachname</label>
-                  <input
-                    value={form.lastName}
-                    onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))}
-                    placeholder={lockedName ? "kein Nachname hinterlegt" : ""}
-                    className={`w-full px-3 py-2.5 border rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm ${
-                      lockedName ? "border-green-200 bg-green-50" : "border-gray-200"
-                    }`}
-                    disabled={lockedName}
-                  />
-                </div>
+                <input
+                  value={form.firstName}
+                  onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))}
+                  className={`mt-1 w-full px-4 h-12 rounded-xl border-2 focus:border-orange-500 focus:outline-none ${
+                    lockedName ? "border-green-200 bg-green-50" : "border-gray-200 bg-white"
+                  }`}
+                  disabled={lockedName}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-900">E-Mail</label>
+              <div>
+                <label className="text-sm font-bold text-gray-700 uppercase">
+                  Nachname
+                </label>
+
+                <input
+                  value={form.lastName}
+                  onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))}
+                  placeholder={lockedName ? "kein Nachname hinterlegt" : ""}
+                  className={`mt-1 w-full px-4 h-12 rounded-xl border-2 focus:border-orange-500 focus:outline-none ${
+                    lockedName ? "border-green-200 bg-green-50" : "border-gray-200 bg-white"
+                  }`}
+                  disabled={lockedName}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray-700 uppercase">
+                  E-Mail-Adresse
+                </label>
+
+                <div className="relative mt-1">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     value={form.email}
                     onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
+                    placeholder="deine.email@example.com"
+                    className="w-full pl-12 pr-3 h-12 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none bg-white"
                     inputMode="email"
                   />
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-900">Passwort</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input
-                      type={showPw ? "text" : "password"}
-                      value={form.password}
-                      onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-                      className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
-                      placeholder="mind. 8 Zeichen"
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPw((s) => !s)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-                      aria-label={showPw ? "Passwort verstecken" : "Passwort anzeigen"}
-                    >
-                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  <p className={`text-xs ${form.password.length >= 8 ? "text-green-700" : "text-gray-500"}`}>Mindestens 8 Zeichen</p>
-                </div>
+              <div>
+                <label className="text-sm font-bold text-gray-700 uppercase">
+                  Passwort
+                </label>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-900">Passwort wiederholen</label>
+                <div className="relative mt-1">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+
                   <input
                     type={showPw ? "text" : "password"}
-                    value={form.password2}
-                    onChange={(e) => setForm((p) => ({ ...p, password2: e.target.value }))}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
-                    placeholder="nochmal eingeben"
+                    value={form.password}
+                    onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+                    placeholder="mind. 8 Zeichen"
+                    className="w-full pl-12 pr-12 h-12 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none bg-white"
                     autoComplete="new-password"
                   />
-                  {form.password2 ? (
-                    <p className={`text-xs ${form.password === form.password2 ? "text-green-700" : "text-red-600"}`}>
-                      {form.password === form.password2 ? "✓ stimmt überein" : "Passwörter sind nicht gleich"}
-                    </p>
-                  ) : null}
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPw((s) => !s)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                    aria-label={showPw ? "Passwort verstecken" : "Passwort anzeigen"}
+                  >
+                    {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
+
+                <p className={`text-xs mt-2 ${form.password.length >= 8 ? "text-green-700" : "text-gray-500"}`}>
+                  Mindestens 8 Zeichen
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray-700 uppercase">
+                  Passwort wiederholen
+                </label>
+
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={form.password2}
+                  onChange={(e) => setForm((p) => ({ ...p, password2: e.target.value }))}
+                  placeholder="nochmal eingeben"
+                  className="mt-1 w-full px-4 h-12 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none bg-white"
+                  autoComplete="new-password"
+                />
+
+                {form.password2 ? (
+                  <p className={`text-xs mt-2 ${form.password === form.password2 ? "text-green-700" : "text-red-600"}`}>
+                    {form.password === form.password2
+                      ? "✓ stimmt überein"
+                      : "Passwörter sind nicht gleich"}
+                  </p>
+                ) : null}
               </div>
 
               {status.type ? (
                 <div
-                  className={`rounded-xl p-4 text-sm ${
+                  className={`rounded-2xl p-4 text-sm border ${
                     status.type === "success"
-                      ? "bg-green-50 text-green-800 border border-green-200"
+                      ? "bg-green-50 text-green-800 border-green-200"
                       : status.type === "info"
-                        ? "bg-blue-50 text-blue-800 border border-blue-200"
-                        : "bg-red-50 text-red-700 border border-red-200"
+                        ? "bg-blue-50 text-blue-800 border-blue-200"
+                        : "bg-red-50 text-red-700 border-red-200"
                   }`}
                 >
                   <div className="flex items-start gap-2">
-                    {status.type === "success" ? <CheckCircle2 className="w-4 h-4 mt-0.5" /> : <span className="w-4 h-4 mt-0.5">⚠️</span>}
+                    {status.type === "success" ? (
+                      <CheckCircle2 className="w-4 h-4 mt-0.5" />
+                    ) : (
+                      <span className="mt-0.5">⚠️</span>
+                    )}
                     <div>{status.message}</div>
                   </div>
                 </div>
               ) : null}
 
-              <Button onClick={submit} disabled={!canSubmit} className="w-full bg-orange-600 hover:bg-orange-700 font-extrabold rounded-xl h-11 shadow-lg shadow-orange-600/20">
+              <Button
+                onClick={submit}
+                disabled={!canSubmit}
+                className="w-full h-12 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-lg"
+              >
                 {submitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     Senden...
-                  </span>
+                  </>
                 ) : (
                   "Konto anfordern"
                 )}
@@ -338,7 +453,7 @@ export default function MemberAccountRequestPage() {
             </CardContent>
           </Card>
         </div>
-      </section>
+      </main>
 
       <MobileBottomNav />
     </div>

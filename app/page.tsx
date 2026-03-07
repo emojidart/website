@@ -1680,19 +1680,19 @@ export default function Home() {
       </DialogTrigger>
 
       {/* MOBILE: fullscreen sheet | DESKTOP: card modal */}
-     {/* ✅ ERSATZ: DialogContent-Block (1:1 austauschen) */}
+     {/* */}
 <DialogContent
   className={[
     // Layout / Größe
     "p-0 gap-0",
     "w-[calc(100vw-16px)] sm:w-full sm:max-w-3xl",
-    // Wichtig: echte Viewport-Höhe auf Mobile (svh/dvh)
+    
     "max-h-[90svh] sm:max-h-[92vh]",
-    // Damit nur innen gescrollt wird
+    
     "overflow-hidden",
-    // Flex-Layout damit Body scrollen kann
+    
     "flex flex-col",
-    // nice rounding
+    
     "rounded-3xl",
   ].join(" ")}
 >
@@ -1735,12 +1735,12 @@ export default function Home() {
     </div>
   </div>
 
-  {/* ✅ Scrollbarer Body (fix für „zu groß“ + „nicht scrollbar“) */}
+  {/* ✅ Scrollbarer Body */}
   <div
     className={[
-      "flex-1", // nimmt restliche Höhe ein
+      "flex-1", 
       "overflow-y-auto",
-      "overscroll-contain", // verhindert „scroll through“ auf iOS
+      "overscroll-contain", 
       "px-4 sm:px-6 py-4 sm:py-6",
       "space-y-4 sm:space-y-6",
       "bg-gray-50",
