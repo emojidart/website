@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { PlayerCodeDialog } from "@/components/vereinsverwaltung/PlayerCodeDialog"
 import {
   AlertCircle,
   CheckCircle,
@@ -17,10 +18,9 @@ import {
   Link2,
   Link2Off as LinkOff,
   Loader2,
-  Mail,
-  Phone,
   Trash2,
   XCircle,
+  KeyRound,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ClubPlayer } from "@/components/vereinsverwaltung/types"
@@ -65,28 +65,50 @@ function fmtText(v: unknown) {
   return s.trim().length > 0 ? s : "—"
 }
 
-function compactContact(player: ClubPlayer) {
-  const email = player.email?.trim()
-  const phone = player.phone?.trim()
-  if (!email && !phone) return "—"
-  if (email && phone) return `${email} · ${phone}`
-  return email || phone || "—"
-}
 
-const getPlayerStatusBadge = (player: ClubPlayer) => {
-  const isInactive = (player as any)?.is_active === false || !!player.club_left_at
+function getPlayerAccountState(player: ClubPlayer) {
+  const isInactive =
+    (player as any)?.is_active === false || !!player.club_left_at
+
+  const hasAccount = !!(player as any)?.user_profiles?.user_id
+  const hasActiveCode = !!(player as any)?.active_code
 
   if (isInactive) {
-    return (
-      <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">
-        Deaktiviert
-      </Badge>
-    )
+    return {
+      label: "Deaktiviert",
+      className: "bg-red-100 text-red-800 border-red-200",
+    }
   }
 
+  if (hasAccount) {
+    return {
+      label: "Konto aktiv",
+      className: "bg-green-100 text-green-800 border-green-200",
+    }
+  }
+
+  if (hasActiveCode) {
+    return {
+      label: "Code aktiv",
+      className: "bg-amber-100 text-amber-800 border-amber-200",
+    }
+  }
+
+  return {
+    label: "Kein Konto",
+    className: "bg-gray-100 text-gray-700 border-gray-200",
+  }
+}
+
+
+
+
+const getPlayerStatusBadge = (player: ClubPlayer) => {
+  const status = getPlayerAccountState(player)
+
   return (
-    <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
-      Aktiv
+    <Badge className={`${status.className} text-xs`}>
+      {status.label}
     </Badge>
   )
 }
@@ -115,6 +137,9 @@ export function ManagePlayersTab(props: Props) {
 
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsPlayer, setDetailsPlayer] = useState<ClubPlayer | null>(null)
+  
+  const [codeDialogOpen, setCodeDialogOpen] = useState(false)
+const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
 
   const [linkingDialogOpen, setLinkingDialogOpen] = useState(false)
   const [isLinking, setIsLinking] = useState(false)
@@ -136,7 +161,7 @@ export function ManagePlayersTab(props: Props) {
   const mustType = "DEAKTIVIEREN"
   const canDelete = confirmText.trim().toUpperCase() === mustType
 
-  const minWidth = useMemo(() => "min-w-[1180px]", [])
+  const minWidth = useMemo(() => "min-w-[880px]", [])
 
   function openDelete(player: ClubPlayer) {
     setDeletePlayerId(player.id)
@@ -144,6 +169,11 @@ export function ManagePlayersTab(props: Props) {
     setConfirmText("")
     setDeleteOpen(true)
   }
+  
+  function openCodeDialog(player: ClubPlayer) {
+  setCodePlayer(player)
+  setCodeDialogOpen(true)
+}
 
   function closeDelete() {
     setDeleteOpen(false)
@@ -292,7 +322,7 @@ export function ManagePlayersTab(props: Props) {
             type="text"
             value={playerSearch}
             onChange={(e) => setPlayerSearch(e.target.value)}
-            placeholder="Name, Ort, E-Mail, Nummer, Player-Code ..."
+            placeholder="Name, Nummer, Player-Code ..."
             className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 mt-2"
           />
         </div>
@@ -336,20 +366,21 @@ export function ManagePlayersTab(props: Props) {
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr className="text-left">
                 <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Spieler</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Status</th>
                 <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Nr.</th>
                 <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Player-Code</th>
                 <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Member Card</th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Kontakt</th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Geburtsdatum</th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Ort</th>
                 <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700 text-right">Aktionen</th>
               </tr>
             </thead>
 
             <tbody>
               {visiblePlayers.map((player, idx) => {
-                const linked = !!(player as any)?.spieldatenbank_id
-                const isInactive = (player as any)?.is_active === false || !!player.club_left_at
+  const isInactive =
+    (player as any)?.is_active === false || !!player.club_left_at
+
+  const hasAccount = !!(player as any)?.user_profiles?.user_id
+  const hasActiveCode = !!(player as any)?.active_code
 
                 return (
                   <tr
@@ -360,10 +391,10 @@ export function ManagePlayersTab(props: Props) {
                     )}
                   >
                     <td className="px-3 py-2 lg:px-4 lg:py-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar className="h-9 w-9">
                           <AvatarImage
-                            src={player.photo_url || "/placeholder.svg?height=32&width=32&query=player-avatar"}
+                            src={player.photo_url || "/placeholder.svg?height=36&width=36&query=player-avatar"}
                           />
                           <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                         </Avatar>
@@ -372,26 +403,12 @@ export function ManagePlayersTab(props: Props) {
                           <div className="font-medium text-gray-800 truncate max-w-[260px]">
                             {player.name}
                           </div>
-
-                          <div className="mt-1 flex gap-2 flex-wrap">
-                            {getPlayerStatusBadge(player)}
-
-                            {player.email ? (
-                              <Badge variant="outline" className="text-xs">
-                                <Mail className="h-3 w-3 mr-1" />
-                                Mail
-                              </Badge>
-                            ) : null}
-
-                            {player.phone ? (
-                              <Badge variant="outline" className="text-xs">
-                                <Phone className="h-3 w-3 mr-1" />
-                                Tel
-                              </Badge>
-                            ) : null}
-                          </div>
                         </div>
                       </div>
+                    </td>
+
+                    <td className="px-3 py-2 lg:px-4 lg:py-3">
+                      {getPlayerStatusBadge(player)}
                     </td>
 
                     <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">
@@ -403,48 +420,7 @@ export function ManagePlayersTab(props: Props) {
                     </td>
 
                     <td className="px-3 py-2 lg:px-4 lg:py-3">
-                      <div className="flex items-center gap-2">
-                        {getMemberCardBadge(player)}
-
-                        {!linked ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 border-blue-200 text-blue-700 hover:bg-blue-50"
-                            onClick={() => openLinkingDialog(player)}
-                            disabled={playerLoading || isLinking}
-                          >
-                            <Link2 className="h-4 w-4 mr-2" />
-                            Verknüpfen
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 border-gray-200 text-gray-700 hover:bg-gray-50"
-                            onClick={() => unlinkSpieldatenbank(player)}
-                            disabled={playerLoading || isLinking}
-                            title="Verknüpfung entfernen"
-                          >
-                            <LinkOff className="h-4 w-4" />
-                            <span className="sr-only">Verknüpfung entfernen</span>
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">
-                      <span className="truncate inline-block max-w-[320px]">
-                        {compactContact(player)}
-                      </span>
-                    </td>
-
-                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">
-                      {fmtDateISO(player.birthdate)}
-                    </td>
-
-                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">
-                      {player.city ?? "—"}
+                      {getMemberCardBadge(player)}
                     </td>
 
                     <td className="px-3 py-2 lg:px-4 lg:py-3">
@@ -470,6 +446,24 @@ export function ManagePlayersTab(props: Props) {
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Bearbeiten</span>
                         </Button>
+						
+						
+						
+						{!isInactive && !hasAccount && (
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => openCodeDialog(player)}
+    className="h-8 px-3 border-purple-200 text-purple-700 hover:bg-purple-50"
+  >
+    <KeyRound className="h-4 w-4 mr-2" />
+    {hasActiveCode ? "Code" : "Code"}
+  </Button>
+)}
+						
+						
+						
+						
 
                         {isInactive ? (
                           <Button
@@ -508,9 +502,9 @@ export function ManagePlayersTab(props: Props) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <Avatar className="h-9 w-9">
+                <Avatar className="h-10 w-10">
                   <AvatarImage
-                    src={detailsPlayer?.photo_url || "/placeholder.svg?height=36&width=36&query=player-avatar"}
+                    src={detailsPlayer?.photo_url || "/placeholder.svg?height=40&width=40&query=player-avatar"}
                   />
                   <AvatarFallback>{detailsPlayer?.name?.charAt(0) ?? "?"}</AvatarFallback>
                 </Avatar>
@@ -518,10 +512,7 @@ export function ManagePlayersTab(props: Props) {
                 <div className="min-w-0">
                   <div className="truncate">{detailsPlayer?.name ?? "Spieler"}</div>
                   <div className="text-xs text-gray-500 truncate">
-                    Player-Code:{" "}
-                    <span className="font-mono">
-                      {(detailsPlayer as any)?.player_code ?? "—"}
-                    </span>
+                    Player-Code: <span className="font-mono">{(detailsPlayer as any)?.player_code ?? "—"}</span>
                   </div>
                 </div>
               </div>
@@ -531,10 +522,15 @@ export function ManagePlayersTab(props: Props) {
           {detailsPlayer && (
             <div className="space-y-5">
               <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {getPlayerStatusBadge(detailsPlayer)}
+                  {getMemberCardBadge(detailsPlayer)}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
                 <div className="font-semibold text-gray-900 mb-3">Member Card</div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {getMemberCardBadge(detailsPlayer)}
-
                   {!((detailsPlayer as any)?.spieldatenbank_id) ? (
                     <Button
                       variant="outline"
@@ -562,16 +558,12 @@ export function ManagePlayersTab(props: Props) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-lg border border-gray-200 bg-white p-3">
                   <div className="text-xs text-gray-500">Nr.</div>
-                  <div className="font-semibold text-gray-900">
-                    {detailsPlayer.player_number ?? "—"}
-                  </div>
+                  <div className="font-semibold text-gray-900">{detailsPlayer.player_number ?? "—"}</div>
                 </div>
 
                 <div className="rounded-lg border border-gray-200 bg-white p-3">
                   <div className="text-xs text-gray-500">Geburtsdatum</div>
-                  <div className="font-semibold text-gray-900">
-                    {fmtDateISO(detailsPlayer.birthdate)}
-                  </div>
+                  <div className="font-semibold text-gray-900">{fmtDateISO(detailsPlayer.birthdate)}</div>
                 </div>
               </div>
 
@@ -769,6 +761,23 @@ export function ManagePlayersTab(props: Props) {
           </div>
         </DialogContent>
       </Dialog>
+	  
+	  
+	  <PlayerCodeDialog
+        open={codeDialogOpen}
+        onOpenChange={(open) => {
+          setCodeDialogOpen(open)
+          if (!open) setCodePlayer(null)
+        }}
+        player={codePlayer}
+        onCodeChanged={async () => {
+          await Promise.resolve(onDataChanged?.())
+        }}
+      />
+	  
+	  
+	  
+	  
 
       {deleteOpen && (
         <div className="fixed inset-0 z-50">

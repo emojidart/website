@@ -14,6 +14,8 @@ type MessageType = "success" | "error" | "info"
  */
 type ClubPlayerRow = Omit<ClubPlayer, "player_code"> & {
   spieldatenbank?: { player_code: string | null } | null
+  user_profiles?: { id: string; user_id: string | null }[] | null
+  qr_code_generated?: { id: string; code: string; used_at: string | null }[] | null
 }
 
 export function useClubPlayers(user: User | null, onDataSaved: () => void) {
@@ -92,14 +94,23 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
 
   const fetchClubPlayers = async () => {
     const { data, error } = await supabase
-      .from("club_players")
-      .select(`
-        *,
-        spieldatenbank:spieldatenbank_id (
-          player_code
-        )
-      `)
-      .order("name", { ascending: true })
+  .from("club_players")
+  .select(`
+    *,
+    spieldatenbank:spieldatenbank_id (
+      player_code
+    ),
+    user_profiles (
+      id,
+      user_id
+    ),
+    qr_code_generated (
+      id,
+      code,
+      used_at
+    )
+  `)
+  .order("name", { ascending: true })
 
     if (error) {
       console.error("Error fetching club players:", error)
@@ -111,13 +122,18 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
     const rows = (data || []) as ClubPlayerRow[]
 
     const mapped: ClubPlayer[] = rows.map((r) => {
-      const { spieldatenbank, ...rest } = r
-      return {
-        ...(rest as ClubPlayer),
-        player_code: spieldatenbank?.player_code ?? null,
-      } as ClubPlayer
-    })
+  const { spieldatenbank, user_profiles, qr_code_generated, ...rest } = r
 
+  const activeCode =
+    (qr_code_generated || []).find((codeRow) => !codeRow.used_at) ?? null
+
+  return {
+    ...(rest as ClubPlayer),
+    player_code: spieldatenbank?.player_code ?? null,
+    user_profiles: user_profiles || [],
+    active_code: activeCode,
+  } as ClubPlayer
+})
     setClubPlayers(mapped)
   }
 
