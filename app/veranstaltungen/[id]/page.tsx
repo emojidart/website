@@ -553,11 +553,35 @@ export default function VeranstaltungDetailPage() {
                     <div className="rounded-2xl border border-gray-200 bg-white p-4">
                       <div className="text-sm font-semibold text-gray-900 mb-3">Teilnahme</div>
 
-                      {!currentUserId ? (
-                        <div className="text-sm text-gray-600">
-                          Bitte einloggen, um für dieses Event zuzusagen oder abzusagen.
-                        </div>
-                      ) : (
+                     {!currentUserId ? (
+  <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4 shadow-sm">
+    <div className="flex items-start gap-3">
+
+      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-100">
+        <Info className="h-5 w-5 text-orange-700" />
+      </div>
+
+      <div className="min-w-0">
+        <div className="text-base font-black text-orange-900">
+          Login erforderlich
+        </div>
+
+        <div className="mt-1 text-sm text-orange-800">
+          Bitte einloggen, um für dieses Event zuzusagen oder abzusagen.
+        </div>
+
+        <div className="mt-3">
+          <Button asChild className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white">
+            <Link href="/member-login">
+              Jetzt einloggen
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+) : (
                         <>
                           <div className="flex flex-wrap gap-2">
                             <Button
