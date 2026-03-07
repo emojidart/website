@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react"
 import { Header } from "@/components/header"
 import { Card, CardContent } from "@/components/ui/card"
+import { PushEnableBanner } from "@/components/push-enable-banner"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { createBrowserClient } from "@supabase/ssr"
@@ -1007,6 +1008,8 @@ export default function Home() {
 
       {/* Abstand für fixed Header */}
 <div className="h-12 sm:h-14" aria-hidden="true" />
+
+<PushEnableBanner />
 
       <PushNotificationDialog />
 
