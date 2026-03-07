@@ -48,7 +48,8 @@ interface Event {
   source?: string | null
   mode?: string | null
   startgeld_details?: string | null
-  event_date: string
+  start_date: string
+  end_date: string
   event_time: string
   location: string
   entry_fee: number
@@ -119,25 +120,44 @@ function hhmm(timeString: string | null) {
   return `${parts[0]}:${parts[1]}`
 }
 
+function getDatesBetween(start: string, end: string) {
+  const dates: string[] = []
+  const current = new Date(start)
+  const last = new Date(end)
+
+  while (current <= last) {
+    const y = current.getFullYear()
+    const m = String(current.getMonth() + 1).padStart(2, "0")
+    const d = String(current.getDate()).padStart(2, "0")
+    dates.push(`${y}-${m}-${d}`)
+    current.setDate(current.getDate() + 1)
+  }
+
+  return dates
+}
+
+
+
 export function EventsManagement({ user }: EventsManagementProps) {
   const [events, setEvents] = useState<Event[]>([])
   const [vacations, setVacations] = useState<Vacation[]>([])
   const [players, setPlayers] = useState<ClubPlayer[]>([])
-  const [form, setForm] = useState<Omit<Event, "id" | "user_id" | "created_at"> & { photo_file: File | null }>({
-    name: "",
-    event_type: "party",
-    source: "internal",
-    mode: "both",
-    startgeld_details: "",
-    event_date: "",
-    event_time: "",
-    location: "",
-    entry_fee: 0,
-    max_participants: null,
-    details: "",
-    photo_url: null,
-    photo_file: null,
-  })
+  const [form, setForm] = useState<Omit<Event, "id" | "user_id"> & { photo_file: File | null }>({
+  name: "",
+  event_type: "party",
+  source: "internal",
+  mode: "both",
+  startgeld_details: "",
+  start_date: "",
+  end_date: "",
+  event_time: "",
+  location: "",
+  entry_fee: 0,
+  max_participants: null,
+  details: "",
+  photo_url: null,
+  photo_file: null,
+})
 
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [isFetching, setIsFetching] = useState(false)
@@ -236,7 +256,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
   const fetchEvents = async () => {
     setIsFetching(true)
     setFormMessage(null)
-    const { data, error } = await supabase.from("events").select("*").order("event_date", { ascending: true })
+    const { data, error } = await supabase.from("events").select("*").order("start_date", { ascending: true })
     if (error) {
       console.error("Error fetching events:", error)
       setFormMessage({ type: "error", text: "Fehler beim Laden der Veranstaltungen." })
@@ -304,122 +324,132 @@ const fetchVacations = async () => {
     const awayOpp = m?.away_opponent_team_id ? opps.find((o) => o.id === m.away_opponent_team_id) : null
     return { ...m, home_opponent_team: homeOpp, away_opponent_team: awayOpp }
   }
+  
+  
+  
+  
+  
 
-  // Matches + interne Events am ausgewählten Datum (form.event_date)
-  useEffect(() => {
-    if (!user) return
+ useEffect(() => {
+  if (!user) return
 
-    if (!form.event_date) {
+  if (!form.start_date || !form.end_date) {
+    setDayMatches([])
+    setDayEvents([])
+    setDayError(null)
+    return
+  }
+
+  ;(async () => {
+    setDayLoading(true)
+    setDayError(null)
+    try {
+      const [matchesRes, eventsRes] = await Promise.all([
+        supabase
+          .from("matches")
+          .select(
+            `
+            id,
+            match_date,
+            match_time,
+            venue,
+            week_number,
+            status,
+            original_date,
+            postponement_reason,
+
+            home_team_id,
+            away_team_id,
+
+            home_team_type,
+            away_team_type,
+
+            home_opponent_team_id,
+            away_opponent_team_id,
+
+            home_team:teams!matches_home_team_id_fkey(id,name),
+            away_team:teams!matches_away_team_id_fkey(id,name)
+          `,
+          )
+          .gte("match_date", form.start_date)
+          .lte("match_date", form.end_date),
+
+        supabase
+          .from("events")
+          .select("*")
+          .lte("start_date", form.end_date)
+          .gte("end_date", form.start_date)
+          .eq("source", "internal")
+          .order("start_date", { ascending: true }),
+      ])
+
+      if (matchesRes.error) throw matchesRes.error
+      if (eventsRes.error) throw eventsRes.error
+
+      const rows = (matchesRes.data || []).map((m: any) => enrichWithOpponentNames(m, opponents))
+      setDayMatches(rows as MatchLite[])
+      setDayEvents((eventsRes.data || []) as Event[])
+    } catch (e: any) {
+      console.error(e)
+      setDayError(e?.message ?? "Fehler beim Laden (Spiele/Events).")
       setDayMatches([])
       setDayEvents([])
-      setDayError(null)
-      return
+    } finally {
+      setDayLoading(false)
     }
+  })()
+}, [user?.id, form.start_date, form.end_date, opponents])
 
-    ;(async () => {
-      setDayLoading(true)
-      setDayError(null)
-      try {
-        const [matchesRes, eventsRes] = await Promise.all([
-          supabase
-            .from("matches")
-            .select(
-              `
-              id,
-              match_date,
-              match_time,
-              venue,
-              week_number,
-              status,
-              original_date,
-              postponement_reason,
+  const homeGamesInRange = useMemo(() => dayMatches.filter((m) => m.home_team_type === "own"), [dayMatches])
 
-              home_team_id,
-              away_team_id,
+const vacationsInRange = useMemo(() => {
+  if (!form.start_date || !form.end_date) return []
 
-              home_team_type,
-              away_team_type,
-
-              home_opponent_team_id,
-              away_opponent_team_id,
-
-              home_team:teams!matches_home_team_id_fkey(id,name),
-              away_team:teams!matches_away_team_id_fkey(id,name)
-            `,
-            )
-            .eq("match_date", form.event_date),
-          supabase
-            .from("events")
-            .select("*")
-            .eq("event_date", form.event_date)
-            .eq("source", "internal")
-            .order("event_time", { ascending: true }),
-        ])
-
-        if (matchesRes.error) throw matchesRes.error
-        if (eventsRes.error) throw eventsRes.error
-
-        const rows = (matchesRes.data || []).map((m: any) => enrichWithOpponentNames(m, opponents))
-        setDayMatches(rows as MatchLite[])
-        setDayEvents((eventsRes.data || []) as Event[])
-      } catch (e: any) {
-        console.error(e)
-        setDayError(e?.message ?? "Fehler beim Laden (Spiele/Events).")
-        setDayMatches([])
-        setDayEvents([])
-      } finally {
-        setDayLoading(false)
-      }
-    })()
-  }, [user?.id, form.event_date, opponents])
-
-  const homeGamesThatDay = useMemo(() => dayMatches.filter((m) => m.home_team_type === "own"), [dayMatches])
-
-const vacationsThatDay = useMemo(() => {
-  if (!form.event_date) return []
-
-  // wir vergleichen als Strings "YYYY-MM-DD" -> klappt gut bei date-spalten
-  const day = form.event_date
-
-  return vacations.filter((v) => v.start_date <= day && day <= v.end_date)
-}, [vacations, form.event_date])
+  return vacations.filter((v) => {
+    return v.start_date <= form.end_date && v.end_date >= form.start_date
+  })
+}, [vacations, form.start_date, form.end_date])
 
 
-const birthdaysThatDay = useMemo(() => {
-  if (!form.event_date) return []
+const birthdaysInRange = useMemo(() => {
+  if (!form.start_date || !form.end_date) return []
 
-  // form.event_date ist "YYYY-MM-DD"
-  const parts = form.event_date.split("-")
-  const m = Number(parts[1])
-  const d = Number(parts[2])
-  if (!m || !d) return []
+  const allDays = getDatesBetween(form.start_date, form.end_date)
+  const monthDaySet = new Set(
+    allDays.map((date) => {
+      const [, month, day] = date.split("-")
+      return `${month}-${day}`
+    }),
+  )
 
   return players.filter((p) => {
     if (!p.birthdate) return false
     const bd = new Date(p.birthdate)
-    return bd.getMonth() + 1 === m && bd.getDate() === d
+    const key = `${String(bd.getMonth() + 1).padStart(2, "0")}-${String(bd.getDate()).padStart(2, "0")}`
+    return monthDaySet.has(key)
   })
-}, [players, form.event_date])
+}, [players, form.start_date, form.end_date])
 
 
 
   const resetForm = () => {
     setEditingEventId(null)
-    setForm({
-      name: "",
-      event_type: "party",
-      source: "internal",
-      mode: "both",
-      startgeld_details: "",
-      event_date: "",
-      event_time: "",
-      location: "",
-      entry_fee: 0,
-      max_participants: null,
-      details: "",
-      photo_url: null,
-      photo_file: null,
-    })
+     setForm({
+    name: "",
+    event_type: "party",
+    source: "internal",
+    mode: "both",
+    startgeld_details: "",
+    start_date: "",
+    end_date: "",
+    event_time: "",
+    location: "",
+    entry_fee: 0,
+    max_participants: null,
+    details: "",
+    photo_url: null,
+    photo_file: null,
+  })
     if (createdObjectUrlRef.current) {
       URL.revokeObjectURL(createdObjectUrlRef.current)
       createdObjectUrlRef.current = null
@@ -438,26 +468,41 @@ const birthdaysThatDay = useMemo(() => {
       setIsSaving(false)
       return
     }
+	
+	if (!form.start_date || !form.end_date) {
+  setFormMessage({ type: "error", text: "Bitte Startdatum und Enddatum auswählen." })
+  setIsSaving(false)
+  return
+}
+
+if (form.end_date < form.start_date) {
+  setFormMessage({ type: "error", text: "Enddatum darf nicht vor dem Startdatum liegen." })
+  setIsSaving(false)
+  return
+}
+	
 
     let photoUrl: string | null = form.photo_url
     try {
       if (form.photo_file) photoUrl = await uploadPhoto(form.photo_file)
 
-      const eventData = {
-        name: form.name,
-        event_type: form.event_type,
-        event_date: form.event_date,
-        event_time: form.event_time,
-        location: form.location,
-        entry_fee: Number(form.entry_fee),
-        max_participants: form.max_participants ? Number(form.max_participants) : null,
-        details: form.details,
-        photo_url: photoUrl,
-        source: form.source,
-        mode: form.event_type === "tournament" ? (form.mode || null) : null,
-        startgeld_details: form.event_type === "tournament" ? (form.startgeld_details || null) : null,
-        user_id: user.id,
-      }
+const eventData = {
+  name: form.name,
+  event_type: form.event_type,
+  event_date: form.start_date,
+  start_date: form.start_date,
+  end_date: form.end_date,
+  event_time: form.event_time,
+  location: form.location,
+  entry_fee: Number(form.entry_fee),
+  max_participants: form.max_participants ? Number(form.max_participants) : null,
+  details: form.details,
+  photo_url: photoUrl,
+  source: form.source,
+  mode: form.event_type === "tournament" ? (form.mode || null) : null,
+  startgeld_details: form.event_type === "tournament" ? (form.startgeld_details || null) : null,
+  user_id: user.id,
+}
 
       if (editingEventId) {
         const { error } = await supabase.from("events").update(eventData).eq("id", editingEventId)
@@ -487,20 +532,21 @@ const birthdaysThatDay = useMemo(() => {
   const handleEdit = (event: Event) => {
     setEditingEventId(event.id)
     setForm({
-      name: event.name,
-      event_type: event.event_type,
-      source: event.source ?? "internal",
-      mode: event.mode ?? "both",
-      startgeld_details: event.startgeld_details ?? "",
-      event_date: event.event_date,
-      event_time: event.event_time,
-      location: event.location,
-      entry_fee: event.entry_fee,
-      max_participants: event.max_participants,
-      details: event.details,
-      photo_url: event.photo_url,
-      photo_file: null,
-    })
+  name: event.name,
+  event_type: event.event_type,
+  source: event.source ?? "internal",
+  mode: event.mode ?? "both",
+  startgeld_details: event.startgeld_details ?? "",
+  start_date: event.start_date,
+  end_date: event.end_date,
+  event_time: event.event_time,
+  location: event.location,
+  entry_fee: event.entry_fee,
+  max_participants: event.max_participants,
+  details: event.details,
+  photo_url: event.photo_url,
+  photo_file: null,
+})
     setPhotoPreview(event.photo_url)
     setFormMessage(null)
   }
@@ -686,37 +732,53 @@ const birthdaysThatDay = useMemo(() => {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label htmlFor="event_date" className="text-sm font-bold text-gray-700">
-                    Datum
-                  </label>
-                  <Input
-                    id="event_date"
-                    name="event_date"
-                    type="date"
-                    value={form.event_date}
-                    onChange={handleInputChange}
-                    required
-                    className="h-11 rounded-2xl"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="event_time" className="text-sm font-bold text-gray-700">
-                    Uhrzeit
-                  </label>
-                  <Input
-                    id="event_time"
-                    name="event_time"
-                    type="time"
-                    value={form.event_time}
-                    onChange={handleInputChange}
-                    required
-                    className="h-11 rounded-2xl"
-                  />
-                </div>
-              </div>
-            </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+  <div className="space-y-2">
+    <label htmlFor="start_date" className="text-sm font-bold text-gray-700">
+      Startdatum
+    </label>
+    <Input
+      id="start_date"
+      name="start_date"
+      type="date"
+      value={form.start_date}
+      onChange={handleInputChange}
+      required
+      className="h-11 rounded-2xl"
+    />
+  </div>
+
+  <div className="space-y-2">
+    <label htmlFor="end_date" className="text-sm font-bold text-gray-700">
+      Enddatum
+    </label>
+    <Input
+      id="end_date"
+      name="end_date"
+      type="date"
+      value={form.end_date}
+      onChange={handleInputChange}
+      required
+      className="h-11 rounded-2xl"
+    />
+  </div>
+
+  <div className="space-y-2">
+    <label htmlFor="event_time" className="text-sm font-bold text-gray-700">
+      Uhrzeit
+    </label>
+    <Input
+      id="event_time"
+      name="event_time"
+      type="time"
+      value={form.event_time}
+      onChange={handleInputChange}
+      required
+      className="h-11 rounded-2xl"
+    />
+  </div>
+</div>
+</div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -910,154 +972,168 @@ const birthdaysThatDay = useMemo(() => {
       <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm sm:text-base font-black">
-            <ListChecks className="w-5 h-5 text-orange-600" />
-            Planung am {form.event_date ? formatDE(form.event_date) : "…"}
-          </CardTitle>
+  <ListChecks className="w-5 h-5 text-orange-600" />
+  Planung von {form.start_date ? formatDE(form.start_date) : "…"} bis {form.end_date ? formatDE(form.end_date) : "…"}
+</CardTitle>
           <CardDescription>Heimspiele + interne Events am ausgewählten Datum.</CardDescription>
         </CardHeader>
+		
+		
+		
+		<CardContent className="text-sm text-gray-700">
+  {dayLoading ? (
+    <span className="inline-flex items-center gap-2">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      Lade Spiele/Events…
+    </span>
+  ) : dayError ? (
+    <span className="text-orange-700">{dayError}</span>
+  ) : (
+    <>
+      <div className="mt-1">
+        <span className="font-black">{homeGamesInRange.length}</span>{" "}
+        {homeGamesInRange.length === 1 ? "Heimspiel" : "Heimspiele"} im Zeitraum.
+      </div>
 
-        <CardContent className="text-sm text-gray-700">
-          {dayLoading ? (
-            <span className="inline-flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Lade Spiele/Events…
-            </span>
-          ) : dayError ? (
-            <span className="text-orange-700">{dayError}</span>
-          ) : (
-            <>
-              <div className="mt-1">
-                <span className="font-black">{homeGamesThatDay.length}</span>{" "}
-                {homeGamesThatDay.length === 1 ? "Heimspiel" : "Heimspiele"} an diesem Tag.
-              </div>
-			  
-			  {/* Geburtstage am ausgewählten Tag */}
-<div className="mt-3 flex items-center gap-2">
-  <PartyPopper className="h-4 w-4 text-pink-600" />
-  <div>
-    <span className="font-black">{birthdaysThatDay.length}</span>{" "}
-    {birthdaysThatDay.length === 1 ? "Geburtstag" : "Geburtstage"} an diesem Tag.
-  </div>
-</div>
-
-{birthdaysThatDay.length > 0 ? (
-  <div className="mt-2 space-y-2">
-    {birthdaysThatDay.map((p) => (
-      <div
-        key={p.id}
-        className="flex items-center justify-between rounded-xl border border-pink-200 bg-pink-50/60 px-3 py-2"
-      >
-        <div className="font-black text-gray-900 truncate">{p.name}</div>
-        <div className="ml-3 font-black text-gray-900 tabular-nums">
-          {p.birthdate ? formatDE(p.birthdate) : "—"}
+      <div className="mt-3 flex items-center gap-2">
+        <PartyPopper className="h-4 w-4 text-pink-600" />
+        <div>
+          <span className="font-black">{birthdaysInRange.length}</span>{" "}
+          {birthdaysInRange.length === 1 ? "Geburtstag" : "Geburtstage"} im Zeitraum.
         </div>
       </div>
-    ))}
-  </div>
-) : (
-  <div className="mt-2 text-sm text-gray-600">Keine Geburtstage an diesem Datum.</div>
-)}
 
-              {homeGamesThatDay.length > 0 ? (
-                <div className="mt-3 space-y-2">
-                  {homeGamesThatDay
-                    .slice()
-                    .sort((a, b) => (a.match_time || "").localeCompare(b.match_time || ""))
-                    .map((m) => {
-                      const h = getTeamDisplayName(m, true)
-                      const a = getTeamDisplayName(m, false)
-                      const t = hhmm(m.match_time)
-                      return (
-                        <div
-                          key={m.id}
-                          className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2"
-                        >
-                          <div className="min-w-0">
-                            <div className="font-black text-gray-900 truncate">
-                              {h} <span className="text-gray-400">vs</span> {a}
-                            </div>
-                            <div className="text-xs text-gray-600 truncate">{m.venue || "—"}</div>
-                          </div>
-                          <div className="ml-3 font-black text-gray-900 tabular-nums">{t}</div>
-                        </div>
-                      )
-                    })}
+      {birthdaysInRange.length > 0 ? (
+        <div className="mt-2 space-y-2">
+          {birthdaysInRange.map((p) => (
+            <div
+              key={p.id}
+              className="flex items-center justify-between rounded-xl border border-pink-200 bg-pink-50/60 px-3 py-2"
+            >
+              <div className="font-black text-gray-900 truncate">{p.name}</div>
+              <div className="ml-3 font-black text-gray-900 tabular-nums">
+                {p.birthdate ? formatDE(p.birthdate) : "—"}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-2 text-sm text-gray-600">Keine Geburtstage im Zeitraum.</div>
+      )}
+
+      {homeGamesInRange.length > 0 ? (
+        <div className="mt-3 space-y-2">
+          {homeGamesInRange
+            .slice()
+            .sort((a, b) => (a.match_time || "").localeCompare(b.match_time || ""))
+            .map((m) => {
+              const h = getTeamDisplayName(m, true)
+              const a = getTeamDisplayName(m, false)
+              const t = hhmm(m.match_time)
+              return (
+                <div
+                  key={m.id}
+                  className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <div className="font-black text-gray-900 truncate">
+                      {h} <span className="text-gray-400">vs</span> {a}
+                    </div>
+                    <div className="text-xs text-gray-600 truncate">
+                      {formatDE(m.match_date)} • {m.venue || "—"}
+                    </div>
+                  </div>
+                  <div className="ml-3 font-black text-gray-900 tabular-nums">{t}</div>
                 </div>
-              ) : (
-                <div className="mt-2 text-sm text-gray-600">Keine Heimspiele an diesem Datum gefunden.</div>
-              )}
-			  
-			  {/* Urlaube am ausgewählten Tag */}
-<div className="mt-4 flex items-center gap-2">
-  <Info className="h-4 w-4 text-blue-700" />
-  <div>
-    <span className="font-black">{vacationsThatDay.length}</span>{" "}
-    {vacationsThatDay.length === 1 ? "Person" : "Personen"} im Urlaub an diesem Tag.
-  </div>
-</div>
+              )
+            })}
+        </div>
+      ) : (
+        <div className="mt-2 text-sm text-gray-600">Keine Heimspiele im Zeitraum gefunden.</div>
+      )}
 
-{vacationsThatDay.length > 0 ? (
-  <div className="mt-2 space-y-2">
-    {vacationsThatDay.map((v) => (
-      <div
-        key={v.id}
-        className="flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50/60 px-3 py-2"
-      >
-        <div className="font-black text-gray-900 truncate">{v.user_name}</div>
-        <div className="ml-3 text-xs font-black text-gray-700 tabular-nums">
-          {formatDE(v.start_date)} – {formatDE(v.end_date)}
+      <div className="mt-4 flex items-center gap-2">
+        <Info className="h-4 w-4 text-blue-700" />
+        <div>
+          <span className="font-black">{vacationsInRange.length}</span>{" "}
+          {vacationsInRange.length === 1 ? "Person" : "Personen"} im Urlaub im Zeitraum.
         </div>
       </div>
-    ))}
-  </div>
-) : (
-  <div className="mt-2 text-sm text-gray-600">Niemand im Urlaub an diesem Datum.</div>
-)}
 
-              <div className="mt-4 flex items-center gap-2">
-                <PartyPopper className="h-4 w-4 text-gray-800" />
-                <div>
-                  <span className="font-black">{dayEvents.length}</span> interne{" "}
-                  {dayEvents.length === 1 ? "Veranstaltung" : "Veranstaltungen"} an diesem Tag.
-                </div>
+      {vacationsInRange.length > 0 ? (
+        <div className="mt-2 space-y-2">
+          {vacationsInRange.map((v) => (
+            <div
+              key={v.id}
+              className="flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50/60 px-3 py-2"
+            >
+              <div className="font-black text-gray-900 truncate">{v.user_name}</div>
+              <div className="ml-3 text-xs font-black text-gray-700 tabular-nums">
+                {formatDE(v.start_date)} – {formatDE(v.end_date)}
               </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-2 text-sm text-gray-600">Niemand im Urlaub im Zeitraum.</div>
+      )}
 
-              {dayEvents.length > 0 ? (
-                <div className="mt-3 space-y-2">
-                  {dayEvents
-                    .slice()
-                    .sort((a, b) => (a.event_time || "").localeCompare(b.event_time || ""))
-                    .map((ev) => {
-                      const t = hhmm(ev.event_time)
-                      const isThis = editingEventId && ev.id === editingEventId
-                      return (
-                        <div
-                          key={ev.id}
-                          className={cn(
-                            "flex items-center justify-between rounded-xl border px-3 py-2",
-                            isThis ? "border-orange-200 bg-orange-50/60" : "border-gray-200 bg-gray-50/50",
-                          )}
-                        >
-                          <div className="min-w-0">
-                            <div className="font-black text-gray-900 truncate">
-                              {ev.name}
-                              {isThis ? (
-                                <span className="ml-2 text-xs font-black text-orange-700">(dieses Event)</span>
-                              ) : null}
-                            </div>
-                            <div className="text-xs text-gray-600 truncate">{getEventTypeLabel(ev.event_type)}</div>
-                          </div>
-                          <div className="ml-3 font-black text-gray-900 tabular-nums">{t}</div>
-                        </div>
-                      )
-                    })}
+      <div className="mt-4 flex items-center gap-2">
+        <PartyPopper className="h-4 w-4 text-gray-800" />
+        <div>
+          <span className="font-black">{dayEvents.length}</span> interne{" "}
+          {dayEvents.length === 1 ? "Veranstaltung" : "Veranstaltungen"} im Zeitraum.
+        </div>
+      </div>
+
+      {dayEvents.length > 0 ? (
+        <div className="mt-3 space-y-2">
+          {dayEvents
+            .slice()
+            .sort((a, b) => {
+              const dateCompare = a.start_date.localeCompare(b.start_date)
+              if (dateCompare !== 0) return dateCompare
+              return (a.event_time || "").localeCompare(b.event_time || "")
+            })
+            .map((ev) => {
+              const t = hhmm(ev.event_time)
+              const isThis = editingEventId && ev.id === editingEventId
+              return (
+                <div
+                  key={ev.id}
+                  className={cn(
+                    "flex items-center justify-between rounded-xl border px-3 py-2",
+                    isThis ? "border-orange-200 bg-orange-50/60" : "border-gray-200 bg-gray-50/50",
+                  )}
+                >
+                  <div className="min-w-0">
+                    <div className="font-black text-gray-900 truncate">
+                      {ev.name}
+                      {isThis ? (
+                        <span className="ml-2 text-xs font-black text-orange-700">(dieses Event)</span>
+                      ) : null}
+                    </div>
+                    <div className="text-xs text-gray-600 truncate">
+                      {getEventTypeLabel(ev.event_type)} • {formatDE(ev.start_date)}
+                      {ev.end_date !== ev.start_date ? ` – ${formatDE(ev.end_date)}` : ""}
+                    </div>
+                  </div>
+                  <div className="ml-3 font-black text-gray-900 tabular-nums">{t}</div>
                 </div>
-              ) : (
-                <div className="mt-2 text-sm text-gray-600">Keine internen Events.</div>
-              )}
-            </>
-          )}
-        </CardContent>
+              )
+            })}
+        </div>
+      ) : (
+        <div className="mt-2 text-sm text-gray-600">Keine internen Events im Zeitraum.</div>
+      )}
+    </>
+  )}
+</CardContent>
+		
+		
+		
+
+      
       </Card>
 
       {/* Liste */}
@@ -1140,7 +1216,10 @@ const birthdaysThatDay = useMemo(() => {
                         )}
                       </TableCell>
 
-                      <TableCell>{new Date(event.event_date).toLocaleDateString("de-DE")}</TableCell>
+                      <TableCell>
+  {new Date(event.start_date).toLocaleDateString("de-DE")}
+  {event.end_date !== event.start_date ? ` – ${new Date(event.end_date).toLocaleDateString("de-DE")}` : ""}
+</TableCell>
                       <TableCell>{event.location}</TableCell>
                       <TableCell>{event.max_participants ? `Max. ${event.max_participants}` : "Unbegrenzt"}</TableCell>
 

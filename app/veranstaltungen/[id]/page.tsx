@@ -27,13 +27,18 @@ import {
 } from "lucide-react"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
-const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+)
 
 type EventRow = {
   id: string
   name: string
   event_type: string
   event_date: string
+  start_date: string | null
+  end_date: string | null
   event_time: string | null
   location: string | null
   entry_fee: number | null
@@ -43,6 +48,23 @@ type EventRow = {
   startgeld_details: string | null
   source: string | null
   max_participants: number | null
+}
+
+type ParticipantStatus = "going" | "maybe" | "declined"
+
+type EventParticipantRow = {
+  id: string
+  event_id: string
+  user_id: string
+  player_id: string | null
+  status: ParticipantStatus
+  created_at: string
+  updated_at: string
+  club_players: {
+    id: string
+    name: string
+    photo_url: string | null
+  } | null
 }
 
 /* ---------------- helpers ---------------- */
@@ -65,8 +87,25 @@ function getEventTypeLabel(type: string) {
   return "Event"
 }
 
-function formatDateDE(dateIso: string) {
-  return new Date(dateIso).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })
+function formatDateRangeDE(startIso: string | null, endIso: string | null, fallbackIso: string) {
+  const start = startIso || fallbackIso
+  const end = endIso || fallbackIso
+
+  const startText = new Date(start).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  })
+
+  if (start === end) return startText
+
+  const endText = new Date(end).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  })
+
+  return `${startText} – ${endText}`
 }
 
 function formatTimeDE(time: string | null) {
@@ -74,10 +113,11 @@ function formatTimeDE(time: string | null) {
   return raw.length >= 5 ? raw.slice(0, 5) : raw
 }
 
-function toDateTime(e: Pick<EventRow, "event_date" | "event_time">) {
-  const raw = (e.event_time || "19:00").toString()
+function toEventEndDateTime(e: Pick<EventRow, "end_date" | "event_date" | "event_time">) {
+  const raw = (e.event_time || "23:59").toString()
   const time = raw.length === 5 ? `${raw}:00` : raw
-  return new Date(`${e.event_date}T${time}`)
+  const date = e.end_date || e.event_date
+  return new Date(`${date}T${time}`)
 }
 
 function parseStartgeld(details: string | null) {
@@ -101,6 +141,7 @@ function ModeIcon({ mode }: { mode: string | null }) {
   const m = (mode || "").toLowerCase()
   if (m === "edart") return <Target className="w-4 h-4" />
   if (m === "steeldart") return <Swords className="w-4 h-4" />
+  if (m === "both") return <Users className="w-4 h-4" />
   return <Users className="w-4 h-4" />
 }
 
@@ -110,6 +151,12 @@ function modeLabel(mode: string | null) {
   if (m === "steeldart") return "Steel Dart"
   if (m === "both") return "Beide"
   return mode || "—"
+}
+
+function getParticipantStatusLabel(status: ParticipantStatus) {
+  if (status === "going") return "Dabei"
+  if (status === "maybe") return "Vielleicht"
+  return "Abgesagt"
 }
 
 function DummyCover({ label, title }: { label: string; title: string }) {
@@ -156,7 +203,7 @@ function Chip({
   )
 }
 
-/* ---------------- lightbox (mobile friendly) ---------------- */
+/* ---------------- lightbox ---------------- */
 
 function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
   useEffect(() => {
@@ -203,6 +250,102 @@ export default function VeranstaltungDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [openImg, setOpenImg] = useState(false)
 
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null)
+  const [participants, setParticipants] = useState<EventParticipantRow[]>([])
+  const [savingStatus, setSavingStatus] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadCurrentUser() {
+      const { data: authData } = await supabase.auth.getUser()
+      const uid = authData?.user?.id ?? null
+      if (cancelled) return
+
+      setCurrentUserId(uid)
+
+      if (!uid) {
+        setCurrentPlayerId(null)
+        return
+      }
+
+      const { data: profileRow } = await supabase
+        .from("user_profiles")
+        .select("player_id")
+        .eq("user_id", uid)
+        .maybeSingle()
+
+      if (!cancelled) {
+        setCurrentPlayerId(profileRow?.player_id ?? null)
+      }
+    }
+
+    loadCurrentUser()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  async function loadParticipants(eventId: string) {
+    const { data, error } = await supabase
+      .from("event_participants")
+      .select(`
+        id,
+        event_id,
+        user_id,
+        player_id,
+        status,
+        created_at,
+        updated_at,
+        club_players (
+          id,
+          name,
+          photo_url
+        )
+      `)
+      .eq("event_id", eventId)
+      .order("created_at", { ascending: true })
+
+    if (error) {
+      console.error("Error loading participants:", error)
+      return
+    }
+
+    setParticipants((data as EventParticipantRow[]) || [])
+  }
+
+  async function saveParticipation(status: ParticipantStatus) {
+    if (!id || !currentUserId) return
+
+    try {
+      setSavingStatus(true)
+
+      const { error } = await supabase
+        .from("event_participants")
+        .upsert(
+          {
+            event_id: id,
+            user_id: currentUserId,
+            player_id: currentPlayerId,
+            status,
+          },
+          {
+            onConflict: "event_id,user_id",
+          },
+        )
+
+      if (error) throw error
+
+      await loadParticipants(id)
+    } catch (e) {
+      console.error("Error saving participation:", e)
+    } finally {
+      setSavingStatus(false)
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
 
@@ -215,13 +358,20 @@ export default function VeranstaltungDetailPage() {
         const { data, error } = await supabase
           .from("events")
           .select(
-            "id,name,event_type,event_date,event_time,location,entry_fee,details,photo_url,mode,startgeld_details,source,max_participants",
+            "id,name,event_type,event_date,start_date,end_date,event_time,location,entry_fee,details,photo_url,mode,startgeld_details,source,max_participants",
           )
           .eq("id", id)
           .maybeSingle()
 
         if (error) throw error
-        if (!cancelled) setEvent((data as EventRow) || null)
+
+        if (!cancelled) {
+          setEvent((data as EventRow) || null)
+        }
+
+        if (data?.id) {
+          await loadParticipants(data.id)
+        }
       } catch (e: any) {
         console.error(e)
         if (!cancelled) setError(e?.message ? String(e.message) : "Fehler beim Laden")
@@ -244,18 +394,33 @@ export default function VeranstaltungDetailPage() {
     const startgeldAmount = parseStartgeld(event.startgeld_details)
     const hasStartgeld = Boolean(event.startgeld_details && event.startgeld_details.trim())
     const hasEintritt = (event.entry_fee ?? 0) > 0
-    const isPast = toDateTime(event).getTime() < Date.now()
+    const isPast = toEventEndDateTime(event).getTime() < Date.now()
     return { isTournament, isExternal, Icon, startgeldAmount, hasStartgeld, hasEintritt, isPast }
   }, [event])
+
+  const myParticipation = useMemo(() => {
+    if (!currentUserId) return null
+    return participants.find((p) => p.user_id === currentUserId) || null
+  }, [participants, currentUserId])
+
+  const goingParticipants = useMemo(() => {
+    return participants.filter((p) => p.status === "going")
+  }, [participants])
+
+  const maybeParticipants = useMemo(() => {
+    return participants.filter((p) => p.status === "maybe")
+  }, [participants])
+
+  const declinedParticipants = useMemo(() => {
+    return participants.filter((p) => p.status === "declined")
+  }, [participants])
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 pb-28 overflow-x-hidden">
       <Header />
 
-      {/* App-like content width */}
       <main className="pt-12 sm:pt-14">
         <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
-          {/* Sticky top bar (app feel) */}
           <div className="sticky top-[56px] z-20 mb-4">
             <div className="rounded-2xl border border-gray-200 bg-white/90 backdrop-blur shadow-sm px-3 py-2 flex items-center justify-between gap-2">
               <Button
@@ -312,9 +477,13 @@ export default function VeranstaltungDetailPage() {
                       {getEventTypeLabel(event.event_type)}
                     </Chip>
 
-                    <Chip tone={view?.isExternal ? "amber" : "emerald"}>{view?.isExternal ? "Extern" : "Intern"}</Chip>
+                    <Chip tone={view?.isExternal ? "amber" : "emerald"}>
+                      {view?.isExternal ? "Extern" : "Intern"}
+                    </Chip>
 
-                    <Chip tone={view?.isPast ? "slate" : "blue"}>{view?.isPast ? "Abgelaufen" : "Anstehend"}</Chip>
+                    <Chip tone={view?.isPast ? "slate" : "blue"}>
+                      {view?.isPast ? "Abgelaufen" : "Anstehend"}
+                    </Chip>
 
                     {view?.isTournament && view?.hasStartgeld ? (
                       <Chip tone="orange">
@@ -332,13 +501,14 @@ export default function VeranstaltungDetailPage() {
                 </CardHeader>
 
                 <CardContent className="pt-2 pb-5">
-                  {/* Info cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="rounded-2xl border border-gray-200 bg-white p-4">
                       <div className="space-y-2 text-sm text-gray-700">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium">{formatDateDE(event.event_date)}</span>
+                          <span className="font-medium">
+                            {formatDateRangeDE(event.start_date, event.end_date, event.event_date)}
+                          </span>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -378,10 +548,164 @@ export default function VeranstaltungDetailPage() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                      <div className="text-sm font-semibold text-gray-900 mb-3">Teilnahme</div>
+
+                      {!currentUserId ? (
+                        <div className="text-sm text-gray-600">
+                          Bitte einloggen, um für dieses Event zuzusagen oder abzusagen.
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              variant={myParticipation?.status === "going" ? "default" : "outline"}
+                              className="rounded-xl"
+                              disabled={savingStatus || !!view?.isPast}
+                              onClick={() => saveParticipation("going")}
+                            >
+                              Dabei
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant={myParticipation?.status === "maybe" ? "default" : "outline"}
+                              className="rounded-xl"
+                              disabled={savingStatus || !!view?.isPast}
+                              onClick={() => saveParticipation("maybe")}
+                            >
+                              Vielleicht
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant={myParticipation?.status === "declined" ? "default" : "outline"}
+                              className="rounded-xl"
+                              disabled={savingStatus || !!view?.isPast}
+                              onClick={() => saveParticipation("declined")}
+                            >
+                              Absage
+                            </Button>
+                          </div>
+
+                          <div className="mt-3 text-sm text-gray-600">
+                            Dein Status:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {myParticipation ? getParticipantStatusLabel(myParticipation.status) : "Noch keine Antwort"}
+                            </span>
+                          </div>
+
+                          {view?.isPast ? (
+                            <div className="mt-2 text-xs text-gray-500">
+                              Für vergangene Events kann nichts mehr geändert werden.
+                            </div>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                      <div className="text-sm font-semibold text-gray-900 mb-3">Teilnehmer</div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                            Dabei ({goingParticipants.length})
+                          </div>
+                          {goingParticipants.length === 0 ? (
+                            <div className="text-sm text-gray-500">Noch niemand.</div>
+                          ) : (
+                            <div className="space-y-2">
+                              {goingParticipants.map((p) => (
+                                <div key={p.id} className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2">
+                                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                                    {p.club_players?.photo_url ? (
+                                      <img
+                                        src={p.club_players.photo_url}
+                                        alt={p.club_players.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <Users className="w-4 h-4 text-gray-500" />
+                                    )}
+                                  </div>
+                                  <span className="text-sm text-gray-900 font-medium">
+                                    {p.club_players?.name || "Unbekannt"}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                            Vielleicht ({maybeParticipants.length})
+                          </div>
+                          {maybeParticipants.length === 0 ? (
+                            <div className="text-sm text-gray-500">Niemand.</div>
+                          ) : (
+                            <div className="space-y-2">
+                              {maybeParticipants.map((p) => (
+                                <div key={p.id} className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2">
+                                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                                    {p.club_players?.photo_url ? (
+                                      <img
+                                        src={p.club_players.photo_url}
+                                        alt={p.club_players.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <Users className="w-4 h-4 text-gray-500" />
+                                    )}
+                                  </div>
+                                  <span className="text-sm text-gray-900 font-medium">
+                                    {p.club_players?.name || "Unbekannt"}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                            Abgesagt ({declinedParticipants.length})
+                          </div>
+                          {declinedParticipants.length === 0 ? (
+                            <div className="text-sm text-gray-500">Niemand.</div>
+                          ) : (
+                            <div className="space-y-2">
+                              {declinedParticipants.map((p) => (
+                                <div key={p.id} className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2">
+                                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                                    {p.club_players?.photo_url ? (
+                                      <img
+                                        src={p.club_players.photo_url}
+                                        alt={p.club_players.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <Users className="w-4 h-4 text-gray-500" />
+                                    )}
+                                  </div>
+                                  <span className="text-sm text-gray-900 font-medium">
+                                    {p.club_players?.name || "Unbekannt"}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Sticky bottom actions (app feel) */}
               <div className="fixed left-0 right-0 bottom-16 z-30 px-4">
                 <div className="mx-auto max-w-2xl">
                   <div className="rounded-2xl border border-gray-200 bg-white/90 backdrop-blur shadow-lg p-3 flex gap-2">

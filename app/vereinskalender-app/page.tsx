@@ -73,8 +73,8 @@ interface Match {
 }
 
 interface Event {
-  vacation_user_id?: string | null;
-  type?: string // "event" | "dko" | "birthday" | "vacation" | "holiday"
+  vacation_user_id?: string | null
+  type?: string // "event" | "dko" | "birthday" | "vacation" | "holiday" | "board"
   id: string
   name: string
   event_date: string
@@ -82,14 +82,12 @@ interface Event {
   description?: string
   start_time?: string
 
-  // Zusätzliche Felder (events Tabelle)
   location?: string | null
   entry_fee?: number | null
   max_participants?: number | null
   details?: string | null
   photo_url?: string | null
 
-  // Urlaub (optional)
   vacation_id?: string
   start_date?: string
   end_date?: string
@@ -339,19 +337,21 @@ try {
         } else {
           const rows = (eventsResponse.data || []) as any[]
           enrichedEvents = rows.map((r) => ({
-            type: "event",
-            id: `event_${r.id}`,
-            name: r.name || "Event",
-            event_date: r.event_date,
-            event_type: r.event_type || "Event",
-            start_time: (r.event_time || "").toString().substring(0, 5) || undefined,
-            description: r.details || undefined,
-            details: r.details ?? null,
-            location: r.location ?? null,
-            entry_fee: r.entry_fee ?? null,
-            max_participants: r.max_participants ?? null,
-            photo_url: r.photo_url ?? null,
-          })) as Event[]
+  type: "event",
+  id: `event_${r.id}`,
+  name: r.name || "Event",
+  event_date: r.start_date || r.event_date,
+  start_date: r.start_date || r.event_date,
+  end_date: r.end_date || r.event_date,
+  event_type: r.event_type || "Event",
+  start_time: (r.event_time || "").toString().substring(0, 5) || undefined,
+  description: r.details || undefined,
+  details: r.details ?? null,
+  location: r.location ?? null,
+  entry_fee: r.entry_fee ?? null,
+  max_participants: r.max_participants ?? null,
+  photo_url: r.photo_url ?? null,
+})) as Event[]
         }
       } catch (eventError) {
         console.error("Events table might not exist or no permissions:", eventError)
@@ -658,9 +658,13 @@ const filteredEvents = allEvents.filter((event) => {
         : []
 
     const eventsForDate =
-      selectedItemType !== "Spiele" && selectedItemType !== "Geburtstage" && selectedItemType !== "Urlaube"
-        ? filteredEvents.filter((event) => event.event_date === dateStr)
-        : []
+  selectedItemType !== "Spiele" && selectedItemType !== "Geburtstage" && selectedItemType !== "Urlaube"
+    ? filteredEvents.filter((event) => {
+        const start = event.start_date || event.event_date
+        const end = event.end_date || event.event_date
+        return isDateInRange(dateStr, start, end)
+      })
+    : []
 
     const birthdaysForDate =
       selectedItemType !== "Spiele" && selectedItemType !== "Turniere" && selectedItemType !== "Events" && selectedItemType !== "Urlaube"
@@ -1095,7 +1099,11 @@ try {
   })()
 
   const todayMatches = matches.filter((match) => match.match_date === todayStr)
-  const todayEvents = events.filter((event) => event.event_date === todayStr)
+const todayEvents = events.filter((event) => {
+  const start = event.start_date || event.event_date
+  const end = event.end_date || event.event_date
+  return isDateInRange(todayStr, start, end)
+})
   const todayBirthdayEvents: Event[] = birthdayPlayers
     .filter((p) => isBirthdayOnDate(p.birthdate, today))
     .map((p) => ({
@@ -2018,8 +2026,11 @@ else bg = "bg-green-500"
                   .sort((a, b) => {
                     const todayStr = format(new Date(), "yyyy-MM-dd")
 
-                    const dateA = "match_date" in a ? a.match_date : a.event_date
-                    const dateB = "match_date" in b ? b.match_date : b.event_date
+                    const dateA =
+  "match_date" in a ? a.match_date : (a.start_date || a.event_date)
+
+const dateB =
+  "match_date" in b ? b.match_date : (b.start_date || b.event_date)
 
                     const timeA =
                       "match_time" in a
@@ -2077,14 +2088,24 @@ else bg = "bg-green-500"
 
                                 <div className="flex flex-col gap-2 text-sm text-gray-600">
                                   <div className="flex items-center gap-2 min-w-0">
-                                    <Calendar className="h-4 w-4 shrink-0" />
-                                    {new Date(item.event_date).toLocaleDateString("de-DE", {
-                                      weekday: "short",
-                                      day: "2-digit",
-                                      month: "2-digit",
-                                      year: "numeric",
-                                    })}
-                                  </div>
+  <Calendar className="h-4 w-4 shrink-0" />
+  <span>
+    {new Date(item.start_date || item.event_date).toLocaleDateString("de-DE", {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })}
+    {(item.end_date || item.event_date) !== (item.start_date || item.event_date)
+      ? ` – ${new Date(item.end_date || item.event_date).toLocaleDateString("de-DE", {
+          weekday: "short",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })}`
+      : ""}
+  </span>
+</div>
                                   {item?.start_time && (
   <div className="flex items-center gap-2 min-w-0">
     <Clock className="h-4 w-4 shrink-0" />
@@ -2415,16 +2436,24 @@ else bg = "bg-green-500"
 
                   <div className="space-y-2 bg-white p-3 rounded-sm-lg border">
                     <div className="flex items-center gap-3 text-sm">
-                      <Calendar className="h-5 w-5 text-gray-600 shrink-0" />
-                      <span>
-                        {new Date(selectedEvent.event_date).toLocaleDateString("de-DE", {
-                          weekday: "long",
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </div>
+  <Calendar className="h-5 w-5 text-gray-600 shrink-0" />
+  <span>
+    {new Date(selectedEvent.start_date || selectedEvent.event_date).toLocaleDateString("de-DE", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    })}
+    {(selectedEvent.end_date || selectedEvent.event_date) !== (selectedEvent.start_date || selectedEvent.event_date)
+      ? ` bis ${new Date(selectedEvent.end_date || selectedEvent.event_date).toLocaleDateString("de-DE", {
+          weekday: "long",
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        })}`
+      : ""}
+  </span>
+</div>
                     <div className="flex items-center gap-3 text-sm">
                       {selectedEvent.event_type === "Turnier" ? (
                         <>

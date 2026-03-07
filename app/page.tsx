@@ -90,6 +90,8 @@ interface Event {
   id: string
   name: string
   event_date: string
+  start_date: string | null
+  end_date: string | null
   event_time: string | null
   location: string | null
   event_type: string
@@ -102,6 +104,8 @@ interface CombinedEvent {
   id: string
   name: string
   date: string
+  start_date?: string | null
+  end_date?: string | null
   time: string
   location: string
   details: string | null
@@ -253,6 +257,29 @@ function formatGermanShortDateFromISO(isoDate: string) {
   const mm = Number.isFinite(m) ? m - 1 : 0
   return `${pad2(d)}. ${months[mm] || "Jan."} ${y}`
 }
+
+
+function formatGermanDateRange(startIso: string | null | undefined, endIso: string | null | undefined, fallbackIso: string) {
+  const start = startIso || fallbackIso
+  const end = endIso || fallbackIso
+
+  const startText = new Date(start).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+
+  if (start === end) return startText
+
+  const endText = new Date(end).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+
+  return `${startText} – ${endText}`
+}
+
 
 function ensureUhr(time: string) {
   const t = time.replace("Uhr", "").trim()
@@ -601,25 +628,25 @@ export default function Home() {
         const today = new Date().toISOString().split("T")[0]
 
         const { data: tournamentsData, error: tournamentsError } = await supabase
-          .from("events")
-          .select("*")
-          .eq("event_type", "tournament")
-          .gte("event_date", today)
-          .order("event_date", { ascending: true })
-          .order("event_time", { ascending: true })
+  .from("events")
+  .select("*")
+  .eq("event_type", "tournament")
+  .gte("end_date", today)
+  .order("start_date", { ascending: true })
+  .order("event_time", { ascending: true })
 
         if (tournamentsError) {
           console.error("Error fetching tournaments:", tournamentsError)
         }
 
         const { data: eventsData, error: eventsError } = await supabase
-          .from("events")
-          .select("*")
-          .neq("event_type", "tournament")
-          .not("name", "ilike", "%LION%")
-          .gte("event_date", today)
-          .order("event_date", { ascending: true })
-          .order("event_time", { ascending: true })
+  .from("events")
+  .select("*")
+  .neq("event_type", "tournament")
+  .not("name", "ilike", "%LION%")
+  .gte("end_date", today)
+  .order("start_date", { ascending: true })
+  .order("event_time", { ascending: true })
 
         if (eventsError) {
           console.error("Error fetching events:", eventsError)
@@ -627,12 +654,14 @@ export default function Home() {
 
         const combined: CombinedEvent[] = []
 
-        if (tournamentsData) {
+       if (tournamentsData) {
   tournamentsData.forEach((tournament: any) => {
     combined.push({
       id: tournament.id,
       name: tournament.name,
-      date: tournament.event_date,
+      date: tournament.start_date || tournament.event_date,
+      start_date: tournament.start_date || tournament.event_date,
+      end_date: tournament.end_date || tournament.event_date,
       time: tournament.event_time || "19:00",
       location: tournament.location || "Ort folgt",
       details: tournament.details ?? tournament.description ?? null,
@@ -647,21 +676,23 @@ export default function Home() {
 }
 
         if (eventsData) {
-          eventsData.forEach((event: any) => {
-            combined.push({
-              id: event.id,
-              name: event.name,
-              date: event.event_date,
-              time: event.event_time || "19:00",
-              location: event.location || "Wird bekannt gegeben",
-              details: event.description,
-              photo_url: event.photo_url,
-              type: "event",
-              eventType: event.event_type,
-              max_participants: event.max_participants,
-            })
-          })
-        }
+  eventsData.forEach((event: any) => {
+    combined.push({
+      id: event.id,
+      name: event.name,
+      date: event.start_date || event.event_date,
+      start_date: event.start_date || event.event_date,
+      end_date: event.end_date || event.event_date,
+      time: event.event_time || "19:00",
+      location: event.location || "Wird bekannt gegeben",
+      details: event.details ?? event.description ?? null,
+      photo_url: event.photo_url,
+      type: "event",
+      eventType: event.event_type,
+      max_participants: event.max_participants,
+    })
+  })
+}
 
         combined.sort((a, b) => {
           const dateA = new Date(`${a.date}T${a.time}`)
@@ -1600,14 +1631,10 @@ export default function Home() {
 
           {/* Content */}
           <div className="p-4">
-            <p className="text-[11px] text-gray-500 font-bold mb-1">
-              {new Date(item.date).toLocaleDateString("de-DE", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
-              {item.time ? ` • ${item.time} Uhr` : ""}
-            </p>
+           <p className="text-[11px] text-gray-500 font-bold mb-1">
+  {formatGermanDateRange(item.start_date, item.end_date, item.date)}
+  {item.time ? ` • ${item.time.slice(0,5)} Uhr` : ""}
+</p>
 
             <h3 className="font-black text-gray-900 mb-1 line-clamp-2">{item.name}</h3>
 
@@ -1682,14 +1709,14 @@ export default function Home() {
             <EventIcon className="w-3.5 h-3.5" />
             {badgeText}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 px-2 py-0.5">
-            <Calendar className="w-3.5 h-3.5" />
-            {new Date(item.date).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })}
-          </span>
+         <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 px-2 py-0.5">
+  <Calendar className="w-3.5 h-3.5" />
+  {formatGermanDateRange(item.start_date, item.end_date, item.date)}
+</span>
           {item.time ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 px-2 py-0.5">
               <Clock className="w-3.5 h-3.5" />
-              {item.time} Uhr
+              {item.time?.slice(0,5)} Uhr
             </span>
           ) : null}
         </div>

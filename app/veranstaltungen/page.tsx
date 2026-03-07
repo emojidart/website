@@ -37,6 +37,8 @@ type EventRow = {
   name: string
   event_type: string
   event_date: string
+  start_date: string | null
+  end_date: string | null
   event_time: string | null
   location: string | null
 
@@ -73,15 +75,50 @@ function formatDateDE(dateIso: string) {
   return new Date(dateIso).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })
 }
 
+
+function formatDateRangeDE(startIso: string | null, endIso: string | null, fallbackIso: string) {
+  const start = startIso || fallbackIso
+  const end = endIso || fallbackIso
+
+  const startText = new Date(start).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  })
+
+  if (start === end) return startText
+
+  const endText = new Date(end).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  })
+
+  return `${startText} – ${endText}`
+}
+
+
+
+
+
+
 function formatTimeDE(time: string | null) {
   const raw = (time || "19:00").toString()
   return raw.length >= 5 ? raw.slice(0, 5) : raw
 }
 
-function toDateTime(e: Pick<EventRow, "event_date" | "event_time">) {
+function toDateTime(e: Pick<EventRow, "start_date" | "event_date" | "event_time">) {
   const raw = (e.event_time || "19:00").toString()
   const time = raw.length === 5 ? `${raw}:00` : raw
-  return new Date(`${e.event_date}T${time}`)
+  const date = e.start_date || e.event_date
+  return new Date(`${date}T${time}`)
+}
+
+function toEventEndDateTime(e: Pick<EventRow, "end_date" | "event_date" | "event_time">) {
+  const raw = (e.event_time || "23:59").toString()
+  const time = raw.length === 5 ? `${raw}:00` : raw
+  const date = e.end_date || e.event_date
+  return new Date(`${date}T${time}`)
 }
 
 function ModeIcon({ mode }: { mode: string | null }) {
@@ -176,13 +213,13 @@ export default function VeranstaltungenPage() {
       setLoading(true)
       setError(null)
       try {
-        const { data, error } = await supabase
-          .from("events")
-          .select(
-            "id,name,event_type,event_date,event_time,location,entry_fee,max_participants,details,photo_url,mode,startgeld_details,source",
-          )
-          .order("event_date", { ascending: true })
-          .order("event_time", { ascending: true })
+       const { data, error } = await supabase
+  .from("events")
+  .select(
+    "id,name,event_type,event_date,start_date,end_date,event_time,location,entry_fee,max_participants,details,photo_url,mode,startgeld_details,source"
+  )
+  .order("start_date", { ascending: true })
+  .order("event_time", { ascending: true })
 
         if (error) throw error
         if (!cancelled) setEvents((data as EventRow[]) || [])
@@ -212,11 +249,13 @@ export default function VeranstaltungenPage() {
 
     return events
       .filter((e) => {
-        const dt = toDateTime(e).getTime()
-        if (timeFilter === "upcoming") return dt >= nowTs
-        if (timeFilter === "past") return dt < nowTs
-        return true
-      })
+  const startTs = toDateTime(e).getTime()
+  const endTs = toEventEndDateTime(e).getTime()
+
+  if (timeFilter === "upcoming") return endTs >= nowTs
+  if (timeFilter === "past") return endTs < nowTs
+  return true
+})
       .filter((e) => {
         if (typeFilter === "all") return true
         return (e.event_type || "").toLowerCase() === typeFilter
@@ -373,7 +412,8 @@ export default function VeranstaltungenPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filtered.map((e) => {
                   const dt = toDateTime(e)
-                  const isPast = dt.getTime() < Date.now()
+const endDt = toEventEndDateTime(e)
+const isPast = endDt.getTime() < Date.now()
                   const isTournament = (e.event_type || "").toLowerCase() === "tournament"
                   const isExternal = (e.source || "internal").toLowerCase() === "external"
                   const Icon = getEventTypeIcon(e.event_type)
@@ -414,9 +454,9 @@ export default function VeranstaltungenPage() {
                       <CardContent className="pt-0">
                         <div className="space-y-2 text-sm text-gray-700">
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-gray-500" />
-                            <span className="font-medium">{formatDateDE(e.event_date)}</span>
-                          </div>
+  <Calendar className="w-4 h-4 text-gray-500" />
+  <span className="font-medium">{formatDateRangeDE(e.start_date, e.end_date, e.event_date)}</span>
+</div>
 
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-gray-500" />
