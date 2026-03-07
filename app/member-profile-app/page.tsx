@@ -105,11 +105,13 @@ export default function MemberProfileAppPage() {
   const router = useRouter()
 
   const [profile, setProfile] = useState<UserProfileWithLastSeen | null>(null)
-  const [tournamentPushEnabled, setTournamentPushEnabled] = useState<boolean | null>(null)
-  const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermission[]>([])
+const [tournamentPushEnabled, setTournamentPushEnabled] = useState<boolean | null>(null)
+const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
+const [loading, setLoading] = useState(true)
+const [error, setError] = useState<string | null>(null)
+const [isBlocked, setIsBlocked] = useState(false)
+const [blockedReason, setBlockedReason] = useState<string | null>(null)
+const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermission[]>([])
 
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
@@ -485,124 +487,164 @@ if (teamMemberCountError) throw teamMemberCountError
     }
   }
 
-  const fetchProfile = async () => {
-    if (!session?.user) return
+const fetchProfile = async () => {
+  if (!session?.user) return
 
-    try {
-      setLoading(true)
-      setError(null)
+  try {
+    setLoading(true)
+    setError(null)
+    setIsBlocked(false)
+    setBlockedReason(null)
 
-      const { data: profileData, error: profileError } = await supabase
-        .from("user_profiles")
-        .select(`id, user_id, player_id, last_seen_at, club_players (id, name, photo_url, throwing_hand, age, origin, club_joined_at, club_left_at)`)
-        .eq("user_id", session.user.id)
-        .single()
+    const { data: profileData, error: profileError } = await supabase
+      .from("user_profiles")
+      .select(`
+        id,
+        user_id,
+        player_id,
+        last_seen_at,
+        is_blocked,
+        blocked_reason,
+        club_players (
+          id,
+          name,
+          photo_url,
+          throwing_hand,
+          age,
+          origin,
+          club_joined_at,
+          club_left_at
+        )
+      `)
+      .eq("user_id", session.user.id)
+      .maybeSingle()
 
-      if (profileError) throw profileError
-      setProfile(profileData as any)
-	  
-	  // Push-Status aus push_preferences laden
-const { data: pushData } = await supabase
-  .from("push_preferences")
-  .select("tournament_push_enabled")
-  .eq("user_id", session.user.id)
-  .single()
+    if (profileError) throw profileError
 
-setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
-
-      if ((profileData as any)?.player_id) {
-        const { data: permissionRows, error: permissionErr } = await supabase.from("user_page_permissions").select("page_key, allowed").eq("player_id", (profileData as any).player_id)
-
-        if (permissionErr) throw permissionErr
-        setUserPagePermissions((permissionRows ?? []) as any)
-      } else {
-        setUserPagePermissions([])
-      }
-	  
-	  
-	  
-	  if ((profileData as any)?.player_id) {
-  const { data: permissionRows, error: permissionErr } = await supabase
-    .from("user_page_permissions")
-    .select("page_key, allowed")
-    .eq("player_id", (profileData as any).player_id)
-
-  if (permissionErr) throw permissionErr
-  setUserPagePermissions((permissionRows ?? []) as any)
-} else {
-  setUserPagePermissions([])
-}
-
-if ((profileData as any)?.player_id) {
-  await fetchNotifications((profileData as any).player_id)
-
-  const { data: teamData, error: teamError } = await supabase
-    .from("team_members")
-    .select(`id, team_id, role, teams (id, name, logo_url, chat_room_id)`)
-    .eq("player_id", (profileData as any).player_id)
-    .is("left_at", null)
-
-  if (teamError) throw teamError
-  setTeamMemberships((teamData || []) as any)
-
-  await fetchNextMatchSummary((profileData as any).player_id, (teamData || []) as any)
-
-  // ✅ Stats (Legs W/L, Siegquote, 180er, Events)
-  const { data: legStats, error: legStatsError } = await supabase
-    .from("leg_statistics")
-    .select("match_id, player_legs_won, opponent_legs_won, throws_180")
-    .eq("player_id", (profileData as any).player_id)
-
-  if (legStatsError) throw legStatsError
-
-  if (legStats) {
-    const legsWon = (legStats as any[]).reduce(
-      (sum, s) => sum + (Number(s.player_legs_won) || 0),
-      0
-    )
-
-    const legsLost = (legStats as any[]).reduce(
-      (sum, s) => sum + (Number(s.opponent_legs_won) || 0),
-      0
-    )
-
-    const legsPlayed = legsWon + legsLost
-
-    const winPercentage =
-      legsPlayed > 0 ? Math.round((legsWon / legsPlayed) * 100) : 0
-
-    const total180s = (legStats as any[]).reduce(
-      (sum, s) => sum + (Number(s.throws_180) || 0),
-      0
-    )
-
-    const totalEvents = new Set(
-      (legStats as any[]).map((s) => s.match_id).filter(Boolean)
-    ).size
-
-    setStatistics((prev) => ({
-      ...prev,
-      legsWon,
-      legsLost,
-      legsPlayed,
-      winPercentage,
-      total180s,
-      totalEvents,
-    }))
-  }
-}
-
-     
-	  
-	  
-	  
-    } catch (err: any) {
-      console.error("Error fetching profile:", err)
-      setError("Fehler beim Laden des Profils")
-    } finally {
-      setLoading(false)
+    if (!profileData) {
+      setError("Für dieses Konto wurde noch kein Profil gefunden.")
+      setProfile(null)
+      return
     }
+
+    if ((profileData as any).is_blocked) {
+      setIsBlocked(true)
+      setBlockedReason((profileData as any).blocked_reason ?? null)
+      setProfile(profileData as any)
+      return
+    }
+
+    setProfile(profileData as any)
+
+    const { data: pushData, error: pushError } = await supabase
+      .from("push_preferences")
+      .select("tournament_push_enabled")
+      .eq("user_id", session.user.id)
+      .maybeSingle()
+
+    if (pushError) throw pushError
+
+    setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
+
+    if ((profileData as any)?.player_id) {
+      const { data: permissionRows, error: permissionErr } = await supabase
+        .from("user_page_permissions")
+        .select("page_key, allowed")
+        .eq("player_id", (profileData as any).player_id)
+
+      if (permissionErr) throw permissionErr
+      setUserPagePermissions((permissionRows ?? []) as any)
+    } else {
+      setUserPagePermissions([])
+    }
+
+    if ((profileData as any)?.player_id) {
+      await fetchNotifications((profileData as any).player_id)
+
+      const { data: teamData, error: teamError } = await supabase
+        .from("team_members")
+        .select(`
+          id,
+          team_id,
+          role,
+          teams (id, name, logo_url, chat_room_id)
+        `)
+        .eq("player_id", (profileData as any).player_id)
+        .is("left_at", null)
+
+      if (teamError) throw teamError
+      setTeamMemberships((teamData || []) as any)
+
+      await fetchNextMatchSummary((profileData as any).player_id, (teamData || []) as any)
+
+      const { data: legStats, error: legStatsError } = await supabase
+        .from("leg_statistics")
+        .select("match_id, player_legs_won, opponent_legs_won, throws_180")
+        .eq("player_id", (profileData as any).player_id)
+
+      if (legStatsError) throw legStatsError
+
+      if (legStats) {
+        const legsWon = (legStats as any[]).reduce(
+          (sum, s) => sum + (Number(s.player_legs_won) || 0),
+          0
+        )
+
+        const legsLost = (legStats as any[]).reduce(
+          (sum, s) => sum + (Number(s.opponent_legs_won) || 0),
+          0
+        )
+
+        const legsPlayed = legsWon + legsLost
+
+        const winPercentage =
+          legsPlayed > 0 ? Math.round((legsWon / legsPlayed) * 100) : 0
+
+        const total180s = (legStats as any[]).reduce(
+          (sum, s) => sum + (Number(s.throws_180) || 0),
+          0
+        )
+
+        const totalEvents = new Set(
+          (legStats as any[]).map((s) => s.match_id).filter(Boolean)
+        ).size
+
+        setStatistics((prev) => ({
+          ...prev,
+          legsWon,
+          legsLost,
+          legsPlayed,
+          winPercentage,
+          total180s,
+          totalEvents,
+        }))
+      }
+    }
+  } catch (err: any) {
+    console.error("Error fetching profile:", {
+      message: err?.message,
+      code: err?.code,
+      details: err?.details,
+      hint: err?.hint,
+      full: err,
+    })
+    setError("Fehler beim Laden des Profils")
+  } finally {
+    setLoading(false)
   }
+}
+
+
+
+
+
+
+
+
+
+
+	  
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -766,20 +808,92 @@ if ((profileData as any)?.player_id) {
     </main>
   )
 }
+if (isBlocked) {
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <Header />
+      <main className="flex-grow flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <Card className="border-0 shadow-2xl bg-white overflow-hidden rounded-3xl">
+            <CardContent className="p-0">
+              <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-5 text-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center">
+                    <AlertTriangle className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="text-sm uppercase tracking-wide text-white/80">
+                      Zugang gesperrt
+                    </div>
+                    <div className="text-xl font-extrabold">
+                      Konto derzeit nicht verfügbar
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-  if (error || !profile) {
-    return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">{error || "Profil nicht gefunden"}</h1>
-            <Button onClick={() => router.push("/member-login")}>Zur Anmeldung</Button>
-          </div>
-        </main>
-      </div>
-    )
-  }
+              <div className="p-6">
+                <p className="text-gray-700 mb-4">
+                  Dein Zugang wurde vorübergehend gesperrt.
+                </p>
+
+                {blockedReason && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 mb-4">
+                    <span className="font-semibold">Grund:</span> {blockedReason}
+                  </div>
+                )}
+
+                <p className="text-sm text-gray-600 mb-6">
+                  Bitte wende dich an die Vereinsleitung, falls du glaubst, dass das ein Fehler ist.
+                </p>
+
+                <Button
+                  onClick={handleLogout}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Abmelden
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+      <MobileBottomNav />
+    </div>
+  )
+}
+
+if (error || !profile) {
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <Header />
+      <main className="flex-grow flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <Card className="border-0 shadow-2xl bg-white overflow-hidden rounded-3xl">
+            <CardContent className="p-6 text-center">
+              <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center">
+                <AlertTriangle className="h-7 w-7 text-orange-600" />
+              </div>
+
+              <h1 className="text-2xl font-bold text-gray-900 mb-3">
+                {error || "Profil nicht gefunden"}
+              </h1>
+
+              <p className="text-sm text-gray-600 mb-6">
+                Es konnte kein vollständiges Mitgliederprofil geladen werden.
+              </p>
+
+              <Button onClick={() => router.push("/member-login")}>
+                Zur Anmeldung
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+      <MobileBottomNav />
+    </div>
+  )
+}
 
   const primaryTeam = teamMemberships[0]
   const hasMultipleTeams = teamMemberships.length > 1

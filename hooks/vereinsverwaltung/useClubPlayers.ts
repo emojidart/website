@@ -39,8 +39,11 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
   const [playerSortKey, setPlayerSortKey] = useState<"name" | "number" | "birthdate" | "city">("name")
   const [playerSortDir, setPlayerSortDir] = useState<"asc" | "desc">("asc")
 
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null)
+
   const visiblePlayers = useMemo(() => {
     const q = playerSearch.trim().toLowerCase()
+
     const filtered = q
       ? clubPlayers.filter((p) => {
           const hay = [
@@ -50,16 +53,17 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
             p.city ?? "",
             p.street ?? "",
             String(p.player_number ?? ""),
-            // ✅ NEU: player_code auch durchsuchbar
-            String(p.player_code ?? ""),
+            String((p as any).player_code ?? ""),
           ]
             .join(" ")
             .toLowerCase()
+
           return hay.includes(q)
         })
       : clubPlayers
 
     const dir = playerSortDir === "asc" ? 1 : -1
+
     const getVal = (p: ClubPlayer) => {
       switch (playerSortKey) {
         case "number":
@@ -77,28 +81,24 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
     return [...filtered].sort((a, b) => {
       const av = getVal(a)
       const bv = getVal(b)
-      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir
+
+      if (typeof av === "number" && typeof bv === "number") {
+        return (av - bv) * dir
+      }
+
       return String(av).localeCompare(String(bv)) * dir
     })
   }, [clubPlayers, playerSearch, playerSortKey, playerSortDir])
 
-  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null)
-
   const fetchClubPlayers = async () => {
-    /**
-     * ✅ Join: club_players.spieldatenbank_id -> spieldatenbank.player_code
-     * Falls deine FK-Relation anders heißt, sag kurz Bescheid, dann passe ich es an.
-     */
     const { data, error } = await supabase
       .from("club_players")
-      .select(
-        `
+      .select(`
         *,
         spieldatenbank:spieldatenbank_id (
           player_code
         )
-      `,
-      )
+      `)
       .order("name", { ascending: true })
 
     if (error) {
@@ -109,13 +109,13 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
     }
 
     const rows = (data || []) as ClubPlayerRow[]
+
     const mapped: ClubPlayer[] = rows.map((r) => {
       const { spieldatenbank, ...rest } = r
       return {
         ...(rest as ClubPlayer),
-        // ✅ NEU: Player Code direkt am ClubPlayer-Objekt
         player_code: spieldatenbank?.player_code ?? null,
-      }
+      } as ClubPlayer
     })
 
     setClubPlayers(mapped)
@@ -128,6 +128,7 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
 
   const handlePlayerPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+
     if (file) {
       setPlayerPhotoFile(file)
       setPlayerPhotoPreview(URL.createObjectURL(file))
@@ -187,6 +188,7 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
       setPlayerLoading(false)
       return
     }
+
     if (!playerName) {
       setPlayerMessage("Bitte Spielername eingeben.")
       setPlayerMessageType("error")
@@ -195,19 +197,26 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
     }
 
     let photoUrl: string | null = playerPhotoPreview
+
     if (playerPhotoFile) {
       const fileExtension = playerPhotoFile.name.split(".").pop()
       const sanitizedPlayerName = playerName.replace(/[^a-zA-Z0-9_.-]/g, "").replace(/\s/g, "_")
       const filePath = `club-player-avatars/${sanitizedPlayerName}-${Date.now()}.${fileExtension}`
 
       try {
-        const { error: uploadError } = await supabase.storage.from("player-avatars").upload(filePath, playerPhotoFile, {
-          cacheControl: "3600",
-          upsert: false,
-        })
+        const { error: uploadError } = await supabase.storage
+          .from("player-avatars")
+          .upload(filePath, playerPhotoFile, {
+            cacheControl: "3600",
+            upsert: false,
+          })
+
         if (uploadError) throw uploadError
 
-        const { data: publicUrlData } = supabase.storage.from("player-avatars").getPublicUrl(filePath)
+        const { data: publicUrlData } = supabase.storage
+          .from("player-avatars")
+          .getPublicUrl(filePath)
+
         photoUrl = publicUrlData.publicUrl
       } catch (uploadError: any) {
         setPlayerMessage(`Fehler beim Hochladen des Bildes: ${uploadError.message}`)
@@ -241,6 +250,7 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
           .eq("id", editingPlayerId)
 
         if (error) throw error
+
         setPlayerMessage("Spieler erfolgreich aktualisiert!")
       } else {
         const { error } = await supabase.from("club_players").insert([
@@ -262,6 +272,7 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
         ])
 
         if (error) throw error
+
         setPlayerMessage("Spieler erfolgreich hinzugefügt!")
       }
 
@@ -277,22 +288,142 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
     }
   }
 
+  const deactivatePlayer = async (playerId: string, afterDone?: () => void) => {
+    setPlayerLoading(true)
+    setPlayerMessage("Spieler wird deaktiviert...")
+    setPlayerMessageType("info")
+
+    try {
+      const today = new Date().toISOString().slice(0, 10)
+      const nowIso = new Date().toISOString()
+
+      const { data: linkedProfile, error: profileErr } = await supabase
+        .from("user_profiles")
+        .select("id, user_id")
+        .eq("player_id", playerId)
+        .maybeSingle()
+
+      if (profileErr) throw profileErr
+
+      const { error: deleteMembersError } = await supabase
+        .from("team_members")
+        .delete()
+        .eq("player_id", playerId)
+
+      if (deleteMembersError) throw deleteMembersError
+
+      const { error: playerError } = await supabase
+        .from("club_players")
+        .update({
+          club_left_at: today,
+          is_active: false,
+        })
+        .eq("id", playerId)
+
+      if (playerError) throw playerError
+
+      if (linkedProfile?.id) {
+        const { error: blockErr } = await supabase
+          .from("user_profiles")
+          .update({
+            is_blocked: true,
+            blocked_at: nowIso,
+            blocked_reason: "Mitglied deaktiviert / ausgetreten",
+          })
+          .eq("id", linkedProfile.id)
+
+        if (blockErr) throw blockErr
+      }
+
+      setPlayerMessage("Spieler erfolgreich deaktiviert und Zugang gesperrt.")
+      setPlayerMessageType("success")
+      await fetchClubPlayers()
+      onDataSaved()
+      afterDone?.()
+    } catch (error: any) {
+      setPlayerMessage(`Fehler beim Deaktivieren: ${error.message}`)
+      setPlayerMessageType("error")
+    } finally {
+      setPlayerLoading(false)
+    }
+  }
+
+  const reactivatePlayer = async (playerId: string, afterDone?: () => void) => {
+    setPlayerLoading(true)
+    setPlayerMessage("Spieler wird reaktiviert...")
+    setPlayerMessageType("info")
+
+    try {
+      const { data: linkedProfile, error: profileErr } = await supabase
+        .from("user_profiles")
+        .select("id, user_id")
+        .eq("player_id", playerId)
+        .maybeSingle()
+
+      if (profileErr) throw profileErr
+
+      const { error: playerError } = await supabase
+        .from("club_players")
+        .update({
+          club_left_at: null,
+          is_active: true,
+        })
+        .eq("id", playerId)
+
+      if (playerError) throw playerError
+
+      if (linkedProfile?.id) {
+        const { error: unblockErr } = await supabase
+          .from("user_profiles")
+          .update({
+            is_blocked: false,
+            blocked_at: null,
+            blocked_reason: null,
+          })
+          .eq("id", linkedProfile.id)
+
+        if (unblockErr) throw unblockErr
+      }
+
+      setPlayerMessage("Spieler erfolgreich reaktiviert.")
+      setPlayerMessageType("success")
+      await fetchClubPlayers()
+      onDataSaved()
+      afterDone?.()
+    } catch (error: any) {
+      setPlayerMessage(`Fehler beim Reaktivieren: ${error.message}`)
+      setPlayerMessageType("error")
+    } finally {
+      setPlayerLoading(false)
+    }
+  }
+
   const deletePlayer = async (playerId: string, photoUrl: string | null, afterDelete?: () => void) => {
     setPlayerLoading(true)
     setPlayerMessage("Spieler wird gelöscht...")
     setPlayerMessageType("info")
 
     try {
-      const { error: deleteMembersError } = await supabase.from("team_members").delete().eq("player_id", playerId)
+      const { error: deleteMembersError } = await supabase
+        .from("team_members")
+        .delete()
+        .eq("player_id", playerId)
+
       if (deleteMembersError) throw deleteMembersError
 
-      const { error } = await supabase.from("club_players").delete().eq("id", playerId)
+      const { error } = await supabase
+        .from("club_players")
+        .delete()
+        .eq("id", playerId)
+
       if (error) throw error
 
       if (photoUrl) {
         const fileName = photoUrl.split("/").pop()
         if (fileName) {
-          await supabase.storage.from("player-avatars").remove([`club-player-avatars/${fileName}`])
+          await supabase.storage
+            .from("player-avatars")
+            .remove([`club-player-avatars/${fileName}`])
         }
       }
 
@@ -395,6 +526,8 @@ export function useClubPlayers(user: User | null, onDataSaved: () => void) {
     cancelPlayerEdit,
     submitPlayerForm,
     deletePlayer,
+    deactivatePlayer,
+    reactivatePlayer,
 
     updateMembershipDates,
   }

@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 
-import { Mail, Lock, Users, Eye, EyeOff, ArrowRight, KeyRound } from "lucide-react"
+import { Mail, Lock, Users, Eye, EyeOff, KeyRound } from "lucide-react"
 
 export default function MemberLoginPage() {
   return (
@@ -70,6 +70,13 @@ function MemberLoginClient() {
     return "Anmeldung fehlgeschlagen. Bitte überprüfe deine Eingaben."
   }
 
+  const getBlockedMessage = (reason?: string | null) => {
+    if (reason && String(reason).trim().length > 0) {
+      return `Dein Zugang wurde gesperrt.`
+    }
+    return "Dein Zugang wurde gesperrt. Bitte wende dich an den Verein."
+  }
+
   useEffect(() => {
     const code = searchParams.get("code")
     if (!code) return
@@ -77,7 +84,30 @@ function MemberLoginClient() {
   }, [searchParams, router])
 
   useEffect(() => {
-    if (!authLoading && session) router.push("/member-profile-app")
+    const checkBlockedAndRedirect = async () => {
+      if (authLoading || !session?.user) return
+
+      const { data: profileData, error } = await supabase
+        .from("user_profiles")
+        .select("is_blocked, blocked_reason")
+        .eq("user_id", session.user.id)
+        .maybeSingle()
+
+      if (error) {
+        setMessage("Fehler beim Prüfen des Benutzerstatus.")
+        return
+      }
+
+      if (profileData?.is_blocked) {
+        await supabase.auth.signOut()
+        setMessage(getBlockedMessage(profileData.blocked_reason))
+        return
+      }
+
+      router.push("/member-profile-app")
+    }
+
+    checkBlockedAndRedirect()
   }, [session, authLoading, router])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -98,8 +128,30 @@ function MemberLoginClient() {
         return
       }
 
-      if (data.user) router.push("/member-profile-app")
-      else setMessage("Anmeldung fehlgeschlagen.")
+      if (!data.user) {
+        setMessage("Anmeldung fehlgeschlagen.")
+        return
+      }
+
+      const { data: profileData, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("is_blocked, blocked_reason")
+        .eq("user_id", data.user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        await supabase.auth.signOut()
+        setMessage("Fehler beim Prüfen des Benutzerstatus.")
+        return
+      }
+
+      if (profileData?.is_blocked) {
+        await supabase.auth.signOut()
+        setMessage(getBlockedMessage(profileData.blocked_reason))
+        return
+      }
+
+      router.push("/member-profile-app")
     } catch {
       setMessage("Ein Fehler ist aufgetreten.")
     } finally {
@@ -146,10 +198,7 @@ function MemberLoginClient() {
 
       <main className="flex-grow px-4 pt-20 pb-28">
         <div className="mx-auto w-full max-w-md">
-
-          {/* Hero */}
           <div className="text-center mb-6">
-
             <div className="inline-flex items-center justify-center mb-4">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
                 <Users className="w-8 h-8 text-white" />
@@ -163,18 +212,11 @@ function MemberLoginClient() {
             <p className="text-gray-600 mt-2">
               Willkommen bei Emoj!'s Dartverein
             </p>
-
           </div>
-
-          {/* Login Card */}
 
           <Card className="rounded-3xl shadow-xl border border-gray-200 bg-white">
             <CardContent className="p-6">
-
               <form onSubmit={handleLogin} className="space-y-5">
-
-                {/* Email */}
-
                 <div>
                   <label className="text-sm font-bold text-gray-700 uppercase">
                     E-Mail-Adresse
@@ -194,15 +236,12 @@ function MemberLoginClient() {
                   </div>
                 </div>
 
-                {/* Password */}
-
                 <div>
                   <label className="text-sm font-bold text-gray-700 uppercase">
                     Passwort
                   </label>
 
                   <div className="relative mt-1">
-
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
 
                     <Input
@@ -225,19 +264,14 @@ function MemberLoginClient() {
                         <Eye className="w-5 h-5" />
                       )}
                     </button>
-
                   </div>
                 </div>
-
-                {/* Message */}
 
                 {message && (
                   <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl text-center">
                     {message}
                   </div>
                 )}
-
-                {/* Login */}
 
                 <Button
                   type="submit"
@@ -247,8 +281,6 @@ function MemberLoginClient() {
                   {loading ? "Wird geladen…" : "Anmelden"}
                 </Button>
 
-                {/* Reset */}
-
                 <Button
                   type="button"
                   variant="outline"
@@ -257,31 +289,21 @@ function MemberLoginClient() {
                   className="w-full h-12 rounded-xl border-2"
                 >
                   <KeyRound className="w-5 h-5 mr-2" />
-
-                  {resetLoading
-                    ? "Sende Reset-Mail…"
-                    : "Passwort vergessen"}
+                  {resetLoading ? "Sende Reset-Mail…" : "Passwort vergessen"}
                 </Button>
 
-                {/* Register */}
-
                 <div className="text-center text-sm text-gray-600">
-
                   Noch keinen Zugang?{" "}
-
                   <Link
                     href="/member-account-request"
                     className="font-bold text-orange-600"
                   >
                     Mit Code registrieren
                   </Link>
-
                 </div>
-
               </form>
             </CardContent>
           </Card>
-
         </div>
       </main>
 

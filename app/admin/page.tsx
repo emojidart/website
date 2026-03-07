@@ -224,18 +224,16 @@ export default function AdminPage() {
     }
   }
 
-  const handleLoginSuccess = () => {
-    fetchAndRenderAllTables()
-    setAuthMessage("Erfolgreich angemeldet!")
-    fetchUnreadApplicationsCount()
-  }
+ const handleLoginSuccess = () => {
+  setAuthMessage("Erfolgreich angemeldet!")
+  fetchUnreadApplicationsCount()
+}
 
   const handleDataSaved = () => {
-    fetchAndRenderAllTables()
-    if (currentView === "recruitment") {
-      // Stay on recruitment view after saving
-    }
+  if (currentView === "recruitment") {
+    // Stay on recruitment view after saving
   }
+}
 
   const handleOpenPlayerList = () => {
     setIsPlayerListModalOpen(true)

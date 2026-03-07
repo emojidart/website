@@ -211,31 +211,36 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           )}
 
           {activeSection === "manage-players" && (
-            <ManagePlayersTab
-              visiblePlayers={players.visiblePlayers}
-              clubPlayersCount={players.clubPlayers.length}
-              playerLoading={players.playerLoading}
-              playerSearch={players.playerSearch}
-              setPlayerSearch={players.setPlayerSearch}
-              playerSortKey={players.playerSortKey}
-              setPlayerSortKey={players.setPlayerSortKey}
-              playerSortDir={players.playerSortDir}
-              setPlayerSortDir={players.setPlayerSortDir}
-              onEditPlayer={(p) => {
-                players.beginEditPlayer(p)
-                setActiveSection("add-player")
-              }}
-              onDeletePlayer={(id, url) =>
-                players.deletePlayer(id, url, async () => {
-                  await members.fetchTeamMembers()
-                })
-              }
-              onDataChanged={async () => {
-                await players.fetchClubPlayers()
-                await members.fetchTeamMembers()
-              }}
-            />
-          )}
+  <ManagePlayersTab
+    visiblePlayers={players.visiblePlayers}
+    clubPlayersCount={players.clubPlayers.length}
+    playerLoading={players.playerLoading}
+    playerSearch={players.playerSearch}
+    setPlayerSearch={players.setPlayerSearch}
+    playerSortKey={players.playerSortKey}
+    setPlayerSortKey={players.setPlayerSortKey}
+    playerSortDir={players.playerSortDir}
+    setPlayerSortDir={players.setPlayerSortDir}
+    onEditPlayer={(p) => {
+      players.beginEditPlayer(p)
+      setActiveSection("add-player")
+    }}
+    onDeactivatePlayer={(id) =>
+      players.deactivatePlayer(id, async () => {
+        await members.fetchTeamMembers()
+      })
+    }
+    onReactivatePlayer={(id) =>
+      players.reactivatePlayer(id, async () => {
+        await members.fetchTeamMembers()
+      })
+    }
+    onDataChanged={async () => {
+      await players.fetchClubPlayers()
+      await members.fetchTeamMembers()
+    }}
+  />
+)}
 
           {activeSection === "manage-teams" && (
             <ManageTeamsTab
