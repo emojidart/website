@@ -1093,11 +1093,11 @@ const subscribeToReads = () => {
       }
 
       // Globaler Captain-Chat (einmal für alle Teams)
-      if (canSeeCaptainChat) {
-        await computeGlobalUnread(CAPTAINS_ROOM_ID, "captains")
-      } else {
-        counts[unreadKey(CAPTAINS_ROOM_ID, "captains")] = 0
-      }
+      if (canSeeCaptainChat || isVorstand) {
+  await computeGlobalUnread(CAPTAINS_ROOM_ID, "captains")
+} else {
+  counts[unreadKey(CAPTAINS_ROOM_ID, "captains")] = 0
+}
 
       for (const room of rooms) {
         const scope: ChatScope = "team"
@@ -1594,7 +1594,7 @@ const subscribeToReads = () => {
                             </Button>
                           </div>
                         </div>
-                      ) : selectedScope === "captains" && !canSeeCaptainChat ? (
+                     ) : selectedScope === "captains" && !canSeeCaptainChat && !isVorstand ? (
                         <div className={`flex-1 flex items-center justify-center text-muted-foreground ${WA.chatBg}`}>
                           <div className="text-center">
                             <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
