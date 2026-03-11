@@ -709,25 +709,29 @@ const filteredEvents = allEvents.filter((event) => {
   }
 
   const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    const daysInMonth = lastDay.getDate()
-    const startingDayOfWeek = firstDay.getDay()
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const daysInMonth = lastDay.getDate()
 
-    const days = []
+  // Sonntag=0, Montag=1, ...
+  // Wir wollen Montag als ersten Tag.
+  const jsDay = firstDay.getDay()
+  const startingDayOfWeek = jsDay === 0 ? 6 : jsDay - 1
 
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null)
-    }
+  const days = []
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day))
-    }
-
-    return days
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    days.push(null)
   }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    days.push(new Date(year, month, day))
+  }
+
+  return days
+}
 
   const navigateMonth = (direction: "prev" | "next") => {
     setCurrentDate((prev) => {
@@ -1083,7 +1087,7 @@ try {
     "Dezember",
   ]
 
-  const dayNames = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
+  const dayNames = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
   const todayBirthdays = (() => {
     const today = new Date()
