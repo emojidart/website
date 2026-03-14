@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { MessageCircle, Send, Clock, Hash, Menu, X, ArrowLeft, Shield, Users, Info, Coffee, Paperclip, FileText, Image as ImageIcon } from "lucide-react"
+import { MessageCircle, Send, Clock, Hash, Menu, X, ArrowLeft, Shield, Users, Info, Coffee, Paperclip, FileText, Image as ImageIcon, BarChart3, CheckCircle2 } from "lucide-react"
 import { useState, useEffect, useRef, useMemo, ChangeEvent } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
@@ -39,6 +39,8 @@ type ChatMessage = {
   room_id: string // uuid as string
   scope: ChatScope
   created_at: string
+  
+    message_type?: "text" | "poll"
 
   attachment_url?: string | null
   attachment_path?: string | null
@@ -85,6 +87,34 @@ type VorstandMember = {
   photo_url: string | null
   role: string | null
 }
+
+
+
+type ChatPoll = {
+  id: string
+  message_id: string
+  question: string
+  allows_multiple: boolean
+  created_by: string
+  created_at: string
+}
+
+type ChatPollOption = {
+  id: string
+  poll_id: string
+  label: string
+  position: number
+}
+
+type ChatPollVote = {
+  poll_id: string
+  option_id: string
+  user_id: string
+  created_at: string
+}
+
+
+
 
 function formatTimeVienna(iso: string) {
   try {
@@ -182,6 +212,17 @@ export default function TeamChatPage() {
   const [profileLoading, setProfileLoading] = useState(true)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [pollsByMessage, setPollsByMessage] = useState<Record<string, ChatPoll>>({})
+const [pollOptionsByPoll, setPollOptionsByPoll] = useState<Record<string, ChatPollOption[]>>({})
+const [pollVotesByPoll, setPollVotesByPoll] = useState<Record<string, ChatPollVote[]>>({})
+
+const [pollDialogOpen, setPollDialogOpen] = useState(false)
+const [pollQuestion, setPollQuestion] = useState("")
+const [pollOptionsInput, setPollOptionsInput] = useState(["", ""])
+const [pollSending, setPollSending] = useState(false)
+const [pollVoteNamesByOption, setPollVoteNamesByOption] = useState<Record<string, string[]>>({})
+const [openPollVotesForOption, setOpenPollVotesForOption] = useState<string | null>(null)
+const [openPollVotesOptionLabel, setOpenPollVotesOptionLabel] = useState<string | null>(null)
   const [readByMessage, setReadByMessage] = useState<Record<string, Set<string>>>({})
   const [readNamesByMessage, setReadNamesByMessage] = useState<Record<string, string[]>>({})
   const [openReadsFor, setOpenReadsFor] = useState<string | null>(null)
@@ -341,13 +382,15 @@ useEffect(() => {
   if (selectedScope === "team" && selectedRoom?.team_id) fetchTeamMembers(selectedRoom.team_id)
   if (selectedScope !== "team") setTeamMembers([])
 
-  const unsubMsg = subscribeToMessages()
-  const unsubReads = subscribeToReads()
+const unsubMsg = subscribeToMessages()
+const unsubReads = subscribeToReads()
+const unsubPollVotes = subscribeToPollVotes()
 
-  return () => {
-    unsubMsg()
-    unsubReads()
-  }
+return () => {
+  unsubMsg()
+  unsubReads()
+  unsubPollVotes()
+}
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [selectedRoom?.id, selectedRoom?.team_id, selectedScope, canSeeVorstandChat])
   
@@ -480,7 +523,290 @@ const uploadAttachment = async (file: File) => {
 
 
 
+const loadPollDataForMessages = async (messageRows: ChatMessage[]) => {
+  const pollMessages = messageRows.filter((m) => m.message_type === "poll")
+  if (pollMessages.length === 0) {
+    setPollsByMessage({})
+    setPollOptionsByPoll({})
+    setPollVotesByPoll({})
+    return
+  }
 
+  const messageIds = pollMessages.map((m) => m.id)
+
+  const { data: pollsData, error: pollsError } = await supabase
+    .from("chat_polls")
+    .select("id,message_id,question,allows_multiple,created_by,created_at")
+    .in("message_id", messageIds)
+
+  if (pollsError) {
+    console.error("loadPollDataForMessages pollsError", pollsError)
+    return
+  }
+
+  const polls = (pollsData as ChatPoll[]) || []
+  const pollIds = polls.map((p) => p.id)
+
+  const nextPollsByMessage: Record<string, ChatPoll> = {}
+  polls.forEach((p) => {
+    nextPollsByMessage[p.message_id] = p
+  })
+  setPollsByMessage(nextPollsByMessage)
+
+  if (pollIds.length === 0) {
+    setPollOptionsByPoll({})
+    setPollVotesByPoll({})
+    return
+  }
+
+  const { data: optionsData, error: optionsError } = await supabase
+    .from("chat_poll_options")
+    .select("id,poll_id,label,position")
+    .in("poll_id", pollIds)
+    .order("position", { ascending: true })
+
+  if (optionsError) {
+    console.error("loadPollDataForMessages optionsError", optionsError)
+    return
+  }
+
+  const nextOptionsByPoll: Record<string, ChatPollOption[]> = {}
+  ;((optionsData as ChatPollOption[]) || []).forEach((opt) => {
+    if (!nextOptionsByPoll[opt.poll_id]) nextOptionsByPoll[opt.poll_id] = []
+    nextOptionsByPoll[opt.poll_id].push(opt)
+  })
+  setPollOptionsByPoll(nextOptionsByPoll)
+
+  const { data: votesData, error: votesError } = await supabase
+    .from("chat_poll_votes")
+    .select("poll_id,option_id,user_id,created_at")
+    .in("poll_id", pollIds)
+
+  if (votesError) {
+    console.error("loadPollDataForMessages votesError", votesError)
+    return
+  }
+
+const voteRows = (votesData as ChatPollVote[]) || []
+
+const nextVotesByPoll: Record<string, ChatPollVote[]> = {}
+voteRows.forEach((vote) => {
+  if (!nextVotesByPoll[vote.poll_id]) nextVotesByPoll[vote.poll_id] = []
+  nextVotesByPoll[vote.poll_id].push(vote)
+})
+setPollVotesByPoll(nextVotesByPoll)
+
+const voteUserIds = Array.from(new Set(voteRows.map((v) => v.user_id).filter(Boolean)))
+
+if (voteUserIds.length === 0) {
+  setPollVoteNamesByOption({})
+  return
+}
+
+const { data: voteProfiles, error: voteProfilesError } = await supabase
+  .from("user_profiles")
+  .select("id,player_id")
+  .in("id", voteUserIds)
+
+if (voteProfilesError) {
+  console.error("loadPollDataForMessages voteProfilesError", voteProfilesError)
+  setPollVoteNamesByOption({})
+  return
+}
+
+const votePlayerIds = Array.from(
+  new Set(((voteProfiles as any[]) || []).map((p) => p.player_id).filter(Boolean))
+)
+
+const votePlayerMap = new Map<string, string>()
+
+if (votePlayerIds.length > 0) {
+  const { data: votePlayers, error: votePlayersError } = await supabase
+    .from("club_players")
+    .select("id,name")
+    .in("id", votePlayerIds)
+
+  if (votePlayersError) {
+    console.error("loadPollDataForMessages votePlayersError", votePlayersError)
+    setPollVoteNamesByOption({})
+    return
+  }
+
+  ;((votePlayers as any[]) || []).forEach((p) => {
+    if (p?.id) votePlayerMap.set(p.id, p.name)
+  })
+}
+
+const voteProfileToName = new Map<string, string>()
+;((voteProfiles as any[]) || []).forEach((p) => {
+  const name = p?.player_id ? (votePlayerMap.get(p.player_id) ?? "Unbekannt") : "Unbekannt"
+  voteProfileToName.set(p.id, name)
+})
+
+const nextPollVoteNamesByOption: Record<string, string[]> = {}
+voteRows.forEach((vote) => {
+  if (!nextPollVoteNamesByOption[vote.option_id]) nextPollVoteNamesByOption[vote.option_id] = []
+  nextPollVoteNamesByOption[vote.option_id].push(voteProfileToName.get(vote.user_id) ?? "Unbekannt")
+})
+
+Object.keys(nextPollVoteNamesByOption).forEach((optionId) => {
+  nextPollVoteNamesByOption[optionId] = nextPollVoteNamesByOption[optionId].sort((a, b) => a.localeCompare(b))
+})
+
+setPollVoteNamesByOption(nextPollVoteNamesByOption)
+}
+
+const resetPollForm = () => {
+
+  setPollQuestion("")
+  setPollOptionsInput(["", ""])
+}
+
+const addPollOptionField = () => {
+  setPollOptionsInput((prev) => {
+    if (prev.length >= 5) return prev
+    return [...prev, ""]
+  })
+}
+
+const updatePollOptionField = (index: number, value: string) => {
+  setPollOptionsInput((prev) => prev.map((item, i) => (i === index ? value : item)))
+}
+
+const removePollOptionField = (index: number) => {
+  setPollOptionsInput((prev) => {
+    if (prev.length <= 2) return prev
+    return prev.filter((_, i) => i !== index)
+  })
+}
+
+const sendPoll = async () => {
+  if (!profile?.id) return
+  if (!currentRoomId) return
+
+  const cleanQuestion = pollQuestion.trim()
+  const cleanOptions = pollOptionsInput.map((o) => o.trim()).filter(Boolean)
+
+  if (!cleanQuestion) {
+    toast({
+      title: "Frage fehlt",
+      description: "Bitte gib eine Frage ein.",
+      variant: "destructive",
+    })
+    return
+  }
+
+  if (cleanOptions.length < 2) {
+    toast({
+      title: "Zu wenig Optionen",
+      description: "Bitte mindestens 2 Optionen eingeben.",
+      variant: "destructive",
+    })
+    return
+  }
+
+  try {
+    setPollSending(true)
+
+    const { data: insertedMessage, error: msgError } = await supabase
+      .from("chat_messages")
+      .insert({
+        user_id: profile.id,
+        message: "",
+        room_id: currentRoomId,
+        scope: selectedScope,
+        message_type: "poll",
+      })
+      .select("id")
+      .single()
+
+    if (msgError) throw msgError
+
+    const messageId = insertedMessage.id
+
+    const { data: insertedPoll, error: pollError } = await supabase
+      .from("chat_polls")
+      .insert({
+        message_id: messageId,
+        question: cleanQuestion,
+        allows_multiple: false,
+        created_by: profile.id,
+      })
+      .select("id")
+      .single()
+
+    if (pollError) throw pollError
+
+    const pollId = insertedPoll.id
+
+    const optionRows = cleanOptions.map((label, index) => ({
+      poll_id: pollId,
+      label,
+      position: index,
+    }))
+
+    const { error: optionsError } = await supabase
+      .from("chat_poll_options")
+      .insert(optionRows)
+
+    if (optionsError) throw optionsError
+
+    setPollDialogOpen(false)
+    resetPollForm()
+    await fetchMessages()
+  } catch (error: any) {
+    console.error("sendPoll error", error)
+    toast({
+      title: "Fehler",
+      description: error?.message || "Abstimmung konnte nicht erstellt werden.",
+      variant: "destructive",
+    })
+  } finally {
+    setPollSending(false)
+  }
+}
+
+const voteOnPoll = async (pollId: string, optionId: string) => {
+  if (!profile?.id) return
+
+  try {
+    const existingVotes = pollVotesByPoll[pollId] || []
+    const myVotes = existingVotes.filter((v) => v.user_id === profile.id)
+
+    if (myVotes.some((v) => v.option_id === optionId)) {
+      return
+    }
+
+    if (myVotes.length > 0) {
+      const { error: deleteError } = await supabase
+        .from("chat_poll_votes")
+        .delete()
+        .eq("poll_id", pollId)
+        .eq("user_id", profile.id)
+
+      if (deleteError) throw deleteError
+    }
+
+    const { error: insertError } = await supabase
+      .from("chat_poll_votes")
+      .insert({
+        poll_id: pollId,
+        option_id: optionId,
+        user_id: profile.id,
+      })
+
+    if (insertError) throw insertError
+
+    await loadPollDataForMessages(messagesRef.current)
+  } catch (error: any) {
+    console.error("voteOnPoll error", error)
+    toast({
+      title: "Fehler",
+      description: error?.message || "Stimme konnte nicht gespeichert werden.",
+      variant: "destructive",
+    })
+  }
+}
 
 
 
@@ -846,19 +1172,20 @@ const uploadAttachment = async (file: File) => {
 
       const { data: messagesData, error: messagesError } = await supabase
   .from("chat_messages")
-  .select(`
-    id,
-    user_id,
-    message,
-    room_id,
-    scope,
-    created_at,
-    attachment_url,
-    attachment_path,
-    attachment_name,
-    attachment_type,
-    attachment_size
-  `)
+.select(`
+  id,
+  user_id,
+  message,
+  room_id,
+  scope,
+  created_at,
+  message_type,
+  attachment_url,
+  attachment_path,
+  attachment_name,
+  attachment_type,
+  attachment_size
+`)
   .eq("room_id", roomId)
   .eq("scope", selectedScope)
   .order("created_at", { ascending: true })
@@ -896,8 +1223,9 @@ const uploadAttachment = async (file: File) => {
         return { ...r, sender_player_id: playerId ?? null, sender }
       })
 
-      setMessages(withSender as any)
-	  await loadReadsForMessageIds(withSender.map((m: any) => m.id))
+     setMessages(withSender as any)
+await loadReadsForMessageIds(withSender.map((m: any) => m.id))
+await loadPollDataForMessages(withSender as any)
     } catch (error) {
       console.error("Error fetching messages:", error)
       toast({
@@ -1105,7 +1433,26 @@ const subscribeToReads = () => {
 }
   
   
-  
+ const subscribeToPollVotes = () => {
+  const channel = supabase
+    .channel(`chat_poll_votes_${currentRoomId}_${selectedScope}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "chat_poll_votes",
+      },
+      async () => {
+        await loadPollDataForMessages(messagesRef.current)
+      },
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+} 
   
   
 
@@ -1857,11 +2204,95 @@ const sendMessage = async () => {
     </div>
   )}
 
-  {message.message?.trim() && (
+{message.message_type === "poll" ? (
+  (() => {
+    const poll = pollsByMessage[message.id]
+    if (!poll) {
+      return <p className="text-sm">Abstimmung wird geladen...</p>
+    }
+
+    const options = pollOptionsByPoll[poll.id] || []
+    const votes = pollVotesByPoll[poll.id] || []
+    const totalVotes = votes.length
+    const myVoteOptionIds = new Set(
+      votes.filter((v) => v.user_id === profile?.id).map((v) => v.option_id)
+    )
+
+    return (
+      <div className="space-y-3 min-w-[240px]">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-4 w-4" />
+          <span className="text-sm font-semibold">{poll.question}</span>
+        </div>
+
+        <div className="space-y-2">
+          {options.map((opt) => {
+            const optionVotes = votes.filter((v) => v.option_id === opt.id).length
+            const percent = totalVotes > 0 ? Math.round((optionVotes / totalVotes) * 100) : 0
+            const isMine = myVoteOptionIds.has(opt.id)
+
+            return (
+             <div
+  key={opt.id}
+  className={`w-full rounded-xl border px-3 py-2 ${
+    isOwnMessage
+      ? "border-white/20 bg-white/10"
+      : "border-slate-200 bg-slate-50"
+  }`}
+>
+  <button
+    type="button"
+    onClick={() => voteOnPoll(poll.id, opt.id)}
+    className="w-full text-left"
+  >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {isMine && <CheckCircle2 className="h-4 w-4 shrink-0" />}
+                    <span className="text-sm truncate">{opt.label}</span>
+                  </div>
+                  <span className="text-xs shrink-0">
+                    {optionVotes} · {percent}%
+                  </span>
+                </div>
+
+              <div className="mt-2 h-2 rounded-full bg-black/10 overflow-hidden">
+  <div
+    className="h-full rounded-full bg-current opacity-40"
+    style={{ width: `${percent}%` }}
+  />
+</div>
+</button>
+
+<button
+  type="button"
+  onClick={() => {
+    setOpenPollVotesForOption(opt.id)
+    setOpenPollVotesOptionLabel(opt.label)
+  }}
+  className={`mt-2 text-xs underline decoration-dotted ${
+    isOwnMessage ? "text-white/80" : "text-slate-500"
+  }`}
+>
+  Anzeigen, wer dafür gestimmt hat
+</button>
+</div>
+            )
+          })}
+        </div>
+
+        <div className={`text-xs ${isOwnMessage ? "text-white/80" : "text-slate-500"}`}>
+          {totalVotes} Stimme{totalVotes === 1 ? "" : "n"}
+        </div>
+      </div>
+    )
+  })()
+) : (
+  message.message?.trim() && (
     <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
       {message.message}
     </p>
-  )}
+  )
+)}
 
   <div className="mt-1 flex justify-end">
   <span className={`text-[10px] flex items-center gap-1 ${isOwnMessage ? "text-white/80" : "text-slate-500"}`}>
@@ -1936,6 +2367,17 @@ const sendMessage = async () => {
       className="hidden"
       onChange={handleFileChange}
     />
+	
+	<Button
+  type="button"
+  variant="outline"
+  size="sm"
+  onClick={() => setPollDialogOpen(true)}
+  disabled={sending || !profile?.id}
+  className="rounded-2xl bg-white border-slate-200"
+>
+  <BarChart3 className="h-4 w-4" />
+</Button>
 
     <Button
       type="button"
@@ -1988,11 +2430,30 @@ const sendMessage = async () => {
         </div>
       </main>
 	  
-	  
-	  <Dialog open={!!openReadsFor} onOpenChange={(o) => setOpenReadsFor(o ? openReadsFor : null)}>
-  
-  
-  <Dialog
+	  <Dialog
+  open={!!openReadsFor}
+  onOpenChange={(o) => setOpenReadsFor(o ? openReadsFor : null)}
+>
+  <DialogContent className="max-w-md">
+    <DialogHeader>
+      <DialogTitle>Gelesen von</DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-2">
+      {openReadsFor && (readNamesByMessage[openReadsFor] || []).length === 0 ? (
+        <p className="text-sm text-muted-foreground">Noch niemand.</p>
+      ) : (
+        (openReadsFor ? readNamesByMessage[openReadsFor] || [] : []).map((n) => (
+          <div key={n} className="text-sm">
+            {n}
+          </div>
+        ))
+      )}
+    </div>
+  </DialogContent>
+</Dialog>
+
+<Dialog
   open={!!openImageUrl}
   onOpenChange={(o) => {
     if (!o) {
@@ -2017,29 +2478,30 @@ const sendMessage = async () => {
     )}
   </DialogContent>
 </Dialog>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+<Dialog
+  open={!!openPollVotesForOption}
+  onOpenChange={(o) => {
+    if (!o) {
+      setOpenPollVotesForOption(null)
+      setOpenPollVotesOptionLabel(null)
+    }
+  }}
+>
   <DialogContent className="max-w-md">
     <DialogHeader>
-      <DialogTitle>Gelesen von</DialogTitle>
+      <DialogTitle className="truncate">
+        Stimmen für: {openPollVotesOptionLabel || "Option"}
+      </DialogTitle>
     </DialogHeader>
 
     <div className="space-y-2">
-      {openReadsFor && (readNamesByMessage[openReadsFor] || []).length === 0 ? (
+      {openPollVotesForOption && (pollVoteNamesByOption[openPollVotesForOption] || []).length === 0 ? (
         <p className="text-sm text-muted-foreground">Noch niemand.</p>
       ) : (
-        (openReadsFor ? readNamesByMessage[openReadsFor] || [] : []).map((n) => (
-          <div key={n} className="text-sm">
-            {n}
+        (openPollVotesForOption ? pollVoteNamesByOption[openPollVotesForOption] || [] : []).map((name) => (
+          <div key={name} className="text-sm">
+            {name}
           </div>
         ))
       )}
@@ -2047,6 +2509,73 @@ const sendMessage = async () => {
   </DialogContent>
 </Dialog>
 
+<Dialog
+  open={pollDialogOpen}
+  onOpenChange={(o) => {
+    setPollDialogOpen(o)
+    if (!o) resetPollForm()
+  }}
+>
+  <DialogContent className="max-w-lg">
+    <DialogHeader>
+      <DialogTitle>Abstimmung erstellen</DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Frage</label>
+        <Input
+          value={pollQuestion}
+          onChange={(e) => setPollQuestion(e.target.value)}
+          placeholder="z. B. Wann trainieren wir?"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Optionen</label>
+
+        {pollOptionsInput.map((opt, index) => (
+          <div key={index} className="flex gap-2">
+            <Input
+              value={opt}
+              onChange={(e) => updatePollOptionField(index, e.target.value)}
+              placeholder={`Option ${index + 1}`}
+            />
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => removePollOptionField(index)}
+              disabled={pollOptionsInput.length <= 2}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={addPollOptionField}
+          disabled={pollOptionsInput.length >= 5}
+          className="w-full"
+        >
+          Option hinzufügen
+        </Button>
+      </div>
+
+      <Button
+        type="button"
+        onClick={sendPoll}
+        disabled={pollSending}
+        className="w-full"
+      >
+        {pollSending ? "Erstelle..." : "Abstimmung senden"}
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
+	 
       <MobileBottomNav />
     </div>
   )
