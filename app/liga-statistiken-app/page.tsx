@@ -239,38 +239,40 @@ if (!selectedSeasonId && resolvedSeasonId) {
           setMatches(enrichedMatches)
         }
 
-        const { data: playersData, error: playersError } = await supabase
-          .from("team_members")
-          .select(`
-            team_id,
-            club_players!team_members_player_id_fkey (
-              id,
-              name,
-              photo_url
-            ),
-            teams (
-              id,
-              name
-            )
-          `)
-          .order("club_players(name)")
+const { data: playersData, error: playersError } = await supabase
+  .from("team_members")
+  .select(`
+    team_id,
+    left_at,
+    club_players!team_members_player_id_fkey (
+      id,
+      name,
+      photo_url
+    ),
+    teams (
+      id,
+      name
+    )
+  `)
+  .is("left_at", null)
+  .order("team_id")
 
-        if (playersError) {
-          console.error("Error fetching players:", playersError)
-        } else {
-          const transformedPlayers =
-            playersData
-              ?.map((member: any) => ({
-                id: member.club_players?.id,
-                name: member.club_players?.name,
-                photo_url: member.club_players?.photo_url,
-                team_id: member.team_id,
-                team_name: member.teams?.name,
-              }))
-              .filter((player) => player.id) || []
+if (playersError) {
+  console.error("Error fetching players:", playersError)
+} else {
+  const transformedPlayers =
+    playersData
+      ?.map((member: any) => ({
+        id: member.club_players?.id,
+        name: member.club_players?.name,
+        photo_url: member.club_players?.photo_url,
+        team_id: member.team_id,
+        team_name: member.teams?.name,
+      }))
+      .filter((player) => player.id) || []
 
-          setPlayers(transformedPlayers)
-        }
+  setPlayers(transformedPlayers)
+}
 
         let legStatsQuery = supabase.from("leg_statistics").select(`
             *,

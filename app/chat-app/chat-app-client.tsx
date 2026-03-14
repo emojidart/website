@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { MessageCircle, Send, Clock, Hash, Menu, X, ArrowLeft, Shield, Users, Info, Coffee } from "lucide-react"
-import { useState, useEffect, useRef, useMemo } from "react"
+import { MessageCircle, Send, Clock, Hash, Menu, X, ArrowLeft, Shield, Users, Info, Coffee, Paperclip, FileText, Image as ImageIcon } from "lucide-react"
+import { useState, useEffect, useRef, useMemo, ChangeEvent } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
@@ -39,6 +39,13 @@ type ChatMessage = {
   room_id: string // uuid as string
   scope: ChatScope
   created_at: string
+
+  attachment_url?: string | null
+  attachment_path?: string | null
+  attachment_name?: string | null
+  attachment_type?: string | null
+  attachment_size?: number | null
+
   sender_player_id?: string | null
   sender?: { name: string; photo_url: string | null } | null
 }
@@ -178,9 +185,13 @@ export default function TeamChatPage() {
   const [readByMessage, setReadByMessage] = useState<Record<string, Set<string>>>({})
   const [readNamesByMessage, setReadNamesByMessage] = useState<Record<string, string[]>>({})
   const [openReadsFor, setOpenReadsFor] = useState<string | null>(null)
-  const [newMessage, setNewMessage] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [sending, setSending] = useState(false)
+const [openImageUrl, setOpenImageUrl] = useState<string | null>(null)
+const [openImageName, setOpenImageName] = useState<string | null>(null)
+const [newMessage, setNewMessage] = useState("")
+const [selectedFile, setSelectedFile] = useState<File | null>(null)
+const [loading, setLoading] = useState(true)
+const [sending, setSending] = useState(false)
+const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesRef = useRef<ChatMessage[]>([])
   const markingRef = useRef(false)
@@ -375,6 +386,110 @@ if (!document.hasFocus()) return
   }, [selectedRoom, selectedScope])
 
   const unreadKey = (roomId: string, scope: ChatScope) => `${roomId}:${scope}`
+
+
+
+
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
+const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"]
+
+const isImageFile = (type?: string | null) => {
+  return !!type && type.startsWith("image/")
+}
+
+const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0] ?? null
+  if (!file) {
+    setSelectedFile(null)
+    return
+  }
+
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    toast({
+      title: "Dateityp nicht erlaubt",
+      description: "Erlaubt sind JPG, PNG, WEBP und PDF.",
+      variant: "destructive",
+    })
+    e.target.value = ""
+    return
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    toast({
+      title: "Datei zu groß",
+      description: "Maximal 10 MB erlaubt.",
+      variant: "destructive",
+    })
+    e.target.value = ""
+    return
+  }
+
+  setSelectedFile(file)
+}
+
+const clearSelectedFile = () => {
+  setSelectedFile(null)
+  if (fileInputRef.current) {
+    fileInputRef.current.value = ""
+  }
+}
+
+const uploadAttachment = async (file: File) => {
+  if (!currentRoomId) {
+    throw new Error("Kein roomId vorhanden")
+  }
+
+  const safeName = file.name
+    .normalize("NFKD")
+    .replace(/[^\w.\-]+/g, "_")
+    .replace(/_+/g, "_")
+
+  const filePath = `${currentRoomId}/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`
+
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from("chat-attachments")
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type,
+    })
+
+  if (uploadError) {
+    console.error("uploadError", uploadError)
+    throw uploadError
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("chat-attachments").getPublicUrl(filePath)
+
+  console.log("UPLOAD PATH:", filePath)
+  console.log("PUBLIC URL:", publicUrl)
+
+  return {
+    attachment_url: publicUrl,
+    attachment_path: filePath,
+    attachment_name: file.name,
+    attachment_type: file.type,
+    attachment_size: file.size,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   const loadMyProfile = async () => {
     try {
@@ -730,12 +845,24 @@ if (!document.hasFocus()) return
       setLoading(true)
 
       const { data: messagesData, error: messagesError } = await supabase
-        .from("chat_messages")
-        .select("id,user_id,message,room_id,scope,created_at")
-        .eq("room_id", roomId)
-        .eq("scope", selectedScope)
-        .order("created_at", { ascending: true })
-        .limit(200)
+  .from("chat_messages")
+  .select(`
+    id,
+    user_id,
+    message,
+    room_id,
+    scope,
+    created_at,
+    attachment_url,
+    attachment_path,
+    attachment_name,
+    attachment_type,
+    attachment_size
+  `)
+  .eq("room_id", roomId)
+  .eq("scope", selectedScope)
+  .order("created_at", { ascending: true })
+  .limit(200)
 
       if (messagesError) throw messagesError
 
@@ -979,80 +1106,100 @@ const subscribeToReads = () => {
   
   
   
+  
+  
 
-  const sendMessage = async () => {
-    if (!newMessage.trim() || sending) return
+const sendMessage = async () => {
+  if ((!newMessage.trim() && !selectedFile) || sending) return
 
-    if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) {
-      toast({ title: "Kein Zugriff", description: "Du bist nicht Captain/Co-Captain.", variant: "destructive" })
-      return
-    }
-
-    if (selectedScope === "vorstand" && !canSeeVorstandChat && !isVorstand) {
-      toast({ title: "Kein Zugriff", description: "Du bist nicht im Vorstand.", variant: "destructive" })
-      return
-    }
-
-    if (selectedScope === "team" && !selectedRoom) return
-
-    if (!profile?.id) {
-      toast({
-        title: "Profil fehlt",
-        description: "Dein Benutzerprofil ist nicht eingerichtet. Bitte melde dich beim Admin.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    const roomId = currentRoomId
-    if (!roomId) return
-
-    try {
-      setSending(true)
-
-      const msg = newMessage.trim()
-
-      const { error } = await supabase.from("chat_messages").insert({
-        user_id: profile.id,
-        message: msg,
-        room_id: roomId,
-        scope: selectedScope,
-      })
-
-      if (error) throw error
-
-      setNewMessage("")
-      markCurrentAsVisited()
-
-      // ✅ Push (best-effort, nie blockieren)
-      const token = session?.access_token
-
-      if (token) {
-        fetch("/api/push/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            room_id: roomId,
-            scope: selectedScope,
-            message: msg,
-            sender_profile_id: profile.id,
-          }),
-        }).catch(() => {})
-      }
-    } catch (error) {
-      console.error("Error sending message:", error)
-      toast({
-        title: "Fehler",
-        description: "Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
-        variant: "destructive",
-      })
-    } finally {
-      setSending(false)
-    }
+  if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) {
+    toast({ title: "Kein Zugriff", description: "Du bist nicht Captain/Co-Captain.", variant: "destructive" })
+    return
   }
+
+  if (selectedScope === "vorstand" && !canSeeVorstandChat && !isVorstand) {
+    toast({ title: "Kein Zugriff", description: "Du bist nicht im Vorstand.", variant: "destructive" })
+    return
+  }
+
+  if (selectedScope === "team" && !selectedRoom) return
+
+  if (!profile?.id) {
+    toast({
+      title: "Profil fehlt",
+      description: "Dein Benutzerprofil ist nicht eingerichtet. Bitte melde dich beim Admin.",
+      variant: "destructive",
+    })
+    return
+  }
+
+  const roomId = currentRoomId
+  if (!roomId) return
+
+  try {
+    setSending(true)
+
+    const msg = newMessage.trim()
+    let attachmentData: {
+      attachment_url?: string | null
+      attachment_path?: string | null
+      attachment_name?: string | null
+      attachment_type?: string | null
+      attachment_size?: number | null
+    } = {}
+
+    if (selectedFile) {
+      attachmentData = await uploadAttachment(selectedFile)
+    }
+
+    const { error } = await supabase.from("chat_messages").insert({
+      user_id: profile.id,
+      message: msg,
+      room_id: roomId,
+      scope: selectedScope,
+      ...attachmentData,
+    })
+
+    if (error) throw error
+
+    setNewMessage("")
+    clearSelectedFile()
+    markCurrentAsVisited()
+
+    const token = session?.access_token
+
+    if (token) {
+      fetch("/api/push/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          room_id: roomId,
+          scope: selectedScope,
+          message: msg || (selectedFile ? `Datei: ${selectedFile.name}` : ""),
+          sender_profile_id: profile.id,
+        }),
+      }).catch(() => {})
+    }
+  } catch (error: any) {
+  console.error("Error sending message FULL:", error)
+  console.error("Error sending message JSON:", JSON.stringify(error, null, 2))
+  console.error("Error sending message message:", error?.message)
+  console.error("Error sending message details:", error?.details)
+  console.error("Error sending message hint:", error?.hint)
+  console.error("Error sending message code:", error?.code)
+
+  toast({
+    title: "Fehler",
+    description: error?.message || "Nachricht / Datei konnte nicht gesendet werden.",
+    variant: "destructive",
+  })
+} finally {
+    setSending(false)
+  }
+}
 
   const fetchUnreadCounts = async (roomsOverride?: TeamRoom[]) => {
     const rooms = roomsOverride ?? chatRooms
@@ -1301,7 +1448,7 @@ const subscribeToReads = () => {
                     </CardHeader>
 
                     <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
-                      <ScrollArea className="h-full">
+                      <ScrollArea className="h-full pb-24">
                         <div className="p-2 border-b border-black/5">
                           <Button
                             variant="ghost"
@@ -1671,9 +1818,52 @@ const subscribeToReads = () => {
                                         )}
 
                                         <div className={`px-3 py-2 ${isOwnMessage ? WA.bubbleOwn : WA.bubbleOther}`}>
-                                          <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.message}</p>
+ {message.attachment_url && isImageFile(message.attachment_type) && (
+  <div className="mb-2">
+    <button
+      type="button"
+      onClick={() => {
+        setOpenImageUrl(message.attachment_url || null)
+        setOpenImageName(message.attachment_name || "Bild")
+      }}
+      className="block"
+    >
+      <img
+        src={message.attachment_url}
+        alt={message.attachment_name || "Bild"}
+        className="max-w-full rounded-xl border border-black/10 cursor-zoom-in"
+      />
+    </button>
+  </div>
+)}
 
-                                          <div className="mt-1 flex justify-end">
+  {message.attachment_url && message.attachment_type === "application/pdf" && (
+    <div className="mb-2">
+      <a
+        href={message.attachment_url}
+        target="_blank"
+        rel="noreferrer"
+        className={`flex items-center gap-2 rounded-xl px-3 py-2 border ${
+          isOwnMessage
+            ? "border-white/20 bg-white/10 text-white"
+            : "border-slate-200 bg-slate-50 text-slate-900"
+        }`}
+      >
+        <FileText className="h-4 w-4" />
+        <span className="text-sm truncate">
+          {message.attachment_name || "PDF öffnen"}
+        </span>
+      </a>
+    </div>
+  )}
+
+  {message.message?.trim() && (
+    <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+      {message.message}
+    </p>
+  )}
+
+  <div className="mt-1 flex justify-end">
   <span className={`text-[10px] flex items-center gap-1 ${isOwnMessage ? "text-white/80" : "text-slate-500"}`}>
     {isOwnMessage && <Clock className="h-3 w-3" />}
     {time}
@@ -1714,34 +1904,79 @@ const subscribeToReads = () => {
                           <div
                             className={`px-3 py-2 ${WA.composer} shrink-0 sticky bottom-0 z-10 pb-[env(safe-area-inset-bottom)]`}
                           >
-                            <div className="flex gap-2 items-end">
-                              <Input
-                                placeholder="Nachricht eingeben..."
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault()
-                                    sendMessage()
-                                  }
-                                }}
-                                disabled={sending || !profile?.id}
-                                className={`flex-1 text-sm rounded-2xl ${WA.input}`}
-                              />
-                              <Button
-                                onClick={sendMessage}
-                                disabled={!newMessage.trim() || sending || !profile?.id}
-                                size="sm"
-                                className={`px-3 rounded-2xl ${WA.sendBtn}`}
-                              >
-                                {sending ? (
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                                ) : (
-                                  <Send className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
+                           <div className="space-y-2">
+  {selectedFile && (
+    <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+      <div className="flex items-center gap-2 min-w-0">
+        {selectedFile.type.startsWith("image/") ? (
+          <ImageIcon className="h-4 w-4 shrink-0 text-orange-600" />
+        ) : (
+          <FileText className="h-4 w-4 shrink-0 text-orange-600" />
+        )}
+        <span className="text-sm truncate">{selectedFile.name}</span>
+      </div>
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={clearSelectedFile}
+        className="rounded-xl"
+      >
+        <X className="h-4 w-4" />
+      </Button>
+    </div>
+  )}
+
+  <div className="flex gap-2 items-end">
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/jpeg,image/png,image/webp,application/pdf"
+      className="hidden"
+      onChange={handleFileChange}
+    />
+
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={() => fileInputRef.current?.click()}
+      disabled={sending || !profile?.id}
+      className="rounded-2xl bg-white border-slate-200"
+    >
+      <Paperclip className="h-4 w-4" />
+    </Button>
+
+    <Input
+      placeholder="Nachricht eingeben..."
+      value={newMessage}
+      onChange={(e) => setNewMessage(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault()
+          sendMessage()
+        }
+      }}
+      disabled={sending || !profile?.id}
+      className={`flex-1 text-sm rounded-2xl ${WA.input}`}
+    />
+
+    <Button
+      onClick={sendMessage}
+      disabled={(!newMessage.trim() && !selectedFile) || sending || !profile?.id}
+      size="sm"
+      className={`px-3 rounded-2xl ${WA.sendBtn}`}
+    >
+      {sending ? (
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+      ) : (
+        <Send className="h-4 w-4" />
+      )}
+    </Button>
+  </div>
+</div>
+</div>
                         </>
                       )}
                     </CardContent>
@@ -1753,7 +1988,46 @@ const subscribeToReads = () => {
         </div>
       </main>
 	  
+	  
 	  <Dialog open={!!openReadsFor} onOpenChange={(o) => setOpenReadsFor(o ? openReadsFor : null)}>
+  
+  
+  <Dialog
+  open={!!openImageUrl}
+  onOpenChange={(o) => {
+    if (!o) {
+      setOpenImageUrl(null)
+      setOpenImageName(null)
+    }
+  }}
+>
+  <DialogContent className="max-w-5xl w-[95vw] p-2 sm:p-4">
+    <DialogHeader>
+      <DialogTitle className="truncate">{openImageName || "Bild"}</DialogTitle>
+    </DialogHeader>
+
+    {openImageUrl && (
+      <div className="flex items-center justify-center">
+        <img
+          src={openImageUrl}
+          alt={openImageName || "Bild"}
+          className="max-h-[80vh] w-auto max-w-full rounded-xl"
+        />
+      </div>
+    )}
+  </DialogContent>
+</Dialog>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   <DialogContent className="max-w-md">
     <DialogHeader>
       <DialogTitle>Gelesen von</DialogTitle>

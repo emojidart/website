@@ -129,6 +129,8 @@ export function Header({
         { href: "/tournament-series-app", label: "Lion Cup", icon: Trophy },
         { href: "/live-all-app", label: "Live", icon: Radio },
         { href: "/tournament-history", label: "History", icon: History },
+        { href: "/chat-app", label: "Chat", icon: MessageCircle, requiresLogin: true },
+        { href: "/vereinskalender-app", label: "Vereinskalender", icon: CalendarDays, requiresLogin: true },
       ],
     },
     {
@@ -170,7 +172,6 @@ export function Header({
     }
 
     return (
-      // ✅ NUR ÄNDERUNG: pt-[env(safe-area-inset-top)]
       <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[env(safe-area-inset-top)]">
         <div className="bg-white/90 backdrop-blur border-b border-orange-100 shadow-sm">
           <div className="mx-auto w-full max-w-7xl px-4">
@@ -210,10 +211,8 @@ export function Header({
   /* ================= SITE HEADER (mit Drawer + Anti-Flicker) ================= */
   return (
     <>
-      {/* DRAWER */}
       {drawerOpen && (
         <div className="fixed top-0 left-0 right-0 bottom-0 z-[60]">
-          {/* overlay */}
           <button aria-label="Schließen" className="absolute inset-0 bg-black/40" onClick={closeDrawer} />
 
           <aside className="absolute left-0 top-0 bottom-0 w-[320px] lg:w-[380px] bg-white shadow-2xl border-r border-gray-200">
@@ -238,7 +237,6 @@ export function Header({
             </div>
 
             <div className="p-3 overflow-y-auto h-full">
-              {/* ✅ NEU: EMD Campus Button direkt unter "Jetzt bewerben" */}
               <Button
                 onClick={() => {
                   closeDrawer()
@@ -324,14 +322,10 @@ export function Header({
         </div>
       )}
 
-      {/* HEADER */}
-      {/* ✅ NUR ÄNDERUNG: pt-[env(safe-area-inset-top)] */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[env(safe-area-inset-top)]">
         <div className="bg-white/90 backdrop-blur border-b border-orange-100 shadow-sm">
-          {/* gleiche Breite wie Seiten */}
           <div className="mx-auto w-full px-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
             <div className="flex h-12 sm:h-14 items-center justify-between gap-3">
-              {/* LEFT */}
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={toggleDrawer}
@@ -356,9 +350,7 @@ export function Header({
                 </Link>
               </div>
 
-              {/* RIGHT (Desktop) - ✅ stabil, kein Blitzen */}
               <div className="hidden lg:flex items-center gap-2 shrink-0">
-                {/* ✅ NEU: EMD Campus Button im normalen Header (rechts) */}
                 <Button
                   onClick={handleCampusClick}
                   variant="outline"
@@ -376,7 +368,6 @@ export function Header({
                   Jetzt bewerben
                 </Button>
 
-                {/* Admin Slot: Platz bleibt stabil */}
                 <div className="min-w-[110px]">
                   {authReady ? (
                     user && isAdmin ? (
@@ -396,7 +387,6 @@ export function Header({
                   )}
                 </div>
 
-                {/* Profil/Login: immer stabil */}
                 <Button
                   onClick={authReady ? handleAuthClick : undefined}
                   disabled={!authReady}

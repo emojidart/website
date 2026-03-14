@@ -58,6 +58,8 @@ const QUICK_BASE: Omit<NavItem, "key">[] = [
   { name: "Lion Cup", href: "/tournament-series-app", icon: Trophy },
   { name: "Live", href: "/live-all-app", icon: Radio },
   { name: "History", href: "/tournament-history", icon: History },
+  { name: "Chat", href: "/chat-app", icon: MessageCircle, requiresLogin: true },
+  { name: "Vereinskalender", href: "/vereinskalender-app", icon: CalendarDays, requiresLogin: true },
 ]
 
 const LIVE_ITEMS: NavItem[] = [
@@ -152,7 +154,7 @@ export function MobileBottomNav() {
   }, [isMoreOpen, closeMore])
 
   const sections: Section[] = useMemo(() => {
-    const quick: NavItem[] = [
+    const quickRaw: NavItem[] = [
       ...QUICK_BASE.map((x) => ({ ...x, key: `q_${x.name}` })),
       {
         key: "q_profile",
@@ -161,6 +163,8 @@ export function MobileBottomNav() {
         icon: isLoggedIn ? UserCircle : LogIn,
       },
     ]
+
+    const quick = filterByAuth(quickRaw, isLoggedIn, isAdmin)
 
     const accountRaw: NavItem[] = [
       { key: "admin", name: "Admin", href: "/admin", icon: LayoutDashboard, adminOnly: true },
