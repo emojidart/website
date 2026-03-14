@@ -2174,7 +2174,11 @@ const sendMessage = async () => {
                                           </div>
                                         )}
 
-                                        <div className={`px-3 py-2 min-w-0 w-full ${isOwnMessage ? WA.bubbleOwn : WA.bubbleOther}`}>
+                                        <div
+  className={`px-3 py-2 min-w-0 ${
+    message.message_type === "poll" ? "w-full max-w-full" : "w-fit max-w-full"
+  } ${isOwnMessage ? WA.bubbleOwn : WA.bubbleOther}`}
+>
  {message.attachment_url && isImageFile(message.attachment_type) && (
   <div className="mb-2">
     <button
@@ -2304,33 +2308,41 @@ const sendMessage = async () => {
   )
 )}
 
- <div className="mt-1 flex justify-end min-w-0">
-<span className={`text-[10px] flex items-center gap-1 min-w-0 flex-wrap ${isOwnMessage ? "text-white/80" : "text-slate-500"}`}>
-    {isOwnMessage && <Clock className="h-3 w-3" />}
-    {time}
 
-    {isOwnMessage && recipientsCount > 0 && (
-      (() => {
-        const readSet = readByMessage[message.id]
-        const readCount = readSet ? readSet.size : 0
 
-        // falls du irgendwann dich selbst speicherst -> nicht mitzählen
-        const me = profile?.id ?? ""
-        const readCountWithoutMe = readSet?.has(me) ? Math.max(0, readCount - 1) : readCount
 
-        return (
-  <button
-    type="button"
-    className="ml-2 underline decoration-dotted"
-    onClick={() => setOpenReadsFor(message.id)}
-  >
-    {readCountWithoutMe === 0 ? "✓" : "✓✓"} gelesen ({readCountWithoutMe}/{recipientsCount})
-  </button>
-)
-      })()
-    )}
-  </span>
+
+
+<div className="mt-1 flex justify-end min-w-0">
+  {(() => {
+    const readSet = readByMessage[message.id]
+    const readCount = readSet ? readSet.size : 0
+    const me = profile?.id ?? ""
+    const readCountWithoutMe = readSet?.has(me) ? Math.max(0, readCount - 1) : readCount
+
+    return (
+      <div
+        className={`text-[10px] min-w-0 flex items-center gap-1 flex-wrap ${
+          isOwnMessage ? "text-white/80" : "text-slate-500"
+        }`}
+      >
+        {isOwnMessage && <Clock className="h-3 w-3" />}
+        <span>{time}</span>
+
+        {isOwnMessage && recipientsCount > 0 && (
+          <button
+            type="button"
+            className="ml-2 underline decoration-dotted"
+            onClick={() => setOpenReadsFor(message.id)}
+          >
+            {readCountWithoutMe === 0 ? "✓" : "✓✓"} gelesen ({readCountWithoutMe}/{recipientsCount})
+          </button>
+        )}
+      </div>
+    )
+  })()}
 </div>
+
                                         </div>
                                       </div>
                                     </div>
