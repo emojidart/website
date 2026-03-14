@@ -1733,9 +1733,9 @@ const sendMessage = async () => {
 
   return (
     <div className={`h-[100dvh] flex flex-col overflow-hidden ${WA.appBg}`}>
-      {/* ✅ Wichtig: Seite selbst darf nicht scrollen -> nur die Chat-ScrollArea */}
+      {/**/}
       <main className="flex-1 min-h-0 overflow-hidden pt-3 pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto w-full px-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl h-full">
+        <div className="mx-auto w-full px-2 sm:px-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl h-full">
           <div className="flex flex-col h-full min-h-0">
             <div className="mb-4 shrink-0">
               <Button
