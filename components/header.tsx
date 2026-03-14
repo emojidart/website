@@ -28,6 +28,7 @@ import {
   GraduationCap,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { supabase } from "@/lib/supabase"
 
 type HeaderVariant = "site" | "app"
 
@@ -47,9 +48,26 @@ type DrawerItem = {
   adminOnly?: boolean
 }
 
+type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand"
+
+type TeamMembershipRow = {
+  role: string | null
+  teams: {
+    chat_room_id: string | null
+  } | null
+}
+
 function cn(...classes: Array<string | false | undefined | null>) {
   return classes.filter(Boolean).join(" ")
 }
+
+// GLOBAL room ids
+const CLUB_ROOM_ID = "11111111-1111-1111-1111-111111111111"
+const FREIZEIT_ROOM_ID = "22222222-2222-2222-2222-222222222222"
+const VORSTAND_ROOM_ID = "33333333-3333-3333-3333-333333333333"
+const CAPTAINS_ROOM_ID = "44444444-4444-4444-4444-444444444444"
+
+const BOARD_ROLES = ["Vorstand", "Kassier", "Schriftführer"]
 
 export function Header({
   variant = "site",
@@ -63,11 +81,13 @@ export function Header({
   const pathname = usePathname()
 
   const [drawerOpen, setDrawerOpen] = React.useState(false)
+  const [chatUnreadCount, setChatUnreadCount] = React.useState(0)
+
   const openDrawer = () => setDrawerOpen(true)
   const closeDrawer = () => setDrawerOpen(false)
   const toggleDrawer = () => setDrawerOpen((v) => !v)
 
-  // ✅ Anti-Flicker: Sobald Auth einmal "ready" war (user !== undefined), bleibt es so
+  // ✅ Anti-Flicker
   const authReadyRef = React.useRef(false)
   React.useEffect(() => {
     if (user !== undefined) authReadyRef.current = true
@@ -83,7 +103,6 @@ export function Header({
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [drawerOpen])
 
-  // Auto-close drawer on route change
   React.useEffect(() => {
     if (!drawerOpen) return
     closeDrawer()
@@ -107,12 +126,189 @@ export function Header({
     router.push("/emd-campus")
   }
 
+  const handleChatClick = () => {
+    router.push("/chat-app")
+  }
+
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/"
     return pathname?.startsWith(href)
   }
 
-  // Drawer Sections
+  const unreadKey = React.useCallback((roomId: string, scope: ChatScope) => `${roomId}:${scope}`, [])
+
+  const loadChatUnreadCount = React.useCallback(async () => {
+    if (!user?.id) {
+      setChatUnreadCount(0)
+      return
+    }
+
+    try {
+      // user_profile holen
+      const { data: profile, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("id,user_id,player_id")
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (profileError || !profile?.id) {
+        setChatUnreadCount(0)
+        return
+      }
+
+      const profileId = profile.id
+      const playerId = profile.player_id ?? null
+
+      // Vorstand prüfen
+      const { data: roleRows } = await supabase
+        .from("club_roles")
+        .select("role")
+        .eq("user_id", user.id)
+
+      const canSeeVorstandChat = ((roleRows as Array<{ role: string }> | null) ?? []).some((r) =>
+        BOARD_ROLES.includes(r.role),
+      )
+
+      // Teamräume laden
+      let memberships: TeamMembershipRow[] = []
+
+      if (playerId) {
+        const { data: membershipRows } = await supabase
+          .from("team_members")
+          .select("role, teams:teams(chat_room_id)")
+          .eq("player_id", playerId)
+          .is("left_at", null)
+
+        memberships = (membershipRows as TeamMembershipRow[] | null) ?? []
+      }
+
+      const canSeeCaptainChat = memberships.some(
+        (m) => m.role === "Captain" || m.role === "Co-Captain",
+      )
+
+      const targets: Array<{ roomId: string; scope: ChatScope }> = [
+        { roomId: CLUB_ROOM_ID, scope: "club" },
+        { roomId: FREIZEIT_ROOM_ID, scope: "freizeit" },
+      ]
+
+      if (canSeeVorstandChat) {
+        targets.push({ roomId: VORSTAND_ROOM_ID, scope: "vorstand" })
+      }
+
+      if (canSeeCaptainChat || canSeeVorstandChat) {
+        targets.push({ roomId: CAPTAINS_ROOM_ID, scope: "captains" })
+      }
+
+      memberships.forEach((m) => {
+        const roomId = m.teams?.chat_room_id
+        if (roomId) {
+          targets.push({ roomId, scope: "team" })
+        }
+      })
+
+      const dedupedTargets = Array.from(
+        new Map(targets.map((t) => [unreadKey(t.roomId, t.scope), t])).values(),
+      )
+
+      const counts = await Promise.all(
+        dedupedTargets.map(async ({ roomId, scope }) => {
+          const { data: visitData } = await supabase
+            .from("user_room_visits")
+            .select("last_visit_at")
+            .eq("user_id", profileId)
+            .eq("room_id", roomId)
+            .eq("scope", scope)
+            .maybeSingle()
+
+          const lastVisit = (visitData as { last_visit_at?: string } | null)?.last_visit_at ?? "1970-01-01T00:00:00Z"
+
+          const { count, error } = await supabase
+            .from("chat_messages")
+            .select("*", { count: "exact", head: true })
+            .eq("room_id", roomId)
+            .eq("scope", scope)
+            .gt("created_at", lastVisit)
+            .neq("user_id", profileId)
+
+          if (error) return 0
+          return count ?? 0
+        }),
+      )
+
+      const total = counts.reduce((sum, n) => sum + n, 0)
+      setChatUnreadCount(total)
+    } catch (error) {
+      console.error("loadChatUnreadCount error", error)
+      setChatUnreadCount(0)
+    }
+  }, [user?.id, unreadKey])
+
+  React.useEffect(() => {
+    if (!authReady) return
+    loadChatUnreadCount()
+  }, [authReady, loadChatUnreadCount])
+
+  React.useEffect(() => {
+    if (!user?.id) return
+
+    let isMounted = true
+
+    const setup = async () => {
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (!isMounted) return
+
+      const profileId = profile?.id
+      if (!profileId) return
+
+      const channel = supabase
+        .channel(`header-chat-unread-${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "chat_messages",
+          },
+          async () => {
+            await loadChatUnreadCount()
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "user_room_visits",
+            filter: `user_id=eq.${profileId}`,
+          },
+          async () => {
+            await loadChatUnreadCount()
+          },
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
+
+    let cleanupFn: (() => void) | undefined
+
+    setup().then((cleanup) => {
+      cleanupFn = cleanup
+    })
+
+    return () => {
+      isMounted = false
+      if (cleanupFn) cleanupFn()
+    }
+  }, [user?.id, loadChatUnreadCount])
+
   const drawerSections: Array<{ title: string; items: DrawerItem[] }> = [
     {
       title: "Hauptmenü",
@@ -163,7 +359,16 @@ export function Header({
     return true
   }
 
-  /* ================= APP HEADER (wie gehabt) ================= */
+  const renderChatBadge = () => {
+    if (!user || chatUnreadCount <= 0) return null
+
+    return (
+      <span className="ml-auto inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
+        {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
+      </span>
+    )
+  }
+
   if (variant === "app") {
     const handleBack = () => {
       if (onBackClick) return onBackClick()
@@ -208,7 +413,6 @@ export function Header({
     )
   }
 
-  /* ================= SITE HEADER (mit Drawer + Anti-Flicker) ================= */
   return (
     <>
       {drawerOpen && (
@@ -269,6 +473,7 @@ export function Header({
                       {sec.items.filter(canShow).map((it) => {
                         const Icon = it.icon
                         const active = isActive(it.href)
+                        const isChatItem = it.href === "/chat-app"
 
                         return (
                           <Link
@@ -284,6 +489,7 @@ export function Header({
                           >
                             <Icon className={cn("h-5 w-5", active ? "text-orange-700" : "text-orange-600")} />
                             <span className="font-semibold">{it.label}</span>
+                            {isChatItem ? renderChatBadge() : null}
                           </Link>
                         )
                       })}
@@ -351,6 +557,22 @@ export function Header({
               </div>
 
               <div className="hidden lg:flex items-center gap-2 shrink-0">
+                {user ? (
+                  <Button
+                    onClick={handleChatClick}
+                    variant="outline"
+                    className="relative h-9 rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50 font-semibold"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Chat
+                    {chatUnreadCount > 0 ? (
+                      <span className="ml-2 inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
+                        {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
+                      </span>
+                    ) : null}
+                  </Button>
+                ) : null}
+
                 <Button
                   onClick={handleCampusClick}
                   variant="outline"
