@@ -2137,37 +2137,44 @@ const sendMessage = async () => {
                                   const time = formatTimeVienna(message.created_at)
 
                                   return (
-                                    <div key={message.id} className={`flex gap-2 ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}>
+                                    <div
+  key={message.id}
+  className={`flex gap-2 min-w-0 overflow-hidden ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}
+>
                                       <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0 mt-0.5">
                                         <AvatarImage src={photoUrl || "/placeholder.svg"} alt={name} />
                                         <AvatarFallback className="bg-orange-100 text-orange-700 text-[10px]">{initials(name)}</AvatarFallback>
                                       </Avatar>
 
-                                      <div className={`flex flex-col max-w-[92%] sm:max-w-xs lg:max-w-md ${isOwnMessage ? "items-end" : "items-start"}`}>
+                                      <div
+  className={`flex flex-col flex-1 min-w-0 max-w-[calc(100%-40px)] sm:max-w-xs lg:max-w-md ${
+    isOwnMessage ? "items-end" : "items-start"
+  }`}
+>
                                         {!isOwnMessage && (
-                                          <div className="w-full mb-1">
-                                            <div className="flex flex-col gap-1 sm:grid sm:grid-cols-[1fr_auto] sm:items-center sm:gap-2">
-  <div className="min-w-0 flex flex-wrap items-center gap-2">
-    <span className="text-[13px] font-semibold text-slate-700 break-words">
-      {name}
-    </span>
-
-    {isSenderVorstand && (
-      <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-800 shrink-0">
-        🛡️ Vorstand
+                                          <div className="w-full mb-1 min-w-0 overflow-hidden">
+  <div className="flex flex-col gap-1 min-w-0">
+    <div className="min-w-0 flex flex-wrap items-center gap-2">
+      <span className="text-[13px] font-semibold text-slate-700 break-words leading-tight">
+        {name}
       </span>
-    )}
-  </div>
 
-  <span className="text-[11px] text-muted-foreground flex items-center gap-1 whitespace-nowrap sm:justify-self-end">
-    <Clock className="h-3 w-3" />
-    {time}
-  </span>
+      {isSenderVorstand && (
+        <span className="inline-flex max-w-full items-center rounded-full border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[9px] font-semibold text-orange-800 shrink-0">
+          🛡️ Vorstand
+        </span>
+      )}
+    </div>
+
+    <span className="text-[11px] text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+      <Clock className="h-3 w-3" />
+      {time}
+    </span>
+  </div>
 </div>
-                                          </div>
                                         )}
 
-                                        <div className={`px-3 py-2 ${isOwnMessage ? WA.bubbleOwn : WA.bubbleOther}`}>
+                                        <div className={`px-3 py-2 min-w-0 w-full ${isOwnMessage ? WA.bubbleOwn : WA.bubbleOther}`}>
  {message.attachment_url && isImageFile(message.attachment_type) && (
   <div className="mb-2">
     <button
