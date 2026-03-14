@@ -2137,7 +2137,7 @@ const sendMessage = async () => {
                                   const time = formatTimeVienna(message.created_at)
 
                                   return (
-                                    <div
+                                   <div
   key={message.id}
   className={`flex gap-2 min-w-0 overflow-hidden ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}
 >
@@ -2152,26 +2152,26 @@ const sendMessage = async () => {
   }`}
 >
                                         {!isOwnMessage && (
-                                          <div className="w-full mb-1 min-w-0 overflow-hidden">
-  <div className="flex flex-col gap-1 min-w-0">
-    <div className="min-w-0 flex flex-wrap items-center gap-2">
-      <span className="text-[13px] font-semibold text-slate-700 break-words leading-tight">
-        {name}
-      </span>
-
-      {isSenderVorstand && (
-        <span className="inline-flex max-w-full items-center rounded-full border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[9px] font-semibold text-orange-800 shrink-0">
-          🛡️ Vorstand
-        </span>
-      )}
-    </div>
-
-    <span className="text-[11px] text-muted-foreground flex items-center gap-1 whitespace-nowrap">
-      <Clock className="h-3 w-3" />
-      {time}
+                                          <div className="w-full mb-1">
+                                            <div className="flex flex-col gap-1 sm:grid sm:grid-cols-[1fr_auto] sm:items-center sm:gap-2">
+  <div className="min-w-0 flex flex-wrap items-center gap-2">
+    <span className="text-[13px] font-semibold text-slate-700 break-words">
+      {name}
     </span>
+
+    {isSenderVorstand && (
+      <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-800 shrink-0">
+        🛡️ Vorstand
+      </span>
+    )}
   </div>
+
+  <span className="text-[11px] text-muted-foreground flex items-center gap-1 whitespace-nowrap sm:justify-self-end">
+    <Clock className="h-3 w-3" />
+    {time}
+  </span>
 </div>
+                                          </div>
                                         )}
 
                                         <div className={`px-3 py-2 min-w-0 w-full ${isOwnMessage ? WA.bubbleOwn : WA.bubbleOther}`}>
@@ -2229,7 +2229,7 @@ const sendMessage = async () => {
     )
 
     return (
-      <div className="space-y-3 min-w-[240px]">
+      <div className="space-y-3 min-w-0 w-full max-w-full">
         <div className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4" />
           <span className="text-sm font-semibold">{poll.question}</span>
@@ -2258,7 +2258,7 @@ const sendMessage = async () => {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     {isMine && <CheckCircle2 className="h-4 w-4 shrink-0" />}
-                    <span className="text-sm truncate">{opt.label}</span>
+                    <span className="text-sm break-words min-w-0">{opt.label}</span>
                   </div>
                   <span className="text-xs shrink-0">
                     {optionVotes} · {percent}%
@@ -2304,8 +2304,8 @@ const sendMessage = async () => {
   )
 )}
 
-  <div className="mt-1 flex justify-end">
-  <span className={`text-[10px] flex items-center gap-1 ${isOwnMessage ? "text-white/80" : "text-slate-500"}`}>
+ <div className="mt-1 flex justify-end min-w-0">
+<span className={`text-[10px] flex items-center gap-1 min-w-0 flex-wrap ${isOwnMessage ? "text-white/80" : "text-slate-500"}`}>
     {isOwnMessage && <Clock className="h-3 w-3" />}
     {time}
 
