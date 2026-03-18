@@ -91,11 +91,9 @@ export function Header({
   const [drawerOpen, setDrawerOpen] = React.useState(false)
   const [chatUnreadCount, setChatUnreadCount] = React.useState(0)
 
-  const openDrawer = () => setDrawerOpen(true)
   const closeDrawer = () => setDrawerOpen(false)
   const toggleDrawer = () => setDrawerOpen((v) => !v)
 
-  // ✅ Anti-Flicker
   const authReadyRef = React.useRef(false)
   React.useEffect(() => {
     if (user !== undefined) authReadyRef.current = true
@@ -370,7 +368,7 @@ export function Header({
     if (!user || chatUnreadCount <= 0) return null
 
     return (
-      <span className="ml-auto inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
+      <span className="ml-auto inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
         {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
       </span>
     )
@@ -384,7 +382,7 @@ export function Header({
     }
 
     return (
-      <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[env(safe-area-inset-top)]">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[max(env(safe-area-inset-top),12px)]">
         <div className="border-b border-orange-100 bg-white/90 shadow-sm backdrop-blur">
           <div className="mx-auto w-full max-w-7xl px-4">
             <div className="flex h-14 items-center gap-3">
@@ -427,7 +425,7 @@ export function Header({
           <button aria-label="Schließen" className="absolute inset-0 bg-black/40" onClick={closeDrawer} />
 
           <aside className="absolute bottom-0 left-0 top-0 w-[320px] border-r border-gray-200 bg-white shadow-2xl lg:w-[380px]">
-            <div className="border-b p-4">
+            <div className="border-b p-4 pt-[max(env(safe-area-inset-top),16px)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex items-center gap-2">
                   <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-orange-600 shadow-sm">
@@ -546,7 +544,7 @@ export function Header({
         </div>
       )}
 
-      <header className="fixed left-0 right-0 top-0 z-50 w-full pt-[env(safe-area-inset-top)]">
+      <header className="fixed left-0 right-0 top-0 z-50 w-full pt-[max(env(safe-area-inset-top),12px)]">
         <div className="border-b border-orange-100 bg-white/90 shadow-sm backdrop-blur">
           <div className="mx-auto w-full max-w-2xl px-4 lg:max-w-screen-xl 2xl:max-w-screen-2xl">
             <div className="flex h-14 items-center justify-between gap-3">
