@@ -1,11 +1,23 @@
 "use client"
 
+import Link from "next/link"
 import { useMemo, useState } from "react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { CampusRegistrationModal } from "@/components/campus-registration-modal"
 import { motion } from "framer-motion"
-import { Target, Users, Trophy, Calendar, MapPin, Clock, Info, CheckCircle2 } from "lucide-react"
+import {
+  Target,
+  Users,
+  Trophy,
+  Calendar,
+  MapPin,
+  Clock,
+  Info,
+  CheckCircle2,
+  ArrowRight,
+  CalendarDays,
+} from "lucide-react"
 
 /* ---------------- animations ---------------- */
 
@@ -438,7 +450,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       <Header />
-      {/* Abstand für fixed Header */}
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
       <motion.main
@@ -508,7 +519,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* hero bottom */}
           <div className="p-4 sm:p-6 bg-white">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
               <div className="flex items-start gap-3">
@@ -522,6 +532,78 @@ export default function App() {
                     und faire Wettkampfroutine.
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* TERMIN-HIGHLIGHT OBEN */}
+        <motion.section variants={itemVariants} className="mt-6">
+          <div className="rounded-3xl overflow-hidden border border-orange-300 bg-white shadow-xl">
+            <div className="bg-gradient-to-r from-orange-500 via-orange-600 to-red-500 p-4 sm:p-6 text-white">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-black uppercase tracking-wider backdrop-blur">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Wichtige Termine 2026
+                  </div>
+
+                  <h2 className="mt-3 text-xl sm:text-2xl lg:text-3xl font-black leading-tight">
+                    Infotag: Samstag, 10. Januar 2026
+                  </h2>
+
+                  <div className="mt-3 flex flex-col gap-2 text-sm sm:text-base text-orange-50 font-semibold">
+                    <span className="inline-flex items-center gap-2">
+                      <Clock className="h-4 w-4 shrink-0" />
+                      14:00 Uhr
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                      <MapPin className="h-4 w-4 shrink-0" />
+                      Vereinsheim Pfeil-OK e.V. • Linzer Bundesstraße 16 • 5020 Salzburg
+                    </span>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Chip tone="green">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Gratis & unverbindlich
+                    </Chip>
+                    <Chip tone="orange">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Starttraining ab 18. Januar 2026
+                    </Chip>
+                  </div>
+                </div>
+
+                <div className="shrink-0">
+                  <Link
+                    href="/emd-campus/termine"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-orange-700 shadow-sm transition hover:bg-orange-50"
+                  >
+                    Alle Termine ansehen
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3 border-t border-orange-100 bg-orange-50/60 p-4 sm:grid-cols-3 sm:p-5">
+              <div className="rounded-2xl border border-orange-200 bg-white p-4">
+                <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Infotag</p>
+                <p className="mt-1 text-sm font-black text-gray-900">10. Januar 2026</p>
+                <p className="mt-1 text-sm text-orange-700 font-semibold">14:00 Uhr</p>
+              </div>
+
+              <div className="rounded-2xl border border-orange-200 bg-white p-4">
+                <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Trainingsstart</p>
+                <p className="mt-1 text-sm font-black text-gray-900">18. Januar 2026</p>
+                <p className="mt-1 text-sm text-orange-700 font-semibold">ab 14:00 Uhr</p>
+              </div>
+
+              <div className="rounded-2xl border border-orange-200 bg-white p-4">
+                <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Terminübersicht</p>
+                <p className="mt-1 text-sm font-black text-gray-900">alle geplanten Sonntage</p>
+                <p className="mt-1 text-sm text-orange-700 font-semibold">weitere Folgen</p>
               </div>
             </div>
           </div>
@@ -611,13 +693,25 @@ export default function App() {
 
           <div className="rounded-3xl border border-orange-200 bg-white shadow-sm overflow-hidden">
             <div className="p-4 sm:p-6 bg-gradient-to-br from-orange-500 to-orange-700 text-white">
-              <p className="text-xs font-black uppercase tracking-wider text-orange-100">Start ab</p>
-              <p className="text-lg sm:text-2xl font-black">Sonntag, 18. Januar 2026</p>
-              <div className="mt-2 flex flex-wrap gap-2 text-sm text-orange-50">
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  Vereinsheim Pfeil-OK e.V. • Salzburg
-                </span>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider text-orange-100">Start ab</p>
+                  <p className="text-lg sm:text-2xl font-black">Sonntag, 18. Januar 2026</p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-sm text-orange-50">
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      Vereinsheim Pfeil-OK e.V. • Salzburg
+                    </span>
+                  </div>
+                </div>
+
+                <Link
+                  href="/emd-campus/termine"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-orange-700 shadow-sm transition hover:bg-orange-50"
+                >
+                  Termine als Tabelle
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
             </div>
 
@@ -655,11 +749,23 @@ export default function App() {
               </div>
 
               <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
-                <p className="text-sm font-black text-gray-900">Weitere Termine</p>
-                <p className="text-sm text-gray-700 mt-1">
-                  Sonntag, 15. Februar 2026 • Sonntag, 22. März 2026 • Sonntag, 19. April 2026
-                </p>
-                <p className="text-[11px] text-gray-500 mt-2 font-semibold">Weitere Termine folgen in Kürze.</p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-black text-gray-900">Weitere Termine</p>
+                    <p className="text-sm text-gray-700 mt-1">
+                      Sonntag, 15. Februar 2026 • Sonntag, 22. März 2026 • Sonntag, 19. April 2026
+                    </p>
+                    <p className="text-[11px] text-gray-500 mt-2 font-semibold">Weitere Termine folgen in Kürze.</p>
+                  </div>
+
+                  <Link
+                    href="/emd-campus/termine"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-black text-orange-700 hover:bg-orange-100"
+                  >
+                    Ganze Übersicht
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -741,7 +847,6 @@ export default function App() {
           <SectionTitle icon={Trophy} title="12-Monats Modulplan" subtitle="Wähle deine Altersgruppe – scroll & fertig." />
 
           <div className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            {/* tabs */}
             <div className="p-4 sm:p-6 border-b border-gray-100 bg-white">
               <div className="flex flex-wrap gap-2">
                 <AgeTab active={selectedAge === "kids"} label="Kids (6–10)" tone="red" onClick={() => setSelectedAge("kids")} />
@@ -765,7 +870,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* mobile cards */}
             <div className="p-4 sm:p-6 bg-gray-50">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {modules.map((m) => (

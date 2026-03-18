@@ -26,6 +26,8 @@ import {
   CreditCard,
   Images,
   GraduationCap,
+  ClipboardList,
+  ChevronRight,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
@@ -68,6 +70,12 @@ const VORSTAND_ROOM_ID = "33333333-3333-3333-3333-333333333333"
 const CAPTAINS_ROOM_ID = "44444444-4444-4444-4444-444444444444"
 
 const BOARD_ROLES = ["Vorstand", "Kassier", "Schriftführer"]
+
+function getUserLabel(user: { email?: string | null } | null | undefined) {
+  if (!user?.email) return "Profil"
+  const local = user.email.split("@")[0] || "Profil"
+  return local.length > 18 ? `${local.slice(0, 18)}…` : local
+}
 
 export function Header({
   variant = "site",
@@ -144,7 +152,6 @@ export function Header({
     }
 
     try {
-      // user_profile holen
       const { data: profile, error: profileError } = await supabase
         .from("user_profiles")
         .select("id,user_id,player_id")
@@ -159,7 +166,6 @@ export function Header({
       const profileId = profile.id
       const playerId = profile.player_id ?? null
 
-      // Vorstand prüfen
       const { data: roleRows } = await supabase
         .from("club_roles")
         .select("role")
@@ -169,7 +175,6 @@ export function Header({
         BOARD_ROLES.includes(r.role),
       )
 
-      // Teamräume laden
       let memberships: TeamMembershipRow[] = []
 
       if (playerId) {
@@ -220,7 +225,8 @@ export function Header({
             .eq("scope", scope)
             .maybeSingle()
 
-          const lastVisit = (visitData as { last_visit_at?: string } | null)?.last_visit_at ?? "1970-01-01T00:00:00Z"
+          const lastVisit =
+            (visitData as { last_visit_at?: string } | null)?.last_visit_at ?? "1970-01-01T00:00:00Z"
 
           const { count, error } = await supabase
             .from("chat_messages")
@@ -327,6 +333,7 @@ export function Header({
         { href: "/tournament-history", label: "History", icon: History },
         { href: "/chat-app", label: "Chat", icon: MessageCircle, requiresLogin: true },
         { href: "/vereinskalender-app", label: "Vereinskalender", icon: CalendarDays, requiresLogin: true },
+        { href: "/member-availability", label: "Aufstellung", icon: ClipboardList, requiresLogin: true },
       ],
     },
     {
@@ -378,7 +385,7 @@ export function Header({
 
     return (
       <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[env(safe-area-inset-top)]">
-        <div className="bg-white/90 backdrop-blur border-b border-orange-100 shadow-sm">
+        <div className="border-b border-orange-100 bg-white/90 shadow-sm backdrop-blur">
           <div className="mx-auto w-full max-w-7xl px-4">
             <div className="flex h-14 items-center gap-3">
               {backHref || onBackClick ? (
@@ -393,14 +400,14 @@ export function Header({
               ) : null}
 
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-orange-600 shadow-sm">
                     <BarChart3 className="h-5 w-5 text-white" />
                   </span>
 
                   <div className="min-w-0">
-                    <div className="truncate text-base sm:text-lg font-extrabold text-gray-900">{title}</div>
-                    {subtitle ? <div className="truncate text-xs sm:text-sm text-gray-500">{subtitle}</div> : null}
+                    <div className="truncate text-base font-extrabold text-gray-900 sm:text-lg">{title}</div>
+                    {subtitle ? <div className="truncate text-xs text-gray-500 sm:text-sm">{subtitle}</div> : null}
                   </div>
                 </div>
               </div>
@@ -416,39 +423,48 @@ export function Header({
   return (
     <>
       {drawerOpen && (
-        <div className="fixed top-0 left-0 right-0 bottom-0 z-[60]">
+        <div className="fixed inset-0 z-[60]">
           <button aria-label="Schließen" className="absolute inset-0 bg-black/40" onClick={closeDrawer} />
 
-          <aside className="absolute left-0 top-0 bottom-0 w-[320px] lg:w-[380px] bg-white shadow-2xl border-r border-gray-200">
-            <div className="flex items-center justify-between p-4 border-b">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-orange-600 shadow-sm overflow-hidden">
-                  <Image
-                    src="/images/brutal-darts-bg---.png"
-                    alt="EMD Logo"
-                    width={26}
-                    height={26}
-                    className="object-contain"
-                    priority
-                  />
-                </span>
-                <div className="font-extrabold text-gray-900">{title}</div>
-              </div>
+          <aside className="absolute bottom-0 left-0 top-0 w-[320px] border-r border-gray-200 bg-white shadow-2xl lg:w-[380px]">
+            <div className="border-b p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex items-center gap-2">
+                  <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-orange-600 shadow-sm">
+                    <Image
+                      src="/images/brutal-darts-bg---.png"
+                      alt="EMD Logo"
+                      width={28}
+                      height={28}
+                      className="object-contain"
+                      priority
+                    />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate font-extrabold text-gray-900">{title}</div>
+                    {user ? (
+                      <div className="truncate text-xs text-gray-500">{user.email}</div>
+                    ) : (
+                      <div className="text-xs text-gray-500">Willkommen bei EMD</div>
+                    )}
+                  </div>
+                </div>
 
-              <button onClick={closeDrawer} className="rounded-xl p-2 hover:bg-gray-100" aria-label="Schließen">
-                <X className="h-5 w-5 text-gray-700" />
-              </button>
+                <button onClick={closeDrawer} className="rounded-xl p-2 hover:bg-gray-100" aria-label="Schließen">
+                  <X className="h-5 w-5 text-gray-700" />
+                </button>
+              </div>
             </div>
 
-            <div className="p-3 overflow-y-auto h-full">
+            <div className="h-full overflow-y-auto p-3">
               <Button
                 onClick={() => {
                   closeDrawer()
                   handleApplyClick()
                 }}
-                className="w-full h-11 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold mb-2"
+                className="mb-2 h-11 w-full rounded-xl bg-orange-600 font-semibold text-white hover:bg-orange-700"
               >
-                <Sparkles className="h-4 w-4 mr-2" />
+                <Sparkles className="mr-2 h-4 w-4" />
                 Jetzt bewerben
               </Button>
 
@@ -458,16 +474,18 @@ export function Header({
                   handleCampusClick()
                 }}
                 variant="outline"
-                className="w-full h-11 rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50 font-semibold mb-3"
+                className="mb-3 h-11 w-full rounded-xl border-orange-200 bg-white font-semibold text-orange-700 hover:bg-orange-50"
               >
-                <GraduationCap className="h-4 w-4 mr-2" />
+                <GraduationCap className="mr-2 h-4 w-4" />
                 EMD Campus
               </Button>
 
               <div className="space-y-5 pb-20">
                 {drawerSections.map((sec) => (
                   <section key={sec.title}>
-                    <div className="mb-2 px-2 text-xs font-bold uppercase text-gray-500">{sec.title}</div>
+                    <div className="mb-2 px-2 text-xs font-bold uppercase tracking-wide text-gray-500">
+                      {sec.title}
+                    </div>
 
                     <div className="space-y-1">
                       {sec.items.filter(canShow).map((it) => {
@@ -480,16 +498,16 @@ export function Header({
                             key={it.href + it.label}
                             href={it.href}
                             className={cn(
-                              "flex items-center gap-3 rounded-xl px-3 py-2 transition",
+                              "flex items-center gap-3 rounded-xl px-3 py-2.5 transition",
                               active
                                 ? "bg-orange-50 text-orange-800 ring-1 ring-orange-200"
                                 : "text-gray-800 hover:bg-gray-50",
                             )}
                             onClick={closeDrawer}
                           >
-                            <Icon className={cn("h-5 w-5", active ? "text-orange-700" : "text-orange-600")} />
+                            <Icon className={cn("h-5 w-5 shrink-0", active ? "text-orange-700" : "text-orange-600")} />
                             <span className="font-semibold">{it.label}</span>
-                            {isChatItem ? renderChatBadge() : null}
+                            {isChatItem ? renderChatBadge() : <ChevronRight className="ml-auto h-4 w-4 text-gray-400" />}
                           </Link>
                         )
                       })}
@@ -504,9 +522,9 @@ export function Header({
                       handleAdminClick()
                     }}
                     variant="outline"
-                    className="w-full h-11 rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
+                    className="h-11 w-full rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
                   >
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
                     ADMIN
                   </Button>
                 ) : null}
@@ -517,10 +535,10 @@ export function Header({
                     handleAuthClick()
                   }}
                   variant="outline"
-                  className="w-full h-11 rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
+                  className="h-11 w-full rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
                 >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  {user ? "PROFIL" : "LOGIN"}
+                  {user ? <UserCircle className="mr-2 h-4 w-4" /> : <LogIn className="mr-2 h-4 w-4" />}
+                  {user ? "Profil öffnen" : "Login"}
                 </Button>
               </div>
             </div>
@@ -528,21 +546,21 @@ export function Header({
         </div>
       )}
 
-      <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[env(safe-area-inset-top)]">
-        <div className="bg-white/90 backdrop-blur border-b border-orange-100 shadow-sm">
-          <div className="mx-auto w-full px-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
-            <div className="flex h-12 sm:h-14 items-center justify-between gap-3">
-              <div className="flex items-center gap-2 shrink-0">
+      <header className="fixed left-0 right-0 top-0 z-50 w-full pt-[env(safe-area-inset-top)]">
+        <div className="border-b border-orange-100 bg-white/90 shadow-sm backdrop-blur">
+          <div className="mx-auto w-full max-w-2xl px-4 lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+            <div className="flex h-14 items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
                 <button
                   onClick={toggleDrawer}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-gray-100"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl hover:bg-gray-100"
                   aria-label="Menü öffnen"
                 >
                   <Menu className="h-5 w-5 text-gray-800" />
                 </button>
 
-                <Link href="/" className="flex items-center gap-2">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-orange-600 shadow-sm overflow-hidden">
+                <Link href="/" className="flex min-w-0 items-center gap-2">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-orange-600 shadow-sm">
                     <Image
                       src="/images/brutal-darts-bg---.png"
                       alt="EMD Logo"
@@ -552,21 +570,23 @@ export function Header({
                       priority
                     />
                   </span>
-                  <span className="text-sm sm:text-base font-extrabold text-gray-900 tracking-wide">{title}</span>
+                  <span className="truncate text-sm font-extrabold tracking-wide text-gray-900 sm:text-base">
+                    {title}
+                  </span>
                 </Link>
               </div>
 
-              <div className="hidden lg:flex items-center gap-2 shrink-0">
+              <div className="hidden items-center gap-2 lg:flex">
                 {user ? (
                   <Button
                     onClick={handleChatClick}
                     variant="outline"
-                    className="relative h-9 rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50 font-semibold"
+                    className="relative h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 hover:bg-orange-50"
                   >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Chat
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    <span>Chat</span>
                     {chatUnreadCount > 0 ? (
-                      <span className="ml-2 inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
+                      <span className="ml-2 inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
                         {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
                       </span>
                     ) : null}
@@ -576,48 +596,66 @@ export function Header({
                 <Button
                   onClick={handleCampusClick}
                   variant="outline"
-                  className="h-9 rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50 font-semibold"
+                  className="h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 hover:bg-orange-50"
                 >
-                  <GraduationCap className="h-4 w-4 mr-2" />
+                  <GraduationCap className="mr-2 h-4 w-4" />
                   EMD Campus
                 </Button>
 
                 <Button
                   onClick={handleApplyClick}
-                  className="h-9 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+                  className="h-10 rounded-xl bg-orange-600 px-4 font-semibold text-white hover:bg-orange-700"
                 >
-                  <Sparkles className="h-4 w-4 mr-2" />
+                  <Sparkles className="mr-2 h-4 w-4" />
                   Jetzt bewerben
                 </Button>
 
-                <div className="min-w-[110px]">
-                  {authReady ? (
-                    user && isAdmin ? (
-                      <Button
-                        onClick={handleAdminClick}
-                        variant="outline"
-                        className="h-9 w-full rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
-                      >
-                        <LayoutDashboard className="h-4 w-4 mr-2" />
-                        ADMIN
-                      </Button>
-                    ) : (
-                      <div className="h-9" />
-                    )
-                  ) : (
-                    <div className="h-9 rounded-xl border border-orange-200 bg-white/60" />
-                  )}
-                </div>
+                {authReady ? (
+                  user && isAdmin ? (
+                    <Button
+                      onClick={handleAdminClick}
+                      variant="outline"
+                      className="h-10 rounded-xl border-orange-200 bg-white px-4 text-orange-700 hover:bg-orange-50"
+                    >
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      ADMIN
+                    </Button>
+                  ) : null
+                ) : (
+                  <div className="h-10 w-[110px] rounded-xl border border-orange-200 bg-white/60" />
+                )}
 
-                <Button
-                  onClick={authReady ? handleAuthClick : undefined}
-                  disabled={!authReady}
-                  variant="outline"
-                  className="h-9 min-w-[120px] rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50 disabled:opacity-100 disabled:text-orange-700/60 disabled:hover:bg-white"
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  {authReady ? (user ? "PROFIL" : "LOGIN") : "…"}
-                </Button>
+                {authReady ? (
+                  user ? (
+                    <button
+                      onClick={handleAuthClick}
+                      className="group flex h-10 max-w-[220px] items-center gap-2 rounded-xl border border-orange-200 bg-white pl-2 pr-3 text-left text-orange-700 transition hover:bg-orange-50"
+                    >
+                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-700">
+                        <UserCircle className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-[11px] font-medium uppercase tracking-wide text-orange-500">
+                          Profil
+                        </span>
+                        <span className="block truncate text-sm font-semibold text-gray-900">
+                          {getUserLabel(user)}
+                        </span>
+                      </span>
+                    </button>
+                  ) : (
+                    <Button
+                      onClick={handleAuthClick}
+                      variant="outline"
+                      className="h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 hover:bg-orange-50"
+                    >
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Login
+                    </Button>
+                  )
+                ) : (
+                  <div className="h-10 w-[148px] rounded-xl border border-orange-200 bg-white/60" />
+                )}
               </div>
             </div>
           </div>

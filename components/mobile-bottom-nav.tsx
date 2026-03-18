@@ -21,6 +21,7 @@ import {
   X,
   Building2,
   CalendarDays,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react"
 
@@ -60,6 +61,7 @@ const QUICK_BASE: Omit<NavItem, "key">[] = [
   { name: "History", href: "/tournament-history", icon: History },
   { name: "Chat", href: "/chat-app", icon: MessageCircle, requiresLogin: true },
   { name: "Vereinskalender", href: "/vereinskalender-app", icon: CalendarDays, requiresLogin: true },
+  { name: "Aufstellung", href: "/member-availability", icon: ClipboardList, requiresLogin: true },
 ]
 
 const LIVE_ITEMS: NavItem[] = [

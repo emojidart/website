@@ -70,13 +70,13 @@ export function TeamStandingsCardApp({ team, index, teamData }: TeamStandingsCar
             )}
 
             <div className="flex-1 min-w-0">
-              {/* ✅ FIX: Teamname nicht abschneiden -> 2 Zeilen erlaubt */}
+              {/*  */}
               <div className="flex flex-col gap-1 min-w-0">
                 <div className="font-semibold text-sm sm:text-base text-gray-900 leading-tight line-clamp-2">
                   {team.team}
                 </div>
 
-                {/* Badge unter dem Namen (damit Name Platz hat) */}
+                {/* */}
                 {topBadge && (
                   <div className="flex">
                     <span

@@ -11,7 +11,7 @@ interface Player {
   name: string
   photo_url: string | null
   throwing_hand: string | null
-  age: number | null
+  birthdate: string | null
   origin: string | null
   role: string | null
 }
@@ -46,13 +46,63 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
       const orderB = roleOrder[roleB] || 3
 
       if (orderA !== orderB) return orderA - orderB
-      return a.name.localeCompare(b.name)
+      return a.name.localeCompare(b.name, "de")
     })
   }
 
-  /* =========================
-     TEAM DETAIL VIEW
-  ========================= */
+  const translateThrowingHand = (hand: string | null) => {
+    if (!hand) return "-"
+
+    const normalized = hand.trim().toLowerCase()
+
+    if (normalized === "left") return "Links"
+    if (normalized === "right") return "Rechts"
+
+    return hand
+  }
+
+  const calculateAge = (birthdate: string | null) => {
+    if (!birthdate) return null
+
+    const birth = new Date(birthdate)
+    if (isNaN(birth.getTime())) return null
+
+    const today = new Date()
+    let age = today.getFullYear() - birth.getFullYear()
+
+    const monthDiff = today.getMonth() - birth.getMonth()
+    const dayDiff = today.getDate() - birth.getDate()
+
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+      age--
+    }
+
+    return age
+  }
+
+  const getAgeText = (birthdate: string | null) => {
+    const age = calculateAge(birthdate)
+    return age !== null ? String(age) : "-"
+  }
+
+  const getOriginText = (origin: string | null) => {
+    if (!origin || !origin.trim()) return "-"
+    return origin
+  }
+
+  const getRoleText = (role: string | null) => {
+    if (!role || !role.trim()) return "Spieler"
+
+    const normalized = role.trim().toLowerCase()
+
+    if (normalized === "captain") return "Captain"
+    if (normalized === "co-captain") return "Co-Captain"
+    if (normalized === "player") return "Spieler"
+    if (normalized === "spieler") return "Spieler"
+
+    return role
+  }
+
   if (selectedTeam) {
     const sortedPlayers = sortPlayersByRole(selectedTeam.players)
 
@@ -91,9 +141,11 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
               <div className="text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-100 inline-flex px-2.5 py-1 rounded-full">
                 Team
               </div>
-              <h2 className="mt-2 text-xl sm:text-2xl font-black leading-tight truncate">{selectedTeam.name}</h2>
+              <h2 className="mt-2 text-xl sm:text-2xl font-black leading-tight truncate">
+                {selectedTeam.name}
+              </h2>
               <p className="mt-1 text-sm text-gray-600">
-                {selectedTeam.players.length} {selectedTeam.players.length === 1 ? "Spieler" : "Spieler"}
+                {selectedTeam.players.length} Spieler
               </p>
             </div>
           </div>
@@ -122,40 +174,38 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-70" />
 
                 <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-                  <h3 className="text-sm sm:text-base font-black leading-tight line-clamp-2">{player.name}</h3>
-                  {player.role ? (
-                    <p className="mt-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-orange-200">
-                      {player.role}
-                    </p>
-                  ) : null}
+                  <h3 className="text-sm sm:text-base font-black leading-tight line-clamp-2">
+                    {player.name}
+                  </h3>
+                  <p className="mt-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-orange-200">
+                    {getRoleText(player.role)}
+                  </p>
                 </div>
               </div>
 
               <div className="p-3 space-y-2">
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  {player.age ? (
-                    <div>
-                      <p className="text-gray-500">Alter</p>
-                      <p className="font-semibold text-gray-900">{player.age}</p>
-                    </div>
-                  ) : (
-                    <div />
-                  )}
+                  <div>
+                    <p className="text-gray-500">Alter</p>
+                    <p className="font-semibold text-gray-900">
+                      {getAgeText(player.birthdate)}
+                    </p>
+                  </div>
 
-                  {player.throwing_hand ? (
-                    <div>
-                      <p className="text-gray-500">Wurfhand</p>
-                      <p className="font-semibold text-gray-900">{player.throwing_hand}</p>
-                    </div>
-                  ) : null}
+                  <div>
+                    <p className="text-gray-500">Wurfhand</p>
+                    <p className="font-semibold text-gray-900">
+                      {translateThrowingHand(player.throwing_hand)}
+                    </p>
+                  </div>
                 </div>
 
-                {player.origin ? (
-                  <div className="text-xs">
-                    <p className="text-gray-500">Herkunft</p>
-                    <p className="font-semibold text-gray-900 line-clamp-1">{player.origin}</p>
-                  </div>
-                ) : null}
+                <div className="text-xs">
+                  <p className="text-gray-500">Herkunft</p>
+                  <p className="font-semibold text-gray-900 line-clamp-1">
+                    {getOriginText(player.origin)}
+                  </p>
+                </div>
               </div>
             </Card>
           ))}
@@ -166,19 +216,17 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center">
               <Users className="w-7 h-7 text-gray-400" />
             </div>
-            <p className="text-base font-semibold text-gray-600">Noch keine Spieler in diesem Team</p>
+            <p className="text-base font-semibold text-gray-600">
+              Noch keine Spieler in diesem Team
+            </p>
           </div>
         ) : null}
       </div>
     )
   }
 
-  /* =========================
-     TEAM LIST VIEW
-  ========================= */
   return (
     <div className="w-full">
-      {/* Compact “App header” */}
       <div className="mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6">
         <div className="flex items-start gap-4">
           <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3">
@@ -188,8 +236,12 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
             <div className="text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-100 inline-flex px-2.5 py-1 rounded-full">
               Unser Verein
             </div>
-            <h2 className="mt-2 text-xl sm:text-2xl font-black leading-tight">Unsere Teams</h2>
-            <p className="mt-1 text-sm text-gray-600">Tippe auf ein Team, um alle Spieler zu sehen.</p>
+            <h2 className="mt-2 text-xl sm:text-2xl font-black leading-tight">
+              Unsere Teams
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Tippe auf ein Team, um alle Spieler zu sehen.
+            </p>
           </div>
         </div>
       </div>
@@ -214,11 +266,13 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
                   <Users className="w-16 h-16 text-gray-300" />
                 </div>
               )}
+
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-70" />
+
               <div className="absolute bottom-2 left-3 right-3 text-white">
                 <div className="text-sm font-black line-clamp-1">{team.name}</div>
                 <div className="text-[11px] text-white/90">
-                  {team.players.length} {team.players.length === 1 ? "Spieler" : "Spieler"}
+                  {team.players.length} Spieler
                 </div>
               </div>
             </div>
@@ -227,6 +281,7 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
               <span className="text-sm font-semibold text-gray-800 group-hover:text-orange-700 transition-colors">
                 Team ansehen
               </span>
+
               <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 group-hover:bg-orange-600 group-hover:border-orange-600 flex items-center justify-center transition-colors">
                 <ArrowRight className="w-4 h-4 text-orange-700 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
               </div>
@@ -240,8 +295,12 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center">
             <Users className="w-7 h-7 text-gray-400" />
           </div>
-          <p className="text-base font-semibold text-gray-600">Noch keine Teams verfügbar</p>
-          <p className="text-sm text-gray-500 mt-1">Teams werden bald hinzugefügt</p>
+          <p className="text-base font-semibold text-gray-600">
+            Noch keine Teams verfügbar
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            Teams werden bald hinzugefügt
+          </p>
         </div>
       ) : null}
     </div>
