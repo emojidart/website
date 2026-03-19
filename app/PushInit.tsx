@@ -36,6 +36,9 @@ export default function PushInit() {
 
     const supabase = getSupabaseBrowser()
 
+    let currentAccessToken: string | null = null
+    let currentAuthState: "unknown" | "signed_in" | "signed_out" = "unknown"
+
     const getStoredToken = () => {
       try {
         const v = localStorage.getItem(STORAGE_FCM_TOKEN_KEY)
@@ -98,10 +101,7 @@ export default function PushInit() {
 
     const registerTokenPublic = async (fcmToken: string, force = false) => {
       try {
-        console.log("[push] registerTokenPublic start", {
-          hasToken: !!fcmToken,
-          force,
-        })
+        console.log("[push] registerTokenPublic start", { hasToken: !!fcmToken, force })
 
         if (!fcmToken) return
 
@@ -142,35 +142,23 @@ export default function PushInit() {
       }
     }
 
-    const registerTokenPrivateIfLoggedIn = async (fcmToken: string, force = false) => {
+    const registerTokenPrivate = async (fcmToken: string, accessToken: string, force = false) => {
       try {
-        console.log("[push] registerTokenPrivateIfLoggedIn start", {
+        console.log("[push] registerTokenPrivate start", {
           hasToken: !!fcmToken,
+          hasAccessToken: !!accessToken,
           force,
         })
 
-        if (!fcmToken) return
+        if (!fcmToken || !accessToken) {
+          console.log("[push] missing token or accessToken -> fallback public")
+          await registerTokenPublic(fcmToken, force)
+          return
+        }
 
         const lastSent = getLastPrivateSentToken()
         if (!force && lastSent === fcmToken) {
           console.log("[push] private token already synced, skip")
-          return
-        }
-
-        const { data, error } = await supabase.auth.getSession()
-
-        if (error) {
-          console.log("[push] getSession error in private flow:", error.message)
-          await registerTokenPublic(fcmToken, force)
-          return
-        }
-
-        const accessToken = data?.session?.access_token
-        console.log("[push] private session exists:", !!accessToken)
-
-        if (!accessToken) {
-          console.log("[push] no session yet -> fallback to public registration")
-          await registerTokenPublic(fcmToken, force)
           return
         }
 
@@ -207,7 +195,11 @@ export default function PushInit() {
     }
 
     const syncStoredTokenIfPossible = async (force = false) => {
-      console.log("[push] syncStoredTokenIfPossible start", { force })
+      console.log("[push] syncStoredTokenIfPossible start", {
+        force,
+        currentAuthState,
+        hasAccessToken: !!currentAccessToken,
+      })
 
       const saved = getStoredToken()
       if (!saved) {
@@ -215,31 +207,36 @@ export default function PushInit() {
         return
       }
 
-      try {
-        const { data, error } = await supabase.auth.getSession()
-
-        if (error) {
-          console.log("[push] getSession error while syncing:", error.message)
-          await registerTokenPublic(saved, force)
-          return
-        }
-
-        const accessToken = data?.session?.access_token
-        console.log("[push] sync session exists:", !!accessToken)
-
-        if (accessToken) {
-          await registerTokenPrivateIfLoggedIn(saved, force)
-        } else {
-          await registerTokenPublic(saved, force)
-        }
-      } catch (err) {
-        console.error("[push] syncStoredTokenIfPossible exception:", err)
-        await registerTokenPublic(saved, force)
+      if (currentAuthState === "signed_in" && currentAccessToken) {
+        await registerTokenPrivate(saved, currentAccessToken, force)
+        return
       }
+
+      if (currentAuthState === "signed_out") {
+        await registerTokenPublic(saved, force)
+        return
+      }
+
+      console.log("[push] auth state unknown -> fallback public")
+      await registerTokenPublic(saved, force)
     }
 
     const init = async () => {
       console.log("[push] init start")
+
+      try {
+        const { data } = await supabase.auth.getSession()
+        currentAccessToken = data?.session?.access_token ?? null
+        currentAuthState = currentAccessToken ? "signed_in" : "signed_out"
+        console.log("[push] initial session loaded:", {
+          currentAuthState,
+          hasAccessToken: !!currentAccessToken,
+        })
+      } catch (e) {
+        console.log("[push] initial getSession failed -> assume signed_out", e)
+        currentAccessToken = null
+        currentAuthState = "signed_out"
+      }
 
       try {
         const cur = await PushNotifications.checkPermissions()
@@ -291,16 +288,16 @@ export default function PushInit() {
       setStoredToken(token.value)
 
       const lastPrivate = getLastPrivateSentToken()
-      if (lastPrivate !== token.value) {
-        clearLastPrivateSentToken()
-      }
+      if (lastPrivate !== token.value) clearLastPrivateSentToken()
 
       const lastPublic = getLastPublicSentToken()
-      if (lastPublic !== token.value) {
-        clearLastPublicSentToken()
-      }
+      if (lastPublic !== token.value) clearLastPublicSentToken()
 
-      await registerTokenPrivateIfLoggedIn(token.value, true)
+      if (currentAuthState === "signed_in" && currentAccessToken) {
+        await registerTokenPrivate(token.value, currentAccessToken, true)
+      } else {
+        await registerTokenPublic(token.value, true)
+      }
     })
 
     const subRegErr = PushNotifications.addListener("registrationError", (err) => {
@@ -326,8 +323,14 @@ export default function PushInit() {
       } catch {}
     })
 
-    const { data: authSub } = supabase.auth.onAuthStateChange(async (event) => {
-      console.log("[push] auth event:", event)
+    const { data: authSub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      currentAccessToken = session?.access_token ?? null
+      currentAuthState = currentAccessToken ? "signed_in" : "signed_out"
+
+      console.log("[push] auth event:", event, {
+        currentAuthState,
+        hasAccessToken: !!currentAccessToken,
+      })
 
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
         await syncStoredTokenIfPossible(true)
