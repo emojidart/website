@@ -1,4 +1,3 @@
-// app/api/push/send-event/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { getFirebaseAdmin } from "@/lib/firebase-admin"
@@ -52,11 +51,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Event not found" }, { status: 400 })
     }
 
-    // Tokens holen
-    const { data: tokenRows, error: tokErr } = await supabase.from("fcm_tokens").select("token")
-    if (tokErr) return NextResponse.json({ success: false, error: "Token load failed" }, { status: 500 })
+    // Tokens holen: Mitglieder + Besucher
+    const { data: privateRows, error: privateErr } = await supabase
+      .from("fcm_tokens")
+      .select("token")
 
-    const tokens = Array.from(new Set(((tokenRows as any[]) || []).map((r) => r.token).filter(Boolean)))
+    const { data: publicRows, error: publicErr } = await supabase
+      .from("public_push_tokens")
+      .select("token")
+
+    if (privateErr || publicErr) {
+      return NextResponse.json({ success: false, error: "Token load failed" }, { status: 500 })
+    }
+
+    const tokens = Array.from(
+      new Set(
+        [
+          ...((privateRows as any[]) || []).map((r) => r.token),
+          ...((publicRows as any[]) || []).map((r) => r.token),
+        ].filter(Boolean)
+      )
+    )
+
     if (tokens.length === 0) {
       return NextResponse.json({ success: true, sent: 0 })
     }
@@ -71,7 +87,7 @@ export async function POST(request: NextRequest) {
     const whereStr = eventRow.location ? `📍 ${String(eventRow.location)}` : ""
     const detailsStr = eventRow.details ? `ℹ️ ${trimText(String(eventRow.details), 220)}` : ""
 
-    // ✅ Flyer / Event-Bild aus DB-Spalte photo_url
+    // Flyer / Event-Bild aus DB-Spalte photo_url
     const imageUrl = eventRow.photo_url ? String(eventRow.photo_url) : ""
 
     const titleStr = String(title)
@@ -83,10 +99,9 @@ export async function POST(request: NextRequest) {
     const tag = `event:${action}:${event_id}`
     const notif_id = stableNotifIdFromTag(tag)
 
-    // ✅ admin korrekt definieren
     const admin = getFirebaseAdmin()
 
-    // ✅ NUR DATA senden (damit deine Android App transparent + flyer rendert)
+    // Nur DATA senden
     const multicast = await admin.messaging().sendEachForMulticast({
       tokens,
       android: { priority: "high" },
@@ -96,7 +111,6 @@ export async function POST(request: NextRequest) {
         event_id: String(event_id),
         clickUrl: "/veranstaltungen",
 
-        // Keys für showEventCard()
         title: titleStr,
         eventName: eventNameStr,
         when: whenStr,
@@ -104,7 +118,6 @@ export async function POST(request: NextRequest) {
         details: detailsStr,
         imageUrl: imageUrl,
 
-        // Extra Fallback Keys (falls du irgendwo noch alte Logik hast)
         conversation: titleStr,
         senderName: "EMD Vereinsapp",
         message: bodyText,
