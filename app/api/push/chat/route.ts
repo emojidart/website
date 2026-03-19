@@ -1,9 +1,7 @@
-// app/api/push/chat/route.ts
-
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
-import { getFirebaseAdmin } from "@/lib/firebase-admin"
+import { sendPushAndCleanup } from "@/lib/sendPushAndCleanup"
 
 type ChatScope = "team" | "match" | "captains" | "club" | "freizeit" | "vorstand"
 
@@ -44,17 +42,16 @@ export async function POST(request: NextRequest) {
     const scope: ChatScope | null = body?.scope ?? null
     const message: string | null = body?.message ?? null
     const sender_profile_id: string | null = body?.sender_profile_id ?? null
-	const team_id: string | null = body?.team_id ?? null
+    const team_id: string | null = body?.team_id ?? null
 
     if (!room_id || !scope || !message || !sender_profile_id) {
       return NextResponse.json({ success: false, error: "Missing params" }, { status: 400 })
     }
 
     const authHeader = request.headers.get("authorization") || ""
-    const bearer =
-      authHeader.toLowerCase().startsWith("bearer ")
-        ? authHeader.slice(7).trim()
-        : null
+    const bearer = authHeader.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7).trim()
+      : null
 
     if (!bearer) {
       return NextResponse.json({ success: false, error: "Missing bearer token" }, { status: 401 })
@@ -76,11 +73,10 @@ export async function POST(request: NextRequest) {
             )
           },
         },
-      },
+      }
     )
 
-    const { data: senderAuth, error: authErr } =
-      await supabase.auth.getUser(bearer)
+    const { data: senderAuth, error: authErr } = await supabase.auth.getUser(bearer)
 
     if (authErr || !senderAuth?.user?.id) {
       return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 })
@@ -119,56 +115,52 @@ export async function POST(request: NextRequest) {
     let iconUrl: string | null = null
     let teamId: string | null = null
 
-   
-   // ✅ TEAM: room_id ist teams.chat_room_id
-if (scope === "team") {
-  const { data: teamRow } = await supabase
-    .from("teams")
-    .select("id,name,logo_url")
-    .eq("chat_room_id", room_id)
-    .maybeSingle()
+    // ✅ TEAM: room_id ist teams.chat_room_id
+    if (scope === "team") {
+      const { data: teamRow } = await supabase
+        .from("teams")
+        .select("id,name,logo_url")
+        .eq("chat_room_id", room_id)
+        .maybeSingle()
 
-  if (!teamRow) {
-    return NextResponse.json(
-      { success: false, error: "Team not found for chat_room_id" },
-      { status: 400 }
-    )
-  }
+      if (!teamRow) {
+        return NextResponse.json(
+          { success: false, error: "Team not found for chat_room_id" },
+          { status: 400 }
+        )
+      }
 
-  teamId = teamRow.id
-  if (teamRow.name) conversation = `🎯 ${teamRow.name}`
-  if (teamRow.logo_url) iconUrl = teamRow.logo_url
-}
+      teamId = teamRow.id
+      if (teamRow.name) conversation = `🎯 ${teamRow.name}`
+      if (teamRow.logo_url) iconUrl = teamRow.logo_url
+    }
 
-// ✅ MATCH: room_id ist match.id, ABER team_id muss aus dem Request kommen
-if (scope === "match") {
-  if (!team_id) {
-    return NextResponse.json(
-      { success: false, error: "Missing team_id for match push" },
-      { status: 400 }
-    )
-  }
+    // ✅ MATCH: room_id ist match.id, ABER team_id muss aus dem Request kommen
+    if (scope === "match") {
+      if (!team_id) {
+        return NextResponse.json(
+          { success: false, error: "Missing team_id for match push" },
+          { status: 400 }
+        )
+      }
 
-  const { data: teamRow } = await supabase
-    .from("teams")
-    .select("id,name,logo_url")
-    .eq("id", team_id)
-    .maybeSingle()
+      const { data: teamRow } = await supabase
+        .from("teams")
+        .select("id,name,logo_url")
+        .eq("id", team_id)
+        .maybeSingle()
 
-  if (!teamRow) {
-    return NextResponse.json(
-      { success: false, error: "Team not found for team_id" },
-      { status: 400 }
-    )
-  }
+      if (!teamRow) {
+        return NextResponse.json(
+          { success: false, error: "Team not found for team_id" },
+          { status: 400 }
+        )
+      }
 
-  teamId = teamRow.id
-  if (teamRow.name) conversation = `🎯 ${teamRow.name}`
-  if (teamRow.logo_url) iconUrl = teamRow.logo_url
-}
-   
-   
-   
+      teamId = teamRow.id
+      if (teamRow.name) conversation = `🎯 ${teamRow.name}`
+      if (teamRow.logo_url) iconUrl = teamRow.logo_url
+    }
 
     let targetAuthUserIds: string[] = []
 
@@ -193,9 +185,7 @@ if (scope === "match") {
       )
     }
 
-    targetAuthUserIds = targetAuthUserIds.filter(
-      (uid) => uid !== senderAuthUserId
-    )
+    targetAuthUserIds = targetAuthUserIds.filter((uid) => uid !== senderAuthUserId)
 
     if (targetAuthUserIds.length === 0) {
       return NextResponse.json({ success: true, sent: 0 })
@@ -207,7 +197,7 @@ if (scope === "match") {
       .in("user_id", targetAuthUserIds)
 
     const tokens = Array.from(
-      new Set(((rows as any[]) || []).map((r) => r.token))
+      new Set(((rows as any[]) || []).map((r) => r.token).filter(Boolean))
     )
 
     if (tokens.length === 0) {
@@ -220,24 +210,21 @@ if (scope === "match") {
     const tag = makeChatTag(scope, room_id)
     const notif_id = stableNotifIdFromTag(tag)
 
-    let clickUrl = "/chat-app" // normaler Chat bleibt wie er ist
+    let clickUrl = "/chat-app"
 
-if (scope === "match") {
-  clickUrl = `/member-availability?match_id=${encodeURIComponent(room_id)}&team_id=${encodeURIComponent(teamId ?? "")}&chat=match`
-}
+    if (scope === "match") {
+      clickUrl = `/member-availability?match_id=${encodeURIComponent(room_id)}&team_id=${encodeURIComponent(teamId ?? "")}&chat=match`
+    }
 
-if (scope === "team") {
-  clickUrl = `/member-availability?team_id=${encodeURIComponent(teamId ?? "")}&chat=team`
-}
+    if (scope === "team") {
+      clickUrl = `/member-availability?team_id=${encodeURIComponent(teamId ?? "")}&chat=team`
+    }
 
-    const admin = getFirebaseAdmin()
-
-    const multicast = await admin.messaging().sendEachForMulticast({
-      tokens,
+    const result = await sendPushAndCleanup(tokens, {
       data: {
         room_id: String(room_id),
         scope: String(scope),
-        clickUrl,
+        clickUrl: String(clickUrl),
         conversation: String(conversation),
         senderName: String(senderName),
         message: String(cleanMessage),
@@ -252,8 +239,8 @@ if (scope === "team") {
 
     return NextResponse.json({
       success: true,
-      sent: multicast.successCount,
-      failed: multicast.failureCount,
+      sent: result.success,
+      failed: result.failed,
     })
   } catch (e: any) {
     console.error("[push-chat-fcm] error:", e)

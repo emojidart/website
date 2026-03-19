@@ -1,4 +1,3 @@
-// app/PushInit.tsx
 "use client"
 
 import { useEffect } from "react"
@@ -7,7 +6,10 @@ import { Capacitor } from "@capacitor/core"
 import { createBrowserClient } from "@supabase/ssr"
 
 function getSupabaseBrowser() {
-  return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 }
 
 function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 8000) {
@@ -16,14 +18,145 @@ function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 8000) {
   return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(id))
 }
 
+const STORAGE_FCM_TOKEN_KEY = "fcm_token"
+const STORAGE_LAST_PRIVATE_SENT_TOKEN_KEY = "fcm_token_last_sent_private"
+const STORAGE_LAST_PUBLIC_SENT_TOKEN_KEY = "fcm_token_last_sent_public"
+const PUBLIC_TOPIC = "public_events"
+
 export default function PushInit() {
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return
+    console.log("[push] PushInit mounted")
+    console.log("[push] Capacitor.isNativePlatform():", Capacitor.isNativePlatform())
+    console.log("[push] Capacitor platform:", Capacitor.getPlatform())
+
+    if (!Capacitor.isNativePlatform()) {
+      console.log("[push] not native platform -> abort")
+      return
+    }
 
     const supabase = getSupabaseBrowser()
 
-    const registerTokenIfLoggedIn = async (fcmToken: string) => {
+    const getStoredToken = () => {
       try {
+        const v = localStorage.getItem(STORAGE_FCM_TOKEN_KEY)
+        console.log("[push] getStoredToken:", v ? `${v.slice(0, 20)}...` : "null")
+        return v
+      } catch (e) {
+        console.log("[push] getStoredToken error:", e)
+        return null
+      }
+    }
+
+    const setStoredToken = (token: string) => {
+      try {
+        localStorage.setItem(STORAGE_FCM_TOKEN_KEY, token)
+        console.log("[push] token saved to localStorage")
+      } catch (e) {
+        console.log("[push] setStoredToken error:", e)
+      }
+    }
+
+    const getLastPrivateSentToken = () => {
+      try {
+        return localStorage.getItem(STORAGE_LAST_PRIVATE_SENT_TOKEN_KEY)
+      } catch {
+        return null
+      }
+    }
+
+    const setLastPrivateSentToken = (token: string) => {
+      try {
+        localStorage.setItem(STORAGE_LAST_PRIVATE_SENT_TOKEN_KEY, token)
+      } catch {}
+    }
+
+    const clearLastPrivateSentToken = () => {
+      try {
+        localStorage.removeItem(STORAGE_LAST_PRIVATE_SENT_TOKEN_KEY)
+      } catch {}
+    }
+
+    const getLastPublicSentToken = () => {
+      try {
+        return localStorage.getItem(STORAGE_LAST_PUBLIC_SENT_TOKEN_KEY)
+      } catch {
+        return null
+      }
+    }
+
+    const setLastPublicSentToken = (token: string) => {
+      try {
+        localStorage.setItem(STORAGE_LAST_PUBLIC_SENT_TOKEN_KEY, token)
+      } catch {}
+    }
+
+    const clearLastPublicSentToken = () => {
+      try {
+        localStorage.removeItem(STORAGE_LAST_PUBLIC_SENT_TOKEN_KEY)
+      } catch {}
+    }
+
+    const registerTokenPublic = async (fcmToken: string, force = false) => {
+      try {
+        console.log("[push] registerTokenPublic start", {
+          hasToken: !!fcmToken,
+          force,
+        })
+
+        if (!fcmToken) return
+
+        const lastSent = getLastPublicSentToken()
+        if (!force && lastSent === fcmToken) {
+          console.log("[push] public token already synced, skip")
+          return
+        }
+
+        const res = await fetchWithTimeout(
+          "/api/push/register-public-fcm",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              token: fcmToken,
+              platform: Capacitor.getPlatform() || "android",
+              topic: PUBLIC_TOPIC,
+            }),
+          },
+          8000
+        )
+
+        const txt = await res.text().catch(() => "")
+        console.log("[push] register-public-fcm response:", res.status, txt)
+
+        if (!res.ok) {
+          console.log("[push] register-public-fcm failed:", res.status, txt)
+          return
+        }
+
+        setLastPublicSentToken(fcmToken)
+        console.log("[push] public token registered in DB")
+      } catch (err) {
+        console.error("[push] register-public-fcm error:", err)
+      }
+    }
+
+    const registerTokenPrivateIfLoggedIn = async (fcmToken: string, force = false) => {
+      try {
+        console.log("[push] registerTokenPrivateIfLoggedIn start", {
+          hasToken: !!fcmToken,
+          force,
+        })
+
+        if (!fcmToken) return
+
+        const lastSent = getLastPrivateSentToken()
+        if (!force && lastSent === fcmToken) {
+          console.log("[push] private token already synced, skip")
+          return
+        }
+
         const { data, error } = await supabase.auth.getSession()
         if (error) {
           console.log("[push] getSession error:", error.message)
@@ -31,8 +164,11 @@ export default function PushInit() {
         }
 
         const accessToken = data?.session?.access_token
+        console.log("[push] private session exists:", !!accessToken)
+
         if (!accessToken) {
-          console.log("[push] no session yet -> will register after login")
+          console.log("[push] no session yet -> fallback to public registration")
+          await registerTokenPublic(fcmToken, force)
           return
         }
 
@@ -44,28 +180,65 @@ export default function PushInit() {
               "Content-Type": "application/json",
               Authorization: `Bearer ${accessToken}`,
             },
-            body: JSON.stringify({ token: fcmToken, platform: "android" }),
+            body: JSON.stringify({
+              token: fcmToken,
+              platform: Capacitor.getPlatform() || "android",
+            }),
           },
           8000
         )
 
         const txt = await res.text().catch(() => "")
+        console.log("[push] register-fcm response:", res.status, txt)
+
         if (!res.ok) {
           console.log("[push] register-fcm failed:", res.status, txt)
-        } else {
-          console.log("[push] token registered in DB:", txt || "ok")
+          return
         }
+
+        setLastPrivateSentToken(fcmToken)
+        console.log("[push] private token registered in DB")
       } catch (err) {
         console.error("[push] register-fcm error:", err)
       }
     }
 
+    const syncStoredTokenIfPossible = async (force = false) => {
+      console.log("[push] syncStoredTokenIfPossible start", { force })
+
+      const saved = getStoredToken()
+      if (!saved) {
+        console.log("[push] no local token stored yet")
+        return
+      }
+
+      const { data, error } = await supabase.auth.getSession()
+      if (error) {
+        console.log("[push] getSession error while syncing:", error.message)
+        return
+      }
+
+      const accessToken = data?.session?.access_token
+      console.log("[push] sync session exists:", !!accessToken)
+
+      if (accessToken) {
+        await registerTokenPrivateIfLoggedIn(saved, force)
+      } else {
+        await registerTokenPublic(saved, force)
+      }
+    }
+
     const init = async () => {
-      // 1) Permission (erst checken, dann request)
+      console.log("[push] init start")
+
       try {
         const cur = await PushNotifications.checkPermissions()
+        console.log("[push] current permission:", cur)
+
         if (cur.receive !== "granted") {
           const perm = await PushNotifications.requestPermissions()
+          console.log("[push] requested permission result:", perm)
+
           if (perm.receive !== "granted") {
             console.log("[push] permission not granted")
             return
@@ -76,14 +249,13 @@ export default function PushInit() {
         return
       }
 
-      // 2) Android Channel (WhatsApp-like: high)
       try {
         await PushNotifications.createChannel({
           id: "chat",
           name: "Chat",
           description: "Chat Benachrichtigungen",
-          importance: 5, // HIGH
-          visibility: 1, // PUBLIC
+          importance: 5,
+          visibility: 1,
           vibration: true,
           lights: true,
         })
@@ -92,24 +264,33 @@ export default function PushInit() {
         console.log("[push] createChannel skipped:", e)
       }
 
-      // 3) Register FCM
       try {
         await PushNotifications.register()
+        console.log("[push] register() called")
       } catch (e) {
         console.log("[push] register failed:", e)
       }
+
+      await syncStoredTokenIfPossible(false)
     }
 
-    // Listener: Token
     const subRegistration = PushNotifications.addListener("registration", (token) => {
+      console.log("[push] REGISTRATION EVENT FIRED")
       console.log("[push] FCM token:", token.value)
 
-      try {
-        localStorage.setItem("fcm_token", token.value)
-      } catch {}
+      setStoredToken(token.value)
 
-      // ✅ EXTREM WICHTIG: NICHT awaiten -> blockiert sonst Start/Render
-      void registerTokenIfLoggedIn(token.value)
+      const lastPrivate = getLastPrivateSentToken()
+      if (lastPrivate !== token.value) {
+        clearLastPrivateSentToken()
+      }
+
+      const lastPublic = getLastPublicSentToken()
+      if (lastPublic !== token.value) {
+        clearLastPublicSentToken()
+      }
+
+      void syncStoredTokenIfPossible(true)
     })
 
     const subRegErr = PushNotifications.addListener("registrationError", (err) => {
@@ -120,15 +301,14 @@ export default function PushInit() {
       console.log("[push] received:", notif)
     })
 
-    // Tap auf Notification
     const subAction = PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
       console.log("[push] action:", action)
+
       try {
         const data: any = (action as any)?.notification?.data || {}
         const url = data?.url || data?.clickUrl || data?.path
+
         if (url && typeof url === "string") {
-          // ✅ kein Full Reload, sondern nur History-State ändern + Event triggern
-          // (funktioniert in WebView stabiler als window.location.href)
           const next = url.startsWith("/") ? url : `/${url}`
           window.history.pushState({}, "", next)
           window.dispatchEvent(new PopStateEvent("popstate"))
@@ -136,20 +316,16 @@ export default function PushInit() {
       } catch {}
     })
 
-    // Wenn User später einloggt -> Token nochmal registrieren
     const { data: authSub } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        const saved = (() => {
-          try {
-            return localStorage.getItem("fcm_token")
-          } catch {
-            return null
-          }
-        })()
-        if (saved) {
-          // ✅ nicht awaiten
-          void registerTokenIfLoggedIn(saved)
-        }
+      console.log("[push] auth event:", event)
+
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+        await syncStoredTokenIfPossible(true)
+      }
+
+      if (event === "SIGNED_OUT") {
+        clearLastPrivateSentToken()
+        await syncStoredTokenIfPossible(true)
       }
     })
 
