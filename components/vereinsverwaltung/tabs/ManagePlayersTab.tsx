@@ -23,12 +23,14 @@ import {
   KeyRound,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { ClubPlayer } from "@/components/vereinsverwaltung/types"
+import type { ClubPlayer, Team, TeamMember } from "@/components/vereinsverwaltung/types"
 
 type Props = {
   visiblePlayers: ClubPlayer[]
   clubPlayersCount: number
   playerLoading: boolean
+  teams: Team[]
+  teamMembers: TeamMember[]
 
   playerSearch: string
   setPlayerSearch: (v: string) => void
@@ -118,6 +120,8 @@ export function ManagePlayersTab(props: Props) {
     visiblePlayers,
     clubPlayersCount,
     playerLoading,
+    teams,
+    teamMembers,
     playerSearch,
     setPlayerSearch,
     playerSortKey,
@@ -162,6 +166,23 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
   const canDelete = confirmText.trim().toUpperCase() === mustType
 
   const minWidth = useMemo(() => "min-w-[880px]", [])
+
+  const detailsPlayerTeams = useMemo(() => {
+    if (!detailsPlayer) return []
+
+    return teamMembers
+      .filter((member) => member.player_id === detailsPlayer.id)
+      .map((member) => {
+        const team = teams.find((entry) => entry.id === member.team_id)
+        return {
+          id: member.id,
+          teamId: member.team_id,
+          teamName: team?.name?.trim() || "Unbekannte Mannschaft",
+          role: member.role?.trim() || "Player",
+        }
+      })
+      .sort((a, b) => a.teamName.localeCompare(b.teamName, "de", { sensitivity: "base" }))
+  }, [detailsPlayer, teamMembers, teams])
 
   function openDelete(player: ClubPlayer) {
     setDeletePlayerId(player.id)
@@ -605,6 +626,28 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
                     <div className="font-medium text-gray-900">{fmtText(detailsPlayer.city)}</div>
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <div className="font-semibold text-gray-900 mb-3">Mannschaften</div>
+
+                {detailsPlayerTeams.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {detailsPlayerTeams.map((entry) => (
+                      <Badge
+                        key={entry.id}
+                        variant="outline"
+                        className="rounded-full border-blue-200 bg-blue-50 px-3 py-1 text-blue-700"
+                      >
+                        {entry.teamName}
+                        <span className="mx-1 text-blue-300">•</span>
+                        <span className="font-normal">{entry.role}</span>
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">Aktuell keiner Mannschaft zugewiesen.</div>
+                )}
               </div>
 
               <div className="rounded-lg border border-gray-200 bg-white p-4">

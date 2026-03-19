@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import {
   Users,
+  LayoutDashboard,
   UserRoundPlus,
   ClipboardList,
   Hand,
@@ -29,6 +30,8 @@ import { AssignPlayerTab } from "@/components/vereinsverwaltung/tabs/AssignPlaye
 import { MembershipTab } from "@/components/vereinsverwaltung/tabs/MembershipTab"
 import { DuesTab } from "@/components/vereinsverwaltung/tabs/DuesTab"
 import { DocumentsTab } from "@/components/vereinsverwaltung/tabs/DocumentsTab"
+import { InventoryTab } from "@/components/vereinsverwaltung/tabs/InventoryTab"
+import { OverviewTab } from "@/components/vereinsverwaltung/tabs/OverviewTab"
 
 export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManagementProps) {
   const safeOnDataSaved = () => {
@@ -40,8 +43,8 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   }
 
   const [activeSection, setActiveSection] = useState<
-    "add-player" | "manage-players" | "manage-teams" | "assign-player" | "membership" | "dues" | "documents"
-  >("add-player")
+    "overview" | "add-player" | "manage-players" | "manage-teams" | "assign-player" | "membership" | "dues" | "documents" | "inventory"
+  >("overview")
 
   const players = useClubPlayers(user, safeOnDataSaved)
   const teams = useTeams(user, safeOnDataSaved)
@@ -70,6 +73,20 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           {/* Navigation Buttons */}
           <div className="sticky top-0 z-10 -mx-3 sm:-mx-5 px-3 sm:px-5 py-3 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-gray-100">
             <div className="flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+              <Button
+                variant={activeSection === "overview" ? "default" : "outline"}
+                onClick={() => setActiveSection("overview")}
+                className={cn(
+                  "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
+                  activeSection === "overview"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                <span className="whitespace-nowrap text-sm">Übersicht</span>
+              </Button>
+
               <Button
                 variant={activeSection === "add-player" ? "default" : "outline"}
                 onClick={() => setActiveSection("add-player")}
@@ -167,10 +184,26 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                 <FolderOpen className="h-4 w-4 mr-2" />
                 <span className="whitespace-nowrap text-sm">Dokumente</span>
               </Button>
+
+              <Button
+                variant={activeSection === "inventory" ? "default" : "outline"}
+                onClick={() => setActiveSection("inventory")}
+                className={cn(
+                  "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
+                  activeSection === "inventory"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <FolderOpen className="h-4 w-4 mr-2" />
+                <span className="whitespace-nowrap text-sm">Inventar</span>
+              </Button>
             </div>
           </div>
 
           {/* Tabs */}
+          {activeSection === "overview" && <OverviewTab clubPlayers={players.clubPlayers} />}
+
           {activeSection === "add-player" && (
             <AddPlayerTab
               editingPlayerId={players.editingPlayerId}
@@ -215,6 +248,8 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
     visiblePlayers={players.visiblePlayers}
     clubPlayersCount={players.clubPlayers.length}
     playerLoading={players.playerLoading}
+    teams={teams.teams}
+    teamMembers={members.teamMembers}
     playerSearch={players.playerSearch}
     setPlayerSearch={players.setPlayerSearch}
     playerSortKey={players.playerSortKey}
@@ -315,6 +350,8 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           )}
 
           {activeSection === "documents" && <DocumentsTab user={user} />}
+
+          {activeSection === "inventory" && <InventoryTab user={user} />}
         </CardContent>
       </Card>
     </div>
