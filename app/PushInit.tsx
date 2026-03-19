@@ -158,8 +158,10 @@ export default function PushInit() {
         }
 
         const { data, error } = await supabase.auth.getSession()
+
         if (error) {
-          console.log("[push] getSession error:", error.message)
+          console.log("[push] getSession error in private flow:", error.message)
+          await registerTokenPublic(fcmToken, force)
           return
         }
 
@@ -200,6 +202,7 @@ export default function PushInit() {
         console.log("[push] private token registered in DB")
       } catch (err) {
         console.error("[push] register-fcm error:", err)
+        await registerTokenPublic(fcmToken, force)
       }
     }
 
@@ -212,18 +215,25 @@ export default function PushInit() {
         return
       }
 
-      const { data, error } = await supabase.auth.getSession()
-      if (error) {
-        console.log("[push] getSession error while syncing:", error.message)
-        return
-      }
+      try {
+        const { data, error } = await supabase.auth.getSession()
 
-      const accessToken = data?.session?.access_token
-      console.log("[push] sync session exists:", !!accessToken)
+        if (error) {
+          console.log("[push] getSession error while syncing:", error.message)
+          await registerTokenPublic(saved, force)
+          return
+        }
 
-      if (accessToken) {
-        await registerTokenPrivateIfLoggedIn(saved, force)
-      } else {
+        const accessToken = data?.session?.access_token
+        console.log("[push] sync session exists:", !!accessToken)
+
+        if (accessToken) {
+          await registerTokenPrivateIfLoggedIn(saved, force)
+        } else {
+          await registerTokenPublic(saved, force)
+        }
+      } catch (err) {
+        console.error("[push] syncStoredTokenIfPossible exception:", err)
         await registerTokenPublic(saved, force)
       }
     }
@@ -274,7 +284,7 @@ export default function PushInit() {
       await syncStoredTokenIfPossible(false)
     }
 
-    const subRegistration = PushNotifications.addListener("registration", (token) => {
+    const subRegistration = PushNotifications.addListener("registration", async (token) => {
       console.log("[push] REGISTRATION EVENT FIRED")
       console.log("[push] FCM token:", token.value)
 
@@ -290,7 +300,7 @@ export default function PushInit() {
         clearLastPublicSentToken()
       }
 
-      void syncStoredTokenIfPossible(true)
+      await registerTokenPrivateIfLoggedIn(token.value, true)
     })
 
     const subRegErr = PushNotifications.addListener("registrationError", (err) => {
