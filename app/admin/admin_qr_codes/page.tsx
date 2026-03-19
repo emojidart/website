@@ -76,7 +76,10 @@ async function buildModernPdf(opts: {
   items: Array<{ name: string; code: string; teamLabel: string }>
   filename: string
 }) {
-  const [{ jsPDF }, QRCode] = await Promise.all([import("jspdf"), import("qrcode")])
+  const [{ jsPDF }, QRCode] = await Promise.all([
+  import("jspdf/dist/jspdf.umd"),
+  import("qrcode")
+])
 
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true })
 
