@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic"
 
 import type React from "react"
 import { Suspense, useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,7 +35,6 @@ function SetPasswordSkeleton() {
 
 function MemberSetPasswordClient() {
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   const [ready, setReady] = useState(false)
   const [password, setPassword] = useState("")
@@ -49,53 +48,22 @@ function MemberSetPasswordClient() {
     const run = async () => {
       setMsg("")
 
-      const checkSession = async () => {
-        const { data } = await supabase.auth.getSession()
-        if (data.session) {
-          setReady(true)
-          return true
-        }
-        return false
+      const { data } = await supabase.auth.getSession()
+
+      if (data.session) {
+        setReady(true)
+        return
       }
 
-     
-      if (await checkSession()) return
-
-     
-      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (session) {
+      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === "PASSWORD_RECOVERY" || session) {
           setReady(true)
           setMsg("")
         }
       })
-      unsub = () => data.subscription.unsubscribe()
 
-      
-      const code = searchParams.get("code")
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) {
-          setReady(false)
-          setMsg(
-            `Link ungültig/abgelaufen: ${error.message}\n\nBitte auf der Login-Seite erneut „Passwort vergessen“ drücken und den neuen Link öffnen.`
-          )
-          return
-        }
+      unsub = () => authListener.subscription.unsubscribe()
 
-        
-        if (typeof window !== "undefined") {
-          window.history.replaceState({}, document.title, window.location.pathname)
-        }
-
-        
-        if (!(await checkSession())) {
-          setReady(false)
-          setMsg("Konnte Session nicht aktivieren. Bitte Passwort-Reset erneut anfordern.")
-        }
-        return
-      }
-
-      
       setReady(false)
       setMsg("Ungültiger oder abgelaufener Link. Bitte auf der Login-Seite erneut „Passwort vergessen“ drücken.")
     }
@@ -105,7 +73,7 @@ function MemberSetPasswordClient() {
     return () => {
       if (unsub) unsub()
     }
-  }, [searchParams])
+  }, [])
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -115,6 +83,7 @@ function MemberSetPasswordClient() {
       setMsg("Passwort muss mindestens 8 Zeichen haben.")
       return
     }
+
     if (password !== password2) {
       setMsg("Passwörter stimmen nicht überein.")
       return
@@ -123,6 +92,7 @@ function MemberSetPasswordClient() {
     setLoading(true)
     try {
       const { error } = await supabase.auth.updateUser({ password })
+
       if (error) {
         setMsg(`Fehler: ${error.message}`)
         return
@@ -209,8 +179,7 @@ function MemberSetPasswordClient() {
 
               {!ready ? (
                 <div className="text-xs text-gray-500 mt-2">
-                  Wenn du den Link am falschen Gerät geöffnet hast: Bitte auf der Login-Seite erneut „Passwort vergessen“
-                  drücken und den neuen Link öffnen.
+                  Bitte den neuesten Passwort-Reset-Link direkt aus der E-Mail öffnen.
                 </div>
               ) : null}
             </form>
