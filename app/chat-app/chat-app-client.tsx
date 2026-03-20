@@ -414,9 +414,19 @@ const applyInitialSelection = (rooms: TeamRoom[]) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+ useEffect(() => {
+  if (!messages.length) return
+
+  const id = requestAnimationFrame(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
+  })
+
+  return () => cancelAnimationFrame(id)
+}, [messages])
+  
+  
+  
+  
   
   
   useEffect(() => {
@@ -485,6 +495,18 @@ return () => {
     if (selectedScope === "captains") return CAPTAINS_ROOM_ID
     return selectedRoom?.id ?? null // ✅ chat_rooms.id
   }, [selectedScope, selectedRoom?.id])
+  
+  
+  useEffect(() => {
+  if (!currentRoomId) return
+  if (loading) return
+
+  const id = requestAnimationFrame(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" })
+  })
+
+  return () => cancelAnimationFrame(id)
+}, [currentRoomId, selectedRoom?.id, selectedScope, loading])
   
   useEffect(() => {
   if (loading) return
