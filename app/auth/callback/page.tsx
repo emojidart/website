@@ -37,13 +37,36 @@ function AuthCallbackClient() {
 
       try {
         const code = searchParams.get("code")
+        const tokenHash = searchParams.get("token_hash")
+        const type = searchParams.get("type")
 
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code)
 
           if (error) {
             router.replace(
-              `/member-login?error=${encodeURIComponent("Reset-Link ungültig oder abgelaufen. Bitte erneut Passwort vergessen wählen.")}`
+              `/member-login?error=${encodeURIComponent(
+                `Reset-Link ungültig oder abgelaufen: ${error.message}`
+              )}`
+            )
+            return
+          }
+
+          router.replace(next)
+          return
+        }
+
+        if (type === "recovery" && tokenHash) {
+          const { error } = await supabase.auth.verifyOtp({
+            type: "recovery",
+            token_hash: tokenHash,
+          })
+
+          if (error) {
+            router.replace(
+              `/member-login?error=${encodeURIComponent(
+                `Recovery-Link ungültig oder abgelaufen: ${error.message}`
+              )}`
             )
             return
           }
@@ -54,11 +77,13 @@ function AuthCallbackClient() {
 
         const hash = window.location.hash
         if (hash && (hash.includes("access_token=") || hash.includes("refresh_token="))) {
-          const { error } = await supabase.auth.getSession()
+          const { data, error } = await supabase.auth.getSession()
 
-          if (error) {
+          if (error || !data.session) {
             router.replace(
-              `/member-login?error=${encodeURIComponent("Reset-Link konnte nicht verarbeitet werden. Bitte erneut versuchen.")}`
+              `/member-login?error=${encodeURIComponent(
+                "Reset-Link konnte nicht verarbeitet werden. Bitte erneut versuchen."
+              )}`
             )
             return
           }
@@ -67,10 +92,16 @@ function AuthCallbackClient() {
           return
         }
 
-        setMsg("Ungültiger Link. Bitte Passwort-Reset erneut anfordern.")
-      } catch {
         router.replace(
-          `/member-login?error=${encodeURIComponent("Beim Verarbeiten des Reset-Links ist ein Fehler aufgetreten.")}`
+          `/member-login?error=${encodeURIComponent(
+            "Ungültiger oder unvollständiger Reset-Link. Bitte Passwort-Reset erneut anfordern."
+          )}`
+        )
+      } catch (e: any) {
+        router.replace(
+          `/member-login?error=${encodeURIComponent(
+            e?.message || "Beim Verarbeiten des Reset-Links ist ein Fehler aufgetreten."
+          )}`
         )
       }
     }
