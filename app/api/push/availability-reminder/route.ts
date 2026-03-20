@@ -238,7 +238,7 @@ if (lastReminder?.sent_at) {
       `${teamsLine}\n\n` +
       `Öffne „Zusagen & Aufstellung“ und tippe auf Ja / Nur wenn Not am Mann / Nein.`
 
-    const clickUrl = `/member-availability`
+    const clickUrl = `/member-availability?match_id=${encodeURIComponent(match_id)}&team_id=${encodeURIComponent(team_id)}`
 
     const tag = `availability:reminder:${team_id}:${match_id}:${target_player_id}`
     const notif_id = stableNotifIdFromTag(tag)

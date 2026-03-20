@@ -33,9 +33,6 @@ interface BonusSectionProps {
   tempBonusConfig: BonusConfig
   setTempBonusConfig: (config: BonusConfig | ((prev: BonusConfig) => BonusConfig)) => void
   saveBonusConfig: () => void
-
-
-  teamMembers: any[]
 }
 
 export function BonusSection({
@@ -47,40 +44,20 @@ export function BonusSection({
   tempBonusConfig,
   setTempBonusConfig,
   saveBonusConfig,
-  teamMembers,
 }: BonusSectionProps) {
-  
-  const isValidForMatchTeam = (stat: any) => {
-    const match = stat?.matches
-    if (!match) return false
-
-    const playerId = stat?.player_id
-    if (!playerId) return false
-
-    const homeTeamId = match?.home_team_id
-    const awayTeamId = match?.away_team_id
-    if (!homeTeamId && !awayTeamId) return false
-
-    const playerHomeMembership = teamMembers?.find(
-      (m: any) => m.player_id === playerId && m.team_id === homeTeamId
-    )
-    const playerAwayMembership = teamMembers?.find(
-      (m: any) => m.player_id === playerId && m.team_id === awayTeamId
-    )
-
-    // ✅ Spieler muss in genau diesem Match einem der beiden Teams zugeordnet sein
-    return Boolean(playerHomeMembership || playerAwayMembership)
+  const normalizeNumber = (value: any) => {
+    const n = Number(value)
+    return Number.isFinite(n) ? n : 0
   }
 
   const getFilteredStatistics = (dartType?: "edart" | "steeldart") => {
-    // ✅ erst mal Team/Side-validieren (entscheidend!)
-    const validStats = Array.isArray(legStatistics) ? legStatistics.filter(isValidForMatchTeam) : []
+    const stats = Array.isArray(legStatistics) ? legStatistics : []
 
-    if (!dartType) return validStats
+    if (!dartType) return stats
 
-    return validStats.filter((stat) => {
-      const matchDartType = stat.matches?.dart_type
-      if (!matchDartType) return true
+    return stats.filter((stat) => {
+      const matchDartType = stat?.matches?.dart_type
+      if (!matchDartType) return false
 
       const normalizedMatchType = String(matchDartType).toLowerCase().replace(/[-_\s]/g, "")
       const normalizedFilterType = dartType.toLowerCase().replace(/[-_\s]/g, "")
@@ -102,34 +79,39 @@ export function BonusSection({
     } = {}
 
     filteredStats.forEach((stat) => {
-      const playerId = stat.player_id
+      const playerId = stat?.player_id
+      if (!playerId) return
+
       if (!penaltyStats[playerId]) {
         penaltyStats[playerId] = {
           under26: 0,
           under30: 0,
           semperit: 0,
-          playerName: stat.player?.name || "Unbekannt",
-          photoUrl: stat.player?.photo_url ?? null,
+          playerName: stat?.player?.name || "Unbekannt",
+          photoUrl: stat?.player?.photo_url ?? null,
         }
       }
-      penaltyStats[playerId].under26 += stat.throws_under_26 || 0
-      penaltyStats[playerId].under30 += stat.throws_under_30 || 0
-      penaltyStats[playerId].semperit += stat.semperit_outs || 0
+
+      penaltyStats[playerId].under26 += normalizeNumber(stat?.throws_under_26)
+      penaltyStats[playerId].under30 += normalizeNumber(stat?.throws_under_30)
+      penaltyStats[playerId].semperit += normalizeNumber(stat?.semperit_outs)
     })
 
-    return Object.entries(penaltyStats).map(([playerId, stats]) => ({
-      playerId,
-      playerName: stats.playerName,
-      photoUrl: stats.photoUrl,
-      under26: stats.under26,
-      under30: stats.under30,
-      semperit: stats.semperit,
-      totalPenalties: stats.under26 + stats.under30 + stats.semperit,
-      totalCost:
-        stats.under26 * bonusConfig.under26 +
-        stats.under30 * bonusConfig.under30 +
-        stats.semperit * bonusConfig.semperit,
-    }))
+    return Object.entries(penaltyStats)
+      .map(([playerId, stats]) => ({
+        playerId,
+        playerName: stats.playerName,
+        photoUrl: stats.photoUrl,
+        under26: stats.under26,
+        under30: stats.under30,
+        semperit: stats.semperit,
+        totalPenalties: stats.under26 + stats.under30 + stats.semperit,
+        totalCost:
+          stats.under26 * bonusConfig.under26 +
+          stats.under30 * bonusConfig.under30 +
+          stats.semperit * bonusConfig.semperit,
+      }))
+      .filter((player) => player.totalPenalties > 0)
   }
 
   const renderStatisticsTable = (dartType?: "edart" | "steeldart") => {
@@ -144,19 +126,20 @@ export function BonusSection({
           <p className="font-semibold text-gray-900">Keine Bonusgelder gefunden.</p>
           <p className="mt-1 text-sm text-gray-500">
             {dartType === "edart"
-              ? "Keine eDart-Spiele vorhanden."
+              ? "Keine eDart-Bonuswerte vorhanden."
               : dartType === "steeldart"
-                ? "Keine Steeldart-Spiele vorhanden."
-                : "Sobald Spiele vorhanden sind, erscheinen die Bonusgelder hier."}
+                ? "Keine Steeldart-Bonuswerte vorhanden."
+                : "Für diese Auswahl gibt es keine Bonuswerte."}
           </p>
         </div>
       )
     }
 
-    const totalCost = penalties.reduce((total, p) => total + p.totalCost, 0)
-    const totalU26 = penalties.reduce((total, p) => total + p.under26, 0)
-    const totalU30 = penalties.reduce((total, p) => total + p.under30, 0)
-    const totalSemp = penalties.reduce((total, p) => total + p.semperit, 0)
+    const sortedPenalties = [...penalties].sort((a, b) => b.totalCost - a.totalCost)
+    const totalCost = sortedPenalties.reduce((total, p) => total + p.totalCost, 0)
+    const totalU26 = sortedPenalties.reduce((total, p) => total + p.under26, 0)
+    const totalU30 = sortedPenalties.reduce((total, p) => total + p.under30, 0)
+    const totalSemp = sortedPenalties.reduce((total, p) => total + p.semperit, 0)
 
     return (
       <div className="space-y-4 sm:space-y-6">
@@ -189,57 +172,55 @@ export function BonusSection({
             </TableHeader>
 
             <TableBody>
-              {penalties
-                .sort((a, b) => b.totalCost - a.totalCost)
-                .map((penalty) => (
-                  <TableRow key={penalty.playerId} className="hover:bg-gray-50/70">
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
-                          <AvatarImage src={penalty.photoUrl || "/darts-player.png"} />
-                          <AvatarFallback className="text-xs bg-orange-50 text-orange-700 border border-orange-200">
-                            {penalty.playerName.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs sm:text-base truncate">{penalty.playerName}</span>
-                      </div>
-                    </TableCell>
+              {sortedPenalties.map((penalty) => (
+                <TableRow key={penalty.playerId} className="hover:bg-gray-50/70">
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
+                        <AvatarImage src={penalty.photoUrl || "/darts-player.png"} />
+                        <AvatarFallback className="text-xs bg-orange-50 text-orange-700 border border-orange-200">
+                          {penalty.playerName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs sm:text-base truncate">{penalty.playerName}</span>
+                    </div>
+                  </TableCell>
 
-                    <TableCell className="text-center">
-                      {penalty.under26 > 0 ? (
-                        <Badge className="bg-red-600 text-white text-[11px]">{penalty.under26}</Badge>
-                      ) : (
-                        <span className="text-emerald-700 font-semibold text-sm">0</span>
-                      )}
-                    </TableCell>
+                  <TableCell className="text-center">
+                    {penalty.under26 > 0 ? (
+                      <Badge className="bg-red-600 text-white text-[11px]">{penalty.under26}</Badge>
+                    ) : (
+                      <span className="text-emerald-700 font-semibold text-sm">0</span>
+                    )}
+                  </TableCell>
 
-                    <TableCell className="text-center">
-                      {penalty.under30 > 0 ? (
-                        <Badge className="bg-red-600 text-white text-[11px]">{penalty.under30}</Badge>
-                      ) : (
-                        <span className="text-emerald-700 font-semibold text-sm">0</span>
-                      )}
-                    </TableCell>
+                  <TableCell className="text-center">
+                    {penalty.under30 > 0 ? (
+                      <Badge className="bg-red-600 text-white text-[11px]">{penalty.under30}</Badge>
+                    ) : (
+                      <span className="text-emerald-700 font-semibold text-sm">0</span>
+                    )}
+                  </TableCell>
 
-                    <TableCell className="text-center">
-                      {penalty.semperit > 0 ? (
-                        <Badge className="bg-red-600 text-white text-[11px]">{penalty.semperit}</Badge>
-                      ) : (
-                        <span className="text-emerald-700 font-semibold text-sm">0</span>
-                      )}
-                    </TableCell>
+                  <TableCell className="text-center">
+                    {penalty.semperit > 0 ? (
+                      <Badge className="bg-red-600 text-white text-[11px]">{penalty.semperit}</Badge>
+                    ) : (
+                      <span className="text-emerald-700 font-semibold text-sm">0</span>
+                    )}
+                  </TableCell>
 
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="text-[11px] border-gray-200 font-bold">
-                        {penalty.totalPenalties}
-                      </Badge>
-                    </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="outline" className="text-[11px] border-gray-200 font-bold">
+                      {penalty.totalPenalties}
+                    </Badge>
+                  </TableCell>
 
-                    <TableCell className="text-center">
-                      <span className="font-bold text-red-700 text-sm">{penalty.totalCost.toFixed(2)}€</span>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                  <TableCell className="text-center">
+                    <span className="font-bold text-red-700 text-sm">{penalty.totalCost.toFixed(2)}€</span>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </UITable>
         </div>
@@ -289,8 +270,7 @@ export function BonusSection({
                 Bonusgeld Übersicht
               </CardTitle>
               <p className="mt-1 text-sm text-gray-500">
-                Bonusgeld für Würfe unter 26 ({bonusConfig.under26.toFixed(2)}€), unter 30 ({bonusConfig.under30.toFixed(2)}
-                €) und Semperit ({bonusConfig.semperit.toFixed(2)}€)
+                Bonusgeld für Würfe unter 26 ({bonusConfig.under26.toFixed(2)}€), unter 30 ({bonusConfig.under30.toFixed(2)}€) und Semperit ({bonusConfig.semperit.toFixed(2)}€)
               </p>
             </div>
 
@@ -312,13 +292,13 @@ export function BonusSection({
               <div className="mx-auto h-9 w-9 rounded-full border-4 border-orange-600/20 border-t-orange-600 animate-spin" />
               <p className="mt-3 text-sm text-gray-500">Lade Bonusgeld...</p>
             </div>
-          ) : getFilteredStatistics().length === 0 ? (
+          ) : getPenaltyStatistics().length === 0 ? (
             <div className="py-10 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
                 <Euro className="h-6 w-6 text-orange-600" />
               </div>
               <p className="font-semibold text-gray-900">Keine Bonusgelder gefunden.</p>
-              <p className="mt-1 text-sm text-gray-500">Sobald Spiele vorhanden sind, erscheinen sie hier.</p>
+              <p className="mt-1 text-sm text-gray-500">Für diese Auswahl gibt es keine Bonuswerte.</p>
             </div>
           ) : (
             <Tabs defaultValue="gesamt" className="w-full">

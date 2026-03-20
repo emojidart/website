@@ -4,7 +4,7 @@ import { BonusSection } from "@/components/bonus-section"
 import { Header } from "@/components/header"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -81,13 +81,23 @@ export default function MemberBonusPage() {
     }
   }, [])
 
+  const teamIds = useMemo(() => {
+    return teamMemberships.map((t: any) => t.team_id).filter(Boolean)
+  }, [teamMemberships])
+
+  const teamIdsKey = useMemo(() => {
+    return teamIds.join(",")
+  }, [teamIds])
+
   useEffect(() => {
-    if (teamMemberships.length > 0 && teamMembers.length > 0) {
-      const teamIds = teamMemberships.map((t: any) => t.team_id)
-      fetchAllTeamStatistics(teamIds, teamMembers)
+    if (!teamIdsKey) {
+      setLegStatistics([])
+      return
     }
+
+    fetchAllTeamStatistics(teamIds)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSeasonId])
+  }, [selectedSeasonId, teamIdsKey])
 
   const fetchUserData = async () => {
     if (!session?.user) return
@@ -95,7 +105,6 @@ export default function MemberBonusPage() {
     setLegStatsLoading(true)
 
     try {
-      // ✅ Seasons
       const { data: seasonsData, error: seasonsError } = await supabase
         .from("seasons")
         .select("id, name, type, year, is_active")
@@ -110,7 +119,7 @@ export default function MemberBonusPage() {
           if (active?.id) setSelectedSeasonId(active.id)
         }
       } else {
-        console.error("[v0] Seasons fetch error:", seasonsError)
+        console.error("[bonus] Seasons fetch error:", seasonsError)
       }
 
       const { data: profileData, error: profileError } = await supabase
@@ -150,7 +159,6 @@ export default function MemberBonusPage() {
         return
       }
 
-      // ✅ Nur aktive Mitgliedschaften
       const { data: teamData, error: teamError } = await supabase
         .from("team_members")
         .select(`
@@ -168,7 +176,7 @@ export default function MemberBonusPage() {
         .is("left_at", null)
 
       if (teamError) {
-        console.error("[v0] Team memberships fetch error:", teamError)
+        console.error("[bonus] Team memberships fetch error:", teamError)
         setTeamMemberships([])
         setTeamMembers([])
         setLegStatistics([])
@@ -183,18 +191,17 @@ export default function MemberBonusPage() {
         return
       }
 
-      const teamIds = teamData.map((t: any) => t.team_id)
+      const teamIdsLocal = teamData.map((t: any) => t.team_id)
 
-      // ✅ TeamMembers nur aktiv
       const { data: rawMembers, error: membersError } = await supabase
         .from("team_members")
         .select("id,team_id,player_id,role,left_at")
-        .in("team_id", teamIds)
+        .in("team_id", teamIdsLocal)
         .is("left_at", null)
         .order("role", { ascending: false })
 
       if (membersError) {
-        console.error("[v0] Team members fetch error:", membersError)
+        console.error("[bonus] Team members fetch error:", membersError)
         setTeamMembers([])
         setLegStatistics([])
         return
@@ -213,7 +220,7 @@ export default function MemberBonusPage() {
         if (!playersErr) {
           for (const p of playersData || []) playersById.set(p.id, p as ClubPlayer)
         } else {
-          console.error("[v0] Club players fetch error:", playersErr)
+          console.error("[bonus] Club players fetch error:", playersErr)
         }
       }
 
@@ -224,9 +231,9 @@ export default function MemberBonusPage() {
 
       setTeamMembers(mergedMembers)
 
-      await fetchAllTeamStatistics(teamIds, mergedMembers)
+      await fetchAllTeamStatistics(teamIdsLocal)
     } catch (error) {
-      console.error("[v0] Error fetching user data:", error)
+      console.error("[bonus] Error fetching user data:", error)
       setTeamMemberships([])
       setTeamMembers([])
       setLegStatistics([])
@@ -234,84 +241,87 @@ export default function MemberBonusPage() {
       setLegStatsLoading(false)
     }
   }
+  
+  
+  
+  
 
-  const fetchAllTeamStatistics = async (teamIds: string[], members: any[]) => {
-    setLegStatsLoading(true)
-    try {
-      if (teamIds.length === 0) {
-        setLegStatistics([])
-        return
-      }
+  const fetchAllTeamStatistics = async (teamIdsToLoad: string[]) => {
+  setLegStatsLoading(true)
 
-      let query = supabase
-        .from("leg_statistics")
-        .select(`
-          *,
-          player:club_players!leg_statistics_player_id_fkey(
-            name,
-            photo_url
-          ),
-          leg_winner:club_players!leg_statistics_leg_winner_id_fkey(
-            name,
-            photo_url
-          ),
-          matches!inner (
-            id,
-            match_date,
-            match_time,
-            venue,
-            dart_type,
-            home_team_id,
-            away_team_id,
-            season_id,
-            home_team:teams!matches_home_team_id_fkey(id, name),
-            away_team:teams!matches_away_team_id_fkey(id, name),
-            home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
-            away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name)
-          )
-        `)
-        .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`, {
-          foreignTable: "matches",
-        })
-        .order("matches(match_date)", { ascending: false })
-        .order("leg_number", { ascending: false })
-
-      if (selectedSeasonId !== "all" && selectedSeasonId) {
-        query = query.eq("matches.season_id", selectedSeasonId)
-      }
-
-      const { data, error } = await query
-      if (error) throw error
-
-      const filteredData = (data || []).filter((stat: any) => {
-        const match = stat.matches
-        if (!match) return false
-
-        const playerHomeTeamMembership = members.find(
-          (member: any) => member.player_id === stat.player_id && member.team_id === match.home_team_id
-        )
-        const playerAwayTeamMembership = members.find(
-          (member: any) => member.player_id === stat.player_id && member.team_id === match.away_team_id
-        )
-
-        let playerTeamInMatch = null
-        if (playerHomeTeamMembership && teamIds.includes(match.home_team_id)) {
-          playerTeamInMatch = match.home_team_id
-        } else if (playerAwayTeamMembership && teamIds.includes(match.away_team_id)) {
-          playerTeamInMatch = match.away_team_id
-        }
-
-        return playerTeamInMatch !== null
-      })
-
-      setLegStatistics(filteredData)
-    } catch (err: any) {
-      console.error("Error fetching team leg statistics:", err)
+  try {
+    if (teamIdsToLoad.length === 0) {
       setLegStatistics([])
-    } finally {
-      setLegStatsLoading(false)
+      return
     }
+
+    const activePlayerIds = Array.from(
+      new Set(teamMembers.map((m: any) => m.player_id).filter(Boolean))
+    )
+
+    if (activePlayerIds.length === 0) {
+      setLegStatistics([])
+      return
+    }
+
+    let query = supabase
+      .from("leg_statistics")
+      .select(`
+        *,
+        player:club_players!leg_statistics_player_id_fkey(
+          id,
+          name,
+          photo_url
+        ),
+        leg_winner:club_players!leg_statistics_leg_winner_id_fkey(
+          id,
+          name,
+          photo_url
+        ),
+        matches!inner (
+          id,
+          match_date,
+          match_time,
+          venue,
+          dart_type,
+          home_team_id,
+          away_team_id,
+          season_id,
+          home_team:teams!matches_home_team_id_fkey(id, name),
+          away_team:teams!matches_away_team_id_fkey(id, name),
+          home_opponent_team:opponent_teams!matches_home_opponent_team_id_fkey(id, name),
+          away_opponent_team:opponent_teams!matches_away_opponent_team_id_fkey(id, name)
+        )
+      `)
+      .in("player_id", activePlayerIds)
+      .or(
+        `home_team_id.in.(${teamIdsToLoad.join(",")}),away_team_id.in.(${teamIdsToLoad.join(",")})`,
+        { foreignTable: "matches" }
+      )
+      .order("match_date", { foreignTable: "matches", ascending: false })
+      .order("leg_number", { ascending: true })
+
+    if (selectedSeasonId !== "all" && selectedSeasonId) {
+      query = query.eq("matches.season_id", selectedSeasonId)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+
+    setLegStatistics(data || [])
+  } catch (err: any) {
+    console.error("[bonus] Error fetching team leg statistics:", err)
+    setLegStatistics([])
+  } finally {
+    setLegStatsLoading(false)
   }
+}
+
+
+
+
+
+
 
   const saveBonusConfig = () => {
     setBonusConfig(tempBonusConfig)
@@ -323,21 +333,10 @@ export default function MemberBonusPage() {
     if (selectedTeamId === "all") return legStatistics
 
     return legStatistics.filter((stat: any) => {
-      const match = stat.matches
+      const match = stat?.matches
       if (!match) return false
 
-      const playerHomeTeamMembership = teamMembers.find(
-        (member: any) => member.player_id === stat.player_id && member.team_id === match.home_team_id
-      )
-      const playerAwayTeamMembership = teamMembers.find(
-        (member: any) => member.player_id === stat.player_id && member.team_id === match.away_team_id
-      )
-
-      let playerTeamInMatch = null
-      if (playerHomeTeamMembership) playerTeamInMatch = match.home_team_id
-      else if (playerAwayTeamMembership) playerTeamInMatch = match.away_team_id
-
-      return playerTeamInMatch === selectedTeamId
+      return match.home_team_id === selectedTeamId || match.away_team_id === selectedTeamId
     })
   }
 
@@ -354,7 +353,6 @@ export default function MemberBonusPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
-      {/* */}
       <Header
         variant="app"
         title="Bonusgeld"
@@ -362,81 +360,80 @@ export default function MemberBonusPage() {
         backHref="/member-profile-app"
       />
 
-     <main className="pt-12 sm:pt-14">
-  <div className="mx-auto w-full px-4 py-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
-        <div className="mb-4 sm:mb-6">
-          <div className="rounded-2xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5">
-            <div className="p-4 sm:p-6">
-              <div className="flex flex-col gap-4">
-                <div className="hidden sm:block">
-                  <h1 className="text-2xl font-bold text-gray-900">Bonusgeld</h1>
-                  <p className="text-sm text-gray-500 mt-1">Ihre Bonuspunkte und Belohnungen</p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2">
-                    <label htmlFor="season-filter" className="text-sm font-medium whitespace-nowrap text-gray-700">
-                      Saison:
-                    </label>
-                    <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-                      <SelectTrigger
-                        id="season-filter"
-                        className="w-full rounded-xl border-gray-200/70 bg-white shadow-sm"
-                      >
-                        <SelectValue placeholder="Saison auswählen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Alle Saisons</SelectItem>
-                        {seasons.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+      <main className="pt-12 sm:pt-14">
+        <div className="mx-auto w-full px-4 py-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+          <div className="mb-4 sm:mb-6">
+            <div className="rounded-2xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5">
+              <div className="p-4 sm:p-6">
+                <div className="flex flex-col gap-4">
+                  <div className="hidden sm:block">
+                    <h1 className="text-2xl font-bold text-gray-900">Bonusgeld</h1>
+                    <p className="text-sm text-gray-500 mt-1">Ihre Bonuspunkte und Belohnungen</p>
                   </div>
 
-                  {teamMemberships.length > 1 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex items-center gap-2">
-                      <label htmlFor="team-filter" className="text-sm font-medium whitespace-nowrap text-gray-700">
-                        Team:
+                      <label htmlFor="season-filter" className="text-sm font-medium whitespace-nowrap text-gray-700">
+                        Saison:
                       </label>
-                      <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                      <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
                         <SelectTrigger
-                          id="team-filter"
+                          id="season-filter"
                           className="w-full rounded-xl border-gray-200/70 bg-white shadow-sm"
                         >
-                          <SelectValue placeholder="Team auswählen" />
+                          <SelectValue placeholder="Saison auswählen" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">Alle Teams</SelectItem>
-                          {teamMemberships.map((membership: any) => (
-                            <SelectItem key={membership.team_id} value={membership.team_id}>
-                              {membership.teams?.name || "Unbekanntes Team"}
+                          <SelectItem value="all">Alle Saisons</SelectItem>
+                          {seasons.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  ) : null}
+
+                    {teamMemberships.length > 1 ? (
+                      <div className="flex items-center gap-2">
+                        <label htmlFor="team-filter" className="text-sm font-medium whitespace-nowrap text-gray-700">
+                          Team:
+                        </label>
+                        <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                          <SelectTrigger
+                            id="team-filter"
+                            className="w-full rounded-xl border-gray-200/70 bg-white shadow-sm"
+                          >
+                            <SelectValue placeholder="Team auswählen" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Alle Teams</SelectItem>
+                            {teamMemberships.map((membership: any) => (
+                              <SelectItem key={membership.team_id} value={membership.team_id}>
+                                {membership.teams?.name || "Unbekanntes Team"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <BonusSection
-          legStatistics={getFilteredStatisticsByTeam()}
-          legStatsLoading={legStatsLoading}
-          bonusConfig={bonusConfig}
-          isBonusConfigOpen={isBonusConfigOpen}
-          setIsBonusConfigOpen={setIsBonusConfigOpen}
-          tempBonusConfig={tempBonusConfig}
-          setTempBonusConfig={setTempBonusConfig}
-          saveBonusConfig={saveBonusConfig}
-          teamMembers={teamMembers}
-        />
-		</div>
+          <BonusSection
+            legStatistics={getFilteredStatisticsByTeam()}
+            legStatsLoading={legStatsLoading}
+            bonusConfig={bonusConfig}
+            isBonusConfigOpen={isBonusConfigOpen}
+            setIsBonusConfigOpen={setIsBonusConfigOpen}
+            tempBonusConfig={tempBonusConfig}
+            setTempBonusConfig={setTempBonusConfig}
+            saveBonusConfig={saveBonusConfig}
+          />
+        </div>
       </main>
 
       <MobileBottomNav />
