@@ -295,7 +295,7 @@ export async function POST(request: NextRequest) {
     // ---- FCM senden ----
     const admin = getFirebaseAdmin()
 
-    const clickUrl = `/member-availability`
+    const clickUrl = `/member-availability?match_id=${encodeURIComponent(match_id)}&team_id=${encodeURIComponent(team_id)}`
     const tag = makeLineupTag(team_id, match_id, action)
     const notif_id = stableNotifIdFromTag(tag)
 
