@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic"
 
 import type React from "react"
 import { Suspense, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,6 +35,7 @@ function SetPasswordSkeleton() {
 
 function MemberSetPasswordClient() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [ready, setReady] = useState(false)
   const [password, setPassword] = useState("")
@@ -43,37 +44,44 @@ function MemberSetPasswordClient() {
   const [msg, setMsg] = useState("")
 
   useEffect(() => {
-    let unsub: null | (() => void) = null
-
     const run = async () => {
       setMsg("")
 
-      const { data } = await supabase.auth.getSession()
+      const tokenHash = searchParams.get("token_hash")
+      const type = searchParams.get("type")
 
+      if (type === "recovery" && tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({
+          type: "recovery",
+          token_hash: tokenHash,
+        })
+
+        if (error) {
+          setReady(false)
+          setMsg(`Link ungültig oder abgelaufen: ${error.message}`)
+          return
+        }
+
+        if (typeof window !== "undefined") {
+          window.history.replaceState({}, document.title, window.location.pathname)
+        }
+
+        setReady(true)
+        return
+      }
+
+      const { data } = await supabase.auth.getSession()
       if (data.session) {
         setReady(true)
         return
       }
 
-      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === "PASSWORD_RECOVERY" || session) {
-          setReady(true)
-          setMsg("")
-        }
-      })
-
-      unsub = () => authListener.subscription.unsubscribe()
-
       setReady(false)
-      setMsg("Ungültiger oder abgelaufener Link. Bitte auf der Login-Seite erneut „Passwort vergessen“ drücken.")
+      setMsg("Ungültiger oder abgelaufener Link. Bitte erneut „Passwort vergessen“ drücken.")
     }
 
     run()
-
-    return () => {
-      if (unsub) unsub()
-    }
-  }, [])
+  }, [searchParams])
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -167,21 +175,13 @@ function MemberSetPasswordClient() {
               </div>
 
               <Button type="submit" className="w-full h-12 rounded-xl" disabled={!ready || loading}>
-                {loading ? (
-                  "Speichere…"
-                ) : (
+                {loading ? "Speichere…" : (
                   <span className="inline-flex items-center gap-2">
                     <Save className="w-5 h-5" />
                     Passwort speichern
                   </span>
                 )}
               </Button>
-
-              {!ready ? (
-                <div className="text-xs text-gray-500 mt-2">
-                  Bitte den neuesten Passwort-Reset-Link direkt aus der E-Mail öffnen.
-                </div>
-              ) : null}
             </form>
           </CardContent>
         </Card>
