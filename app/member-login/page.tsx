@@ -171,7 +171,7 @@ function MemberLoginClient() {
         return
       }
 
-      const redirectTo = `${window.location.origin}/auth/callback?next=/member-set-password`
+      const redirectTo = `https://emojisdartverein.com/auth/callback?next=/member-set-password`
 
       const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
         redirectTo,
