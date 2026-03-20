@@ -39,7 +39,7 @@ import { PushNotificationDialog } from "@/components/push-notification-dialog"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
-const APK_URL = "https://puozttepmqkelrzaojys.supabase.co/storage/v1/object/public/downloads/app-debug.apk"
+
 
 interface Match {
   id: string
@@ -2043,26 +2043,7 @@ export default function Home() {
       </a>
     </div>
 
-    {/* APK Info */}
-    <div className="mt-6 bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20 text-center">
-      <p className="text-xs sm:text-sm text-orange-50">
-        Android-Version aktuell im Prüfprozess bei Google Play.
-        Bis dahin kannst du die APK hier direkt herunterladen.
-      </p>
-
-      <Button
-        size="sm"
-        className="mt-4 bg-white text-orange-700 hover:bg-white/90 font-black w-full sm:w-auto"
-        onClick={handleApkDownload}
-      >
-        <Download className="w-4 h-4 mr-2" />
-        APK herunterladen
-      </Button>
-
-      <p className="text-[11px] text-orange-50/70 mt-3">
-        Hinweis: Installation aus unbekannten Quellen ggf. aktivieren.
-      </p>
-    </div>
+   
 
   </div>
 </section>
