@@ -77,11 +77,7 @@ function MemberLoginClient() {
     return "Dein Zugang wurde gesperrt. Bitte wende dich an den Verein."
   }
 
-  useEffect(() => {
-    const code = searchParams.get("code")
-    if (!code) return
-    router.replace(`/member-set-password?code=${encodeURIComponent(code)}`)
-  }, [searchParams, router])
+
 
   useEffect(() => {
     const checkBlockedAndRedirect = async () => {
