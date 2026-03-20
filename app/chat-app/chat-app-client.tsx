@@ -318,8 +318,7 @@ const applyInitialSelection = (rooms: TeamRoom[]) => {
     return
   }
 
-  console.log("[chat deep link] team room not found for room_id:", init.roomId)
-  console.log("[chat deep link] available rooms:", rooms.map((r) => ({ id: r.id, name: r.name })))
+
 }
   
   
@@ -374,18 +373,12 @@ const applyInitialSelection = (rooms: TeamRoom[]) => {
   const found = chatRooms.find((r) => r.id === init.roomId) ?? null
 
   if (!found) {
-    console.log("[chat deep link late apply] room not found", {
-      roomId: init.roomId,
-      availableRooms: chatRooms.map((r) => ({ id: r.id, name: r.name })),
-    })
+   
     return
   }
 
   if (selectedRoom?.id !== found.id) {
-    console.log("[chat deep link late apply] forcing room", {
-      roomId: found.id,
-      roomName: found.name,
-    })
+    
     setSelectedRoom(found)
   }
 }
@@ -590,8 +583,7 @@ const uploadAttachment = async (file: File) => {
     data: { publicUrl },
   } = supabase.storage.from("chat-attachments").getPublicUrl(filePath)
 
-  console.log("UPLOAD PATH:", filePath)
-  console.log("PUBLIC URL:", publicUrl)
+ 
 
   return {
     attachment_url: publicUrl,
@@ -1618,12 +1610,7 @@ const sendMessage = async () => {
       }).catch(() => {})
     }
   } catch (error: any) {
-  console.error("Error sending message FULL:", error)
-  console.error("Error sending message JSON:", JSON.stringify(error, null, 2))
-  console.error("Error sending message message:", error?.message)
-  console.error("Error sending message details:", error?.details)
-  console.error("Error sending message hint:", error?.hint)
-  console.error("Error sending message code:", error?.code)
+console.error("Error sending message:", error)
 
   toast({
     title: "Fehler",
@@ -1798,16 +1785,7 @@ const sendMessage = async () => {
 
   const showNoProfile = !profileLoading && !profile
   
-  const debugInfo = {
-  url_scope: searchParams.get("scope"),
-  url_room_id: searchParams.get("room_id"),
-  deepLinkScope: deepLinkParams.scope,
-  deepLinkRoomId: deepLinkParams.roomId,
-  selectedScope,
-  selectedRoomId: selectedRoom?.id ?? null,
-  selectedRoomName: selectedRoom?.name ?? null,
-  chatRooms: chatRooms.map((r) => ({ id: r.id, name: r.name })),
-}
+
   
   
 
@@ -1837,23 +1815,7 @@ const sendMessage = async () => {
 	
 	
 	
-	<div className="px-2 sm:px-4 pt-2">
-  <div className="bg-black text-white text-xs rounded-xl p-3 overflow-auto max-h-48">
-    <div><strong>DEBUG CHAT</strong></div>
-    <div>url_scope: {String(debugInfo.url_scope)}</div>
-    <div>url_room_id: {String(debugInfo.url_room_id)}</div>
-    <div>deepLinkScope: {String(debugInfo.deepLinkScope)}</div>
-    <div>deepLinkRoomId: {String(debugInfo.deepLinkRoomId)}</div>
-    <div>selectedScope: {String(debugInfo.selectedScope)}</div>
-    <div>selectedRoomId: {String(debugInfo.selectedRoomId)}</div>
-    <div>selectedRoomName: {String(debugInfo.selectedRoomName)}</div>
-    <div className="mt-2">rooms:</div>
-    <pre className="whitespace-pre-wrap break-all">
-      {JSON.stringify(debugInfo.chatRooms, null, 2)}
-    </pre>
-  </div>
-</div>
-	
+
 	
 	
 	
