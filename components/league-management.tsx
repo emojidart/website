@@ -443,45 +443,66 @@ export function LeagueManagement() {
     [fetchData, toastSuccess],
   )
 
-  const createMatch = useCallback(async () => {
-    try {
-     const matchData: any = {
-  match_date: editMatchDetails.match_date,
-  match_time: editMatchDetails.match_time,
-  week_number: editMatchDetails.week_number,
-  venue: editMatchDetails.venue,
-  dart_type: editMatchDetails.dart_type,
-  home_team_type: editMatchDetails.home_team_type,
-  away_team_type: editMatchDetails.away_team_type,
-}
 
-      if (newMatchState.home_team_type === "own") matchData.home_team_id = newMatchState.home_team_id
-      else matchData.home_opponent_team_id = newMatchState.home_team_id
 
-      if (newMatchState.away_team_type === "own") matchData.away_team_id = newMatchState.away_team_id
-      else matchData.away_opponent_team_id = newMatchState.away_team_id
 
-      const { error } = await supabase.from("matches").insert([matchData])
-      if (error) throw error
-
-      setNewMatch({
-        home_team_id: "",
-        home_team_type: "own",
-        away_team_id: "",
-        away_team_type: "own",
-        match_date: "",
-        match_time: "",
-        week_number: 1,
-        venue: "",
-        dart_type: "steeldart",
-      })
-
-      toastSuccess("Spiel erstellt!")
-      fetchData()
-    } catch (error) {
-      console.error("Error creating match:", error)
+const createMatch = useCallback(async () => {
+  try {
+    const matchData: any = {
+      season_id: selectedSeason,
+      match_date: newMatchState.match_date,
+      match_time: newMatchState.match_time,
+      week_number: newMatchState.week_number,
+      venue: newMatchState.venue,
+      dart_type: newMatchState.dart_type,
+      home_team_type: newMatchState.home_team_type,
+      away_team_type: newMatchState.away_team_type,
+      status: "scheduled",
     }
-  }, [fetchData, newMatchState, selectedSeason, toastSuccess])
+
+    if (newMatchState.home_team_type === "own") {
+      matchData.home_team_id = newMatchState.home_team_id
+      matchData.home_opponent_team_id = null
+    } else {
+      matchData.home_opponent_team_id = newMatchState.home_team_id
+      matchData.home_team_id = null
+    }
+
+    if (newMatchState.away_team_type === "own") {
+      matchData.away_team_id = newMatchState.away_team_id
+      matchData.away_opponent_team_id = null
+    } else {
+      matchData.away_opponent_team_id = newMatchState.away_team_id
+      matchData.away_team_id = null
+    }
+
+    const { error } = await supabase.from("matches").insert([matchData])
+    if (error) throw error
+
+    setNewMatch({
+      home_team_id: "",
+      home_team_type: "own",
+      away_team_id: "",
+      away_team_type: "own",
+      match_date: "",
+      match_time: "",
+      week_number: 1,
+      venue: "",
+      dart_type: "steeldart",
+    })
+
+    toastSuccess("Spiel erstellt!")
+    fetchData()
+  } catch (error) {
+    console.error("Error creating match:", error)
+  }
+}, [fetchData, newMatchState, selectedSeason, toastSuccess])
+
+
+
+
+
+
 
   const deleteMatch = useCallback(
     async (matchId: string) => {

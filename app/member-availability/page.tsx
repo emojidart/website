@@ -310,11 +310,9 @@ const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null)
 
   // ✅ je nach Modus: Match-Room oder Team-Room
   const activeRoomId = useMemo(() => {
-    if (!dialogMatch) return null
-    if (chatMode === "match") return dialogMatch.id // Spiel-Chat
-    return selectedTeamId // Team-Chat (wie bisher)
-  }, [dialogMatch, chatMode, selectedTeamId])
-
+  if (!dialogMatch) return null
+  return dialogMatch.id
+}, [dialogMatch])
 
   useEffect(() => {
     if (!authLoading && !session) router.push("/member-login")
@@ -342,14 +340,15 @@ const [cooldownMinutes, setCooldownMinutes] = useState<number | null>(null)
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [profile, teamMemberships])
 
-// 🔥 PUSH-DEEPLINK MATCH AUTO-OPEN
+
+
+
 useEffect(() => {
   if (!session?.user) return
   if (!matches || matches.length === 0) return
 
   const matchId = searchParams.get("match_id")
   const teamId = searchParams.get("team_id")
-  const chat = searchParams.get("chat")
 
   if (!matchId) return
 
@@ -364,8 +363,7 @@ useEffect(() => {
       await loadMatchData(m.id, teamId)
     }
 
-    if (chat === "match") setChatMode("match")
-    if (chat === "team") setChatMode("team")
+    setChatMode("match")
   })()
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -599,20 +597,19 @@ setLineupChangedNotified(false)
     })
     if (error) throw error
 
-    // 2) 🔥 PUSH AUSLÖSEN (Team-Chat + Spiel-Chat)
-    await fetch("/api/push/chat", {
+await fetch("/api/push/chat", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
     authorization: `Bearer ${session?.access_token ?? ""}`,
   },
   body: JSON.stringify({
-  room_id: activeRoomId,                           // match.id ODER team chat_room_id
-  scope: chatMode === "team" ? "team" : "match",   // ✅ richtig!
-  team_id: chatMode === "match" ? selectedTeamId : null, // ✅ bei Match nötig
-  sender_profile_id: profile.id,
-  message: text,
-}),
+    room_id: activeRoomId,
+    scope: "match",
+    team_id: selectedTeamId,
+    sender_profile_id: profile.id,
+    message: text,
+  }),
 })
 
     // 3) Input leeren
@@ -1527,24 +1524,7 @@ if (authLoading || loading) {
     Chat
   </span>
 
-  <div className="flex gap-1">
-    <Button
-      size="sm"
-      variant={chatMode === "match" ? "default" : "outline"}
-      onClick={() => setChatMode("match")}
-    >
-      Spiel
-    </Button>
 
-    <Button
-      size="sm"
-      variant={chatMode === "team" ? "default" : "outline"}
-      onClick={() => setChatMode("team")}
-      disabled={!selectedTeamId}
-    >
-      Team
-    </Button>
-  </div>
 </CardTitle>
 
                     </CardHeader>
@@ -1935,7 +1915,7 @@ if (authLoading || loading) {
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         <MessageCircle className="h-4 w-4 text-orange-600" />
-                        Team-Chat
+                        Spiel-Chat
                       </CardTitle>
                     </CardHeader>
 

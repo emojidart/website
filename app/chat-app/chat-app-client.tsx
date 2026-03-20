@@ -192,21 +192,26 @@ export default function TeamChatPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // ✅ Query-Params nur 1x beim ersten Render einfrieren
-  const initialParamsRef = useRef<{ roomId: string | null; scope: ChatScope | null } | null>(null)
-  const initialAppliedRef = useRef(false)
 
-  if (!initialParamsRef.current) {
-    const scopeRaw = searchParams.get("scope") as ChatScope | null
-    const scope: ChatScope | null =
-      scopeRaw && (["team", "captains", "club", "freizeit", "vorstand"] as const).includes(scopeRaw) ? scopeRaw : null
 
-    // ✅ Push/DeepLink nutzt room_id
-    initialParamsRef.current = {
-      roomId: searchParams.get("room_id"),
-      scope,
-    }
+  const urlScopeRaw = searchParams.get("scope") as ChatScope | null
+  const urlScope: ChatScope | null =
+    urlScopeRaw && (["team", "captains", "club", "freizeit", "vorstand"] as const).includes(urlScopeRaw)
+      ? urlScopeRaw
+      : null
+
+  const urlRoomId = searchParams.get("room_id")
+
+  const deepLinkParams = {
+    roomId: urlRoomId,
+    scope: urlScope,
   }
+
+
+
+
+
+
 
   const [profile, setProfile] = useState<UserProfileLite | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
@@ -276,34 +281,121 @@ const fileInputRef = useRef<HTMLInputElement>(null)
   // GLOBAL captains/co-captains across all teams
   const [globalCaptains, setGlobalCaptains] = useState<TeamMember[]>([])
   const [globalCaptainsLoading, setGlobalCaptainsLoading] = useState(false)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+const applyInitialSelection = (rooms: TeamRoom[]) => {
+  const init = deepLinkParams
+  if (!init.scope && !init.roomId) return
 
-  const applyInitialSelection = (rooms: TeamRoom[]) => {
-    if (initialAppliedRef.current) return
-    const init = initialParamsRef.current
-    if (!init) return
+  const scopeToUse: ChatScope = init.scope ?? "team"
 
-    const scopeToUse: ChatScope = init.scope ?? "team"
+  if (scopeToUse === "vorstand" && !canSeeVorstandChat && !isVorstand) return
 
-    // Scope setzen (mit Access-Checks)
-    if (scopeToUse === "vorstand" && !canSeeVorstandChat && !isVorstand) {
-      // kein Zugriff -> ignorieren
-    } else if (scopeToUse === "captains") {
-      // Zugriff-Check passiert später via canSeeCaptainChat effect
-      setSelectedScope("captains")
-    } else if (scopeToUse !== "team") {
-      setSelectedScope(scopeToUse)
-    } else {
-      setSelectedScope("team")
-    }
-
-    // Teamraum auswählen falls team + room_id (chat_room_id)
-    if (scopeToUse === "team" && init.roomId) {
-      const found = rooms.find((r) => r.id === init.roomId) ?? null
-      if (found) setSelectedRoom(found)
-    }
-
-    initialAppliedRef.current = true
+  if (scopeToUse === "captains") {
+    setSelectedScope("captains")
+    return
   }
+
+  if (scopeToUse !== "team") {
+    setSelectedScope(scopeToUse)
+    return
+  }
+
+  if (!init.roomId) return
+
+  setSelectedScope("team")
+
+  const found = rooms.find((r) => r.id === init.roomId) ?? null
+  if (found) {
+    setSelectedRoom(found)
+    return
+  }
+
+  console.log("[chat deep link] team room not found for room_id:", init.roomId)
+  console.log("[chat deep link] available rooms:", rooms.map((r) => ({ id: r.id, name: r.name })))
+}
+  
+  
+  
+  
+  
+  
+ useEffect(() => {
+  applyDeepLinkToExistingRooms()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [
+  urlRoomId,
+  urlScope,
+  chatRooms,
+  selectedRoom?.id,
+  selectedScope,
+  canSeeVorstandChat,
+  isVorstand,
+])
+  
+  
+  
+  
+  const applyDeepLinkToExistingRooms = () => {
+  const init = deepLinkParams
+  if (!init.scope && !init.roomId) return
+
+  const scopeToUse: ChatScope = init.scope ?? "team"
+
+  if (scopeToUse === "vorstand" && !canSeeVorstandChat && !isVorstand) return
+
+  if (scopeToUse === "captains") {
+    if (selectedScope !== "captains") {
+      setSelectedScope("captains")
+    }
+    return
+  }
+
+  if (scopeToUse !== "team") {
+    if (selectedScope !== scopeToUse) {
+      setSelectedScope(scopeToUse)
+    }
+    return
+  }
+
+  if (!chatRooms.length || !init.roomId) return
+
+  if (selectedScope !== "team") {
+    setSelectedScope("team")
+  }
+
+  const found = chatRooms.find((r) => r.id === init.roomId) ?? null
+
+  if (!found) {
+    console.log("[chat deep link late apply] room not found", {
+      roomId: init.roomId,
+      availableRooms: chatRooms.map((r) => ({ id: r.id, name: r.name })),
+    })
+    return
+  }
+
+  if (selectedRoom?.id !== found.id) {
+    console.log("[chat deep link late apply] forcing room", {
+      roomId: found.id,
+      roomName: found.name,
+    })
+    setSelectedRoom(found)
+  }
+}
+  
+
+
+  
+  
+  
+  
 
   useEffect(() => {
     if (!profile?.id) return
@@ -345,16 +437,7 @@ const fileInputRef = useRef<HTMLInputElement>(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id])
 
-  useEffect(() => {
-    if (profile && profile.player_id) {
-      fetchMyTeamRooms(profile.player_id)
-    } else if (profile && !profile.player_id) {
-      setChatRooms([])
-      setSelectedRoom(null)
-      setRoomsLoading(false)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id, profile?.player_id])
+ 
 
   // Load global captains once profile exists
   useEffect(() => {
@@ -865,12 +948,14 @@ const voteOnPoll = async (pollId: string, optionId: string) => {
 
       rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
 
-      setChatRooms(rooms)
+           setChatRooms(rooms)
+
+            const isTeamDeepLink = (deepLinkParams.scope ?? "team") === "team" && !!deepLinkParams.roomId
 
       // ✅ URL-Auswahl anwenden (nur 1x)
       applyInitialSelection(rooms)
 
-      if (!["club", "freizeit", "vorstand", "captains"].includes(selectedScope)) {
+      if (!["club", "freizeit", "vorstand", "captains"].includes(selectedScope) && !isTeamDeepLink) {
         let nextSelected = selectedRoom
         if (!nextSelected && rooms.length > 0) nextSelected = rooms[0]
         if (nextSelected && !rooms.find((r) => r.id === nextSelected!.id)) nextSelected = rooms[0] ?? null
@@ -921,12 +1006,14 @@ const voteOnPoll = async (pollId: string, optionId: string) => {
 
       rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
 
-      setChatRooms(rooms)
+            setChatRooms(rooms)
+
+           const isTeamDeepLink = (deepLinkParams.scope ?? "team") === "team" && !!deepLinkParams.roomId
 
       // ✅ URL-Auswahl anwenden (nur 1x)
       applyInitialSelection(rooms)
 
-      if (!["club", "freizeit", "vorstand", "captains"].includes(selectedScope)) {
+      if (!["club", "freizeit", "vorstand", "captains"].includes(selectedScope) && !isTeamDeepLink) {
         let nextSelected = selectedRoom
         if (!nextSelected && rooms.length > 0) nextSelected = rooms[0]
         if (nextSelected && !rooms.find((r) => r.id === nextSelected!.id)) nextSelected = rooms[0] ?? null
@@ -1710,6 +1797,19 @@ const sendMessage = async () => {
   }, [messages])
 
   const showNoProfile = !profileLoading && !profile
+  
+  const debugInfo = {
+  url_scope: searchParams.get("scope"),
+  url_room_id: searchParams.get("room_id"),
+  deepLinkScope: deepLinkParams.scope,
+  deepLinkRoomId: deepLinkParams.roomId,
+  selectedScope,
+  selectedRoomId: selectedRoom?.id ?? null,
+  selectedRoomName: selectedRoom?.name ?? null,
+  chatRooms: chatRooms.map((r) => ({ id: r.id, name: r.name })),
+}
+  
+  
 
   if (!session) {
     return (
@@ -1733,6 +1833,36 @@ const sendMessage = async () => {
 
   return (
     <div className={`h-[100dvh] flex flex-col overflow-hidden ${WA.appBg}`}>
+	
+	
+	
+	
+	<div className="px-2 sm:px-4 pt-2">
+  <div className="bg-black text-white text-xs rounded-xl p-3 overflow-auto max-h-48">
+    <div><strong>DEBUG CHAT</strong></div>
+    <div>url_scope: {String(debugInfo.url_scope)}</div>
+    <div>url_room_id: {String(debugInfo.url_room_id)}</div>
+    <div>deepLinkScope: {String(debugInfo.deepLinkScope)}</div>
+    <div>deepLinkRoomId: {String(debugInfo.deepLinkRoomId)}</div>
+    <div>selectedScope: {String(debugInfo.selectedScope)}</div>
+    <div>selectedRoomId: {String(debugInfo.selectedRoomId)}</div>
+    <div>selectedRoomName: {String(debugInfo.selectedRoomName)}</div>
+    <div className="mt-2">rooms:</div>
+    <pre className="whitespace-pre-wrap break-all">
+      {JSON.stringify(debugInfo.chatRooms, null, 2)}
+    </pre>
+  </div>
+</div>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
       {/**/}
       <main className="flex-1 min-h-0 overflow-hidden pt-3 pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto w-full px-2 sm:px-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl h-full">
