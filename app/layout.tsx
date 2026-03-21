@@ -49,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* 🔐 Supabase Session Guard */}
         <SupabaseSessionGuard />
 
-        <div className="app-root">
+        <div className="app-root safe-pt safe-pb">
           <PresenceTracker />
           <PushSubscriptionRepair />
           <PushInit />

@@ -382,9 +382,8 @@ export function Header({
     }
 
     return (
-      <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[max(env(safe-area-inset-top),12px)]">
-        <div className="border-b border-orange-100 bg-white/90 shadow-sm backdrop-blur">
-          <div className="mx-auto w-full max-w-7xl px-4">
+     <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm">
+  <div className="bg-white">
             <div className="flex h-14 items-center gap-3">
               {backHref || onBackClick ? (
                 <Button
@@ -544,8 +543,8 @@ export function Header({
         </div>
       )}
 
-      <header className="fixed left-0 right-0 top-0 z-50 w-full pt-[max(env(safe-area-inset-top),12px)]">
-        <div className="border-b border-orange-100 bg-white/90 shadow-sm backdrop-blur">
+      <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm">
+  <div className="bg-white">
           <div className="mx-auto w-full max-w-2xl px-4 lg:max-w-screen-xl 2xl:max-w-screen-2xl">
             <div className="flex h-14 items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
