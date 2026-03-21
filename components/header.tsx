@@ -478,7 +478,7 @@ export function Header({
                 EMD Campus
               </Button>
 
-              <div className="space-y-5 pb-20">
+              <div className="space-y-5 pb-[max(20px,env(safe-area-inset-bottom))]">
                 {drawerSections.map((sec) => (
                   <section key={sec.title}>
                     <div className="mb-2 px-2 text-xs font-bold uppercase tracking-wide text-gray-500">
