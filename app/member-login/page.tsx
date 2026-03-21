@@ -6,6 +6,9 @@ import type React from "react"
 import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
+import { Capacitor } from "@capacitor/core"
+import { Preferences } from "@capacitor/preferences"
+import { BiometricAuth } from "@aparajita/capacitor-biometric-auth"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -77,11 +80,65 @@ function MemberLoginClient() {
     return "Dein Zugang wurde gesperrt. Bitte wende dich an den Verein."
   }
 
+  const isNative = Capacitor.isNativePlatform()
 
+  const maybeEnableBiometric = async () => {
+    if (!isNative) return
+
+    try {
+      const biometry = await BiometricAuth.checkBiometry()
+
+      if (!biometry.isAvailable && !biometry.deviceIsSecure) {
+        return
+      }
+
+      const shouldEnable = window.confirm("Fingerabdruck / Face Unlock für diese App aktivieren?")
+
+      if (!shouldEnable) return
+
+      await Preferences.set({
+        key: "biometric_enabled",
+        value: "true",
+      })
+    } catch {
+      // stilles Fehlschlagen, Login soll trotzdem normal funktionieren
+    }
+  }
+
+  const requireBiometricIfEnabled = async () => {
+    if (!isNative) return true
+
+    try {
+      const { value } = await Preferences.get({ key: "biometric_enabled" })
+
+      if (value !== "true") return true
+
+      const biometry = await BiometricAuth.checkBiometry()
+
+      if (!biometry.isAvailable && !biometry.deviceIsSecure) {
+        return true
+      }
+
+      await BiometricAuth.authenticate({
+        reason: "App entsperren",
+        cancelTitle: "Abbrechen",
+        allowDeviceCredential: true,
+        androidTitle: "EMD Vereinsapp",
+        androidSubtitle: "Mit Fingerabdruck oder Gerätecode entsperren",
+      })
+
+      return true
+    } catch {
+      return false
+    }
+  }
 
   useEffect(() => {
     const checkBlockedAndRedirect = async () => {
       if (authLoading || !session?.user) return
+
+      const biometricOk = await requireBiometricIfEnabled()
+      if (!biometricOk) return
 
       const { data: profileData, error } = await supabase
         .from("user_profiles")
@@ -146,6 +203,8 @@ function MemberLoginClient() {
         setMessage(getBlockedMessage(profileData.blocked_reason))
         return
       }
+
+      await maybeEnableBiometric()
 
       router.push("/member-profile-app")
     } catch {
