@@ -382,8 +382,9 @@ export function Header({
     }
 
     return (
-     <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm">
+    <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm">
   <div className="bg-white">
+          <div className="mx-auto w-full max-w-7xl px-4">
             <div className="flex h-14 items-center gap-3">
               {backHref || onBackClick ? (
                 <Button
