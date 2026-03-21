@@ -454,7 +454,7 @@ export function Header({
               </div>
             </div>
 
-            <div className="h-full overflow-y-auto p-3">
+            <div className="h-full overflow-y-auto p-3 pb-[env(safe-area-inset-bottom)]">
               <Button
                 onClick={() => {
                   closeDrawer()
@@ -478,7 +478,7 @@ export function Header({
                 EMD Campus
               </Button>
 
-              <div className="space-y-5 pb-[max(20px,env(safe-area-inset-bottom))]">
+              <div className="space-y-5 pb-20">
                 {drawerSections.map((sec) => (
                   <section key={sec.title}>
                     <div className="mb-2 px-2 text-xs font-bold uppercase tracking-wide text-gray-500">
