@@ -34,7 +34,7 @@ export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
-    flowType: "pkce",
+      flowType: "pkce",
   },
 })
 
