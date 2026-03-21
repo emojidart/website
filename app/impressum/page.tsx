@@ -1,11 +1,9 @@
 "use client"
 
-import { useState } from "react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { Scale, Egg, Sparkles, X } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "@/components/ui/button"
+import { Scale } from "lucide-react"
+import { motion } from "framer-motion"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -20,50 +18,19 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 15 } },
 }
 
-type EggState = {
-  open: boolean
-  success: boolean
-  text: string
-}
-
 export default function ImpressumPage() {
-  const [eggState, setEggState] = useState<EggState>({
-    open: false,
-    success: false,
-    text: "",
-  })
-
-  const openWrongEgg = () => {
-    setEggState({
-      open: true,
-      success: false,
-      text: "Falscher Pfad. Such weiter.",
-    })
-  }
-
-  const openRightEgg = () => {
-    setEggState({
-      open: true,
-      success: true,
-      text: "Du hast den richtigen Pfad gefunden. Der Code lautet: 058",
-    })
-  }
-
-  const closeEgg = () => {
-    setEggState((prev) => ({ ...prev, open: false }))
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
       <Header />
 
-      <main className="pt-12 sm:pt-14">
-        <motion.div
-          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
+     <main className="pt-12 sm:pt-14">
+  <motion.div
+    className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+    variants={containerVariants}
+    initial="hidden"
+    animate="visible"
+  >
+          {/* App Header Card */}
           <motion.div variants={itemVariants} className="mb-6">
             <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
@@ -71,46 +38,23 @@ export default function ImpressumPage() {
                 <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
                   <Scale className="w-5 h-5 text-orange-600" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h1 className="text-base sm:text-lg font-black">Impressum</h1>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Angaben gemäß E-Commerce-Gesetz und Mediengesetz.
-                      </p>
-                    </div>
-
-                    {/* Falsches Osterei 1 */}
-                    <button
-                      type="button"
-                      onClick={openWrongEgg}
-                      className="group rounded-full p-2 hover:bg-orange-50 transition"
-                      aria-label="Verstecktes Osterei"
-                    >
-                      <Egg className="w-4 h-4 text-orange-300 group-hover:text-orange-500 transition" />
-                    </button>
-                  </div>
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-lg font-black">Impressum</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Angaben gemäß E-Commerce-Gesetz und Mediengesetz.
+                  </p>
                 </div>
               </div>
             </div>
           </motion.div>
 
+          {/* Content */}
           <div className="space-y-6 text-sm leading-relaxed text-gray-700">
             <Section title="Angaben gemäß § 5 ECG & Mediengesetz">
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 mt-3 shadow-sm relative">
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 mt-3 shadow-sm">
                 <p className="font-black text-gray-900">Emoj!'s Dartverein e.V.</p>
                 <p>Wüstenrotstraße 30</p>
                 <p>5020 Salzburg, Österreich</p>
-
-                {/* Falsches Osterei 2 */}
-                <button
-                  type="button"
-                  onClick={openWrongEgg}
-                  className="absolute right-3 top-3 rounded-full p-1.5 hover:bg-orange-50 transition"
-                  aria-label="Verstecktes Osterei"
-                >
-                  <Sparkles className="w-4 h-4 text-gray-300 hover:text-orange-500 transition" />
-                </button>
               </div>
             </Section>
 
@@ -122,7 +66,7 @@ export default function ImpressumPage() {
             </Section>
 
             <Section title="Kontakt">
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 mt-3 shadow-sm space-y-2 relative">
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 mt-3 shadow-sm space-y-2">
                 <p>
                   <span className="font-bold text-gray-900">Telefon:</span> +43 660 4696464
                 </p>
@@ -132,16 +76,6 @@ export default function ImpressumPage() {
                     office@emojisdartverein.com
                   </a>
                 </p>
-
-                {/* Richtiges Osterei */}
-                <button
-                  type="button"
-                  onClick={openRightEgg}
-                  className="absolute bottom-3 right-3 rounded-full p-1.5 hover:bg-orange-50 transition"
-                  aria-label="Geheimes Osterei"
-                >
-                  <Egg className="w-4 h-4 text-orange-200 hover:text-orange-600 transition" />
-                </button>
               </div>
             </Section>
 
@@ -203,89 +137,12 @@ export default function ImpressumPage() {
         </motion.div>
       </main>
 
-      <AnimatePresence>
-        {eggState.open && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 14, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 14, scale: 0.98 }}
-              className={`w-full max-w-md rounded-3xl border p-6 shadow-2xl ${
-                eggState.success
-                  ? "border-green-200 bg-white"
-                  : "border-orange-200 bg-white"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-11 h-11 rounded-2xl flex items-center justify-center border ${
-                      eggState.success
-                        ? "bg-green-50 border-green-200"
-                        : "bg-orange-50 border-orange-200"
-                    }`}
-                  >
-                    {eggState.success ? (
-                      <Sparkles className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <Egg className="w-5 h-5 text-orange-600" />
-                    )}
-                  </div>
-
-                  <div>
-                    <p
-                      className={`text-[11px] font-black uppercase tracking-wider ${
-                        eggState.success ? "text-green-700" : "text-orange-700"
-                      }`}
-                    >
-                      {eggState.success ? "Richtiger Pfad" : "Osterei gefunden"}
-                    </p>
-                    <h3 className="text-lg font-black text-gray-900">
-                      {eggState.success ? "Treffer." : "Nicht ganz."}
-                    </h3>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={closeEgg}
-                  className="rounded-full p-2 hover:bg-gray-100 transition"
-                  aria-label="Schließen"
-                >
-                  <X className="w-4 h-4 text-gray-500" />
-                </button>
-              </div>
-
-              <p className="mt-4 text-sm leading-relaxed text-gray-700">
-                {eggState.text}
-              </p>
-
-              <div className="mt-6 flex justify-end">
-                <Button
-                  onClick={closeEgg}
-                  className={`rounded-2xl font-black ${
-                    eggState.success
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-orange-600 hover:bg-orange-700"
-                  }`}
-                >
-                  Verstanden
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <MobileBottomNav />
     </div>
   )
 }
+
+/* Helper Components */
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
