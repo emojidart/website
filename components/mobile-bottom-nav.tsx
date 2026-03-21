@@ -196,8 +196,8 @@ export function MobileBottomNav() {
 
   // 👉 Offset, damit die Nav in "richtiger App" (WebView) nicht unter der Systemleiste hängt
   // env(...) ist auf manchen WebViews 0, daher Fallback 12px
-  const BOTTOM_OFFSET = "max(12px, env(safe-area-inset-bottom))"
-  const SPACER_H = `calc(4rem + ${BOTTOM_OFFSET})` // 4rem = h-16
+  const BOTTOM_OFFSET = "0px"
+  const SPACER_H = "calc(4rem + max(12px, env(safe-area-inset-bottom)))"
 
   if (loading) return <div className="md:hidden" style={{ height: SPACER_H }} />
 
@@ -257,10 +257,10 @@ export function MobileBottomNav() {
       )}
 
       {/* BOTTOM NAV (normal hoch, nur nach oben versetzt) */}
-      <nav
-        className="fixed left-0 right-0 z-50 md:hidden border-t border-gray-200 bg-white shadow-2xl"
-        style={{ bottom: BOTTOM_OFFSET }}
-      >
+     <nav
+  className="fixed left-0 right-0 bottom-0 z-50 md:hidden border-t border-gray-200 bg-white shadow-2xl"
+  style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+>
         <div className="grid h-16 grid-cols-5">
           {BOTTOM_BAR.map((item) => {
             const isActive = pathname === item.href
