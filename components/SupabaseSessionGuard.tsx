@@ -7,18 +7,18 @@ import { supabase } from "@/lib/supabase"
 export default function SupabaseSessionGuard() {
   useEffect(() => {
     const sub = App.addListener("appStateChange", async ({ isActive }) => {
-      if (!isActive) return
+  if (!isActive) return
 
-      const { data } = await supabase.auth.getSession()
+  const { data } = await supabase.auth.getSession()
 
-      if (!data.session) {
-        await supabase.auth.refreshSession()
-      }
-    })
+  if (!data.session) {
+    await supabase.auth.refreshSession()
+  }
+})
 
-    return () => {
-      sub.remove()
-    }
+return () => {
+  sub.then((listener) => listener.remove())
+}
   }, [])
 
   return null

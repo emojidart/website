@@ -19,6 +19,7 @@ import {
   CalendarCheck,
   ChevronRight,
   Home,
+  BellRing,
   Target,
   HelpCircle,
   PartyPopper,
@@ -35,6 +36,7 @@ import { PlayerRegistration } from "@/components/player-registration"
 import { PlayerManagement } from "@/components/player-management"
 import { ClubPlayerTeamManagement } from "@/components/vereinsverwaltung/ClubPlayerTeamManagement"
 import SeasonSettingsPage from "@/app/admin/season_settings/page"
+import { AdminPushManagement } from "@/components/admin/admin-push-management"
 import { PlayerRecruitmentForm } from "@/components/player-recruitment-form"
 import { PlayerRecruitmentList } from "@/components/player-recruitment-list"
 import { PlayerApplicationsList } from "@/components/player-applications-list"
@@ -87,6 +89,7 @@ export default function AdminPage() {
     | "lion-cup-settings"
     | "role-permissions"
 	  | "member-availability-all"
+	  | "admin-push"
   >("dashboard")
 
   const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
@@ -283,6 +286,14 @@ export default function AdminPage() {
       view: "events" as const,
       category: "verein" as const,
     },
+	{
+  title: "Push Nachrichten",
+  description: "Push an alle oder ausgewählte Spieler senden",
+  icon: BellRing,
+  color: "bg-orange-500",
+  view: "admin-push" as const,
+  category: "verein" as const,
+},
     {
       title: "Vereinsverwaltung",
       description: "Teams, Spieler & Vereinsdaten pflegen",
@@ -423,6 +434,7 @@ export default function AdminPage() {
         },
         { key: "attendance", label: "Anwesenheit", icon: CalendarCheck },
         { key: "events", label: "Veranstaltungen", icon: PartyPopper },
+		{ key: "admin-push", label: "Push Nachrichten", icon: BellRing },
         { key: "club", label: "Vereinsverwaltung", icon: Users },
         { key: "support-tickets", label: "Support Tickets", icon: HelpCircle },
         {
@@ -466,6 +478,7 @@ export default function AdminPage() {
       "campus-registrations",
       "credit-loader",
       "advent-quiz",
+	  "admin-push",
     ].includes(c.view)
   ),
 } as const
@@ -876,6 +889,23 @@ if (!hasAnyPermission) {
                     </Card>
                   </div>
                 )}
+				
+				{currentView === "admin-push" && (
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <BellRing className="h-5 w-5" />
+          <span>Push Nachrichten</span>
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <AdminPushManagement user={user} />
+      </CardContent>
+    </Card>
+  </div>
+)}
 
                 {currentView === "recruitment" && (
                   <div className="space-y-6">

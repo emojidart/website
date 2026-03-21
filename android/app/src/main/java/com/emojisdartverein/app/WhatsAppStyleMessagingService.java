@@ -71,6 +71,11 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
             return;
         }
 
+        if ("admin_push".equals(type)) {
+            showAdminPush(remoteMessage);
+            return;
+        }
+
         // ✅ NEU: TEAM EVENT / TRAINING PUSH
         if ("team_event".equals(type)) {
             showTeamEventSimple(remoteMessage);
@@ -237,6 +242,71 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setContentIntent(pendingIntent)
                 .setColor(orange)
                 .setColorized(true);
+
+        if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
+        else nm.notify(notifId, builder.build());
+    }
+
+    // =========================
+    // ADMIN PUSH WITH IMAGE
+    // =========================
+    private void showAdminPush(RemoteMessage remoteMessage) {
+        NotificationManagerCompat nm = NotificationManagerCompat.from(this);
+        if (!nm.areNotificationsEnabled()) return;
+
+        Map<String, String> data = remoteMessage.getData();
+
+        String title      = get(data, "title");
+        String body       = firstNonEmpty(get(data, "body"), get(data, "message"));
+        String imageUrl   = firstNonEmpty(get(data, "imageUrl"), get(data, "iconUrl"));
+        String tag        = get(data, "tag");
+        String notifIdStr = get(data, "notif_id");
+        String clickUrl   = get(data, "clickUrl");
+
+        if (TextUtils.isEmpty(title)) title = "📢 Vereinsinfo";
+        if (TextUtils.isEmpty(body)) body = "";
+
+        int orange = ContextCompat.getColor(this, R.color.emd_orange);
+        int notifId = safeInt(notifIdStr, stableIdFrom(tag));
+
+        if (TextUtils.isEmpty(clickUrl)) clickUrl = "/member-home";
+        if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setAction("OPEN_PUSH_" + notifId);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("path", clickUrl);
+        intent.setData(Uri.parse("emd://push" + clickUrl));
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this,
+                notifId,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        ensureChannel();
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(title)
+                .setContentText(firstLine(body))
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setColor(orange)
+                .setColorized(true);
+
+        Bitmap bmp = fetchBitmap(imageUrl);
+        if (bmp != null) {
+            bmp = scaleDownForNotification(bmp, 1200, 800);
+            builder.setStyle(new NotificationCompat.BigPictureStyle()
+                    .bigPicture(bmp)
+                    .bigLargeIcon((Bitmap) null));
+            builder.setLargeIcon(bmp);
+        }
 
         if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
         else nm.notify(notifId, builder.build());
