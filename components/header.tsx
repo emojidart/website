@@ -382,7 +382,7 @@ export function Header({
     }
 
     return (
-    <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm pt-1">
+    <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm">
   <div className="bg-white">
           <div className="mx-auto w-full max-w-7xl px-4">
             <div className="flex h-14 items-center gap-3">
@@ -544,7 +544,7 @@ export function Header({
         </div>
       )}
 
-      <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm">
+      <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm pt-[env(safe-area-inset-top)]">
   <div className="bg-white">
           <div className="mx-auto w-full max-w-2xl px-4 lg:max-w-screen-xl 2xl:max-w-screen-2xl">
             <div className="flex h-14 items-center justify-between gap-3">
