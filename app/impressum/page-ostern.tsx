@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { Scale, Egg, Sparkles, X } from "lucide-react"
+import { Scale, Sparkles, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 
@@ -24,6 +24,37 @@ type EggState = {
   open: boolean
   success: boolean
   text: string
+}
+
+function EasterEggButton({
+  onClick,
+  success = false,
+  className = "",
+}: {
+  onClick: () => void
+  success?: boolean
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Verstecktes Osterei"
+      className={`group inline-flex items-center justify-center rounded-full transition-all duration-200 hover:scale-110 ${className}`}
+    >
+      <div
+        className={`relative flex h-7 w-6 items-center justify-center rounded-[45%_45%_48%_48%/55%_55%_40%_40%] border-2 shadow-sm ${
+          success
+            ? "border-orange-400 bg-gradient-to-b from-orange-200 to-orange-400"
+            : "border-orange-300 bg-gradient-to-b from-orange-100 to-orange-300"
+        }`}
+      >
+        <span className="absolute h-1.5 w-1.5 rounded-full bg-white/70 top-1.5 left-2" />
+        <span className="absolute h-1 w-1 rounded-full bg-white/60 bottom-2 left-1.5" />
+        <span className="absolute h-1 w-1 rounded-full bg-white/60 bottom-3 right-1.5" />
+      </div>
+    </button>
+  )
 }
 
 export default function ImpressumPage() {
@@ -80,15 +111,7 @@ export default function ImpressumPage() {
                       </p>
                     </div>
 
-                    {/* Falsches Osterei 1 */}
-                    <button
-                      type="button"
-                      onClick={openWrongEgg}
-                      className="group rounded-full p-2 hover:bg-orange-50 transition"
-                      aria-label="Verstecktes Osterei"
-                    >
-                      <Egg className="w-4 h-4 text-orange-300 group-hover:text-orange-500 transition" />
-                    </button>
+                    <EasterEggButton onClick={openWrongEgg} />
                   </div>
                 </div>
               </div>
@@ -102,15 +125,9 @@ export default function ImpressumPage() {
                 <p>Wüstenrotstraße 30</p>
                 <p>5020 Salzburg, Österreich</p>
 
-                {/* Falsches Osterei 2 */}
-                <button
-                  type="button"
-                  onClick={openWrongEgg}
-                  className="absolute right-3 top-3 rounded-full p-1.5 hover:bg-orange-50 transition"
-                  aria-label="Verstecktes Osterei"
-                >
-                  <Sparkles className="w-4 h-4 text-gray-300 hover:text-orange-500 transition" />
-                </button>
+                <div className="absolute right-3 top-3">
+                  <EasterEggButton onClick={openWrongEgg} />
+                </div>
               </div>
             </Section>
 
@@ -133,15 +150,9 @@ export default function ImpressumPage() {
                   </a>
                 </p>
 
-                {/* Richtiges Osterei */}
-                <button
-                  type="button"
-                  onClick={openRightEgg}
-                  className="absolute bottom-3 right-3 rounded-full p-1.5 hover:bg-orange-50 transition"
-                  aria-label="Geheimes Osterei"
-                >
-                  <Egg className="w-4 h-4 text-orange-200 hover:text-orange-600 transition" />
-                </button>
+                <div className="absolute bottom-3 right-3">
+                  <EasterEggButton onClick={openWrongEgg} />
+                </div>
               </div>
             </Section>
 
@@ -199,6 +210,21 @@ export default function ImpressumPage() {
                 Datenschutzerklärung.
               </p>
             </Section>
+
+            <Section title="Letzter Hinweis">
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 mt-3 shadow-sm">
+                <p>
+                  Wer nur oben sucht, übersieht oft den richtigen Weg.
+                </p>
+                <p className="mt-3">
+                  Manche Antworten warten erst ganz am Ende.
+                </p>
+
+                <div className="mt-6 flex justify-center">
+                  <EasterEggButton onClick={openRightEgg} success />
+                </div>
+              </div>
+            </Section>
           </div>
         </motion.div>
       </main>
@@ -216,24 +242,22 @@ export default function ImpressumPage() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 14, scale: 0.98 }}
               className={`w-full max-w-md rounded-3xl border p-6 shadow-2xl ${
-                eggState.success
-                  ? "border-green-200 bg-white"
-                  : "border-orange-200 bg-white"
+                eggState.success ? "border-green-200 bg-white" : "border-orange-200 bg-white"
               }`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-11 h-11 rounded-2xl flex items-center justify-center border ${
-                      eggState.success
-                        ? "bg-green-50 border-green-200"
-                        : "bg-orange-50 border-orange-200"
+                      eggState.success ? "bg-green-50 border-green-200" : "bg-orange-50 border-orange-200"
                     }`}
                   >
                     {eggState.success ? (
                       <Sparkles className="w-5 h-5 text-green-600" />
                     ) : (
-                      <Egg className="w-5 h-5 text-orange-600" />
+                      <div className="relative flex h-6 w-5 items-center justify-center rounded-[45%_45%_48%_48%/55%_55%_40%_40%] border-2 border-orange-400 bg-gradient-to-b from-orange-200 to-orange-400">
+                        <span className="absolute h-1 w-1 rounded-full bg-white/70 top-1 left-1.5" />
+                      </div>
                     )}
                   </div>
 
@@ -269,9 +293,7 @@ export default function ImpressumPage() {
                 <Button
                   onClick={closeEgg}
                   className={`rounded-2xl font-black ${
-                    eggState.success
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-orange-600 hover:bg-orange-700"
+                    eggState.success ? "bg-green-600 hover:bg-green-700" : "bg-orange-600 hover:bg-orange-700"
                   }`}
                 >
                   Verstanden
