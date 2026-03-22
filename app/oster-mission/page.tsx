@@ -29,15 +29,27 @@ type MissionProgressRow = {
   solved_at: string
 }
 
+type SecretProgressRow = {
+  user_id: string
+  player_id: number | string | null
+  secret_193_unlocked: boolean
+  secret_058_unlocked: boolean
+  secret_193_unlocked_at: string | null
+  secret_058_unlocked_at: string | null
+  created_at?: string
+  updated_at?: string
+}
+
 type MessageType = "success" | "error" | "info"
 
-const SOLUTION_LENGTH = 9
-const FINAL_WORD = "BULLSEYES"
+const TOTAL_DAYS = 7
+const FINAL_WORD = "TURNIER"
+const LETTER_SLOT_COUNT = FINAL_WORD.length
 
 const SECRET_TRIGGER_CODE = "193"
 const SECRET_SECOND_CODE = "058"
 
-const HINTS: Record<number, { label: string; text: string }> = {
+const HINTS: Record<number, { label: string; text: string; link?: string; linkLabel?: string }> = {
   1: {
     label: "Erster Hinweis",
     text: `Finde heraus, ob du wirklich aufmerksam liest.
@@ -45,7 +57,7 @@ Achte nicht nur auf den Inhalt, sondern auf den Anfang.
 Quellen können Hinweise enthalten.
 
 Nicht jeder findet sofort die Lösung.
-Doch wer nach HINWEIS fragt, wird Sie entdecken.`,
+Doch wer nach HINWEIS fragt, wird sie entdecken.`,
   },
   2: {
     label: "Zweiter Hinweis",
@@ -95,10 +107,23 @@ Hinweis: Der vollständige Name ist der Code.`,
   },
   6: {
     label: "Sechster Hinweis",
-    text: `Die nächste Spur liegt außerhalb dieser Seite.
+    text: `Die Spur führt zu einem Sieger.
 
-Öffne:
-https://neal.fun/spend/
+Finde heraus,
+wer das UK Open im Jahr 2019 gewonnen hat.
+
+Suche anschließend sein Einlauflied auf Youtube
+Official Music Video.
+
+Gehe zu Minute 2:33.
+
+Dort wird ein Wort gesungen.
+
+Dieses Wort ist dein Code.`,
+  },
+7: {
+  label: "Siebter Hinweis",
+  text: `Die letzte Spur liegt außerhalb dieser Seite.
 
 Du bekommst dort das Geld von Bill Gates.
 
@@ -113,8 +138,10 @@ Kaufe genau:
 Nimm von der verbleibenden Gesamtsumme die letzten drei Ziffern.
 
 Diese Zahl ist dein Code.`,
-  },
-  7: {
+  link: "https://neal.fun/spend/",
+  linkLabel: "Seite öffnen",
+},
+  8: {
     label: "Siebter Hinweis",
     text: `Das Finale wartet schon.
 Nicht jede Antwort öffnet sofort die letzte Tür.`,
@@ -130,6 +157,29 @@ const RELEASE_DATES = [
   "2026-04-04T08:00:00+02:00",
   "2026-04-05T08:00:00+02:00",
 ]
+
+
+const withTimeout = async <T,>(promise: Promise<T>, ms = 10000): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout>
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error("Timeout"))
+    }, ms)
+  })
+
+  try {
+    return await Promise.race([promise, timeoutPromise])
+  } finally {
+    clearTimeout(timeoutId!)
+  }
+}
+
+
+
+
+
+
 
 export default function OsterMissionPage() {
   const [mounted, setMounted] = useState(false)
@@ -153,8 +203,9 @@ export default function OsterMissionPage() {
   const [submittingSecret, setSubmittingSecret] = useState(false)
 
   const [showSecretPopup193, setShowSecretPopup193] = useState(false)
-  const [secretStageUnlocked, setSecretStageUnlocked] = useState(false)
   const [showSecretPopup058, setShowSecretPopup058] = useState(false)
+  const [secret193Unlocked, setSecret193Unlocked] = useState(false)
+  const [secret058Unlocked, setSecret058Unlocked] = useState(false)
 
   const messageRef = useRef<HTMLDivElement | null>(null)
   const codeInputRef = useRef<HTMLInputElement | null>(null)
@@ -173,7 +224,8 @@ export default function OsterMissionPage() {
     })
   }
 
-  const normalize = (value: string) => value.trim().replace(/\s+/g, " ").toUpperCase()
+  const normalize = (value: string) =>
+    value.trim().replace(/\s+/g, " ").toUpperCase()
 
   const focusCodeInput = () => {
     requestAnimationFrame(() => codeInputRef.current?.focus())
@@ -187,23 +239,44 @@ export default function OsterMissionPage() {
     requestAnimationFrame(() => finalInputRef.current?.focus())
   }
 
-  const letterSlots = useMemo(() => {
-    const slots = Array(SOLUTION_LENGTH).fill("_")
-    for (const row of progress) {
-      if (row.day_number >= 1 && row.day_number <= SOLUTION_LENGTH) {
-        slots[row.day_number - 1] = row.letter
-      }
-    }
-    return slots
+  const collectedLetters = useMemo(() => {
+    return progress
+      .sort((a, b) => a.day_number - b.day_number)
+      .map((row) => (row.letter ?? "").toString())
+      .join("")
+      .toUpperCase()
   }, [progress])
 
+  const letterSlots = useMemo(() => {
+    const chars = collectedLetters.slice(0, LETTER_SLOT_COUNT).split("")
+    const slots = Array(LETTER_SLOT_COUNT).fill("_")
+
+    chars.forEach((char, index) => {
+      slots[index] = char
+    })
+
+    return slots
+  }, [collectedLetters])
+
   const progressPercent = useMemo(() => {
-    return Math.round((progress.length / SOLUTION_LENGTH) * 100)
+    return Math.round((progress.length / TOTAL_DAYS) * 100)
   }, [progress.length])
+
+  const hasAllCodesCollected = useMemo(() => {
+    return progress.length >= TOTAL_DAYS
+  }, [progress.length])
+
+  const isCodeInputLocked = !userId || submittingCode || hasAllCodesCollected
+  const isFinalInputLocked =
+    !userId || hasCorrectFinalSubmission || submittingFinal
 
   const nextRelease = useMemo(() => {
     if (!mounted || !now) return null
-    return RELEASE_DATES.map((date) => new Date(date)).find((date) => date.getTime() > now.getTime()) ?? null
+    return (
+      RELEASE_DATES.map((date) => new Date(date)).find(
+        (date) => date.getTime() > now.getTime()
+      ) ?? null
+    )
   }, [mounted, now])
 
   const countdownText = useMemo(() => {
@@ -242,17 +315,48 @@ export default function OsterMissionPage() {
   }, [mounted, nextRelease, now])
 
   const currentDay = useMemo(() => {
-    return Math.min(progress.length + 1, SOLUTION_LENGTH)
+    return Math.min(progress.length + 1, TOTAL_DAYS)
   }, [progress.length])
 
-  const activeHint = useMemo(() => {
-    return (
-      HINTS[currentDay] ?? {
-        label: `Tag ${currentDay}`,
-        text: "Das nächste Rätsel wird bald freigeschaltet.",
-      }
-    )
-  }, [currentDay])
+const activeHint = useMemo(() => {
+  if (hasCorrectFinalSubmission) {
+    return null
+  }
+
+  if (hasAllCodesCollected) {
+    return {
+      label: "Alle Hinweise abgeschlossen",
+      text: "Du hast alle 7 Buchstaben gesammelt.",
+    }
+  }
+
+  if (secret058Unlocked) {
+    return {
+      label: "Finale freigeschaltet",
+      text: "Du hast den geheimen Pfad abgeschlossen.",
+    }
+  }
+
+  if (secret193Unlocked && !secret058Unlocked) {
+    return {
+      label: "Geheimer Pfad aktiv",
+      text: "Du hast den versteckten Weg gefunden. Folge jetzt dieser Spur...",
+    }
+  }
+
+  return (
+    HINTS[currentDay] ?? {
+      label: `Tag ${currentDay}`,
+      text: "Das nächste Rätsel wird bald freigeschaltet.",
+    }
+  )
+}, [
+  currentDay,
+  hasAllCodesCollected,
+  hasCorrectFinalSubmission,
+  secret058Unlocked,
+  secret193Unlocked,
+])
 
   useEffect(() => {
     setMounted(true)
@@ -285,37 +389,51 @@ export default function OsterMissionPage() {
 
       setPlayerId((profileData as any)?.player_id ?? null)
 
-      await Promise.all([loadProgress(authUserId), loadFinalSubmission(authUserId)])
+      await Promise.all([
+        loadProgress(authUserId),
+        loadFinalSubmission(authUserId),
+        loadSecretProgress(authUserId),
+      ])
+
       setLoading(false)
     }
 
     init()
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const authUserId = session?.user?.id ?? null
-      setUserId(authUserId)
+    const { data: sub } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        const authUserId = session?.user?.id ?? null
+        setUserId(authUserId)
 
-      if (!authUserId) {
-        setPlayerId(null)
-        setProgress([])
-        setHasCorrectFinalSubmission(false)
+        if (!authUserId) {
+          setPlayerId(null)
+          setProgress([])
+          setHasCorrectFinalSubmission(false)
+          setSecret193Unlocked(false)
+          setSecret058Unlocked(false)
+          setLoading(false)
+          return
+        }
+
+        setLoading(true)
+
+        const { data: profileData } = await supabase
+          .from("user_profiles")
+          .select("player_id")
+          .eq("user_id", authUserId)
+          .maybeSingle()
+
+        setPlayerId((profileData as any)?.player_id ?? null)
+
+        await Promise.all([
+          loadProgress(authUserId),
+          loadFinalSubmission(authUserId),
+          loadSecretProgress(authUserId),
+        ])
+
         setLoading(false)
-        return
       }
-
-      setLoading(true)
-
-      const { data: profileData } = await supabase
-        .from("user_profiles")
-        .select("player_id")
-        .eq("user_id", authUserId)
-        .maybeSingle()
-
-      setPlayerId((profileData as any)?.player_id ?? null)
-
-      await Promise.all([loadProgress(authUserId), loadFinalSubmission(authUserId)])
-      setLoading(false)
-    })
+    )
 
     return () => {
       sub.subscription.unsubscribe()
@@ -335,7 +453,7 @@ export default function OsterMissionPage() {
       return
     }
 
-    setProgress(data ?? [])
+    setProgress((data ?? []) as MissionProgressRow[])
   }
 
   const loadFinalSubmission = async (uid: string) => {
@@ -355,95 +473,196 @@ export default function OsterMissionPage() {
     setHasCorrectFinalSubmission(Boolean(data && data.length > 0))
   }
 
-  const handleCodeSubmit = async () => {
-    if (submittingCode) return
+  const loadSecretProgress = async (uid: string) => {
+    const { data, error } = await supabase
+      .from("oster_mission_secret_progress")
+      .select("*")
+      .eq("user_id", uid)
+      .maybeSingle()
+
+    if (error) {
+      console.error("loadSecretProgress error:", error)
+      setSecret193Unlocked(false)
+      setSecret058Unlocked(false)
+      return
+    }
+
+    const row = data as SecretProgressRow | null
+
+    setSecret193Unlocked(Boolean(row?.secret_193_unlocked))
+    setSecret058Unlocked(Boolean(row?.secret_058_unlocked))
+  }
+  
+  
+  
+  
+
+const handleCodeSubmit = async () => {
+  if (submittingCode) return
+
+  if (!userId) {
+    setFeedback("Bitte zuerst einloggen.", "error")
+    return
+  }
+
+  if (hasAllCodesCollected) {
+    setFeedback(
+      "Du hast bereits alle 7 Codes eingegeben. Die Code-Eingabe ist abgeschlossen.",
+      "info"
+    )
+    return
+  }
+
+  const normalizedCode = normalize(codeInput)
+
+  if (!normalizedCode) {
+    setFeedback("Bitte gib zuerst einen Code ein.", "error")
+    focusCodeInput()
+    return
+  }
+
+  setSubmittingCode(true)
+
+  try {
+    if (normalizedCode === "4") {
+      setCodeInput("")
+      setShowSecretPopup193(false)
+      setMessage("")
+      focusCodeInput()
+      return
+    }
+
+    if (normalizedCode === SECRET_TRIGGER_CODE) {
+      const { error } = await supabase
+        .from("oster_mission_secret_progress")
+        .upsert(
+          {
+            user_id: userId,
+            secret_193_unlocked: true,
+            secret_193_unlocked_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        )
+
+      if (error) {
+        console.error("secret 193 save error:", error)
+        setFeedback(
+          "Der geheime Fortschritt konnte nicht gespeichert werden.",
+          "error"
+        )
+        focusCodeInput()
+        return
+      }
+
+      setCodeInput("")
+      setMessage("")
+      setSecret193Unlocked(true)
+      setShowSecretPopup193(true)
+      focusSecretInput()
+      return
+    }
+
+   const { data: codeRow, error: codeError } = await withTimeout(
+  supabase
+    .from("oster_mission_codes")
+    .select("*")
+    .eq("code_value", normalizedCode)
+    .maybeSingle(),
+  10000
+)
+
+    if (codeError || !codeRow) {
+      setFeedback("Dieser Code ist leider nicht korrekt.", "error")
+      focusCodeInput()
+      return
+    }
+
+   const { data: existing } = await withTimeout(
+  supabase
+    .from("oster_mission_progress")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("day_number", codeRow.day_number)
+    .maybeSingle(),
+  10000
+)
+
+    if (existing) {
+      setCodeInput("")
+      setFeedback(`Tag ${codeRow.day_number} wurde bereits gelöst.`, "info")
+      focusCodeInput()
+      return
+    }
+
+    const { error: insertError } = await withTimeout(
+  supabase
+    .from("oster_mission_progress")
+    .insert({
+      user_id: userId,
+      player_id: playerId,
+      day_number: codeRow.day_number,
+      code_value: codeRow.code_value,
+      letter: codeRow.letter,
+    }),
+  10000
+)
+
+    if (insertError) {
+      console.error("insert progress error:", insertError)
+      setFeedback(
+        "Der Code war richtig, konnte aber nicht gespeichert werden.",
+        "error"
+      )
+      focusCodeInput()
+      return
+    }
+
+  await withTimeout(
+  Promise.all([
+    loadProgress(userId),
+    loadFinalSubmission(userId),
+    loadSecretProgress(userId),
+  ]),
+  10000
+)
+
+    setCodeInput("")
+    setFeedback(
+      `Richtig! Für Tag ${codeRow.day_number} wurde ${codeRow.letter} freigeschaltet.`,
+      "success"
+    )
+    focusCodeInput()
+  } catch (err) {
+  console.error("handleCodeSubmit crashed:", err)
+
+  const isTimeout =
+    err instanceof Error && err.message === "Timeout"
+
+  setFeedback(
+    isTimeout
+      ? "Die Anfrage hat zu lange gedauert. Bitte versuche es erneut."
+      : "Beim Prüfen ist ein Fehler aufgetreten. Bitte versuche es erneut.",
+    "error"
+  )
+} finally {
+    setSubmittingCode(false)
+  }
+}
+  
+  
+  
+  
+  
+  
+  
+
+  const handleSecretSubmit = async () => {
+    if (submittingSecret) return
 
     if (!userId) {
       setFeedback("Bitte zuerst einloggen.", "error")
       return
     }
-
-    const normalizedCode = normalize(codeInput)
-
-    if (!normalizedCode) {
-      setFeedback("Bitte gib zuerst einen Code ein.", "error")
-      focusCodeInput()
-      return
-    }
-
-    setSubmittingCode(true)
-
-    try {
-      if (normalizedCode === "4") {
-        setCodeInput("")
-        setShowSecretPopup193(false)
-        setMessage("")
-        focusCodeInput()
-        return
-      }
-
-      if (normalizedCode === SECRET_TRIGGER_CODE) {
-        setCodeInput("")
-        setMessage("")
-        setSecretStageUnlocked(true)
-        setShowSecretPopup193(true)
-        focusSecretInput()
-        return
-      }
-
-      const { data: codeRow, error: codeError } = await supabase
-        .from("oster_mission_codes")
-        .select("*")
-        .eq("code_value", normalizedCode)
-        .maybeSingle()
-
-      if (codeError || !codeRow) {
-        setFeedback("Dieser Code ist leider nicht korrekt.", "error")
-        focusCodeInput()
-        return
-      }
-
-      const { data: existing } = await supabase
-        .from("oster_mission_progress")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("day_number", codeRow.day_number)
-        .maybeSingle()
-
-      if (existing) {
-        setCodeInput("")
-        setFeedback(`Tag ${codeRow.day_number} wurde bereits gelöst.`, "info")
-        focusCodeInput()
-        return
-      }
-
-      const { error: insertError } = await supabase.from("oster_mission_progress").insert({
-        user_id: userId,
-        player_id: playerId,
-        day_number: codeRow.day_number,
-        code_value: codeRow.code_value,
-        letter: codeRow.letter,
-      })
-
-      if (insertError) {
-        console.error("insert progress error:", insertError)
-        setFeedback("Der Code war richtig, konnte aber nicht gespeichert werden.", "error")
-        focusCodeInput()
-        return
-      }
-
-      await Promise.all([loadProgress(userId), loadFinalSubmission(userId)])
-
-      setCodeInput("")
-      setFeedback(`Richtig! Dein Buchstabe für Tag ${codeRow.day_number}: ${codeRow.letter}`, "success")
-      focusCodeInput()
-    } finally {
-      setSubmittingCode(false)
-    }
-  }
-
-  const handleSecretSubmit = async () => {
-    if (submittingSecret) return
 
     const normalizedSecret = normalize(secretInput)
 
@@ -457,12 +676,38 @@ export default function OsterMissionPage() {
 
     try {
       if (normalizedSecret !== SECRET_SECOND_CODE) {
-        setFeedback("Das ist noch nicht der richtige versteckte Code.", "error")
+        setFeedback(
+          "Das ist noch nicht der richtige versteckte Code.",
+          "error"
+        )
         focusSecretInput()
         return
       }
 
+     const { error } = await supabase
+  .from("oster_mission_secret_progress")
+  .upsert(
+    {
+      user_id: userId,
+      secret_193_unlocked: true,
+      secret_058_unlocked: true,
+      secret_058_unlocked_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  )
+
+      if (error) {
+        console.error("secret 058 save error:", error)
+        setFeedback(
+          "Der finale Geheimstatus konnte nicht gespeichert werden.",
+          "error"
+        )
+        return
+      }
+
       setSecretInput("")
+      setSecret193Unlocked(true)
+      setSecret058Unlocked(true)
       setShowSecretPopup058(true)
       setFeedback("Geheimer Pfad erkannt.", "success")
     } finally {
@@ -478,13 +723,22 @@ export default function OsterMissionPage() {
       return
     }
 
-    if (progress.length < SOLUTION_LENGTH) {
-      setFeedback("Du brauchst erst alle Buchstaben.", "error")
+    if (hasCorrectFinalSubmission) {
+      setFeedback(
+        "Du hast bereits eine richtige Lösung eingereicht. Weitere Einsendungen sind gesperrt.",
+        "info"
+      )
+      return
+    }
+
+    if (progress.length < TOTAL_DAYS) {
+      setFeedback("Du musst zuerst alle 7 Tage lösen.", "error")
       focusFinalInput()
       return
     }
 
     const normalizedWord = normalize(finalInput)
+
     if (!normalizedWord) {
       setFeedback("Bitte gib zuerst ein Lösungswort ein.", "error")
       focusFinalInput()
@@ -496,12 +750,14 @@ export default function OsterMissionPage() {
     try {
       const isCorrect = normalizedWord === FINAL_WORD
 
-      const { error } = await supabase.from("oster_mission_submissions").insert({
-        user_id: userId,
-        player_id: playerId,
-        solution_word: normalizedWord,
-        is_correct: isCorrect,
-      })
+      const { error } = await supabase
+        .from("oster_mission_submissions")
+        .insert({
+          user_id: userId,
+          player_id: playerId,
+          solution_word: normalizedWord,
+          is_correct: isCorrect,
+        })
 
       if (error) {
         console.error("final submission error:", error)
@@ -517,10 +773,11 @@ export default function OsterMissionPage() {
           "Glückwunsch! Du hast das Rätsel gelöst. Unter allen richtigen Lösungen wird ein Gewinner gezogen.",
           "success"
         )
-      } else {
-        setFeedback("Das Lösungswort ist leider noch nicht richtig.", "error")
-        focusFinalInput()
+        return
       }
+
+      setFeedback("Das Lösungswort ist leider noch nicht richtig.", "error")
+      focusFinalInput()
     } finally {
       setSubmittingFinal(false)
     }
@@ -561,7 +818,8 @@ export default function OsterMissionPage() {
                 Der versteckte Code
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-relaxed text-orange-50/95 sm:text-base">
-                Gib hier deine gefundenen Codes ein, sammle Buchstaben und knackle am Ende das Lösungswort.
+                Gib hier deine gefundenen Codes ein, sammle Buchstaben und
+                knackle am Ende das Lösungswort.
               </p>
             </div>
           </section>
@@ -569,7 +827,9 @@ export default function OsterMissionPage() {
           {!loading && !userId && (
             <Card className="mt-5 rounded-2xl border border-red-200 bg-red-50 shadow-sm">
               <CardContent className="p-5">
-                <p className="font-black text-red-800">Bitte zuerst einloggen.</p>
+                <p className="font-black text-red-800">
+                  Bitte zuerst einloggen.
+                </p>
                 <p className="mt-1 text-sm text-red-700">
                   Die Mission ist nur für eingeloggte Benutzer verfügbar.
                 </p>
@@ -586,7 +846,9 @@ export default function OsterMissionPage() {
                   </div>
                   <div>
                     <h2 className="text-lg font-black">Code eingeben</h2>
-                    <p className="text-sm text-gray-600">Jeder richtige Code schaltet einen Buchstaben frei.</p>
+                    <p className="text-sm text-gray-600">
+                      Jeder richtige Code schaltet einen Buchstaben frei.
+                    </p>
                   </div>
                 </div>
 
@@ -601,21 +863,36 @@ export default function OsterMissionPage() {
                     ref={codeInputRef}
                     value={codeInput}
                     onChange={(e) => setCodeInput(e.target.value)}
-                    placeholder="Code eingeben"
+                    placeholder={
+                      hasAllCodesCollected
+                        ? "Alle 7 Codes wurden bereits eingegeben"
+                        : "Code eingeben"
+                    }
                     className="h-12 rounded-2xl"
-                    disabled={!userId || submittingCode}
+                    disabled={isCodeInputLocked}
                   />
                   <Button
                     type="submit"
                     className="h-12 rounded-2xl bg-orange-600 font-black hover:bg-orange-700"
-                    disabled={!userId || submittingCode}
+                    disabled={isCodeInputLocked}
                   >
-                    {submittingCode ? "Prüft..." : "Prüfen"}
+                    {submittingCode
+                      ? "Prüft..."
+                      : hasAllCodesCollected
+                        ? "Abgeschlossen"
+                        : "Prüfen"}
                   </Button>
                 </form>
 
-                <AnimatePresence>
-                  {secretStageUnlocked && (
+                {hasAllCodesCollected && (
+                  <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800">
+                    Alle 7 Codes wurden gespeichert. Die Code-Eingabe ist jetzt
+                    gesperrt.
+                  </div>
+                )}
+
+              <AnimatePresence>
+  {!hasAllCodesCollected && secret193Unlocked && !secret058Unlocked && (
                     <motion.div
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -626,7 +903,8 @@ export default function OsterMissionPage() {
                         Versteckter Pfad aktiv
                       </p>
                       <p className="mt-2 text-sm leading-relaxed text-zinc-300">
-                        Du hast die erste Tür geöffnet. Wenn du den nächsten geheimen Code findest, gib ihn hier ein.
+                        Du hast die erste Tür geöffnet. Wenn du den nächsten
+                        geheimen Code findest, gib ihn hier ein.
                       </p>
 
                       <form
@@ -655,6 +933,30 @@ export default function OsterMissionPage() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+				
+				
+{secret058Unlocked && !hasAllCodesCollected && !hasCorrectFinalSubmission && (
+  <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-4">
+    <p className="text-[11px] font-black uppercase tracking-wider text-green-700">
+      Finale freigeschaltet
+    </p>
+
+    <p className="mt-2 text-sm font-semibold leading-relaxed text-green-900">
+      Du hast den geheimen Pfad abgeschlossen. Das Finale wartet auf dich.
+    </p>
+
+    <div className="mt-4">
+      <Button
+        asChild
+        className="rounded-2xl bg-green-600 font-black text-white hover:bg-green-700"
+      >
+        <Link href="/mission/finale">Zum Finale</Link>
+      </Button>
+    </div>
+  </div>
+)}
+
+
 
                 <AnimatePresence mode="wait">
                   {message && (
@@ -674,14 +976,29 @@ export default function OsterMissionPage() {
                   )}
                 </AnimatePresence>
 
-                <div className="mt-5 rounded-2xl border border-orange-200 bg-orange-50 p-4">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-orange-700">
-                    {activeHint.label}
-                  </p>
-                  <p className="mt-2 whitespace-pre-line text-sm font-semibold leading-relaxed text-gray-900">
-                    {activeHint.text}
-                  </p>
-                </div>
+           {activeHint && (
+  <div className="mt-5 rounded-2xl border border-orange-200 bg-orange-50 p-4">
+    <p className="text-[11px] font-black uppercase tracking-wider text-orange-700">
+      {activeHint.label}
+    </p>
+
+    <p className="mt-2 whitespace-pre-line text-sm font-semibold leading-relaxed text-gray-900">
+      {activeHint.text}
+    </p>
+
+    {activeHint.link && (
+      <div className="mt-4">
+        <Button
+          type="button"
+          onClick={() => window.open(activeHint.link, "_blank", "noopener,noreferrer")}
+          className="rounded-2xl bg-orange-600 font-black text-white hover:bg-orange-700"
+        >
+          {activeHint.linkLabel ?? "Link öffnen"}
+        </Button>
+      </div>
+    )}
+  </div>
+)}
               </CardContent>
             </Card>
 
@@ -694,11 +1011,13 @@ export default function OsterMissionPage() {
                     </div>
                     <div>
                       <h2 className="text-lg font-black">Deine Buchstaben</h2>
-                      <p className="text-sm text-gray-600">7 Tage · 9 Buchstaben</p>
+                      <p className="text-sm text-gray-600">
+                        {TOTAL_DAYS} Tage · {LETTER_SLOT_COUNT} Buchstaben
+                      </p>
                     </div>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-9">
+                  <div className="mt-5 grid grid-cols-4 gap-2 sm:grid-cols-8">
                     {letterSlots.map((letter, index) => (
                       <div
                         key={index}
@@ -718,8 +1037,12 @@ export default function OsterMissionPage() {
                       <Timer className="h-5 w-5 text-orange-600" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-black">Fortschritt & Countdown</h2>
-                      <p className="text-sm text-gray-600">Bleib täglich dran und verpasse keinen Hinweis.</p>
+                      <h2 className="text-lg font-black">
+                        Fortschritt & Countdown
+                      </h2>
+                      <p className="text-sm text-gray-600">
+                        Bleib täglich dran und verpasse keinen Hinweis.
+                      </p>
                     </div>
                   </div>
 
@@ -727,7 +1050,8 @@ export default function OsterMissionPage() {
                     <div className="flex items-center justify-between text-sm font-semibold text-gray-700">
                       <span>Fortschritt</span>
                       <span>
-                        {progress.length} / {SOLUTION_LENGTH} gelöst · {progressPercent}%
+                        {progress.length} / {TOTAL_DAYS} gelöst ·{" "}
+                        {progressPercent}%
                       </span>
                     </div>
                     <div className="mt-2 h-3 overflow-hidden rounded-full bg-gray-100">
@@ -742,8 +1066,12 @@ export default function OsterMissionPage() {
                     <p className="text-[11px] font-black uppercase tracking-wider text-orange-700">
                       Nächstes Rätsel
                     </p>
-                    <p className="mt-2 text-2xl font-black text-gray-900">{countdownText}</p>
-                    <p className="mt-1 text-sm text-gray-600">{nextReleaseLabel}</p>
+                    <p className="mt-2 text-2xl font-black text-gray-900">
+                      {countdownText}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-600">
+                      {nextReleaseLabel}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -756,7 +1084,9 @@ export default function OsterMissionPage() {
                     </div>
                     <div>
                       <h2 className="text-lg font-black">Lösungswort</h2>
-                      <p className="text-sm text-gray-600">Groß- oder Kleinschreibung ist egal.</p>
+                      <p className="text-sm text-gray-600">
+                        Groß- oder Kleinschreibung ist egal.
+                      </p>
                     </div>
                   </div>
 
@@ -771,22 +1101,31 @@ export default function OsterMissionPage() {
                       ref={finalInputRef}
                       value={finalInput}
                       onChange={(e) => setFinalInput(e.target.value)}
-                      placeholder="Lösungswort eingeben"
+                      placeholder={
+                        hasCorrectFinalSubmission
+                          ? "Richtige Lösung bereits eingereicht"
+                          : "Lösungswort eingeben"
+                      }
                       className="h-12 rounded-2xl"
-                      disabled={!userId || hasCorrectFinalSubmission || submittingFinal}
+                      disabled={isFinalInputLocked}
                     />
                     <Button
                       type="submit"
                       className="h-12 rounded-2xl bg-gray-900 font-black hover:bg-black"
-                      disabled={!userId || hasCorrectFinalSubmission || submittingFinal}
+                      disabled={isFinalInputLocked}
                     >
-                      {submittingFinal ? "Sendet..." : "Absenden"}
+                      {submittingFinal
+                        ? "Sendet..."
+                        : hasCorrectFinalSubmission
+                          ? "Gespeichert"
+                          : "Absenden"}
                     </Button>
                   </form>
 
                   {hasCorrectFinalSubmission && (
                     <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800">
-                      Glückwunsch! Du hast das Rätsel gelöst. Unter allen richtigen Lösungen wird ein Gewinner gezogen.
+                      Glückwunsch! Du hast bereits eine richtige Lösung
+                      eingereicht. Das Formular ist jetzt gesperrt.
                     </div>
                   )}
                 </CardContent>
@@ -832,7 +1171,8 @@ export default function OsterMissionPage() {
                   Nächster Schritt
                 </p>
                 <p className="mt-2 text-sm text-orange-200">
-                  Suche den versteckten Code auf unserer Website und gib ihn hier in der Mission ein.
+                  Suche den versteckten Code auf unserer Website und gib ihn hier
+                  in der Mission ein.
                 </p>
               </div>
 
@@ -899,7 +1239,10 @@ export default function OsterMissionPage() {
                   Später
                 </Button>
 
-                <Button asChild className="flex-1 rounded-2xl bg-orange-600 font-black hover:bg-orange-700">
+                <Button
+                  asChild
+                  className="flex-1 rounded-2xl bg-orange-600 font-black hover:bg-orange-700"
+                >
                   <Link href="/mission/finale">Zum Finale</Link>
                 </Button>
               </div>

@@ -111,9 +111,16 @@ interface Vacation {
   end_date: string
   note?: string | null
   created_at?: string
+}
 
-
-
+interface PrivateCalendarEntry {
+  id: string
+  user_id: string
+  title: string
+  start_date: string
+  end_date: string
+  note?: string | null
+  created_at?: string
 }
 
 
@@ -207,6 +214,16 @@ const [loadingBoardAttachments, setLoadingBoardAttachments] = useState(false)
 
   const [vacations, setVacations] = useState<Vacation[]>([])
   const [isVacationDialogOpen, setIsVacationDialogOpen] = useState(false)
+  const [privateEntries, setPrivateEntries] = useState<PrivateCalendarEntry[]>([])
+const [isPrivateDialogOpen, setIsPrivateDialogOpen] = useState(false)
+const [privateTitle, setPrivateTitle] = useState("")
+const [privateStart, setPrivateStart] = useState("")
+const [privateEnd, setPrivateEnd] = useState("")
+const [privateNote, setPrivateNote] = useState("")
+const [savingPrivateEntry, setSavingPrivateEntry] = useState(false)
+const [editingPrivateEntryId, setEditingPrivateEntryId] = useState<string | null>(null)
+const [confirmDeletePrivateEntryId, setConfirmDeletePrivateEntryId] = useState<string | null>(null)
+const [isConfirmDeletePrivateOpen, setIsConfirmDeletePrivateOpen] = useState(false)
   const [isBoardDialogOpen, setIsBoardDialogOpen] = useState(false)
 const [isVorstand, setIsVorstand] = useState(false)
 
@@ -519,6 +536,26 @@ if (!boardRes.error) {
       }
 
       setVacations(fetchedVacations)
+	  
+	        let fetchedPrivateEntries: PrivateCalendarEntry[] = []
+      try {
+        if (uid) {
+          const privateResponse = await supabase
+            .from("calendar_private_entries")
+            .select("id, user_id, title, start_date, end_date, note, created_at")
+            .order("start_date", { ascending: true })
+
+          if (privateResponse.error) {
+            console.error("Error fetching private calendar entries:", privateResponse.error)
+          } else {
+            fetchedPrivateEntries = (privateResponse.data || []) as PrivateCalendarEntry[]
+          }
+        }
+      } catch (privateErr) {
+        console.error("calendar_private_entries fetch failed:", privateErr)
+      }
+
+      setPrivateEntries(fetchedPrivateEntries)
 
 
       const uniqueLeagues = new Set<string>(["Alle Ligen"])
@@ -704,8 +741,33 @@ const filteredEvents = allEvents.filter((event) => {
               } as Event
             })
         : []
+		
+		
+		    const privateEntriesForDate =
+      selectedItemType !== "Spiele" && selectedItemType !== "Turniere" && selectedItemType !== "Geburtstage"
+        ? privateEntries
+            .filter((p) => isDateInRange(dateStr, p.start_date, p.end_date))
+            .map((p) => {
+              return {
+                id: `private-${p.id}-${dateStr}`,
+                vacation_id: p.id,
+                vacation_user_id: p.user_id,
+                start_date: p.start_date,
+                end_date: p.end_date,
+                note: p.note || null,
+                name: `🔒 Privat: ${p.title}`,
+                event_date: dateStr,
+                event_type: "Privat",
+                description: p.note || undefined,
+                start_time: "00:00:00",
+                type: "private",
+              } as Event
+            })
+        : []
+		
+		
 
-    return [...matchesForDate, ...eventsForDate, ...birthdaysForDate, ...vacationsForDate]
+       return [...matchesForDate, ...eventsForDate, ...birthdaysForDate, ...vacationsForDate, ...privateEntriesForDate]
   }
 
   const getDaysInMonth = (date: Date) => {
@@ -788,6 +850,21 @@ const loadLineup = async (matchId: string) => {
   const openEventDialog = async (event: Event) => {
   setSelectedEvent(event)
   setIsEventDialogOpen(true)
+  
+    if (event.type === "private") {
+    setIsEventDialogOpen(false)
+
+    const entry = privateEntries.find((p) => event.id.includes(p.id))
+    if (!entry) return
+
+    setEditingPrivateEntryId(entry.id)
+    setPrivateTitle(entry.title)
+    setPrivateStart(entry.start_date)
+    setPrivateEnd(entry.end_date)
+    setPrivateNote(entry.note || "")
+    setIsPrivateDialogOpen(true)
+    return
+  }
   
   boardAttachments.forEach((a) => {
   if (a.url?.startsWith("blob:")) URL.revokeObjectURL(a.url)
@@ -902,7 +979,65 @@ const loadLineup = async (matchId: string) => {
   }
   
   
-  
+    const createPrivateEntry = async () => {
+    if (!privateTitle.trim() || !privateStart || !privateEnd) return
+
+    setSavingPrivateEntry(true)
+
+    try {
+      const { data: authData } = await supabase.auth.getUser()
+      const uid = authData?.user?.id
+
+      if (!uid) {
+        console.error("No authenticated user found")
+        return
+      }
+
+      if (editingPrivateEntryId) {
+        const { error } = await supabase
+          .from("calendar_private_entries")
+          .update({
+            title: privateTitle.trim(),
+            start_date: privateStart,
+            end_date: privateEnd,
+            note: privateNote.trim() ? privateNote.trim() : null,
+          })
+          .eq("id", editingPrivateEntryId)
+
+        if (error) {
+          console.error("Error updating private entry:", error)
+          return
+        }
+      } else {
+        const { error } = await supabase
+          .from("calendar_private_entries")
+          .insert({
+            user_id: uid,
+            title: privateTitle.trim(),
+            start_date: privateStart,
+            end_date: privateEnd,
+            note: privateNote.trim() ? privateNote.trim() : null,
+          })
+
+        if (error) {
+          console.error("Error creating private entry:", error)
+          return
+        }
+      }
+
+      setIsPrivateDialogOpen(false)
+      setEditingPrivateEntryId(null)
+      setPrivateTitle("")
+      setPrivateStart("")
+      setPrivateEnd("")
+      setPrivateNote("")
+      await fetchData()
+    } catch (e) {
+      console.error("createPrivateEntry failed:", e)
+    } finally {
+      setSavingPrivateEntry(false)
+    }
+  }
   
 
 
@@ -1044,6 +1179,37 @@ try {
       setSavingVacation(false)
     }
   }
+  
+  
+    const deletePrivateEntry = async (entryId: string) => {
+    if (!entryId) return
+
+    setSavingPrivateEntry(true)
+
+    try {
+      const { error } = await supabase
+        .from("calendar_private_entries")
+        .delete()
+        .eq("id", entryId)
+
+      if (error) {
+        console.error("Error deleting private entry:", error)
+        return
+      }
+
+      setIsEventDialogOpen(false)
+      setIsPrivateDialogOpen(false)
+      setEditingPrivateEntryId(null)
+      setConfirmDeletePrivateEntryId(null)
+      await fetchData()
+    } catch (e) {
+      console.error("deletePrivateEntry failed:", e)
+    } finally {
+      setSavingPrivateEntry(false)
+    }
+  }
+  
+  
 
   const handleItemClick = (item: CalendarItem) => {
     if ("match_date" in item) {
@@ -1136,8 +1302,29 @@ const todayEvents = events.filter((event) => {
       start_time: "00:00:00",
       type: "vacation",
     }))
+	
+	
+	
+	  const todayPrivateEntries: Event[] = privateEntries
+    .filter((p) => isDateInRange(todayStr, p.start_date, p.end_date))
+    .map((p) => ({
+      id: `today-private-${p.id}-${todayStr}`,
+      vacation_id: p.id,
+      vacation_user_id: p.user_id,
+      start_date: p.start_date,
+      end_date: p.end_date,
+      note: p.note,
+      name: `🔒 Privat: ${p.title}`,
+      event_date: todayStr,
+      event_type: "Privat",
+      description: p.note || undefined,
+      start_time: "00:00:00",
+      type: "private",
+    }))
+	
+	
 
-  const todayHighlights: CalendarItem[] = [...todayMatches, ...todayEvents, ...todayBirthdayEvents, ...todayVacations]
+    const todayHighlights: CalendarItem[] = [...todayMatches, ...todayEvents, ...todayBirthdayEvents, ...todayVacations, ...todayPrivateEntries]
   
   
   
@@ -1182,6 +1369,8 @@ function getEventTypeBadge(eventType: string) {
   } else if (eventType === "Versammlung") {
     return <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">Event</Badge>
   } else if (eventType === "Urlaub") {
+    } else if (eventType === "Privat") {
+    return <Badge className="bg-zinc-100 text-zinc-800 border-zinc-200 text-xs">🔒 Privat</Badge>
     return <Badge className="bg-sky-100 text-sky-800 border-sky-200 text-xs">🏖️ Urlaub</Badge>
   } else if (eventType === "Feiertag") {
     return <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">🇦🇹 Feiertag</Badge>
@@ -1651,23 +1840,40 @@ const toggleInvitePlayer = (playerId: string) => {
 )}
 					
 
+<div className="flex flex-col gap-2">
+  <Button
+    variant="default"
+    size="sm"
+    onClick={() => {
+      setEditingVacationId(null)
+      setVacationStart("")
+      setVacationEnd("")
+      setVacationNote("")
+      setIsVacationDialogOpen(true)
+    }}
+    className="w-full h-11 rounded-sm-2xl text-sm font-semibold shadow-sm"
+  >
+    <Plus className="h-4 w-4 mr-2" />
+    Urlaub eintragen
+  </Button>
 
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => {
-                        setEditingVacationId(null)
-                       
-                        setVacationStart("")
-                        setVacationEnd("")
-                        setVacationNote("")
-                        setIsVacationDialogOpen(true)
-                      }}
-                      className="w-full h-11 rounded-sm-2xl text-sm font-semibold shadow-sm"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Urlaub eintragen
-                    </Button>
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => {
+      setEditingPrivateEntryId(null)
+      setPrivateTitle("")
+      setPrivateStart("")
+      setPrivateEnd("")
+      setPrivateNote("")
+      setIsPrivateDialogOpen(true)
+    }}
+    className="w-full h-11 rounded-sm-2xl text-sm font-semibold shadow-sm"
+  >
+    🔒 Privaten Termin
+  </Button>
+</div>
+					
                   </div>
                 </div>
               </CardContent>
@@ -2809,6 +3015,119 @@ const dateB =
             </DialogContent>
           </Dialog>
 		  
+		  
+		  
+		<Dialog open={isPrivateDialogOpen} onOpenChange={setIsPrivateDialogOpen}>
+  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle className="text-lg">
+        {editingPrivateEntryId ? "Privaten Termin bearbeiten" : "Privaten Termin eintragen"}
+      </DialogTitle>
+      <DialogDescription className="text-sm">
+        Nur für dich sichtbar
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Titel</Label>
+        <Input
+          value={privateTitle}
+          onChange={(e) => setPrivateTitle(e.target.value)}
+          placeholder="z.B. Arzt, Privat, Frei, Termin"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label>Von</Label>
+          <Input type="date" value={privateStart} onChange={(e) => setPrivateStart(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>Bis</Label>
+          <Input type="date" value={privateEnd} onChange={(e) => setPrivateEnd(e.target.value)} />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Notiz (optional)</Label>
+        <Textarea
+          value={privateNote}
+          onChange={(e) => setPrivateNote(e.target.value)}
+          placeholder="z.B. nur intern / privat / nicht verfügbar ..."
+        />
+      </div>
+
+      <Button
+        onClick={createPrivateEntry}
+        disabled={savingPrivateEntry || !privateTitle.trim() || !privateStart || !privateEnd}
+        className="w-full"
+      >
+        {savingPrivateEntry
+          ? "Speichern..."
+          : editingPrivateEntryId
+          ? "Änderungen speichern"
+          : "Privaten Termin speichern"}
+      </Button>
+
+      {editingPrivateEntryId && (
+        <Button
+          variant="destructive"
+          onClick={() => {
+            setConfirmDeletePrivateEntryId(editingPrivateEntryId)
+            setIsConfirmDeletePrivateOpen(true)
+          }}
+          disabled={savingPrivateEntry}
+          className="w-full"
+        >
+          Privaten Termin löschen
+        </Button>
+      )}
+    </div>
+  </DialogContent>
+</Dialog>  
+		  
+		  
+		  <Dialog open={isConfirmDeletePrivateOpen} onOpenChange={setIsConfirmDeletePrivateOpen}>
+  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md">
+    <DialogHeader>
+      <DialogTitle className="text-lg">Privaten Termin wirklich löschen?</DialogTitle>
+      <DialogDescription className="text-sm">
+        Dieser private Termin wird dauerhaft entfernt.
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="flex flex-col sm:flex-row gap-2">
+      <Button
+        variant="outline"
+        onClick={() => {
+          setIsConfirmDeletePrivateOpen(false)
+          setConfirmDeletePrivateEntryId(null)
+        }}
+        className="w-full"
+      >
+        Abbrechen
+      </Button>
+
+      <Button
+        variant="destructive"
+        onClick={async () => {
+          if (!confirmDeletePrivateEntryId) return
+
+          const id = confirmDeletePrivateEntryId
+          setIsConfirmDeletePrivateOpen(false)
+          setConfirmDeletePrivateEntryId(null)
+
+          await deletePrivateEntry(id)
+        }}
+        className="w-full"
+        disabled={!confirmDeletePrivateEntryId}
+      >
+        Ja, löschen
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
 		  
 		  
 		  <Dialog open={isBoardDialogOpen} onOpenChange={setIsBoardDialogOpen}>
