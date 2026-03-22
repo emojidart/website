@@ -132,6 +132,7 @@ const RELEASE_DATES = [
 ]
 
 export default function OsterMissionPage() {
+  const [mounted, setMounted] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [playerId, setPlayerId] = useState<number | string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -145,7 +146,7 @@ export default function OsterMissionPage() {
 
   const [progress, setProgress] = useState<MissionProgressRow[]>([])
   const [hasCorrectFinalSubmission, setHasCorrectFinalSubmission] = useState(false)
-  const [now, setNow] = useState(() => new Date())
+  const [now, setNow] = useState<Date | null>(null)
 
   const [submittingCode, setSubmittingCode] = useState(false)
   const [submittingFinal, setSubmittingFinal] = useState(false)
@@ -201,10 +202,12 @@ export default function OsterMissionPage() {
   }, [progress.length])
 
   const nextRelease = useMemo(() => {
+    if (!mounted || !now) return null
     return RELEASE_DATES.map((date) => new Date(date)).find((date) => date.getTime() > now.getTime()) ?? null
-  }, [now])
+  }, [mounted, now])
 
   const countdownText = useMemo(() => {
+    if (!mounted || !now) return "Wird geladen..."
     if (!nextRelease) return "Alle Rätseltage sind freigeschaltet."
 
     const diff = nextRelease.getTime() - now.getTime()
@@ -223,7 +226,20 @@ export default function OsterMissionPage() {
     parts.push(`${seconds}s`)
 
     return parts.join(" ")
-  }, [nextRelease, now])
+  }, [mounted, nextRelease, now])
+
+  const nextReleaseLabel = useMemo(() => {
+    if (!mounted || !now) return "Freischaltung wird geladen..."
+    if (!nextRelease) return "Das Finale ist jetzt komplett spielbar."
+
+    return `Freischaltung am ${nextRelease.toLocaleString("de-AT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`
+  }, [mounted, nextRelease, now])
 
   const currentDay = useMemo(() => {
     return Math.min(progress.length + 1, SOLUTION_LENGTH)
@@ -239,6 +255,9 @@ export default function OsterMissionPage() {
   }, [currentDay])
 
   useEffect(() => {
+    setMounted(true)
+    setNow(new Date())
+
     const timer = window.setInterval(() => {
       setNow(new Date())
     }, 1000)
@@ -310,11 +329,13 @@ export default function OsterMissionPage() {
       .eq("user_id", uid)
       .order("day_number", { ascending: true })
 
-    if (!error && data) {
-      setProgress(data)
-    } else {
+    if (error) {
+      console.error("loadProgress error:", error)
       setProgress([])
+      return
     }
+
+    setProgress(data ?? [])
   }
 
   const loadFinalSubmission = async (uid: string) => {
@@ -325,11 +346,13 @@ export default function OsterMissionPage() {
       .eq("is_correct", true)
       .limit(1)
 
-    if (!error && data && data.length > 0) {
-      setHasCorrectFinalSubmission(true)
-    } else {
+    if (error) {
+      console.error("loadFinalSubmission error:", error)
       setHasCorrectFinalSubmission(false)
+      return
     }
+
+    setHasCorrectFinalSubmission(Boolean(data && data.length > 0))
   }
 
   const handleCodeSubmit = async () => {
@@ -403,6 +426,7 @@ export default function OsterMissionPage() {
       })
 
       if (insertError) {
+        console.error("insert progress error:", insertError)
         setFeedback("Der Code war richtig, konnte aber nicht gespeichert werden.", "error")
         focusCodeInput()
         return
@@ -480,6 +504,7 @@ export default function OsterMissionPage() {
       })
 
       if (error) {
+        console.error("final submission error:", error)
         setFeedback("Deine Lösung konnte nicht gespeichert werden.", "error")
         focusFinalInput()
         return
@@ -718,17 +743,7 @@ export default function OsterMissionPage() {
                       Nächstes Rätsel
                     </p>
                     <p className="mt-2 text-2xl font-black text-gray-900">{countdownText}</p>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {nextRelease
-                        ? `Freischaltung am ${nextRelease.toLocaleString("de-AT", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}`
-                        : "Das Finale ist jetzt komplett spielbar."}
-                    </p>
+                    <p className="mt-1 text-sm text-gray-600">{nextReleaseLabel}</p>
                   </div>
                 </CardContent>
               </Card>
