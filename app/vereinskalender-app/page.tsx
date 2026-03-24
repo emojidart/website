@@ -119,6 +119,7 @@ interface PrivateCalendarEntry {
   title: string
   start_date: string
   end_date: string
+  start_time?: string | null
   note?: string | null
   created_at?: string
 }
@@ -219,6 +220,7 @@ const [isPrivateDialogOpen, setIsPrivateDialogOpen] = useState(false)
 const [privateTitle, setPrivateTitle] = useState("")
 const [privateStart, setPrivateStart] = useState("")
 const [privateEnd, setPrivateEnd] = useState("")
+const [privateTime, setPrivateTime] = useState("")
 const [privateNote, setPrivateNote] = useState("")
 const [savingPrivateEntry, setSavingPrivateEntry] = useState(false)
 const [editingPrivateEntryId, setEditingPrivateEntryId] = useState<string | null>(null)
@@ -542,7 +544,7 @@ if (!boardRes.error) {
         if (uid) {
           const privateResponse = await supabase
             .from("calendar_private_entries")
-            .select("id, user_id, title, start_date, end_date, note, created_at")
+            .select("id, user_id, title, start_date, end_date, start_time, note, created_at")
             .order("start_date", { ascending: true })
 
           if (privateResponse.error) {
@@ -759,7 +761,7 @@ const filteredEvents = allEvents.filter((event) => {
                 event_date: dateStr,
                 event_type: "Privat",
                 description: p.note || undefined,
-                start_time: "00:00:00",
+                start_time: p.start_time || undefined,
                 type: "private",
               } as Event
             })
@@ -857,12 +859,13 @@ const loadLineup = async (matchId: string) => {
     const entry = privateEntries.find((p) => event.id.includes(p.id))
     if (!entry) return
 
-    setEditingPrivateEntryId(entry.id)
-    setPrivateTitle(entry.title)
-    setPrivateStart(entry.start_date)
-    setPrivateEnd(entry.end_date)
-    setPrivateNote(entry.note || "")
-    setIsPrivateDialogOpen(true)
+setEditingPrivateEntryId(entry.id)
+setPrivateTitle(entry.title)
+setPrivateStart(entry.start_date)
+setPrivateEnd(entry.end_date)
+setPrivateTime(normalizeTimeHHMM(entry.start_time || ""))
+setPrivateNote(entry.note || "")
+setIsPrivateDialogOpen(true)
     return
   }
   
@@ -996,12 +999,13 @@ const loadLineup = async (matchId: string) => {
       if (editingPrivateEntryId) {
         const { error } = await supabase
           .from("calendar_private_entries")
-          .update({
-            title: privateTitle.trim(),
-            start_date: privateStart,
-            end_date: privateEnd,
-            note: privateNote.trim() ? privateNote.trim() : null,
-          })
+         .update({
+  title: privateTitle.trim(),
+  start_date: privateStart,
+  end_date: privateEnd,
+  start_time: privateTime ? `${privateTime}:00` : null,
+  note: privateNote.trim() ? privateNote.trim() : null,
+})
           .eq("id", editingPrivateEntryId)
 
         if (error) {
@@ -1012,12 +1016,13 @@ const loadLineup = async (matchId: string) => {
         const { error } = await supabase
           .from("calendar_private_entries")
           .insert({
-            user_id: uid,
-            title: privateTitle.trim(),
-            start_date: privateStart,
-            end_date: privateEnd,
-            note: privateNote.trim() ? privateNote.trim() : null,
-          })
+  user_id: uid,
+  title: privateTitle.trim(),
+  start_date: privateStart,
+  end_date: privateEnd,
+  start_time: privateTime ? `${privateTime}:00` : null,
+  note: privateNote.trim() ? privateNote.trim() : null,
+})
 
         if (error) {
           console.error("Error creating private entry:", error)
@@ -1025,12 +1030,14 @@ const loadLineup = async (matchId: string) => {
         }
       }
 
-      setIsPrivateDialogOpen(false)
-      setEditingPrivateEntryId(null)
-      setPrivateTitle("")
-      setPrivateStart("")
-      setPrivateEnd("")
-      setPrivateNote("")
+   setIsPrivateDialogOpen(false)
+setEditingPrivateEntryId(null)
+setPrivateTitle("")
+setPrivateStart("")
+setPrivateEnd("")
+setPrivateTime("")
+setPrivateNote("")
+await fetchData()
       await fetchData()
     } catch (e) {
       console.error("createPrivateEntry failed:", e)
@@ -1318,7 +1325,7 @@ const todayEvents = events.filter((event) => {
       event_date: todayStr,
       event_type: "Privat",
       description: p.note || undefined,
-      start_time: "00:00:00",
+     start_time: p.start_time || undefined,
       type: "private",
     }))
 	
@@ -1861,13 +1868,14 @@ const toggleInvitePlayer = (playerId: string) => {
     variant="outline"
     size="sm"
     onClick={() => {
-      setEditingPrivateEntryId(null)
-      setPrivateTitle("")
-      setPrivateStart("")
-      setPrivateEnd("")
-      setPrivateNote("")
-      setIsPrivateDialogOpen(true)
-    }}
+  setEditingPrivateEntryId(null)
+  setPrivateTitle("")
+  setPrivateStart("")
+  setPrivateEnd("")
+  setPrivateTime("")
+  setPrivateNote("")
+  setIsPrivateDialogOpen(true)
+}}
     className="w-full h-11 rounded-sm-2xl text-sm font-semibold shadow-sm"
   >
     🔒 Privaten Termin
@@ -2979,6 +2987,8 @@ const dateB =
                     <Input type="date" value={vacationEnd} onChange={(e) => setVacationEnd(e.target.value)} />
                   </div>
                 </div>
+				
+	
 
                 <div className="space-y-2">
                   <Label>Notiz (optional)</Label>
@@ -3048,6 +3058,15 @@ const dateB =
           <Input type="date" value={privateEnd} onChange={(e) => setPrivateEnd(e.target.value)} />
         </div>
       </div>
+	  
+	  <div className="space-y-2">
+  <Label>Uhrzeit (optional)</Label>
+  <Input
+    type="time"
+    value={privateTime}
+    onChange={(e) => setPrivateTime(e.target.value)}
+  />
+</div>
 
       <div className="space-y-2">
         <Label>Notiz (optional)</Label>

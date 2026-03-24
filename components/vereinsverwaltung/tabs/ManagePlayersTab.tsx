@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -9,18 +9,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { PlayerCodeDialog } from "@/components/vereinsverwaltung/PlayerCodeDialog"
 import {
   AlertCircle,
   CheckCircle,
   Edit,
   Eye,
+  KeyRound,
   Link2,
   Link2Off as LinkOff,
   Loader2,
+  Settings,
   Trash2,
+  Users,
   XCircle,
-  KeyRound,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ClubPlayer, Team, TeamMember } from "@/components/vereinsverwaltung/types"
@@ -53,6 +56,14 @@ type SpielerOption = {
   player_code: string | null
 }
 
+type ClubRole = "Vorstand" | "Kassier" | "Schriftführer"
+
+const CLUB_ROLE_OPTIONS: Array<{ value: ClubRole; label: string }> = [
+  { value: "Vorstand", label: "Vorstand" },
+  { value: "Kassier", label: "Kassier" },
+  { value: "Schriftführer", label: "Schriftführer" },
+]
+
 function fmtDateISO(d: string | null | undefined) {
   if (!d) return "—"
   const s = String(d)
@@ -67,11 +78,8 @@ function fmtText(v: unknown) {
   return s.trim().length > 0 ? s : "—"
 }
 
-
 function getPlayerAccountState(player: ClubPlayer) {
-  const isInactive =
-    (player as any)?.is_active === false || !!player.club_left_at
-
+  const isInactive = (player as any)?.is_active === false || !!player.club_left_at
   const hasAccount = !!(player as any)?.user_profiles?.user_id
   const hasActiveCode = !!(player as any)?.active_code
 
@@ -102,17 +110,10 @@ function getPlayerAccountState(player: ClubPlayer) {
   }
 }
 
-
-
-
 const getPlayerStatusBadge = (player: ClubPlayer) => {
   const status = getPlayerAccountState(player)
 
-  return (
-    <Badge className={`${status.className} text-xs`}>
-      {status.label}
-    </Badge>
-  )
+  return <Badge className={`${status.className} text-xs`}>{status.label}</Badge>
 }
 
 export function ManagePlayersTab(props: Props) {
@@ -141,9 +142,9 @@ export function ManagePlayersTab(props: Props) {
 
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsPlayer, setDetailsPlayer] = useState<ClubPlayer | null>(null)
-  
+
   const [codeDialogOpen, setCodeDialogOpen] = useState(false)
-const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
+  const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
 
   const [linkingDialogOpen, setLinkingDialogOpen] = useState(false)
   const [isLinking, setIsLinking] = useState(false)
@@ -160,6 +161,17 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
     playerId: "",
     playerName: "",
     selectedSpielerId: "",
+  })
+
+  const [clubRoles, setClubRoles] = useState<ClubRole[]>([])
+  const [clubRolesLoading, setClubRolesLoading] = useState(false)
+  const [clubRolesSaving, setClubRolesSaving] = useState(false)
+  const [clubRolesStatus, setClubRolesStatus] = useState<{
+    type: "success" | "error" | null
+    message: string
+  }>({
+    type: null,
+    message: "",
   })
 
   const mustType = "DEAKTIVIEREN"
@@ -190,11 +202,11 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
     setConfirmText("")
     setDeleteOpen(true)
   }
-  
+
   function openCodeDialog(player: ClubPlayer) {
-  setCodePlayer(player)
-  setCodeDialogOpen(true)
-}
+    setCodePlayer(player)
+    setCodeDialogOpen(true)
+  }
 
   function closeDelete() {
     setDeleteOpen(false)
@@ -217,14 +229,13 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
   function closeDetails() {
     setDetailsOpen(false)
     setDetailsPlayer(null)
+    setClubRoles([])
+    setClubRolesStatus({ type: null, message: "" })
   }
 
   const loadSpielerdatenbank = async () => {
     try {
-      const { data, error } = await supabase
-        .from("spieldatenbank")
-        .select("id, name, verein, player_code")
-        .order("name", { ascending: true })
+      const { data, error } = await supabase.from("spieldatenbank").select("id, name, verein, player_code").order("name", { ascending: true })
 
       if (error) throw error
       setSpielerOptions((data || []) as SpielerOption[])
@@ -249,11 +260,6 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
 
   const refreshAfterChange = async () => {
     await Promise.resolve(onDataChanged?.())
-
-    if (detailsOpen && detailsPlayer) {
-      const updated = visiblePlayers.find((p) => p.id === detailsPlayer.id) || null
-      if (updated) setDetailsPlayer(updated)
-    }
   }
 
   const linkToSpieldatenbank = async () => {
@@ -269,10 +275,7 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
     setLinkingStatus({ type: null, message: "" })
 
     try {
-      const { error } = await supabase
-        .from("club_players")
-        .update({ spieldatenbank_id: linkingForm.selectedSpielerId })
-        .eq("id", linkingForm.playerId)
+      const { error } = await supabase.from("club_players").update({ spieldatenbank_id: linkingForm.selectedSpielerId }).eq("id", linkingForm.playerId)
 
       if (error) throw error
 
@@ -296,10 +299,7 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
   const unlinkSpieldatenbank = async (player: ClubPlayer) => {
     setIsLinking(true)
     try {
-      const { error } = await supabase
-        .from("club_players")
-        .update({ spieldatenbank_id: null })
-        .eq("id", player.id)
+      const { error } = await supabase.from("club_players").update({ spieldatenbank_id: null }).eq("id", player.id)
 
       if (error) throw error
       await refreshAfterChange()
@@ -329,6 +329,122 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
         Card fehlt
       </Badge>
     )
+  }
+
+  const getClubRoleBadges = (roles: ClubRole[]) => {
+    if (!roles.length) {
+      return <div className="text-sm text-gray-500">Keine Vereinsrollen vergeben.</div>
+    }
+
+    return (
+      <div className="flex flex-wrap gap-2">
+        {roles.map((role) => (
+          <Badge key={role} className="bg-purple-100 text-purple-800 border-purple-200 text-xs">
+            <Users className="h-3 w-3 mr-1" />
+            {role}
+          </Badge>
+        ))}
+      </div>
+    )
+  }
+
+  const toggleRoleInForm = (role: ClubRole) => {
+    setClubRoles((prev) => {
+      const has = prev.includes(role)
+      return has ? prev.filter((r) => r !== role) : [...prev, role]
+    })
+  }
+
+  useEffect(() => {
+    const loadClubRoles = async () => {
+      if (!detailsOpen || !detailsPlayer) {
+        setClubRoles([])
+        setClubRolesStatus({ type: null, message: "" })
+        return
+      }
+
+      const authUserId = (detailsPlayer as any)?.user_profiles?.user_id as string | undefined
+
+      if (!authUserId) {
+        setClubRoles([])
+        setClubRolesStatus({
+          type: "error",
+          message: "Keine Vereinsrollen möglich, weil der Spieler noch keinen Account hat.",
+        })
+        return
+      }
+
+      setClubRolesLoading(true)
+      setClubRolesStatus({ type: null, message: "" })
+
+      try {
+        const { data, error } = await supabase.from("club_roles").select("role").eq("user_id", authUserId)
+
+        if (error) throw error
+
+        const roles = ((data || []).map((r: any) => r.role).filter((r: any) =>
+          CLUB_ROLE_OPTIONS.some((opt) => opt.value === r),
+        ) || []) as ClubRole[]
+
+        setClubRoles(Array.from(new Set(roles)))
+      } catch (err: any) {
+        setClubRoles([])
+        setClubRolesStatus({
+          type: "error",
+          message: `Fehler beim Laden der Vereinsrollen: ${err.message}`,
+        })
+      } finally {
+        setClubRolesLoading(false)
+      }
+    }
+
+    loadClubRoles()
+  }, [detailsOpen, detailsPlayer])
+
+  const saveClubRoles = async () => {
+    if (!detailsPlayer) return
+
+    const authUserId = (detailsPlayer as any)?.user_profiles?.user_id as string | undefined
+
+    if (!authUserId) {
+      setClubRolesStatus({
+        type: "error",
+        message: "Der Spieler hat keinen Account. Vereinsrollen können erst nach Account-Erstellung gespeichert werden.",
+      })
+      return
+    }
+
+    setClubRolesSaving(true)
+    setClubRolesStatus({ type: null, message: "" })
+
+    try {
+      const { error: delErr } = await supabase.from("club_roles").delete().eq("user_id", authUserId)
+      if (delErr) throw delErr
+
+      if (clubRoles.length > 0) {
+        const payload = clubRoles.map((role) => ({
+          user_id: authUserId,
+          role,
+        }))
+
+        const { error: insErr } = await supabase.from("club_roles").insert(payload)
+        if (insErr) throw insErr
+      }
+
+      setClubRolesStatus({
+        type: "success",
+        message: "Vereinsrollen gespeichert.",
+      })
+
+      await refreshAfterChange()
+    } catch (err: any) {
+      setClubRolesStatus({
+        type: "error",
+        message: `Fehler beim Speichern der Vereinsrollen: ${err.message}`,
+      })
+    } finally {
+      setClubRolesSaving(false)
+    }
   }
 
   return (
@@ -397,52 +513,35 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
 
             <tbody>
               {visiblePlayers.map((player, idx) => {
-  const isInactive =
-    (player as any)?.is_active === false || !!player.club_left_at
-
-  const hasAccount = !!(player as any)?.user_profiles?.user_id
-  const hasActiveCode = !!(player as any)?.active_code
+                const isInactive = (player as any)?.is_active === false || !!player.club_left_at
+                const hasAccount = !!(player as any)?.user_profiles?.user_id
+                const hasActiveCode = !!(player as any)?.active_code
 
                 return (
                   <tr
                     key={player.id}
-                    className={cn(
-                      "border-t border-gray-200 hover:bg-gray-50/60",
-                      idx % 2 === 1 && "bg-gray-50/30"
-                    )}
+                    className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}
                   >
                     <td className="px-3 py-2 lg:px-4 lg:py-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <Avatar className="h-9 w-9">
-                          <AvatarImage
-                            src={player.photo_url || "/placeholder.svg?height=36&width=36&query=player-avatar"}
-                          />
+                          <AvatarImage src={player.photo_url || "/placeholder.svg?height=36&width=36&query=player-avatar"} />
                           <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                         </Avatar>
 
                         <div className="min-w-0">
-                          <div className="font-medium text-gray-800 truncate max-w-[260px]">
-                            {player.name}
-                          </div>
+                          <div className="font-medium text-gray-800 truncate max-w-[260px]">{player.name}</div>
                         </div>
                       </div>
                     </td>
 
-                    <td className="px-3 py-2 lg:px-4 lg:py-3">
-                      {getPlayerStatusBadge(player)}
-                    </td>
+                    <td className="px-3 py-2 lg:px-4 lg:py-3">{getPlayerStatusBadge(player)}</td>
 
-                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">
-                      {player.player_number ?? "—"}
-                    </td>
+                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.player_number ?? "—"}</td>
 
-                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700 font-mono">
-                      {(player as any)?.player_code ?? "—"}
-                    </td>
+                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700 font-mono">{(player as any)?.player_code ?? "—"}</td>
 
-                    <td className="px-3 py-2 lg:px-4 lg:py-3">
-                      {getMemberCardBadge(player)}
-                    </td>
+                    <td className="px-3 py-2 lg:px-4 lg:py-3">{getMemberCardBadge(player)}</td>
 
                     <td className="px-3 py-2 lg:px-4 lg:py-3">
                       <div className="flex justify-end gap-2">
@@ -467,24 +566,18 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Bearbeiten</span>
                         </Button>
-						
-						
-						
-						{!isInactive && !hasAccount && (
-  <Button
-    variant="outline"
-    size="sm"
-    onClick={() => openCodeDialog(player)}
-    className="h-8 px-3 border-purple-200 text-purple-700 hover:bg-purple-50"
-  >
-    <KeyRound className="h-4 w-4 mr-2" />
-    {hasActiveCode ? "Code" : "Code"}
-  </Button>
-)}
-						
-						
-						
-						
+
+                        {!isInactive && !hasAccount && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openCodeDialog(player)}
+                            className="h-8 px-3 border-purple-200 text-purple-700 hover:bg-purple-50"
+                          >
+                            <KeyRound className="h-4 w-4 mr-2" />
+                            {hasActiveCode ? "Code" : "Code"}
+                          </Button>
+                        )}
 
                         {isInactive ? (
                           <Button
@@ -524,9 +617,7 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
             <DialogTitle className="flex items-center gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={detailsPlayer?.photo_url || "/placeholder.svg?height=40&width=40&query=player-avatar"}
-                  />
+                  <AvatarImage src={detailsPlayer?.photo_url || "/placeholder.svg?height=40&width=40&query=player-avatar"} />
                   <AvatarFallback>{detailsPlayer?.name?.charAt(0) ?? "?"}</AvatarFallback>
                 </Avatar>
 
@@ -573,6 +664,68 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
                       Verknüpfung entfernen
                     </Button>
                   )}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Settings className="h-4 w-4 text-purple-600" />
+                  <div className="font-semibold text-gray-900">Vereinsrollen</div>
+                </div>
+
+                <div className="mb-4">{getClubRoleBadges(clubRoles)}</div>
+
+                {clubRolesLoading ? (
+                  <div className="text-sm text-gray-500">Vereinsrollen werden geladen...</div>
+                ) : (
+                  <div className="space-y-2">
+                    {CLUB_ROLE_OPTIONS.map((opt) => {
+                      const checked = clubRoles.includes(opt.value)
+                      return (
+                        <div key={opt.value} className="flex items-center justify-between p-3 rounded-lg border bg-white">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-purple-600" />
+                            <span className="text-sm font-medium">{opt.label}</span>
+                          </div>
+                          <Switch checked={checked} onCheckedChange={() => toggleRoleInForm(opt.value)} />
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {clubRolesStatus.type && (
+                  <div
+                    className={cn(
+                      "mt-4 p-3 rounded-lg flex items-center space-x-2 border",
+                      clubRolesStatus.type === "success"
+                        ? "bg-green-50 border-green-200 text-green-700"
+                        : "bg-red-50 border-red-200 text-red-700",
+                    )}
+                  >
+                    {clubRolesStatus.type === "success" ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                    <span className="text-sm">{clubRolesStatus.message}</span>
+                  </div>
+                )}
+
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    onClick={saveClubRoles}
+                    disabled={clubRolesSaving || clubRolesLoading || !((detailsPlayer as any)?.user_profiles?.user_id)}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    {clubRolesSaving ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Speichern...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        <span>Vereinsrollen speichern</span>
+                      </div>
+                    )}
+                  </Button>
                 </div>
               </div>
 
@@ -723,9 +876,7 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
               <Label htmlFor="spieler-select">Spieler aus Spielerdatenbank</Label>
               <Select
                 value={linkingForm.selectedSpielerId}
-                onValueChange={(value) =>
-                  setLinkingForm((prev) => ({ ...prev, selectedSpielerId: value }))
-                }
+                onValueChange={(value) => setLinkingForm((prev) => ({ ...prev, selectedSpielerId: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Spieler auswählen..." />
@@ -759,27 +910,16 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
               <div
                 className={cn(
                   "p-3 rounded-lg flex items-center space-x-2 border",
-                  linkingStatus.type === "success"
-                    ? "bg-green-50 border-green-200 text-green-700"
-                    : "bg-red-50 border-red-200 text-red-700"
+                  linkingStatus.type === "success" ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700",
                 )}
               >
-                {linkingStatus.type === "success" ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : (
-                  <AlertCircle className="h-4 w-4" />
-                )}
+                {linkingStatus.type === "success" ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
                 <span className="text-sm">{linkingStatus.message}</span>
               </div>
             )}
 
             <div className="flex space-x-2">
-              <Button
-                onClick={() => setLinkingDialogOpen(false)}
-                variant="outline"
-                className="flex-1"
-                disabled={isLinking}
-              >
+              <Button onClick={() => setLinkingDialogOpen(false)} variant="outline" className="flex-1" disabled={isLinking}>
                 Abbrechen
               </Button>
 
@@ -804,9 +944,8 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
           </div>
         </DialogContent>
       </Dialog>
-	  
-	  
-	  <PlayerCodeDialog
+
+      <PlayerCodeDialog
         open={codeDialogOpen}
         onOpenChange={(open) => {
           setCodeDialogOpen(open)
@@ -817,29 +956,18 @@ const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
           await Promise.resolve(onDataChanged?.())
         }}
       />
-	  
-	  
-	  
-	  
 
       {deleteOpen && (
         <div className="fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
-            onClick={() => !playerLoading && closeDelete()}
-          />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={() => !playerLoading && closeDelete()} />
 
           <div className="absolute left-1/2 top-1/2 w-[95vw] max-w-md -translate-x-1/2 -translate-y-1/2">
             <div className="rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden">
               <div className="p-4 border-b border-gray-100 bg-gray-50">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h5 className="text-base font-semibold text-gray-900">
-                      Spieler deaktivieren
-                    </h5>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Der Spieler wird deaktiviert, aus Teams entfernt und der Zugang gesperrt.
-                    </p>
+                    <h5 className="text-base font-semibold text-gray-900">Spieler deaktivieren</h5>
+                    <p className="text-sm text-gray-600 mt-1">Der Spieler wird deaktiviert, aus Teams entfernt und der Zugang gesperrt.</p>
                   </div>
 
                   <Button

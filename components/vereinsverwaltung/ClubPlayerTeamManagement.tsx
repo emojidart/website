@@ -13,6 +13,7 @@ import {
   CalendarPlus,
   CreditCard,
   FolderOpen,
+  KeyRound,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -32,6 +33,7 @@ import { DuesTab } from "@/components/vereinsverwaltung/tabs/DuesTab"
 import { DocumentsTab } from "@/components/vereinsverwaltung/tabs/DocumentsTab"
 import { InventoryTab } from "@/components/vereinsverwaltung/tabs/InventoryTab"
 import { OverviewTab } from "@/components/vereinsverwaltung/tabs/OverviewTab"
+import { QrCodesTab } from "@/components/vereinsverwaltung/tabs/QrCodesTab"
 
 export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManagementProps) {
   const safeOnDataSaved = () => {
@@ -43,7 +45,16 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   }
 
   const [activeSection, setActiveSection] = useState<
-    "overview" | "add-player" | "manage-players" | "manage-teams" | "assign-player" | "membership" | "dues" | "documents" | "inventory"
+    | "overview"
+    | "add-player"
+    | "manage-players"
+    | "manage-teams"
+    | "assign-player"
+    | "qr-codes"
+    | "membership"
+    | "dues"
+    | "documents"
+    | "inventory"
   >("overview")
 
   const players = useClubPlayers(user, safeOnDataSaved)
@@ -70,7 +81,6 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
         </CardHeader>
 
         <CardContent className="p-3 sm:p-5 space-y-4 sm:space-y-6">
-          {/* Navigation Buttons */}
           <div className="sticky top-0 z-10 -mx-3 sm:-mx-5 px-3 sm:px-5 py-3 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-gray-100">
             <div className="flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
               <Button
@@ -144,6 +154,20 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
               </Button>
 
               <Button
+                variant={activeSection === "qr-codes" ? "default" : "outline"}
+                onClick={() => setActiveSection("qr-codes")}
+                className={cn(
+                  "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
+                  activeSection === "qr-codes"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                <KeyRound className="h-4 w-4 mr-2" />
+                <span className="whitespace-nowrap text-sm">QR-Codes</span>
+              </Button>
+
+              <Button
                 variant={activeSection === "membership" ? "default" : "outline"}
                 onClick={() => setActiveSection("membership")}
                 className={cn(
@@ -201,7 +225,6 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
             </div>
           </div>
 
-          {/* Tabs */}
           {activeSection === "overview" && <OverviewTab clubPlayers={players.clubPlayers} />}
 
           {activeSection === "add-player" && (
@@ -244,38 +267,38 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           )}
 
           {activeSection === "manage-players" && (
-  <ManagePlayersTab
-    visiblePlayers={players.visiblePlayers}
-    clubPlayersCount={players.clubPlayers.length}
-    playerLoading={players.playerLoading}
-    teams={teams.teams}
-    teamMembers={members.teamMembers}
-    playerSearch={players.playerSearch}
-    setPlayerSearch={players.setPlayerSearch}
-    playerSortKey={players.playerSortKey}
-    setPlayerSortKey={players.setPlayerSortKey}
-    playerSortDir={players.playerSortDir}
-    setPlayerSortDir={players.setPlayerSortDir}
-    onEditPlayer={(p) => {
-      players.beginEditPlayer(p)
-      setActiveSection("add-player")
-    }}
-    onDeactivatePlayer={(id) =>
-      players.deactivatePlayer(id, async () => {
-        await members.fetchTeamMembers()
-      })
-    }
-    onReactivatePlayer={(id) =>
-      players.reactivatePlayer(id, async () => {
-        await members.fetchTeamMembers()
-      })
-    }
-    onDataChanged={async () => {
-      await players.fetchClubPlayers()
-      await members.fetchTeamMembers()
-    }}
-  />
-)}
+            <ManagePlayersTab
+              visiblePlayers={players.visiblePlayers}
+              clubPlayersCount={players.clubPlayers.length}
+              playerLoading={players.playerLoading}
+              teams={teams.teams}
+              teamMembers={members.teamMembers}
+              playerSearch={players.playerSearch}
+              setPlayerSearch={players.setPlayerSearch}
+              playerSortKey={players.playerSortKey}
+              setPlayerSortKey={players.setPlayerSortKey}
+              playerSortDir={players.playerSortDir}
+              setPlayerSortDir={players.setPlayerSortDir}
+              onEditPlayer={(p) => {
+                players.beginEditPlayer(p)
+                setActiveSection("add-player")
+              }}
+              onDeactivatePlayer={(id) =>
+                players.deactivatePlayer(id, async () => {
+                  await members.fetchTeamMembers()
+                })
+              }
+              onReactivatePlayer={(id) =>
+                players.reactivatePlayer(id, async () => {
+                  await members.fetchTeamMembers()
+                })
+              }
+              onDataChanged={async () => {
+                await players.fetchClubPlayers()
+                await members.fetchTeamMembers()
+              }}
+            />
+          )}
 
           {activeSection === "manage-teams" && (
             <ManageTeamsTab
@@ -321,7 +344,21 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
               assignmentMessageType={members.assignmentMessageType}
               onSubmitAssign={members.assignPlayerToTeam}
               getPlayersInTeam={members.getPlayersInTeam}
+              teamMembers={members.teamMembers}
               onRemoveMember={members.removeTeamMember}
+            />
+          )}
+
+          {activeSection === "qr-codes" && (
+            <QrCodesTab
+              clubPlayers={players.clubPlayers}
+              teams={teams.teams}
+              teamMembers={members.teamMembers}
+              loading={players.playerLoading}
+              onDataChanged={async () => {
+                await players.fetchClubPlayers()
+                await members.fetchTeamMembers()
+              }}
             />
           )}
 
@@ -344,7 +381,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
               messageType={dues.messageType}
               onSaveSetting={dues.upsertSetting}
               onMarkPaid={dues.markPaid}
-              onMarkPaidAllOpen={dues.markPaidAllOpen}  // ✅ HIER ist die wichtige Zeile
+              onMarkPaidAllOpen={dues.markPaidAllOpen}
               onResetPaid={dues.resetPaid}
             />
           )}

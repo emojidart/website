@@ -47,7 +47,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import Link from "next/link"
 import { UserManagement } from "@/components/user-management"
-import { AttendanceManagement } from "@/components/attendance-management"
+import { AdminBonusManagement } from "@/components/admin/bonus/admin-bonus-management"
+import { AdminSpieldatenbankManagement } from "@/components/admin/spieldatenbank/admin-spieldatenbank-management"
 import { LeagueManagement } from "@/components/league-management"
 import { RolePermissionsManager } from "@/components/role-permissions-manager"
 
@@ -76,7 +77,6 @@ export default function AdminPage() {
     | "upcoming-tournaments"
     | "player-database"
     | "dart-competition"
-    | "attendance"
     | "leagues"
     | "support-tickets"
     | "lion-cup-registrations"
@@ -89,6 +89,7 @@ export default function AdminPage() {
     | "lion-cup-settings"
     | "role-permissions"
 	  | "member-availability-all"
+	  | "bonus-system"
 	  | "admin-push"
   >("dashboard")
 
@@ -270,14 +271,15 @@ export default function AdminPage() {
       category: "verein" as const,
       badge: unreadApplicationsCount > 0 ? unreadApplicationsCount : undefined,
     },
-    {
-      title: "Anwesenheitsliste",
-      description: "Anwesenheit bei Events & Versammlungen",
-      icon: CalendarCheck,
-      color: "bg-slate-700",
-      view: "attendance" as const,
-      category: "verein" as const,
-    },
+  
+	{
+  title: "Bonussystem",
+  description: "Bonusregeln und Punkteverwaltung",
+  icon: Trophy,
+  color: "bg-orange-600",
+  view: "bonus-system" as const,
+  category: "verein" as const,
+},
     {
       title: "Veranstaltungen",
       description: "Turniere, Partys & Events verwalten",
@@ -432,9 +434,10 @@ export default function AdminPage() {
           icon: Mail,
           badge: unreadApplicationsCount > 0 ? unreadApplicationsCount : undefined,
         },
-        { key: "attendance", label: "Anwesenheit", icon: CalendarCheck },
+        
         { key: "events", label: "Veranstaltungen", icon: PartyPopper },
 		{ key: "admin-push", label: "Push Nachrichten", icon: BellRing },
+		{ key: "bonus-system", label: "Bonussystem", icon: Trophy },
         { key: "club", label: "Vereinsverwaltung", icon: Users },
         { key: "support-tickets", label: "Support Tickets", icon: HelpCircle },
         {
@@ -471,7 +474,6 @@ export default function AdminPage() {
     [
       "users",
       "recruitment",
-      "attendance",
       "events",
       "club",
       "support-tickets",
@@ -479,6 +481,7 @@ export default function AdminPage() {
       "credit-loader",
       "advent-quiz",
 	  "admin-push",
+	  "bonus-system"
     ].includes(c.view)
   ),
 } as const
@@ -821,7 +824,7 @@ if (!hasAnyPermission) {
                 {currentView === "players" && <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />}
                 {currentView === "history" && <GameHistoryTable />}
                 {currentView === "management" && <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />}
-                {currentView === "attendance" && <AttendanceManagement />}
+               
                 {currentView === "leagues" && <LeagueManagement />}
 				{currentView === "member-availability-all" && (
   <div className="space-y-6">
@@ -902,6 +905,23 @@ if (!hasAnyPermission) {
 
       <CardContent>
         <AdminPushManagement user={user} />
+      </CardContent>
+    </Card>
+  </div>
+)}
+
+{currentView === "bonus-system" && (
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <Trophy className="h-5 w-5" />
+          <span>Bonussystem</span>
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <AdminBonusManagement user={user} />
       </CardContent>
     </Card>
   </div>
@@ -1102,32 +1122,21 @@ if (!hasAnyPermission) {
                 )}
 
                 {currentView === "player-database" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <List className="h-5 w-5" />
-                          <span>Spielerdatenbank</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-600 mb-4">Hier können Sie alle Spielerdaten einsehen und verwalten.</p>
-                        <div className="space-y-3">
-                          <Link href="/spielerdatenbank">
-                            <Button className="w-full">
-                              <List className="h-4 w-4 mr-2" />
-                              Zur Spielerdatenbank
-                            </Button>
-                          </Link>
-                          <Button onClick={handleOpenPlayerList} variant="outline" className="w-full bg-transparent">
-                            <Users className="h-4 w-4 mr-2" />
-                            Spielerliste Modal anzeigen
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <List className="h-5 w-5" />
+          <span>Spielerdatenbank</span>
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <AdminSpieldatenbankManagement user={user} />
+      </CardContent>
+    </Card>
+  </div>
+)}
 
                 {currentView === "dart-competition" && (
                   <div className="space-y-6">

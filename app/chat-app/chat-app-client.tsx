@@ -234,7 +234,7 @@ const [openPollVotesOptionLabel, setOpenPollVotesOptionLabel] = useState<string 
 const [openImageUrl, setOpenImageUrl] = useState<string | null>(null)
 const [openImageName, setOpenImageName] = useState<string | null>(null)
 const [newMessage, setNewMessage] = useState("")
-const [selectedFile, setSelectedFile] = useState<File | null>(null)
+const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 const [loading, setLoading] = useState(true)
 const [sending, setSending] = useState(false)
 const fileInputRef = useRef<HTMLInputElement>(null)
@@ -539,42 +539,55 @@ const isImageFile = (type?: string | null) => {
   return !!type && type.startsWith("image/")
 }
 
+
+
+
 const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0] ?? null
-  if (!file) {
-    setSelectedFile(null)
+  const files = Array.from(e.target.files || [])
+
+  if (!files.length) {
+    setSelectedFiles([])
     return
   }
 
-  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-    toast({
-      title: "Dateityp nicht erlaubt",
-      description: "Erlaubt sind JPG, PNG, WEBP und PDF.",
-      variant: "destructive",
-    })
-    e.target.value = ""
-    return
+  const validFiles: File[] = []
+
+  for (const file of files) {
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      toast({
+        title: "Dateityp nicht erlaubt",
+        description: `${file.name}: Erlaubt sind JPG, PNG, WEBP und PDF.`,
+        variant: "destructive",
+      })
+      continue
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: "Datei zu groß",
+        description: `${file.name}: Maximal 10 MB erlaubt.`,
+        variant: "destructive",
+      })
+      continue
+    }
+
+    validFiles.push(file)
   }
 
-  if (file.size > MAX_FILE_SIZE) {
-    toast({
-      title: "Datei zu groß",
-      description: "Maximal 10 MB erlaubt.",
-      variant: "destructive",
-    })
-    e.target.value = ""
-    return
-  }
+  setSelectedFiles(validFiles)
 
-  setSelectedFile(file)
-}
-
-const clearSelectedFile = () => {
-  setSelectedFile(null)
   if (fileInputRef.current) {
     fileInputRef.current.value = ""
   }
 }
+
+const clearSelectedFiles = () => {
+  setSelectedFiles([])
+  if (fileInputRef.current) {
+    fileInputRef.current.value = ""
+  }
+}
+
 
 const uploadAttachment = async (file: File) => {
   if (!currentRoomId) {
@@ -1556,9 +1569,10 @@ const subscribeToReads = () => {
 } 
   
   
-
+  
+  
 const sendMessage = async () => {
-  if ((!newMessage.trim() && !selectedFile) || sending) return
+  if ((!newMessage.trim() && selectedFiles.length === 0) || sending) return
 
   if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) {
     toast({ title: "Kein Zugriff", description: "Du bist nicht Captain/Co-Captain.", variant: "destructive" })
@@ -1588,30 +1602,35 @@ const sendMessage = async () => {
     setSending(true)
 
     const msg = newMessage.trim()
-    let attachmentData: {
-      attachment_url?: string | null
-      attachment_path?: string | null
-      attachment_name?: string | null
-      attachment_type?: string | null
-      attachment_size?: number | null
-    } = {}
 
-    if (selectedFile) {
-      attachmentData = await uploadAttachment(selectedFile)
+    if (selectedFiles.length > 0) {
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i]
+        const attachmentData = await uploadAttachment(file)
+
+        const { error } = await supabase.from("chat_messages").insert({
+          user_id: profile.id,
+          message: i === 0 ? msg : "",
+          room_id: roomId,
+          scope: selectedScope,
+          ...attachmentData,
+        })
+
+        if (error) throw error
+      }
+    } else {
+      const { error } = await supabase.from("chat_messages").insert({
+        user_id: profile.id,
+        message: msg,
+        room_id: roomId,
+        scope: selectedScope,
+      })
+
+      if (error) throw error
     }
 
-    const { error } = await supabase.from("chat_messages").insert({
-      user_id: profile.id,
-      message: msg,
-      room_id: roomId,
-      scope: selectedScope,
-      ...attachmentData,
-    })
-
-    if (error) throw error
-
     setNewMessage("")
-    clearSelectedFile()
+    clearSelectedFiles()
     markCurrentAsVisited()
 
     const token = session?.access_token
@@ -1626,23 +1645,25 @@ const sendMessage = async () => {
         body: JSON.stringify({
           room_id: roomId,
           scope: selectedScope,
-          message: msg || (selectedFile ? `Datei: ${selectedFile.name}` : ""),
+          message: msg || (selectedFiles.length > 0 ? `Dateien: ${selectedFiles.length}` : ""),
           sender_profile_id: profile.id,
         }),
       }).catch(() => {})
     }
   } catch (error: any) {
-console.error("Error sending message:", error)
+    console.error("Error sending message:", error)
 
-  toast({
-    title: "Fehler",
-    description: error?.message || "Nachricht / Datei konnte nicht gesendet werden.",
-    variant: "destructive",
-  })
-} finally {
+    toast({
+      title: "Fehler",
+      description: error?.message || "Nachricht / Datei konnte nicht gesendet werden.",
+      variant: "destructive",
+    })
+  } finally {
     setSending(false)
   }
 }
+
+
 
   const fetchUnreadCounts = async (roomsOverride?: TeamRoom[]) => {
     const rooms = roomsOverride ?? chatRooms
@@ -2472,37 +2493,53 @@ console.error("Error sending message:", error)
                             className={`px-3 py-2 ${WA.composer} shrink-0 sticky bottom-0 z-10 pb-[env(safe-area-inset-bottom)]`}
                           >
                            <div className="space-y-2">
-  {selectedFile && (
-    <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-      <div className="flex items-center gap-2 min-w-0">
-        {selectedFile.type.startsWith("image/") ? (
-          <ImageIcon className="h-4 w-4 shrink-0 text-orange-600" />
-        ) : (
-          <FileText className="h-4 w-4 shrink-0 text-orange-600" />
-        )}
-        <span className="text-sm truncate">{selectedFile.name}</span>
-      </div>
+{selectedFiles.length > 0 && (
+  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+    <div className="mb-2 flex items-center justify-between gap-2">
+      <span className="text-sm font-medium">
+        {selectedFiles.length} Datei(en) ausgewählt
+      </span>
 
       <Button
         type="button"
         variant="ghost"
         size="sm"
-        onClick={clearSelectedFile}
+        onClick={clearSelectedFiles}
         className="rounded-xl"
       >
         <X className="h-4 w-4" />
       </Button>
     </div>
-  )}
+
+    <div className="flex gap-2 overflow-x-auto">
+      {selectedFiles.map((file, index) => (
+        <div
+          key={`${file.name}-${index}`}
+          className="shrink-0 rounded-lg border border-slate-200 bg-white px-2 py-2 min-w-[120px]"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            {file.type.startsWith("image/") ? (
+              <ImageIcon className="h-4 w-4 shrink-0 text-orange-600" />
+            ) : (
+              <FileText className="h-4 w-4 shrink-0 text-orange-600" />
+            )}
+            <span className="text-xs truncate">{file.name}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
   <div className="flex gap-2 items-end">
-    <input
-      ref={fileInputRef}
-      type="file"
-      accept="image/jpeg,image/png,image/webp,application/pdf"
-      className="hidden"
-      onChange={handleFileChange}
-    />
+ <input
+  ref={fileInputRef}
+  type="file"
+  multiple
+  accept="image/jpeg,image/png,image/webp,application/pdf"
+  className="hidden"
+  onChange={handleFileChange}
+/>
 	
 	<Button
   type="button"
@@ -2542,7 +2579,7 @@ console.error("Error sending message:", error)
 
     <Button
       onClick={sendMessage}
-      disabled={(!newMessage.trim() && !selectedFile) || sending || !profile?.id}
+      disabled={(!newMessage.trim() && selectedFiles.length === 0) || sending || !profile?.id}
       size="sm"
       className={`px-3 rounded-2xl ${WA.sendBtn}`}
     >

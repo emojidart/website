@@ -23,7 +23,7 @@ import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SpieldatenbankForm } from "@/components/spielerdatenbank-form"
+import { SpieldatenbankForm } from "@/components/admin/spieldatenbank/spieldatenbank-form"
 
 interface Player {
   id: number

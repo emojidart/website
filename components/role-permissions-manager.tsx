@@ -20,11 +20,14 @@ type PageKey =
   | "events"
   | "recruitment"
   | "club"
-  | "create-event" // ✅ NEU: Neue Veranstaltung anlegen
+  | "create-event"
   | "tournaments"
   | "tournament-management"
   | "player-database"
   | "dart-competition"
+  | "admin-push"
+  | "bonus-system"
+  | "member-availability-all"
 
 const PAGES: Array<{ key: PageKey; title: string }> = [
   { key: "users", title: "Benutzerverwaltung" },
@@ -37,6 +40,9 @@ const PAGES: Array<{ key: PageKey; title: string }> = [
   { key: "events", title: "Veranstaltungen" },
   { key: "recruitment", title: "Rekrutierung" },
   { key: "club", title: "Vereinsverwaltung" },
+    { key: "admin-push", title: "Push Nachrichten" },
+  { key: "bonus-system", title: "Bonussystem" },
+  { key: "member-availability-all", title: "Aufstellung & Zusagen" },
 
  
 
