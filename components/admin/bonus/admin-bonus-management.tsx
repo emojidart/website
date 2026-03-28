@@ -21,7 +21,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, Trophy, Loader2, Plus, Pencil, Save, X, RefreshCw, Trash2, AlertTriangle } from "lucide-react"
+import {
+  Search,
+  Trophy,
+  Loader2,
+  Plus,
+  Pencil,
+  Save,
+  X,
+  RefreshCw,
+  Trash2,
+  AlertTriangle,
+  FolderPlus,
+  FolderEdit,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type BonusCategory = {
@@ -62,7 +75,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   gray: "bg-gray-50 text-gray-700 border-gray-200",
 }
 
-const EMPTY_FORM = {
+const EMPTY_RULE_FORM = {
   id: "",
   category_id: "",
   title: "",
@@ -72,24 +85,41 @@ const EMPTY_FORM = {
   sort_order: "0",
 }
 
+const EMPTY_CATEGORY_FORM = {
+  id: "",
+  name: "",
+  color: "gray",
+  sort_order: "0",
+  is_active: true,
+}
+
 export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
   const [categories, setCategories] = useState<BonusCategory[]>([])
   const [rules, setRules] = useState<BonusRuleWithCategory[]>([])
 
   const [loading, setLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [savingRule, setSavingRule] = useState(false)
+  const [savingCategory, setSavingCategory] = useState(false)
+  const [deletingRuleId, setDeletingRuleId] = useState<string | null>(null)
+  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null)
 
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
 
-  const [isEditing, setIsEditing] = useState(false)
-  const [form, setForm] = useState(EMPTY_FORM)
+  const [isEditingRule, setIsEditingRule] = useState(false)
+  const [ruleForm, setRuleForm] = useState(EMPTY_RULE_FORM)
+
+  const [isEditingCategory, setIsEditingCategory] = useState(false)
+  const [categoryForm, setCategoryForm] = useState(EMPTY_CATEGORY_FORM)
+
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null)
 
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteRuleModalOpen, setDeleteRuleModalOpen] = useState(false)
   const [ruleToDelete, setRuleToDelete] = useState<BonusRuleWithCategory | null>(null)
+
+  const [deleteCategoryModalOpen, setDeleteCategoryModalOpen] = useState(false)
+  const [categoryToDelete, setCategoryToDelete] = useState<BonusCategory | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -103,7 +133,11 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
       setMessage(null)
 
       const [{ data: categoryData, error: categoryError }, { data: ruleData, error: ruleError }] = await Promise.all([
-        supabase.from("bonus_categories").select("id,name,color,sort_order,is_active").order("sort_order", { ascending: true }),
+        supabase
+          .from("bonus_categories")
+          .select("id,name,color,sort_order,is_active")
+          .order("sort_order", { ascending: true })
+          .order("name", { ascending: true }),
         supabase
           .from("bonus_rules")
           .select(`
@@ -156,8 +190,8 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
       setCategories(nextCategories)
       setRules(nextRules)
 
-      if (!form.category_id && nextCategories.length > 0) {
-        setForm((prev) => ({ ...prev, category_id: nextCategories[0].id }))
+      if (!ruleForm.category_id && nextCategories.length > 0) {
+        setRuleForm((prev) => ({ ...prev, category_id: nextCategories[0].id }))
       }
     } catch (error: any) {
       console.error("loadData error", error)
@@ -197,27 +231,32 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
       .filter((group) => group.rules.length > 0 || selectedCategory !== "all")
   }, [categories, filteredRules, selectedCategory])
 
-  const resetForm = () => {
-    setIsEditing(false)
-    setForm({
-      ...EMPTY_FORM,
+  const resetRuleForm = () => {
+    setIsEditingRule(false)
+    setRuleForm({
+      ...EMPTY_RULE_FORM,
       category_id: categories[0]?.id ?? "",
     })
   }
 
-  const startCreate = () => {
+  const resetCategoryForm = () => {
+    setIsEditingCategory(false)
+    setCategoryForm(EMPTY_CATEGORY_FORM)
+  }
+
+  const startCreateRule = () => {
     setMessage(null)
-    setIsEditing(false)
-    setForm({
-      ...EMPTY_FORM,
+    setIsEditingRule(false)
+    setRuleForm({
+      ...EMPTY_RULE_FORM,
       category_id: categories[0]?.id ?? "",
     })
   }
 
-  const startEdit = (rule: BonusRuleWithCategory) => {
+  const startEditRule = (rule: BonusRuleWithCategory) => {
     setMessage(null)
-    setIsEditing(true)
-    setForm({
+    setIsEditingRule(true)
+    setRuleForm({
       id: rule.id,
       category_id: rule.category_id,
       title: rule.title,
@@ -228,18 +267,47 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
     })
   }
 
-  const openDeleteModal = (rule: BonusRuleWithCategory) => {
-    setRuleToDelete(rule)
-    setDeleteModalOpen(true)
+  const startCreateCategory = () => {
+    setMessage(null)
+    setIsEditingCategory(false)
+    setCategoryForm(EMPTY_CATEGORY_FORM)
   }
 
-  const closeDeleteModal = () => {
-    if (deletingId) return
-    setDeleteModalOpen(false)
+  const startEditCategory = (category: BonusCategory) => {
+    setMessage(null)
+    setIsEditingCategory(true)
+    setCategoryForm({
+      id: category.id,
+      name: category.name,
+      color: category.color ?? "gray",
+      sort_order: String(category.sort_order ?? 0),
+      is_active: category.is_active,
+    })
+  }
+
+  const openDeleteRuleModal = (rule: BonusRuleWithCategory) => {
+    setRuleToDelete(rule)
+    setDeleteRuleModalOpen(true)
+  }
+
+  const closeDeleteRuleModal = () => {
+    if (deletingRuleId) return
+    setDeleteRuleModalOpen(false)
     setRuleToDelete(null)
   }
 
-  const handleSave = async () => {
+  const openDeleteCategoryModal = (category: BonusCategory) => {
+    setCategoryToDelete(category)
+    setDeleteCategoryModalOpen(true)
+  }
+
+  const closeDeleteCategoryModal = () => {
+    if (deletingCategoryId) return
+    setDeleteCategoryModalOpen(false)
+    setCategoryToDelete(null)
+  }
+
+  const handleSaveRule = async () => {
     try {
       setMessage(null)
 
@@ -248,41 +316,41 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
         return
       }
 
-      if (!form.category_id) {
+      if (!ruleForm.category_id) {
         setMessage({ type: "error", text: "Bitte eine Kategorie wählen." })
         return
       }
 
-      if (!form.title.trim()) {
+      if (!ruleForm.title.trim()) {
         setMessage({ type: "error", text: "Bitte eine Bezeichnung eingeben." })
         return
       }
 
-      const parsedPoints = Number(form.points)
+      const parsedPoints = Number(ruleForm.points)
       if (!Number.isFinite(parsedPoints) || parsedPoints < 0) {
         setMessage({ type: "error", text: "Bitte gültige Punkte eingeben." })
         return
       }
 
-      const parsedSortOrder = Number(form.sort_order || 0)
+      const parsedSortOrder = Number(ruleForm.sort_order || 0)
       if (!Number.isFinite(parsedSortOrder)) {
         setMessage({ type: "error", text: "Bitte eine gültige Sortierung eingeben." })
         return
       }
 
-      setSaving(true)
+      setSavingRule(true)
 
       const payload = {
-        category_id: form.category_id,
-        title: form.title.trim(),
+        category_id: ruleForm.category_id,
+        title: ruleForm.title.trim(),
         points: parsedPoints,
-        description: form.description.trim() || null,
-        is_active: form.is_active,
+        description: ruleForm.description.trim() || null,
+        is_active: ruleForm.is_active,
         sort_order: parsedSortOrder,
       }
 
-      if (isEditing && form.id) {
-        const { error } = await supabase.from("bonus_rules").update(payload).eq("id", form.id)
+      if (isEditingRule && ruleForm.id) {
+        const { error } = await supabase.from("bonus_rules").update(payload).eq("id", ruleForm.id)
         if (error) throw error
         setMessage({ type: "success", text: "Bonusregel wurde gespeichert." })
       } else {
@@ -292,42 +360,146 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
       }
 
       await loadData()
-      resetForm()
+      resetRuleForm()
     } catch (error: any) {
-      console.error("handleSave error", error)
+      console.error("handleSaveRule error", error)
       setMessage({ type: "error", text: error?.message || "Bonusregel konnte nicht gespeichert werden." })
     } finally {
-      setSaving(false)
+      setSavingRule(false)
     }
   }
 
-  const handleDelete = async () => {
+  const handleDeleteRule = async () => {
     if (!ruleToDelete) return
 
     try {
-      setDeletingId(ruleToDelete.id)
+      setDeletingRuleId(ruleToDelete.id)
       setMessage(null)
 
       const { error } = await supabase.from("bonus_rules").delete().eq("id", ruleToDelete.id)
       if (error) throw error
 
       setMessage({ type: "success", text: "Bonusregel wurde gelöscht." })
-      if (form.id === ruleToDelete.id) resetForm()
 
-      setDeleteModalOpen(false)
+      if (ruleForm.id === ruleToDelete.id) {
+        resetRuleForm()
+      }
+
+      setDeleteRuleModalOpen(false)
       setRuleToDelete(null)
 
       await loadData()
     } catch (error: any) {
-      console.error("handleDelete error", error)
+      console.error("handleDeleteRule error", error)
       setMessage({ type: "error", text: error?.message || "Bonusregel konnte nicht gelöscht werden." })
     } finally {
-      setDeletingId(null)
+      setDeletingRuleId(null)
+    }
+  }
+
+  const handleSaveCategory = async () => {
+    try {
+      setMessage(null)
+
+      if (!user) {
+        setMessage({ type: "error", text: "Nicht eingeloggt." })
+        return
+      }
+
+      if (!categoryForm.name.trim()) {
+        setMessage({ type: "error", text: "Bitte einen Kategorienamen eingeben." })
+        return
+      }
+
+      const parsedSortOrder = Number(categoryForm.sort_order || 0)
+      if (!Number.isFinite(parsedSortOrder)) {
+        setMessage({ type: "error", text: "Bitte eine gültige Sortierung eingeben." })
+        return
+      }
+
+      if (!Object.keys(CATEGORY_COLORS).includes(categoryForm.color)) {
+        setMessage({ type: "error", text: "Bitte eine gültige Farbe wählen." })
+        return
+      }
+
+      setSavingCategory(true)
+
+      const payload = {
+        name: categoryForm.name.trim(),
+        color: categoryForm.color,
+        sort_order: parsedSortOrder,
+        is_active: categoryForm.is_active,
+      }
+
+      if (isEditingCategory && categoryForm.id) {
+        const { error } = await supabase.from("bonus_categories").update(payload).eq("id", categoryForm.id)
+        if (error) throw error
+        setMessage({ type: "success", text: "Kategorie wurde gespeichert." })
+      } else {
+        const { error } = await supabase.from("bonus_categories").insert(payload)
+        if (error) throw error
+        setMessage({ type: "success", text: "Kategorie wurde angelegt." })
+      }
+
+      await loadData()
+      resetCategoryForm()
+    } catch (error: any) {
+      console.error("handleSaveCategory error", error)
+      setMessage({ type: "error", text: error?.message || "Kategorie konnte nicht gespeichert werden." })
+    } finally {
+      setSavingCategory(false)
+    }
+  }
+
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return
+
+    try {
+      setDeletingCategoryId(categoryToDelete.id)
+      setMessage(null)
+
+      const linkedRules = rules.filter((rule) => rule.category_id === categoryToDelete.id)
+
+      if (linkedRules.length > 0) {
+        setMessage({
+          type: "error",
+          text: `Kategorie kann nicht gelöscht werden, solange noch ${linkedRules.length} Regel${linkedRules.length === 1 ? "" : "n"} zugeordnet sind.`,
+        })
+        return
+      }
+
+      const { error } = await supabase.from("bonus_categories").delete().eq("id", categoryToDelete.id)
+      if (error) throw error
+
+      setMessage({ type: "success", text: "Kategorie wurde gelöscht." })
+
+      if (categoryForm.id === categoryToDelete.id) {
+        resetCategoryForm()
+      }
+
+      if (ruleForm.category_id === categoryToDelete.id) {
+        setRuleForm((prev) => ({
+          ...prev,
+          category_id: categories.find((cat) => cat.id !== categoryToDelete.id)?.id ?? "",
+        }))
+      }
+
+      setDeleteCategoryModalOpen(false)
+      setCategoryToDelete(null)
+
+      await loadData()
+    } catch (error: any) {
+      console.error("handleDeleteCategory error", error)
+      setMessage({ type: "error", text: error?.message || "Kategorie konnte nicht gelöscht werden." })
+    } finally {
+      setDeletingCategoryId(null)
     }
   }
 
   const totalRules = rules.length
   const activeRules = rules.filter((rule) => rule.is_active).length
+  const totalCategories = categories.length
+  const activeCategories = categories.filter((category) => category.is_active).length
 
   return (
     <div className="w-full space-y-6">
@@ -339,7 +511,9 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-base sm:text-lg font-black">Bonussystem</h2>
-            <p className="text-sm text-gray-600 mt-1">Bonusregeln anlegen, Punkte ändern und Regeln aktiv oder inaktiv setzen.</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Kategorien und Bonusregeln direkt auf der Seite anlegen, bearbeiten und verwalten.
+            </p>
           </div>
           <Button type="button" variant="outline" onClick={() => void loadData()} disabled={loading}>
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
@@ -348,19 +522,199 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
         </div>
       </div>
 
+      {message ? (
+        <div
+          className={cn(
+            "rounded-xl px-4 py-3 text-sm font-medium border",
+            message.type === "success" && "bg-green-50 border-green-200 text-green-800",
+            message.type === "error" && "bg-red-50 border-red-200 text-red-800",
+            message.type === "info" && "bg-blue-50 border-blue-200 text-blue-800"
+          )}
+        >
+          {message.text}
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <CardHeader>
+            <CardTitle>{isEditingCategory ? "Kategorie bearbeiten" : "Neue Kategorie"}</CardTitle>
+            <CardDescription>
+              Hier kannst du eigene Kategorien wie z. B. „Mitglieder werben“ anlegen.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                value={categoryForm.name}
+                onChange={(e) => setCategoryForm((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="z. B. Mitglieder werben"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Farbe</Label>
+                <Select
+                  value={categoryForm.color}
+                  onValueChange={(value) => setCategoryForm((prev) => ({ ...prev, color: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Farbe wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(CATEGORY_COLORS).map((color) => (
+                      <SelectItem key={color} value={color}>
+                        {color}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Sortierung</Label>
+                <Input
+                  type="number"
+                  value={categoryForm.sort_order}
+                  onChange={(e) => setCategoryForm((prev) => ({ ...prev, sort_order: e.target.value }))}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-2xl border p-4">
+              <div>
+                <div className="font-medium">Kategorie aktiv</div>
+                <div className="text-sm text-gray-500">
+                  Inaktive Kategorien bleiben gespeichert, können aber ausgeblendet oder nicht verwendet werden.
+                </div>
+              </div>
+              <Switch
+                checked={categoryForm.is_active}
+                onCheckedChange={(checked) => setCategoryForm((prev) => ({ ...prev, is_active: checked }))}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Button type="button" onClick={handleSaveCategory} disabled={savingCategory} className="rounded-xl">
+                {savingCategory ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : isEditingCategory ? (
+                  <FolderEdit className="w-4 h-4 mr-2" />
+                ) : (
+                  <FolderPlus className="w-4 h-4 mr-2" />
+                )}
+                {isEditingCategory ? "Kategorie speichern" : "Kategorie anlegen"}
+              </Button>
+
+              <Button type="button" variant="outline" onClick={resetCategoryForm} className="rounded-xl">
+                <X className="w-4 h-4 mr-2" />
+                Zurücksetzen
+              </Button>
+
+              <Button type="button" variant="ghost" onClick={startCreateCategory} className="rounded-xl">
+                Neue Eingabe
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <CardHeader>
+            <CardTitle>Vorhandene Kategorien</CardTitle>
+            <CardDescription>Bearbeite oder lösche bestehende Kategorien.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-2xl border overflow-hidden">
+              <ScrollArea className="h-[320px]">
+                <div className="p-4 space-y-3">
+                  {loading ? (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Kategorien werden geladen...
+                    </div>
+                  ) : categories.length === 0 ? (
+                    <div className="text-sm text-gray-500">Noch keine Kategorien vorhanden.</div>
+                  ) : (
+                    categories.map((category) => {
+                      const colorClass = CATEGORY_COLORS[category.color || "gray"] || CATEGORY_COLORS.gray
+                      const linkedRulesCount = rules.filter((rule) => rule.category_id === category.id).length
+
+                      return (
+                        <div
+                          key={category.id}
+                          className="rounded-2xl border border-gray-200 bg-white p-4 flex flex-col lg:flex-row lg:items-center gap-4"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant="outline" className={cn("rounded-xl px-3 py-1", colorClass)}>
+                                {category.name}
+                              </Badge>
+                              <Badge variant={category.is_active ? "default" : "secondary"} className="rounded-lg">
+                                {category.is_active ? "Aktiv" : "Inaktiv"}
+                              </Badge>
+                              <Badge variant="outline" className="rounded-lg">
+                                Sortierung {category.sort_order}
+                              </Badge>
+                              <Badge variant="outline" className="rounded-lg">
+                                {linkedRulesCount} Regel{linkedRulesCount === 1 ? "" : "n"}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => startEditCategory(category)}
+                              className="rounded-xl"
+                            >
+                              <Pencil className="w-4 h-4 mr-2" />
+                              Bearbeiten
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => openDeleteCategoryModal(category)}
+                              disabled={deletingCategoryId === category.id}
+                              className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                            >
+                              {deletingCategoryId === category.id ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4 mr-2" />
+                              )}
+                              Löschen
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-1 space-y-6">
           <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <CardHeader>
-              <CardTitle>{isEditing ? "Bonusregel bearbeiten" : "Neue Bonusregel"}</CardTitle>
-              <CardDescription>
-                Hier legst du Regeln für das Bonussystem an.
-              </CardDescription>
+              <CardTitle>{isEditingRule ? "Bonusregel bearbeiten" : "Neue Bonusregel"}</CardTitle>
+              <CardDescription>Hier legst du Regeln für das Bonussystem an.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Kategorie</Label>
-                <Select value={form.category_id} onValueChange={(value) => setForm((prev) => ({ ...prev, category_id: value }))}>
+                <Select
+                  value={ruleForm.category_id}
+                  onValueChange={(value) => setRuleForm((prev) => ({ ...prev, category_id: value }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Kategorie wählen" />
                   </SelectTrigger>
@@ -377,9 +731,9 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
               <div className="space-y-2">
                 <Label>Bezeichnung</Label>
                 <Input
-                  value={form.title}
-                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="z. B. Cup-Spiel + Ersatz E-Dart"
+                  value={ruleForm.title}
+                  onChange={(e) => setRuleForm((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="z. B. Neues Mitglied geworben"
                 />
               </div>
 
@@ -389,8 +743,8 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
                   <Input
                     type="number"
                     min="0"
-                    value={form.points}
-                    onChange={(e) => setForm((prev) => ({ ...prev, points: e.target.value }))}
+                    value={ruleForm.points}
+                    onChange={(e) => setRuleForm((prev) => ({ ...prev, points: e.target.value }))}
                     placeholder="0"
                   />
                 </div>
@@ -398,8 +752,8 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
                   <Label>Sortierung</Label>
                   <Input
                     type="number"
-                    value={form.sort_order}
-                    onChange={(e) => setForm((prev) => ({ ...prev, sort_order: e.target.value }))}
+                    value={ruleForm.sort_order}
+                    onChange={(e) => setRuleForm((prev) => ({ ...prev, sort_order: e.target.value }))}
                     placeholder="0"
                   />
                 </div>
@@ -408,8 +762,8 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
               <div className="space-y-2">
                 <Label>Beschreibung (optional)</Label>
                 <Textarea
-                  value={form.description}
-                  onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                  value={ruleForm.description}
+                  onChange={(e) => setRuleForm((prev) => ({ ...prev, description: e.target.value }))}
                   placeholder="Optionaler Hinweis für Admins"
                   className="min-h-[90px]"
                 />
@@ -418,34 +772,34 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
               <div className="flex items-center justify-between rounded-2xl border p-4">
                 <div>
                   <div className="font-medium">Regel aktiv</div>
-                  <div className="text-sm text-gray-500">Inaktive Regeln bleiben gespeichert, werden aber ausgeblendet oder nicht verwendet.</div>
+                  <div className="text-sm text-gray-500">
+                    Inaktive Regeln bleiben gespeichert, werden aber ausgeblendet oder nicht verwendet.
+                  </div>
                 </div>
-                <Switch checked={form.is_active} onCheckedChange={(checked) => setForm((prev) => ({ ...prev, is_active: checked }))} />
+                <Switch
+                  checked={ruleForm.is_active}
+                  onCheckedChange={(checked) => setRuleForm((prev) => ({ ...prev, is_active: checked }))}
+                />
               </div>
 
-              {message ? (
-                <div
-                  className={cn(
-                    "rounded-xl px-4 py-3 text-sm font-medium border",
-                    message.type === "success" && "bg-green-50 border-green-200 text-green-800",
-                    message.type === "error" && "bg-red-50 border-red-200 text-red-800",
-                    message.type === "info" && "bg-blue-50 border-blue-200 text-blue-800"
-                  )}
-                >
-                  {message.text}
-                </div>
-              ) : null}
-
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button type="button" onClick={handleSave} disabled={saving} className="rounded-xl">
-                  {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : isEditing ? <Save className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                  {isEditing ? "Änderungen speichern" : "Regel anlegen"}
+                <Button type="button" onClick={handleSaveRule} disabled={savingRule} className="rounded-xl">
+                  {savingRule ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : isEditingRule ? (
+                    <Save className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Plus className="w-4 h-4 mr-2" />
+                  )}
+                  {isEditingRule ? "Änderungen speichern" : "Regel anlegen"}
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm} className="rounded-xl">
+
+                <Button type="button" variant="outline" onClick={resetRuleForm} className="rounded-xl">
                   <X className="w-4 h-4 mr-2" />
                   Zurücksetzen
                 </Button>
-                <Button type="button" variant="ghost" onClick={startCreate} className="rounded-xl">
+
+                <Button type="button" variant="ghost" onClick={startCreateRule} className="rounded-xl">
                   Neue Eingabe
                 </Button>
               </div>
@@ -455,13 +809,28 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
           <div className="grid grid-cols-2 gap-4">
             <Card className="rounded-2xl border border-gray-200 shadow-sm">
               <CardContent className="p-5">
+                <div className="text-sm text-gray-500">Kategorien gesamt</div>
+                <div className="text-3xl font-black mt-1">{totalCategories}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-gray-200 shadow-sm">
+              <CardContent className="p-5">
+                <div className="text-sm text-gray-500">Kategorien aktiv</div>
+                <div className="text-3xl font-black mt-1">{activeCategories}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-gray-200 shadow-sm">
+              <CardContent className="p-5">
                 <div className="text-sm text-gray-500">Regeln gesamt</div>
                 <div className="text-3xl font-black mt-1">{totalRules}</div>
               </CardContent>
             </Card>
+
             <Card className="rounded-2xl border border-gray-200 shadow-sm">
               <CardContent className="p-5">
-                <div className="text-sm text-gray-500">Aktiv</div>
+                <div className="text-sm text-gray-500">Regeln aktiv</div>
                 <div className="text-3xl font-black mt-1">{activeRules}</div>
               </CardContent>
             </Card>
@@ -532,7 +901,9 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
                               <Badge variant="outline" className={cn("rounded-xl px-3 py-1", colorClass)}>
                                 {category.name}
                               </Badge>
-                              <span className="text-sm text-gray-500">{categoryRules.length} Regel{categoryRules.length === 1 ? "" : "n"}</span>
+                              <span className="text-sm text-gray-500">
+                                {categoryRules.length} Regel{categoryRules.length === 1 ? "" : "n"}
+                              </span>
                             </div>
 
                             <div className="space-y-3">
@@ -554,22 +925,34 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
                                         Sortierung {rule.sort_order}
                                       </Badge>
                                     </div>
-                                    {rule.description ? <div className="text-sm text-gray-500 mt-2">{rule.description}</div> : null}
+                                    {rule.description ? (
+                                      <div className="text-sm text-gray-500 mt-2">{rule.description}</div>
+                                    ) : null}
                                   </div>
 
                                   <div className="flex flex-wrap gap-2">
-                                    <Button type="button" variant="outline" onClick={() => startEdit(rule)} className="rounded-xl">
-                                      <Pencil className="w-4 h-4 mr-2" />
-                                      Bearbeiten
-                                    </Button>
                                     <Button
                                       type="button"
                                       variant="outline"
-                                      onClick={() => openDeleteModal(rule)}
-                                      disabled={deletingId === rule.id}
+                                      onClick={() => startEditRule(rule)}
+                                      className="rounded-xl"
+                                    >
+                                      <Pencil className="w-4 h-4 mr-2" />
+                                      Bearbeiten
+                                    </Button>
+
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      onClick={() => openDeleteRuleModal(rule)}
+                                      disabled={deletingRuleId === rule.id}
                                       className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                                     >
-                                      {deletingId === rule.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                                      {deletingRuleId === rule.id ? (
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                      )}
                                       Löschen
                                     </Button>
                                   </div>
@@ -588,7 +971,7 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
         </div>
       </div>
 
-      <Dialog open={deleteModalOpen} onOpenChange={(open) => (!deletingId ? setDeleteModalOpen(open) : null)}>
+      <Dialog open={deleteRuleModalOpen} onOpenChange={(open) => (!deletingRuleId ? setDeleteRuleModalOpen(open) : null)}>
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <div className="flex items-center gap-3">
@@ -597,9 +980,7 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
               </div>
               <div>
                 <DialogTitle>Bonusregel löschen</DialogTitle>
-                <DialogDescription>
-                  Bitte bestätige das Löschen dieser Regel.
-                </DialogDescription>
+                <DialogDescription>Bitte bestätige das Löschen dieser Regel.</DialogDescription>
               </div>
             </div>
           </DialogHeader>
@@ -621,27 +1002,90 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
             </div>
           </div>
 
-          <div className="text-sm text-gray-600">
-            Diese Aktion kann nicht rückgängig gemacht werden.
-          </div>
+          <div className="text-sm text-gray-600">Diese Aktion kann nicht rückgängig gemacht werden.</div>
 
           <DialogFooter className="gap-2 sm:justify-end">
             <Button
               type="button"
               variant="outline"
-              onClick={closeDeleteModal}
-              disabled={!!deletingId}
+              onClick={closeDeleteRuleModal}
+              disabled={!!deletingRuleId}
               className="rounded-xl"
             >
               Abbrechen
             </Button>
             <Button
               type="button"
-              onClick={handleDelete}
-              disabled={!!deletingId}
+              onClick={handleDeleteRule}
+              disabled={!!deletingRuleId}
               className="rounded-xl bg-red-600 hover:bg-red-700 text-white"
             >
-              {deletingId ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              {deletingRuleId ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Endgültig löschen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deleteCategoryModalOpen}
+        onOpenChange={(open) => (!deletingCategoryId ? setDeleteCategoryModalOpen(open) : null)}
+      >
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 border border-red-200">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <DialogTitle>Kategorie löschen</DialogTitle>
+                <DialogDescription>Bitte bestätige das Löschen dieser Kategorie.</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="rounded-2xl border border-red-100 bg-red-50/60 p-4">
+            <div className="text-sm text-gray-600 mb-1">Ausgewählte Kategorie</div>
+            <div className="font-semibold text-gray-900">{categoryToDelete?.name || "—"}</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {categoryToDelete?.color ? (
+                <Badge variant="outline" className="rounded-lg">
+                  Farbe {categoryToDelete.color}
+                </Badge>
+              ) : null}
+              {typeof categoryToDelete?.sort_order === "number" ? (
+                <Badge variant="outline" className="rounded-lg">
+                  Sortierung {categoryToDelete.sort_order}
+                </Badge>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="text-sm text-gray-600">
+            Löschen ist nur möglich, wenn keine Bonusregeln mehr dieser Kategorie zugeordnet sind.
+          </div>
+
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeDeleteCategoryModal}
+              disabled={!!deletingCategoryId}
+              className="rounded-xl"
+            >
+              Abbrechen
+            </Button>
+            <Button
+              type="button"
+              onClick={handleDeleteCategory}
+              disabled={!!deletingCategoryId}
+              className="rounded-xl bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deletingCategoryId ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
               Endgültig löschen
             </Button>
           </DialogFooter>
