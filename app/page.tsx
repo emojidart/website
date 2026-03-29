@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
+import Link from "next/link"
 import { Header } from "@/components/header"
 import { Card, CardContent } from "@/components/ui/card"
 import { PushEnableBanner } from "@/components/push-enable-banner"
@@ -1014,49 +1015,54 @@ export default function Home() {
       <PushNotificationDialog />
 
 <div className="mx-4 sm:mx-6 mt-3">
-  <div className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50 to-yellow-50 shadow-lg">
+  <div className="relative overflow-hidden rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-yellow-50 shadow-lg">
     {/* Deko */}
-    <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-200/30 blur-3xl" />
+    <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-orange-200/30 blur-3xl" />
     <div className="absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-yellow-200/30 blur-3xl" />
 
     <div className="relative p-5 sm:p-6 lg:p-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         {/* Textbereich */}
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-emerald-700 backdrop-blur">
+          <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/80 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-orange-700 backdrop-blur">
             <Sparkles className="h-3.5 w-3.5" />
-            Bald verfügbar
+            Jetzt verfügbar
           </div>
 
           <h2 className="mt-4 text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-gray-900">
-            Oster Mission startet bald
+            Oster Mission ist gestartet
           </h2>
 
           <p className="mt-3 text-sm sm:text-base leading-relaxed text-gray-700">
-            Am <span className="font-black text-gray-900">30.03.2026 ab 00:00 Uhr</span> geht es los.
-            Freu dich auf spannende Rätsel, versteckte Codes und tolle Sachpreise.
+            Die Oster Mission ist jetzt live. Freu dich auf spannende Rätsel,
+            versteckte Codes und tolle Sachpreise.
           </p>
 
           <p className="mt-2 text-sm sm:text-base leading-relaxed text-gray-600">
-            Mehr Infos folgen in Kürze.
+            Starte jetzt und sichere dir deinen ersten Hinweis.
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
             <div className="inline-flex items-center gap-2 rounded-2xl border border-white bg-white px-3 py-2 text-xs sm:text-sm font-bold text-gray-700 shadow-sm">
-              <Calendar className="h-4 w-4 text-emerald-600" />
-              30.03.2026
+              <Calendar className="h-4 w-4 text-orange-600" />
+              Seit 30.03.2026 live
             </div>
 
-           
-
             <div className="inline-flex items-center gap-2 rounded-2xl border border-white bg-white px-3 py-2 text-xs sm:text-sm font-bold text-gray-700 shadow-sm">
-              <Trophy className="h-4 w-4 text-emerald-600" />
+              <Trophy className="h-4 w-4 text-orange-600" />
               Tolle Sachpreise
             </div>
           </div>
-        </div>
 
-       
+          <div className="mt-5">
+            <Button
+              className="h-11 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black px-5"
+              onClick={() => (window.location.href = "/oster-mission")}
+            >
+              Zur Oster Mission
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

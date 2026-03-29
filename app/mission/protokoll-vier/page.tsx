@@ -216,7 +216,7 @@ export default function ProtokollVierPage() {
 
                           <p className="mt-2 text-sm font-semibold text-green-100">
                             Richtig. Das Zentrum wurde erkannt:{" "}
-                            <span className="font-black text-green-300">BULL</span>
+                            <span className="font-black text-green-300">0074</span>
                           </p>
 
                           <p className="mt-2 text-sm leading-relaxed text-green-200/90">

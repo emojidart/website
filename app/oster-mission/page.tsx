@@ -51,14 +51,17 @@ const SECRET_SECOND_CODE = "058"
 
 const HINTS: Record<number, { label: string; text: string; link?: string; linkLabel?: string }> = {
   1: {
-    label: "Erster Hinweis",
-    text: `Finde heraus, ob du wirklich aufmerksam liest.
-Achte nicht nur auf den Inhalt, sondern auf den Anfang.
-Quellen können Hinweise enthalten.
-
-Nicht jeder findet sofort die Lösung.
-Doch wer nach HINWEIS fragt, wird sie entdecken.`,
-  },
+  label: "Erster Hinweis",
+  text: (
+    <>
+      <strong>F</strong>inde heraus, ob du wirklich aufmerksam liest.{"\n"}
+      <strong>A</strong>chte nicht nur auf den Inhalt, sondern auf den Anfang.{"\n"}
+      <strong>Q</strong>uellen können Hinweise enthalten.{"\n\n"}
+      Nicht jeder findet sofort die Lösung.{"\n"}
+      Doch wer nach HINWEIS fragt, wird sie entdecken.
+    </>
+  ),
+},
   2: {
     label: "Zweiter Hinweis",
     text: `Manchmal sprechen Zahlen eine eigene Sprache.
@@ -149,7 +152,7 @@ Nicht jede Antwort öffnet sofort die letzte Tür.`,
 }
 
 const RELEASE_DATES = [
-  "2026-03-30T08:00:00+02:00",
+  "2026-03-30T00:01:00+02:00",
   "2026-03-31T08:00:00+02:00",
   "2026-04-01T08:00:00+02:00",
   "2026-04-02T08:00:00+02:00",
@@ -300,28 +303,45 @@ export default function OsterMissionPage() {
 
     return parts.join(" ")
   }, [mounted, nextRelease, now])
+const availableDay = useMemo(() => {
+  if (!mounted || !now) return 0
 
-  const nextReleaseLabel = useMemo(() => {
-    if (!mounted || !now) return "Freischaltung wird geladen..."
-    if (!nextRelease) return "Das Finale ist jetzt komplett spielbar."
+  const unlockedCount = RELEASE_DATES.filter((date) => {
+    return new Date(date).getTime() <= now.getTime()
+  }).length
 
-    return `Freischaltung am ${nextRelease.toLocaleString("de-AT", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })}`
-  }, [mounted, nextRelease, now])
+  return Math.min(unlockedCount, TOTAL_DAYS)
+}, [mounted, now])
 
-  const currentDay = useMemo(() => {
-    return Math.min(progress.length + 1, TOTAL_DAYS)
-  }, [progress.length])
+const nextReleaseLabel = useMemo(() => {
+  if (!mounted || !now) return "Freischaltung wird geladen..."
+  if (!nextRelease) return "Das Finale ist jetzt komplett spielbar."
+
+  return `Freischaltung am ${nextRelease.toLocaleString("de-AT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`
+}, [mounted, nextRelease, now])
+
+
+const currentDay = useMemo(() => {
+  if (availableDay <= 0) return 1
+  return Math.min(progress.length + 1, availableDay, TOTAL_DAYS)
+}, [availableDay, progress.length])
 
 const activeHint = useMemo(() => {
   if (hasCorrectFinalSubmission) {
     return null
   }
+  if (availableDay <= 0) {
+  return {
+    label: "Noch gesperrt",
+    text: "Das Rätsel wird erst um 08:00 Uhr freigeschaltet.",
+  }
+}
 
   if (hasAllCodesCollected) {
     return {
@@ -344,13 +364,22 @@ const activeHint = useMemo(() => {
     }
   }
 
-  return (
-    HINTS[currentDay] ?? {
-      label: `Tag ${currentDay}`,
-      text: "Das nächste Rätsel wird bald freigeschaltet.",
-    }
-  )
+  // 👉 wenn nächster Tag noch nicht freigeschaltet → NICHTS anzeigen
+if (progress.length >= availableDay) {
+  return null
+}
+
+// 👉 sonst normalen Hinweis anzeigen
+const nextDay = progress.length + 1
+
+return (
+  HINTS[nextDay] ?? {
+    label: `Tag ${nextDay}`,
+    text: "Das nächste Rätsel wird bald freigeschaltet.",
+  }
+)
 }, [
+  availableDay,
   currentDay,
   hasAllCodesCollected,
   hasCorrectFinalSubmission,
@@ -440,6 +469,7 @@ const activeHint = useMemo(() => {
     }
   }, [])
 
+
   const loadProgress = async (uid: string) => {
     const { data, error } = await supabase
       .from("oster_mission_progress")
@@ -494,6 +524,24 @@ const activeHint = useMemo(() => {
   }
   
   
+  const refreshMissionState = async (uid?: string | null) => {
+  const activeUserId = uid ?? userId
+
+  if (!activeUserId) return
+
+  try {
+    await Promise.all([
+      loadProgress(activeUserId),
+      loadFinalSubmission(activeUserId),
+      loadSecretProgress(activeUserId),
+    ])
+    setNow(new Date())
+  } catch (err) {
+    console.error("refreshMissionState error:", err)
+  }
+}
+  
+  
   
   
 
@@ -524,13 +572,15 @@ const handleCodeSubmit = async () => {
   setSubmittingCode(true)
 
   try {
-    if (normalizedCode === "4") {
-      setCodeInput("")
-      setShowSecretPopup193(false)
-      setMessage("")
-      focusCodeInput()
-      return
-    }
+   if (normalizedCode === "4") {
+  setCodeInput("")
+  setMessage("🔍 Geheimer Pfad entdeckt...")
+
+  // 👉 Weiterleitung zu Protokoll IV
+  window.location.href = "/mission/protokoll-vier"
+
+  return
+}
 
     if (normalizedCode === SECRET_TRIGGER_CODE) {
       const { error } = await supabase
