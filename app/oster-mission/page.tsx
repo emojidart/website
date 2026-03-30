@@ -543,35 +543,8 @@ return (
   
   
   
-
-const handleCodeSubmit = async () => {
-  if (submittingCode) return
-
-  if (!userId) {
-    setFeedback("Bitte zuerst einloggen.", "error")
-    return
-  }
-
-  if (hasAllCodesCollected) {
-    setFeedback(
-      "Du hast bereits alle 7 Codes eingegeben. Die Code-Eingabe ist abgeschlossen.",
-      "info"
-    )
-    return
-  }
-
-  const normalizedCode = normalize(codeInput)
-
-  if (!normalizedCode) {
-    setFeedback("Bitte gib zuerst einen Code ein.", "error")
-    focusCodeInput()
-    return
-  }
-
-  setSubmittingCode(true)
-
-  try {
- 
+  
+  
 
 const handleCodeSubmit = async () => {
   if (submittingCode) return
@@ -623,28 +596,39 @@ const handleCodeSubmit = async () => {
     setCodeInput("")
 
     if (data.type === "secret_193") {
+      setMessage("")
       setSecret193Unlocked(true)
       setShowSecretPopup193(true)
+      await refreshMissionState(userId)
+      focusSecretInput()
       return
     }
 
     if (data.type === "secret_058") {
+      setMessage("")
+      setSecret193Unlocked(true)
       setSecret058Unlocked(true)
       setShowSecretPopup058(true)
+      await refreshMissionState(userId)
       return
     }
 
     if (data.type === "day_code") {
       await refreshMissionState(userId)
-
       setFeedback(
         `Richtig! Tag ${data.dayNumber} → ${data.letter}`,
         "success"
       )
+      focusCodeInput()
+      return
     }
+
+    setFeedback("Unbekannte Server-Antwort.", "error")
+    focusCodeInput()
   } catch (err) {
-    console.error(err)
+    console.error("handleCodeSubmit error:", err)
     setFeedback("Fehler beim Prüfen", "error")
+    focusCodeInput()
   } finally {
     setSubmittingCode(false)
   }
@@ -652,81 +636,88 @@ const handleCodeSubmit = async () => {
 
 
 
-    if (codeError || !codeRow) {
-      setFeedback("Dieser Code ist leider nicht korrekt.", "error")
-      focusCodeInput()
-      return
-    }
 
-   const { data: existing } = await withTimeout(
-  supabase
-    .from("oster_mission_progress")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("day_number", codeRow.day_number)
-    .maybeSingle(),
-  10000
-)
 
-    if (existing) {
-      setCodeInput("")
-      setFeedback(`Tag ${codeRow.day_number} wurde bereits gelöst.`, "info")
-      focusCodeInput()
-      return
-    }
 
-    const { error: insertError } = await withTimeout(
-  supabase
-    .from("oster_mission_progress")
-    .insert({
-      user_id: userId,
-      player_id: playerId,
-      day_number: codeRow.day_number,
-      code_value: codeRow.code_value,
-      letter: codeRow.letter,
-    }),
-  10000
-)
 
-    if (insertError) {
-      console.error("insert progress error:", insertError)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const handleSecretSubmit = async () => {
+  if (submittingSecret) return
+
+  if (!userId) {
+    setFeedback("Bitte zuerst einloggen.", "error")
+    return
+  }
+
+  const normalizedSecret = normalize(secretInput)
+
+  if (!normalizedSecret) {
+    setFeedback("Bitte gib zuerst den geheimen Code ein.", "error")
+    focusSecretInput()
+    return
+  }
+
+  setSubmittingSecret(true)
+
+  try {
+    const res = await fetch("/api/mission/submit-code", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        playerId,
+        code: normalizedSecret,
+      }),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
       setFeedback(
-        "Der Code war richtig, konnte aber nicht gespeichert werden.",
+        data.message || "Das ist noch nicht der richtige versteckte Code.",
         "error"
       )
-      focusCodeInput()
+      focusSecretInput()
       return
     }
 
-  await withTimeout(
-  Promise.all([
-    loadProgress(userId),
-    loadFinalSubmission(userId),
-    loadSecretProgress(userId),
-  ]),
-  10000
-)
+    if (data.type !== "secret_058") {
+      setFeedback("Das ist noch nicht der richtige versteckte Code.", "error")
+      focusSecretInput()
+      return
+    }
 
-    setCodeInput("")
-    setFeedback(
-      `Richtig! Für Tag ${codeRow.day_number} wurde ${codeRow.letter} freigeschaltet.`,
-      "success"
-    )
-    focusCodeInput()
+    setSecretInput("")
+    setMessage("")
+    setSecret193Unlocked(true)
+    setSecret058Unlocked(true)
+    setShowSecretPopup058(true)
+    await refreshMissionState(userId)
+    setFeedback("Geheimer Pfad erkannt.", "success")
   } catch (err) {
-  console.error("handleCodeSubmit crashed:", err)
-
-  const isTimeout =
-    err instanceof Error && err.message === "Timeout"
-
-  setFeedback(
-    isTimeout
-      ? "Die Anfrage hat zu lange gedauert. Bitte versuche es erneut."
-      : "Beim Prüfen ist ein Fehler aufgetreten. Bitte versuche es erneut.",
-    "error"
-  )
-} finally {
-    setSubmittingCode(false)
+    console.error("handleSecretSubmit error:", err)
+    setFeedback("Fehler beim Prüfen", "error")
+    focusSecretInput()
+  } finally {
+    setSubmittingSecret(false)
   }
 }
   
@@ -734,67 +725,6 @@ const handleCodeSubmit = async () => {
   
   
   
-  
-  
-
-  const handleSecretSubmit = async () => {
-    if (submittingSecret) return
-
-    if (!userId) {
-      setFeedback("Bitte zuerst einloggen.", "error")
-      return
-    }
-
-    const normalizedSecret = normalize(secretInput)
-
-    if (!normalizedSecret) {
-      setFeedback("Bitte gib zuerst den geheimen Code ein.", "error")
-      focusSecretInput()
-      return
-    }
-
-    setSubmittingSecret(true)
-
-    try {
-      if (normalizedSecret !== SECRET_SECOND_CODE) {
-        setFeedback(
-          "Das ist noch nicht der richtige versteckte Code.",
-          "error"
-        )
-        focusSecretInput()
-        return
-      }
-
-     const { error } = await supabase
-  .from("oster_mission_secret_progress")
-  .upsert(
-    {
-      user_id: userId,
-      secret_193_unlocked: true,
-      secret_058_unlocked: true,
-      secret_058_unlocked_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id" }
-  )
-
-      if (error) {
-        console.error("secret 058 save error:", error)
-        setFeedback(
-          "Der finale Geheimstatus konnte nicht gespeichert werden.",
-          "error"
-        )
-        return
-      }
-
-      setSecretInput("")
-      setSecret193Unlocked(true)
-      setSecret058Unlocked(true)
-      setShowSecretPopup058(true)
-      setFeedback("Geheimer Pfad erkannt.", "success")
-    } finally {
-      setSubmittingSecret(false)
-    }
-  }
 
   const handleFinalSubmit = async () => {
     if (submittingFinal) return
