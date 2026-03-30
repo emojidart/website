@@ -46,8 +46,7 @@ const TOTAL_DAYS = 7
 const FINAL_WORD = "TURNIER"
 const LETTER_SLOT_COUNT = FINAL_WORD.length
 
-const SECRET_TRIGGER_CODE = "193"
-const SECRET_SECOND_CODE = "058"
+
 
 const HINTS: Record<number, { label: string; text: string; link?: string; linkLabel?: string }> = {
   1: {
@@ -572,54 +571,86 @@ const handleCodeSubmit = async () => {
   setSubmittingCode(true)
 
   try {
-   if (normalizedCode === "4") {
-  setCodeInput("")
-  setMessage("🔍 Geheimer Pfad entdeckt...")
+ 
 
-  // 👉 Weiterleitung zu Protokoll IV
-  window.location.href = "/mission/protokoll-vier"
+const handleCodeSubmit = async () => {
+  if (submittingCode) return
 
-  return
-}
+  if (!userId) {
+    setFeedback("Bitte zuerst einloggen.", "error")
+    return
+  }
 
-    if (normalizedCode === SECRET_TRIGGER_CODE) {
-      const { error } = await supabase
-        .from("oster_mission_secret_progress")
-        .upsert(
-          {
-            user_id: userId,
-            secret_193_unlocked: true,
-            secret_193_unlocked_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" }
-        )
+  if (hasAllCodesCollected) {
+    setFeedback(
+      "Du hast bereits alle 7 Codes eingegeben.",
+      "info"
+    )
+    return
+  }
 
-      if (error) {
-        console.error("secret 193 save error:", error)
-        setFeedback(
-          "Der geheime Fortschritt konnte nicht gespeichert werden.",
-          "error"
-        )
-        focusCodeInput()
-        return
-      }
+  const normalizedCode = normalize(codeInput)
 
-      setCodeInput("")
-      setMessage("")
-      setSecret193Unlocked(true)
-      setShowSecretPopup193(true)
-      focusSecretInput()
+  if (!normalizedCode) {
+    setFeedback("Bitte Code eingeben.", "error")
+    focusCodeInput()
+    return
+  }
+
+  setSubmittingCode(true)
+
+  try {
+    const res = await fetch("/api/mission/submit-code", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        playerId,
+        code: normalizedCode,
+      }),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      setFeedback(data.message || "Falscher Code", "error")
+      focusCodeInput()
       return
     }
 
-   const { data: codeRow, error: codeError } = await withTimeout(
-  supabase
-    .from("oster_mission_codes")
-    .select("*")
-    .eq("code_value", normalizedCode)
-    .maybeSingle(),
-  10000
-)
+    setCodeInput("")
+
+    if (data.type === "secret_193") {
+      setSecret193Unlocked(true)
+      setShowSecretPopup193(true)
+      return
+    }
+
+    if (data.type === "secret_058") {
+      setSecret058Unlocked(true)
+      setShowSecretPopup058(true)
+      return
+    }
+
+    if (data.type === "day_code") {
+      await refreshMissionState(userId)
+
+      setFeedback(
+        `Richtig! Tag ${data.dayNumber} → ${data.letter}`,
+        "success"
+      )
+    }
+  } catch (err) {
+    console.error(err)
+    setFeedback("Fehler beim Prüfen", "error")
+  } finally {
+    setSubmittingCode(false)
+  }
+}
+
+
 
     if (codeError || !codeRow) {
       setFeedback("Dieser Code ist leider nicht korrekt.", "error")
