@@ -144,16 +144,16 @@ export async function POST(req: Request) {
 
     if (codeRow.day_number > availableDay) {
       return NextResponse.json(
-        { message: `Tag ${codeRow.day_number} ist noch nicht freigeschaltet.` },
-        { status: 400 }
-      )
+  { message: "Dieser Code ist leider nicht korrekt." },
+  { status: 400 }
+)
     }
 
     if (codeRow.day_number !== nextExpectedDay) {
       return NextResponse.json(
-        { message: `Aktuell kannst du nur Tag ${nextExpectedDay} lösen.` },
-        { status: 400 }
-      )
+  { message: "Dieser Code ist leider nicht korrekt." },
+  { status: 400 }
+)
     }
 
     const { error: insertError } = await supabase

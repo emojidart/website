@@ -187,37 +187,26 @@ const distributePlayersWithFreilose = (players: string[], bracketSize: number): 
   const totalSlots = bracketSize
   const freilosCount = totalSlots - players.length
 
-  if (freilosCount === 0) {
-    return players.sort(() => Math.random() - 0.5)
-  }
-
-  const freilose: string[] = Array.from({ length: freilosCount }, (_, i) => `Freilos ${i + 1}`)
   const shuffledPlayers = [...players].sort(() => Math.random() - 0.5)
+
+  // Freilose erstellen
+  const freilose: string[] = Array.from({ length: freilosCount }, (_, i) => `Freilos ${i + 1}`)
+
   const result: string[] = []
-  const remainingPlayers = [...shuffledPlayers]
-  const remainingFreilose = [...freilose]
 
-  while (remainingFreilose.length > 0 && remainingPlayers.length > 0) {
-    const player = remainingPlayers.pop()!
-    const freilos = remainingFreilose.pop()!
-
-    if (Math.random() > 0.5) {
-      result.push(player, freilos)
-    } else {
-      result.push(freilos, player)
-    }
+  // 1. IMMER zuerst Spieler + Freilos paaren
+  while (freilose.length > 0 && shuffledPlayers.length > 0) {
+    result.push(shuffledPlayers.pop()!, freilose.pop()!)
   }
 
-  while (remainingPlayers.length >= 2) {
-    result.push(remainingPlayers.pop()!, remainingPlayers.pop()!)
+  // 2. Restliche Spieler normal paaren
+  while (shuffledPlayers.length >= 2) {
+    result.push(shuffledPlayers.pop()!, shuffledPlayers.pop()!)
   }
 
-  while (remainingFreilose.length >= 2) {
-    result.push(remainingFreilose.pop()!, remainingFreilose.pop()!)
-  }
-
-  if (remainingPlayers.length === 1 && remainingFreilose.length === 1) {
-    result.push(remainingPlayers.pop()!, remainingFreilose.pop()!)
+  // 3. Sicherheitscheck (sollte NIE passieren)
+  if (freilose.length > 0) {
+    console.error("FEHLER: Übrig gebliebene Freilose → LOGIK PROBLEM")
   }
 
   return result
