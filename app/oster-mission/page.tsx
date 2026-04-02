@@ -1219,7 +1219,7 @@ const handleSecretSubmit = async () => {
                     asChild
                     className="flex-1 rounded-2xl bg-orange-600 font-black text-white hover:bg-orange-700"
                   >
-                    <Link href="/protokoll-vier">Zur geheimen Seite</Link>
+                    <Link href="/mission/protokoll-vier">Zur geheimen Seite</Link>
                   </Button>
                 )}
 
