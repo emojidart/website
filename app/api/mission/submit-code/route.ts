@@ -40,6 +40,17 @@ export async function POST(req: Request) {
     }
 
     const normalized = code.trim().toUpperCase()
+	
+	// 4 = spezieller Frontend-Trigger für Tag 4
+// KEIN Eintrag in oster_mission_secret_progress
+if (normalized === "4") {
+  return NextResponse.json({
+    type: "day_code",
+    dayNumber: 4,
+    letter: "",
+    openHint4Modal: true,
+  })
+}
 
     if (normalized === SECRET_TRIGGER_CODE) {
       const { error } = await supabase

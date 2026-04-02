@@ -614,23 +614,23 @@ const handleCodeSubmit = async () => {
       return
     }
 
-    if (data.type === "day_code") {
-      await refreshMissionState(userId)
+  if (data.type === "day_code") {
+  await refreshMissionState(userId)
 
-      if (normalizedCode === "4") {
-        setMessage("")
-        setShowHint4Modal(true)
-        focusCodeInput()
-        return
-      }
+  if (data.openHint4Modal) {
+    setMessage("")
+    setShowHint4Modal(true)
+    focusCodeInput()
+    return
+  }
 
-      setFeedback(
-        `Richtig! Tag ${data.dayNumber} → ${data.letter}`,
-        "success"
-      )
-      focusCodeInput()
-      return
-    }
+  setFeedback(
+    `Richtig! Tag ${data.dayNumber} → ${data.letter}`,
+    "success"
+  )
+  focusCodeInput()
+  return
+}
 
     setFeedback("Unbekannte Server-Antwort.", "error")
     focusCodeInput()
