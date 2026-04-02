@@ -208,6 +208,7 @@ export default function OsterMissionPage() {
   const [showSecretPopup058, setShowSecretPopup058] = useState(false)
   const [secret193Unlocked, setSecret193Unlocked] = useState(false)
   const [secret058Unlocked, setSecret058Unlocked] = useState(false)
+  const [secretTriggerCode, setSecretTriggerCode] = useState<string | null>(null)
 
   const messageRef = useRef<HTMLDivElement | null>(null)
   const codeInputRef = useRef<HTMLInputElement | null>(null)
@@ -585,6 +586,16 @@ const handleCodeSubmit = async () => {
       }),
     })
 
+    const contentType = res.headers.get("content-type") || ""
+
+    if (!contentType.includes("application/json")) {
+      const rawText = await res.text()
+      console.error("submit-code returned non-JSON:", rawText)
+      setFeedback("Serverfehler bei /api/mission/submit-code", "error")
+      focusCodeInput()
+      return
+    }
+
     const data = await res.json()
 
     if (!res.ok) {
@@ -598,6 +609,7 @@ const handleCodeSubmit = async () => {
     if (data.type === "secret_193") {
       setMessage("")
       setSecret193Unlocked(true)
+      setSecretTriggerCode(data.triggerCode ?? "193")
       setShowSecretPopup193(true)
       await refreshMissionState(userId)
       focusSecretInput()
@@ -1166,15 +1178,28 @@ const handleSecretSubmit = async () => {
               </p>
 
               <h3 className="mt-3 text-2xl font-black leading-tight text-white">
-                193 war nur der Anfang.
+                {secretTriggerCode === "4"
+                  ? "4 war nur eine Tür."
+                  : "193 war nur der Anfang."}
               </h3>
 
               <p className="mt-4 text-sm leading-relaxed text-zinc-300">
-                Du hast die erste Tür geöffnet.
-                <br />
-                <br />
-                Auf unserer Seite warten mehrere falsche Pfade.
-                Nur einer führt dich weiter.
+                {secretTriggerCode === "4" ? (
+                  <>
+                    Die Vier war nur eine Tür.
+                    <br />
+                    <br />
+                    Nur wer dem richtigen Pfad folgt, kommt weiter.
+                  </>
+                ) : (
+                  <>
+                    Du hast die erste Tür geöffnet.
+                    <br />
+                    <br />
+                    Auf unserer Seite warten mehrere falsche Pfade.
+                    Nur einer führt dich weiter.
+                  </>
+                )}
               </p>
 
               <div className="mt-5 rounded-2xl border border-orange-500/20 bg-black/40 p-4">
@@ -1182,12 +1207,22 @@ const handleSecretSubmit = async () => {
                   Nächster Schritt
                 </p>
                 <p className="mt-2 text-sm text-orange-200">
-                  Suche den versteckten Code auf unserer Website und gib ihn hier
-                  in der Mission ein.
+                  {secretTriggerCode === "4"
+                    ? "Öffne jetzt die geheime Seite und folge dort der Spur."
+                    : "Suche den versteckten Code auf unserer Website und gib ihn hier in der Mission ein."}
                 </p>
               </div>
 
               <div className="mt-6 flex gap-3">
+                {secretTriggerCode === "4" && (
+                  <Button
+                    asChild
+                    className="flex-1 rounded-2xl bg-orange-600 font-black text-white hover:bg-orange-700"
+                  >
+                    <Link href="/protokoll-vier">Zur geheimen Seite</Link>
+                  </Button>
+                )}
+
                 <Button
                   variant="outline"
                   onClick={() => {

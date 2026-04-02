@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { RotateCcw, Check } from "lucide-react"
+import { RotateCcw, Check, Radio, Activity, Clock3, Trophy } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSpeechAnnouncer, SpeechAnnouncerSettings } from "@/components/speech-announcer"
@@ -38,6 +38,13 @@ interface Ranking {
 
 const isFreilos = (playerName: string): boolean => {
   return playerName.startsWith("Freilos")
+}
+
+const DEBUG = false
+const debugLog = (...args: unknown[]) => {
+  if (DEBUG) {
+    console.log(...args)
+  }
 }
 
 const saveMatchStatesToDatabase = async (
@@ -79,7 +86,7 @@ score1: match.score1,
     })
 
     if (error) throw error
-    console.log("[v0] Match states saved successfully")
+    debugLog("[v0] Match states saved successfully")
   } catch (error) {
     console.error("Fehler beim Speichern der Match-States:", error)
   }
@@ -100,7 +107,7 @@ const loadMatchStatesFromDatabase = async (
     if (error) throw error
 
     if (!data || data.length === 0) {
-      console.log("[v0] No saved match states found")
+      debugLog("[v0] No saved match states found")
       return null
     }
 
@@ -115,11 +122,11 @@ const loadMatchStatesFromDatabase = async (
         winner: state.winner || undefined,
         loser: state.loser || undefined,
         machineNumber: state.machine_number || undefined,
-        callCount: state.callCount !== undefined ? state.callCount : undefined,
+        callCount: state.machine_number ? 1 : undefined,
       }
     })
 
-    console.log("[v0] Match states loaded successfully")
+    debugLog("[v0] Match states loaded successfully")
     return matches
   } catch (error) {
     console.error("Fehler beim Laden der Match-States:", error)
@@ -136,7 +143,7 @@ const deleteMatchStatesFromDatabase = async (tournamentType: string, tournamentI
       .eq("tournament_id", tournamentId)
 
     if (error) throw error
-    console.log("[v0] Match states deleted")
+    debugLog("[v0] Match states deleted")
   } catch (error) {
     console.error("Fehler beim Löschen der Match-States:", error)
   }
@@ -151,7 +158,7 @@ const deleteRankingsFromDatabase = async (tournamentType: string, tournamentId: 
       .eq("tournament_id", tournamentId)
 
     if (error) throw error
-    console.log("[v0] Rankings deleted")
+    debugLog("[v0] Rankings deleted")
   } catch (error) {
     console.error("Fehler beim Löschen der Rankings:", error)
   }
@@ -166,7 +173,7 @@ const deleteFreiloseFromDatabase = async (tournamentType: string, tournamentId: 
       .eq("tournament_id", tournamentId)
 
     if (error) throw error
-    console.log("[v0] Freilose deleted")
+    debugLog("[v0] Freilose deleted")
   } catch (error) {
     console.error("Fehler beim Löschen der Freilose:", error)
   }
@@ -177,7 +184,7 @@ const clearTournamentRegistration = async (tournamentId: string) => {
     const { error } = await supabase.from("dko_tournament_registration").delete().neq("id", 0)
 
     if (error) throw error
-    console.log("[v0] Tournament registration cleared successfully")
+    debugLog("[v0] Tournament registration cleared successfully")
   } catch (error) {
     console.error("Fehler beim Löschen der Registrierung:", error)
   }
@@ -226,7 +233,7 @@ const saveFreiloseToDatabase = async (freilose: string[], tournamentType: string
     })
 
     if (error) throw error
-    console.log("[v0] Freilose saved successfully")
+    debugLog("[v0] Freilose saved successfully")
   } catch (error) {
     console.error("Fehler beim Speichern der Freilose:", error)
   }
@@ -252,7 +259,7 @@ const loadFreiloseFromDatabase = async (tournamentType: string, tournamentId: st
 
 const removePlayerFromRankings = async (playerName: string, tournamentType: string, tournamentId: string) => {
   try {
-    console.log(`[v0] Removing ${playerName} from rankings due to match reset`)
+    debugLog(`[v0] Removing ${playerName} from rankings due to match reset`)
 
     const { error } = await supabase
       .from("dko_rankings")
@@ -266,7 +273,7 @@ const removePlayerFromRankings = async (playerName: string, tournamentType: stri
       throw error
     }
 
-    console.log(`[v0] Successfully removed ${playerName} from rankings`)
+    debugLog(`[v0] Successfully removed ${playerName} from rankings`)
   } catch (error) {
     console.error("Fehler beim Entfernen aus Rankings:", error)
   }
@@ -303,13 +310,13 @@ const trackPlayerElimination = async (
   tournamentName: string,
   totalPlayers: number,
 ) => {
-  console.log(`[v0] ========== TRACKING ELIMINATION ==========`)
-  console.log(`[v0] Player: ${eliminatedPlayer}`)
-  console.log(`[v0] Tournament ID: ${tournamentId}`)
-  console.log(`[v0] Tournament Name: ${tournamentName}`)
+  debugLog(`[v0] ========== TRACKING ELIMINATION ==========`)
+  debugLog(`[v0] Player: ${eliminatedPlayer}`)
+  debugLog(`[v0] Tournament ID: ${tournamentId}`)
+  debugLog(`[v0] Tournament Name: ${tournamentName}`)
 
   if (isFreilos(eliminatedPlayer)) {
-    console.log(`[v0] ✗ Skipping ranking for Freilos: ${eliminatedPlayer} (Freilos are not ranked)`)
+    debugLog(`[v0] ✗ Skipping ranking for Freilos: ${eliminatedPlayer} (Freilos are not ranked)`)
     return
   }
 
@@ -326,7 +333,7 @@ const trackPlayerElimination = async (
   }
 
   if (existingPlayerRanking) {
-    console.log(
+    debugLog(
       `[v0] ✗ Player ${eliminatedPlayer} already has ranking in THIS tournament (placement ${existingPlayerRanking.placement}), skipping duplicate call`,
     )
     return
@@ -335,20 +342,20 @@ const trackPlayerElimination = async (
   const lossMatches = Object.values(allMatches).filter((m) => m.loser === eliminatedPlayer && m.winner)
   const losses = lossMatches.length
 
-  console.log(`[v0] Player ${eliminatedPlayer} loss history:`)
+  debugLog(`[v0] Player ${eliminatedPlayer} loss history:`)
   lossMatches.forEach((m) => {
-    console.log(`[v0]   - Lost Match ${m.id}: ${m.player1} vs ${m.player2}, Winner: ${m.winner}`)
+    debugLog(`[v0]   - Lost Match ${m.id}: ${m.player1} vs ${m.player2}, Winner: ${m.winner}`)
   })
-  console.log(`[v0] Total losses: ${losses}`)
+  debugLog(`[v0] Total losses: ${losses}`)
 
   if (losses === 2) {
-    console.log(`[v0] ✓ Player ${eliminatedPlayer} is ELIMINATED with 2 losses! Saving to database...`)
+    debugLog(`[v0] ✓ Player ${eliminatedPlayer} is ELIMINATED with 2 losses! Saving to database...`)
     try {
       const eliminationMatch = lossMatches[lossMatches.length - 1]
       const placement = getPlacementForEliminationMatch(eliminationMatch.id, totalPlayers)
 
-      console.log(`[v0] Elimination match: ${eliminationMatch.id}`)
-      console.log(`[v0] Calculated placement for ${eliminatedPlayer}: ${placement} (based on elimination round)`)
+      debugLog(`[v0] Elimination match: ${eliminationMatch.id}`)
+      debugLog(`[v0] Calculated placement for ${eliminatedPlayer}: ${placement} (based on elimination round)`)
 
       if (isFreilos(eliminatedPlayer)) {
         console.error(`[v0] ✗ CRITICAL ERROR: Attempted to save Freilos ${eliminatedPlayer} to rankings! Aborting.`)
@@ -364,13 +371,13 @@ const trackPlayerElimination = async (
         eliminated_at: new Date().toISOString(),
       }
 
-      console.log("[v0] Attempting to insert ranking data:", rankingData)
+      debugLog("[v0] Attempting to insert ranking data:", rankingData)
 
       const { data: insertData, error: insertError } = await supabase.from("dko_rankings").insert(rankingData).select()
 
       if (insertError) {
         if (insertError.code === "23505") {
-          console.log(
+          debugLog(
             `[v0] ℹ️ Player ${eliminatedPlayer} already exists in rankings (caught by database constraint), skipping`,
           )
           return
@@ -379,22 +386,22 @@ const trackPlayerElimination = async (
         throw insertError
       }
 
-      console.log(`[v0] ✓ Successfully saved! Player ${eliminatedPlayer} - Placement: ${placement}`, insertData)
+      debugLog(`[v0] ✓ Successfully saved! Player ${eliminatedPlayer} - Placement: ${placement}`, insertData)
     } catch (error) {
       if (error && typeof error === "object" && "code" in error && error.code === "23505") {
-        console.log(`[v0] ℹ️ Player ${eliminatedPlayer} already ranked (duplicate prevented by database)`)
+        debugLog(`[v0] ℹ️ Player ${eliminatedPlayer} already ranked (duplicate prevented by database)`)
         return
       }
       console.error("[v0] Fehler beim Speichern der Platzierung:", error)
     }
   } else if (losses > 2) {
-    console.log(
+    debugLog(
       `[v0] ⚠️ WARNING: Player ${eliminatedPlayer} has ${losses} losses (more than 2)! This shouldn't happen in double elimination!`,
     )
   } else {
-    console.log(`[v0] Player ${eliminatedPlayer} only has ${losses} loss(es), not eliminated yet`)
+    debugLog(`[v0] Player ${eliminatedPlayer} only has ${losses} loss(es), not eliminated yet`)
   }
-  console.log(`[v0] ========================================`)
+  debugLog(`[v0] ========================================`)
 }
 
 const saveFinalRankings = async (
@@ -405,7 +412,7 @@ const saveFinalRankings = async (
   tournamentName: string,
 ) => {
   try {
-    console.log(`[v0] Saving final rankings for tournament "${tournamentName}": 1st: ${winner}, 2nd: ${runnerUp}`)
+    debugLog(`[v0] Saving final rankings for tournament "${tournamentName}": 1st: ${winner}, 2nd: ${runnerUp}`)
 
     const { error: winnerError } = await supabase.from("dko_rankings").insert({
       tournament_type: tournamentType,
@@ -433,7 +440,7 @@ const saveFinalRankings = async (
       console.error("[v0] Error saving runner-up:", runnerUpError)
     }
 
-    console.log(`[v0] Final rankings saved successfully!`)
+    debugLog(`[v0] Final rankings saved successfully!`)
   } catch (error) {
     console.error("Fehler beim Speichern der finalen Platzierungen:", error)
   }
@@ -441,7 +448,7 @@ const saveFinalRankings = async (
 
 const markTournamentAsCompleted = async (tournamentId: string) => {
   try {
-    console.log(`[v0] Marking tournament ${tournamentId} as completed`)
+    debugLog(`[v0] Marking tournament ${tournamentId} as completed`)
 
     const { error } = await supabase
       .from("tournaments_status")
@@ -450,7 +457,7 @@ const markTournamentAsCompleted = async (tournamentId: string) => {
 
     if (error) throw error
 
-    console.log(`[v0] Tournament marked as completed successfully`)
+    debugLog(`[v0] Tournament marked as completed successfully`)
   } catch (error) {
     console.error("Fehler beim Markieren des Turniers als abgeschlossen:", error)
   }
@@ -458,7 +465,7 @@ const markTournamentAsCompleted = async (tournamentId: string) => {
 
 const markTournamentAsCancelled = async (tournamentId: string) => {
   try {
-    console.log(`[v0] Marking tournament ${tournamentId} as cancelled`)
+    debugLog(`[v0] Marking tournament ${tournamentId} as cancelled`)
 
     const { error } = await supabase
       .from("tournaments_status")
@@ -467,7 +474,7 @@ const markTournamentAsCancelled = async (tournamentId: string) => {
 
     if (error) throw error
 
-    console.log(`[v0] Tournament marked as cancelled successfully`)
+    debugLog(`[v0] Tournament marked as cancelled successfully`)
   } catch (error) {
     console.error("Fehler beim Markieren des Turniers als abgebrochen:", error)
   }
@@ -523,7 +530,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
         })
 
         setPlayerIdMap(idMap)
-        console.log("[v0] Player IDs loaded:", Object.keys(idMap).length)
+        debugLog("[v0] Player IDs loaded:", Object.keys(idMap).length)
       } catch (err) {
         console.error("Error fetching player ids:", err)
       }
@@ -562,7 +569,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
     if (!loading && tournamentId) {
       const timeoutId = setTimeout(() => {
         saveMatchStatesToDatabase(matches, tournamentType, tournamentId, playerIdMap)
-      }, 1000)
+      }, 800)
 
       return () => clearTimeout(timeoutId)
     }
@@ -620,28 +627,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
 
             // Only auto-progress once: when a match transitions from "no winner" -> "has winner"
             if (!wasFinished && isFinishedNow && record.winner && record.loser) {
-              // Clear machine/call info locally (we'll persist it with the derived save below)
-              next[record.match_id] = {
-                ...next[record.match_id],
-                machineNumber: undefined,
-                callCount: undefined,
-              }
-
-              // Apply the same progression rules as confirmMatch()
-              if (record.match_id === 14) {
-                if (record.winner === next[14].player1) {
-                  saveFinalRankings(record.winner, record.loser, tournamentType, tournamentId, tournamentName)
-                } else {
-                  next[15].player1 = next[14].player1
-                  next[15].player2 = next[14].player2
-                }
-              } else if (record.match_id === 15) {
-                saveFinalRankings(record.winner, record.loser, tournamentType, tournamentId, tournamentName)
-              } else {
-                progressPlayers(next, record.match_id, record.winner, record.loser)
-                trackPlayerElimination(next, record.loser, tournamentType, tournamentId, tournamentName, bracketSize)
-              }
-
+              applyCompletedMatch(next, record.match_id, record.winner, record.loser)
               didProgress = true
               progressedMatches = next
             }
@@ -686,26 +672,12 @@ useEffect(() => {
           const realPlayer = isP1Freilos ? match.player2 : match.player1
           const freilosPlayer = isP1Freilos ? match.player1 : match.player2
 
-          console.log(`[v0] Auto-resolving Freilos match ${match.id}: ${realPlayer} beats ${freilosPlayer}`)
+          debugLog(`[v0] Auto-resolving Freilos match ${match.id}: ${realPlayer} beats ${freilosPlayer}`)
 
-          match.winner = realPlayer
-          match.loser = freilosPlayer
-          match.score1 = isP1Freilos ? 0 : 2
-          match.score2 = isP2Freilos ? 0 : 2
-
-          if (match.id === 14) {
-            if (match.winner === match.player1) {
-              saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
-            } else {
-              newMatches[15].player1 = match.player1
-              newMatches[15].player2 = match.player2
-            }
-          } else if (match.id === 15) {
-            saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
-          } else {
-            progressPlayers(newMatches, match.id, realPlayer, freilosPlayer)
-            trackPlayerElimination(newMatches, freilosPlayer, tournamentType, tournamentId, tournamentName, bracketSize)
-          }
+          applyCompletedMatch(newMatches, match.id, realPlayer, freilosPlayer, {
+            score1: isP1Freilos ? 0 : 2,
+            score2: isP2Freilos ? 0 : 2,
+          })
 
           hasChanges = true
         })
@@ -724,6 +696,43 @@ useEffect(() => {
       .map((m) => m.machineNumber!)
 
     return Array.from({ length: totalMachines }, (_, i) => i + 1).filter((num) => !usedMachines.includes(num))
+  }
+
+
+  const applyCompletedMatch = (
+    allMatches: Record<number, Match>,
+    matchId: number,
+    winner: string,
+    loser: string,
+    extras?: Partial<Match>,
+  ) => {
+    const currentMatch = allMatches[matchId]
+    if (!currentMatch) return allMatches
+
+    allMatches[matchId] = {
+      ...currentMatch,
+      ...extras,
+      winner,
+      loser,
+      machineNumber: undefined,
+      callCount: undefined,
+    }
+
+    if (matchId === 14) {
+      if (winner === allMatches[14].player1) {
+        saveFinalRankings(winner, loser, tournamentType, tournamentId, tournamentName)
+      } else {
+        allMatches[15].player1 = allMatches[14].player1
+        allMatches[15].player2 = allMatches[14].player2
+      }
+    } else if (matchId === 15) {
+      saveFinalRankings(winner, loser, tournamentType, tournamentId, tournamentName)
+    } else {
+      progressPlayers(allMatches, matchId, winner, loser)
+      trackPlayerElimination(allMatches, loser, tournamentType, tournamentId, tournamentName, bracketSize)
+    }
+
+    return allMatches
   }
 
   const fetchRankings = async () => {
@@ -799,8 +808,8 @@ useEffect(() => {
         tiersBelow[placement] = sortedPlacements.length - index - 1
       })
 
-      console.log("[v0] Placement counts:", placementCounts)
-      console.log("[v0] Tiers below each placement:", tiersBelow)
+      debugLog("[v0] Placement counts:", placementCounts)
+      debugLog("[v0] Tiers below each placement:", tiersBelow)
 
       const { data: matchStates, error: matchError } = await supabase
         .from("dko_match_states")
@@ -843,10 +852,10 @@ useEffect(() => {
         playerMatchHistory[playerName].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
       })
 
-      console.log("[v0] Player match history:", playerMatchHistory)
+      debugLog("[v0] Player match history:", playerMatchHistory)
 
       const bracketResetOccurred = matches[15].winner !== undefined
-      console.log("[v0] Bracket reset occurred:", bracketResetOccurred)
+      debugLog("[v0] Bracket reset occurred:", bracketResetOccurred)
 
       const playerStats: Record<
         string,
@@ -948,7 +957,7 @@ useEffect(() => {
         }
       })
 
-      console.log("[v0] Calculated player statistics:", playerStats)
+      debugLog("[v0] Calculated player statistics:", playerStats)
 
       const tournamentEntries = Object.entries(playerStats).map(([playerName, stats]) => {
         const totalPoints = stats.placement_points + stats.legs_points + stats.bonus_points
@@ -961,7 +970,7 @@ useEffect(() => {
         const matchHistory = playerMatchHistory[playerName] || []
         const chronologicalForm = matchHistory.map((m) => m.result).join(",")
 
-        console.log(
+        debugLog(
           `[v0] ${playerName}: Platz ${stats.placement} | ` +
             `${stats.placement_points}P (Platzierung) + ${stats.legs_points}P (Legs) + ${stats.bonus_points}P (Bonus) = ${totalPoints}P | ` +
             `Legs: ${stats.legs_won}W-${stats.legs_lost}L | Matches: ${stats.matches_won}W-${stats.matches_lost}L | ` +
@@ -995,7 +1004,7 @@ useEffect(() => {
         throw insertError
       }
 
-      console.log(`[v0] Successfully inserted ${tournamentEntries.length} tournament entries`)
+      debugLog(`[v0] Successfully inserted ${tournamentEntries.length} tournament entries`)
 
       const { error: historyError } = await supabase.from("tournament_series_history").insert({
         tournament_id: tournamentId,
@@ -1033,19 +1042,13 @@ useEffect(() => {
     const isP2Freilos = isFreilos(match.player2)
 
     if (isP1Freilos && isP2Freilos) {
-      console.log(`[v0] Auto-resolving Freilos vs Freilos match ${matchId}: ${match.player1} vs ${match.player2}`)
+      debugLog(`[v0] Auto-resolving Freilos vs Freilos match ${matchId}: ${match.player1} vs ${match.player2}`)
       setMatches((prev) => {
         const newMatches = { ...prev }
-        const updatedMatch = {
-          ...match,
-          winner: match.player1,
-          loser: match.player2,
+        return applyCompletedMatch(newMatches, matchId, match.player1, match.player2, {
           score1: 2,
           score2: 0,
-        }
-        newMatches[matchId] = updatedMatch
-        progressPlayers(newMatches, matchId, match.player1, match.player2)
-        return newMatches
+        })
       })
       return
     }
@@ -1054,19 +1057,13 @@ useEffect(() => {
       const realPlayer = isP1Freilos ? match.player2 : match.player1
       const freilosPlayer = isP1Freilos ? match.player1 : match.player2
 
-      console.log(`[v0] Auto-resolving Freilos match ${matchId}: ${realPlayer} beats ${freilosPlayer}`)
+      debugLog(`[v0] Auto-resolving Freilos match ${matchId}: ${realPlayer} beats ${freilosPlayer}`)
       setMatches((prev) => {
         const newMatches = { ...prev }
-        const updatedMatch = {
-          ...match,
-          winner: realPlayer,
-          loser: freilosPlayer,
+        return applyCompletedMatch(newMatches, matchId, realPlayer, freilosPlayer, {
           score1: isP1Freilos ? 0 : 2,
           score2: isP2Freilos ? 0 : 2,
-        }
-        newMatches[matchId] = updatedMatch
-        progressPlayers(newMatches, matchId, realPlayer, freilosPlayer)
-        return newMatches
+        })
       })
       return
     }
@@ -1143,42 +1140,21 @@ useEffect(() => {
       const match = { ...newMatches[matchId] }
 
       if (match.score1 > match.score2) {
-        match.winner = match.player1
-        match.loser = match.player2
-      } else if (match.score2 > match.score1) {
-        match.winner = match.player2
-        match.loser = match.player1
-      } else {
-        alert("Unentschieden ist nicht erlaubt!")
-        return prev
+        return applyCompletedMatch(newMatches, matchId, match.player1, match.player2)
       }
 
-      match.machineNumber = undefined
-      match.callCount = undefined
-
-      newMatches[matchId] = match
-
-      if (matchId === 14) {
-        if (match.winner === match.player1) {
-          saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
-        } else {
-          newMatches[15].player1 = match.player1
-          newMatches[15].player2 = match.player2
-        }
-      } else if (matchId === 15) {
-        saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
-      } else {
-        progressPlayers(newMatches, matchId, match.winner, match.loser)
-        trackPlayerElimination(newMatches, match.loser, tournamentType, tournamentId, tournamentName, bracketSize)
+      if (match.score2 > match.score1) {
+        return applyCompletedMatch(newMatches, matchId, match.player2, match.player1)
       }
 
-      return newMatches
+      alert("Unentschieden ist nicht erlaubt!")
+      return prev
     })
   }
 
   const progressPlayers = (allMatches: Record<number, Match>, matchId: number, winner: string, loser: string) => {
-    console.log(`[v0] ========== PROGRESSING PLAYERS ==========`)
-    console.log(`[v0] Match ${matchId} completed: Winner: ${winner}, Loser: ${loser}`)
+    debugLog(`[v0] ========== PROGRESSING PLAYERS ==========`)
+    debugLog(`[v0] Match ${matchId} completed: Winner: ${winner}, Loser: ${loser}`)
 
     const progressionMap: Record<
       number,
@@ -1203,13 +1179,13 @@ useEffect(() => {
 
     const progression = progressionMap[matchId]
     if (!progression) {
-      console.log(`[v0] ⚠️ No progression defined for match ${matchId}`)
+      debugLog(`[v0] ⚠️ No progression defined for match ${matchId}`)
       return
     }
 
     if (progression.winner) {
       const { matchId: targetMatch, position } = progression.winner
-      console.log(`[v0] ✓ Winner ${winner} progresses to Match ${targetMatch} position ${position}`)
+      debugLog(`[v0] ✓ Winner ${winner} progresses to Match ${targetMatch} position ${position}`)
 
       const targetMatchBefore = { ...allMatches[targetMatch] }
 
@@ -1219,25 +1195,25 @@ useEffect(() => {
         allMatches[targetMatch].player2 = winner
       }
 
-      console.log(
+      debugLog(
         `[v0]   Match ${targetMatch} before: P1="${targetMatchBefore.player1}" P2="${targetMatchBefore.player2}"`,
       )
-      console.log(
+      debugLog(
         `[v0]   Match ${targetMatch} after:  P1="${allMatches[targetMatch].player1}" P2="${allMatches[targetMatch].player2}"`,
       )
 
       if (allMatches[targetMatch].player1 && allMatches[targetMatch].player2 && !allMatches[targetMatch].winner) {
-        console.log(`[v0]   ✓ Match ${targetMatch} now has both players, checking for optimization...`)
+        debugLog(`[v0]   ✓ Match ${targetMatch} now has both players, checking for optimization...`)
         optimizeMatchInRound(allMatches, targetMatch)
         autoResolveFreilosMatch(allMatches, targetMatch)
       }
     } else {
-      console.log(`[v0] ✓ Winner ${winner} has no further progression (reached final or waiting)`)
+      debugLog(`[v0] ✓ Winner ${winner} has no further progression (reached final or waiting)`)
     }
 
     if (progression.loser) {
       const { matchId: targetMatch, position } = progression.loser
-      console.log(`[v0] ↓ Loser ${loser} drops to Match ${targetMatch} position ${position} (1st loss)`)
+      debugLog(`[v0] ↓ Loser ${loser} drops to Match ${targetMatch} position ${position} (1st loss)`)
 
       const targetMatchBefore = { ...allMatches[targetMatch] }
 
@@ -1247,22 +1223,22 @@ useEffect(() => {
         allMatches[targetMatch].player2 = loser
       }
 
-      console.log(
+      debugLog(
         `[v0]   Match ${targetMatch} before: P1="${targetMatchBefore.player1}" P2="${targetMatchBefore.player2}"`,
       )
-      console.log(
+      debugLog(
         `[v0]   Match ${targetMatch} after:  P1="${allMatches[targetMatch].player1}" P2="${allMatches[targetMatch].player2}"`,
       )
 
       if (allMatches[targetMatch].player1 && allMatches[targetMatch].player2 && !allMatches[targetMatch].winner) {
-        console.log(`[v0]   ✓ Match ${targetMatch} now has both players, checking for optimization...`)
+        debugLog(`[v0]   ✓ Match ${targetMatch} now has both players, checking for optimization...`)
         optimizeMatchInRound(allMatches, targetMatch)
         autoResolveFreilosMatch(allMatches, targetMatch)
       }
     } else {
-      console.log(`[v0] ✗ Loser ${loser} is ELIMINATED (2nd loss, no further progression)`)
+      debugLog(`[v0] ✗ Loser ${loser} is ELIMINATED (2nd loss, no further progression)`)
     }
-    console.log(`[v0] ==========================================`)
+    debugLog(`[v0] ==========================================`)
   }
 
   const optimizeMatchInRound = (allMatches: Record<number, Match>, matchId: number) => {
@@ -1288,7 +1264,7 @@ useEffect(() => {
           const temp = match.player2
           match.player2 = nearbyMatch.player2
           nearbyMatch.player2 = temp
-          console.log(
+          debugLog(
             `[v0] Optimized: Swapped ${nearbyMatch.player2} from Match ${nearbyId} with ${match.player2} from Match ${matchId}`,
           )
           return
@@ -1298,7 +1274,7 @@ useEffect(() => {
           const temp = match.player1
           match.player1 = nearbyMatch.player2
           nearbyMatch.player2 = temp
-          console.log(`[v0] Optimized: Swapped Freilos from Match ${nearbyId} with Freilos from Match ${matchId}`)
+          debugLog(`[v0] Optimized: Swapped Freilos from Match ${nearbyId} with Freilos from Match ${matchId}`)
           return
         }
 
@@ -1306,7 +1282,7 @@ useEffect(() => {
           const temp = match.player1
           match.player1 = nearbyMatch.player1
           nearbyMatch.player1 = temp
-          console.log(`[v0] Optimized: Swapped Freilos from Match ${nearbyId} with Freilos from Match ${matchId}`)
+          debugLog(`[v0] Optimized: Swapped Freilos from Match ${nearbyId} with Freilos from Match ${matchId}`)
           return
         }
       }
@@ -1325,7 +1301,7 @@ useEffect(() => {
           const temp = match.player2
           match.player2 = nearbyMatch.player2
           nearbyMatch.player2 = temp
-          console.log(
+          debugLog(
             `[v0] Optimized: Swapped ${match.player2} from Match ${matchId} with ${nearbyMatch.player2} from Match ${nearbyId}`,
           )
           return
@@ -1374,7 +1350,7 @@ useEffect(() => {
     const match = matches[matchId]
 
     if (matchId === 14 || matchId === 15) {
-      console.log(`[v0] Resetting finale Match ${matchId}, removing both players from rankings...`)
+      debugLog(`[v0] Resetting finale Match ${matchId}, removing both players from rankings...`)
 
       if (match.player1) {
         await removePlayerFromRankings(match.player1, tournamentType, tournamentId)
@@ -1389,10 +1365,10 @@ useEffect(() => {
         const lossMatches = Object.values(matches).filter((m) => m.loser === oldLoser && m.winner)
         const losses = lossMatches.length
 
-        console.log(`[v0] Resetting Match ${matchId}: ${oldLoser} had ${losses} losses before reset`)
+        debugLog(`[v0] Resetting Match ${matchId}: ${oldLoser} had ${losses} losses before reset`)
 
         if (losses === 2) {
-          console.log(`[v0] ${oldLoser} was eliminated, removing from rankings...`)
+          debugLog(`[v0] ${oldLoser} was eliminated, removing from rankings...`)
           await removePlayerFromRankings(oldLoser, tournamentType, tournamentId)
         }
       }
@@ -1541,7 +1517,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
     match.score1 = isP1Freilos ? 0 : 2
     match.score2 = isP2Freilos ? 0 : 2
 
-    console.log(`[v0] Auto-resolved Match ${matchId}: ${realPlayer} beats ${freilosPlayer} 2:0`)
+    debugLog(`[v0] Auto-resolved Match ${matchId}: ${realPlayer} beats ${freilosPlayer} 2:0`)
 
     progressPlayers(allMatches, matchId, realPlayer, freilosPlayer)
   }
@@ -1549,7 +1525,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
   useEffect(() => {
     const fetchRegisteredPlayers = async () => {
       if (initializingRef.current) {
-        console.log("[v0] Already initializing, skipping duplicate call")
+        debugLog("[v0] Already initializing, skipping duplicate call")
         return
       }
 
@@ -1562,10 +1538,10 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
 
         if (urlTournamentId) {
           currentTournamentId = urlTournamentId
-          console.log("[v0] Using existing tournament ID from URL:", currentTournamentId)
+          debugLog("[v0] Using existing tournament ID from URL:", currentTournamentId)
         } else {
           currentTournamentId = crypto.randomUUID()
-          console.log("[v0] Generated new tournament ID:", currentTournamentId)
+          debugLog("[v0] Generated new tournament ID:", currentTournamentId)
 
           const newUrl = new URL(window.location.href)
           newUrl.searchParams.set("tournamentId", currentTournamentId)
@@ -1581,22 +1557,22 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
         if (urlTournamentName) {
           const decodedName = decodeURIComponent(urlTournamentName)
           setTournamentName(decodedName)
-          console.log("[v0] Tournament name from URL:", decodedName)
+          debugLog("[v0] Tournament name from URL:", decodedName)
         } else {
           setTournamentName("Unbenanntes Turnier")
-          console.log("[v0] No tournament name provided, using default")
+          debugLog("[v0] No tournament name provided, using default")
         }
 
         const savedMatches = await loadMatchStatesFromDatabase(tournamentType, currentTournamentId)
 
         if (savedMatches) {
-          console.log("[v0] ✓ Loaded saved tournament state - tournament will continue from where it left off")
+          debugLog("[v0] ✓ Loaded saved tournament state - tournament will continue from where it left off")
           setMatches(savedMatches)
           setLoading(false)
           return
         }
 
-        console.log("[v0] No saved state found - initializing new tournament")
+        debugLog("[v0] No saved state found - initializing new tournament")
 
         const { error: statusError } = await supabase.from("tournaments_status").insert({
           tournament_id: currentTournamentId,
@@ -1622,16 +1598,16 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           const existingFreilose = await loadFreiloseFromDatabase(tournamentType, currentTournamentId)
 
           if (existingFreilose.length === 0) {
-            console.log("[v0] No existing Freilose found, creating new ones")
+            debugLog("[v0] No existing Freilose found, creating new ones")
             playerNames = distributePlayersWithFreilose(playerNames, bracketSize)
 
             const freilose = playerNames.filter((name) => isFreilos(name))
             if (freilose.length > 0) {
-              console.log("[v0] Saving", freilose.length, "Freilose to database")
+              debugLog("[v0] Saving", freilose.length, "Freilose to database")
               await saveFreiloseToDatabase(freilose, tournamentType, currentTournamentId)
             }
           } else {
-            console.log("[v0] Using existing Freilose from database:", existingFreilose)
+            debugLog("[v0] Using existing Freilose from database:", existingFreilose)
             const freilosCount = bracketSize - playerNames.length
             if (freilosCount > 0) {
               playerNames = [...playerNames, ...existingFreilose.slice(0, freilosCount)]
@@ -1670,6 +1646,21 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
 
   const availableMachines = getAvailableMachines()
 
+  const allMatches = Object.values(matches)
+  const activeLiveMatches = allMatches
+    .filter((match) => match.player1 && match.player2 && !match.winner && match.machineNumber)
+    .sort((a, b) => (a.machineNumber || 0) - (b.machineNumber || 0))
+  const readyMatches = allMatches.filter((match) => match.player1 && match.player2 && !match.winner && !match.machineNumber)
+  const completedMatches = allMatches.filter((match) => Boolean(match.winner))
+  const liveMachineNumbers = activeLiveMatches
+    .map((match) => match.machineNumber)
+    .filter((value): value is number => Boolean(value))
+  const totalMatchCount = 15
+  const completedCount = completedMatches.length
+  const remainingCount = Math.max(totalMatchCount - completedCount, 0)
+  const liveCompletion = Math.round((completedCount / totalMatchCount) * 100)
+  const winnerName = matches[15].winner || (matches[14].winner === matches[14].player1 ? matches[14].winner : undefined)
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-4 md:p-8 flex items-center justify-center">
@@ -1682,7 +1673,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="w-full mx-auto space-y-8">
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
+          <div className="space-y-1">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground">
               {bracketSize}er DKO - {tournamentName}
             </h1>
@@ -1697,6 +1688,225 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
             </Button>
           </div>
         </div>
+
+        <Card className="overflow-hidden border-0 shadow-xl bg-white text-slate-900 border border-slate-200">
+          <div className="p-5 md:p-6 space-y-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-600">
+                  <Radio className="h-3.5 w-3.5" />
+                  LIVE Center
+                </div>
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold">Alles Wichtige auf einen Blick</h2>
+                  <p className="text-sm md:text-base text-slate-600">
+                    Laufende Spiele, freie Automaten und die nächsten Matches sofort sichtbar.
+                  </p>
+                </div>
+              </div>
+
+              <div className="min-w-[220px] rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <span>Turnier-Fortschritt</span>
+                  <span className="font-semibold text-slate-900">{liveCompletion}%</span>
+                </div>
+                <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className="h-full rounded-full bg-orange-500 transition-all duration-500"
+                    style={{ width: `${liveCompletion}%` }}
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-700">
+                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Fertig</div>
+                    <div className="mt-1 font-semibold">{completedCount} von {totalMatchCount} Matches</div>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-right">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                      {winnerName ? "Sieger" : "Offen"}
+                    </div>
+                    <div className="mt-1 font-semibold">{winnerName ? winnerName : `${remainingCount} Matches`}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">LIVE Matches</span>
+                  <Activity className="h-4 w-4 text-red-500" />
+                </div>
+                <div className="mt-2 text-3xl font-bold">{activeLiveMatches.length}</div>
+                <p className="mt-1 text-xs text-slate-500">Aktuell auf Automaten gestartet</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Bereit</span>
+                  <Clock3 className="h-4 w-4 text-orange-500" />
+                </div>
+                <div className="mt-2 text-3xl font-bold">{readyMatches.length}</div>
+                <p className="mt-1 text-xs text-slate-500">Sofort startbare Matches</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Frei</span>
+                  <Radio className="h-4 w-4 text-slate-500" />
+                </div>
+                <div className="mt-2 text-3xl font-bold">{availableMachines.length}</div>
+                <p className="mt-1 text-xs text-slate-500">Verfügbare Automaten</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Abgeschlossen</span>
+                  <Trophy className="h-4 w-4 text-emerald-600" />
+                </div>
+                <div className="mt-2 text-3xl font-bold">{completedMatches.length}</div>
+                <p className="mt-1 text-xs text-slate-500">Bereits bestätigte Matches</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="rounded-2xl border border-red-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-semibold text-lg">Gerade LIVE</h3>
+                  <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                    {liveMachineNumbers.length > 0 ? `Automaten ${liveMachineNumbers.join(", ")}` : "Noch kein Spiel gestartet"}
+                  </span>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {activeLiveMatches.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600">
+                      Noch kein LIVE-Match aktiv. Starte ein Match und es erscheint sofort hier oben.
+                    </div>
+                  ) : (
+                    activeLiveMatches.map((match) => {
+                      const canConfirmLive = match.score1 !== match.score2 && (match.score1 > 0 || match.score2 > 0)
+                      const nextCall = Math.min((match.callCount || 1) + 1, 3)
+
+                      return (
+                        <div
+                          key={match.id}
+                          className="rounded-2xl border border-red-200 bg-red-50/40 px-4 py-4 shadow-sm"
+                        >
+                          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                            <div>
+                              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-500"><span>Match {match.id}</span><span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-white">LIVE</span></div>
+                              <div className="mt-1 text-base font-semibold">
+                                {match.player1} <span className="text-slate-400">vs.</span> {match.player2}
+                              </div>
+                              <div className="mt-2">
+                                <span className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600">
+                                  Automat {match.machineNumber}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 md:w-[190px]">
+                              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                <div className="truncate text-xs text-slate-500">{match.player1}</div>
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  maxLength={2}
+                                  value={match.score1 === 0 ? "" : String(match.score1)}
+                                  onChange={(e) => updateScore(match.id, 1, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)}
+                                  className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
+                                />
+                              </div>
+                              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                <div className="truncate text-xs text-slate-500">{match.player2}</div>
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  maxLength={2}
+                                  value={match.score2 === 0 ? "" : String(match.score2)}
+                                  onChange={(e) => updateScore(match.id, 2, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)}
+                                  className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600">
+                              Stand {match.score1}:{match.score2}
+                            </span>
+                            {match.callCount && match.callCount < 3 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => repeatCall(match.id)}
+                                className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                              >
+                                {nextCall}. Aufruf
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              onClick={() => confirmMatch(match.id)}
+                              disabled={!canConfirmLive}
+                              className="bg-red-500 text-white hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-500"
+                            >
+                              <Check className="mr-1 h-4 w-4" />
+                              Ergebnis bestätigen
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-semibold text-lg">Als Nächstes dran</h3>
+                  <span className="text-xs text-slate-500">Top {Math.min(readyMatches.length, 4)}</span>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {readyMatches.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600">
+                      Aktuell wartet kein startbereites Match.
+                    </div>
+                  ) : (
+                    readyMatches.slice(0, 4).map((match) => {
+                      const hasFreilos = isFreilos(match.player1) || isFreilos(match.player2)
+
+                      return (
+                        <div key={match.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm font-semibold">Match {match.id}</span>
+                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                              {hasFreilos ? "auto" : "bereit"}
+                            </span>
+                          </div>
+                          <div className="mt-2 text-sm text-slate-700">
+                            {match.player1} <span className="text-slate-400">vs.</span> {match.player2}
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => startMatch(match.id)}
+                              className="bg-orange-500 text-white hover:bg-orange-600"
+                            >
+                              {hasFreilos ? "Auto starten" : "Spiel starten"}
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
 
         <div className="space-y-8">
           <div className="space-y-3">
@@ -2028,9 +2238,26 @@ function MatchCard({
         hasFreilos && !match.winner && "border-l-4 border-l-yellow-500 bg-yellow-50/30",
       )}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold text-muted-foreground">Match {match.id}</span>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-2 gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-bold text-muted-foreground">Match {match.id}</span>
+          {isRunning && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-[11px] font-semibold text-orange-700">
+              <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" /> LIVE
+            </span>
+          )}
+          {match.winner && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
+              Fertig
+            </span>
+          )}
+          {hasFreilos && !match.winner && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-yellow-200 bg-yellow-50 px-2 py-1 text-[11px] font-semibold text-yellow-700">
+              Freilos
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           {match.machineNumber && !match.winner && (
             <span className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-1 rounded animate-pulse">
               🎯 Automat {match.machineNumber}
