@@ -41,29 +41,6 @@ export async function POST(req: Request) {
 
     const normalized = code.trim().toUpperCase()
 
-    if (normalized === "4") {
-      const { error } = await supabase
-        .from("oster_mission_secret_progress")
-        .upsert(
-          {
-            user_id: userId,
-            secret_193_unlocked: true,
-            secret_193_unlocked_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" }
-        )
-
-      if (error) {
-        console.error('secret 4 save error:', error)
-        return NextResponse.json(
-          { message: "Secret konnte nicht gespeichert werden." },
-          { status: 500 }
-        )
-      }
-
-      return NextResponse.json({ type: "secret_193", triggerCode: "4" })
-    }
-
     if (normalized === SECRET_TRIGGER_CODE) {
       const { error } = await supabase
         .from("oster_mission_secret_progress")
@@ -84,7 +61,7 @@ export async function POST(req: Request) {
         )
       }
 
-      return NextResponse.json({ type: "secret_193", triggerCode: "193" })
+      return NextResponse.json({ type: "secret_193" })
     }
 
     if (normalized === SECRET_SECOND_CODE) {

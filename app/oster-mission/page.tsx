@@ -204,11 +204,11 @@ export default function OsterMissionPage() {
   const [submittingFinal, setSubmittingFinal] = useState(false)
   const [submittingSecret, setSubmittingSecret] = useState(false)
 
+  const [showHint4Modal, setShowHint4Modal] = useState(false)
   const [showSecretPopup193, setShowSecretPopup193] = useState(false)
   const [showSecretPopup058, setShowSecretPopup058] = useState(false)
   const [secret193Unlocked, setSecret193Unlocked] = useState(false)
   const [secret058Unlocked, setSecret058Unlocked] = useState(false)
-  const [secretTriggerCode, setSecretTriggerCode] = useState<string | null>(null)
 
   const messageRef = useRef<HTMLDivElement | null>(null)
   const codeInputRef = useRef<HTMLInputElement | null>(null)
@@ -586,16 +586,6 @@ const handleCodeSubmit = async () => {
       }),
     })
 
-    const contentType = res.headers.get("content-type") || ""
-
-    if (!contentType.includes("application/json")) {
-      const rawText = await res.text()
-      console.error("submit-code returned non-JSON:", rawText)
-      setFeedback("Serverfehler bei /api/mission/submit-code", "error")
-      focusCodeInput()
-      return
-    }
-
     const data = await res.json()
 
     if (!res.ok) {
@@ -609,7 +599,6 @@ const handleCodeSubmit = async () => {
     if (data.type === "secret_193") {
       setMessage("")
       setSecret193Unlocked(true)
-      setSecretTriggerCode(data.triggerCode ?? "193")
       setShowSecretPopup193(true)
       await refreshMissionState(userId)
       focusSecretInput()
@@ -627,6 +616,14 @@ const handleCodeSubmit = async () => {
 
     if (data.type === "day_code") {
       await refreshMissionState(userId)
+
+      if (normalizedCode === "4") {
+        setMessage("")
+        setShowHint4Modal(true)
+        focusCodeInput()
+        return
+      }
+
       setFeedback(
         `Richtig! Tag ${data.dayNumber} → ${data.letter}`,
         "success"
@@ -915,46 +912,64 @@ const handleSecretSubmit = async () => {
                 )}
 
               <AnimatePresence>
-  {!hasAllCodesCollected && secret193Unlocked && !secret058Unlocked && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-100"
-                    >
-                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-orange-400">
-                        Versteckter Pfad aktiv
-                      </p>
-                      <p className="mt-2 text-sm leading-relaxed text-zinc-300">
-                        Du hast die erste Tür geöffnet. Wenn du den nächsten
-                        geheimen Code findest, gib ihn hier ein.
-                      </p>
+			  
+			  
+			  
+			  
+ {!hasAllCodesCollected && secret193Unlocked && !secret058Unlocked && (
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -8 }}
+    className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-100"
+  >
+    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-orange-400">
+      Versteckter Pfad aktiv
+    </p>
 
-                      <form
-                        className="mt-4 flex gap-2"
-                        onSubmit={(e) => {
-                          e.preventDefault()
-                          handleSecretSubmit()
-                        }}
-                      >
-                        <Input
-                          ref={secretInputRef}
-                          value={secretInput}
-                          onChange={(e) => setSecretInput(e.target.value)}
-                          placeholder="Geheimer Code"
-                          className="h-12 rounded-2xl border-zinc-700 bg-black text-white placeholder:text-zinc-500"
-                          disabled={submittingSecret}
-                        />
-                        <Button
-                          type="submit"
-                          className="h-12 rounded-2xl bg-zinc-100 font-black text-zinc-900 hover:bg-white"
-                          disabled={submittingSecret}
-                        >
-                          {submittingSecret ? "Prüft..." : "Öffnen"}
-                        </Button>
-                      </form>
-                    </motion.div>
-                  )}
+    <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+      Du hast die erste Tür geöffnet. Folge jetzt der Spur...
+    </p>
+
+    {/* 🔥 NEU: BUTTON ZUR SECRET SEITE */}
+    <div className="mt-4">
+      <Button
+        asChild
+        className="w-full rounded-2xl bg-orange-600 font-black text-white hover:bg-orange-700"
+      >
+        <Link href="/mission/protokoll-vier">
+          🔐 Zur geheimen Seite
+        </Link>
+      </Button>
+    </div>
+
+    {/* INPUT BLEIBT */}
+    <form
+      className="mt-4 flex gap-2"
+      onSubmit={(e) => {
+        e.preventDefault()
+        handleSecretSubmit()
+      }}
+    >
+      <Input
+        ref={secretInputRef}
+        value={secretInput}
+        onChange={(e) => setSecretInput(e.target.value)}
+        placeholder="Geheimer Code"
+        className="h-12 rounded-2xl border-zinc-700 bg-black text-white placeholder:text-zinc-500"
+        disabled={submittingSecret}
+      />
+      <Button
+        type="submit"
+        className="h-12 rounded-2xl bg-zinc-100 font-black text-zinc-900 hover:bg-white"
+        disabled={submittingSecret}
+      >
+        {submittingSecret ? "Prüft..." : "Öffnen"}
+      </Button>
+    </form>
+  </motion.div>
+)}
+                  
                 </AnimatePresence>
 				
 				
@@ -1159,6 +1174,67 @@ const handleSecretSubmit = async () => {
       </main>
 
       <AnimatePresence>
+        {showHint4Modal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="w-full max-w-md rounded-3xl border border-orange-500/20 bg-zinc-950 p-6 shadow-2xl"
+              initial={{ scale: 0.96, opacity: 0, y: 18 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0, y: 18 }}
+              transition={{ duration: 0.2 }}
+            >
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">
+                Signal erkannt
+              </p>
+
+              <h3 className="mt-3 text-2xl font-black leading-tight text-white">
+                4 war nur eine Tür.
+              </h3>
+
+              <p className="mt-4 text-sm leading-relaxed text-zinc-300">
+                Die Vier war nur eine Tür.
+                <br />
+                <br />
+                Nur wer dem richtigen Pfad folgt, kommt weiter.
+              </p>
+
+              <div className="mt-5 rounded-2xl border border-orange-500/20 bg-black/40 p-4">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-orange-400">
+                  Nächster Schritt
+                </p>
+                <p className="mt-2 text-sm text-orange-200">
+                  Öffne jetzt die geheime Seite und folge dort der Spur.
+                </p>
+              </div>
+
+              <div className="mt-6 flex gap-3">
+                <Button
+                  asChild
+                  className="flex-1 rounded-2xl bg-orange-600 font-black text-white hover:bg-orange-700"
+                >
+                  <Link href="/protokoll-vier">Zur geheimen Seite</Link>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowHint4Modal(false)
+                    focusCodeInput()
+                  }}
+                  className="flex-1 rounded-2xl border-zinc-700 bg-transparent text-zinc-200 hover:bg-zinc-900"
+                >
+                  Schließen
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {showSecretPopup193 && (
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
@@ -1178,28 +1254,15 @@ const handleSecretSubmit = async () => {
               </p>
 
               <h3 className="mt-3 text-2xl font-black leading-tight text-white">
-                {secretTriggerCode === "4"
-                  ? "4 war nur eine Tür."
-                  : "193 war nur der Anfang."}
+                193 war nur der Anfang.
               </h3>
 
               <p className="mt-4 text-sm leading-relaxed text-zinc-300">
-                {secretTriggerCode === "4" ? (
-                  <>
-                    Die Vier war nur eine Tür.
-                    <br />
-                    <br />
-                    Nur wer dem richtigen Pfad folgt, kommt weiter.
-                  </>
-                ) : (
-                  <>
-                    Du hast die erste Tür geöffnet.
-                    <br />
-                    <br />
-                    Auf unserer Seite warten mehrere falsche Pfade.
-                    Nur einer führt dich weiter.
-                  </>
-                )}
+                Du hast die erste Tür geöffnet.
+                <br />
+                <br />
+                Auf unserer Seite warten mehrere falsche Pfade.
+                Nur einer führt dich weiter.
               </p>
 
               <div className="mt-5 rounded-2xl border border-orange-500/20 bg-black/40 p-4">
@@ -1207,22 +1270,12 @@ const handleSecretSubmit = async () => {
                   Nächster Schritt
                 </p>
                 <p className="mt-2 text-sm text-orange-200">
-                  {secretTriggerCode === "4"
-                    ? "Öffne jetzt die geheime Seite und folge dort der Spur."
-                    : "Suche den versteckten Code auf unserer Website und gib ihn hier in der Mission ein."}
+                  Suche den versteckten Code auf unserer Website und gib ihn hier
+                  in der Mission ein.
                 </p>
               </div>
 
               <div className="mt-6 flex gap-3">
-                {secretTriggerCode === "4" && (
-                  <Button
-                    asChild
-                    className="flex-1 rounded-2xl bg-orange-600 font-black text-white hover:bg-orange-700"
-                  >
-                    <Link href="/mission/protokoll-vier">Zur geheimen Seite</Link>
-                  </Button>
-                )}
-
                 <Button
                   variant="outline"
                   onClick={() => {

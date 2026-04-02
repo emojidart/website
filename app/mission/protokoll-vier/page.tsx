@@ -220,7 +220,7 @@ export default function ProtokollVierPage() {
                           </p>
 
                           <p className="mt-2 text-sm leading-relaxed text-green-200/90">
-                            Du kannst jetzt zur Mission zurückkehren und den nächsten Code eingeben.
+                            Du kannst jetzt zur Mission zurückkehren und den Code eingeben.
                           </p>
 
                           <div className="mt-4">
