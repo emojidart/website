@@ -13,8 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle, CheckCircle, Clock, Plus, Ticket, MessageCircle, Send, ArrowLeft, Loader2, X } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { AlertCircle, CheckCircle, Clock, Plus, Ticket, MessageCircle, Send, ArrowLeft, Loader2 } from "lucide-react"
 
 interface SupportTicket {
   id: string
@@ -48,116 +47,11 @@ const statusIcons: Record<SupportTicket["status"], any> = {
 }
 
 function PageMain({ children }: { children: React.ReactNode }) {
+  // ✅ 1:1 Container wie deine andere Seite (Campus)
   return (
     <main className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl flex-1">
       {children}
     </main>
-  )
-}
-
-function EasterNieteEgg({
-  visible,
-  imageSrc,
-  position = "left",
-}: {
-  visible: boolean
-  imageSrc: string
-  position?: "left" | "right" | "center"
-}) {
-  const [open, setOpen] = useState(false)
-
-  const positionClass =
-    position === "left"
-      ? "left-3 sm:left-5"
-      : position === "right"
-        ? "right-3 sm:right-5"
-        : "left-1/2 -translate-x-1/2"
-
-  return (
-    <>
-      <div className="h-28 sm:h-36" />
-      <div className="relative h-24 sm:h-28">
-        <AnimatePresence>
-          {visible && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.85, y: 14 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              transition={{ duration: 0.3 }}
-              onClick={() => setOpen(true)}
-              type="button"
-              aria-label="Verstecktes Osterei"
-              className={`absolute ${positionClass} bottom-1 sm:bottom-2 z-10`}
-            >
-              <motion.img
-                src={imageSrc}
-                alt="Verstecktes Osterei"
-                className="w-9 h-9 sm:w-11 sm:h-11 drop-shadow-md select-none"
-                animate={{ y: [0, -3, 0] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-4"
-            onClick={() => setOpen(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 30, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.98 }}
-              transition={{ duration: 0.22 }}
-              className="w-full max-w-sm rounded-3xl border border-orange-200 bg-white shadow-2xl overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-
-              <div className="p-5 relative">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600"
-                  aria-label="Schließen"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-
-                <div className="flex flex-col items-center text-center pt-2">
-                  <img
-                    src={imageSrc}
-                    alt="Nieten-Ei"
-                    className="w-16 h-16 mb-3 drop-shadow-md"
-                  />
-                  <p className="text-lg font-black text-gray-900">Niete</p>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Leider kein Gewinn auf dieser Seite.
-                  </p>
-                  <p className="text-sm font-semibold text-orange-600 mt-1">
-                    Bitte weitersuchen.
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    className="mt-5 inline-flex items-center justify-center rounded-2xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-orange-600 transition"
-                  >
-                    Weiter
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
   )
 }
 
@@ -170,7 +64,6 @@ export default function SupportPage() {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null)
   const [newMessage, setNewMessage] = useState("")
   const [sendingMessage, setSendingMessage] = useState(false)
-  const [now, setNow] = useState<number | null>(null)
 
   const [formData, setFormData] = useState({
     title: "",
@@ -195,17 +88,6 @@ export default function SupportPage() {
     if (user) fetchTickets()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
-
-  useEffect(() => {
-    const updateTime = () => setNow(Date.now())
-    updateTime()
-
-    const interval = setInterval(updateTime, 1000)
-    return () => clearInterval(interval)
-  }, [])
-
-   const eggVisibleAt = new Date("2026-04-05T08:00:00+02:00").getTime()
-  const isEggVisible = now !== null && now >= eggVisibleAt
 
   const checkUser = async () => {
     try {
@@ -314,8 +196,6 @@ export default function SupportPage() {
               </div>
             </div>
           </div>
-
-          <EasterNieteEgg visible={isEggVisible} imageSrc="/easter/egg-3.png" position="center" />
         </PageMain>
 
         <MobileBottomNav />
@@ -323,6 +203,7 @@ export default function SupportPage() {
     )
   }
 
+  // ✅ Ticket Detail View
   if (selectedTicket) {
     const StatusIcon = statusIcons[selectedTicket.status]
     return (
@@ -429,8 +310,6 @@ export default function SupportPage() {
               </CardContent>
             </Card>
           </div>
-
-          <EasterNieteEgg visible={isEggVisible} imageSrc="/easter/egg-3.png" position="right" />
         </PageMain>
 
         <MobileBottomNav />
@@ -438,6 +317,7 @@ export default function SupportPage() {
     )
   }
 
+  // ✅ Overview
   return (
     <div className="min-h-screen bg-gray-50 pb-24 flex flex-col">
       <Header variant="app" title="Support" subtitle="Tickets & Nachrichten" backHref="/member-profile-app" />
@@ -629,8 +509,6 @@ export default function SupportPage() {
             </Card>
           </div>
         </div>
-
-        <EasterNieteEgg visible={isEggVisible} imageSrc="/easter/egg-3.png" position="left" />
       </PageMain>
 
       <MobileBottomNav />

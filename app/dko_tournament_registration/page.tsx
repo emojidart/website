@@ -51,6 +51,67 @@ type RRPlayer = { id: string; name: string }
 
 const makeMatchId = (groupNo: number, roundNo: number, matchNo: number) =>
   groupNo * 10000 + roundNo * 100 + matchNo
+  
+  
+const formatShortName = (fullName: string) => {
+  const parts = fullName.trim().split(/\s+/)
+
+  if (parts.length === 0) return ""
+  if (parts.length === 1) return parts[0]
+
+  const firstName = parts[0]
+  const lastNameInitial = parts[parts.length - 1].charAt(0).toUpperCase()
+
+  return `${firstName} ${lastNameInitial}.`
+}
+
+const buildDoubleTeamName = (playerName1: string, playerName2: string) => {
+  const short1 = formatShortName(playerName1)
+  const short2 = formatShortName(playerName2)
+
+  return `${short1} / ${short2}`
+}
+
+
+const DOUBLE_SUFFIX_REGEX = /\s\[(\d+)\]$/
+
+const stripDoubleSuffix = (name: string) => {
+  return (name || "").replace(DOUBLE_SUFFIX_REGEX, "").trim()
+}
+
+const getBasePlayerId = (playerId: string | number | null | undefined) => {
+  return String(playerId ?? "").trim()
+}
+
+const isDoubleEntryName = (name: string) => DOUBLE_SUFFIX_REGEX.test(name || "")
+
+const getNextDoubleEntryData = (
+  playerId: number | string,
+  playerName: string,
+  registrations: RegisteredPlayer[],
+) => {
+  const baseId = String(playerId)
+  const baseName = stripDoubleSuffix(playerName)
+
+  const relatedEntries = registrations.filter((rp) => {
+    const rpBaseId = getBasePlayerId(rp.player_id)
+    const rpBaseName = stripDoubleSuffix(rp.player_name)
+    return rpBaseId === baseId || rpBaseName === baseName
+  })
+
+  const existingNumbers = relatedEntries.map((rp) => {
+    const match = rp.player_name.match(DOUBLE_SUFFIX_REGEX)
+    return match ? Number(match[1]) : 1
+  })
+
+  const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2
+
+    return {
+    syntheticPlayerId: crypto.randomUUID(),
+    syntheticPlayerName: `${baseName} [${nextNumber}]`,
+    entryNumber: nextNumber,
+  }
+}
 
 function splitIntoGroups(players: RRPlayer[], groupCount: number): RRPlayer[][] {
   const groups: RRPlayer[][] = Array.from({ length: groupCount }, () => [])
@@ -196,13 +257,16 @@ export default function DKOTournamentRegistration() {
   const [registeredPlayers, setRegisteredPlayers] = useState<RegisteredPlayer[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedPlayers, setSelectedPlayers] = useState<Set<number>>(new Set())
+  const [doubleMode, setDoubleMode] = useState(false)
+const [doublePlayer1Id, setDoublePlayer1Id] = useState("")
+const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
   const [loading, setLoading] = useState(true)
   const [tournamentName, setTournamentName] = useState("")
   const [tournamentEntryFee, setTournamentEntryFee] = useState("")
-  type TournamentMode = "dko" | "round_robin"
-const [tournamentMode, setTournamentMode] = useState<TournamentMode>("dko")
-const [rrGroupCount, setRrGroupCount] = useState<number>(2)
-const [startingTournament, setStartingTournament] = useState(false)
+  const [tournamentMode, setTournamentMode] = useState<TournamentMode>("dko")
+  const [allowDoubleEntry, setAllowDoubleEntry] = useState(false)
+  const [rrGroupCount, setRrGroupCount] = useState<number>(2)
+  const [startingTournament, setStartingTournament] = useState(false)
 
   const [showPaymentWarning, setShowPaymentWarning] = useState(false)
   const [showNameWarning, setShowNameWarning] = useState(false)
@@ -295,20 +359,44 @@ const [startingTournament, setStartingTournament] = useState(false)
     if (!scannedPlayerForConfirm) return
 
     try {
+      const alreadyRegisteredEntries = registeredPlayers.filter(
+  (rp) => stripDoubleSuffix(rp.player_name) === stripDoubleSuffix(scannedPlayerForConfirm.name),
+)
+
+      const alreadyRegisteredNormally = alreadyRegisteredEntries.some((rp) => !isDoubleEntryName(rp.player_name))
+
+      if (alreadyRegisteredEntries.length > 0 && !allowDoubleEntry) {
+        setShowAlreadyRegisteredModal({
+          open: true,
+          playerName: scannedPlayerForConfirm.name,
+        })
+        setScannedPlayerForConfirm(null)
+        return
+      }
+
+      const shouldUseDoubleEntry = allowDoubleEntry && alreadyRegisteredNormally
+      const registrationPayload = buildRegistrationPayload(
+        scannedPlayerForConfirm.id,
+        scannedPlayerForConfirm.name,
+        shouldUseDoubleEntry,
+      )
+
       const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-player_id: scannedPlayerForConfirm.id.toString(),
-        player_name: scannedPlayerForConfirm.name,
+        player_id: registrationPayload.player_id,
+        player_name: registrationPayload.player_name,
         paid: shouldDeduct,
         entry_fee: scannedPlayerForConfirm.entryFee,
         deducted_from_credit: shouldDeduct,
-          payment_method: "admin",
-        })
+        payment_method: "admin",
+      })
 
       if (registerError) {
-        if (registerError.message.includes("duplicate")) {
+        const message = String(registerError.message || "").toLowerCase()
+
+        if (message.includes("duplicate")) {
           setShowAlreadyRegisteredModal({
             open: true,
-            playerName: scannedPlayerForConfirm.name,
+            playerName: registrationPayload.player_name,
           })
         } else {
           throw registerError
@@ -340,7 +428,7 @@ player_id: scannedPlayerForConfirm.id.toString(),
         })
       }
 
-      setScannerMessage(`✓ ${scannedPlayerForConfirm.name} erfolgreich registriert!`)
+      setScannerMessage(`✓ ${registrationPayload.player_name} erfolgreich registriert!`)
       setScanSuccess(true)
       setScannedPlayerForConfirm(null)
 
@@ -454,9 +542,16 @@ player_id: scannedPlayerForConfirm.id.toString(),
         const player = availablePlayers.find((p) => p.id === playerId)
         if (!player) continue
 
+        const alreadyRegisteredNormally = registeredPlayers.some(
+          (rp) => stripDoubleSuffix(rp.player_name) === stripDoubleSuffix(player.name) && !isDoubleEntryName(rp.player_name),
+        )
+
+        const shouldUseDoubleEntry = allowDoubleEntry && alreadyRegisteredNormally
+        const registrationPayload = buildRegistrationPayload(playerId, player.name, shouldUseDoubleEntry)
+
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-player_id: playerId.toString(),
-          player_name: player.name,
+          player_id: registrationPayload.player_id,
+          player_name: registrationPayload.player_name,
           paid: false,
           entry_fee: entryFee,
           deducted_from_credit: false,
@@ -464,10 +559,12 @@ player_id: playerId.toString(),
         })
 
         if (registerError) {
-          if (registerError.message.includes("duplicate")) {
+          const message = String(registerError.message || "").toLowerCase()
+
+          if (message.includes("duplicate")) {
             setShowAlreadyRegisteredModal({
               open: true,
-              playerName: player.name,
+              playerName: shouldUseDoubleEntry ? registrationPayload.player_name : player.name,
             })
           } else {
             throw registerError
@@ -485,8 +582,17 @@ player_id: playerId.toString(),
       if (successfullyRegistered.length > 0) {
         setShowSuccessModal({ open: true, playerCount: successfullyRegistered.length })
       }
-    } catch (error) {
-      console.error("[v0] Error in registerPlayersDirectly:", error)
+       } catch (error: any) {
+      console.error("[v0] Error in registerPlayersDirectly FULL:", {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+        full: error,
+      })
+      alert(
+        `Fehler:\nmessage=${error?.message ?? "-"}\ncode=${error?.code ?? "-"}\ndetails=${error?.details ?? "-"}\nhint=${error?.hint ?? "-"}`
+      )
       setShowErrorModal({ open: true })
     }
   }
@@ -520,9 +626,16 @@ player_id: playerId.toString(),
         const player = availablePlayers.find((p) => p.id === playerWithCredit.id)
         if (!player) continue
 
+        const alreadyRegisteredNormally = registeredPlayers.some(
+          (rp) => getBasePlayerId(rp.player_id) === playerWithCredit.id.toString() && !isDoubleEntryName(rp.player_name),
+        )
+
+        const shouldUseDoubleEntry = allowDoubleEntry && alreadyRegisteredNormally
+        const registrationPayload = buildRegistrationPayload(playerWithCredit.id, player.name, shouldUseDoubleEntry)
+
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-player_id: playerWithCredit.id.toString(),
-          player_name: player.name,
+          player_id: registrationPayload.player_id,
+          player_name: registrationPayload.player_name,
           paid: true,
           entry_fee: entryFee,
           deducted_from_credit: true,
@@ -530,10 +643,12 @@ player_id: playerWithCredit.id.toString(),
         })
 
         if (registerError) {
-          if (registerError.message.includes("duplicate")) {
+          const message = String(registerError.message || "").toLowerCase()
+
+          if (message.includes("duplicate")) {
             setShowAlreadyRegisteredModal({
               open: true,
-              playerName: player.name,
+              playerName: shouldUseDoubleEntry ? registrationPayload.player_name : player.name,
             })
           } else {
             throw registerError
@@ -566,19 +681,28 @@ player_id: playerWithCredit.id.toString(),
         const player = availablePlayers.find((p) => p.id === playerId)
         if (!player) continue
 
+        const alreadyRegisteredNormally = registeredPlayers.some(
+          (rp) => stripDoubleSuffix(rp.player_name) === stripDoubleSuffix(player.name) && !isDoubleEntryName(rp.player_name),
+        )
+
+        const shouldUseDoubleEntry = allowDoubleEntry && alreadyRegisteredNormally
+        const registrationPayload = buildRegistrationPayload(playerId, player.name, shouldUseDoubleEntry)
+
         const { error: registerError } = await supabase.from("dko_tournament_registration").insert({
-player_id: playerId.toString(),
-          player_name: player.name,
+          player_id: registrationPayload.player_id,
+          player_name: registrationPayload.player_name,
           paid: false,
           entry_fee: entryFee,
           payment_method: "admin",
         })
 
         if (registerError) {
-          if (registerError.message.includes("duplicate")) {
+          const message = String(registerError.message || "").toLowerCase()
+
+          if (message.includes("duplicate")) {
             setShowAlreadyRegisteredModal({
               open: true,
-              playerName: player.name,
+              playerName: shouldUseDoubleEntry ? registrationPayload.player_name : player.name,
             })
           } else {
             throw registerError
@@ -765,6 +889,109 @@ useEffect(() => {
     setTournamentFormCompleted(isCompleted)
   }, [tournamentName, tournamentEntryFee])
 
+  const buildRegistrationPayload = (playerId: number, playerName: string, useDoubleEntry: boolean) => {
+    if (!useDoubleEntry) {
+      return {
+        player_id: playerId.toString(),
+        player_name: stripDoubleSuffix(playerName),
+      }
+    }
+
+    const nextDouble = getNextDoubleEntryData(playerId, playerName, registeredPlayers)
+
+    return {
+      player_id: nextDouble.syntheticPlayerId,
+      player_name: nextDouble.syntheticPlayerName,
+    }
+  }
+  
+  
+const registerDoubleTeam = async () => {
+  if (!tournamentFormCompleted) {
+    alert("Bitte zuerst Turniername und Startgeld eingeben.")
+    return
+  }
+
+  if (!doublePlayer1Id || !doublePlayer2Id) {
+    alert("Bitte 2 Spieler auswählen.")
+    return
+  }
+
+  if (doublePlayer1Id === doublePlayer2Id) {
+    alert("Spieler 1 und Spieler 2 dürfen nicht identisch sein.")
+    return
+  }
+
+  try {
+    const player1 = availablePlayers.find((p) => String(p.id) === doublePlayer1Id)
+    const player2 = availablePlayers.find((p) => String(p.id) === doublePlayer2Id)
+
+    if (!player1 || !player2) {
+      alert("Spieler nicht gefunden.")
+      return
+    }
+
+    const sortedNames = [player1.name, player2.name].sort((a, b) => a.localeCompare(b, "de"))
+    const baseTeamName = buildDoubleTeamName(sortedNames[0], sortedNames[1])
+
+    // 🔥 WICHTIG: bestehende Einträge checken
+    const existingEntries = registeredPlayers.filter(
+      (rp) => stripDoubleSuffix(rp.player_name) === stripDoubleSuffix(baseTeamName)
+    )
+
+    const alreadyRegisteredNormally = existingEntries.some(
+      (rp) => !isDoubleEntryName(rp.player_name)
+    )
+
+    // ❌ wenn NICHT erlaubt → blocken
+    if (existingEntries.length > 0 && !allowDoubleEntry) {
+      setShowAlreadyRegisteredModal({
+        open: true,
+        playerName: baseTeamName,
+      })
+      return
+    }
+
+    // ✅ Double Entry bauen
+    let finalName = baseTeamName
+    let finalId = crypto.randomUUID()
+
+    if (allowDoubleEntry && alreadyRegisteredNormally) {
+      const nextDouble = getNextDoubleEntryData(finalId, baseTeamName, registeredPlayers)
+      finalName = nextDouble.syntheticPlayerName
+      finalId = nextDouble.syntheticPlayerId
+    }
+
+    const entryFee = Number.parseFloat(tournamentEntryFee) || 0
+
+    const { error } = await supabase.from("dko_tournament_registration").insert({
+      player_id: finalId,
+      player_name: finalName,
+      paid: false,
+      entry_fee: entryFee,
+      deducted_from_credit: false,
+      payment_method: "admin",
+    })
+
+    if (error) throw error
+
+    setDoublePlayer1Id("")
+    setDoublePlayer2Id("")
+
+    await fetchRegisteredPlayers()
+    await fetchFrequentPlayers()
+
+    setShowSuccessModal({ open: true, playerCount: 1 })
+  } catch (error) {
+    console.error("Fehler beim Registrieren des Doppelteams:", error)
+    setShowErrorModal({ open: true })
+  }
+}
+
+
+
+
+
   const handlePlayerSelect = (playerId: number) => {
     const newSelected = new Set(selectedPlayers)
     if (newSelected.has(playerId)) {
@@ -816,13 +1043,25 @@ useEffect(() => {
         return
       }
 
-      const spieldatenbankId = playerToUnregister.player_id
+      const basePlayerName = stripDoubleSuffix(playerToUnregister.player_name)
 
-      const { data: clubPlayer, error: clubPlayerError } = await supabase
-        .from("club_players")
-        .select("id")
-        .eq("spieldatenbank_id", spieldatenbankId)
-        .maybeSingle()
+const { data: spielerStamm, error: spielerStammError } = await supabase
+  .from("spieldatenbank")
+  .select("id")
+  .eq("name", basePlayerName)
+  .maybeSingle()
+
+if (spielerStammError || !spielerStamm) {
+  console.error("[v0] Spieldatenbank player not found:", spielerStammError)
+  setShowRefundConfirmModal({ open: false })
+  return
+}
+
+const { data: clubPlayer, error: clubPlayerError } = await supabase
+  .from("club_players")
+  .select("id")
+  .eq("spieldatenbank_id", spielerStamm.id)
+  .maybeSingle()
 
       if (clubPlayerError || !clubPlayer) {
         console.error("[v0] Club player not found:", clubPlayerError)
@@ -1061,8 +1300,13 @@ useEffect(() => {
         return
       }
 
-      const alreadyRegistered = registeredPlayers.some((rp) => rp.player_id === spielData.id.toString())
-      if (alreadyRegistered) {
+      const existingEntriesForPlayer = registeredPlayers.filter(
+  (rp) => stripDoubleSuffix(rp.player_name) === stripDoubleSuffix(spielData.name),
+)
+
+      const alreadyRegisteredNormally = existingEntriesForPlayer.some((rp) => !isDoubleEntryName(rp.player_name))
+
+      if (existingEntriesForPlayer.length > 0 && !allowDoubleEntry) {
         console.log("[v0] Player already registered:", spielData.name)
         setScannerMessage(`${spielData.name} ist bereits registriert!`)
         setIsScanning(false)
@@ -1106,17 +1350,20 @@ useEffect(() => {
               return
             } else {
               console.log("[v0] Player has insufficient credit, registering without payment")
+              const shouldUseDoubleEntry = allowDoubleEntry && alreadyRegisteredNormally
+              const registrationPayload = buildRegistrationPayload(spielData.id, spielData.name, shouldUseDoubleEntry)
+
               const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
-player_id: spielData.id.toString(),
-                player_name: spielData.name,
+                player_id: registrationPayload.player_id,
+                player_name: registrationPayload.player_name,
                 paid: false,
                 entry_fee: entryFee,
-          payment_method: "admin",
-        })
+                payment_method: "admin",
+              })
 
               if (insertError) throw insertError
 
-              setScannerMessage(`✓ ${spielData.name} registriert (Zahlung vor Ort)`)
+              setScannerMessage(`✓ ${registrationPayload.player_name} registriert (Zahlung vor Ort)`)
               setScanSuccess(true)
               setIsScanning(false)
               setScannerInput("")
@@ -1134,9 +1381,12 @@ player_id: spielData.id.toString(),
         }
 
         console.log("[v0] No credit account found, registering without payment")
+        const shouldUseDoubleEntry = allowDoubleEntry && alreadyRegisteredNormally
+        const registrationPayload = buildRegistrationPayload(spielData.id, spielData.name, shouldUseDoubleEntry)
+
         const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
-player_id: spielData.id.toString(),
-          player_name: spielData.name,
+          player_id: registrationPayload.player_id,
+          player_name: registrationPayload.player_name,
           paid: false,
           entry_fee: entryFee,
           payment_method: "admin",
@@ -1144,7 +1394,7 @@ player_id: spielData.id.toString(),
 
         if (insertError) throw insertError
 
-        setScannerMessage(`✓ ${spielData.name} registriert (Zahlung vor Ort)`)
+        setScannerMessage(`✓ ${registrationPayload.player_name} registriert (Zahlung vor Ort)`)
         setScanSuccess(true)
         setIsScanning(false)
         setScannerInput("")
@@ -1158,9 +1408,12 @@ player_id: spielData.id.toString(),
         }, 2000)
       } else {
         console.log("[v0] No entry fee, registering player")
+        const shouldUseDoubleEntry = allowDoubleEntry && alreadyRegisteredNormally
+        const registrationPayload = buildRegistrationPayload(spielData.id, spielData.name, shouldUseDoubleEntry)
+
         const { error: insertError } = await supabase.from("dko_tournament_registration").insert({
-player_id: spielData.id.toString(),
-          player_name: spielData.name,
+          player_id: registrationPayload.player_id,
+          player_name: registrationPayload.player_name,
           paid: false,
           entry_fee: entryFee,
           payment_method: "admin",
@@ -1168,7 +1421,7 @@ player_id: spielData.id.toString(),
 
         if (insertError) throw insertError
 
-        setScannerMessage(`✓ ${spielData.name} erfolgreich registriert!`)
+        setScannerMessage(`✓ ${registrationPayload.player_name} erfolgreich registriert!`)
         setScanSuccess(true)
         setIsScanning(false)
         setScannerInput("")
@@ -1274,15 +1527,24 @@ player_id: spielData.id.toString(),
     }
   }
 
-  const filteredPlayers = availablePlayers.filter(
-    (player) =>
-      player.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      !registeredPlayers.some((rp) => rp.player_name === player.name),
-  )
 
-  const availableFrequentPlayers = frequentPlayers.filter(
-    (player) => !registeredPlayers.some((rp) => rp.player_name === player.name),
-  )
+
+const filteredPlayers = availablePlayers.filter((player) => {
+  const matchesSearch = player.name.toLowerCase().includes(searchTerm.toLowerCase())
+  if (!matchesSearch) return false
+
+  if (doubleMode) return true
+  if (allowDoubleEntry) return true
+
+  return !registeredPlayers.some((rp) => stripDoubleSuffix(rp.player_name) === player.name)
+})
+
+const availableFrequentPlayers = frequentPlayers.filter((player) => {
+  if (doubleMode) return true
+  if (allowDoubleEntry) return true
+
+  return !registeredPlayers.some((rp) => stripDoubleSuffix(rp.player_name) === player.name)
+})
 
   if (authLoading || adminLoading) {
     return (
@@ -1324,14 +1586,7 @@ player_id: spielData.id.toString(),
     <div className="min-h-screen bg-white">
       <Header />
 
-      <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
-            <UserPlus className="w-8 h-8" />
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-black mb-4 tracking-tight">DKO TURNIER REGISTRIERUNG</h1>
-        </div>
-      </div>
+     
 
       {showInsufficientBalanceModal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
@@ -1801,7 +2056,7 @@ player_id: spielData.id.toString(),
         </div>
       )}
 
-      <div className="w-full px-8 py-12">
+      <div className="w-full px-8 py-6 mt-24">
 
         <div className="mb-6">
           <Button
@@ -1872,7 +2127,42 @@ player_id: spielData.id.toString(),
               </p>
             )}
           </div>
-        </div>
+
+          <div className="mt-4 flex items-center gap-3 rounded-xl border border-orange-200 bg-white px-4 py-3">
+  <input
+    id="allow-double-entry"
+    type="checkbox"
+    checked={allowDoubleEntry}
+    onChange={(e) => setAllowDoubleEntry(e.target.checked)}
+    className="h-4 w-4"
+  />
+  <label htmlFor="allow-double-entry" className="text-sm font-medium text-slate-800 cursor-pointer">
+    Doppelnennung erlauben
+  </label>
+</div>
+
+<div className="mt-2 flex items-center gap-3 rounded-xl border border-orange-200 bg-white px-4 py-3">
+  <input
+    id="double-mode"
+    type="checkbox"
+    checked={doubleMode}
+    onChange={(e) => {
+      setDoubleMode(e.target.checked)
+      setDoublePlayer1Id("")
+      setDoublePlayer2Id("")
+    }}
+    className="h-4 w-4"
+  />
+  <label htmlFor="double-mode" className="text-sm font-medium text-slate-800 cursor-pointer">
+    Doppelturnier-Modus
+  </label>
+</div>
+</div>
+		
+		
+		
+		
+
 
         {registeredPlayers.length > 0 && (
           <div className="mb-8 bg-orange-50 border-2 border-white rounded-lg p-6 shadow-lg">
@@ -2067,17 +2357,82 @@ player_id: spielData.id.toString(),
               )}
             </div>
 
-            <button
-              onClick={handleRegisterPlayers}
-              disabled={selectedPlayers.size === 0 || !tournamentFormCompleted}
-              className={`w-full font-bold py-3 px-6 rounded-lg transition-colors ${
-                selectedPlayers.size > 0 && tournamentFormCompleted
-                  ? "bg-orange-500 hover:bg-orange-600 text-white"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              {selectedPlayers.size > 0 ? `${selectedPlayers.size} Spieler registrieren` : "Spieler auswählen"}
-            </button>
+            {!doubleMode ? (
+  <button
+    onClick={handleRegisterPlayers}
+    disabled={selectedPlayers.size === 0 || !tournamentFormCompleted}
+    className={`w-full font-bold py-3 px-6 rounded-lg transition-colors ${
+      selectedPlayers.size > 0 && tournamentFormCompleted
+        ? "bg-orange-500 hover:bg-orange-600 text-white"
+        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+    }`}
+  >
+    {selectedPlayers.size > 0 ? `${selectedPlayers.size} Spieler registrieren` : "Spieler auswählen"}
+  </button>
+) : (
+  <div className="space-y-4">
+    <div className="grid md:grid-cols-2 gap-4">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Spieler 1</label>
+        <select
+          value={doublePlayer1Id}
+          onChange={(e) => setDoublePlayer1Id(e.target.value)}
+          className="w-full px-4 py-3 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none bg-white shadow-md"
+        >
+          <option value="">Bitte wählen</option>
+          {availablePlayers.map((player) => (
+            <option key={player.id} value={player.id}>
+              {player.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Spieler 2</label>
+        <select
+          value={doublePlayer2Id}
+          onChange={(e) => setDoublePlayer2Id(e.target.value)}
+          className="w-full px-4 py-3 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none bg-white shadow-md"
+        >
+          <option value="">Bitte wählen</option>
+          {availablePlayers
+            .filter((player) => String(player.id) !== doublePlayer1Id)
+            .map((player) => (
+              <option key={player.id} value={player.id}>
+                {player.name}
+              </option>
+            ))}
+        </select>
+      </div>
+    </div>
+
+    {doublePlayer1Id && doublePlayer2Id && (
+      <div className="rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700">
+        Teamname:{" "}
+        {(() => {
+          const p1 = availablePlayers.find((p) => String(p.id) === doublePlayer1Id)
+          const p2 = availablePlayers.find((p) => String(p.id) === doublePlayer2Id)
+          if (!p1 || !p2) return "-"
+          const sortedNames = [p1.name, p2.name].sort((a, b) => a.localeCompare(b, "de"))
+          return buildDoubleTeamName(sortedNames[0], sortedNames[1])
+        })()}
+      </div>
+    )}
+
+    <button
+      onClick={registerDoubleTeam}
+      disabled={!doublePlayer1Id || !doublePlayer2Id || !tournamentFormCompleted}
+      className={`w-full font-bold py-3 px-6 rounded-lg transition-colors ${
+        doublePlayer1Id && doublePlayer2Id && tournamentFormCompleted
+          ? "bg-orange-500 hover:bg-orange-600 text-white"
+          : "bg-gray-300 text-gray-500 cursor-not-allowed"
+      }`}
+    >
+      Doppelteam registrieren
+    </button>
+  </div>
+)}
           </div>
 
           <div className="bg-white border-2 border-white rounded-lg p-6 shadow-lg">

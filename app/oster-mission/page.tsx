@@ -43,7 +43,7 @@ type SecretProgressRow = {
 type MessageType = "success" | "error" | "info"
 
 const TOTAL_DAYS = 7
-const FINAL_WORD = "TURNIER"
+const FINAL_WORD = "STREUEN"
 const LETTER_SLOT_COUNT = FINAL_WORD.length
 
 

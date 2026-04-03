@@ -27,9 +27,8 @@ import {
   Home,
   Building,
   Shirt,
-  X,
 } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 
 type ClubPlayer = {
   id: string
@@ -76,6 +75,7 @@ const normalizeEmptyToNull = (v: any) => {
   return v
 }
 
+// ✅ DB -> UI (Right/Left -> Rechts/Links)
 const mapThrowingHandFromDB = (value: string | null) => {
   if (!value) return ""
   const v = value.toLowerCase()
@@ -84,6 +84,7 @@ const mapThrowingHandFromDB = (value: string | null) => {
   return value
 }
 
+// ✅ UI -> DB (nur deutsch speichern)
 const mapThrowingHandToDB = (value: string | null) => {
   if (!value) return null
   const v = value.toLowerCase()
@@ -147,98 +148,6 @@ function ThrowingHandSelect(props: { value: string; onChange: (v: string) => voi
   )
 }
 
-function EasterNieteEgg({ visible }: { visible: boolean }) {
-  const [showPopup, setShowPopup] = useState(false)
-
-  return (
-    <>
-      <div className="h-24 sm:h-32" />
-
-      <div className="relative h-24 sm:h-28">
-        <AnimatePresence>
-          {visible && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.85, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              transition={{ duration: 0.3 }}
-              onClick={() => setShowPopup(true)}
-              type="button"
-              aria-label="Verstecktes Osterei"
-              className="absolute left-[58%] -translate-x-1/2 bottom-1 sm:bottom-2 z-10"
-            >
-              <motion.img
-                src="/easter/egg-4.png"
-                alt="Verstecktes Osterei"
-                className="w-9 h-9 sm:w-11 sm:h-11 drop-shadow-md select-none"
-                animate={{ y: [0, -3, 0] }}
-                transition={{ duration: 1.7, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <AnimatePresence>
-        {showPopup && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-4"
-            onClick={() => setShowPopup(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 30, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.98 }}
-              transition={{ duration: 0.22 }}
-              className="w-full max-w-sm rounded-3xl border border-orange-200 bg-white shadow-2xl overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-
-              <div className="p-5 relative">
-                <button
-                  type="button"
-                  onClick={() => setShowPopup(false)}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600"
-                  aria-label="Schließen"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-
-                <div className="flex flex-col items-center text-center pt-2">
-                  <img
-                    src="/easter/egg-4.png"
-                    alt="Nieten-Ei"
-                    className="w-16 h-16 mb-3 drop-shadow-md"
-                  />
-                  <p className="text-lg font-black text-gray-900">Niete</p>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Leider kein Gewinn auf dieser Seite.
-                  </p>
-                  <p className="text-sm font-semibold text-orange-600 mt-1">
-                    Bitte weitersuchen.
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPopup(false)}
-                    className="mt-5 inline-flex items-center justify-center rounded-2xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-orange-600 transition"
-                  >
-                    Weiter
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  )
-}
-
 export default function ProfilDatenAppPage() {
   const { session, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -247,7 +156,6 @@ export default function ProfilDatenAppPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [now, setNow] = useState<number | null>(null)
 
   const [row, setRow] = useState<ClubPlayer | null>(null)
 
@@ -283,22 +191,11 @@ export default function ProfilDatenAppPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id])
 
-  useEffect(() => {
-    const updateTime = () => setNow(Date.now())
-    updateTime()
-
-    const interval = setInterval(updateTime, 1000)
-    return () => clearInterval(interval)
-  }, [])
-
   const setField = (k: keyof typeof form, v: any) => {
     setError(null)
     setSuccess(null)
     setForm((p) => ({ ...p, [k]: v }))
   }
-
-  const eggVisibleAt = new Date("2026-04-05T08:00:00+02:00").getTime()
-  const isEggVisible = now !== null && now >= eggVisibleAt
 
   const loadMyClubPlayer = async () => {
     try {
@@ -306,6 +203,7 @@ export default function ProfilDatenAppPage() {
       setError(null)
       setSuccess(null)
 
+      // ✅ Fix: mehrere rows pro user_id → order + limit(1)
       const { data, error } = await supabase
         .from("club_players")
         .select(`
@@ -432,11 +330,12 @@ export default function ProfilDatenAppPage() {
 
       <main className="pt-12 sm:pt-14">
         <motion.div
-          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+        className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
+          {/* App Header Card */}
           <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
             <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
@@ -466,6 +365,7 @@ export default function ProfilDatenAppPage() {
             </div>
           </motion.div>
 
+          {/* Status Badges */}
           {(error || success) && (
             <motion.div variants={itemVariants} className="mb-4">
               <div className="flex flex-wrap gap-2">
@@ -475,6 +375,7 @@ export default function ProfilDatenAppPage() {
             </motion.div>
           )}
 
+          {/* Persönliche Daten */}
           <motion.div variants={itemVariants} className="mt-5">
             <Card className="rounded-2xl border border-gray-200 shadow-sm">
               <CardHeader className="pb-2">
@@ -536,6 +437,7 @@ export default function ProfilDatenAppPage() {
             </Card>
           </motion.div>
 
+          {/* Adresse */}
           <motion.div variants={itemVariants} className="mt-5">
             <Card className="rounded-2xl border border-gray-200 shadow-sm">
               <CardHeader className="pb-2">
@@ -586,6 +488,7 @@ export default function ProfilDatenAppPage() {
             </Card>
           </motion.div>
 
+          {/* Kontakt */}
           <motion.div variants={itemVariants} className="mt-5">
             <Card className="rounded-2xl border border-gray-200 shadow-sm">
               <CardHeader className="pb-2">
@@ -615,6 +518,7 @@ export default function ProfilDatenAppPage() {
             </Card>
           </motion.div>
 
+          {/* Action: Speichern */}
           <motion.div variants={itemVariants} className="mt-5">
             <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
@@ -639,8 +543,6 @@ export default function ProfilDatenAppPage() {
               </CardContent>
             </Card>
           </motion.div>
-
-          <EasterNieteEgg visible={isEggVisible} />
         </motion.div>
       </main>
 

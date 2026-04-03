@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { VsIntroOverlay } from "@/components/vs-intro-overlay"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { RotateCcw, Check, Volume2 } from "lucide-react"
+import { RotateCcw, Check, Volume2, Radio, Activity, Clock3, Trophy } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSpeechAnnouncer } from "@/components/speech-announcer"
@@ -1669,6 +1669,20 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
   }, [searchParams, bracketSize, tournamentType])
 
   const availableMachines = getAvailableMachines()
+  const allMatches = Object.values(matches)
+  const activeLiveMatches = allMatches
+    .filter((match) => match.player1 && match.player2 && !match.winner && match.machineNumber)
+    .sort((a, b) => (a.machineNumber || 0) - (b.machineNumber || 0))
+  const readyMatches = allMatches.filter((match) => match.player1 && match.player2 && !match.winner && !match.machineNumber)
+  const completedMatches = allMatches.filter((match) => Boolean(match.winner))
+  const liveMachineNumbers = activeLiveMatches
+    .map((match) => match.machineNumber)
+    .filter((value): value is number => Boolean(value))
+  const totalMatchCount = 31
+  const completedCount = completedMatches.length
+  const remainingCount = Math.max(totalMatchCount - completedCount, 0)
+  const liveCompletion = Math.round((completedCount / totalMatchCount) * 100)
+  const winnerName = matches[31].winner || (matches[30].winner === matches[30].player1 ? matches[30].winner : undefined)
 
   if (loading) {
     return (
@@ -1707,6 +1721,235 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
             </Button>
           </div>
         </div>
+
+
+        <Card className="overflow-hidden border-0 shadow-xl bg-white text-slate-900 border border-slate-200">
+          <div className="p-5 md:p-6 space-y-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-600">
+                  <Radio className="h-3.5 w-3.5" />
+                  LIVE Center
+                </div>
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold">Alles Wichtige auf einen Blick</h2>
+                  <p className="text-sm md:text-base text-slate-600">
+                    Laufende Spiele, freie Automaten und die nächsten Matches sofort sichtbar.
+                  </p>
+                </div>
+              </div>
+
+              <div className="min-w-[220px] rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <span>Turnier-Fortschritt</span>
+                  <span className="font-semibold text-slate-900">{liveCompletion}%</span>
+                </div>
+                <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className="h-full rounded-full bg-orange-500 transition-all duration-500"
+                    style={{ width: `${liveCompletion}%` }}
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-700">
+                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Fertig</div>
+                    <div className="mt-1 font-semibold">{completedCount} von {totalMatchCount} Matches</div>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-right">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                      {winnerName ? "Sieger" : "Offen"}
+                    </div>
+                    <div className="mt-1 font-semibold">{winnerName ? winnerName : `${remainingCount} Matches`}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">LIVE Matches</span>
+                  <Activity className="h-4 w-4 text-red-500" />
+                </div>
+                <div className="mt-2 text-3xl font-bold">{activeLiveMatches.length}</div>
+                <p className="mt-1 text-xs text-slate-500">Aktuell auf Automaten gestartet</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Bereit</span>
+                  <Clock3 className="h-4 w-4 text-orange-500" />
+                </div>
+                <div className="mt-2 text-3xl font-bold">{readyMatches.length}</div>
+                <p className="mt-1 text-xs text-slate-500">Sofort startbare Matches</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Frei</span>
+                  <Radio className="h-4 w-4 text-slate-500" />
+                </div>
+                <div className="mt-2 text-3xl font-bold">{availableMachines.length}</div>
+                <p className="mt-1 text-xs text-slate-500">Verfügbare Automaten</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Abgeschlossen</span>
+                  <Trophy className="h-4 w-4 text-emerald-600" />
+                </div>
+                <div className="mt-2 text-3xl font-bold">{completedMatches.length}</div>
+                <p className="mt-1 text-xs text-slate-500">Bereits bestätigte Matches</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="rounded-2xl border border-red-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-semibold text-lg">Gerade LIVE</h3>
+                  <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                    {liveMachineNumbers.length > 0 ? `Automaten ${liveMachineNumbers.join(", ")}` : "Noch kein Spiel gestartet"}
+                  </span>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {activeLiveMatches.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600">
+                      Noch kein LIVE-Match aktiv. Starte ein Match und es erscheint sofort hier oben.
+                    </div>
+                  ) : (
+                    activeLiveMatches.map((match) => {
+                      const canConfirmLive = match.score1 !== match.score2 && (match.score1 > 0 || match.score2 > 0)
+                      const nextCall = Math.min((match.callCount || 1) + 1, 3)
+
+                      return (
+                        <div
+                          key={match.id}
+                          className="rounded-2xl border border-red-200 bg-red-50/40 px-4 py-4 shadow-sm"
+                        >
+                          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                            <div>
+                              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+                                <span>Match {match.id}</span>
+                                <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-white">
+                                  LIVE
+                                </span>
+                              </div>
+                              <div className="mt-1 text-base font-semibold">
+                                {match.player1} <span className="text-slate-400">vs.</span> {match.player2}
+                              </div>
+                              <div className="mt-2">
+                                <span className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600">
+                                  Automat {match.machineNumber}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 md:w-[190px]">
+                              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                <div className="truncate text-xs text-slate-500">{match.player1}</div>
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  maxLength={2}
+                                  value={match.score1 === 0 ? "" : String(match.score1)}
+                                  onChange={(e) =>
+                                    updateScore(match.id, 1, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)
+                                  }
+                                  className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
+                                />
+                              </div>
+                              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                <div className="truncate text-xs text-slate-500">{match.player2}</div>
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  maxLength={2}
+                                  value={match.score2 === 0 ? "" : String(match.score2)}
+                                  onChange={(e) =>
+                                    updateScore(match.id, 2, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)
+                                  }
+                                  className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600">
+                              Stand {match.score1}:{match.score2}
+                            </span>
+                            {match.callCount && match.callCount < 3 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleRepeatCall(match.id)}
+                                className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                              >
+                                {nextCall}. Aufruf
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              onClick={() => confirmMatch(match.id)}
+                              disabled={!canConfirmLive}
+                              className="bg-red-500 text-white hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-500"
+                            >
+                              <Check className="mr-1 h-4 w-4" />
+                              Ergebnis bestätigen
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-semibold text-lg">Als Nächstes dran</h3>
+                  <span className="text-xs text-slate-500">Top {Math.min(readyMatches.length, 4)}</span>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {readyMatches.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600">
+                      Aktuell wartet kein startbereites Match.
+                    </div>
+                  ) : (
+                    readyMatches.slice(0, 4).map((match) => {
+                      const hasFreilos = isFreilos(match.player1) || isFreilos(match.player2)
+
+                      return (
+                        <div key={match.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm font-semibold">Match {match.id}</span>
+                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                              {hasFreilos ? "auto" : "bereit"}
+                            </span>
+                          </div>
+                          <div className="mt-2 text-sm text-slate-700">
+                            {match.player1} <span className="text-slate-400">vs.</span> {match.player2}
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => startMatch(match.id)}
+                              className="bg-orange-500 text-white hover:bg-orange-600"
+                            >
+                              {hasFreilos ? "Auto starten" : "Spiel starten"}
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
 
         <div className="space-y-8">
           <div className="space-y-3">
