@@ -430,13 +430,14 @@ export function Header({
                 <div className="min-w-0 flex items-center gap-2">
                   <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-orange-600 shadow-sm">
                     <Image
-                      src="/images/brutal-darts-bg---.png"
-                      alt="EMD Logo"
-                      width={28}
-                      height={28}
-                      className="object-contain"
-                      priority
-                    />
+  src="/images/brutal-darts-bg---.png"
+  alt="EMD Logo"
+  width={28}
+  height={28}
+  className="h-auto object-contain"
+  style={{ width: "auto", height: "28px" }}
+  priority
+/>
                   </span>
                   <div className="min-w-0">
                     <div className="truncate font-extrabold text-gray-900">{title}</div>

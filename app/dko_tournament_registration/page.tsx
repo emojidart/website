@@ -1454,11 +1454,12 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
     p?.payment_method === "credit" || p?.payment_method === "on_site"
 
   const getTournamentSize = (playerCount: number): number => {
-    if (playerCount <= 8) return 8
-    if (playerCount <= 16) return 16
-    if (playerCount <= 32) return 32
-    return 64
-  }
+  if (playerCount <= 8) return 8
+  if (playerCount <= 16) return 16
+  if (playerCount <= 32) return 32
+  if (playerCount <= 64) return 64
+  return 128
+}
 
   const tournamentSize = getTournamentSize(registeredPlayers.length)
 
@@ -1517,14 +1518,16 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
 
 
     if (tournamentSize === 16) {
-      router.push(`/16erdko?shuffle=true&tournamentName=${encodedName}`)
-    } else if (tournamentSize === 8) {
-      router.push(`/8erdko?shuffle=true&tournamentName=${encodedName}`)
-    } else if (tournamentSize === 32) {
-      router.push(`/32erdko?shuffle=true&tournamentName=${encodedName}`)
-    } else if (tournamentSize === 64) {
-      router.push(`/64erdko?shuffle=true&tournamentName=${encodedName}`)
-    }
+  router.push(`/16erdko?shuffle=true&tournamentName=${encodedName}`)
+} else if (tournamentSize === 8) {
+  router.push(`/8erdko?shuffle=true&tournamentName=${encodedName}`)
+} else if (tournamentSize === 32) {
+  router.push(`/32erdko?shuffle=true&tournamentName=${encodedName}`)
+} else if (tournamentSize === 64) {
+  router.push(`/64erdko?shuffle=true&tournamentName=${encodedName}`)
+} else if (tournamentSize === 128) {
+  router.push(`/128erdko?shuffle=true&tournamentName=${encodedName}`)
+}
   }
 
 

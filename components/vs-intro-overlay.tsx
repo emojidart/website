@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 
 type Props = {
   open: boolean
@@ -19,22 +19,30 @@ export function VsIntroOverlay({
   durationMs = 3000,
   onDone,
 }: Props) {
+  const onDoneRef = useRef(onDone)
+
+  useEffect(() => {
+    onDoneRef.current = onDone
+  }, [onDone])
+
   useEffect(() => {
     if (!open) return
-    const t = setTimeout(() => onDone?.(), durationMs)
+
+    const t = setTimeout(() => {
+      onDoneRef.current?.()
+    }, durationMs)
+
     return () => clearTimeout(t)
-  }, [open, durationMs, onDone])
+  }, [open, durationMs])
 
   if (!open) return null
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fadeIn">
-
       {/* Orange glow background */}
       <div className="absolute w-[600px] h-[600px] bg-orange-500/30 rounded-full blur-[160px]" />
 
       <div className="relative px-12 py-14 rounded-3xl border border-orange-400/40 bg-gradient-to-br from-black via-zinc-900 to-black shadow-[0_0_80px_rgba(255,140,0,0.5)]">
-
         {/* Titel */}
         <div className="text-center mb-10">
           <p className="uppercase tracking-[0.4em] text-orange-400 text-sm">
@@ -44,7 +52,6 @@ export function VsIntroOverlay({
 
         {/* VS Layout */}
         <div className="flex items-center gap-14">
-
           {/* Player 1 */}
           <div className="text-right animate-slideLeft">
             <p className="text-4xl font-extrabold text-white drop-shadow-lg">
@@ -70,7 +77,6 @@ export function VsIntroOverlay({
             </p>
             <span className="text-orange-400 text-sm">Spieler 2</span>
           </div>
-
         </div>
 
         {/* Footer */}
@@ -82,8 +88,12 @@ export function VsIntroOverlay({
       {/* Animations */}
       <style jsx global>{`
         @keyframes fadeIn {
-          from { opacity: 0 }
-          to { opacity: 1 }
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
         }
 
         .animate-fadeIn {
@@ -91,13 +101,25 @@ export function VsIntroOverlay({
         }
 
         @keyframes slideLeft {
-          from { transform: translateX(-40px); opacity: 0 }
-          to { transform: translateX(0); opacity: 1 }
+          from {
+            transform: translateX(-40px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
         }
 
         @keyframes slideRight {
-          from { transform: translateX(40px); opacity: 0 }
-          to { transform: translateX(0); opacity: 1 }
+          from {
+            transform: translateX(40px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
         }
 
         .animate-slideLeft {

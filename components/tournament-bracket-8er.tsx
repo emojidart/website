@@ -47,33 +47,74 @@ const debugLog = (...args: unknown[]) => {
   }
 }
 
+
+
+
+
+
 const saveMatchStatesToDatabase = async (
   matches: Record<number, Match>,
   tournamentType: string,
   tournamentId: string,
   playerIdMap: Record<string, string>,
+  previousMatches?: Record<number, Match>,
 ) => {
+  const getId = (name: string) => {
+    const key = (name ?? "").toLowerCase().trim()
+    if (!key || key.startsWith("freilos")) return null
+    return playerIdMap[key] ?? null
+  }
 
-const getId = (name: string) => {
-  const key = (name ?? "").toLowerCase().trim()
-  if (!key || key.startsWith("freilos")) return null
-  return playerIdMap[key] ?? null
-}
+  const hasMeaningfulData = (match: Match) => {
+    const player1 = (match.player1 ?? "").trim()
+    const player2 = (match.player2 ?? "").trim()
 
+    return (
+      player1 !== "" ||
+      player2 !== "" ||
+      (match.score1 ?? 0) > 0 ||
+      (match.score2 ?? 0) > 0 ||
+      !!match.winner ||
+      !!match.loser ||
+      !!match.machineNumber
+    )
+  }
+
+  const isSameMatchState = (a?: Match, b?: Match) => {
+    if (!a && !b) return true
+    if (!a || !b) return false
+
+    return (
+      (a.player1 ?? "") === (b.player1 ?? "") &&
+      (a.player2 ?? "") === (b.player2 ?? "") &&
+      (a.score1 ?? 0) === (b.score1 ?? 0) &&
+      (a.score2 ?? 0) === (b.score2 ?? 0) &&
+      (a.winner ?? "") === (b.winner ?? "") &&
+      (a.loser ?? "") === (b.loser ?? "") &&
+      (a.machineNumber ?? "") === (b.machineNumber ?? "") &&
+      (a.callCount ?? 0) === (b.callCount ?? 0)
+    )
+  }
 
   try {
-    const matchStates = Object.values(matches).map((match) => ({
+    let relevantMatches = Object.values(matches).filter(hasMeaningfulData)
+
+    if (previousMatches) {
+      relevantMatches = relevantMatches.filter((match) => {
+        const previousMatch = previousMatches[match.id]
+        return !isSameMatchState(previousMatch, match)
+      })
+    }
+
+    const matchStates = relevantMatches.map((match) => ({
       tournament_type: tournamentType,
       tournament_id: tournamentId,
       match_id: match.id,
       player1: match.player1,
-player2: match.player2,
-
-player1_id: getId(match.player1),
-player2_id: getId(match.player2),
-
-score1: match.score1,
-
+      player2: match.player2,
+      player1_id: getId(match.player1),
+      player2_id: getId(match.player2),
+      score1: match.score1,
       score2: match.score2,
       winner: match.winner || null,
       loser: match.loser || null,
@@ -81,16 +122,26 @@ score1: match.score1,
       updated_at: new Date().toISOString(),
     }))
 
+    if (matchStates.length === 0) {
+      debugLog("[v0] No changed match states to save")
+      return
+    }
+
     const { error } = await supabase.from("dko_match_states").upsert(matchStates, {
       onConflict: "tournament_type,tournament_id,match_id",
     })
 
     if (error) throw error
-    debugLog("[v0] Match states saved successfully")
+
+    debugLog(`[v0] Match states saved successfully (${matchStates.length} rows)`)
   } catch (error) {
     console.error("Fehler beim Speichern der Match-States:", error)
+    throw error
   }
 }
+
+
+
 
 const loadMatchStatesFromDatabase = async (
   tournamentType: string,
@@ -559,95 +610,102 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
     }
     return initialMatches
   })
-  useEffect(() => {
-    // Prevent feedback-loop: when we receive a realtime update we don't immediately upsert it back
-    if (isRemoteUpdateRef.current) {
-      isRemoteUpdateRef.current = false
-      return
-    }
+  
+  
+  
+useEffect(() => {
+  if (!tournamentId) return
+  if (loading) return
 
-    if (!loading && tournamentId) {
-      const timeoutId = setTimeout(() => {
-        saveMatchStatesToDatabase(matches, tournamentType, tournamentId, playerIdMap)
-      }, 800)
+  if (isRemoteUpdateRef.current) {
+    isRemoteUpdateRef.current = false
+    return
+  }
 
-      return () => clearTimeout(timeoutId)
-    }
-  }, [matches, tournamentType, tournamentId, loading, playerIdMap])
+  const timeoutId = setTimeout(() => {
+    saveMatchStatesToDatabase(matches, tournamentType, tournamentId, playerIdMap)
+  }, 300)
 
-  useEffect(() => {
-    if (loading || !tournamentId) return
+  return () => clearTimeout(timeoutId)
+}, [matches])
+  
+  
+  
 
-    const channel = supabase
-      .channel(`dko_match_states_${tournamentType}_${tournamentId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "dko_match_states",
-          filter: `tournament_id=eq.${tournamentId}`,
-        },
-        (payload) => {
-          const record: any = payload.new
-          if (!record) return
-          if (record.tournament_type !== tournamentType) return
+useEffect(() => {
+  if (loading || !tournamentId) return
+
+  const channel = supabase
+    .channel(`dko_match_states_${tournamentType}_${tournamentId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "dko_match_states",
+        filter: `tournament_id=eq.${tournamentId}`,
+      },
+      (payload: any) => {
+        const record = payload?.new
+        if (!record) return
+        if (record.tournament_type && record.tournament_type !== tournamentType) return
+
+        setMatches((prev) => {
+          const prevMatch = prev[record.match_id] || {
+            id: record.match_id,
+            player1: "",
+            player2: "",
+            score1: 0,
+            score2: 0,
+            callCount: 1,
+          }
+
+          const nextMatch = {
+            ...prevMatch,
+            id: record.match_id,
+            player1: record.player1 || "",
+            player2: record.player2 || "",
+            score1: typeof record.score1 === "number" ? record.score1 : prevMatch.score1,
+            score2: typeof record.score2 === "number" ? record.score2 : prevMatch.score2,
+            winner: record.winner || undefined,
+            loser: record.loser || undefined,
+            machineNumber: record.machine_number || undefined,
+            callCount: record.machine_number ? (prevMatch.callCount || 1) : undefined,
+          }
+
+          const isSame =
+            prevMatch.player1 === nextMatch.player1 &&
+            prevMatch.player2 === nextMatch.player2 &&
+            prevMatch.score1 === nextMatch.score1 &&
+            prevMatch.score2 === nextMatch.score2 &&
+            prevMatch.winner === nextMatch.winner &&
+            prevMatch.loser === nextMatch.loser &&
+            prevMatch.machineNumber === nextMatch.machineNumber &&
+            prevMatch.callCount === nextMatch.callCount
+
+          if (isSame) {
+            return prev
+          }
 
           isRemoteUpdateRef.current = true
 
-                    // If a player saves the result in the public LIVE view, we still need to progress the bracket here (admin view),
-          // otherwise the winner/loser are stored but nobody moves to the next match.
-          let progressedMatches: Record<number, Match> | null = null
-          let didProgress = false
-
-          setMatches((prev) => {
-            const next = { ...prev }
-            const prevMatch = next[record.match_id] || {
-              id: record.match_id,
-              player1: "",
-              player2: "",
-              score1: 0,
-              score2: 0,
-            }
-
-            const wasFinished = Boolean(prevMatch.winner)
-            const isFinishedNow = Boolean(record.winner)
-
-            next[record.match_id] = {
-              ...prevMatch,
-              id: record.match_id,
-              player1: record.player1 || "",
-              player2: record.player2 || "",
-              score1: record.score1 || 0,
-              score2: record.score2 || 0,
-              winner: record.winner || undefined,
-              loser: record.loser || undefined,
-              machineNumber: record.machine_number || undefined,
-            }
-
-            // Only auto-progress once: when a match transitions from "no winner" -> "has winner"
-            if (!wasFinished && isFinishedNow && record.winner && record.loser) {
-              applyCompletedMatch(next, record.match_id, record.winner, record.loser)
-              didProgress = true
-              progressedMatches = next
-            }
-
-            return next
-          })
-
-          if (didProgress && progressedMatches) {
-            // Persist derived progression (next matches) without relying on the normal save effect (which is skipped for remote updates)
-            saveMatchStatesToDatabase(progressedMatches, tournamentType, tournamentId, playerIdMap)
+          return {
+            ...prev,
+            [record.match_id]: nextMatch,
           }
+        })
+      },
+    )
+    .subscribe()
 
-        },
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [loading, tournamentId, tournamentType])
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [loading, tournamentId, tournamentType])
+  
+  
+  
+  
 
 
 
@@ -688,7 +746,7 @@ useEffect(() => {
     }, 100)
 
     return () => clearTimeout(timer)
-  }, [matches, loading, tournamentType, tournamentId, tournamentName, bracketSize])
+}, [matches, loading, tournamentType, tournamentId])
 
   const getAvailableMachines = (): number[] => {
     const usedMachines = Object.values(matches)
@@ -1075,36 +1133,98 @@ useEffect(() => {
     setSelectedMatchId(matchId)
     setMachineDialogOpen(true)
   }
+  
+  
+  
 
-  const assignMachine = (machineNumber: number) => {
-    if (selectedMatchId === null) return
+ const assignMachine = async (machineNumber: number) => {
+  if (selectedMatchId === null) return
+  if (!tournamentId) return
 
-    const match = matches[selectedMatchId]
+  const currentMatchId = selectedMatchId
+  const match = matches[currentMatchId]
+
+  if (!match || !match.player1 || !match.player2 || match.winner) {
+    return
+  }
+
+  if (match.machineNumber) {
+    alert(`Dieses Spiel läuft bereits auf Automat ${match.machineNumber}`)
+    return
+  }
+
+  const updatedMatch = {
+    ...match,
+    machineNumber,
+    callCount: 1,
+  }
+
+  try {
+    const getId = (name: string) => {
+      const key = (name ?? "").toLowerCase().trim()
+      if (!key || key.startsWith("freilos")) return null
+      return playerIdMap[key] ?? null
+    }
+
+    const payload = {
+      tournament_type: tournamentType,
+      tournament_id: tournamentId,
+      match_id: currentMatchId,
+      player1: updatedMatch.player1,
+      player2: updatedMatch.player2,
+      player1_id: getId(updatedMatch.player1),
+      player2_id: getId(updatedMatch.player2),
+      score1: updatedMatch.score1,
+      score2: updatedMatch.score2,
+      winner: updatedMatch.winner || null,
+      loser: updatedMatch.loser || null,
+      machine_number: updatedMatch.machineNumber || null,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error } = await supabase.from("dko_match_states").upsert(payload, {
+      onConflict: "tournament_type,tournament_id,match_id",
+    })
+
+    if (error) {
+      console.error("[v0] Error starting match immediately:", error)
+      alert("Spiel konnte nicht gestartet werden. Bitte erneut versuchen.")
+      return
+    }
+
+    isRemoteUpdateRef.current = true
 
     setMatches((prev) => ({
       ...prev,
-      [selectedMatchId]: {
-        ...prev[selectedMatchId],
+      [currentMatchId]: {
+        ...prev[currentMatchId],
         machineNumber,
         callCount: 1,
       },
     }))
 
-    if (match.player1 && match.player2) {
+    if (speechEnabled) {
       announce(match.player1, match.player2, machineNumber, 1)
-
-      // VS-Intro Overlay (3 Sekunden)
-      setVsIntro({
-        open: true,
-        player1: match.player1,
-        player2: match.player2,
-        machineNumber,
-      })
     }
+
+    setVsIntro({
+      open: true,
+      player1: match.player1,
+      player2: match.player2,
+      machineNumber,
+    })
 
     setMachineDialogOpen(false)
     setSelectedMatchId(null)
+  } catch (err) {
+    console.error("[v0] Fehler beim direkten Starten des Spiels:", err)
+    alert("Spiel konnte nicht gestartet werden. Bitte erneut versuchen.")
   }
+}
+  
+  
+  
+  
 
   const repeatCall = (matchId: number) => {
     const match = matches[matchId]
@@ -1124,33 +1244,65 @@ useEffect(() => {
     announce(match.player1, match.player2, match.machineNumber, nextCall)
   }
 
-  const updateScore = (matchId: number, player: 1 | 2, score: number) => {
-    setMatches((prev) => ({
-      ...prev,
-      [matchId]: {
-        ...prev[matchId],
-        [player === 1 ? "score1" : "score2"]: score,
-      },
-    }))
+const updateScore = (matchId: number, player: 1 | 2, score: number) => {
+  setMatches((prev) => ({
+    ...prev,
+    [matchId]: {
+      ...prev[matchId],
+      [player === 1 ? "score1" : "score2"]: score,
+    },
+  }))
+}
+
+
+
+
+
+
+
+
+
+const confirmMatch = async (matchId: number) => {
+  if (!tournamentId) return
+
+  const currentMatch = matches[matchId]
+  if (!currentMatch) return
+
+  const match = { ...currentMatch }
+
+  if (match.score1 > match.score2) {
+    match.winner = match.player1
+    match.loser = match.player2
+  } else if (match.score2 > match.score1) {
+    match.winner = match.player2
+    match.loser = match.player1
+  } else {
+    alert("Unentschieden ist nicht erlaubt!")
+    return
   }
 
-  const confirmMatch = (matchId: number) => {
-    setMatches((prev) => {
-      const newMatches = { ...prev }
-      const match = { ...newMatches[matchId] }
+  match.machineNumber = undefined
+  match.callCount = undefined
 
-      if (match.score1 > match.score2) {
-        return applyCompletedMatch(newMatches, matchId, match.player1, match.player2)
-      }
+  const newMatches = { ...matches }
+  newMatches[matchId] = match
 
-      if (match.score2 > match.score1) {
-        return applyCompletedMatch(newMatches, matchId, match.player2, match.player1)
-      }
+  applyCompletedMatch(newMatches, matchId, match.winner!, match.loser!)
 
-      alert("Unentschieden ist nicht erlaubt!")
-      return prev
-    })
+  try {
+    await saveMatchStatesToDatabase(newMatches, tournamentType, tournamentId, playerIdMap, matches)
+
+    isRemoteUpdateRef.current = true
+    setMatches(newMatches)
+  } catch (error) {
+    console.error("Fehler beim direkten Bestätigen des Ergebnisses:", error)
+    alert("Ergebnis konnte nicht gespeichert werden. Bitte erneut versuchen.")
   }
+}
+
+
+
+
 
   const progressPlayers = (allMatches: Record<number, Match>, matchId: number, winner: string, loser: string) => {
     debugLog(`[v0] ========== PROGRESSING PLAYERS ==========`)
@@ -1184,6 +1336,17 @@ useEffect(() => {
     }
 
     if (progression.winner) {
+	if (!allMatches[progression.winner.matchId]) {
+  allMatches[progression.winner.matchId] = {
+    id: progression.winner.matchId,
+    player1: undefined,
+    player2: undefined,
+    winner: undefined,
+    loser: undefined,
+    score1: 0,
+    score2: 0,
+  }
+}
       const { matchId: targetMatch, position } = progression.winner
       debugLog(`[v0] ✓ Winner ${winner} progresses to Match ${targetMatch} position ${position}`)
 
@@ -1212,6 +1375,18 @@ useEffect(() => {
     }
 
     if (progression.loser) {
+	if (!allMatches[progression.loser.matchId]) {
+  allMatches[progression.loser.matchId] = {
+    id: progression.loser.matchId,
+    player1: undefined,
+    player2: undefined,
+    winner: undefined,
+    loser: undefined,
+    score1: 0,
+    score2: 0,
+  }
+}
+	
       const { matchId: targetMatch, position } = progression.loser
       debugLog(`[v0] ↓ Loser ${loser} drops to Match ${targetMatch} position ${position} (1st loss)`)
 
@@ -1496,31 +1671,35 @@ useEffect(() => {
       }
     })
   }
+  
+  
+  
 
 const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: number) => {
-    const match = allMatches[matchId]
+  const match = allMatches[matchId]
+  if (!match || match.winner || !match.player1 || !match.player2) return
 
-    if (match.winner) return
+  const isP1Freilos = isFreilos(match.player1)
+  const isP2Freilos = isFreilos(match.player2)
 
-    const isP1Freilos = isFreilos(match.player1)
-    const isP2Freilos = isFreilos(match.player2)
+  if (!isP1Freilos && !isP2Freilos) return
+  if (isP1Freilos && isP2Freilos) return
 
-    if ((isP1Freilos && isP2Freilos) || (!isP1Freilos && !isP2Freilos)) {
-      return
-    }
+  const realPlayer = isP1Freilos ? match.player2 : match.player1
+  const freilosPlayer = isP1Freilos ? match.player1 : match.player2
 
-    const realPlayer = isP1Freilos ? match.player2 : match.player1
-    const freilosPlayer = isP1Freilos ? match.player1 : match.player2
+  debugLog(`[v0] Auto-resolving Freilos match ${matchId}: ${realPlayer} beats ${freilosPlayer}`)
 
-    match.winner = realPlayer
-    match.loser = freilosPlayer
-    match.score1 = isP1Freilos ? 0 : 2
-    match.score2 = isP2Freilos ? 0 : 2
+  applyCompletedMatch(allMatches, matchId, realPlayer, freilosPlayer, {
+    score1: isP1Freilos ? 0 : 2,
+    score2: isP2Freilos ? 0 : 2,
+    machineNumber: undefined,
+    callCount: undefined,
+  })
+}
 
-    debugLog(`[v0] Auto-resolved Match ${matchId}: ${realPlayer} beats ${freilosPlayer} 2:0`)
 
-    progressPlayers(allMatches, matchId, realPlayer, freilosPlayer)
-  }
+
 
   useEffect(() => {
     const fetchRegisteredPlayers = async () => {
@@ -1813,7 +1992,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                                   type="text"
                                   inputMode="numeric"
                                   maxLength={2}
-                                  value={match.score1 === 0 ? "" : String(match.score1)}
+                                  value={match.score1 > 0 ? String(match.score1) : ""}
                                   onChange={(e) => updateScore(match.id, 1, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)}
                                   className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
                                 />
@@ -1824,7 +2003,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                                   type="text"
                                   inputMode="numeric"
                                   maxLength={2}
-                                  value={match.score2 === 0 ? "" : String(match.score2)}
+                                  value={match.score2 > 0 ? String(match.score2) : ""}
                                   onChange={(e) => updateScore(match.id, 2, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)}
                                   className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
                                 />

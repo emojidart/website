@@ -39,21 +39,132 @@ const isFreilos = (playerName: string): boolean => {
   return playerName.startsWith("Freilos")
 }
 
+
+const DEBUG = false
+const debugLog = (...args: unknown[]) => {
+  if (DEBUG) {
+    console.log(...args)
+  }
+}
+
+
+
+const applyCompletedMatch = (
+  allMatches: Record<number, Match>,
+  matchId: number,
+  winner: string,
+  loser: string,
+  extras?: Partial<Match>,
+) => {
+  const currentMatch = allMatches[matchId]
+  if (!currentMatch) return allMatches
+
+  allMatches[matchId] = {
+    ...currentMatch,
+    ...extras,
+    winner,
+    loser,
+    machineNumber: undefined,
+    callCount: undefined,
+  }
+
+  if (matchId === 126) {
+    if (winner === allMatches[126]?.player1) {
+      saveFinalRankings(winner, loser, tournamentType, tournamentId, tournamentName)
+    } else {
+      if (!allMatches[127]) {
+        allMatches[127] = {
+          id: 127,
+          player1: "",
+          player2: "",
+          score1: 0,
+          score2: 0,
+          winner: undefined,
+          loser: undefined,
+          machineNumber: undefined,
+          callCount: 1,
+        }
+      }
+
+      allMatches[127] = {
+        ...allMatches[127],
+        player1: allMatches[126]?.player1 || "",
+        player2: allMatches[126]?.player2 || "",
+        score1: 0,
+        score2: 0,
+        winner: undefined,
+        loser: undefined,
+        machineNumber: undefined,
+        callCount: 1,
+      }
+    }
+  } else if (matchId === 127) {
+    saveFinalRankings(winner, loser, tournamentType, tournamentId, tournamentName)
+  } else {
+    progressPlayers(allMatches, matchId, winner, loser)
+    trackPlayerElimination(allMatches, loser, tournamentType, tournamentId, tournamentName, bracketSize)
+  }
+
+  return allMatches
+}
+
+
+
 const saveMatchStatesToDatabase = async (
   matches: Record<number, Match>,
   tournamentType: string,
   tournamentId: string,
   playerIdMap: Record<string, string>,
-
+  previousMatches?: Record<number, Match>,
 ) => {
+  const getId = (name: string) => {
+    const key = (name ?? "").toLowerCase().trim()
+    if (!key || key.startsWith("freilos")) return null
+    return playerIdMap[key] ?? null
+  }
+
+  const hasMeaningfulData = (match: Match) => {
+    const player1 = (match.player1 ?? "").trim()
+    const player2 = (match.player2 ?? "").trim()
+
+    return (
+      player1 !== "" ||
+      player2 !== "" ||
+      (match.score1 ?? 0) > 0 ||
+      (match.score2 ?? 0) > 0 ||
+      !!match.winner ||
+      !!match.loser ||
+      !!match.machineNumber
+    )
+  }
+
+  const isSameMatchState = (a?: Match, b?: Match) => {
+    if (!a && !b) return true
+    if (!a || !b) return false
+
+    return (
+      (a.player1 ?? "") === (b.player1 ?? "") &&
+      (a.player2 ?? "") === (b.player2 ?? "") &&
+      (a.score1 ?? 0) === (b.score1 ?? 0) &&
+      (a.score2 ?? 0) === (b.score2 ?? 0) &&
+      (a.winner ?? "") === (b.winner ?? "") &&
+      (a.loser ?? "") === (b.loser ?? "") &&
+      (a.machineNumber ?? "") === (b.machineNumber ?? "") &&
+      (a.callCount ?? 0) === (b.callCount ?? 0)
+    )
+  }
+
   try {
-    const getId = (name: string) => {
-      const key = (name ?? "").toLowerCase().trim()
-      if (!key || key.startsWith("freilos")) return null
-      return playerIdMap[key] ?? null
+    let relevantMatches = Object.values(matches).filter(hasMeaningfulData)
+
+    if (previousMatches) {
+      relevantMatches = relevantMatches.filter((match) => {
+        const previousMatch = previousMatches[match.id]
+        return !isSameMatchState(previousMatch, match)
+      })
     }
 
-    const matchStates = Object.values(matches).map((match) => ({
+    const matchStates = relevantMatches.map((match) => ({
       tournament_type: tournamentType,
       tournament_id: tournamentId,
       match_id: match.id,
@@ -69,16 +180,28 @@ const saveMatchStatesToDatabase = async (
       updated_at: new Date().toISOString(),
     }))
 
+    if (matchStates.length === 0) {
+      debugLog("[v0] No changed match states to save")
+      return
+    }
+
     const { error } = await supabase.from("dko_match_states").upsert(matchStates, {
       onConflict: "tournament_type,tournament_id,match_id",
     })
 
     if (error) throw error
-    console.log("[v0] Match states saved successfully")
+
+    debugLog(`[v0] Match states saved successfully (${matchStates.length} rows)`)
   } catch (error) {
     console.error("Fehler beim Speichern der Match-States:", error)
+    throw error
   }
 }
+
+
+
+
+
 
 const loadMatchStatesFromDatabase = async (
   tournamentType: string,
@@ -101,17 +224,18 @@ const loadMatchStatesFromDatabase = async (
 
     const matches: Record<number, Match> = {}
     data.forEach((state) => {
-      matches[state.match_id] = {
-        id: state.match_id,
-        player1: state.player1 || "",
-        player2: state.player2 || "",
-        score1: state.score1 || 0,
-        score2: state.score2 || 0,
-        winner: state.winner || undefined,
-        loser: state.loser || undefined,
-        machineNumber: state.machine_number || undefined,
-      }
-    })
+  matches[state.match_id] = {
+    id: state.match_id,
+    player1: state.player1 || "",
+    player2: state.player2 || "",
+    score1: state.score1 || 0,
+    score2: state.score2 || 0,
+    winner: state.winner || undefined,
+    loser: state.loser || undefined,
+    machineNumber: state.machine_number || undefined,
+    callCount: state.machine_number ? 1 : undefined,
+  }
+})
 
     console.log("[v0] Match states loaded successfully")
     return matches
@@ -780,117 +904,105 @@ export default function TournamentBracket({ bracketSize = 64, tournamentType = "
 
 
 
-  useEffect(() => {
-    // Prevent save loops on realtime updates
-    if (isRemoteUpdateRef.current) {
-      isRemoteUpdateRef.current = false
-      return
-    }
-
-    if (!loading && tournamentId) {
-      const timeoutId = setTimeout(() => {
-        saveMatchStatesToDatabase(matches, tournamentType, tournamentId, playerIdMap)
-      }, 1000)
-
-      return () => clearTimeout(timeoutId)
-    }
-  }, [matches, tournamentType, tournamentId, loading, playerIdMap])
 
 
-  // Realtime: when players enter results in the LIVE view, progress the bracket here (admin view) too.
-  useEffect(() => {
-    if (loading || !tournamentId) return
 
-    const channel = supabase
-      .channel(`dko_match_states_${tournamentType}_${tournamentId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "dko_match_states",
-          filter: `tournament_id=eq.${tournamentId}`,
-        },
-        (payload: any) => {
-          const record = payload?.new
-          if (!record) return
-          if (record.tournament_type && record.tournament_type !== tournamentType) return
+useEffect(() => {
+  if (!tournamentId) return
+  if (loading) return
+
+  if (isRemoteUpdateRef.current) {
+    isRemoteUpdateRef.current = false
+    return
+  }
+
+  const timeoutId = setTimeout(() => {
+    saveMatchStatesToDatabase(matches, tournamentType, tournamentId, playerIdMap)
+  }, 300)
+
+  return () => clearTimeout(timeoutId)
+}, [matches])
+  
+  
+  
+  
+
+
+
+
+useEffect(() => {
+  if (loading || !tournamentId) return
+
+  const channel = supabase
+    .channel(`dko_match_states_${tournamentType}_${tournamentId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "dko_match_states",
+        filter: `tournament_id=eq.${tournamentId}`,
+      },
+      (payload: any) => {
+        const record = payload?.new
+        if (!record) return
+        if (record.tournament_type && record.tournament_type !== tournamentType) return
+
+        setMatches((prev) => {
+          const prevMatch = prev[record.match_id] || {
+            id: record.match_id,
+            player1: "",
+            player2: "",
+            score1: 0,
+            score2: 0,
+            callCount: 1,
+          }
+
+          const nextMatch = {
+            ...prevMatch,
+            id: record.match_id,
+            player1: record.player1 || "",
+            player2: record.player2 || "",
+            score1: typeof record.score1 === "number" ? record.score1 : prevMatch.score1,
+            score2: typeof record.score2 === "number" ? record.score2 : prevMatch.score2,
+            winner: record.winner || undefined,
+            loser: record.loser || undefined,
+            machineNumber: record.machine_number || undefined,
+            callCount: record.machine_number ? (prevMatch.callCount || 1) : undefined,
+          }
+
+          const isSame =
+            prevMatch.player1 === nextMatch.player1 &&
+            prevMatch.player2 === nextMatch.player2 &&
+            prevMatch.score1 === nextMatch.score1 &&
+            prevMatch.score2 === nextMatch.score2 &&
+            prevMatch.winner === nextMatch.winner &&
+            prevMatch.loser === nextMatch.loser &&
+            prevMatch.machineNumber === nextMatch.machineNumber &&
+            prevMatch.callCount === nextMatch.callCount
+
+          if (isSame) return prev
 
           isRemoteUpdateRef.current = true
 
-          let progressedMatches: Record<number, Match> | null = null
-          let didProgress = false
-
-          setMatches((prev) => {
-            const next = { ...prev }
-            const prevMatch = next[record.match_id] || {
-              id: record.match_id,
-              player1: "",
-              player2: "",
-              score1: 0,
-              score2: 0,
-              callCount: 1,
-            }
-
-            const wasFinished = Boolean(prevMatch.winner)
-            const isFinishedNow = Boolean(record.winner)
-
-            next[record.match_id] = {
-              ...prevMatch,
-              id: record.match_id,
-              player1: record.player1 || "",
-              player2: record.player2 || "",
-              score1: record.score1 || 0,
-              score2: record.score2 || 0,
-              winner: record.winner || undefined,
-              loser: record.loser || undefined,
-              machineNumber: record.machine_number || undefined,
-            }
-
-            // Only auto-progress once: when a match transitions from "no winner" -> "has winner"
-            if (!wasFinished && isFinishedNow && record.winner && record.loser) {
-              // Clear machine/call info locally
-              next[record.match_id] = {
-                ...next[record.match_id],
-                machineNumber: undefined,
-                callCount: 1,
-              }
-
-              if (record.match_id === 126) {
-                if (record.winner === next[126].player1) {
-                  // Winner's bracket player wins the grand final
-                  saveFinalRankings(record.winner, record.loser, tournamentType, tournamentId, tournamentName)
-                } else {
-                  // Loser's bracket player wins -> bracket reset match 63
-                  next[127].player1 = next[126].player1
-                  next[127].player2 = next[126].player2
-                }
-              } else if (record.match_id === 127) {
-                saveFinalRankings(record.winner, record.loser, tournamentType, tournamentId, tournamentName)
-              } else {
-                progressPlayers(next, record.match_id, record.winner, record.loser)
-                trackPlayerElimination(next, record.loser, tournamentType, tournamentId, tournamentName, bracketSize)
-              }
-
-              didProgress = true
-              progressedMatches = next
-            }
-
-            return next
-          })
-
-          if (didProgress && progressedMatches) {
-            // Persist derived progression without relying on the normal save effect (which is skipped for remote updates)
-            saveMatchStatesToDatabase(progressedMatches, tournamentType, tournamentId, playerIdMap)
+          return {
+            ...prev,
+            [record.match_id]: nextMatch,
           }
-        },
-      )
-      .subscribe()
+        })
+      },
+    )
+    .subscribe()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [loading, tournamentId, tournamentType, tournamentName, bracketSize, playerIdMap])
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [loading, tournamentId, tournamentType])
+
+
+
+
+
   useEffect(() => {
     if (loading || !tournamentId || autoResolveRanRef.current) return
 
@@ -942,7 +1054,7 @@ export default function TournamentBracket({ bracketSize = 64, tournamentType = "
     }, 100)
 
     return () => clearTimeout(timer)
-  }, [matches, loading, tournamentType, tournamentId, tournamentName, bracketSize])
+ }, [matches, loading, tournamentType, tournamentId])
 
   const getAvailableMachines = (): number[] => {
     const usedMachines = Object.values(matches)
@@ -1297,31 +1409,96 @@ export default function TournamentBracket({ bracketSize = 64, tournamentType = "
     setSelectedMatchId(matchId)
     setMachineDialogOpen(true)
   }
+  
+  
+  
 
-  const assignMachine = (machineNumber: number) => {
-    if (selectedMatchId === null) return
+const assignMachine = async (machineNumber: number) => {
+  if (selectedMatchId === null) return
+  if (!tournamentId) return
 
-    const match = matches[selectedMatchId]
+  const currentMatchId = selectedMatchId
+  const match = matches[currentMatchId]
+
+  if (!match || !match.player1 || !match.player2 || match.winner) {
+    return
+  }
+
+  if (match.machineNumber) {
+    alert(`Dieses Spiel läuft bereits auf Automat ${match.machineNumber}`)
+    return
+  }
+
+  const updatedMatch = {
+    ...match,
+    machineNumber,
+    callCount: 1,
+  }
+
+  try {
+    const getId = (name: string) => {
+      const key = (name ?? "").toLowerCase().trim()
+      if (!key || key.startsWith("freilos")) return null
+      return playerIdMap[key] ?? null
+    }
+
+    const payload = {
+      tournament_type: tournamentType,
+      tournament_id: tournamentId,
+      match_id: currentMatchId,
+      player1: updatedMatch.player1,
+      player2: updatedMatch.player2,
+      player1_id: getId(updatedMatch.player1),
+      player2_id: getId(updatedMatch.player2),
+      score1: updatedMatch.score1,
+      score2: updatedMatch.score2,
+      winner: updatedMatch.winner || null,
+      loser: updatedMatch.loser || null,
+      machine_number: updatedMatch.machineNumber || null,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error } = await supabase.from("dko_match_states").upsert(payload, {
+      onConflict: "tournament_type,tournament_id,match_id",
+    })
+
+    if (error) {
+      console.error("[v0] Error starting match immediately:", error)
+      alert("Spiel konnte nicht gestartet werden. Bitte erneut versuchen.")
+      return
+    }
+
+    isRemoteUpdateRef.current = true
 
     setMatches((prev) => ({
       ...prev,
-      [selectedMatchId]: {
-        ...prev[selectedMatchId],
+      [currentMatchId]: {
+        ...prev[currentMatchId],
         machineNumber,
         callCount: 1,
       },
     }))
 
-    if (announcementsEnabled && match) {
+    if (announcementsEnabled) {
       announce(match.player1, match.player2, machineNumber, 1)
     }
 
+    setVsIntro({
+      open: true,
+      player1: match.player1,
+      player2: match.player2,
+      machineNumber,
+    })
+
     setMachineDialogOpen(false)
-
-    setVsIntro({ open: true, player1: match?.player1 ?? "", player2: match?.player2 ?? "", machineNumber })
-
     setSelectedMatchId(null)
+  } catch (err) {
+    console.error("[v0] Fehler beim direkten Starten des Spiels:", err)
+    alert("Spiel konnte nicht gestartet werden. Bitte erneut versuchen.")
   }
+}
+  
+  
 
   const handleRepeatCall = (matchId: number) => {
     const match = matches[matchId]
@@ -1342,57 +1519,95 @@ export default function TournamentBracket({ bracketSize = 64, tournamentType = "
     }
   }
 
-  const updateScore = (matchId: number, player: 1 | 2, score: number) => {
-    setMatches((prev) => ({
-      ...prev,
-      [matchId]: {
-        ...prev[matchId],
-        [player === 1 ? "score1" : "score2"]: score,
-      },
-    }))
+const updateScore = (matchId: number, player: 1 | 2, score: number) => {
+  setMatches((prev) => ({
+    ...prev,
+    [matchId]: {
+      ...prev[matchId],
+      [player === 1 ? "score1" : "score2"]: score,
+    },
+  }))
+}
+
+
+
+
+
+const confirmMatch = async (matchId: number) => {
+  if (!tournamentId) return
+
+  const currentMatch = matches[matchId]
+  if (!currentMatch) return
+
+  const match = { ...currentMatch }
+
+  if (match.score1 > match.score2) {
+    match.winner = match.player1
+    match.loser = match.player2
+  } else if (match.score2 > match.score1) {
+    match.winner = match.player2
+    match.loser = match.player1
+  } else {
+    alert("Unentschieden ist nicht erlaubt!")
+    return
   }
 
-  const confirmMatch = (matchId: number) => {
-    setMatches((prev) => {
-      const newMatches = { ...prev }
-      const match = { ...newMatches[matchId] }
+  match.machineNumber = undefined
+  match.callCount = undefined
 
-      if (match.score1 > match.score2) {
-        match.winner = match.player1
-        match.loser = match.player2
-      } else if (match.score2 > match.score1) {
-        match.winner = match.player2
-        match.loser = match.player1
-      } else {
-        alert("Unentschieden ist nicht erlaubt!")
-        return prev
-      }
+  const newMatches = { ...matches }
+  newMatches[matchId] = match
 
-      match.machineNumber = undefined
-      match.callCount = undefined
-
-      newMatches[matchId] = match
-
-      if (matchId === 126) {
-        if (match.winner === match.player1) {
-          console.log(`[v0] Grand Final: Winner's bracket player ${match.winner} wins! Tournament over.`)
-          saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
-        } else {
-          console.log(`[v0] Grand Final: Loser's bracket player ${match.winner} wins! Bracket reset required.`)
-          newMatches[127].player1 = match.player1
-          newMatches[127].player2 = match.player2
-        }
-      } else if (matchId === 127) {
-        console.log(`[v0] Bracket Reset: ${match.winner} wins the tournament!`)
-        saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
-      } else {
-        progressPlayers(newMatches, matchId, match.winner, match.loser)
-        trackPlayerElimination(newMatches, match.loser, tournamentType, tournamentId, tournamentName, bracketSize)
-      }
-
-      return newMatches
-    })
+  if (matchId === 126) {
+    if (match.winner === match.player1) {
+      console.log(`[v0] Grand Final: Winner's bracket player ${match.winner} wins! Tournament over.`)
+      await saveFinalRankings(match.winner, match.loser!, tournamentType, tournamentId, tournamentName)
+    } else {
+      console.log(`[v0] Grand Final: Loser's bracket player ${match.winner} wins! Bracket reset required.`)
+      newMatches[127] = {
+  ...(newMatches[127] ?? {
+    id: 127,
+    player1: "",
+    player2: "",
+    score1: 0,
+    score2: 0,
+    callCount: 1,
+  }),
+  player1: match.player1,
+  player2: match.player2,
+  score1: 0,
+  score2: 0,
+  winner: undefined,
+  loser: undefined,
+  machineNumber: undefined,
+  callCount: 1,
+}
+    }
+  } else if (matchId === 127) {
+    console.log(`[v0] Bracket Reset: ${match.winner} wins the tournament!`)
+    await saveFinalRankings(match.winner, match.loser!, tournamentType, tournamentId, tournamentName)
+  } else {
+    progressPlayers(newMatches, matchId, match.winner!, match.loser!)
+    await trackPlayerElimination(newMatches, match.loser!, tournamentType, tournamentId, tournamentName, bracketSize)
   }
+
+  try {
+    await saveMatchStatesToDatabase(newMatches, tournamentType, tournamentId, playerIdMap, matches)
+
+    isRemoteUpdateRef.current = true
+    setMatches(newMatches)
+  } catch (error) {
+    console.error("[v0] Fehler beim direkten Bestätigen des Ergebnisses:", error)
+    alert("Ergebnis konnte nicht gespeichert werden. Bitte erneut versuchen.")
+  }
+}
+
+
+
+
+
+
+
 
   const progressPlayers = (allMatches: Record<number, Match>, matchId: number, winner: string, loser: string) => {
     console.log(`[v0] ========== PROGRESSING PLAYERS ==========`)
@@ -1409,6 +1624,21 @@ export default function TournamentBracket({ bracketSize = 64, tournamentType = "
     if (progression.winner) {
       const { matchId: targetMatch, position } = progression.winner
       console.log(`[v0] ✓ Winner ${winner} progresses to Match ${targetMatch} position ${position}`)
+	  
+	  
+	  if (!allMatches[targetMatch]) {
+  allMatches[targetMatch] = {
+    id: targetMatch,
+    player1: "",
+    player2: "",
+    score1: 0,
+    score2: 0,
+    winner: undefined,
+    loser: undefined,
+    machineNumber: undefined,
+    callCount: 1,
+  }
+}
 
       const targetMatchBefore = { ...allMatches[targetMatch] }
 
@@ -1437,6 +1667,20 @@ export default function TournamentBracket({ bracketSize = 64, tournamentType = "
     if (progression.loser) {
       const { matchId: targetMatch, position } = progression.loser
       console.log(`[v0] ↓ Loser ${loser} drops to Match ${targetMatch} position ${position} (1st loss)`)
+	  
+	  if (!allMatches[targetMatch]) {
+  allMatches[targetMatch] = {
+    id: targetMatch,
+    player1: "",
+    player2: "",
+    score1: 0,
+    score2: 0,
+    winner: undefined,
+    loser: undefined,
+    machineNumber: undefined,
+    callCount: 1,
+  }
+}
 
       const targetMatchBefore = { ...allMatches[targetMatch] }
 
@@ -1687,31 +1931,35 @@ export default function TournamentBracket({ bracketSize = 64, tournamentType = "
       }
     })
   }
+  
+  
+  
 
 const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: number) => {
-    const match = allMatches[matchId]
+  const match = allMatches[matchId]
+  if (!match || match.winner || !match.player1 || !match.player2) return
 
-    if (match.winner) return
+  const isP1Freilos = isFreilos(match.player1)
+  const isP2Freilos = isFreilos(match.player2)
 
-    const isP1Freilos = isFreilos(match.player1)
-    const isP2Freilos = isFreilos(match.player2)
+  if (!isP1Freilos && !isP2Freilos) return
+  if (isP1Freilos && isP2Freilos) return
 
-    if ((isP1Freilos && isP2Freilos) || (!isP1Freilos && !isP2Freilos)) {
-      return
-    }
+  const realPlayer = isP1Freilos ? match.player2 : match.player1
+  const freilosPlayer = isP1Freilos ? match.player1 : match.player2
 
-    const realPlayer = isP1Freilos ? match.player2 : match.player1
-    const freilosPlayer = isP1Freilos ? match.player1 : match.player2
+  console.log(`[v0] Auto-resolving Freilos match ${matchId}: ${realPlayer} beats ${freilosPlayer}`)
 
-    match.winner = realPlayer
-    match.loser = freilosPlayer
-    match.score1 = isP1Freilos ? 0 : 2
-    match.score2 = isP2Freilos ? 0 : 2
-
-    console.log(`[v0] Auto-resolved Match ${matchId}: ${realPlayer} beats ${freilosPlayer} 2:0`)
-
-    progressPlayers(allMatches, matchId, realPlayer, freilosPlayer)
-  }
+  applyCompletedMatch(allMatches, matchId, realPlayer, freilosPlayer, {
+    score1: isP1Freilos ? 0 : 2,
+    score2: isP2Freilos ? 0 : 2,
+    machineNumber: undefined,
+    callCount: undefined,
+  })
+}
+  
+  
+  
 
   useEffect(() => {
     const fetchRegisteredPlayers = async () => {
@@ -1835,21 +2083,29 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
     fetchRegisteredPlayers()
   }, [searchParams, bracketSize, tournamentType])
 
-  const availableMachines = getAvailableMachines()
-  const allMatches = Object.values(matches)
-  const activeLiveMatches = allMatches
-    .filter((match) => match.player1 && match.player2 && !match.winner && match.machineNumber)
-    .sort((a, b) => (a.machineNumber || 0) - (b.machineNumber || 0))
-  const readyMatches = allMatches.filter((match) => match.player1 && match.player2 && !match.winner && !match.machineNumber)
-  const completedMatches = allMatches.filter((match) => Boolean(match.winner))
-  const liveMachineNumbers = activeLiveMatches
-    .map((match) => match.machineNumber)
-    .filter((value): value is number => Boolean(value))
-  const totalMatchCount = 127
-  const completedCount = completedMatches.length
-  const remainingCount = Math.max(totalMatchCount - completedCount, 0)
-  const liveCompletion = Math.round((completedCount / totalMatchCount) * 100)
-  const winnerName = matches[127].winner || (matches[126].winner === matches[126].player1 ? matches[126].winner : undefined)
+const availableMachines = getAvailableMachines()
+const allMatches = Object.values(matches).sort((a, b) => a.id - b.id)
+
+const activeLiveMatches = allMatches.filter(
+  (match) => match.player1 && match.player2 && !match.winner && match.machineNumber
+)
+
+const readyMatches = allMatches.filter(
+  (match) => match.player1 && match.player2 && !match.winner && !match.machineNumber
+)
+
+const completedMatches = allMatches.filter((match) => Boolean(match.winner))
+
+const liveMachineNumbers = activeLiveMatches
+  .map((match) => match.machineNumber)
+  .filter((value): value is number => Boolean(value))
+
+const totalMatchCount = 127
+const completedCount = completedMatches.length
+const remainingCount = Math.max(totalMatchCount - completedCount, 0)
+const liveCompletion = Math.round((completedCount / totalMatchCount) * 100)
+const winnerName =
+  matches[127]?.winner || (matches[126]?.winner === matches[126]?.player1 ? matches[126]?.winner : undefined)
 
   if (loading) {
     return (
@@ -1992,84 +2248,100 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                           key={match.id}
                           className="rounded-2xl border border-red-200 bg-red-50/40 px-4 py-4 shadow-sm"
                         >
+						
+						
+						
+						
+						
                           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                            <div>
-                              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-500">
-                                <span>Match {match.id}</span>
-                                <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-white">
-                                  LIVE
-                                </span>
-                              </div>
-                              <div className="mt-1 text-base font-semibold">
-                                {match.player1} <span className="text-slate-400">vs.</span> {match.player2}
-                              </div>
-                              <div className="mt-2">
-                                <span className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600">
-                                  Automat {match.machineNumber}
-                                </span>
-                              </div>
-                            </div>
+  <div>
+    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+      <span>Match {match.id}</span>
+      <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-white">
+        LIVE
+      </span>
+    </div>
+    <div className="mt-1 text-base font-semibold">
+      {match.player1} <span className="text-slate-400">vs.</span> {match.player2}
+    </div>
+    <div className="mt-2">
+      <span className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600">
+        Automat {match.machineNumber}
+      </span>
+    </div>
+  </div>
 
-                            <div className="grid grid-cols-2 gap-3 md:w-[190px]">
-                              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                                <div className="truncate text-xs text-slate-500">{match.player1}</div>
-                                <Input
-                                  type="text"
-                                  inputMode="numeric"
-                                  maxLength={2}
-                                  value={match.score1 === 0 ? "" : String(match.score1)}
-                                  onChange={(e) =>
-                                    updateScore(match.id, 1, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)
-                                  }
-                                  className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
-                                />
-                              </div>
-                              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                                <div className="truncate text-xs text-slate-500">{match.player2}</div>
-                                <Input
-                                  type="text"
-                                  inputMode="numeric"
-                                  maxLength={2}
-                                  value={match.score2 === 0 ? "" : String(match.score2)}
-                                  onChange={(e) =>
-                                    updateScore(match.id, 2, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)
-                                  }
-                                  className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
-                                />
-                              </div>
-                            </div>
-                          </div>
+  <div className="grid grid-cols-2 gap-3 md:w-[190px]">
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
+      <div className="truncate text-xs text-slate-500">{match.player1}</div>
+      <Input
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
+        value={match.score1 > 0 ? String(match.score1) : ""}
+        onChange={(e) => {
+          const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+          updateScore(match.id, 1, cleaned === "" ? 0 : Number(cleaned))
+        }}
+        className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
+      />
+    </div>
 
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600">
-                              Stand {match.score1}:{match.score2}
-                            </span>
-                            {match.callCount && match.callCount < 3 && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleRepeatCall(match.id)}
-                                className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                              >
-                                {nextCall}. Aufruf
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              onClick={() => confirmMatch(match.id)}
-                              disabled={!canConfirmLive}
-                              className="bg-red-500 text-white hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-500"
-                            >
-                              <Check className="mr-1 h-4 w-4" />
-                              Ergebnis bestätigen
-                            </Button>
-                          </div>
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
+      <div className="truncate text-xs text-slate-500">{match.player2}</div>
+      <Input
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
+        value={match.score2 > 0 ? String(match.score2) : ""}
+        onChange={(e) => {
+          const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+          updateScore(match.id, 2, cleaned === "" ? 0 : Number(cleaned))
+        }}
+        className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
+      />
+    </div>
+  </div>
+</div>
+
+<div className="mt-3 flex flex-wrap items-center gap-2">
+  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600">
+    Stand {match.score1}:{match.score2}
+  </span>
+  {match.callCount && match.callCount < 3 && (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => handleRepeatCall(match.id)}
+      className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+    >
+      {nextCall}. Aufruf
+    </Button>
+  )}
+  <Button
+    size="sm"
+    onClick={() => confirmMatch(match.id)}
+    disabled={!canConfirmLive}
+    className="bg-red-500 text-white hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-500"
+  >
+    <Check className="mr-1 h-4 w-4" />
+    Ergebnis bestätigen
+  </Button>
+</div>
                         </div>
                       )
                     })
                   )}
                 </div>
               </div>
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  
 
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
@@ -2389,60 +2661,41 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
               isGrandFinal
             />
           </div>
+		  
+		  
+		  
+		  
+{((matches[127]?.winner) || (matches[126]?.winner === matches[126]?.player1 && matches[126]?.player1)) && (
+  <Card className="p-6 bg-primary text-primary-foreground">
+    <h3 className="text-2xl font-bold text-center">🏆 Turniersieger</h3>
+    <p className="text-3xl font-bold text-center mt-4">{matches[127]?.winner || matches[126]?.winner}</p>
 
-          {(matches[127].player1 ||
-            matches[127].player2 ||
-            (matches[126].winner === matches[126].player2 && matches[126].winner)) &&
-            !matches[127].winner && (
-              <div className="space-y-3">
-                <h2 className="text-xl font-bold text-purple-600 border-b-2 border-purple-600 pb-2">Bracket Reset</h2>
-                <p className="text-sm text-muted-foreground">
-                  Der Spieler von der Verliererseite hat gewonnen! Beide Spieler haben jetzt je 1 Niederlage.
-                </p>
-                <MatchCard
-                  match={matches[127]}
-                  onScoreUpdate={updateScore}
-                  onConfirm={confirmMatch}
-                  onStartMatch={startMatch}
-                  onReset={resetMatch}
-                  onRepeatCall={handleRepeatCall}
-                  announcementsEnabled={announcementsEnabled}
-                  isGrandFinal
-                />
-              </div>
-            )}
-
-          {(matches[127].winner || (matches[126].winner === matches[126].player1 && matches[126].player1)) && (
-            <Card className="p-6 bg-primary text-primary-foreground">
-              <h3 className="text-2xl font-bold text-center">🏆 Turniersieger</h3>
-              <p className="text-3xl font-bold text-center mt-4">{matches[127].winner || matches[126].winner}</p>
-
-              <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
-                <Button
-                  onClick={saveToTournamentSeries}
-                  disabled={savingToSeries}
-                  size="lg"
-                  variant="secondary"
-                  className="font-semibold"
-                >
-                  {savingToSeries ? "Speichere..." : "Zur Turnierserie hinzufügen"}
-                </Button>
-                <Button
-                  onClick={async () => {
-                    await markTournamentAsCompleted(tournamentId)
-                    await deleteFreiloseFromDatabase(tournamentType, tournamentId)
-                    await clearTournamentRegistration(tournamentId)
-                    router.push("/dko_tournament_registration")
-                  }}
-                  size="lg"
-                  variant="outline"
-                  className="font-semibold bg-background text-foreground hover:bg-background/90"
-                >
-                  Weiter zu Ergebnissen
-                </Button>
-              </div>
-            </Card>
-          )}
+    <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
+      <Button
+        onClick={saveToTournamentSeries}
+        disabled={savingToSeries}
+        size="lg"
+        variant="secondary"
+        className="font-semibold"
+      >
+        {savingToSeries ? "Speichere..." : "Zur Turnierserie hinzufügen"}
+      </Button>
+      <Button
+        onClick={async () => {
+          await markTournamentAsCompleted(tournamentId)
+          await deleteFreiloseFromDatabase(tournamentType, tournamentId)
+          await clearTournamentRegistration(tournamentId)
+          router.push("/dko_tournament_registration")
+        }}
+        size="lg"
+        variant="outline"
+        className="font-semibold bg-background text-foreground hover:bg-background/90"
+      >
+        Weiter zu Ergebnissen
+      </Button>
+    </div>
+  </Card>
+)}
         </div>
       </div>
 

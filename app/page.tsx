@@ -410,9 +410,8 @@ export default function Home() {
 
   // DKO: Sekunden-Tick für Countdown
   useEffect(() => {
-    const id = setInterval(() => setNowTick(Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [])
+  return () => {}
+}, [])
 
   // DKO: Auth User id (für Self-Registration)
   useEffect(() => {
@@ -710,72 +709,84 @@ export default function Home() {
 
     fetchEventsAndTournaments()
   }, [])
+  
+  
+  
+  
+  
 
-  useEffect(() => {
-    const loadActiveTournament = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("tournaments_status")
-          .select("tournament_id, tournament_name, tournament_type, status")
-          .eq("status", "active")
-          .limit(1)
-          .single()
+useEffect(() => {
+  const loadActiveTournament = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("tournaments_status")
+        .select("tournament_id, tournament_name, tournament_type, status")
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle()
 
-        if (error && (error as any).code !== "PGRST116") {
-          console.error("Error loading active tournament:", error)
-          return
-        }
-
-        if (data) {
-          setActiveTournament({
-            tournament_id: (data as any).tournament_id,
-            tournament_name: (data as any).tournament_name,
-            tournament_type: (data as any).tournament_type,
-            status: (data as any).status,
-          })
-        } else {
-          setActiveTournament(null)
-        }
-      } catch (error) {
+      if (error) {
         console.error("Error loading active tournament:", error)
+        setActiveTournament(null)
+        return
       }
+
+      if (!data) {
+        setActiveTournament(null)
+        return
+      }
+
+      setActiveTournament({
+        tournament_id: data.tournament_id,
+        tournament_name: data.tournament_name,
+        tournament_type: data.tournament_type,
+        status: data.status,
+      })
+    } catch (error) {
+      console.error("Error loading active tournament:", error)
+      setActiveTournament(null)
     }
+  }
 
-    loadActiveTournament()
+  loadActiveTournament()
 
-    const channel = supabase
-      .channel("tournament_status_home")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "tournaments_status",
-        },
-        (payload) => {
-          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-            const data = payload.new as any
-            if (data.status === "active") {
-              setActiveTournament({
-                tournament_id: data.tournament_id,
-                tournament_name: data.tournament_name,
-                tournament_type: data.tournament_type,
-                status: data.status,
-              })
-            } else if (data.status === "cancelled" || data.status === "completed") {
-              setActiveTournament(null)
-            }
-          } else if (payload.eventType === "DELETE") {
+  const channel = supabase
+    .channel("tournament_status_home")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "tournaments_status",
+      },
+      (payload) => {
+        if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+          const data = payload.new as any
+          if (data.status === "active") {
+            setActiveTournament({
+              tournament_id: data.tournament_id,
+              tournament_name: data.tournament_name,
+              tournament_type: data.tournament_type,
+              status: data.status,
+            })
+          } else if (data.status === "cancelled" || data.status === "completed") {
             setActiveTournament(null)
           }
-        },
-      )
-      .subscribe()
+        } else if (payload.eventType === "DELETE") {
+          setActiveTournament(null)
+        }
+      },
+    )
+    .subscribe()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [])
+  
+  
+  
+  
 
   useEffect(() => {
     const fetchFromDb = async () => {
@@ -1291,7 +1302,7 @@ export default function Home() {
   <div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
     {/* TOP HERO (ORANGE) */}
     <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
-      <div className="absolute inset-0 bg-[url('/stadium-crowd-atmosphere.jpg')] bg-cover bg-center opacity-10" />
+     <div className="absolute inset-0 opacity-10" />
 
       <div className="relative p-4 sm:p-6 lg:p-10">
         <div className="w-full mx-auto flex flex-col">
@@ -1949,13 +1960,14 @@ export default function Home() {
       <div className="p-4">
         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6 flex items-center justify-center">
           <Image
-            src="/images/sponsoren/sponsor1.png"
-            alt="Hauptsponsor"
-            width={260}
-            height={110}
-            className="object-contain"
-            priority
-          />
+  src="/images/sponsoren/sponsor1.png"
+  alt="Hauptsponsor"
+  width={260}
+  height={110}
+  className="h-auto object-contain"
+  style={{ width: "100%", height: "auto", maxWidth: "260px" }}
+  priority
+/>
         </div>
       </div>
     </div>
@@ -1975,12 +1987,13 @@ export default function Home() {
               className="min-w-[170px] rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex items-center justify-center"
             >
               <Image
-                src={`/images/sponsoren/sponsor${num}.png`}
-                alt={`Premium Partner ${num}`}
-                width={160}
-                height={70}
-                className="object-contain"
-              />
+  src={`/images/sponsoren/sponsor${num}.png`}
+  alt={`Premium Partner ${num}`}
+  width={160}
+  height={70}
+  className="h-auto object-contain"
+  style={{ width: "100%", height: "auto", maxWidth: "160px" }}
+/>
             </div>
           ))}
         </div>
@@ -2001,12 +2014,13 @@ export default function Home() {
             className="rounded-2xl border border-gray-200 bg-white shadow-sm p-3 flex items-center justify-center"
           >
             <Image
-              src={`/images/sponsoren/sponsor${num}.png`}
-              alt={`Partner ${num}`}
-              width={140}
-              height={60}
-              className="object-contain"
-            />
+  src={`/images/sponsoren/sponsor${num}.png`}
+  alt={`Partner ${num}`}
+  width={140}
+  height={60}
+  className="h-auto object-contain"
+  style={{ width: "100%", height: "auto", maxWidth: "140px" }}
+/>
           </div>
         ))}
       </div>

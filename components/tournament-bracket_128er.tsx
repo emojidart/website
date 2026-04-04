@@ -7,12 +7,10 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { VsIntroOverlay } from "@/components/vs-intro-overlay"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { RotateCcw, Check, Volume2, Radio, Activity, Clock3, Trophy } from "lucide-react"
+import { RotateCcw, Check, Radio, Activity, Clock3, Trophy } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSpeechAnnouncer } from "@/components/speech-announcer"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
 
 interface Match {
   id: number
@@ -23,11 +21,11 @@ interface Match {
   winner?: string
   loser?: string
   machineNumber?: number
-  callCount?: number // Added callCount for repeat announcements
+  callCount?: number
 }
 
 interface TournamentBracketProps {
-  bracketSize?: 8 | 16 | 32 | 64
+  bracketSize?: 8 | 16 | 32 | 64 | 128
   tournamentType?: string
 }
 
@@ -47,6 +45,7 @@ const debugLog = (...args: unknown[]) => {
     console.log(...args)
   }
 }
+
 
 
 const saveMatchStatesToDatabase = async (
@@ -137,6 +136,54 @@ const saveMatchStatesToDatabase = async (
   }
 }
 
+
+
+const loadMatchStatesFromDatabase = async (
+  tournamentType: string,
+  tournamentId: string,
+): Promise<Record<number, Match> | null> => {
+  try {
+    const { data, error } = await supabase
+      .from("dko_match_states")
+      .select("*")
+      .eq("tournament_type", tournamentType)
+      .eq("tournament_id", tournamentId)
+      .order("match_id", { ascending: true })
+
+    if (error) throw error
+
+    if (!data || data.length === 0) {
+      console.log("[v0] No saved match states found")
+      return null
+    }
+
+    const matches: Record<number, Match> = {}
+
+    data.forEach((state: any) => {
+      matches[state.match_id] = {
+        id: state.match_id,
+        player1: state.player1 || "",
+        player2: state.player2 || "",
+        score1: state.score1 || 0,
+        score2: state.score2 || 0,
+        winner: state.winner || undefined,
+        loser: state.loser || undefined,
+        machineNumber: state.machine_number || undefined,
+        callCount: state.machine_number ? 1 : undefined,
+      }
+    })
+
+    console.log("[v0] Match states loaded successfully")
+    return matches
+  } catch (error) {
+    console.error("Fehler beim Laden der Match-States:", error)
+    return null
+  }
+}
+
+
+
+
 const deleteMatchStatesFromDatabase = async (tournamentType: string, tournamentId: string) => {
   try {
     const { error } = await supabase
@@ -193,6 +240,294 @@ const clearTournamentRegistration = async (tournamentId: string) => {
   }
 }
 
+
+const createProgressionMap128 = (): Record<
+  number,
+  { winner: { matchId: number; position: 1 | 2 } | null; loser: { matchId: number; position: 1 | 2 } | null }
+> => ({
+      1: { winner: { matchId: 97, position: 1 }, loser: { matchId: 65, position: 1 } },
+      2: { winner: { matchId: 97, position: 2 }, loser: { matchId: 65, position: 2 } },
+      3: { winner: { matchId: 98, position: 1 }, loser: { matchId: 66, position: 1 } },
+      4: { winner: { matchId: 98, position: 2 }, loser: { matchId: 66, position: 2 } },
+      5: { winner: { matchId: 99, position: 1 }, loser: { matchId: 67, position: 1 } },
+      6: { winner: { matchId: 99, position: 2 }, loser: { matchId: 67, position: 2 } },
+      7: { winner: { matchId: 100, position: 1 }, loser: { matchId: 68, position: 1 } },
+      8: { winner: { matchId: 100, position: 2 }, loser: { matchId: 68, position: 2 } },
+      9: { winner: { matchId: 101, position: 1 }, loser: { matchId: 69, position: 1 } },
+      10: { winner: { matchId: 101, position: 2 }, loser: { matchId: 69, position: 2 } },
+      11: { winner: { matchId: 102, position: 1 }, loser: { matchId: 70, position: 1 } },
+      12: { winner: { matchId: 102, position: 2 }, loser: { matchId: 70, position: 2 } },
+      13: { winner: { matchId: 103, position: 1 }, loser: { matchId: 71, position: 1 } },
+      14: { winner: { matchId: 103, position: 2 }, loser: { matchId: 71, position: 2 } },
+      15: { winner: { matchId: 104, position: 1 }, loser: { matchId: 72, position: 1 } },
+      16: { winner: { matchId: 104, position: 2 }, loser: { matchId: 72, position: 2 } },
+      17: { winner: { matchId: 105, position: 1 }, loser: { matchId: 73, position: 1 } },
+      18: { winner: { matchId: 105, position: 2 }, loser: { matchId: 73, position: 2 } },
+      19: { winner: { matchId: 106, position: 1 }, loser: { matchId: 74, position: 1 } },
+      20: { winner: { matchId: 106, position: 2 }, loser: { matchId: 74, position: 2 } },
+      21: { winner: { matchId: 107, position: 1 }, loser: { matchId: 75, position: 1 } },
+      22: { winner: { matchId: 107, position: 2 }, loser: { matchId: 75, position: 2 } },
+      23: { winner: { matchId: 108, position: 1 }, loser: { matchId: 76, position: 1 } },
+      24: { winner: { matchId: 108, position: 2 }, loser: { matchId: 76, position: 2 } },
+      25: { winner: { matchId: 109, position: 1 }, loser: { matchId: 77, position: 1 } },
+      26: { winner: { matchId: 109, position: 2 }, loser: { matchId: 77, position: 2 } },
+      27: { winner: { matchId: 110, position: 1 }, loser: { matchId: 78, position: 1 } },
+      28: { winner: { matchId: 110, position: 2 }, loser: { matchId: 78, position: 2 } },
+      29: { winner: { matchId: 111, position: 1 }, loser: { matchId: 79, position: 1 } },
+      30: { winner: { matchId: 111, position: 2 }, loser: { matchId: 79, position: 2 } },
+      31: { winner: { matchId: 112, position: 1 }, loser: { matchId: 80, position: 1 } },
+      32: { winner: { matchId: 112, position: 2 }, loser: { matchId: 80, position: 2 } },
+      33: { winner: { matchId: 113, position: 1 }, loser: { matchId: 81, position: 1 } },
+      34: { winner: { matchId: 113, position: 2 }, loser: { matchId: 81, position: 2 } },
+      35: { winner: { matchId: 114, position: 1 }, loser: { matchId: 82, position: 1 } },
+      36: { winner: { matchId: 114, position: 2 }, loser: { matchId: 82, position: 2 } },
+      37: { winner: { matchId: 115, position: 1 }, loser: { matchId: 83, position: 1 } },
+      38: { winner: { matchId: 115, position: 2 }, loser: { matchId: 83, position: 2 } },
+      39: { winner: { matchId: 116, position: 1 }, loser: { matchId: 84, position: 1 } },
+      40: { winner: { matchId: 116, position: 2 }, loser: { matchId: 84, position: 2 } },
+      41: { winner: { matchId: 117, position: 1 }, loser: { matchId: 85, position: 1 } },
+      42: { winner: { matchId: 117, position: 2 }, loser: { matchId: 85, position: 2 } },
+      43: { winner: { matchId: 118, position: 1 }, loser: { matchId: 86, position: 1 } },
+      44: { winner: { matchId: 118, position: 2 }, loser: { matchId: 86, position: 2 } },
+      45: { winner: { matchId: 119, position: 1 }, loser: { matchId: 87, position: 1 } },
+      46: { winner: { matchId: 119, position: 2 }, loser: { matchId: 87, position: 2 } },
+      47: { winner: { matchId: 120, position: 1 }, loser: { matchId: 88, position: 1 } },
+      48: { winner: { matchId: 120, position: 2 }, loser: { matchId: 88, position: 2 } },
+      49: { winner: { matchId: 121, position: 1 }, loser: { matchId: 89, position: 1 } },
+      50: { winner: { matchId: 121, position: 2 }, loser: { matchId: 89, position: 2 } },
+      51: { winner: { matchId: 122, position: 1 }, loser: { matchId: 90, position: 1 } },
+      52: { winner: { matchId: 122, position: 2 }, loser: { matchId: 90, position: 2 } },
+      53: { winner: { matchId: 123, position: 1 }, loser: { matchId: 91, position: 1 } },
+      54: { winner: { matchId: 123, position: 2 }, loser: { matchId: 91, position: 2 } },
+      55: { winner: { matchId: 124, position: 1 }, loser: { matchId: 92, position: 1 } },
+      56: { winner: { matchId: 124, position: 2 }, loser: { matchId: 92, position: 2 } },
+      57: { winner: { matchId: 125, position: 1 }, loser: { matchId: 93, position: 1 } },
+      58: { winner: { matchId: 125, position: 2 }, loser: { matchId: 93, position: 2 } },
+      59: { winner: { matchId: 126, position: 1 }, loser: { matchId: 94, position: 1 } },
+      60: { winner: { matchId: 126, position: 2 }, loser: { matchId: 94, position: 2 } },
+      61: { winner: { matchId: 127, position: 1 }, loser: { matchId: 95, position: 1 } },
+      62: { winner: { matchId: 127, position: 2 }, loser: { matchId: 95, position: 2 } },
+      63: { winner: { matchId: 128, position: 1 }, loser: { matchId: 96, position: 1 } },
+      64: { winner: { matchId: 128, position: 2 }, loser: { matchId: 96, position: 2 } },
+      65: { winner: { matchId: 129, position: 1 }, loser: null },
+      66: { winner: { matchId: 130, position: 1 }, loser: null },
+      67: { winner: { matchId: 131, position: 1 }, loser: null },
+      68: { winner: { matchId: 132, position: 1 }, loser: null },
+      69: { winner: { matchId: 133, position: 1 }, loser: null },
+      70: { winner: { matchId: 134, position: 1 }, loser: null },
+      71: { winner: { matchId: 135, position: 1 }, loser: null },
+      72: { winner: { matchId: 136, position: 1 }, loser: null },
+      73: { winner: { matchId: 137, position: 1 }, loser: null },
+      74: { winner: { matchId: 138, position: 1 }, loser: null },
+      75: { winner: { matchId: 139, position: 1 }, loser: null },
+      76: { winner: { matchId: 140, position: 1 }, loser: null },
+      77: { winner: { matchId: 141, position: 1 }, loser: null },
+      78: { winner: { matchId: 142, position: 1 }, loser: null },
+      79: { winner: { matchId: 143, position: 1 }, loser: null },
+      80: { winner: { matchId: 144, position: 1 }, loser: null },
+      81: { winner: { matchId: 145, position: 1 }, loser: null },
+      82: { winner: { matchId: 146, position: 1 }, loser: null },
+      83: { winner: { matchId: 147, position: 1 }, loser: null },
+      84: { winner: { matchId: 148, position: 1 }, loser: null },
+      85: { winner: { matchId: 149, position: 1 }, loser: null },
+      86: { winner: { matchId: 150, position: 1 }, loser: null },
+      87: { winner: { matchId: 151, position: 1 }, loser: null },
+      88: { winner: { matchId: 152, position: 1 }, loser: null },
+      89: { winner: { matchId: 153, position: 1 }, loser: null },
+      90: { winner: { matchId: 154, position: 1 }, loser: null },
+      91: { winner: { matchId: 155, position: 1 }, loser: null },
+      92: { winner: { matchId: 156, position: 1 }, loser: null },
+      93: { winner: { matchId: 157, position: 1 }, loser: null },
+      94: { winner: { matchId: 158, position: 1 }, loser: null },
+      95: { winner: { matchId: 159, position: 1 }, loser: null },
+      96: { winner: { matchId: 160, position: 1 }, loser: null },
+      97: { winner: { matchId: 177, position: 1 }, loser: { matchId: 160, position: 2 } },
+      98: { winner: { matchId: 177, position: 2 }, loser: { matchId: 159, position: 2 } },
+      99: { winner: { matchId: 178, position: 1 }, loser: { matchId: 158, position: 2 } },
+      100: { winner: { matchId: 178, position: 2 }, loser: { matchId: 157, position: 2 } },
+      101: { winner: { matchId: 179, position: 1 }, loser: { matchId: 156, position: 2 } },
+      102: { winner: { matchId: 179, position: 2 }, loser: { matchId: 155, position: 2 } },
+      103: { winner: { matchId: 180, position: 1 }, loser: { matchId: 154, position: 2 } },
+      104: { winner: { matchId: 180, position: 2 }, loser: { matchId: 153, position: 2 } },
+      105: { winner: { matchId: 181, position: 1 }, loser: { matchId: 152, position: 2 } },
+      106: { winner: { matchId: 181, position: 2 }, loser: { matchId: 151, position: 2 } },
+      107: { winner: { matchId: 182, position: 1 }, loser: { matchId: 150, position: 2 } },
+      108: { winner: { matchId: 182, position: 2 }, loser: { matchId: 149, position: 2 } },
+      109: { winner: { matchId: 183, position: 1 }, loser: { matchId: 148, position: 2 } },
+      110: { winner: { matchId: 183, position: 2 }, loser: { matchId: 147, position: 2 } },
+      111: { winner: { matchId: 184, position: 1 }, loser: { matchId: 146, position: 2 } },
+      112: { winner: { matchId: 184, position: 2 }, loser: { matchId: 145, position: 2 } },
+      113: { winner: { matchId: 185, position: 1 }, loser: { matchId: 144, position: 2 } },
+      114: { winner: { matchId: 185, position: 2 }, loser: { matchId: 143, position: 2 } },
+      115: { winner: { matchId: 186, position: 1 }, loser: { matchId: 142, position: 2 } },
+      116: { winner: { matchId: 186, position: 2 }, loser: { matchId: 141, position: 2 } },
+      117: { winner: { matchId: 187, position: 1 }, loser: { matchId: 140, position: 2 } },
+      118: { winner: { matchId: 187, position: 2 }, loser: { matchId: 139, position: 2 } },
+      119: { winner: { matchId: 188, position: 1 }, loser: { matchId: 138, position: 2 } },
+      120: { winner: { matchId: 188, position: 2 }, loser: { matchId: 137, position: 2 } },
+      121: { winner: { matchId: 189, position: 1 }, loser: { matchId: 136, position: 2 } },
+      122: { winner: { matchId: 189, position: 2 }, loser: { matchId: 135, position: 2 } },
+      123: { winner: { matchId: 190, position: 1 }, loser: { matchId: 134, position: 2 } },
+      124: { winner: { matchId: 190, position: 2 }, loser: { matchId: 133, position: 2 } },
+      125: { winner: { matchId: 191, position: 1 }, loser: { matchId: 132, position: 2 } },
+      126: { winner: { matchId: 191, position: 2 }, loser: { matchId: 131, position: 2 } },
+      127: { winner: { matchId: 192, position: 1 }, loser: { matchId: 130, position: 2 } },
+      128: { winner: { matchId: 192, position: 2 }, loser: { matchId: 129, position: 2 } },
+      129: { winner: { matchId: 161, position: 1 }, loser: null },
+      130: { winner: { matchId: 161, position: 2 }, loser: null },
+      131: { winner: { matchId: 162, position: 1 }, loser: null },
+      132: { winner: { matchId: 162, position: 2 }, loser: null },
+      133: { winner: { matchId: 163, position: 1 }, loser: null },
+      134: { winner: { matchId: 163, position: 2 }, loser: null },
+      135: { winner: { matchId: 164, position: 1 }, loser: null },
+      136: { winner: { matchId: 164, position: 2 }, loser: null },
+      137: { winner: { matchId: 165, position: 1 }, loser: null },
+      138: { winner: { matchId: 165, position: 2 }, loser: null },
+      139: { winner: { matchId: 166, position: 1 }, loser: null },
+      140: { winner: { matchId: 166, position: 2 }, loser: null },
+      141: { winner: { matchId: 167, position: 1 }, loser: null },
+      142: { winner: { matchId: 167, position: 2 }, loser: null },
+      143: { winner: { matchId: 168, position: 1 }, loser: null },
+      144: { winner: { matchId: 168, position: 2 }, loser: null },
+      145: { winner: { matchId: 169, position: 1 }, loser: null },
+      146: { winner: { matchId: 169, position: 2 }, loser: null },
+      147: { winner: { matchId: 170, position: 1 }, loser: null },
+      148: { winner: { matchId: 170, position: 2 }, loser: null },
+      149: { winner: { matchId: 171, position: 1 }, loser: null },
+      150: { winner: { matchId: 171, position: 2 }, loser: null },
+      151: { winner: { matchId: 172, position: 1 }, loser: null },
+      152: { winner: { matchId: 172, position: 2 }, loser: null },
+      153: { winner: { matchId: 173, position: 1 }, loser: null },
+      154: { winner: { matchId: 173, position: 2 }, loser: null },
+      155: { winner: { matchId: 174, position: 1 }, loser: null },
+      156: { winner: { matchId: 174, position: 2 }, loser: null },
+      157: { winner: { matchId: 175, position: 1 }, loser: null },
+      158: { winner: { matchId: 175, position: 2 }, loser: null },
+      159: { winner: { matchId: 176, position: 1 }, loser: null },
+      160: { winner: { matchId: 176, position: 2 }, loser: null },
+      161: { winner: { matchId: 193, position: 1 }, loser: null },
+      162: { winner: { matchId: 194, position: 1 }, loser: null },
+      163: { winner: { matchId: 195, position: 1 }, loser: null },
+      164: { winner: { matchId: 196, position: 1 }, loser: null },
+      165: { winner: { matchId: 197, position: 1 }, loser: null },
+      166: { winner: { matchId: 198, position: 1 }, loser: null },
+      167: { winner: { matchId: 199, position: 1 }, loser: null },
+      168: { winner: { matchId: 200, position: 1 }, loser: null },
+      169: { winner: { matchId: 201, position: 1 }, loser: null },
+      170: { winner: { matchId: 202, position: 1 }, loser: null },
+      171: { winner: { matchId: 203, position: 1 }, loser: null },
+      172: { winner: { matchId: 204, position: 1 }, loser: null },
+      173: { winner: { matchId: 205, position: 1 }, loser: null },
+      174: { winner: { matchId: 206, position: 1 }, loser: null },
+      175: { winner: { matchId: 207, position: 1 }, loser: null },
+      176: { winner: { matchId: 208, position: 1 }, loser: null },
+      177: { winner: { matchId: 217, position: 1 }, loser: { matchId: 208, position: 2 } },
+      178: { winner: { matchId: 217, position: 2 }, loser: { matchId: 207, position: 2 } },
+      179: { winner: { matchId: 218, position: 1 }, loser: { matchId: 206, position: 2 } },
+      180: { winner: { matchId: 218, position: 2 }, loser: { matchId: 205, position: 2 } },
+      181: { winner: { matchId: 219, position: 1 }, loser: { matchId: 204, position: 2 } },
+      182: { winner: { matchId: 219, position: 2 }, loser: { matchId: 203, position: 2 } },
+      183: { winner: { matchId: 220, position: 1 }, loser: { matchId: 202, position: 2 } },
+      184: { winner: { matchId: 220, position: 2 }, loser: { matchId: 201, position: 2 } },
+      185: { winner: { matchId: 221, position: 1 }, loser: { matchId: 200, position: 2 } },
+      186: { winner: { matchId: 221, position: 2 }, loser: { matchId: 199, position: 2 } },
+      187: { winner: { matchId: 222, position: 1 }, loser: { matchId: 198, position: 2 } },
+      188: { winner: { matchId: 222, position: 2 }, loser: { matchId: 197, position: 2 } },
+      189: { winner: { matchId: 223, position: 1 }, loser: { matchId: 196, position: 2 } },
+      190: { winner: { matchId: 223, position: 2 }, loser: { matchId: 195, position: 2 } },
+      191: { winner: { matchId: 224, position: 1 }, loser: { matchId: 194, position: 2 } },
+      192: { winner: { matchId: 224, position: 2 }, loser: { matchId: 193, position: 2 } },
+      193: { winner: { matchId: 209, position: 1 }, loser: null },
+      194: { winner: { matchId: 209, position: 2 }, loser: null },
+      195: { winner: { matchId: 210, position: 1 }, loser: null },
+      196: { winner: { matchId: 210, position: 2 }, loser: null },
+      197: { winner: { matchId: 211, position: 1 }, loser: null },
+      198: { winner: { matchId: 211, position: 2 }, loser: null },
+      199: { winner: { matchId: 212, position: 1 }, loser: null },
+      200: { winner: { matchId: 212, position: 2 }, loser: null },
+      201: { winner: { matchId: 213, position: 1 }, loser: null },
+      202: { winner: { matchId: 213, position: 2 }, loser: null },
+      203: { winner: { matchId: 214, position: 1 }, loser: null },
+      204: { winner: { matchId: 214, position: 2 }, loser: null },
+      205: { winner: { matchId: 215, position: 1 }, loser: null },
+      206: { winner: { matchId: 215, position: 2 }, loser: null },
+      207: { winner: { matchId: 216, position: 1 }, loser: null },
+      208: { winner: { matchId: 216, position: 2 }, loser: null },
+      209: { winner: { matchId: 225, position: 1 }, loser: null },
+      210: { winner: { matchId: 226, position: 1 }, loser: null },
+      211: { winner: { matchId: 227, position: 1 }, loser: null },
+      212: { winner: { matchId: 228, position: 1 }, loser: null },
+      213: { winner: { matchId: 229, position: 1 }, loser: null },
+      214: { winner: { matchId: 230, position: 1 }, loser: null },
+      215: { winner: { matchId: 231, position: 1 }, loser: null },
+      216: { winner: { matchId: 232, position: 1 }, loser: null },
+      217: { winner: { matchId: 237, position: 1 }, loser: { matchId: 232, position: 2 } },
+      218: { winner: { matchId: 237, position: 2 }, loser: { matchId: 231, position: 2 } },
+      219: { winner: { matchId: 238, position: 1 }, loser: { matchId: 230, position: 2 } },
+      220: { winner: { matchId: 238, position: 2 }, loser: { matchId: 229, position: 2 } },
+      221: { winner: { matchId: 239, position: 1 }, loser: { matchId: 228, position: 2 } },
+      222: { winner: { matchId: 239, position: 2 }, loser: { matchId: 227, position: 2 } },
+      223: { winner: { matchId: 240, position: 1 }, loser: { matchId: 226, position: 2 } },
+      224: { winner: { matchId: 240, position: 2 }, loser: { matchId: 225, position: 2 } },
+      225: { winner: { matchId: 233, position: 1 }, loser: null },
+      226: { winner: { matchId: 233, position: 2 }, loser: null },
+      227: { winner: { matchId: 234, position: 1 }, loser: null },
+      228: { winner: { matchId: 234, position: 2 }, loser: null },
+      229: { winner: { matchId: 235, position: 1 }, loser: null },
+      230: { winner: { matchId: 235, position: 2 }, loser: null },
+      231: { winner: { matchId: 236, position: 1 }, loser: null },
+      232: { winner: { matchId: 236, position: 2 }, loser: null },
+      233: { winner: { matchId: 241, position: 1 }, loser: null },
+      234: { winner: { matchId: 242, position: 1 }, loser: null },
+      235: { winner: { matchId: 243, position: 1 }, loser: null },
+      236: { winner: { matchId: 244, position: 1 }, loser: null },
+      237: { winner: { matchId: 247, position: 1 }, loser: { matchId: 244, position: 2 } },
+      238: { winner: { matchId: 247, position: 2 }, loser: { matchId: 243, position: 2 } },
+      239: { winner: { matchId: 248, position: 1 }, loser: { matchId: 242, position: 2 } },
+      240: { winner: { matchId: 248, position: 2 }, loser: { matchId: 241, position: 2 } },
+      241: { winner: { matchId: 245, position: 1 }, loser: null },
+      242: { winner: { matchId: 245, position: 2 }, loser: null },
+      243: { winner: { matchId: 246, position: 1 }, loser: null },
+      244: { winner: { matchId: 246, position: 2 }, loser: null },
+      245: { winner: { matchId: 249, position: 1 }, loser: null },
+      246: { winner: { matchId: 250, position: 1 }, loser: null },
+      247: { winner: { matchId: 252, position: 1 }, loser: { matchId: 250, position: 2 } },
+      248: { winner: { matchId: 252, position: 2 }, loser: { matchId: 249, position: 2 } },
+      249: { winner: { matchId: 251, position: 1 }, loser: null },
+      250: { winner: { matchId: 251, position: 2 }, loser: null },
+      251: { winner: { matchId: 253, position: 1 }, loser: null },
+      252: { winner: { matchId: 254, position: 1 }, loser: { matchId: 253, position: 2 } },
+      253: { winner: { matchId: 254, position: 2 }, loser: null },
+      254: { winner: null, loser: null },
+      255: { winner: null, loser: null },
+})
+
+const getNearbyRoundGroups128 = (): Record<string, number[]> => (
+{
+      round1: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64],
+      loser1: [65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96],
+      round2: [97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128],
+      loser2: [129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160],
+      loser3: [161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176],
+      round3: [177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192],
+      loser4: [193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208],
+      loser5: [209, 210, 211, 212, 213, 214, 215, 216],
+      round4: [217, 218, 219, 220, 221, 222, 223, 224],
+      loser6: [225, 226, 227, 228, 229, 230, 231, 232],
+      loser7: [233, 234, 235, 236],
+      round5: [237, 238, 239, 240],
+      loser8: [241, 242, 243, 244],
+      loser9: [245, 246],
+      round6: [247, 248],
+      loser10: [249, 250],
+      loser11: [251],
+      semi: [252],
+      loser12: [253],
+      final: [254],
+      reset: [255],
+    }
+)
+
 const distributePlayersWithFreilose = (players: string[], bracketSize: number): string[] => {
   const totalSlots = bracketSize
   const freilosCount = totalSlots - players.length
@@ -204,7 +539,6 @@ const distributePlayersWithFreilose = (players: string[], bracketSize: number): 
   const freilose: string[] = Array.from({ length: freilosCount }, (_, i) => `Freilos ${i + 1}`)
   const shuffledPlayers = [...players].sort(() => Math.random() - 0.5)
   const result: string[] = []
-  const numMatches = bracketSize / 2
   const remainingPlayers = [...shuffledPlayers]
   const remainingFreilose = [...freilose]
 
@@ -295,14 +629,20 @@ const removePlayerFromRankings = async (playerName: string, tournamentType: stri
 }
 
 const getPlacementForEliminationMatch = (matchId: number, bracketSize: number): number => {
-  if (bracketSize === 16) {
-    if (matchId >= 9 && matchId <= 12) return 13
-    if (matchId >= 17 && matchId <= 20) return 9
-    if (matchId === 21 || matchId === 22) return 7
-    if (matchId === 25 || matchId === 26) return 5
-    if (matchId === 27) return 4
-    if (matchId === 29) return 3
-    if (matchId === 30 || matchId === 31) return 2
+  if (bracketSize === 128) {
+    if (matchId >= 65 && matchId <= 96) return 97
+    if (matchId >= 129 && matchId <= 160) return 65
+    if (matchId >= 161 && matchId <= 176) return 49
+    if (matchId >= 193 && matchId <= 208) return 33
+    if (matchId >= 209 && matchId <= 216) return 25
+    if (matchId >= 225 && matchId <= 232) return 17
+    if (matchId >= 233 && matchId <= 236) return 13
+    if (matchId >= 241 && matchId <= 244) return 9
+    if (matchId === 245 || matchId === 246) return 7
+    if (matchId === 249 || matchId === 250) return 5
+    if (matchId === 251) return 4
+    if (matchId === 253) return 3
+    if (matchId === 254 || matchId === 255) return 2
   }
 
   console.warn(`[v0] Unknown elimination match ${matchId}, using fallback placement`)
@@ -487,52 +827,7 @@ const markTournamentAsCancelled = async (tournamentId: string) => {
   }
 }
 
-
-const loadMatchStatesFromDatabase = async (
-  tournamentType: string,
-  tournamentId: string,
-): Promise<Record<number, Match> | null> => {
-  try {
-    const { data, error } = await supabase
-      .from("dko_match_states")
-      .select("*")
-      .eq("tournament_type", tournamentType)
-      .eq("tournament_id", tournamentId)
-      .order("match_id", { ascending: true })
-
-    if (error) throw error
-
-    if (!data || data.length === 0) {
-      console.log("[v0] No saved match states found")
-      return null
-    }
-
-    const matches: Record<number, Match> = {}
-
-    data.forEach((state: any) => {
-      matches[state.match_id] = {
-        id: state.match_id,
-        player1: state.player1 || "",
-        player2: state.player2 || "",
-        score1: state.score1 || 0,
-        score2: state.score2 || 0,
-        winner: state.winner || undefined,
-        loser: state.loser || undefined,
-        machineNumber: state.machine_number || undefined,
-        callCount: state.machine_number ? 1 : undefined,
-      }
-    })
-
-    console.log("[v0] Match states loaded successfully")
-    return matches
-  } catch (error) {
-    console.error("Fehler beim Laden der Match-States:", error)
-    return null
-  }
-}
-
-
-export default function TournamentBracket({ bracketSize = 16, tournamentType = "16er_dko" }: TournamentBracketProps) {
+export default function TournamentBracket({ bracketSize = 128, tournamentType = "128er_dko" }: TournamentBracketProps) {
   const initializingRef = useRef(false)
   const [vsIntro, setVsIntro] = useState<{ open: boolean; player1: string; player2: string; machineNumber?: number }>(() => ({
     open: false,
@@ -542,6 +837,7 @@ export default function TournamentBracket({ bracketSize = 16, tournamentType = "
   }))
 
   const isRemoteUpdateRef = useRef(false)
+  const autoResolveRanRef = useRef(false)
 
   const [tournamentId, setTournamentId] = useState<string>("")
   const [tournamentName, setTournamentName] = useState<string>("")
@@ -563,42 +859,160 @@ export default function TournamentBracket({ bracketSize = 16, tournamentType = "
 
   const { announce } = useSpeechAnnouncer({ enabled: announcementsEnabled })
 
-  const [matches, setMatches] = useState<Record<number, Match>>(() => {
-    const initialMatches: Record<number, Match> = {
-      1: { id: 1, player1: "Jimmy Wilhelmer", player2: "Spieler 16", score1: 0, score2: 0, callCount: 1 },
-      2: { id: 2, player1: "Spieler 8", player2: "Spieler 9", score1: 0, score2: 0, callCount: 1 },
-      3: { id: 3, player1: "Spieler 4", player2: "Spieler 13", score1: 0, score2: 0, callCount: 1 },
-      4: { id: 4, player1: "Spieler 5", player2: "Spieler 12", score1: 0, score2: 0, callCount: 1 },
-      5: { id: 5, player1: "Spieler 2", player2: "Spieler 15", score1: 0, score2: 0, callCount: 1 },
-      6: { id: 6, player1: "Spieler 7", player2: "Spieler 10", score1: 0, score2: 0, callCount: 1 },
-      7: { id: 7, player1: "Spieler 3", player2: "Spieler 14", score1: 0, score2: 0, callCount: 1 },
-      8: { id: 8, player1: "Spieler 6", player2: "Spieler 11", score1: 0, score2: 0, callCount: 1 },
-      13: { id: 13, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      14: { id: 14, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      15: { id: 15, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      16: { id: 16, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      23: { id: 23, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      24: { id: 24, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      28: { id: 28, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      9: { id: 9, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      10: { id: 10, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      11: { id: 11, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      12: { id: 12, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      17: { id: 17, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      18: { id: 18, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      19: { id: 19, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      20: { id: 20, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      21: { id: 21, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      22: { id: 22, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      25: { id: 25, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      26: { id: 26, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      27: { id: 27, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      29: { id: 29, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      30: { id: 30, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
-      31: { id: 31, player1: "", player2: "", score1: 0, score2: 0, callCount: 1 },
+  const initializeMatches = () => {
+    const teamNames = [
+      "Team 1",
+      "Team 2",
+      "Team 3",
+      "Team 4",
+      "Team 5",
+      "Team 6",
+      "Team 7",
+      "Team 8",
+      "Team 9",
+      "Team 10",
+      "Team 11",
+      "Team 12",
+      "Team 13",
+      "Team 14",
+      "Team 15",
+      "Team 16",
+      "Team 17",
+      "Team 18",
+      "Team 19",
+      "Team 20",
+      "Team 21",
+      "Team 22",
+      "Team 23",
+      "Team 24",
+      "Team 25",
+      "Team 26",
+      "Team 27",
+      "Team 28",
+      "Team 29",
+      "Team 30",
+      "Team 31",
+      "Team 32",
+      "Team 33",
+      "Team 34",
+      "Team 35",
+      "Team 36",
+      "Team 37",
+      "Team 38",
+      "Team 39",
+      "Team 40",
+      "Team 41",
+      "Team 42",
+      "Team 43",
+      "Team 44",
+      "Team 45",
+      "Team 46",
+      "Team 47",
+      "Team 48",
+      "Team 49",
+      "Team 50",
+      "Team 51",
+      "Team 52",
+      "Team 53",
+      "Team 54",
+      "Team 55",
+      "Team 56",
+      "Team 57",
+      "Team 58",
+      "Team 59",
+      "Team 60",
+      "Team 61",
+      "Team 62",
+      "Team 63",
+      "Team 64",
+      "Team 65",
+      "Team 66",
+      "Team 67",
+      "Team 68",
+      "Team 69",
+      "Team 70",
+      "Team 71",
+      "Team 72",
+      "Team 73",
+      "Team 74",
+      "Team 75",
+      "Team 76",
+      "Team 77",
+      "Team 78",
+      "Team 79",
+      "Team 80",
+      "Team 81",
+      "Team 82",
+      "Team 83",
+      "Team 84",
+      "Team 85",
+      "Team 86",
+      "Team 87",
+      "Team 88",
+      "Team 89",
+      "Team 90",
+      "Team 91",
+      "Team 92",
+      "Team 93",
+      "Team 94",
+      "Team 95",
+      "Team 96",
+      "Team 97",
+      "Team 98",
+      "Team 99",
+      "Team 100",
+      "Team 101",
+      "Team 102",
+      "Team 103",
+      "Team 104",
+      "Team 105",
+      "Team 106",
+      "Team 107",
+      "Team 108",
+      "Team 109",
+      "Team 110",
+      "Team 111",
+      "Team 112",
+      "Team 113",
+      "Team 114",
+      "Team 115",
+      "Team 116",
+      "Team 117",
+      "Team 118",
+      "Team 119",
+      "Team 120",
+      "Team 121",
+      "Team 122",
+      "Team 123",
+      "Team 124",
+      "Team 125",
+      "Team 126",
+      "Team 127",
+      "Team 128"
+    ]
+
+    const initialMatches: Record<number, Match> = {}
+
+    for (let i = 1; i <= 64; i++) {
+      const player1Index = (i - 1) * 2
+      const player2Index = player1Index + 1
+      initialMatches[i] = {
+        id: i,
+        player1: teamNames[player1Index],
+        player2: teamNames[player2Index],
+        score1: 0,
+        score2: 0,
+      }
     }
+
+    for (let i = 65; i <= 255; i++) {
+      initialMatches[i] = { id: i, player1: "", player2: "", score1: 0, score2: 0 }
+    }
+
     return initialMatches
-  })
+  }
+
+  const [matches, setMatches] = useState<Record<number, Match>>(() => initializeMatches())
   useEffect(() => {
     const fetchPlayerIds = async () => {
       try {
@@ -641,7 +1055,7 @@ useEffect(() => {
 
   return () => clearTimeout(timeoutId)
 }, [matches])
-  
+
 
 useEffect(() => {
   if (loading || !tournamentId) return
@@ -713,46 +1127,62 @@ useEffect(() => {
     supabase.removeChannel(channel)
   }
 }, [loading, tournamentId, tournamentType])
-  
-  
-  
-  
+
+
+
+
   useEffect(() => {
-    if (loading || !tournamentId) return
+    if (loading || !tournamentId || autoResolveRanRef.current) return
+
+    autoResolveRanRef.current = true
 
     const timer = setTimeout(() => {
-      setMatches((prevMatches) => {
-        const newMatches = { ...prevMatches }
+      setMatches((prev) => {
+        const newMatches = { ...prev }
         let hasChanges = false
 
-        Object.values(newMatches).forEach((match) => {
-          if (match.player1 && match.player2 && !match.winner && !match.machineNumber) {
-            const isP1Freilos = isFreilos(match.player1)
-            const isP2Freilos = isFreilos(match.player2)
+        Object.values(newMatches).forEach((match: Match) => {
+          if (match.winner || !match.player1 || !match.player2) return
 
-            if (isP1Freilos || isP2Freilos) {
-              const realPlayer = isP1Freilos ? match.player2 : match.player1
-              const freilosPlayer = isP1Freilos ? match.player1 : match.player2
+          const isP1Freilos = isFreilos(match.player1)
+          const isP2Freilos = isFreilos(match.player2)
 
-              console.log(`[v0] Auto-resolving Freilos match ${match.id}: ${realPlayer} beats ${freilosPlayer}`)
+          if (!isP1Freilos && !isP2Freilos) return
 
-              match.winner = realPlayer
-              match.loser = freilosPlayer
-              match.score1 = isP1Freilos ? 0 : 2
-              match.score2 = isP2Freilos ? 0 : 2
+          const realPlayer = isP1Freilos ? match.player2 : match.player1
+          const freilosPlayer = isP1Freilos ? match.player1 : match.player2
 
-              progressPlayers(newMatches, match.id, realPlayer, freilosPlayer)
-              hasChanges = true
+          console.log(`[v0] Auto-resolving Freilos match ${match.id}: ${realPlayer} beats ${freilosPlayer}`)
+
+          match.winner = realPlayer
+          match.loser = freilosPlayer
+          match.score1 = isP1Freilos ? 0 : 2
+          match.score2 = isP2Freilos ? 0 : 2
+
+          if (match.id === 254) {
+            if (match.winner === match.player1) {
+              saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
+            } else {
+              newMatches[255].player1 = match.player1
+              newMatches[255].player2 = match.player2
             }
+          } else if (match.id === 255) {
+            saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
+          } else {
+            progressPlayers(newMatches, match.id, realPlayer, freilosPlayer)
+            trackPlayerElimination(newMatches, freilosPlayer, tournamentType, tournamentId, tournamentName, bracketSize)
           }
+
+          hasChanges = true
         })
 
-        return hasChanges ? newMatches : prevMatches
+        autoResolveRanRef.current = false
+        return hasChanges ? newMatches : prev
       })
     }, 100)
 
     return () => clearTimeout(timer)
-  }, [matches, loading, tournamentId])
+  }, [matches, loading, tournamentType, tournamentId])
 
   const getAvailableMachines = (): number[] => {
     const usedMachines = Object.values(matches)
@@ -761,7 +1191,6 @@ useEffect(() => {
 
     return Array.from({ length: totalMachines }, (_, i) => i + 1).filter((num) => !usedMachines.includes(num))
   }
-  
   
 const applyCompletedMatch = (
   allMatches: Record<number, Match>,
@@ -782,13 +1211,13 @@ const applyCompletedMatch = (
     callCount: undefined,
   }
 
-  if (matchId === 30) {
-    if (winner === allMatches[30]?.player1) {
+  if (matchId === 254) {
+    if (winner === allMatches[254]?.player1) {
       saveFinalRankings(winner, loser, tournamentType, tournamentId, tournamentName)
     } else {
-      if (!allMatches[31]) {
-        allMatches[31] = {
-          id: 31,
+      if (!allMatches[255]) {
+        allMatches[255] = {
+          id: 255,
           player1: "",
           player2: "",
           score1: 0,
@@ -800,10 +1229,10 @@ const applyCompletedMatch = (
         }
       }
 
-      allMatches[31] = {
-        ...allMatches[31],
-        player1: allMatches[30]?.player1 || "",
-        player2: allMatches[30]?.player2 || "",
+      allMatches[255] = {
+        ...allMatches[255],
+        player1: allMatches[254]?.player1 || "",
+        player2: allMatches[254]?.player2 || "",
         score1: 0,
         score2: 0,
         winner: undefined,
@@ -812,7 +1241,7 @@ const applyCompletedMatch = (
         callCount: 1,
       }
     }
-  } else if (matchId === 31) {
+  } else if (matchId === 255) {
     saveFinalRankings(winner, loser, tournamentType, tournamentId, tournamentName)
   } else {
     progressPlayers(allMatches, matchId, winner, loser)
@@ -821,8 +1250,6 @@ const applyCompletedMatch = (
 
   return allMatches
 }
-  
-  
 
   const fetchRankings = async () => {
     setLoadingRankings(true)
@@ -847,7 +1274,7 @@ const applyCompletedMatch = (
   }
 
   const saveToTournamentSeries = async () => {
-    const winner = matches[31]?.winner || matches[30]?.winner
+    const winner = matches[255]?.winner || matches[254]?.winner
 
     if (!winner) {
       alert("Kein Gewinner gefunden!")
@@ -909,20 +1336,55 @@ const applyCompletedMatch = (
 
       if (matchError) throw matchError
 
-      const bracketResetOccurred = matches[31]?.winner !== undefined
+      const playerMatchHistory: Record<string, Array<{ matchId: number; result: "W" | "L"; timestamp: string }>> = {}
+
+      matchStates?.forEach((match) => {
+        if (!match.winner) return
+
+        if (match.player1 && !isFreilos(match.player1)) {
+          if (!playerMatchHistory[match.player1]) {
+            playerMatchHistory[match.player1] = []
+          }
+          playerMatchHistory[match.player1].push({
+            matchId: match.match_id,
+            result: match.winner === match.player1 ? "W" : "L",
+            timestamp: match.updated_at || new Date().toISOString(),
+          })
+        }
+
+        if (match.player2 && !isFreilos(match.player2)) {
+          if (!playerMatchHistory[match.player2]) {
+            playerMatchHistory[match.player2] = []
+          }
+          playerMatchHistory[match.player2].push({
+            matchId: match.match_id,
+            result: match.winner === match.player2 ? "W" : "L",
+            timestamp: match.updated_at || new Date().toISOString(),
+          })
+        }
+      })
+
+      Object.keys(playerMatchHistory).forEach((playerName) => {
+        playerMatchHistory[playerName].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      })
+
+      console.log("[v0] Player match history:", playerMatchHistory)
+
+      const bracketResetOccurred = matches[255]?.winner !== undefined
       console.log("[v0] Bracket reset occurred:", bracketResetOccurred)
 
       const playerStats: Record<
         string,
         {
+          placement: number
           placement_points: number
+          legs_points: number
           bonus_points: number
           legs_won: number
           legs_lost: number
           matches_played: number
           matches_won: number
           matches_lost: number
-          match_history: Array<{ match_id: number; result: "W" | "L"; timestamp: string }>
         }
       > = {}
 
@@ -932,19 +1394,16 @@ const applyCompletedMatch = (
         const placementPoints = 10 + tiersBelow[placement] * 2
         const bonus = placement === 1 && !bracketResetOccurred ? 5 : 0
 
-        console.log(
-          `[v0] ${playerName} (Platz ${placement}): ${tiersBelow[placement]} Stufen darunter → ${placementPoints} Platzierungspunkte + ${bonus} Bonus`,
-        )
-
         playerStats[playerName] = {
+          placement: placement,
           placement_points: placementPoints,
+          legs_points: 0,
           bonus_points: bonus,
           legs_won: 0,
           legs_lost: 0,
           matches_played: 0,
           matches_won: 0,
           matches_lost: 0,
-          match_history: [],
         }
       })
 
@@ -952,88 +1411,92 @@ const applyCompletedMatch = (
         if (match.player1 && !isFreilos(match.player1)) {
           if (!playerStats[match.player1]) {
             playerStats[match.player1] = {
+              placement: 0,
               placement_points: 0,
+              legs_points: 0,
               bonus_points: 0,
               legs_won: 0,
               legs_lost: 0,
               matches_played: 0,
               matches_won: 0,
               matches_lost: 0,
-              match_history: [],
             }
           }
-          playerStats[match.player1].legs_won += match.score1 || 0
-          playerStats[match.player1].legs_lost += match.score2 || 0
+
+          const score1 = match.score1 || 0
+          const score2 = match.score2 || 0
+
+          playerStats[match.player1].legs_won += score1
+          playerStats[match.player1].legs_lost += score2
+          playerStats[match.player1].legs_points += score1
 
           if (match.winner) {
             playerStats[match.player1].matches_played += 1
-            const result = match.winner === match.player1 ? "W" : "L"
-            if (result === "W") {
+            if (match.winner === match.player1) {
               playerStats[match.player1].matches_won += 1
             } else {
               playerStats[match.player1].matches_lost += 1
             }
-            playerStats[match.player1].match_history.push({
-              match_id: match.match_id,
-              result,
-              timestamp: match.updated_at || new Date().toISOString(),
-            })
           }
         }
 
         if (match.player2 && !isFreilos(match.player2)) {
           if (!playerStats[match.player2]) {
             playerStats[match.player2] = {
+              placement: 0,
               placement_points: 0,
+              legs_points: 0,
               bonus_points: 0,
               legs_won: 0,
               legs_lost: 0,
               matches_played: 0,
               matches_won: 0,
               matches_lost: 0,
-              match_history: [],
             }
           }
-          playerStats[match.player2].legs_won += match.score2 || 0
-          playerStats[match.player2].legs_lost += match.score1 || 0
+
+          const score1 = match.score1 || 0
+          const score2 = match.score2 || 0
+
+          playerStats[match.player2].legs_won += score2
+          playerStats[match.player2].legs_lost += score1
+          playerStats[match.player2].legs_points += score2
 
           if (match.winner) {
             playerStats[match.player2].matches_played += 1
-            const result = match.winner === match.player2 ? "W" : "L"
-            if (result === "W") {
+            if (match.winner === match.player2) {
               playerStats[match.player2].matches_won += 1
             } else {
               playerStats[match.player2].matches_lost += 1
             }
-            playerStats[match.player2].match_history.push({
-              match_id: match.match_id,
-              result,
-              timestamp: match.updated_at || new Date().toISOString(),
-            })
           }
         }
       })
 
-      console.log("[v0] Calculated player stats:", playerStats)
+      console.log("[v0] Calculated player statistics:", playerStats)
 
-      for (const [playerName, stats] of Object.entries(playerStats)) {
-        const totalPoints = stats.placement_points + stats.bonus_points
+      const tournamentEntries = Object.entries(playerStats).map(([playerName, stats]) => {
+        const totalPoints = stats.placement_points + stats.legs_points + stats.bonus_points
 
-        stats.match_history.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-        const form = stats.match_history.map((h) => h.result).join(",")
+        const matchHistory = playerMatchHistory[playerName] || []
+        const chronologicalForm = matchHistory.map((m) => m.result).join(",")
 
         console.log(
-          `[v0] ${playerName}: ${stats.placement_points} (Platzierung) + ${stats.bonus_points} (Bonus) = ${totalPoints} Gesamt | Form: ${form}`,
+          `[v0] ${playerName}: Platz ${stats.placement} | ` +
+            `${stats.placement_points}P (Platzierung) + ${stats.legs_points}P (Legs) + ${stats.bonus_points}P (Bonus) = ${totalPoints}P | ` +
+            `Legs: ${stats.legs_won}W-${stats.legs_lost}L | Matches: ${stats.matches_won}W-${stats.matches_lost}L | ` +
+            `Form: ${chronologicalForm}`,
         )
 
-        const { error: insertError } = await supabase.from("tournament_series_standings").insert({
+        return {
           player_name: playerName,
           tournament_id: tournamentId,
           tournament_name: tournamentName,
           tournament_type: tournamentType,
           tournament_date: new Date().toISOString(),
-          placement: rankings.find((r) => r.player_name === playerName)?.placement,
+          placement: stats.placement,
           placement_points: stats.placement_points,
+          legs_points: stats.legs_points,
           bonus_points: stats.bonus_points,
           total_points: totalPoints,
           legs_won: stats.legs_won,
@@ -1041,14 +1504,18 @@ const applyCompletedMatch = (
           matches_played: stats.matches_played,
           matches_won: stats.matches_won,
           matches_lost: stats.matches_lost,
-          form: form,
-        })
-
-        if (insertError) {
-          console.error(`[v0] Error inserting ${playerName}:`, insertError)
-          throw insertError
+          form: chronologicalForm,
         }
+      })
+
+      const { error: insertError } = await supabase.from("tournament_series_standings").insert(tournamentEntries)
+
+      if (insertError) {
+        console.error("[v0] Error inserting tournament entries:", insertError)
+        throw insertError
       }
+
+      console.log(`[v0] Successfully inserted ${tournamentEntries.length} tournament entries`)
 
       const { error: historyError } = await supabase.from("tournament_series_history").insert({
         tournament_id: tournamentId,
@@ -1082,37 +1549,45 @@ const applyCompletedMatch = (
 
     const isP1Freilos = isFreilos(match.player1)
     const isP2Freilos = isFreilos(match.player2)
-	
-	
-	
-	
 
-   if (isP1Freilos && isP2Freilos) {
-  console.log(`[v0] Auto-resolving Freilos vs Freilos match ${matchId}: ${match.player1} vs ${match.player2}`)
-  setMatches((prev) => {
-    const newMatches = { ...prev }
-    return applyCompletedMatch(newMatches, matchId, match.player1, match.player2, {
-      score1: 2,
-      score2: 0,
-    })
-  })
-  return
-}
+    if (isP1Freilos && isP2Freilos) {
+      console.log(`[v0] Auto-resolving Freilos vs Freilos match ${matchId}: ${match.player1} vs ${match.player2}`)
+      setMatches((prev) => {
+        const newMatches = { ...prev }
+        const updatedMatch = {
+          ...match,
+          winner: match.player1,
+          loser: match.player2,
+          score1: 2,
+          score2: 0,
+        }
+        newMatches[matchId] = updatedMatch
+        progressPlayers(newMatches, matchId, match.player1, match.player2)
+        return newMatches
+      })
+      return
+    }
 
-if (isP1Freilos || isP2Freilos) {
-  const realPlayer = isP1Freilos ? match.player2 : match.player1
-  const freilosPlayer = isP1Freilos ? match.player1 : match.player2
+    if (isP1Freilos || isP2Freilos) {
+      const realPlayer = isP1Freilos ? match.player2 : match.player1
+      const freilosPlayer = isP1Freilos ? match.player1 : match.player2
 
-  console.log(`[v0] Auto-resolving Freilos match ${matchId}: ${realPlayer} beats ${freilosPlayer}`)
-  setMatches((prev) => {
-    const newMatches = { ...prev }
-    return applyCompletedMatch(newMatches, matchId, realPlayer, freilosPlayer, {
-      score1: isP1Freilos ? 0 : 2,
-      score2: isP2Freilos ? 0 : 2,
-    })
-  })
-  return
-}
+      console.log(`[v0] Auto-resolving Freilos match ${matchId}: ${realPlayer} beats ${freilosPlayer}`)
+      setMatches((prev) => {
+        const newMatches = { ...prev }
+        const updatedMatch = {
+          ...match,
+          winner: realPlayer,
+          loser: freilosPlayer,
+          score1: isP1Freilos ? 0 : 2,
+          score2: isP2Freilos ? 0 : 2,
+        }
+        newMatches[matchId] = updatedMatch
+        progressPlayers(newMatches, matchId, realPlayer, freilosPlayer)
+        return newMatches
+      })
+      return
+    }
 
     if (match.machineNumber) {
       alert(`Dieses Spiel läuft bereits auf Automat ${match.machineNumber}`)
@@ -1211,7 +1686,6 @@ const assignMachine = async (machineNumber: number) => {
 }
   
   
-  
 
   const handleRepeatCall = (matchId: number) => {
     const match = matches[matchId]
@@ -1232,7 +1706,7 @@ const assignMachine = async (machineNumber: number) => {
     }
   }
 
-const updateScore = (matchId: number, player: 1 | 2, score: number) => {
+ const updateScore = (matchId: number, player: 1 | 2, score: number) => {
   setMatches((prev) => ({
     ...prev,
     [matchId]: {
@@ -1241,8 +1715,6 @@ const updateScore = (matchId: number, player: 1 | 2, score: number) => {
     },
   }))
 }
-
-
 
 const confirmMatch = async (matchId: number) => {
   if (!tournamentId) return
@@ -1269,33 +1741,32 @@ const confirmMatch = async (matchId: number) => {
   const newMatches = { ...matches }
   newMatches[matchId] = match
 
-  if (matchId === 30) {
+  if (matchId === 254) {
     if (match.winner === match.player1) {
       console.log(`[v0] Grand Final: Winner's bracket player ${match.winner} wins! Tournament over.`)
       await saveFinalRankings(match.winner, match.loser!, tournamentType, tournamentId, tournamentName)
     } else {
       console.log(`[v0] Grand Final: Loser's bracket player ${match.winner} wins! Bracket reset required.`)
-
-      newMatches[31] = {
-        ...(newMatches[31] ?? {
-          id: 31,
-          player1: "",
-          player2: "",
-          score1: 0,
-          score2: 0,
-          callCount: 1,
-        }),
-        player1: match.player1,
-        player2: match.player2,
-        score1: 0,
-        score2: 0,
-        winner: undefined,
-        loser: undefined,
-        machineNumber: undefined,
-        callCount: 1,
-      }
+     newMatches[255] = {
+  ...(newMatches[255] ?? {
+    id: 255,
+    player1: "",
+    player2: "",
+    score1: 0,
+    score2: 0,
+    callCount: 1,
+  }),
+  player1: match.player1,
+  player2: match.player2,
+  score1: 0,
+  score2: 0,
+  winner: undefined,
+  loser: undefined,
+  machineNumber: undefined,
+  callCount: 1,
+}
     }
-  } else if (matchId === 31) {
+  } else if (matchId === 255) {
     console.log(`[v0] Bracket Reset: ${match.winner} wins the tournament!`)
     await saveFinalRankings(match.winner, match.loser!, tournamentType, tournamentId, tournamentName)
   } else {
@@ -1304,130 +1775,36 @@ const confirmMatch = async (matchId: number) => {
   }
 
   try {
-    await saveMatchStatesToDatabase(newMatches, tournamentType, tournamentId, playerIdMap, matches)
-
     isRemoteUpdateRef.current = true
     setMatches(newMatches)
+
+    await saveMatchStatesToDatabase(newMatches, tournamentType, tournamentId, playerIdMap, matches)
   } catch (error) {
     console.error("[v0] Fehler beim direkten Bestätigen des Ergebnisses:", error)
     alert("Ergebnis konnte nicht gespeichert werden. Bitte erneut versuchen.")
   }
 }
-  
-  
-  
+
+
+
 
   const progressPlayers = (allMatches: Record<number, Match>, matchId: number, winner: string, loser: string) => {
     console.log(`[v0] ========== PROGRESSING PLAYERS ==========`)
     console.log(`[v0] Match ${matchId} completed: Winner: ${winner}, Loser: ${loser}`)
 
-    const progressionMap: Record<
-      number,
-      { winner: { matchId: number; position: 1 | 2 } | null; loser: { matchId: number; position: 1 | 2 } | null }
-    > = {
-      1: { winner: { matchId: 13, position: 1 }, loser: { matchId: 9, position: 1 } },
-      2: { winner: { matchId: 13, position: 2 }, loser: { matchId: 9, position: 2 } },
-      3: { winner: { matchId: 14, position: 1 }, loser: { matchId: 10, position: 1 } },
-      4: { winner: { matchId: 14, position: 2 }, loser: { matchId: 10, position: 2 } },
-      5: { winner: { matchId: 15, position: 1 }, loser: { matchId: 11, position: 1 } },
-      6: { winner: { matchId: 15, position: 2 }, loser: { matchId: 11, position: 2 } },
-      7: { winner: { matchId: 16, position: 1 }, loser: { matchId: 12, position: 1 } },
-      8: { winner: { matchId: 16, position: 2 }, loser: { matchId: 12, position: 2 } },
-      9: { winner: { matchId: 17, position: 1 }, loser: null },
-      10: { winner: { matchId: 18, position: 1 }, loser: null },
-      11: { winner: { matchId: 19, position: 1 }, loser: null },
-      12: { winner: { matchId: 20, position: 1 }, loser: null },
-      13: { winner: { matchId: 23, position: 1 }, loser: { matchId: 20, position: 2 } },
-      14: { winner: { matchId: 23, position: 2 }, loser: { matchId: 19, position: 2 } },
-      15: { winner: { matchId: 24, position: 1 }, loser: { matchId: 18, position: 2 } },
-      16: { winner: { matchId: 24, position: 2 }, loser: { matchId: 17, position: 2 } },
-      17: { winner: { matchId: 21, position: 1 }, loser: null },
-      18: { winner: { matchId: 21, position: 2 }, loser: null },
-      19: { winner: { matchId: 22, position: 1 }, loser: null },
-      20: { winner: { matchId: 22, position: 2 }, loser: null },
-      21: { winner: { matchId: 25, position: 1 }, loser: null },
-      22: { winner: { matchId: 26, position: 1 }, loser: null },
-      23: { winner: { matchId: 28, position: 1 }, loser: { matchId: 26, position: 2 } },
-      24: { winner: { matchId: 28, position: 2 }, loser: { matchId: 25, position: 2 } },
-      25: { winner: { matchId: 27, position: 1 }, loser: null },
-      26: { winner: { matchId: 27, position: 2 }, loser: null },
-      27: { winner: { matchId: 29, position: 1 }, loser: null },
-      28: { winner: { matchId: 30, position: 1 }, loser: { matchId: 29, position: 2 } },
-      29: { winner: { matchId: 30, position: 2 }, loser: null },
-      30: { winner: null, loser: null },
-      31: { winner: null, loser: null },
-    }
-
+    const progressionMap = createProgressionMap128()
     const progression = progressionMap[matchId]
+
     if (!progression) {
       console.log(`[v0] ⚠️ No progression defined for match ${matchId}`)
       return
     }
-	
-	
-	
-	
-	
 
-   if (progression.winner) {
-  const { matchId: targetMatch, position } = progression.winner
-  console.log(`[v0] ✓ Winner ${winner} progresses to Match ${targetMatch} position ${position}`)
-
-  if (!allMatches[targetMatch]) {
-    allMatches[targetMatch] = {
-      id: targetMatch,
-      player1: "",
-      player2: "",
-      score1: 0,
-      score2: 0,
-      winner: undefined,
-      loser: undefined,
-      machineNumber: undefined,
-      callCount: 1,
-    }
-  }
-  
-  
-  
-
-  
-
-  const targetMatchBefore = { ...allMatches[targetMatch] }
-
-  if (position === 1) {
-    allMatches[targetMatch].player1 = winner
-  } else {
-    allMatches[targetMatch].player2 = winner
-  }
-
-  console.log(
-    `[v0]   Match ${targetMatch} before: P1="${targetMatchBefore.player1}" P2="${targetMatchBefore.player2}"`,
-  )
-  console.log(
-    `[v0]   Match ${targetMatch} after:  P1="${allMatches[targetMatch].player1}" P2="${allMatches[targetMatch].player2}"`,
-  )
-
-  if (allMatches[targetMatch].player1 && allMatches[targetMatch].player2 && !allMatches[targetMatch].winner) {
-    console.log(`[v0]   ✓ Match ${targetMatch} now has both players, checking for optimization...`)
-    optimizeMatchInRound(allMatches, targetMatch)
-    autoResolveFreilosMatch(allMatches, targetMatch)
-  }
-} else {
-  console.log(`[v0] ✓ Winner ${winner} has no further progression (reached final or waiting)`)
-}
-	
-	
-	
-	
-	
-	
-	
-
-   if (progression.loser) {
-  const { matchId: targetMatch, position } = progression.loser
-  console.log(`[v0] ↓ Loser ${loser} drops to Match ${targetMatch} position ${position} (1st loss)`)
-
-if (!allMatches[targetMatch]) {
+    if (progression.winner) {
+      const { matchId: targetMatch, position } = progression.winner
+      console.log(`[v0] ✓ Winner ${winner} progresses to Match ${targetMatch} position ${position}`)
+	  
+	  if (!allMatches[targetMatch]) {
   allMatches[targetMatch] = {
     id: targetMatch,
     player1: "",
@@ -1441,37 +1818,73 @@ if (!allMatches[targetMatch]) {
   }
 }
 
-  const targetMatchBefore = { ...allMatches[targetMatch] }
+      const targetMatchBefore = { ...allMatches[targetMatch] }
 
-  if (position === 1) {
-    allMatches[targetMatch].player1 = loser
-  } else {
-    allMatches[targetMatch].player2 = loser
+      if (position === 1) {
+        allMatches[targetMatch].player1 = winner
+      } else {
+        allMatches[targetMatch].player2 = winner
+      }
+
+      console.log(
+        `[v0]   Match ${targetMatch} before: P1="${targetMatchBefore.player1}" P2="${targetMatchBefore.player2}"`,
+      )
+      console.log(
+        `[v0]   Match ${targetMatch} after:  P1="${allMatches[targetMatch].player1}" P2="${allMatches[targetMatch].player2}"`,
+      )
+
+      if (allMatches[targetMatch].player1 && allMatches[targetMatch].player2 && !allMatches[targetMatch].winner) {
+        console.log(`[v0]   ✓ Match ${targetMatch} now has both players, checking for optimization...`)
+        optimizeMatchInRound(allMatches, targetMatch)
+        autoResolveFreilosMatch(allMatches, targetMatch)
+      }
+    } else {
+      console.log(`[v0] ✓ Winner ${winner} has no further progression (reached final or waiting)`)
+    }
+
+    if (progression.loser) {
+      const { matchId: targetMatch, position } = progression.loser
+      console.log(`[v0] ↓ Loser ${loser} drops to Match ${targetMatch} position ${position} (1st loss)`)
+	  
+	  if (!allMatches[targetMatch]) {
+  allMatches[targetMatch] = {
+    id: targetMatch,
+    player1: "",
+    player2: "",
+    score1: 0,
+    score2: 0,
+    winner: undefined,
+    loser: undefined,
+    machineNumber: undefined,
+    callCount: 1,
   }
-
-  console.log(
-    `[v0]   Match ${targetMatch} before: P1="${targetMatchBefore.player1}" P2="${targetMatchBefore.player2}"`,
-  )
-  console.log(
-    `[v0]   Match ${targetMatch} after:  P1="${allMatches[targetMatch].player1}" P2="${allMatches[targetMatch].player2}"`,
-  )
-
-  if (allMatches[targetMatch].player1 && allMatches[targetMatch].player2 && !allMatches[targetMatch].winner) {
-    console.log(`[v0]   ✓ Match ${targetMatch} now has both players, checking for optimization...`)
-    optimizeMatchInRound(allMatches, targetMatch)
-    autoResolveFreilosMatch(allMatches, targetMatch)
-  }
-} else {
-  console.log(`[v0] ✗ Loser ${loser} is ELIMINATED (2nd loss, no further progression)`)
 }
-console.log(`[v0] ==========================================`)
+
+      const targetMatchBefore = { ...allMatches[targetMatch] }
+
+      if (position === 1) {
+        allMatches[targetMatch].player1 = loser
+      } else {
+        allMatches[targetMatch].player2 = loser
+      }
+
+      console.log(
+        `[v0]   Match ${targetMatch} before: P1="${targetMatchBefore.player1}" P2="${targetMatchBefore.player2}"`,
+      )
+      console.log(
+        `[v0]   Match ${targetMatch} after:  P1="${allMatches[targetMatch].player1}" P2="${allMatches[targetMatch].player2}"`,
+      )
+
+      if (allMatches[targetMatch].player1 && allMatches[targetMatch].player2 && !allMatches[targetMatch].winner) {
+        console.log(`[v0]   ✓ Match ${targetMatch} now has both players, checking for optimization...`)
+        optimizeMatchInRound(allMatches, targetMatch)
+        autoResolveFreilosMatch(allMatches, targetMatch)
+      }
+    } else {
+      console.log(`[v0] ✗ Loser ${loser} is ELIMINATED (2nd loss, no further progression)`)
+    }
+    console.log(`[v0] ==========================================`)
   }
-  
-  
-  
-  
-  
-  
 
   const optimizeMatchInRound = (allMatches: Record<number, Match>, matchId: number) => {
     const match = allMatches[matchId]
@@ -1543,22 +1956,9 @@ console.log(`[v0] ==========================================`)
   }
 
   const findNearbyMatches = (matchId: number): number[] => {
-    const rounds: Record<string, number[]> = {
-      round1: [1, 2, 3, 4, 5, 6, 7, 8],
-      loser1: [9, 10, 11, 12],
-      round2: [13, 14, 15, 16],
-      loser2: [17, 18, 19, 20],
-      round3: [23, 24],
-      loser3: [21, 22],
-      loser4: [25, 26],
-      semi: [28],
-      loser5: [27],
-      loser6: [29],
-      final: [30],
-      reset: [31],
-    }
+    const rounds = getNearbyRoundGroups128()
 
-    for (const [roundName, matches] of Object.entries(rounds)) {
+    for (const [, matches] of Object.entries(rounds)) {
       if (matches.includes(matchId)) {
         return matches.filter((id) => id !== matchId)
       }
@@ -1584,7 +1984,7 @@ console.log(`[v0] ==========================================`)
   const resetMatch = async (matchId: number) => {
     const match = matches[matchId]
 
-    if (matchId === 30 || matchId === 31) {
+    if (matchId === 254 || matchId === 255) {
       console.log(`[v0] Resetting finale Match ${matchId}, removing both players from rankings...`)
 
       if (match.player1) {
@@ -1623,7 +2023,7 @@ console.log(`[v0] ==========================================`)
         winner: undefined,
         loser: undefined,
         machineNumber: undefined,
-        callCount: 1, // Reset callCount when match is reset
+        callCount: undefined,
       }
 
       if (oldWinner || oldLoser) {
@@ -1643,84 +2043,32 @@ console.log(`[v0] ==========================================`)
     winner?: string,
     loser?: string,
   ) => {
-    if (matchId === 1 || matchId === 2) {
-      if (allMatches[13]?.player1 === winner) allMatches[13].player1 = ""
-      if (allMatches[13]?.player2 === winner) allMatches[13].player2 = ""
-    } else if (matchId === 3 || matchId === 4) {
-      if (allMatches[14]?.player1 === winner) allMatches[14].player1 = ""
-      if (allMatches[14]?.player2 === winner) allMatches[14].player2 = ""
-    } else if (matchId === 5 || matchId === 6) {
-      if (allMatches[15]?.player1 === winner) allMatches[15].player1 = ""
-      if (allMatches[15]?.player2 === winner) allMatches[15].player2 = ""
-    } else if (matchId === 7 || matchId === 8) {
-      if (allMatches[16]?.player1 === winner) allMatches[16].player1 = ""
-      if (allMatches[16]?.player2 === winner) allMatches[16].player2 = ""
-    } else if (matchId === 13 || matchId === 14) {
-      if (allMatches[23]?.player1 === winner) allMatches[23].player1 = ""
-      if (allMatches[23]?.player2 === winner) allMatches[23].player2 = ""
-    } else if (matchId === 15 || matchId === 16) {
-      if (allMatches[24]?.player1 === winner) allMatches[24].player1 = ""
-      if (allMatches[24]?.player2 === winner) allMatches[24].player2 = ""
-    } else if (matchId === 23 || matchId === 24) {
-      if (allMatches[28]?.player1 === winner) allMatches[28].player1 = ""
-      if (allMatches[28]?.player2 === winner) allMatches[28].player2 = ""
-    } else if (matchId === 28) {
-      if (allMatches[30]?.player1 === winner) allMatches[30].player1 = ""
-    } else if (matchId === 30 && winner === allMatches[30].player1) {
-      if (allMatches[31]?.player1 === winner) allMatches[31].player1 = ""
-      if (allMatches[31]?.player2 === winner) allMatches[31].player2 = ""
+    const progressionMap = createProgressionMap128()
+    const progression = progressionMap[matchId]
+
+    if (winner && progression?.winner) {
+      const targetMatch = allMatches[progression.winner.matchId]
+      if (targetMatch?.player1 === winner) targetMatch.player1 = ""
+      if (targetMatch?.player2 === winner) targetMatch.player2 = ""
     }
 
-    if (matchId === 1 || matchId === 2) {
-      if (allMatches[9]?.player1 === loser) allMatches[9].player1 = ""
-      if (allMatches[9]?.player2 === loser) allMatches[9].player2 = ""
-    } else if (matchId === 3 || matchId === 4) {
-      if (allMatches[10]?.player1 === loser) allMatches[10].player1 = ""
-      if (allMatches[10]?.player2 === loser) allMatches[10].player2 = ""
-    } else if (matchId === 5 || matchId === 6) {
-      if (allMatches[11]?.player1 === loser) allMatches[11].player1 = ""
-      if (allMatches[11]?.player2 === loser) allMatches[11].player2 = ""
-    } else if (matchId === 7 || matchId === 8) {
-      if (allMatches[12]?.player1 === loser) allMatches[12].player1 = ""
-      if (allMatches[12]?.player2 === loser) allMatches[12].player2 = ""
-    } else if (matchId === 13 || matchId === 14) {
-      if (allMatches[20]?.player1 === loser) allMatches[20].player1 = ""
-      if (allMatches[20]?.player2 === loser) allMatches[20].player2 = ""
-    } else if (matchId === 15 || matchId === 16) {
-      if (allMatches[19]?.player1 === loser) allMatches[19].player1 = ""
-      if (allMatches[19]?.player2 === loser) allMatches[19].player2 = ""
-    } else if (matchId === 17 || matchId === 18) {
-      if (allMatches[21]?.player1 === loser) allMatches[21].player1 = ""
-      if (allMatches[21]?.player2 === loser) allMatches[21].player2 = ""
-    } else if (matchId === 19 || matchId === 20) {
-      if (allMatches[22]?.player1 === loser) allMatches[22].player1 = ""
-      if (allMatches[22]?.player2 === loser) allMatches[22].player2 = ""
-    } else if (matchId === 23 || matchId === 24) {
-      if (allMatches[26]?.player1 === loser) allMatches[26].player1 = ""
-      if (allMatches[26]?.player2 === loser) allMatches[26].player2 = ""
-    } else if (matchId === 21 || matchId === 22) {
-      if (allMatches[25]?.player1 === loser) allMatches[25].player1 = ""
-      if (allMatches[25]?.player2 === loser) allMatches[25].player2 = ""
-    } else if (matchId === 25 || matchId === 26) {
-      if (allMatches[27]?.player1 === loser) allMatches[27].player1 = ""
-      if (allMatches[27]?.player2 === loser) allMatches[27].player2 = ""
-    } else if (matchId === 27) {
-      if (allMatches[29]?.player1 === loser) allMatches[29].player1 = ""
-      if (allMatches[29]?.player2 === loser) allMatches[29].player2 = ""
-    } else if (matchId === 28) {
-      if (allMatches[30]?.player1 === loser) allMatches[30].player1 = ""
-    } else if (matchId === 29) {
-      if (allMatches[30]?.player2 === loser) allMatches[30].player2 = ""
-    } else if (matchId === 30 && loser === allMatches[30].player1) {
-      if (allMatches[31]?.player1 === loser) allMatches[31].player1 = ""
-      if (allMatches[31]?.player2 === loser) allMatches[31].player2 = ""
-    } else if (matchId === 30 && loser === allMatches[30].player2) {
-      if (allMatches[31]?.player1 === loser) allMatches[31].player1 = ""
-      if (allMatches[31]?.player2 === loser) allMatches[31].player2 = ""
+    if (loser && progression?.loser) {
+      const targetMatch = allMatches[progression.loser.matchId]
+      if (targetMatch?.player1 === loser) targetMatch.player1 = ""
+      if (targetMatch?.player2 === loser) targetMatch.player2 = ""
+    }
+
+    if (matchId === 254 && winner === allMatches[254]?.player1) {
+      if (allMatches[255]?.player1 === winner) allMatches[255].player1 = ""
+      if (allMatches[255]?.player2 === winner) allMatches[255].player2 = ""
+    }
+
+    if (matchId === 254 && loser) {
+      if (allMatches[255]?.player1 === loser) allMatches[255].player1 = ""
+      if (allMatches[255]?.player2 === loser) allMatches[255].player2 = ""
     }
   }
 
-  
   // When a match is reset, we must also remove the affected players from ALL later matches.
   // Otherwise the database can keep "stale" players in lower rounds (because they had already progressed further).
   const purgePlayerFromFutureMatches = (allMatches: Record<number, Match>, fromMatchId: number, player?: string) => {
@@ -1761,9 +2109,8 @@ console.log(`[v0] ==========================================`)
       }
     })
   }
-
-
-
+  
+  
 
 const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: number) => {
   const match = allMatches[matchId]
@@ -1787,7 +2134,6 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
     callCount: undefined,
   })
 }
-  
   
   
   
@@ -1835,15 +2181,12 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
 
         const savedMatches = await loadMatchStatesFromDatabase(tournamentType, currentTournamentId)
 
- if (savedMatches) {
-  console.log("[v0] ✓ Loaded saved tournament state - tournament will continue from where it left off")
-  setMatches((prev) => ({
-    ...prev,
-    ...savedMatches,
-  }))
-  setLoading(false)
-  return
-}
+        if (savedMatches) {
+          console.log("[v0] ✓ Loaded saved tournament state - tournament will continue from where it left off")
+          setMatches(savedMatches)
+          setLoading(false)
+          return
+        }
 
         console.log("[v0] No saved state found - initializing new tournament")
 
@@ -1917,21 +2260,29 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
     fetchRegisteredPlayers()
   }, [searchParams, bracketSize, tournamentType])
 
-  const availableMachines = getAvailableMachines()
-  const allMatches = Object.values(matches)
-  const activeLiveMatches = allMatches
-    .filter((match) => match.player1 && match.player2 && !match.winner && match.machineNumber)
-    .sort((a, b) => (a.machineNumber || 0) - (b.machineNumber || 0))
-  const readyMatches = allMatches.filter((match) => match.player1 && match.player2 && !match.winner && !match.machineNumber)
-  const completedMatches = allMatches.filter((match) => Boolean(match.winner))
-  const liveMachineNumbers = activeLiveMatches
-    .map((match) => match.machineNumber)
-    .filter((value): value is number => Boolean(value))
-  const totalMatchCount = 31
-  const completedCount = completedMatches.length
-  const remainingCount = Math.max(totalMatchCount - completedCount, 0)
-  const liveCompletion = Math.round((completedCount / totalMatchCount) * 100)
-const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.player1 ? matches[30]?.winner : undefined)
+const availableMachines = getAvailableMachines()
+const allMatches = Object.values(matches).sort((a, b) => a.id - b.id)
+
+const activeLiveMatches = allMatches.filter(
+  (match) => match.player1 && match.player2 && !match.winner && match.machineNumber
+)
+
+const readyMatches = allMatches.filter(
+  (match) => match.player1 && match.player2 && !match.winner && !match.machineNumber
+)
+
+const completedMatches = allMatches.filter((match) => Boolean(match.winner))
+
+const liveMachineNumbers = activeLiveMatches
+  .map((match) => match.machineNumber)
+  .filter((value): value is number => Boolean(value))
+
+const totalMatchCount = 255
+const completedCount = completedMatches.length
+const remainingCount = Math.max(totalMatchCount - completedCount, 0)
+const liveCompletion = Math.round((completedCount / totalMatchCount) * 100)
+const winnerName =
+  matches[255].winner || (matches[254].winner === matches[254].player1 ? matches[254].winner : undefined)
 
   if (loading) {
     return (
@@ -1951,17 +2302,15 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
             </h1>
           </div>
           <div className="flex gap-2 items-center">
-            <div className="flex items-center gap-2 mr-4">
-              <Checkbox
-                id="announcements"
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
                 checked={announcementsEnabled}
-                onCheckedChange={(checked) => setAnnouncementsEnabled(checked === true)}
+                onChange={(e) => setAnnouncementsEnabled(e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
               />
-              <Label htmlFor="announcements" className="flex items-center gap-1 cursor-pointer">
-                <Volume2 className="h-4 w-4" />
-                Ansage
-              </Label>
-            </div>
+              <span>Ansage aktivieren</span>
+            </label>
             <Button onClick={fetchRankings} variant="outline" disabled={loadingRankings || !tournamentId}>
               {loadingRankings ? "Lädt..." : "Rangliste"}
             </Button>
@@ -2076,84 +2425,100 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
                           key={match.id}
                           className="rounded-2xl border border-red-200 bg-red-50/40 px-4 py-4 shadow-sm"
                         >
+						
+						
+						
+						
+						
                           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                            <div>
-                              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-500">
-                                <span>Match {match.id}</span>
-                                <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-white">
-                                  LIVE
-                                </span>
-                              </div>
-                              <div className="mt-1 text-base font-semibold">
-                                {match.player1} <span className="text-slate-400">vs.</span> {match.player2}
-                              </div>
-                              <div className="mt-2">
-                                <span className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600">
-                                  Automat {match.machineNumber}
-                                </span>
-                              </div>
-                            </div>
+  <div>
+    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+      <span>Match {match.id}</span>
+      <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-white">
+        LIVE
+      </span>
+    </div>
+    <div className="mt-1 text-base font-semibold">
+      {match.player1} <span className="text-slate-400">vs.</span> {match.player2}
+    </div>
+    <div className="mt-2">
+      <span className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600">
+        Automat {match.machineNumber}
+      </span>
+    </div>
+  </div>
 
-                            <div className="grid grid-cols-2 gap-3 md:w-[190px]">
-                              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                                <div className="truncate text-xs text-slate-500">{match.player1}</div>
-                                <Input
-                                  type="text"
-                                  inputMode="numeric"
-                                  maxLength={2}
-                                  value={match.score1 > 0 ? String(match.score1) : ""}
-                                  onChange={(e) =>
-                                    updateScore(match.id, 1, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)
-                                  }
-                                  className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
-                                />
-                              </div>
-                              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                                <div className="truncate text-xs text-slate-500">{match.player2}</div>
-                                <Input
-                                  type="text"
-                                  inputMode="numeric"
-                                  maxLength={2}
-                                  value={match.score2 > 0 ? String(match.score2) : ""}
-                                  onChange={(e) =>
-                                    updateScore(match.id, 2, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)
-                                  }
-                                  className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
-                                />
-                              </div>
-                            </div>
-                          </div>
+  <div className="grid grid-cols-2 gap-3 md:w-[190px]">
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
+      <div className="truncate text-xs text-slate-500">{match.player1}</div>
+      <Input
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
+        value={match.score1 === 0 ? "" : String(match.score1)}
+        onChange={(e) => {
+          const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+          updateScore(match.id, 1, cleaned === "" ? 0 : Number(cleaned))
+        }}
+        className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
+      />
+    </div>
 
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600">
-                              Stand {match.score1}:{match.score2}
-                            </span>
-                            {match.callCount && match.callCount < 3 && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleRepeatCall(match.id)}
-                                className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                              >
-                                {nextCall}. Aufruf
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              onClick={() => confirmMatch(match.id)}
-                              disabled={!canConfirmLive}
-                              className="bg-red-500 text-white hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-500"
-                            >
-                              <Check className="mr-1 h-4 w-4" />
-                              Ergebnis bestätigen
-                            </Button>
-                          </div>
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
+      <div className="truncate text-xs text-slate-500">{match.player2}</div>
+      <Input
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
+        value={match.score2 === 0 ? "" : String(match.score2)}
+        onChange={(e) => {
+          const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+          updateScore(match.id, 2, cleaned === "" ? 0 : Number(cleaned))
+        }}
+        className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
+      />
+    </div>
+  </div>
+</div>
+
+<div className="mt-3 flex flex-wrap items-center gap-2">
+  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600">
+    Stand {match.score1}:{match.score2}
+  </span>
+  {match.callCount && match.callCount < 3 && (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => handleRepeatCall(match.id)}
+      className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+    >
+      {nextCall}. Aufruf
+    </Button>
+  )}
+  <Button
+    size="sm"
+    onClick={() => confirmMatch(match.id)}
+    disabled={!canConfirmLive}
+    className="bg-red-500 text-white hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-500"
+  >
+    <Check className="mr-1 h-4 w-4" />
+    Ergebnis bestätigen
+  </Button>
+</div>
                         </div>
                       )
                     })
                   )}
                 </div>
               </div>
+			  
+			  
+			  
+			  
+			  
+			  
+			  
+			  
 
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
@@ -2200,10 +2565,11 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
           </div>
         </Card>
 
+
         <div className="space-y-8">
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-orange-600 border-b-2 border-orange-600 pb-2">Runde 1</h2>
-            {[...Array(bracketSize / 2)].map((_, i) => (
+            {[...Array(64)].map((_, i) => (
               <MatchCard
                 key={i + 1}
                 match={matches[i + 1]}
@@ -2219,10 +2585,10 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
 
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 1</h2>
-            {[...Array(bracketSize / 4)].map((_, i) => (
+            {[...Array(32)].map((_, i) => (
               <MatchCard
-                key={i + 9}
-                match={matches[i + 9]}
+                key={i + 65}
+                match={matches[i + 65]}
                 onScoreUpdate={updateScore}
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
@@ -2236,10 +2602,10 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
 
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Runde 2</h2>
-            {[...Array(bracketSize / 4)].map((_, i) => (
+            {[...Array(32)].map((_, i) => (
               <MatchCard
-                key={i + 13}
-                match={matches[i + 13]}
+                key={i + 97}
+                match={matches[i + 97]}
                 onScoreUpdate={updateScore}
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
@@ -2252,10 +2618,27 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
 
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 2</h2>
-            {[...Array(bracketSize / 4)].map((_, i) => (
+            {[...Array(32)].map((_, i) => (
               <MatchCard
-                key={i + 17}
-                match={matches[i + 17]}
+                key={i + 129}
+                match={matches[i + 129]}
+                onScoreUpdate={updateScore}
+                onConfirm={confirmMatch}
+                onStartMatch={startMatch}
+                onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
+                isLoser
+              />
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 3</h2>
+            {[...Array(16)].map((_, i) => (
+              <MatchCard
+                key={i + 161}
+                match={matches[i + 161]}
                 onScoreUpdate={updateScore}
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
@@ -2269,43 +2652,26 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
 
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Runde 3</h2>
-            {[...Array(bracketSize / 8)].map((_, i) => (
+            {[...Array(16)].map((_, i) => (
               <MatchCard
-                key={i + 23}
-                match={matches[i + 23]}
+                key={i + 177}
+                match={matches[i + 177]}
                 onScoreUpdate={updateScore}
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
                 onReset={resetMatch}
                 onRepeatCall={handleRepeatCall}
                 announcementsEnabled={announcementsEnabled}
-              />
-            ))}
-          </div>
-
-          <div className="space-y-3">
-            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 3</h2>
-            {[...Array(bracketSize / 8)].map((_, i) => (
-              <MatchCard
-                key={i + 21}
-                match={matches[i + 21]}
-                onScoreUpdate={updateScore}
-                onConfirm={confirmMatch}
-                onStartMatch={startMatch}
-                onReset={resetMatch}
-                onRepeatCall={handleRepeatCall}
-                announcementsEnabled={announcementsEnabled}
-                isLoser
               />
             ))}
           </div>
 
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 4</h2>
-            {[...Array(bracketSize / 8)].map((_, i) => (
+            {[...Array(16)].map((_, i) => (
               <MatchCard
-                key={i + 25}
-                match={matches[i + 25]}
+                key={i + 193}
+                match={matches[i + 193]}
                 onScoreUpdate={updateScore}
                 onConfirm={confirmMatch}
                 onStartMatch={startMatch}
@@ -2318,22 +2684,159 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Halbfinale</h2>
-            <MatchCard
-              match={matches[28]}
-              onScoreUpdate={updateScore}
-              onConfirm={confirmMatch}
-              onStartMatch={startMatch}
-              onReset={resetMatch}
-              onRepeatCall={handleRepeatCall}
-              announcementsEnabled={announcementsEnabled}
-            />
+            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 5</h2>
+            {[...Array(8)].map((_, i) => (
+              <MatchCard
+                key={i + 209}
+                match={matches[i + 209]}
+                onScoreUpdate={updateScore}
+                onConfirm={confirmMatch}
+                onStartMatch={startMatch}
+                onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
+                isLoser
+              />
+            ))}
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 5</h2>
+            <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Runde 4</h2>
+            {[...Array(8)].map((_, i) => (
+              <MatchCard
+                key={i + 217}
+                match={matches[i + 217]}
+                onScoreUpdate={updateScore}
+                onConfirm={confirmMatch}
+                onStartMatch={startMatch}
+                onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
+              />
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 6</h2>
+            {[...Array(8)].map((_, i) => (
+              <MatchCard
+                key={i + 225}
+                match={matches[i + 225]}
+                onScoreUpdate={updateScore}
+                onConfirm={confirmMatch}
+                onStartMatch={startMatch}
+                onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
+                isLoser
+              />
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 7</h2>
+            {[...Array(4)].map((_, i) => (
+              <MatchCard
+                key={i + 233}
+                match={matches[i + 233]}
+                onScoreUpdate={updateScore}
+                onConfirm={confirmMatch}
+                onStartMatch={startMatch}
+                onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
+                isLoser
+              />
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Runde 5</h2>
+            {[...Array(4)].map((_, i) => (
+              <MatchCard
+                key={i + 237}
+                match={matches[i + 237]}
+                onScoreUpdate={updateScore}
+                onConfirm={confirmMatch}
+                onStartMatch={startMatch}
+                onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
+              />
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 8</h2>
+            {[...Array(4)].map((_, i) => (
+              <MatchCard
+                key={i + 241}
+                match={matches[i + 241]}
+                onScoreUpdate={updateScore}
+                onConfirm={confirmMatch}
+                onStartMatch={startMatch}
+                onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
+                isLoser
+              />
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 9</h2>
+            {[...Array(2)].map((_, i) => (
+              <MatchCard
+                key={i + 245}
+                match={matches[i + 245]}
+                onScoreUpdate={updateScore}
+                onConfirm={confirmMatch}
+                onStartMatch={startMatch}
+                onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
+                isLoser
+              />
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Runde 6</h2>
+            {[...Array(2)].map((_, i) => (
+              <MatchCard
+                key={i + 247}
+                match={matches[i + 247]}
+                onScoreUpdate={updateScore}
+                onConfirm={confirmMatch}
+                onStartMatch={startMatch}
+                onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
+              />
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 10</h2>
+            {[...Array(2)].map((_, i) => (
+              <MatchCard
+                key={i + 249}
+                match={matches[i + 249]}
+                onScoreUpdate={updateScore}
+                onConfirm={confirmMatch}
+                onStartMatch={startMatch}
+                onReset={resetMatch}
+                onRepeatCall={handleRepeatCall}
+                announcementsEnabled={announcementsEnabled}
+                isLoser
+              />
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 11</h2>
             <MatchCard
-              match={matches[27]}
+              match={matches[251]}
               onScoreUpdate={updateScore}
               onConfirm={confirmMatch}
               onStartMatch={startMatch}
@@ -2345,9 +2848,22 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 6</h2>
+            <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Halbfinale</h2>
             <MatchCard
-              match={matches[29]}
+              match={matches[252]}
+              onScoreUpdate={updateScore}
+              onConfirm={confirmMatch}
+              onStartMatch={startMatch}
+              onReset={resetMatch}
+              onRepeatCall={handleRepeatCall}
+              announcementsEnabled={announcementsEnabled}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 12</h2>
+            <MatchCard
+              match={matches[253]}
               onScoreUpdate={updateScore}
               onConfirm={confirmMatch}
               onStartMatch={startMatch}
@@ -2362,7 +2878,7 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
             <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Großes Finale</h2>
             <p className="text-sm text-muted-foreground">Sieger Gewinnerseite vs. Sieger Verliererseite</p>
             <MatchCard
-              match={matches[30]}
+              match={matches[254]}
               onScoreUpdate={updateScore}
               onConfirm={confirmMatch}
               onStartMatch={startMatch}
@@ -2373,41 +2889,42 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
             />
           </div>
 
-          {((matches[31]?.player1) ||
-  (matches[31]?.player2) ||
-  (matches[30]?.winner === matches[30]?.player2 && matches[30]?.winner)) &&
-  !matches[31]?.winner && (
-    <div className="space-y-3">
-      <h2 className="text-xl font-bold text-purple-600 border-b-2 border-purple-600 pb-2">Bracket Reset</h2>
-      <p className="text-sm text-muted-foreground">
-        Der Spieler von der Verliererseite hat gewonnen! Beide Spieler haben jetzt je 1 Niederlage.
-      </p>
-      <MatchCard
-        match={
-          matches[31] ?? {
-            id: 31,
-            player1: "",
-            player2: "",
-            score1: 0,
-            score2: 0,
-            callCount: 1,
-          }
-        }
-        onScoreUpdate={updateScore}
-        onConfirm={confirmMatch}
-        onStartMatch={startMatch}
-        onReset={resetMatch}
-        onRepeatCall={handleRepeatCall}
-        announcementsEnabled={announcementsEnabled}
-        isGrandFinal
-      />
-    </div>
-  )}
 
-{((matches[31]?.winner) || (matches[30]?.winner === matches[30]?.player1 && matches[30]?.player1)) && (
-  <Card className="p-6 bg-primary text-primary-foreground">
-    <h3 className="text-2xl font-bold text-center">🏆 Turniersieger</h3>
-    <p className="text-3xl font-bold text-center mt-4">{matches[31]?.winner || matches[30]?.winner}</p>
+                    {((matches[255]?.player1) ||
+            (matches[255]?.player2) ||
+            (matches[254]?.winner === matches[254]?.player2 && matches[254]?.winner)) &&
+            !matches[255]?.winner && (
+              <div className="space-y-3">
+                <h2 className="text-xl font-bold text-purple-600 border-b-2 border-purple-600 pb-2">Bracket Reset</h2>
+                <p className="text-sm text-muted-foreground">
+                  Der Spieler von der Verliererseite hat gewonnen! Beide Spieler haben jetzt je 1 Niederlage.
+                </p>
+                <MatchCard
+                  match={
+                    matches[255] ?? {
+                      id: 255,
+                      player1: "",
+                      player2: "",
+                      score1: 0,
+                      score2: 0,
+                      callCount: 1,
+                    }
+                  }
+                  onScoreUpdate={updateScore}
+                  onConfirm={confirmMatch}
+                  onStartMatch={startMatch}
+                  onReset={resetMatch}
+                  onRepeatCall={handleRepeatCall}
+                  announcementsEnabled={announcementsEnabled}
+                  isGrandFinal
+                />
+              </div>
+            )}
+
+          {((matches[255]?.winner) || (matches[254]?.winner === matches[254]?.player1 && matches[254]?.player1)) && (
+            <Card className="p-6 bg-primary text-primary-foreground">
+              <h3 className="text-2xl font-bold text-center">🏆 Turniersieger</h3>
+              <p className="text-3xl font-bold text-center mt-4">{matches[255]?.winner || matches[254]?.winner}</p>
 
               <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
                 <Button
@@ -2436,18 +2953,6 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
             </Card>
           )}
         </div>
-      </div>
-
-      <VsIntroOverlay
-        open={vsIntro.open}
-        player1={vsIntro.player1}
-        player2={vsIntro.player2}
-        machineNumber={vsIntro.machineNumber}
-        durationMs={3000}
-        onDone={() => setVsIntro((p) => ({ ...p, open: false }))}
-      />
-
-
 
       <Dialog open={machineDialogOpen} onOpenChange={setMachineDialogOpen}>
         <DialogContent>
@@ -2537,6 +3042,7 @@ const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.
         </DialogContent>
       </Dialog>
     </div>
+	</div>
   )
 }
 
@@ -2546,8 +3052,8 @@ interface MatchCardProps {
   onConfirm: (matchId: number) => void
   onStartMatch: (matchId: number) => void
   onReset: (matchId: number) => void
-  onRepeatCall: (matchId: number) => void // Added onRepeatCall prop
-  announcementsEnabled: boolean // Added announcementsEnabled prop
+  onRepeatCall: (matchId: number) => void
+  announcementsEnabled: boolean
   isLoser?: boolean
   isGrandFinal?: boolean
 }
@@ -2573,7 +3079,7 @@ function MatchCard({
 
   const hasFreilos = isFreilos(match.player1) || isFreilos(match.player2)
 
-  const callCount = match.callCount || 1
+  const callCount = match.callCount || 0
   const showSecondCall = announcementsEnabled && isRunning && callCount === 1
   const showThirdCall = announcementsEnabled && isRunning && callCount === 2
 
@@ -2600,8 +3106,7 @@ function MatchCard({
               size="sm"
               onClick={() => onRepeatCall(match.id)}
               variant="outline"
-              className="h-7 text-xs"
-              title="2. Aufruf"
+              className="h-7 text-xs border-orange-500 text-orange-600 hover:bg-orange-50"
             >
               2. Aufruf
             </Button>
@@ -2611,8 +3116,7 @@ function MatchCard({
               size="sm"
               onClick={() => onRepeatCall(match.id)}
               variant="outline"
-              className="h-7 text-xs"
-              title="3. Aufruf (Letzter)"
+              className="h-7 text-xs border-red-500 text-red-600 hover:bg-red-50"
             >
               3. Aufruf
             </Button>
@@ -2672,7 +3176,7 @@ function MatchCard({
         <Input
           type="number"
           min="0"
-          max="10"
+          max="2"
           value={match.score1}
           onChange={(e) => onScoreUpdate(match.id, 1, Number.parseInt(e.target.value) || 0)}
           className="w-16 h-8 text-center"
@@ -2706,7 +3210,7 @@ function MatchCard({
         <Input
           type="number"
           min="0"
-          max="10"
+          max="2"
           value={match.score2}
           onChange={(e) => onScoreUpdate(match.id, 2, Number.parseInt(e.target.value) || 0)}
           className="w-16 h-8 text-center"
