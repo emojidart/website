@@ -11,10 +11,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing token" }, { status: 400 })
     }
 
-    // ✅ Bearer aus Header
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization")
     const bearer =
-      authHeader && authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : null
+      authHeader && authHeader.toLowerCase().startsWith("bearer ")
+        ? authHeader.slice(7).trim()
+        : null
 
     if (!bearer) {
       return NextResponse.json({ success: false, error: "Missing bearer token" }, { status: 401 })
@@ -24,7 +25,6 @@ export async function POST(req: NextRequest) {
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-    // ✅ 1) User mit ANON + bearer validieren
     const supabaseAuth = createClient(url, anonKey)
     const { data: userRes, error: userErr } = await supabaseAuth.auth.getUser(bearer)
 
@@ -33,19 +33,29 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = userRes.user.id
-
-    // ✅ 2) Service-Client (RLS umgehen)
     const supabaseService = createClient(url, serviceKey)
+
+    // 1) Prüfen, ob derselbe Token für denselben User und dieselbe Plattform schon existiert
+    const { data: existingExact, error: existingExactErr } = await supabaseService
+      .from("fcm_tokens")
+      .select("token,user_id,platform")
+      .eq("token", token)
+      .eq("user_id", userId)
+      .eq("platform", platform)
+      .maybeSingle()
+
+    if (existingExactErr) {
+      return NextResponse.json({ success: false, error: existingExactErr.message }, { status: 500 })
+    }
+
+    // Wenn exakt derselbe Datensatz schon existiert: NICHT neu schreiben
+    if (existingExact) {
+      return NextResponse.json({ success: true, skipped: true, reason: "unchanged" })
+    }
 
     const now = new Date().toISOString()
 
-    /**
-     * Strategie:
-     *  A) Token sicher speichern (falls Token schon existiert -> user_id & platform aktualisieren)
-     *  B) Danach alle anderen Tokens des Users für dieselbe Plattform löschen
-     */
-
-    // A) Upsert nach token (Token ist global unique)
+    // 2) Token speichern/aktualisieren
     const { error: upsertErr } = await supabaseService
       .from("fcm_tokens")
       .upsert(
@@ -62,7 +72,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: upsertErr.message }, { status: 500 })
     }
 
-    // B) Cleanup: alle anderen Tokens des Users (gleiche Plattform) löschen
+    // 3) Cleanup: andere Tokens desselben Users auf derselben Plattform löschen
     const { error: cleanupErr } = await supabaseService
       .from("fcm_tokens")
       .delete()
@@ -74,7 +84,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: cleanupErr.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, skipped: false })
   } catch (e: any) {
     console.error("[register-fcm] error:", e)
     return NextResponse.json({ success: false, error: e?.message || "Server error" }, { status: 500 })
