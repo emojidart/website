@@ -18,36 +18,32 @@ export async function POST(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // 1) Prüfen, ob exakt derselbe öffentliche Token schon existiert
+    // prüfen, ob exakt derselbe Datensatz schon existiert
     const { data: existingExact, error: existingExactErr } = await supabase
-      .from("fcm_tokens")
-      .select("token,platform,topic,is_public")
+      .from("public_push_tokens")
+      .select("token,platform,topic")
       .eq("token", token)
       .eq("platform", platform)
       .eq("topic", topic)
-      .eq("is_public", true)
       .maybeSingle()
 
     if (existingExactErr) {
       return NextResponse.json({ success: false, error: existingExactErr.message }, { status: 500 })
     }
 
-    // Wenn identisch vorhanden: NICHT neu schreiben
     if (existingExact) {
       return NextResponse.json({ success: true, skipped: true, reason: "unchanged" })
     }
 
     const now = new Date().toISOString()
 
-    // 2) Nur dann schreiben, wenn wirklich neu/geändert
     const { error: upsertErr } = await supabase
-      .from("fcm_tokens")
+      .from("public_push_tokens")
       .upsert(
         {
           token,
           platform,
           topic,
-          is_public: true,
           updated_at: now,
         },
         { onConflict: "token" }
