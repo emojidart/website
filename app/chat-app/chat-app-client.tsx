@@ -459,26 +459,37 @@ const applyInitialSelection = (rooms: TeamRoom[]) => {
   }, [profile?.id])
 
 
-  // Load messages whenever target changes
+
+
 useEffect(() => {
+  if (!currentRoomId) return
+
   fetchMessages()
   markCurrentAsVisited()
 
   // ✅ Team members brauchen TEAM-ID, nicht room-id
-  if (selectedScope === "team" && selectedRoom?.team_id) fetchTeamMembers(selectedRoom.team_id)
-  if (selectedScope !== "team") setTeamMembers([])
+  if (selectedScope === "team" && selectedRoom?.team_id) {
+    fetchTeamMembers(selectedRoom.team_id)
+  } else {
+    setTeamMembers([])
+  }
 
-const unsubMsg = subscribeToMessages()
-const unsubReads = subscribeToReads()
-const unsubPollVotes = subscribeToPollVotes()
+  const unsubMsg = subscribeToMessages()
+  const unsubReads = subscribeToReads()
+  const unsubPollVotes = subscribeToPollVotes()
 
-return () => {
-  unsubMsg()
-  unsubReads()
-  unsubPollVotes()
-}
+  return () => {
+    unsubMsg?.()
+    unsubReads?.()
+    unsubPollVotes?.()
+  }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [selectedRoom?.id, selectedRoom?.team_id, selectedScope, canSeeVorstandChat])
+}, [currentRoomId])
+
+
+
+
+
   
   const canSeeCaptainChat = useMemo(() => {
   
