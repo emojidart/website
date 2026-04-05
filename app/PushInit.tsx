@@ -332,13 +332,18 @@ export default function PushInit() {
         hasAccessToken: !!currentAccessToken,
       })
 
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
-        await syncStoredTokenIfPossible(true)
-      }
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+  await syncStoredTokenIfPossible(false)
+}
+
+// ❌ TOKEN_REFRESHED NICHT MEHR FORCEN!
+if (event === "TOKEN_REFRESHED") {
+  console.log("[push] token refreshed -> skip force sync")
+}
 
       if (event === "SIGNED_OUT") {
         clearLastPrivateSentToken()
-        await syncStoredTokenIfPossible(true)
+        await syncStoredTokenIfPossible(false)
       }
     })
 
