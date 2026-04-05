@@ -99,6 +99,9 @@ export function Header({
     if (user !== undefined) authReadyRef.current = true
   }, [user])
   const authReady = authReadyRef.current
+  
+  
+  
 
   React.useEffect(() => {
     if (!drawerOpen) return
@@ -251,67 +254,15 @@ export function Header({
     if (!authReady) return
     loadChatUnreadCount()
   }, [authReady, loadChatUnreadCount])
+  
+  
+  
 
-  React.useEffect(() => {
-    if (!user?.id) return
 
-    let isMounted = true
-
-    const setup = async () => {
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle()
-
-      if (!isMounted) return
-
-      const profileId = profile?.id
-      if (!profileId) return
-
-      const channel = supabase
-        .channel(`header-chat-unread-${user.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "chat_messages",
-          },
-          async () => {
-            await loadChatUnreadCount()
-          },
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "user_room_visits",
-            filter: `user_id=eq.${profileId}`,
-          },
-          async () => {
-            await loadChatUnreadCount()
-          },
-        )
-        .subscribe()
-
-      return () => {
-        supabase.removeChannel(channel)
-      }
-    }
-
-    let cleanupFn: (() => void) | undefined
-
-    setup().then((cleanup) => {
-      cleanupFn = cleanup
-    })
-
-    return () => {
-      isMounted = false
-      if (cleanupFn) cleanupFn()
-    }
-  }, [user?.id, loadChatUnreadCount])
+  
+  
+  
+  
 
   const drawerSections: Array<{ title: string; items: DrawerItem[] }> = [
     {

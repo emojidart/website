@@ -1479,48 +1479,43 @@ const markMessagesAsRead = async () => {
 
 
 
-  const subscribeToMessages = () => {
-    const roomId = currentRoomId
-    if (!roomId) return () => {}
+const subscribeToMessages = () => {
+  const roomId = currentRoomId
+  if (!roomId) return () => {}
 
-    const channel = supabase
-      .channel(`chat_messages_${roomId}_${selectedScope}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `room_id=eq.${roomId}`,
-        },
-        async (payload) => {
-          const incoming = payload.new as any
-          if ((incoming.scope as ChatScope) !== selectedScope) return
+  const channel = supabase
+    .channel(`chat_messages_${roomId}_${selectedScope}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "chat_messages",
+        filter: `room_id=eq.${roomId}`,
+      },
+      (payload) => {
+        const incoming = payload.new as any
+        if ((incoming.scope as ChatScope) !== selectedScope) return
 
-          const { data: prof } = await supabase.from("user_profiles").select("player_id").eq("id", incoming.user_id).maybeSingle()
+        // ❌ KEINE zusätzlichen DB Calls mehr!
+        setMessages((prev) => [...prev, incoming])
 
-          let sender: { name: string; photo_url: string | null } | null = null
-          const playerId = (prof as any)?.player_id
-          if (playerId) {
-            const { data: cp } = await supabase.from("club_players").select("name,photo_url").eq("id", playerId).maybeSingle()
-            if (cp) sender = { name: (cp as any).name, photo_url: (cp as any).photo_url ?? null }
-          }
+        if (incoming.user_id !== profile?.id) {
+          fetchUnreadCounts(chatRooms)
+        }
+      },
+    )
+    .subscribe()
 
-          setMessages((prev) => [...prev, { ...incoming, sender_player_id: playerId ?? null, sender }])
-		  
-		  
-
-          if (incoming.user_id !== profile?.id) {
-            fetchUnreadCounts(chatRooms)
-          }
-        },
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
+  return () => {
+    supabase.removeChannel(channel)
   }
+}
+  
+  
+  
+  
+  
   
   
 const subscribeToReads = () => {
