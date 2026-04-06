@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { VsIntroOverlay } from "@/components/vs-intro-overlay"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { RotateCcw, Check, Volume2 } from "lucide-react"
+import { RotateCcw, Check, Volume2, Activity, Clock3, Radio, Trophy } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSpeechAnnouncer } from "@/components/speech-announcer"
@@ -24,6 +24,7 @@ interface Match {
   loser?: string
   machineNumber?: number
   callCount?: number // Added callCount for repeat announcements
+  _localUpdate?: boolean
 }
 
 interface TournamentBracketProps {
@@ -568,118 +569,150 @@ export default function TournamentBracket({ bracketSize = 16, tournamentType = "
 
 
 
-  useEffect(() => {
-    // Prevent save loops on realtime updates
-    if (isRemoteUpdateRef.current) {
-      isRemoteUpdateRef.current = false
-      return
-    }
+useEffect(() => {
+  if (isRemoteUpdateRef.current) {
+    return
+  }
 
-    if (!loading && tournamentId) {
-      const timeoutId = setTimeout(() => {
-        saveMatchStatesToDatabase(matches, tournamentType, tournamentId, playerIdMap)
-      }, 1000)
+  if (!loading && tournamentId) {
+    const timeoutId = setTimeout(async () => {
+      await saveMatchStatesToDatabase(matches, tournamentType, tournamentId, playerIdMap)
 
-      return () => clearTimeout(timeoutId)
-    }
-  }, [matches, tournamentType, tournamentId, loading, playerIdMap])
+      setMatches((prev) => {
+        let changed = false
+        const cleaned: Record<number, Match> = {}
 
-
-  // Realtime: when players enter results in the LIVE view, progress the bracket here (admin view) too.
-  useEffect(() => {
-    if (loading || !tournamentId) return
-
-    const channel = supabase
-      .channel(`dko_match_states_${tournamentType}_${tournamentId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "dko_match_states",
-          filter: `tournament_id=eq.${tournamentId}`,
-        },
-        (payload: any) => {
-          const record = payload?.new
-          if (!record) return
-          if (record.tournament_type && record.tournament_type !== tournamentType) return
-
-          isRemoteUpdateRef.current = true
-
-          let progressedMatches: Record<number, Match> | null = null
-          let didProgress = false
-
-          setMatches((prev) => {
-            const next = { ...prev }
-            const prevMatch = next[record.match_id] || {
-              id: record.match_id,
-              player1: "",
-              player2: "",
-              score1: 0,
-              score2: 0,
-              callCount: 1,
+        Object.entries(prev).forEach(([key, match]) => {
+          const numKey = Number(key)
+          if (match._localUpdate) {
+            changed = true
+            cleaned[numKey] = {
+              ...match,
+              _localUpdate: false,
             }
+          } else {
+            cleaned[numKey] = match
+          }
+        })
 
-            const wasFinished = Boolean(prevMatch.winner)
-            const isFinishedNow = Boolean(record.winner)
+        return changed ? cleaned : prev
+      })
+    }, 1000)
 
+    return () => clearTimeout(timeoutId)
+  }
+}, [matches, tournamentType, tournamentId, loading, playerIdMap])
+
+
+
+
+
+// Realtime: when players enter results in the LIVE view, progress the bracket here (admin view) too.
+useEffect(() => {
+  if (loading || !tournamentId) return
+
+  const channel = supabase
+    .channel(`dko_match_states_${tournamentType}_${tournamentId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "dko_match_states",
+        filter: `tournament_id=eq.${tournamentId}`,
+      },
+      (payload: any) => {
+        const record = payload?.new
+        if (!record) return
+        if (record.tournament_type && record.tournament_type !== tournamentType) return
+
+        // Während lokal bestätigt/gespeichert wird -> Realtime kurz ignorieren
+        if (isRemoteUpdateRef.current) return
+
+        let progressedMatches: Record<number, Match> | null = null
+        let didProgress = false
+
+        setMatches((prev) => {
+          const next = { ...prev }
+          const prevMatch = next[record.match_id] || {
+            id: record.match_id,
+            player1: "",
+            player2: "",
+            score1: 0,
+            score2: 0,
+            callCount: 1,
+          }
+
+          // Wenn dieses Match lokal gerade bearbeitet wird -> NICHT überschreiben
+          if ((prevMatch as any)?._localUpdate) {
+            return prev
+          }
+
+          const wasFinished = Boolean(prevMatch.winner)
+          const isFinishedNow = Boolean(record.winner)
+
+          next[record.match_id] = {
+            ...prevMatch,
+            id: record.match_id,
+            player1: record.player1 || "",
+            player2: record.player2 || "",
+            score1: record.score1 || 0,
+            score2: record.score2 || 0,
+            winner: record.winner || undefined,
+            loser: record.loser || undefined,
+            machineNumber: record.machine_number || undefined,
+            callCount: record.call_count || prevMatch.callCount || 1,
+            _localUpdate: false,
+          }
+
+          // Only auto-progress once: when a match transitions from "no winner" -> "has winner"
+          if (!wasFinished && isFinishedNow && record.winner && record.loser) {
             next[record.match_id] = {
-              ...prevMatch,
-              id: record.match_id,
-              player1: record.player1 || "",
-              player2: record.player2 || "",
-              score1: record.score1 || 0,
-              score2: record.score2 || 0,
-              winner: record.winner || undefined,
-              loser: record.loser || undefined,
-              machineNumber: record.machine_number || undefined,
-              // keep callCount as-is (or defaulted above)
+              ...next[record.match_id],
+              machineNumber: undefined,
+              callCount: 1,
+              _localUpdate: false,
             }
 
-            // Only auto-progress once: when a match transitions from "no winner" -> "has winner"
-            if (!wasFinished && isFinishedNow && record.winner && record.loser) {
-              // Clear machine/call info locally
-              next[record.match_id] = {
-                ...next[record.match_id],
-                machineNumber: undefined,
-                callCount: 1,
-              }
-
-              if (record.match_id === 30) {
-                if (record.winner === next[30].player1) {
-                  // Winner's bracket player wins the grand final
-                  saveFinalRankings(record.winner, record.loser, tournamentType, tournamentId, tournamentName)
-                } else {
-                  // Loser's bracket player wins -> bracket reset match 31
-                  next[31].player1 = next[30].player1
-                  next[31].player2 = next[30].player2
-                }
-              } else if (record.match_id === 31) {
+            if (record.match_id === 30) {
+              if (record.winner === next[30].player1) {
                 saveFinalRankings(record.winner, record.loser, tournamentType, tournamentId, tournamentName)
               } else {
-                progressPlayers(next, record.match_id, record.winner, record.loser)
-                trackPlayerElimination(next, record.loser, tournamentType, tournamentId, tournamentName, bracketSize)
+                next[31].player1 = next[30].player1
+                next[31].player2 = next[30].player2
               }
-
-              didProgress = true
-              progressedMatches = next
+            } else if (record.match_id === 31) {
+              saveFinalRankings(record.winner, record.loser, tournamentType, tournamentId, tournamentName)
+            } else {
+              progressPlayers(next, record.match_id, record.winner, record.loser)
+              trackPlayerElimination(next, record.loser, tournamentType, tournamentId, tournamentName, bracketSize)
             }
 
-            return next
-          })
-
-          if (didProgress && progressedMatches) {
-            // Persist derived progression without triggering save loops
-            saveMatchStatesToDatabase(progressedMatches, tournamentType, tournamentId, playerIdMap)
+            didProgress = true
+            progressedMatches = next
           }
-        },
-      )
-      .subscribe()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [loading, tournamentId, tournamentType, tournamentName, bracketSize, playerIdMap])
+          return next
+        })
+
+        if (didProgress && progressedMatches) {
+          saveMatchStatesToDatabase(progressedMatches, tournamentType, tournamentId, playerIdMap)
+        }
+      },
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [
+  loading,
+  tournamentId,
+  tournamentType,
+  tournamentName,
+  bracketSize,
+  playerIdMap,
+])
   useEffect(() => {
     if (loading || !tournamentId) return
 
@@ -1076,17 +1109,26 @@ export default function TournamentBracket({ bracketSize = 16, tournamentType = "
   }
 
   const updateScore = (matchId: number, player: 1 | 2, score: number) => {
-    setMatches((prev) => ({
+  setMatches((prev) => {
+    const match = prev[matchId]
+    if (!match) return prev
+
+    return {
       ...prev,
       [matchId]: {
-        ...prev[matchId],
-        [player === 1 ? "score1" : "score2"]: score,
+        ...match,
+        _localUpdate: true,
+        score1: player === 1 ? score : match.score1,
+        score2: player === 2 ? score : match.score2,
       },
-    }))
-  }
+    }
+  })
+}
 
   const confirmMatch = (matchId: number) => {
-    setMatches((prev) => {
+  isRemoteUpdateRef.current = true
+
+  setMatches((prev) => {
       const newMatches = { ...prev }
       const match = { ...newMatches[matchId] }
 
@@ -1123,9 +1165,17 @@ export default function TournamentBracket({ bracketSize = 16, tournamentType = "
         trackPlayerElimination(newMatches, match.loser, tournamentType, tournamentId, tournamentName, bracketSize)
       }
 
-      return newMatches
+           return newMatches
     })
+
+    setTimeout(() => {
+      isRemoteUpdateRef.current = false
+    }, 500)
   }
+  
+  
+  
+  
 
   const progressPlayers = (allMatches: Record<number, Match>, matchId: number, winner: string, loser: string) => {
     console.log(`[v0] ========== PROGRESSING PLAYERS ==========`)
@@ -1669,6 +1719,21 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
   }, [searchParams, bracketSize, tournamentType])
 
   const availableMachines = getAvailableMachines()
+  
+    const allMatches = Object.values(matches)
+  const activeLiveMatches = allMatches
+    .filter((match) => match.player1 && match.player2 && !match.winner && match.machineNumber)
+    .sort((a, b) => (a.machineNumber || 0) - (b.machineNumber || 0))
+  const readyMatches = allMatches.filter((match) => match.player1 && match.player2 && !match.winner && !match.machineNumber)
+  const completedMatches = allMatches.filter((match) => Boolean(match.winner))
+  const liveMachineNumbers = activeLiveMatches
+    .map((match) => match.machineNumber)
+    .filter((value): value is number => Boolean(value))
+  const totalMatchCount = 31
+  const completedCount = completedMatches.length
+  const remainingCount = Math.max(totalMatchCount - completedCount, 0)
+  const liveCompletion = Math.round((completedCount / totalMatchCount) * 100)
+  const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.player1 ? matches[30]?.winner : undefined)
 
   if (loading) {
     return (
@@ -1708,7 +1773,232 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
         </div>
 
-        <div className="space-y-8">
+                <div className="space-y-8">
+          <Card className="border-2 border-red-100 bg-gradient-to-br from-white via-red-50/40 to-orange-50 shadow-lg">
+            <div className="space-y-6 p-5 md:p-6">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-white">
+                      LIVE Center
+                    </span>
+                    <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
+                      Alles Wichtige auf einen Blick
+                    </span>
+                  </div>
+                  <h2 className="mt-3 text-2xl font-bold text-slate-900">Turnierstatus & aktuelle Spiele</h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Hier siehst du sofort, welche Matches gerade laufen, welche direkt gestartet werden können und wie weit das Turnier bereits fortgeschritten ist.
+                  </p>
+                </div>
+
+                <div className="w-full xl:max-w-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between text-sm text-slate-600">
+                      <span>Turnier-Fortschritt</span>
+                      <span className="font-semibold text-slate-900">{liveCompletion}%</span>
+                    </div>
+                    <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
+                      <div
+                        className="h-full rounded-full bg-orange-500 transition-all duration-500"
+                        style={{ width: `${liveCompletion}%` }}
+                      />
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-700">
+                      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                        <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Fertig</div>
+                        <div className="mt-1 font-semibold">{completedCount} von {totalMatchCount} Matches</div>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-right">
+                        <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                          {winnerName ? "Sieger" : "Offen"}
+                        </div>
+                        <div className="mt-1 font-semibold">{winnerName ? winnerName : `${remainingCount} Matches`}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600">LIVE Matches</span>
+                    <Activity className="h-4 w-4 text-red-500" />
+                  </div>
+                  <div className="mt-2 text-3xl font-bold">{activeLiveMatches.length}</div>
+                  <p className="mt-1 text-xs text-slate-500">Aktuell auf Automaten gestartet</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600">Bereit</span>
+                    <Clock3 className="h-4 w-4 text-orange-500" />
+                  </div>
+                  <div className="mt-2 text-3xl font-bold">{readyMatches.length}</div>
+                  <p className="mt-1 text-xs text-slate-500">Sofort startbare Matches</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600">Frei</span>
+                    <Radio className="h-4 w-4 text-slate-500" />
+                  </div>
+                  <div className="mt-2 text-3xl font-bold">{availableMachines.length}</div>
+                  <p className="mt-1 text-xs text-slate-500">Verfügbare Automaten</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600">Abgeschlossen</span>
+                    <Trophy className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div className="mt-2 text-3xl font-bold">{completedMatches.length}</div>
+                  <p className="mt-1 text-xs text-slate-500">Bereits bestätigte Matches</p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+                <div className="rounded-2xl border border-red-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="font-semibold text-lg">Gerade LIVE</h3>
+                    <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                      {liveMachineNumbers.length > 0 ? `Automaten ${liveMachineNumbers.join(", ")}` : "Noch kein Spiel gestartet"}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {activeLiveMatches.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600">
+                        Noch kein LIVE-Match aktiv. Starte ein Match und es erscheint sofort hier oben.
+                      </div>
+                    ) : (
+                      activeLiveMatches.map((match) => {
+                        const canConfirmLive = match.score1 !== match.score2 && (match.score1 > 0 || match.score2 > 0)
+                        const nextCall = Math.min((match.callCount || 1) + 1, 3)
+
+                        return (
+                          <div
+                            key={match.id}
+                            className="rounded-2xl border border-red-200 bg-red-50/40 px-4 py-4 shadow-sm"
+                          >
+                            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                              <div>
+                                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+                                  <span>Match {match.id}</span>
+                                  <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-white">
+                                    LIVE
+                                  </span>
+                                </div>
+                                <div className="mt-1 text-base font-semibold">
+                                  {match.player1} <span className="text-slate-400">vs.</span> {match.player2}
+                                </div>
+                                <div className="mt-2">
+                                  <span className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600">
+                                    Automat {match.machineNumber}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3 md:w-[190px]">
+                                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                  <div className="truncate text-xs text-slate-500">{match.player1}</div>
+                                  <Input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={2}
+                                    value={match.score1 > 0 ? String(match.score1) : ""}
+                                    onChange={(e) =>
+                                      updateScore(match.id, 1, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)
+                                    }
+                                    className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
+                                  />
+                                </div>
+                                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                  <div className="truncate text-xs text-slate-500">{match.player2}</div>
+                                  <Input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={2}
+                                    value={match.score2 > 0 ? String(match.score2) : ""}
+                                    onChange={(e) =>
+                                      updateScore(match.id, 2, Number(e.target.value.replace(/\D/g, "").slice(0, 2)) || 0)
+                                    }
+                                    className="mt-2 h-10 w-14 border-slate-200 bg-slate-50 px-0 text-center text-base font-bold text-slate-900"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {(match.callCount || 1) < 3 && (
+                                <Button
+                                  onClick={() => handleRepeatCall(match.id)}
+                                  variant="outline"
+                                  className="border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
+                                >
+                                  {nextCall}. Aufruf
+                                </Button>
+                              )}
+
+                              <Button
+                                onClick={() => confirmMatch(match.id)}
+                                disabled={!canConfirmLive}
+                                className="bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                              >
+                                Bestätigen
+                              </Button>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="font-semibold text-lg">Bereit zum Start</h3>
+                    <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700">
+                      {readyMatches.length} offen
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {readyMatches.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600">
+                        Aktuell ist kein weiteres Match startklar.
+                      </div>
+                    ) : (
+                      readyMatches.slice(0, 6).map((match) => (
+                        <div
+                          key={match.id}
+                          className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Match {match.id}</div>
+                              <div className="mt-1 font-semibold text-slate-900">
+                                {match.player1} <span className="text-slate-400">vs.</span> {match.player2}
+                              </div>
+                            </div>
+
+                            <Button
+                              onClick={() => startMatch(match.id)}
+                              className="bg-orange-500 text-white hover:bg-orange-600"
+                            >
+                              Starten
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-orange-600 border-b-2 border-orange-600 pb-2">Runde 1</h2>
             {[...Array(bracketSize / 2)].map((_, i) => (
