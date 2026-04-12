@@ -247,6 +247,14 @@ const fileInputRef = useRef<HTMLInputElement>(null)
 
   // selectedScope determines which chat is shown
   const [selectedScope, setSelectedScope] = useState<ChatScope>("team")
+  
+    const currentRoomId = useMemo(() => {
+    if (selectedScope === "club") return CLUB_ROOM_ID
+    if (selectedScope === "freizeit") return FREIZEIT_ROOM_ID
+    if (selectedScope === "vorstand") return VORSTAND_ROOM_ID
+    if (selectedScope === "captains") return CAPTAINS_ROOM_ID
+    return selectedRoom?.id ?? null // ✅ chat_rooms.id
+  }, [selectedScope, selectedRoom?.id])
 
   const [roomsLoading, setRoomsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -499,13 +507,7 @@ useEffect(() => {
   
   
 
-  const currentRoomId = useMemo(() => {
-    if (selectedScope === "club") return CLUB_ROOM_ID
-    if (selectedScope === "freizeit") return FREIZEIT_ROOM_ID
-    if (selectedScope === "vorstand") return VORSTAND_ROOM_ID
-    if (selectedScope === "captains") return CAPTAINS_ROOM_ID
-    return selectedRoom?.id ?? null // ✅ chat_rooms.id
-  }, [selectedScope, selectedRoom?.id])
+
   
   
   useEffect(() => {
