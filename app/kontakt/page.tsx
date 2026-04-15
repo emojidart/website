@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Phone, Mail, Clock, Navigation, ExternalLink, X } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { MapPin, Phone, Mail, Clock, Navigation, ExternalLink } from "lucide-react"
+import { motion } from "framer-motion"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -21,112 +20,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 110, damping: 14 } },
 }
 
-function EasterNieteEgg({ visible }: { visible: boolean }) {
-  const [showPopup, setShowPopup] = useState(false)
-
-  return (
-    <>
-      <div className="h-28 sm:h-36" />
-
-      <div className="relative h-24 sm:h-28">
-        <AnimatePresence>
-          {visible && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.85, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              transition={{ duration: 0.3 }}
-              onClick={() => setShowPopup(true)}
-              type="button"
-              aria-label="Verstecktes Osterei"
-              className="absolute left-4 sm:left-6 bottom-1 sm:bottom-2 z-10"
-            >
-              <motion.img
-                src="/easter/egg-5.png"
-                alt="Verstecktes Osterei"
-                className="w-9 h-9 sm:w-11 sm:h-11 drop-shadow-md select-none"
-                animate={{ y: [0, -3, 0] }}
-                transition={{ duration: 1.7, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <AnimatePresence>
-        {showPopup && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-4"
-            onClick={() => setShowPopup(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 30, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.98 }}
-              transition={{ duration: 0.22 }}
-              className="w-full max-w-sm rounded-3xl border border-orange-200 bg-white shadow-2xl overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-
-              <div className="p-5 relative">
-                <button
-                  type="button"
-                  onClick={() => setShowPopup(false)}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600"
-                  aria-label="Schließen"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-
-                <div className="flex flex-col items-center text-center pt-2">
-                  <img
-                    src="/easter/egg-5.png"
-                    alt="Nieten-Ei"
-                    className="w-16 h-16 mb-3 drop-shadow-md"
-                  />
-                  <p className="text-lg font-black text-gray-900">Niete</p>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Leider kein Gewinn auf dieser Seite.
-                  </p>
-                  <p className="text-sm font-semibold text-orange-600 mt-1">
-                    Bitte weitersuchen.
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPopup(false)}
-                    className="mt-5 inline-flex items-center justify-center rounded-2xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-orange-600 transition"
-                  >
-                    Weiter
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  )
-}
-
 export default function KontaktPage() {
-  const [now, setNow] = useState<number | null>(null)
-
-  useEffect(() => {
-    const updateTime = () => setNow(Date.now())
-    updateTime()
-
-    const interval = setInterval(updateTime, 1000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const eggVisibleAt = new Date("2026-04-05T08:00:00+02:00").getTime()
-  const isEggVisible = now !== null && now >= eggVisibleAt
-
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
       <Header />
@@ -317,8 +211,6 @@ export default function KontaktPage() {
               </CardContent>
             </Card>
           </motion.div>
-
-          <EasterNieteEgg visible={isEggVisible} />
         </motion.div>
       </main>
 

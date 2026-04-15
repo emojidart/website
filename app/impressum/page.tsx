@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { Scale, X } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { Scale } from "lucide-react"
+import { motion } from "framer-motion"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -20,33 +19,17 @@ const itemVariants = {
 }
 
 export default function ImpressumPage() {
-  const [now, setNow] = useState<number | null>(null)
-  const [showNietePopup, setShowNietePopup] = useState(false)
-
-  useEffect(() => {
-    const updateTime = () => setNow(Date.now())
-
-    updateTime()
-
-    const interval = setInterval(updateTime, 1000)
-    return () => clearInterval(interval)
-  }, [])
-
- 
-  const eggVisibleAt = new Date("2026-04-05T08:00:00+02:00").getTime()
-  const isEggVisible = now !== null && now >= eggVisibleAt
-
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-28 overflow-x-hidden relative">
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
       <Header />
 
-      <main className="pt-12 sm:pt-14">
-        <motion.div
-          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
+     <main className="pt-12 sm:pt-14">
+  <motion.div
+    className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+    variants={containerVariants}
+    initial="hidden"
+    animate="visible"
+  >
           {/* App Header Card */}
           <motion.div variants={itemVariants} className="mb-6">
             <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -153,89 +136,6 @@ export default function ImpressumPage() {
           </div>
         </motion.div>
       </main>
-
-      {/* */}
-      <AnimatePresence>
-        {isEggVisible && (
-          <>
-            <motion.button
-              initial={{ opacity: 0, y: 30, scale: 0.85 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              transition={{ duration: 0.35 }}
-              onClick={() => setShowNietePopup(true)}
-              className="fixed left-1/2 -translate-x-1/2 bottom-24 z-40 select-none"
-              aria-label="Verstecktes Osterei"
-              type="button"
-            >
-              <motion.img
-                src="/easter/egg-1.png"
-                alt="Verstecktes Osterei"
-                className="w-10 h-10 sm:w-12 sm:h-12 drop-shadow-lg"
-                animate={{ y: [0, -4, 0] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </motion.button>
-
-            <AnimatePresence>
-              {showNietePopup && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-4"
-                  onClick={() => setShowNietePopup(false)}
-                >
-                  <motion.div
-                    initial={{ opacity: 0, y: 30, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 20, scale: 0.98 }}
-                    transition={{ duration: 0.22 }}
-                    className="w-full max-w-sm rounded-3xl border border-orange-200 bg-white shadow-2xl overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-
-                    <div className="p-5 relative">
-                      <button
-                        type="button"
-                        onClick={() => setShowNietePopup(false)}
-                        className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600"
-                        aria-label="Schließen"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-
-                      <div className="flex flex-col items-center text-center pt-2">
-                        <img
-                          src="/easter/egg-1.png"
-                          alt="Nieten-Ei"
-                          className="w-16 h-16 mb-3 drop-shadow-md"
-                        />
-                        <p className="text-lg font-black text-gray-900">Niete</p>
-                        <p className="text-sm text-gray-600 mt-2">
-                          Dieses Ei war leider nichts.
-                        </p>
-                        <p className="text-sm font-semibold text-orange-600 mt-1">
-                          Bitte weitersuchen.
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={() => setShowNietePopup(false)}
-                          className="mt-5 inline-flex items-center justify-center rounded-2xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-orange-600 transition"
-                        >
-                          Weiter
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </>
-        )}
-      </AnimatePresence>
 
       <MobileBottomNav />
     </div>

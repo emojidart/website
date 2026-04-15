@@ -219,11 +219,6 @@ export default function TrainingPage() {
   const [teamStats, setTeamStats] = useState<TeamMemberStats[]>([])
   const [loadingTeamStats, setLoadingTeamStats] = useState(false)
   const [progressView, setProgressView] = useState<"my-progress" | "team-progress">("my-progress")
-  const [now, setNow] = useState<number | null>(null)
-const [showEgg058Dialog, setShowEgg058Dialog] = useState(false)
-
-const eggVisibleAt = new Date("2026-04-05T08:00:00+02:00").getTime()
-const isEggVisible = now !== null && now >= eggVisibleAt
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -252,16 +247,6 @@ const isEggVisible = now !== null && now >= eggVisibleAt
       loadTeamStats()
     }
   }, [progressView])
-  
-  useEffect(() => {
-  const updateTime = () => setNow(Date.now())
-  updateTime()
-
-  const interval = setInterval(updateTime, 1000)
-  return () => clearInterval(interval)
-}, [])
-  
-  
 
   const loadTrainingSessions = async () => {
     if (!session?.user) return
@@ -1273,64 +1258,44 @@ const isEggVisible = now !== null && now >= eggVisibleAt
             </Tabs>
           </TabsContent>
 
-         <TabsContent value="tips" className="space-y-4">
-  <Card className="border-2 border-orange-200 bg-gradient-to-br from-orange-50 via-white to-red-50">
-    <CardHeader>
-      <CardTitle className="text-xl flex items-center gap-2">
-        <Trophy className="h-6 w-6 text-orange-600" />
-        Profi-Tipps für besseres Dart
-      </CardTitle>
-      <CardDescription className="text-xs leading-relaxed">
-        Bewährte Methoden und Techniken von professionellen Dart-Spielern
-      </CardDescription>
-    </CardHeader>
-  </Card>
+          <TabsContent value="tips" className="space-y-4">
+            <Card className="border-2 border-orange-200 bg-gradient-to-br from-orange-50 via-white to-red-50">
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Trophy className="h-6 w-6 text-orange-600" />
+                  Profi-Tipps für besseres Dart
+                </CardTitle>
+                <CardDescription className="text-xs leading-relaxed">
+                  Bewährte Methoden und Techniken von professionellen Dart-Spielern
+                </CardDescription>
+              </CardHeader>
+            </Card>
 
-  {trainingTips.map((section, idx) => (
-    <Card key={idx} className="border-l-4 border-l-orange-500">
-      <CardHeader>
-        <CardTitle className="text-lg text-orange-700">{section.category}</CardTitle>
-      </CardHeader>
-
-      <CardContent>
-        <div className="grid grid-cols-1 gap-3">
-          {section.tips.map((tip, tipIdx) => (
-            <div
-              key={tipIdx}
-              className="p-4 bg-white rounded-xl border border-orange-100 shadow-sm"
-            >
-              <div className="flex items-start gap-3">
-                <div className="text-2xl flex-shrink-0">{tip.icon}</div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">{tip.title}</h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">{tip.description}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {section.category === "Trainingsplan" && isEggVisible && (
-          <div className="mt-5 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setShowEgg058Dialog(true)}
-              aria-label="Verstecktes Osterei"
-              className="group"
-            >
-              <img
-                src="/easter/egg-7.png"
-                alt="Verstecktes Osterei"
-                className="w-10 h-10 sm:w-12 sm:h-12 drop-shadow-md transition-transform duration-200 group-hover:scale-110"
-              />
-            </button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  ))}
-
-	
+            {trainingTips.map((section, idx) => (
+              <Card key={idx} className="border-l-4 border-l-orange-500">
+                <CardHeader>
+                  <CardTitle className="text-lg text-orange-700">{section.category}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-3">
+                    {section.tips.map((tip, tipIdx) => (
+                      <div
+                        key={tipIdx}
+                        className="p-4 border-2 rounded-lg hover:border-orange-300 hover:shadow-md transition-all bg-white"
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="text-2xl flex-shrink-0">{tip.icon}</div>
+                          <div className="space-y-1">
+                            <h4 className="font-bold text-sm text-gray-900">{tip.title}</h4>
+                            <p className="text-gray-700 leading-relaxed text-xs">{tip.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
 
             <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white">
               <CardHeader>
@@ -1485,32 +1450,6 @@ const isEggVisible = now !== null && now >= eggVisibleAt
         </Tabs>
 		</div>
       </main>
-	  
-	  <AlertDialog open={showEgg058Dialog} onOpenChange={setShowEgg058Dialog}>
-  <AlertDialogContent className="rounded-3xl border border-orange-200 bg-white">
-    <AlertDialogHeader>
-      <AlertDialogTitle className="text-center text-2xl font-black text-orange-600">
-        Code gefunden
-      </AlertDialogTitle>
-      <AlertDialogDescription asChild>
-        <div className="text-center">
-          <img
-            src="/easter/egg-7.png"
-            alt="Gefundenes Osterei"
-            className="w-20 h-20 mx-auto mb-4 drop-shadow-md"
-          />
-          <p className="text-sm text-gray-600 mb-2">Du hast das richtige Ei gefunden.</p>
-          <p className="text-4xl font-black tracking-widest text-gray-900">058</p>
-        </div>
-      </AlertDialogDescription>
-    </AlertDialogHeader>
-    <AlertDialogFooter>
-      <AlertDialogAction className="w-full rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black">
-        Weiter
-      </AlertDialogAction>
-    </AlertDialogFooter>
-  </AlertDialogContent>
-</AlertDialog>
 
       <MobileBottomNav />
 

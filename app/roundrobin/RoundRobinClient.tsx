@@ -67,6 +67,7 @@ type MatchState = {
   loser?: string
   machineNumber?: number
   callCount?: number
+  _localUpdate?: boolean
 }
 
 type Qualifier = {
@@ -287,7 +288,7 @@ export default function RoundRobinClient() {
           const tt = record.tournament_type
           if (tt !== tournamentTypeGroup && tt !== tournamentTypePlayoff) return
 
-          isRemoteUpdateRef.current = true
+         
 
           const mid = Number(record.match_id)
           const st: MatchState = {
@@ -304,11 +305,43 @@ export default function RoundRobinClient() {
             callCount: record.callCount ?? undefined,
           }
 
-          if (tt === tournamentTypePlayoff) {
-            setPlayoffStates((prev) => ({ ...prev, [mid]: st }))
-          } else {
-            setMatchStates((prev) => ({ ...prev, [mid]: st }))
-          }
+         if (tt === tournamentTypePlayoff) {
+  setPlayoffStates((prev) => {
+    const prevMatch = prev[mid]
+
+    if (prevMatch?._localUpdate) {
+      return prev
+    }
+
+    return {
+      ...prev,
+      [mid]: {
+        ...st,
+        score1: record.score1 ?? prevMatch?.score1 ?? 0,
+        score2: record.score2 ?? prevMatch?.score2 ?? 0,
+        _localUpdate: false,
+      },
+    }
+  })
+} else {
+  setMatchStates((prev) => {
+    const prevMatch = prev[mid]
+
+    if (prevMatch?._localUpdate) {
+      return prev
+    }
+
+    return {
+      ...prev,
+      [mid]: {
+        ...st,
+        score1: record.score1 ?? prevMatch?.score1 ?? 0,
+        score2: record.score2 ?? prevMatch?.score2 ?? 0,
+        _localUpdate: false,
+      },
+    }
+  })
+}
         },
       )
       .subscribe()
@@ -348,9 +381,29 @@ export default function RoundRobinClient() {
         if (rows.length === 0) return
 
         const { error } = await supabase.from("dko_match_states").upsert(rows, {
-          onConflict: "tournament_type,tournament_id,match_id",
-        })
-        if (error) throw error
+  onConflict: "tournament_type,tournament_id,match_id",
+})
+if (error) throw error
+
+setMatchStates((prev) => {
+  let changed = false
+  const next: Record<number, MatchState> = {}
+
+  Object.entries(prev).forEach(([key, match]) => {
+    const id = Number(key)
+    if (match._localUpdate) {
+      changed = true
+      next[id] = {
+        ...match,
+        _localUpdate: false,
+      }
+    } else {
+      next[id] = match
+    }
+  })
+
+  return changed ? next : prev
+})
       } catch (e) {
         console.error("[RR] save error:", e)
       }
@@ -389,9 +442,29 @@ export default function RoundRobinClient() {
         if (rows.length === 0) return
 
         const { error } = await supabase.from("dko_match_states").upsert(rows, {
-          onConflict: "tournament_type,tournament_id,match_id",
-        })
-        if (error) throw error
+  onConflict: "tournament_type,tournament_id,match_id",
+})
+if (error) throw error
+
+setPlayoffStates((prev) => {
+  let changed = false
+  const next: Record<number, MatchState> = {}
+
+  Object.entries(prev).forEach(([key, match]) => {
+    const id = Number(key)
+    if (match._localUpdate) {
+      changed = true
+      next[id] = {
+        ...match,
+        _localUpdate: false,
+      }
+    } else {
+      next[id] = match
+    }
+  })
+
+  return changed ? next : prev
+})
       } catch (e) {
         console.error("[RR] playoff save error:", e)
       }
@@ -584,74 +657,47 @@ export default function RoundRobinClient() {
   }, [groups.length])
 
   const neededQualifierCount = useMemo(() => playoffSize, [playoffSize])
+  
+  
 
-  const qualifiedFinalists = useMemo(() => {
-    // 1) nimm qualifiersPerGroup je Gruppe
-    let base = [...qualifiers]
+const qualifiedFinalists = useMemo(() => {
+  const perGroup = Math.max(1, Math.min(4, qualifiersPerGroup || 2))
+  const groupOrder = [...groups].sort((a, b) => a.group_no - b.group_no)
 
-    // 2) wenn zu viele -> truncate nach Platz und tie-break
-    base.sort((a, b) => {
-      // zuerst place (1 besser als 2), dann points, dann legs diff, dann legsFor
-      if (a.place !== b.place) return a.place - b.place
-      if (b.points !== a.points) return b.points - a.points
+  const list: Qualifier[] = []
+
+  groupOrder.forEach((g) => {
+    const rows = Object.values(standingsByGroup[g.id] || {}).sort((a, b) => {
+      const pa = ptsFrom(a.w)
+      const pb = ptsFrom(b.w)
       const da = a.legsFor - a.legsAgainst
       const db = b.legsFor - b.legsAgainst
+
+      if (pb !== pa) return pb - pa
       if (db !== da) return db - da
       if (b.legsFor !== a.legsFor) return b.legsFor - a.legsFor
       return a.name.localeCompare(b.name)
     })
 
-    if (base.length > neededQualifierCount) base = base.slice(0, neededQualifierCount)
-
-    // 3) wenn zu wenige -> Wildcards (beste "restlichen" Plätze)
-    if (base.length < neededQualifierCount) {
-      // finde restliche kandidaten (platz > qualifiersPerGroup)
-      const rest: Qualifier[] = []
-      const groupOrder = [...groups].sort((a, b) => a.group_no - b.group_no)
-      groupOrder.forEach((g) => {
-        const rows = Object.values(standingsByGroup[g.id] || {}).sort((a, b) => {
-          const pa = ptsFrom(a.w)
-          const pb = ptsFrom(b.w)
-          const da = a.legsFor - a.legsAgainst
-          const db = b.legsFor - b.legsAgainst
-          if (pb !== pa) return pb - pa
-          return db - da
-        })
-        rows.forEach((r, idx) => {
-          const place = idx + 1
-          if (place > Math.max(1, Math.min(4, qualifiersPerGroup || 2))) {
-            rest.push({
-              name: r.name,
-              player_id: r.player_id ?? null,
-              group_id: g.id,
-              group_no: g.group_no,
-              place,
-              points: ptsFrom(r.w),
-              legsFor: r.legsFor,
-              legsAgainst: r.legsAgainst,
-            })
-          }
-        })
+    rows.slice(0, perGroup).forEach((r, idx) => {
+      list.push({
+        name: r.name,
+        player_id: r.player_id ?? null,
+        group_id: g.id,
+        group_no: g.group_no,
+        place: idx + 1,
+        points: ptsFrom(r.w),
+        legsFor: r.legsFor,
+        legsAgainst: r.legsAgainst,
       })
+    })
+  })
 
-      rest.sort((a, b) => {
-        // beste Wildcards: points -> legs diff -> legsFor
-        if (b.points !== a.points) return b.points - a.points
-        const da = a.legsFor - a.legsAgainst
-        const db = b.legsFor - b.legsAgainst
-        if (db !== da) return db - da
-        if (b.legsFor !== a.legsFor) return b.legsFor - a.legsFor
-        return a.name.localeCompare(b.name)
-      })
-
-      for (const r of rest) {
-        if (base.length >= neededQualifierCount) break
-        if (!base.some((x) => x.name === r.name && x.group_id === r.group_id)) base.push(r)
-      }
-    }
-
-    return base
-  }, [qualifiers, neededQualifierCount, groups, standingsByGroup, qualifiersPerGroup])
+  return list
+}, [groups, standingsByGroup, qualifiersPerGroup])
+  
+  
+  
 
   const playoffExists = useMemo(() => {
     return Object.keys(playoffStates).length > 0
@@ -659,92 +705,88 @@ export default function RoundRobinClient() {
 
   
   
-  
-  // ---- seeding + pairings (QF or SF) ✅ PERFEKT-LOGIK
 function buildPairings(size: PlayoffSize, players: Qualifier[]) {
-  // 1) Ranking/Seeding nach Leistung
-  const ps = [...players].sort((a, b) => {
+  const sortedPlayers = [...players].sort((a, b) => {
+    if (a.group_no !== b.group_no) return a.group_no - b.group_no
     if (a.place !== b.place) return a.place - b.place
-    if (b.points !== a.points) return b.points - a.points
+
     const da = a.legsFor - a.legsAgainst
     const db = b.legsFor - b.legsAgainst
+
+    if (b.points !== a.points) return b.points - a.points
     if (db !== da) return db - da
     if (b.legsFor !== a.legsFor) return b.legsFor - a.legsFor
     return a.name.localeCompare(b.name)
   })
 
-  const okPair = (a?: Qualifier, b?: Qualifier) => {
-    if (!a || !b) return false
-    return a.group_id !== b.group_id
+  const uniqueGroupNos = Array.from(new Set(sortedPlayers.map((p) => p.group_no))).sort((a, b) => a - b)
+
+  const playersByGroup = new Map<number, Qualifier[]>()
+  for (const groupNo of uniqueGroupNos) {
+    playersByGroup.set(
+      groupNo,
+      sortedPlayers
+        .filter((p) => p.group_no === groupNo)
+        .sort((a, b) => {
+          if (a.place !== b.place) return a.place - b.place
+
+          const da = a.legsFor - a.legsAgainst
+          const db = b.legsFor - b.legsAgainst
+
+          if (b.points !== a.points) return b.points - a.points
+          if (db !== da) return db - da
+          if (b.legsFor !== a.legsFor) return b.legsFor - a.legsFor
+          return a.name.localeCompare(b.name)
+        }),
+    )
   }
 
-  // 2) Standard-Paarung: 1vN, 2v(N-1), ...
   const pairs: Array<[Qualifier | undefined, Qualifier | undefined]> = []
+
+  if (size === 8 && uniqueGroupNos.length === 2) {
+    const g1 = playersByGroup.get(uniqueGroupNos[0]) || []
+    const g2 = playersByGroup.get(uniqueGroupNos[1]) || []
+
+    if (g1.length < 4 || g2.length < 4) {
+      return []
+    }
+
+    pairs.push([g1[0], g2[3]])
+    pairs.push([g1[1], g2[2]])
+    pairs.push([g2[0], g1[3]])
+    pairs.push([g2[1], g1[2]])
+
+    return pairs
+  }
+
+  if (size === 4 && uniqueGroupNos.length === 2) {
+    const g1 = playersByGroup.get(uniqueGroupNos[0]) || []
+    const g2 = playersByGroup.get(uniqueGroupNos[1]) || []
+
+    if (g1.length < 2 || g2.length < 2) {
+      return []
+    }
+
+    pairs.push([g1[0], g2[1]])
+    pairs.push([g2[0], g1[1]])
+
+    return pairs
+  }
+
+  const seeded = [...sortedPlayers].sort((a, b) => {
+    if (a.place !== b.place) return a.place - b.place
+
+    const da = a.legsFor - a.legsAgainst
+    const db = b.legsFor - b.legsAgainst
+
+    if (b.points !== a.points) return b.points - a.points
+    if (db !== da) return db - da
+    if (b.legsFor !== a.legsFor) return b.legsFor - a.legsFor
+    return a.name.localeCompare(b.name)
+  })
+
   for (let i = 0; i < size / 2; i++) {
-    pairs.push([ps[i], ps[size - 1 - i]])
-  }
-
-  // 3) Konflikte (gleiche Gruppe) in Runde 1 reparieren: swap der zweiten Spieler
-  for (let i = 0; i < pairs.length; i++) {
-    const [a, b] = pairs[i]
-    if (!a || !b) continue
-    if (okPair(a, b)) continue
-
-    for (let j = i + 1; j < pairs.length; j++) {
-      const [c, d] = pairs[j]
-      if (!c || !d) continue
-      if (okPair(a, d) && okPair(c, b)) {
-        pairs[i] = [a, d]
-        pairs[j] = [c, b]
-        break
-      }
-    }
-  }
-
-  // 4) 8er: Gruppensieger (#1) bestmöglich auf verschiedene Halbfinal-Seiten verteilen
-  // Ziel: In (Pair0, Pair1) und (Pair2, Pair3) nicht 2x Platz1 im selben Ast.
-  if (size === 8) {
-    const hasGroupWinner = (p: [Qualifier | undefined, Qualifier | undefined]) =>
-      (p[0]?.place === 1) || (p[1]?.place === 1)
-
-    // kleine Permutation (max 24) -> beste Reihenfolge suchen
-    const permute = <T,>(arr: T[]) => {
-      const out: T[][] = []
-      const rec = (a: T[], i: number) => {
-        if (i === a.length) return out.push([...a])
-        for (let j = i; j < a.length; j++) {
-          ;[a[i], a[j]] = [a[j], a[i]]
-          rec(a, i + 1)
-          ;[a[i], a[j]] = [a[j], a[i]]
-        }
-      }
-      rec([...arr], 0)
-      return out
-    }
-
-    const scoreOrder = (ord: typeof pairs) => {
-      const left = (hasGroupWinner(ord[0]) ? 1 : 0) + (hasGroupWinner(ord[1]) ? 1 : 0)
-      const right = (hasGroupWinner(ord[2]) ? 1 : 0) + (hasGroupWinner(ord[3]) ? 1 : 0)
-      let s = 0
-      if (left <= 1) s += 3
-      if (right <= 1) s += 3
-      return s
-    }
-
-    const all = [...pairs]
-    let best = all
-    let bestScore = -1
-
-    for (const ord of permute(all)) {
-      const s = scoreOrder(ord as any)
-      if (s > bestScore) {
-        bestScore = s
-        best = ord as any
-        if (bestScore >= 6) break
-      }
-    }
-
-    return best
+    pairs.push([seeded[i], seeded[size - 1 - i]])
   }
 
   return pairs
@@ -1022,111 +1064,158 @@ function buildPairings(size: PlayoffSize, players: Qualifier[]) {
     setSelectedMatchId(matchId)
     setMachineDialogOpen(true)
   }
+  
+  
 
-  const assignMachine = (machineNumber: number) => {
-    if (selectedMatchId == null) return
+const assignMachine = (machineNumber: number) => {
+  if (selectedMatchId == null) return
 
-    if (selectedMatchScope === "playoff") {
-      setPlayoffStates((prev) => ({
-        ...prev,
-        [selectedMatchId]: {
-          ...(prev[selectedMatchId] || emptyState(selectedMatchId)),
-          machineNumber,
-          callCount: 1,
-        },
-      }))
-    } else {
-      // group
-      const m = displayMatches.find((x) => x.id === selectedMatchId)
-      const base = m?.state || emptyState(selectedMatchId)
-      setMatchStates((prev) => ({
-        ...prev,
-        [selectedMatchId]: {
-          ...(prev[selectedMatchId] || base),
-          machineNumber,
-          callCount: 1,
-        },
-      }))
-    }
+  isRemoteUpdateRef.current = true
 
-    setMachineDialogOpen(false)
-    setSelectedMatchId(null)
+  if (selectedMatchScope === "playoff") {
+    setPlayoffStates((prev) => ({
+      ...prev,
+      [selectedMatchId]: {
+        ...(prev[selectedMatchId] || emptyState(selectedMatchId)),
+        machineNumber,
+        callCount: 1,
+        _localUpdate: true,
+      },
+    }))
+  } else {
+    const m = displayMatches.find((x) => x.id === selectedMatchId)
+    const base = m?.state || emptyState(selectedMatchId)
+
+    setMatchStates((prev) => ({
+      ...prev,
+      [selectedMatchId]: {
+        ...(prev[selectedMatchId] || base),
+        machineNumber,
+        callCount: 1,
+        _localUpdate: true,
+      },
+    }))
   }
 
-  const updateScore = (scope: "group" | "playoff", matchId: number, player: 1 | 2, score: number, fallback?: MatchState) => {
-    if (scope === "playoff") {
-      const base = playoffStates[matchId] || fallback || emptyState(matchId)
-      setPlayoffStates((prev) => ({
-        ...prev,
-        [matchId]: {
-          ...(prev[matchId] || base),
-          score1: player === 1 ? score : (prev[matchId]?.score1 ?? base.score1),
-          score2: player === 2 ? score : (prev[matchId]?.score2 ?? base.score2),
-        },
-      }))
-    } else {
-      const base = matchStates[matchId] || fallback || emptyState(matchId)
-      setMatchStates((prev) => ({
-        ...prev,
-        [matchId]: {
-          ...(prev[matchId] || base),
-          score1: player === 1 ? score : (prev[matchId]?.score1 ?? base.score1),
-          score2: player === 2 ? score : (prev[matchId]?.score2 ?? base.score2),
-        },
-      }))
-    }
+  setMachineDialogOpen(false)
+  setSelectedMatchId(null)
+
+  setTimeout(() => {
+    isRemoteUpdateRef.current = false
+  }, 500)
+}
+  
+  
+  
+
+const updateScore = (
+  scope: "group" | "playoff",
+  matchId: number,
+  player: 1 | 2,
+  score: number,
+  fallback?: MatchState
+) => {
+  if (scope === "playoff") {
+    const base = playoffStates[matchId] || fallback || emptyState(matchId)
+    setPlayoffStates((prev) => ({
+      ...prev,
+      [matchId]: {
+        ...(prev[matchId] || base),
+        score1: player === 1 ? score : (prev[matchId]?.score1 ?? base.score1),
+        score2: player === 2 ? score : (prev[matchId]?.score2 ?? base.score2),
+        _localUpdate: true,
+      },
+    }))
+  } else {
+    const base = matchStates[matchId] || fallback || emptyState(matchId)
+    setMatchStates((prev) => ({
+      ...prev,
+      [matchId]: {
+        ...(prev[matchId] || base),
+        score1: player === 1 ? score : (prev[matchId]?.score1 ?? base.score1),
+        score2: player === 2 ? score : (prev[matchId]?.score2 ?? base.score2),
+        _localUpdate: true,
+      },
+    }))
+  }
+}
+
+const confirmMatch = (scope: "group" | "playoff", matchId: number, fallback?: MatchState) => {
+  isRemoteUpdateRef.current = true
+
+  const s =
+    scope === "playoff"
+      ? playoffStates[matchId] || fallback || emptyState(matchId)
+      : matchStates[matchId] || fallback || emptyState(matchId)
+
+  if (s.score1 === s.score2) {
+    isRemoteUpdateRef.current = false
+    alert("Unentschieden ist nicht erlaubt!")
+    return
   }
 
-  const confirmMatch = (scope: "group" | "playoff", matchId: number, fallback?: MatchState) => {
-    const s =
-      scope === "playoff"
-        ? playoffStates[matchId] || fallback || emptyState(matchId)
-        : matchStates[matchId] || fallback || emptyState(matchId)
+  const p1 = normalizeName(s.player1)
+  const p2 = normalizeName(s.player2)
+  const winner = s.score1 > s.score2 ? p1 : p2
+  const loser = s.score1 > s.score2 ? p2 : p1
 
-    if (s.score1 === s.score2) {
-      alert("Unentschieden ist nicht erlaubt!")
-      return
-    }
-
-    const p1 = normalizeName(s.player1)
-    const p2 = normalizeName(s.player2)
-    const winner = s.score1 > s.score2 ? p1 : p2
-    const loser = s.score1 > s.score2 ? p2 : p1
-
-    const next: MatchState = {
-      ...s,
-      winner,
-      loser,
-      machineNumber: undefined,
-      callCount: undefined,
-    }
-
-    if (scope === "playoff") {
-      setPlayoffStates((prev) => ({ ...prev, [matchId]: next }))
-    } else {
-      setMatchStates((prev) => ({ ...prev, [matchId]: next }))
-    }
+  const next: MatchState = {
+    ...s,
+    winner,
+    loser,
+    machineNumber: undefined,
+    callCount: undefined,
+    _localUpdate: true,
   }
 
-  const resetMatch = (scope: "group" | "playoff", matchId: number, fallback?: MatchState) => {
-    const s =
-      scope === "playoff"
-        ? playoffStates[matchId] || fallback || emptyState(matchId)
-        : matchStates[matchId] || fallback || emptyState(matchId)
-
-    const next: MatchState = {
-      ...s,
-      score1: 0,
-      score2: 0,
-      winner: undefined,
-      loser: undefined,
-      machineNumber: undefined,
-      callCount: undefined,
-    }
-
-    if (scope === "playoff") setPlayoffStates((prev) => ({ ...prev, [matchId]: next }))
-    else setMatchStates((prev) => ({ ...prev, [matchId]: next }))
+  if (scope === "playoff") {
+    setPlayoffStates((prev) => ({ ...prev, [matchId]: next }))
+  } else {
+    setMatchStates((prev) => ({ ...prev, [matchId]: next }))
   }
+
+  setTimeout(() => {
+    isRemoteUpdateRef.current = false
+  }, 500)
+}
+  
+  
+  
+  
+const resetMatch = (scope: "group" | "playoff", matchId: number, fallback?: MatchState) => {
+  isRemoteUpdateRef.current = true
+
+  const s =
+    scope === "playoff"
+      ? playoffStates[matchId] || fallback || emptyState(matchId)
+      : matchStates[matchId] || fallback || emptyState(matchId)
+
+  const next: MatchState = {
+    ...s,
+    score1: 0,
+    score2: 0,
+    winner: undefined,
+    loser: undefined,
+    machineNumber: undefined,
+    callCount: undefined,
+    _localUpdate: true,
+  }
+
+  if (scope === "playoff") {
+    setPlayoffStates((prev) => ({ ...prev, [matchId]: next }))
+  } else {
+    setMatchStates((prev) => ({ ...prev, [matchId]: next }))
+  }
+
+  setTimeout(() => {
+    isRemoteUpdateRef.current = false
+  }, 500)
+}
+  
+  
+  
+  
+  
 
   const PO_DEFS_4: PoMatchDef[] = [
   { id: PO_SF1, round: "SF", label: "HF1" },
@@ -1936,6 +2025,12 @@ function Row(props: {
   loser: boolean
 }) {
   const { name, score, onScore, disabled, winner, loser } = props
+  const [localValue, setLocalValue] = useState(String(score))
+
+  useEffect(() => {
+    setLocalValue(String(score))
+  }, [score])
+
   return (
     <div
       className={cn(
@@ -1945,15 +2040,38 @@ function Row(props: {
         !winner && !loser && "bg-gray-50 border-gray-200",
       )}
     >
-      <p className={cn("flex-1 text-sm truncate font-bold", winner && "text-orange-700", loser && "text-red-600", !winner && !loser && "text-gray-900")}>
+      <p
+        className={cn(
+          "flex-1 text-sm truncate font-bold",
+          winner && "text-orange-700",
+          loser && "text-red-600",
+          !winner && !loser && "text-gray-900"
+        )}
+      >
         {name}
       </p>
+
       <Input
-        type="number"
-        min="0"
-        max="50"
-        value={score}
-        onChange={(e) => onScore(Number.parseInt(e.target.value) || 0)}
+        type="text"
+        inputMode="numeric"
+        value={localValue}
+        onChange={(e) => {
+          const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+          setLocalValue(cleaned)
+
+          if (cleaned === "") {
+            onScore(0)
+            return
+          }
+
+          onScore(Number(cleaned))
+        }}
+        onBlur={() => {
+          if (localValue === "") {
+            setLocalValue("0")
+            onScore(0)
+          }
+        }}
         className="w-20 h-10 text-center font-black rounded-xl"
         disabled={disabled}
       />
