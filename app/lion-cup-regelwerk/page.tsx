@@ -355,20 +355,13 @@ export default function RegelwerkAppPage() {
 
                 <SubCard tone="warn" title="§7 Finaltag – Ablauf & Modus">
                   <p>
-                    Der Ablauf sowie der Spielmodus des Finaltages sind derzeit noch <strong>offen</strong>.
+                    Der <strong>Finaltag</strong> findet am <strong>05.06.2026</strong> um <strong>19:30 Uhr</strong> statt.
                   </p>
                   <ul className="mt-2 text-sm text-gray-700 space-y-2">
-                    <li>• Der genaue Modus (Spielsystem, Anzahl der Runden, Setzliste, Gruppen- oder KO-System etc.)</li>
-                    <li>• Der zeitliche Ablauf</li>
-                    <li>• Die konkrete Finalqualifikation</li>
+                    <li>• Gespielt wird am Finaltag im Modus <strong>Best of 5</strong>.</li>
+                    
                   </ul>
-                  <p className="mt-3 text-sm text-gray-700">
-                    werden noch intern besprochen und rechtzeitig vor dem Finaltag offiziell bekanntgegeben.
-                  </p>
-                  <div className="mt-3 rounded-xl border border-yellow-200 bg-white p-3 text-sm text-yellow-900 font-semibold inline-flex items-center gap-2">
-                    <Flag className="w-4 h-4" />
-                    Eine gesonderte Finalausschreibung wird veröffentlicht.
-                  </div>
+                  
                 </SubCard>
               </div>
             </SectionCard>
