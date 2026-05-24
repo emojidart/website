@@ -4,6 +4,7 @@ import type React from "react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { motion } from "framer-motion"
+import Image from "next/image"
 import {
   Crown,
   Calendar,
@@ -137,46 +138,71 @@ export default function MembersChampionCupRegelwerkPage() {
               Zurück
             </Link>
           </motion.div>
+		  
+		  
+		  
+		  
+		  
+		  
+		  
 
-          {/* HERO */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <div className="rounded-3xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 overflow-hidden">
-              <div className="p-5 sm:p-7">
-                <div className="flex items-start gap-4">
-                  <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
-                    <Crown className="w-6 h-6" />
-                  </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="inline-flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-700 border border-orange-100">
-                        EMD – MEMBERS CHAMPION CUP
-                      </span>
-                      <span className="text-xs text-gray-500">Saison 2026/27</span>
-                    </div>
+  {/* HERO */}
+<motion.div variants={itemVariants} className="mb-6">
+  <div className="relative rounded-3xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 overflow-hidden">
+    
+{/* LOGO */}
+<div className="flex justify-center pt-6 pb-2">
+  <Image
+    src="/images/logo5.png"
+    alt="EMD Logo"
+    width={170}
+    height={170}
+    className="object-contain drop-shadow-xl"
+    priority
+  />
+</div>
 
-                    <h1 className="mt-2 text-2xl sm:text-3xl font-black leading-tight">
-                      Offizielles Turnier- & Jahresreglement
-                    </h1>
+    <div className="p-5 sm:p-7 pt-2">
+      <div className="flex items-start gap-4">
+        <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
+          <Crown className="w-6 h-6" />
+        </div>
 
-                    <p className="mt-1 text-sm sm:text-base text-gray-600">
-                      Vereinsinterne Turnierserie{" "}
-                      <span className="font-semibold text-gray-900">Juli 2026 – Juni 2027</span>
-                    </p>
+        <div className="min-w-0 flex-1">
+          <div className="inline-flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-700 border border-orange-100">
+              EMD – MEMBERS CHAMPION CUP
+            </span>
+            <span className="text-xs text-gray-500">Saison 2026/27</span>
+          </div>
 
-                    <div className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 p-4">
-                      <p className="text-xs sm:text-sm text-orange-900 leading-relaxed">
-                        Der EMD Members Champion Cup ist eine ganzjährige, strukturierte Vereinsserie mit
-                        Steeldart, E-Dart, Partner-Zulosung, Einzelwertung und Finaltag.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <h1 className="mt-2 text-2xl sm:text-3xl font-black leading-tight">
+            Offizielles Turnier- & Jahresreglement
+          </h1>
 
-              <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700" />
-            </div>
-          </motion.div>
+          <p className="mt-1 text-sm sm:text-base text-gray-600">
+            Vereinsinterne Turnierserie{" "}
+            <span className="font-semibold text-gray-900">Juli 2026 – Juni 2027</span>
+          </p>
+
+          <div className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 p-4">
+            <p className="text-xs sm:text-sm text-orange-900 leading-relaxed">
+              Der EMD Members Champion Cup ist eine ganzjährige, strukturierte Vereinsserie mit
+              Steeldart, E-Dart, Partner-Zulosung, Einzelwertung und Finaltag.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700" />
+  </div>
+</motion.div>
+		  
+		  
+		  
+		  
 
           <div className="space-y-4">
             <SectionCard icon={<FileText className="w-5 h-5" />} title="Allgemeines">

@@ -4,6 +4,7 @@ import type React from "react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { motion } from "framer-motion"
+import Image from "next/image"
 import {
   Crown,
   Calendar,
@@ -127,46 +128,69 @@ export default function SummerSpecialRegelwerkPage() {
               Zurück
             </Link>
           </motion.div>
+		  
+		  
+		  
+		  
+		  
 
-          {/* HERO */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <div className="rounded-3xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 overflow-hidden">
-              <div className="p-5 sm:p-7">
-                <div className="flex items-start gap-4">
-                  <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
-                    <Crown className="w-6 h-6" />
-                  </div>
+{/* HERO */}
+<motion.div variants={itemVariants} className="mb-6">
+  <div className="relative rounded-3xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 overflow-hidden">
 
-                  <div className="min-w-0 flex-1">
-                    <div className="inline-flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-700 border border-orange-100">
-                        EMD – SUMMER SPECIAL K26
-                      </span>
-                      <span className="text-xs text-gray-500">Stand Sommer 2026</span>
-                    </div>
+  {/* LOGO */}
+<div className="flex justify-center pt-6 pb-2">
+  <Image
+    src="/images/logo4.png"
+    alt="EMD Logo"
+    width={170}
+    height={170}
+    className="object-contain drop-shadow-xl"
+    priority
+  />
+</div>
 
-                    <h1 className="mt-2 text-2xl sm:text-3xl font-black leading-tight">
-                      Regelwerk & Prämierungsliste
-                    </h1>
+    <div className="p-5 sm:p-7 pt-2">
+      <div className="flex items-start gap-4">
+        <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
+          <Crown className="w-6 h-6" />
+        </div>
 
-                    <p className="mt-1 text-sm sm:text-base text-gray-600">
-                      Steeldart Tournament Competition Cup K26{" "}
-                      <span className="font-semibold text-gray-900">09.06.2026 – 01.09.2026</span>
-                    </p>
+        <div className="min-w-0 flex-1">
+          <div className="inline-flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-700 border border-orange-100">
+              EMD – SUMMER SPECIAL K26
+            </span>
+            <span className="text-xs text-gray-500">Stand Sommer 2026</span>
+          </div>
 
-                    <div className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 p-4">
-                      <p className="text-xs sm:text-sm text-orange-900 leading-relaxed">
-                        Diese Prämierungsliste ist ein allgemeines Informationsdokument und gilt nur als Hinweis des
-                        Ablaufs. Änderungen vorbehalten!
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <h1 className="mt-2 text-2xl sm:text-3xl font-black leading-tight">
+            Regelwerk & Prämierungsliste
+          </h1>
 
-              <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700" />
-            </div>
-          </motion.div>
+          <p className="mt-1 text-sm sm:text-base text-gray-600">
+            Steeldart Tournament Competition Cup K26{" "}
+            <span className="font-semibold text-gray-900">09.06.2026 – 01.09.2026</span>
+          </p>
+
+          <div className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 p-4">
+            <p className="text-xs sm:text-sm text-orange-900 leading-relaxed">
+              Diese Prämierungsliste ist ein allgemeines Informationsdokument und gilt nur als Hinweis des
+              Ablaufs. Änderungen vorbehalten!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700" />
+  </div>
+</motion.div>
+		  
+		  
+		  
+		  
+		  
 
           <div className="space-y-4">
             <SectionCard icon={<FileText className="w-5 h-5" />} title="EMD Summer Special – Überblick">
