@@ -437,33 +437,64 @@ export default function MembersChampionCupRegelwerkPage() {
             </SectionCard>
 
             <SectionCard icon={<Trophy className="w-5 h-5" />} title="Jahreswertung">
-              <div className="space-y-3">
-                <SubCard title="Grundprinzip">
-                  <p>
-                    Jeder Spieler sammelt im Laufe der Saison Punkte aus den gewerteten Turnieren. Für die Jahreswertung
-                    zählen jedoch nur die <strong>besten 8 Ergebnisse</strong> eines Spielers.
-                  </p>
-                </SubCard>
+  <div className="space-y-3">
+    <SubCard title="Grundprinzip">
+      <p>
+        Jeder Spieler sammelt im Laufe der Saison Punkte aus den gewerteten Turnieren. Für die Jahreswertung
+        zählen jedoch nur die <strong>besten 8 Ergebnisse</strong> eines Spielers.
+      </p>
+    </SubCard>
 
-                <SubCard tone="success" title="Top-8-Regel">
-                  <ul className="space-y-2">
-                    <li>• Spieler können an beliebig vielen Turnieren teilnehmen</li>
-                    <li>• Nur die 8 punktbesten Resultate fließen in die Jahreswertung ein</li>
-                    <li>• Schwächere Ergebnisse werden automatisch gestrichen</li>
-                    <li>• Qualität und Konstanz werden stärker belohnt als reine Teilnahmehäufigkeit</li>
-                  </ul>
-                </SubCard>
+    <SubCard title="Platzierungspunkte">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {[
+          ["1. Platz", "100 Punkte"],
+          ["2. Platz", "95 Punkte"],
+          ["3. Platz", "85 Punkte"],
+          ["4. Platz", "70 Punkte"],
+          ["alle 5. Platzierten", "50 Punkte"],
+          ["alle 7. Platzierten", "35 Punkte"],
+          ["alle 8. Platzierten", "35 Punkte"],
+          ["alle 9. Platzierten", "25 Punkte"],
+          ["alle 13. Platzierten", "15 Punkte"],
+          ["alle 17. Platzierten", "10 Punkte"],
+        ].map(([platz, punkte]) => (
+          <div key={platz} className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="text-sm font-black text-gray-900">{platz}</div>
+            <div className="mt-1 text-xl font-black text-orange-600">{punkte}</div>
+          </div>
+        ))}
+      </div>
+    </SubCard>
 
-                <SubCard title="Laufende Rangliste">
-                  <ul className="space-y-2">
-                    <li>• Rangliste wird auf der EMD Vereins-Webseite / VereinsApp geführt</li>
-                    <li>• Nach jedem Turnier erfolgt ein Update</li>
-                    <li>• Neue starke Ergebnisse können ältere schwächere Resultate verdrängen</li>
-                    <li>• Spieler können sich laufend verbessern</li>
-                  </ul>
-                </SubCard>
-              </div>
-            </SectionCard>
+    <SubCard tone="success" title="Top-8-Regel">
+      <ul className="space-y-2">
+        <li>• Spieler können an beliebig vielen Turnieren teilnehmen</li>
+        <li>• Nur die 8 punktbesten Resultate fließen in die Jahreswertung ein</li>
+        <li>• Schwächere Ergebnisse werden automatisch gestrichen</li>
+        <li>• Qualität und Konstanz werden stärker belohnt als reine Teilnahmehäufigkeit</li>
+      </ul>
+    </SubCard>
+
+    <SubCard title="Laufende Rangliste">
+      <ul className="space-y-2">
+        <li>• Rangliste wird auf der EMD Vereins-Webseite / VereinsApp geführt</li>
+        <li>• Nach jedem Turnier erfolgt ein Update</li>
+        <li>• Neue starke Ergebnisse können ältere schwächere Resultate verdrängen</li>
+        <li>• Spieler können sich laufend verbessern</li>
+      </ul>
+    </SubCard>
+  </div>
+</SectionCard>
+			
+			
+			
+			
+			
+			
+			
+			
+			
 
             <SectionCard icon={<ListChecks className="w-5 h-5" />} title="Kriterien bei Punktegleichheit">
               <SubCard tone="warn">
