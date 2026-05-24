@@ -454,7 +454,6 @@ export default function MembersChampionCupRegelwerkPage() {
           ["4. Platz", "70 Punkte"],
           ["alle 5. Platzierten", "50 Punkte"],
           ["alle 7. Platzierten", "35 Punkte"],
-          ["alle 8. Platzierten", "35 Punkte"],
           ["alle 9. Platzierten", "25 Punkte"],
           ["alle 13. Platzierten", "15 Punkte"],
           ["alle 17. Platzierten", "10 Punkte"],
