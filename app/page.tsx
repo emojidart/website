@@ -318,6 +318,10 @@ export default function Home() {
   const [nextEvent, setNextEvent] = useState<LionCupEvent | null>(null)
   const [nextTournamentEvent, setNextTournamentEvent] = useState<LionCupEvent | null>(null)
   const [lionCupLoading, setLionCupLoading] = useState(true)
+  const [nextSummerTournamentEvent, setNextSummerTournamentEvent] = useState<LionCupEvent | null>(null)
+const [summerSpecialLoading, setSummerSpecialLoading] = useState(true)
+const [nextMembersChampionEvent, setNextMembersChampionEvent] = useState<LionCupEvent | null>(null)
+const [membersChampionLoading, setMembersChampionLoading] = useState(true)
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null)
   const [activeTournament, setActiveTournament] = useState<ActiveTournament | null>(null)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
@@ -900,6 +904,160 @@ useEffect(() => {
 
     fetchFromDb()
   }, [])
+  
+  
+  
+  
+  
+  useEffect(() => {
+  const fetchSummerSpecialFromDb = async () => {
+    try {
+      setSummerSpecialLoading(true)
+
+      const SUMMER_SPECIAL_SERIES_ID = "ff1badbe-0d2c-4bd2-a877-9f1009579599"
+
+      const { data, error } = await supabase
+        .from("dko_series_events")
+        .select("id,series_id,title,start_at,is_matchday,registration_cutoff_minutes,is_rescheduled,rescheduled_at")
+        .eq("series_id", SUMMER_SPECIAL_SERIES_ID)
+        .order("start_at", { ascending: true })
+
+      if (error) throw error
+
+      const summerEvents = ((data || []) as DkoSeriesEventRow[]).map((r) => {
+        const isRescheduled = !!r.is_rescheduled && !!r.rescheduled_at
+        const effectiveIso = isRescheduled && r.rescheduled_at ? r.rescheduled_at : r.start_at
+        const effectiveDT = new Date(effectiveIso)
+
+        return {
+          id: r.id,
+          series_id: r.series_id,
+          title: r.title,
+          is_matchday: !!r.is_matchday,
+          cutoffMinutes: Number(r.registration_cutoff_minutes ?? 10) || 10,
+          originalDT: new Date(r.start_at),
+          effectiveDT,
+          effectiveISODate: toISODate(effectiveDT),
+          effectiveTimeHHMM: toHHMM(effectiveDT),
+        }
+      })
+
+      const today0 = startOfDay(new Date()).getTime()
+
+      const summerUpcoming = summerEvents
+        .filter((e) => startOfDay(e.effectiveDT).getTime() >= today0)
+        .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
+
+      const summerNextMatchday = summerUpcoming.find((e) => e.is_matchday) ?? null
+
+      if (summerNextMatchday) {
+        const allMatchdaysSorted = summerEvents
+          .filter((e) => e.is_matchday)
+          .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
+
+        const idx = allMatchdaysSorted.findIndex((e) => e.id === summerNextMatchday.id)
+        const matchday = idx >= 0 ? idx + 1 : 1
+
+        setNextSummerTournamentEvent({
+          id: summerNextMatchday.id,
+          name: "EMD Summer Special | Steeldart",
+          event_date: summerNextMatchday.effectiveISODate,
+          event_time: summerNextMatchday.effectiveTimeHHMM,
+          event_type: "Turnier",
+          matchday,
+          description: null,
+        })
+      } else {
+        setNextSummerTournamentEvent(null)
+      }
+    } catch (error) {
+      console.error("Error fetching Summer Special schedule from DB:", error)
+      setNextSummerTournamentEvent(null)
+    } finally {
+      setSummerSpecialLoading(false)
+    }
+  }
+
+  fetchSummerSpecialFromDb()
+}, [])
+  
+  
+  
+  
+  useEffect(() => {
+  const fetchMembersChampionFromDb = async () => {
+    try {
+      setMembersChampionLoading(true)
+
+      const MEMBERS_CHAMPION_SERIES_ID = "baeef5fb-b386-4a75-a1f3-c56090a0ec76"
+
+      const { data, error } = await supabase
+        .from("dko_series_events")
+        .select("id,series_id,title,start_at,is_matchday,registration_cutoff_minutes,is_rescheduled,rescheduled_at")
+        .eq("series_id", MEMBERS_CHAMPION_SERIES_ID)
+        .order("start_at", { ascending: true })
+
+      if (error) throw error
+
+      const events = ((data || []) as DkoSeriesEventRow[]).map((r) => {
+        const isRescheduled = !!r.is_rescheduled && !!r.rescheduled_at
+        const effectiveIso = isRescheduled && r.rescheduled_at ? r.rescheduled_at : r.start_at
+        const effectiveDT = new Date(effectiveIso)
+
+        return {
+          id: r.id,
+          series_id: r.series_id,
+          title: r.title,
+          is_matchday: !!r.is_matchday,
+          cutoffMinutes: Number(r.registration_cutoff_minutes ?? 10) || 10,
+          originalDT: new Date(r.start_at),
+          effectiveDT,
+          effectiveISODate: toISODate(effectiveDT),
+          effectiveTimeHHMM: toHHMM(effectiveDT),
+        }
+      })
+
+      const today0 = startOfDay(new Date()).getTime()
+
+      const upcoming = events
+        .filter((e) => startOfDay(e.effectiveDT).getTime() >= today0)
+        .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
+
+      const nextMatchday = upcoming.find((e) => e.is_matchday) ?? null
+
+      if (nextMatchday) {
+        const allMatchdaysSorted = events
+          .filter((e) => e.is_matchday)
+          .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
+
+        const idx = allMatchdaysSorted.findIndex((e) => e.id === nextMatchday.id)
+        const matchday = idx >= 0 ? idx + 1 : 1
+
+        setNextMembersChampionEvent({
+          id: nextMatchday.id,
+          name: "EMD Members Champions Cup",
+          event_date: nextMatchday.effectiveISODate,
+          event_time: nextMatchday.effectiveTimeHHMM,
+          event_type: "Turnier",
+          matchday,
+          description: null,
+        })
+      } else {
+        setNextMembersChampionEvent(null)
+      }
+    } catch (error) {
+      console.error("Error fetching Members Champions Cup schedule from DB:", error)
+      setNextMembersChampionEvent(null)
+    } finally {
+      setMembersChampionLoading(false)
+    }
+  }
+
+  fetchMembersChampionFromDb()
+}, [])
+  
+  
+  
 
   const getTeamName = (match: Match, isHome: boolean) => {
     if (isHome) {
@@ -924,6 +1082,8 @@ useEffect(() => {
   }
 
   const lionCupNextDate = createEventDate(nextTournamentEvent)
+  const summerSpecialNextDate = createEventDate(nextSummerTournamentEvent)
+  const membersChampionNextDate = createEventDate(nextMembersChampionEvent)
   const isNextEventSpielfrei = nextEvent?.event_type?.toLowerCase() === "spielfrei"
 
   // --- Turniertag (Lion) Self-Registration Box ---
@@ -1246,6 +1406,304 @@ useEffect(() => {
 
       <section className="container mx-auto px-4 py-8 lg:py-12 overflow-x-hidden">
         <div className="grid lg:grid-cols-2 gap-6">
+		
+		
+		
+		
+		
+		
+		
+		
+		
+{/* MEMBERS CHAMPIONS CUP CARD */}
+<div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
+  <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
+    <div className="absolute inset-0 opacity-10" />
+
+    <div className="relative p-4 sm:p-6 lg:p-10">
+      <div className="w-full mx-auto flex flex-col">
+        <div className="flex items-center justify-center mb-5 sm:mb-7">
+          <div className="w-32 h-32 sm:w-44 sm:h-44 lg:w-56 lg:h-56 flex items-center justify-center">
+            <Image
+              src="/images/logo5.png"
+              alt="EMD Members Champions Cup"
+              width={280}
+              height={280}
+              className="object-contain"
+            />
+          </div>
+        </div>
+
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-950 px-3 py-1.5 rounded-full font-black text-xs mb-3">
+            <Trophy className="w-3.5 h-3.5" />
+            <span>MEMBERS CHAMPIONS CUP 2026/27</span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">
+            EMD Members Champions Cup
+          </h1>
+
+          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
+            Offizielle Vereinsserie 2026/27
+          </p>
+
+          <div className="min-h-[40px] flex items-center justify-center mb-2">
+            {nextMembersChampionEvent?.matchday ? (
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
+                <div className="flex items-center gap-2 text-xs">
+                  <Trophy className="w-3.5 h-3.5 text-yellow-300" />
+                  <span className="text-orange-100">
+                    Spieltag {nextMembersChampionEvent.matchday}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
+            Nächstes Turnier
+          </p>
+
+          <p className="text-sm lg:text-base text-orange-200">
+            {nextMembersChampionEvent
+              ? `${new Date(membersChampionNextDate).toLocaleDateString("de-DE", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })} • ${nextMembersChampionEvent.event_time || "19:00"} Uhr`
+              : membersChampionLoading
+                ? "Lade Termin..."
+                : "Noch kein Termin eingetragen"}
+          </p>
+        </div>
+
+        <div className="mt-5 sm:mt-7 flex justify-center">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 sm:px-6 lg:px-10 py-3 sm:py-4 border border-white/20">
+            <CountdownTimer targetDate={membersChampionNextDate} />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div className="p-4 sm:p-6 lg:p-8">
+    <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
+      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Trophy className="w-4 h-4 text-orange-600" />
+          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
+            Top 5 aktuell
+          </span>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600 font-semibold">
+          Die Serie ist noch nicht gestartet. Top 5 wird später angezeigt.
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-4 h-4 text-orange-600" />
+          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
+            Preisgeld
+          </span>
+        </div>
+
+        <div className="text-center rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
+          <div className="text-2xl sm:text-3xl font-black text-gray-900 mb-1">
+            Noch nicht gestartet
+          </div>
+          <p className="text-gray-600 text-xs sm:text-sm">
+            Preisgeld wird angezeigt, sobald die Serie läuft.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+      <Button
+        size="lg"
+        className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
+        disabled
+      >
+        Zur Gesamtwertung
+        <ArrowRight className="w-4 h-4 ml-2" />
+      </Button>
+
+      <Button
+        size="lg"
+        variant="outline"
+        className="border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
+        onClick={() => (window.location.href = "/emd-champions-cup-regelwerk")}
+      >
+        Regelwerk
+      </Button>
+
+      <Button
+        size="lg"
+        variant="outline"
+        className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
+        disabled
+      >
+        Anmelden
+      </Button>
+    </div>
+  </div>
+</div>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		{/* SUMMER SPECIAL CARD */}
+<div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
+  <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
+    <div className="absolute inset-0 opacity-10" />
+
+    <div className="relative p-4 sm:p-6 lg:p-10">
+      <div className="w-full mx-auto flex flex-col">
+        <div className="flex items-center justify-center mb-5 sm:mb-7">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center">
+            <Image
+              src="/images/logo4.png"
+              alt="EMD Summer Special"
+              width={90}
+              height={90}
+              className="object-contain p-2"
+            />
+          </div>
+        </div>
+
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-950 px-3 py-1.5 rounded-full font-black text-xs mb-3">
+            <Trophy className="w-3.5 h-3.5" />
+            <span>STEELDART SERIE 2026</span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">
+            EMD Summer Special
+          </h1>
+
+          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
+            Steeldart Tournament Competition Cup K26
+          </p>
+
+          <div className="min-h-[40px] flex items-center justify-center mb-2">
+            {nextSummerTournamentEvent?.matchday ? (
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
+                <div className="flex items-center gap-2 text-xs">
+                  <Trophy className="w-3.5 h-3.5 text-yellow-300" />
+                  <span className="text-orange-100">
+                    Spieltag {nextSummerTournamentEvent.matchday}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
+            Nächstes Turnier
+          </p>
+
+          <p className="text-sm lg:text-base text-orange-200">
+            {nextSummerTournamentEvent
+              ? `${new Date(summerSpecialNextDate).toLocaleDateString("de-DE", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })} • ${nextSummerTournamentEvent.event_time || "19:00"} Uhr`
+              : summerSpecialLoading
+                ? "Lade Termin..."
+                : "Noch kein Termin eingetragen"}
+          </p>
+        </div>
+
+        <div className="mt-5 sm:mt-7 flex justify-center">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 sm:px-6 lg:px-10 py-3 sm:py-4 border border-white/20">
+            <CountdownTimer targetDate={summerSpecialNextDate} />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div className="p-4 sm:p-6 lg:p-8">
+    <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
+      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Trophy className="w-4 h-4 text-orange-600" />
+          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
+            Top 5 aktuell
+          </span>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600 font-semibold">
+          Die Serie ist noch nicht gestartet. Top 5 wird später angezeigt.
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-4 h-4 text-orange-600" />
+          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
+            Preisgeld
+          </span>
+        </div>
+
+        <div className="text-center rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
+          <div className="text-2xl sm:text-3xl font-black text-gray-900 mb-1">
+            Noch nicht gestartet
+          </div>
+          <p className="text-gray-600 text-xs sm:text-sm">
+            Preisgeld wird angezeigt, sobald die Serie läuft.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+      <Button
+        size="lg"
+        className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
+        disabled
+      >
+        Zur Gesamtwertung
+        <ArrowRight className="w-4 h-4 ml-2" />
+      </Button>
+
+      <Button
+        size="lg"
+        variant="outline"
+        className="border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
+        onClick={() => (window.location.href = "/steeldart-competition-regelwerk")}
+      >
+        Regelwerk
+      </Button>
+
+      <Button
+        size="lg"
+        variant="outline"
+        className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
+        disabled
+      >
+        Anmelden
+      </Button>
+    </div>
+  </div>
+</div>
+		
+		
+		
+		
+		
+		
   {/* LION CUP CARD */}
   <div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
     {/* TOP HERO (ORANGE) */}
@@ -1462,6 +1920,11 @@ useEffect(() => {
   </div>
 </div>
  </section>
+ 
+ 
+ 
+ 
+ 
 
       <div className="container mx-auto px-4 py-6 sm:py-10">
   <div className="space-y-8">
