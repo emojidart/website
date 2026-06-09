@@ -1670,13 +1670,13 @@ useEffect(() => {
 
     <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row gap-3 justify-center">
       <Button
-        size="lg"
-        className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
-        disabled
-      >
-        Zur Gesamtwertung
-        <ArrowRight className="w-4 h-4 ml-2" />
-      </Button>
+  size="lg"
+  className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
+  onClick={() => (window.location.href = "/summer-special")}
+>
+  Zur Gesamtwertung
+  <ArrowRight className="w-4 h-4 ml-2" />
+</Button>
 
       <Button
         size="lg"

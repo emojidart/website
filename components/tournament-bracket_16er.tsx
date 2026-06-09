@@ -497,6 +497,7 @@ export default function TournamentBracket({ bracketSize = 16, tournamentType = "
   const [rankings, setRankings] = useState<Ranking[]>([])
   const [loadingRankings, setLoadingRankings] = useState(false)
   const [savingToSeries, setSavingToSeries] = useState(false)
+  const [savingToSummerSpecial, setSavingToSummerSpecial] = useState(false)
   const [successDialogOpen, setSuccessDialogOpen] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -1006,6 +1007,164 @@ useEffect(() => {
       setSavingToSeries(false)
     }
   }
+  
+  
+    const saveToSummerSpecial = async () => {
+    const winner = matches[31].winner || matches[30].winner
+
+    if (!winner) {
+      alert("Kein Gewinner gefunden!")
+      return
+    }
+
+    setSavingToSummerSpecial(true)
+
+    try {
+      const { data: existingRows, error: existingError } = await supabase
+        .from("summer_special_standings")
+        .select("id")
+        .eq("tournament_id", tournamentId)
+        .limit(1)
+
+      if (existingError) throw existingError
+
+      if (existingRows && existingRows.length > 0) {
+        alert("Dieses Turnier wurde bereits zum Summer Special hinzugefügt!")
+        return
+      }
+
+      const { data: rankings, error: rankingsError } = await supabase
+        .from("dko_rankings")
+        .select("player_name, placement")
+        .eq("tournament_type", tournamentType)
+        .eq("tournament_id", tournamentId)
+        .order("placement", { ascending: true })
+
+      if (rankingsError) throw rankingsError
+
+      if (!rankings || rankings.length === 0) {
+        alert("Keine Rangliste gefunden! Bitte stelle sicher, dass das Turnier vollständig ist.")
+        return
+      }
+
+      const placementCounts: Record<number, number> = {}
+      rankings.forEach((r) => {
+        placementCounts[r.placement] = (placementCounts[r.placement] || 0) + 1
+      })
+
+      const tiersBelow: Record<number, number> = {}
+      const sortedPlacements = Object.keys(placementCounts).map(Number).sort((a, b) => a - b)
+
+      sortedPlacements.forEach((placement, index) => {
+        tiersBelow[placement] = sortedPlacements.length - index - 1
+      })
+
+      const { data: matchStates, error: matchError } = await supabase
+        .from("dko_match_states")
+        .select("match_id, player1, player2, score1, score2, winner, updated_at")
+        .eq("tournament_type", tournamentType)
+        .eq("tournament_id", tournamentId)
+        .order("match_id", { ascending: true })
+
+      if (matchError) throw matchError
+
+      const bracketResetOccurred = matches[31].winner !== undefined
+      const playerStats: Record<string, any> = {}
+
+      rankings.forEach((ranking) => {
+        const placementPoints = 10 + tiersBelow[ranking.placement] * 2
+        const winnerSideBonus = ranking.placement === 1 && !bracketResetOccurred
+
+        playerStats[ranking.player_name] = {
+          placement: ranking.placement,
+          placement_points: placementPoints,
+          bonus_points: 0,
+          winner_side_bonus: winnerSideBonus,
+          legs_won: 0,
+          legs_lost: 0,
+          matches_played: 0,
+          matches_won: 0,
+          matches_lost: 0,
+          match_history: [],
+        }
+      })
+
+      matchStates?.forEach((match) => {
+        if (match.player1 && !isFreilos(match.player1) && playerStats[match.player1]) {
+          playerStats[match.player1].legs_won += match.score1 || 0
+          playerStats[match.player1].legs_lost += match.score2 || 0
+
+          if (match.winner) {
+            playerStats[match.player1].matches_played += 1
+            const result = match.winner === match.player1 ? "W" : "L"
+            if (result === "W") playerStats[match.player1].matches_won += 1
+            else playerStats[match.player1].matches_lost += 1
+
+            playerStats[match.player1].match_history.push({
+              match_id: match.match_id,
+              result,
+              timestamp: match.updated_at || new Date().toISOString(),
+            })
+          }
+        }
+
+        if (match.player2 && !isFreilos(match.player2) && playerStats[match.player2]) {
+          playerStats[match.player2].legs_won += match.score2 || 0
+          playerStats[match.player2].legs_lost += match.score1 || 0
+
+          if (match.winner) {
+            playerStats[match.player2].matches_played += 1
+            const result = match.winner === match.player2 ? "W" : "L"
+            if (result === "W") playerStats[match.player2].matches_won += 1
+            else playerStats[match.player2].matches_lost += 1
+
+            playerStats[match.player2].match_history.push({
+              match_id: match.match_id,
+              result,
+              timestamp: match.updated_at || new Date().toISOString(),
+            })
+          }
+        }
+      })
+
+      const summerRows = Object.entries(playerStats).map(([playerName, stats]: any) => {
+        stats.match_history.sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        const form = stats.match_history.map((h: any) => h.result).join(",")
+
+        return {
+          player_name: playerName,
+          tournament_id: tournamentId,
+          tournament_name: tournamentName,
+          tournament_type: tournamentType,
+          tournament_date: new Date().toISOString(),
+          placement: stats.placement,
+          placement_points: stats.placement_points,
+          bonus_points: stats.bonus_points,
+          winner_side_bonus: stats.winner_side_bonus,
+          legs_won: stats.legs_won,
+          legs_lost: stats.legs_lost,
+          matches_played: stats.matches_played,
+          matches_won: stats.matches_won,
+          matches_lost: stats.matches_lost,
+          form,
+        }
+      })
+
+      const { error: insertError } = await supabase.from("summer_special_standings").insert(summerRows)
+
+      if (insertError) throw insertError
+
+      alert("Turnier wurde zum Summer Special hinzugefügt!")
+    } catch (error) {
+      console.error("Fehler beim Speichern zum Summer Special:", error)
+      alert("Fehler beim Speichern zum Summer Special.")
+    } finally {
+      setSavingToSummerSpecial(false)
+    }
+  }
+
+  
+  
 
   const startMatch = (matchId: number) => {
     const match = matches[matchId]
@@ -2199,29 +2358,40 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
               <p className="text-3xl font-bold text-center mt-4">{matches[31].winner || matches[30].winner}</p>
 
               <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
-                <Button
-                  onClick={saveToTournamentSeries}
-                  disabled={savingToSeries}
-                  size="lg"
-                  variant="secondary"
-                  className="font-semibold"
-                >
-                  {savingToSeries ? "Speichere..." : "Zur Turnierserie hinzufügen"}
-                </Button>
-                <Button
-                  onClick={async () => {
-                    await markTournamentAsCompleted(tournamentId)
-                    await deleteFreiloseFromDatabase(tournamentType, tournamentId)
-                    await clearTournamentRegistration(tournamentId)
-                    router.push("/dko_tournament_registration")
-                  }}
-                  size="lg"
-                  variant="outline"
-                  className="font-semibold bg-background text-foreground hover:bg-background/90"
-                >
-                  Weiter zu Ergebnissen
-                </Button>
-              </div>
+  <Button
+    onClick={saveToTournamentSeries}
+    disabled={savingToSeries}
+    size="lg"
+    variant="secondary"
+    className="font-semibold"
+  >
+    {savingToSeries ? "Speichere..." : "Zu Lion Cup hinzufügen"}
+  </Button>
+
+  <Button
+    onClick={saveToSummerSpecial}
+    disabled={savingToSummerSpecial}
+    size="lg"
+    variant="outline"
+    className="font-semibold bg-yellow-400 text-black hover:bg-yellow-500"
+  >
+    {savingToSummerSpecial ? "Speichere..." : "Zu Summer Special hinzufügen"}
+  </Button>
+
+  <Button
+    onClick={async () => {
+      await markTournamentAsCompleted(tournamentId)
+      await deleteFreiloseFromDatabase(tournamentType, tournamentId)
+      await clearTournamentRegistration(tournamentId)
+      router.push("/dko_tournament_registration")
+    }}
+    size="lg"
+    variant="outline"
+    className="font-semibold bg-background text-foreground hover:bg-background/90"
+  >
+    Weiter zu Ergebnissen
+  </Button>
+</div>
             </Card>
           )}
         </div>
