@@ -398,8 +398,8 @@ export default function SummerSpecialPage() {
   const remainingTournaments = Math.max(0, settings.total_tournament_days - completedTournaments)
   const oneTimeFees = totalParticipants * settings.one_time_participation_fee
   const tournamentFees = totalAppearances * settings.entry_fee_per_tournament
-  const finalDayFees = totalParticipants * settings.final_day_fee
-  const totalPrizePool = oneTimeFees + tournamentFees + finalDayFees
+const finalDayFees = 0
+const totalPrizePool = oneTimeFees + tournamentFees
 
   if (loading) {
     return (

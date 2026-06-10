@@ -1222,31 +1222,65 @@ useEffect(() => {
     setSelectedMatchId(matchId)
     setMachineDialogOpen(true)
   }
+  
+  
+  
+  //neu
+  
+  const assignMachine = async (machineNumber: number) => {
+  if (selectedMatchId === null) return
+  if (!tournamentId) return
 
-  const assignMachine = (machineNumber: number) => {
-    if (selectedMatchId === null) return
+  const match = matches[selectedMatchId]
+  if (!match) return
 
-    const match = matches[selectedMatchId]
+  const updatedMatches = {
+    ...matches,
+    [selectedMatchId]: {
+      ...match,
+      machineNumber,
+      callCount: 1,
+      _localUpdate: false,
+    },
+  }
 
-    setMatches((prev) => ({
-      ...prev,
-      [selectedMatchId]: {
-        ...prev[selectedMatchId],
-        machineNumber,
-        callCount: 1, // Initialize callCount when machine is assigned
-      },
-    }))
+  isRemoteUpdateRef.current = true
 
-    if (announcementsEnabled && match) {
+  try {
+    await saveMatchStatesToDatabase(updatedMatches, tournamentType, tournamentId, playerIdMap)
+
+    setMatches(updatedMatches)
+
+    if (announcementsEnabled) {
       announce(match.player1, match.player2, machineNumber, 1)
     }
 
     setMachineDialogOpen(false)
-
-    setVsIntro({ open: true, player1: match?.player1 ?? "", player2: match?.player2 ?? "", machineNumber })
-
+    setVsIntro({
+      open: true,
+      player1: match.player1 ?? "",
+      player2: match.player2 ?? "",
+      machineNumber,
+    })
     setSelectedMatchId(null)
+  } catch (error) {
+    console.error("Fehler beim Starten des Spiels:", error)
+    alert("Spiel konnte nicht gestartet werden. Bitte erneut versuchen.")
+  } finally {
+    setTimeout(() => {
+      isRemoteUpdateRef.current = false
+    }, 1000)
   }
+}
+
+
+
+
+
+
+
+
+
 
   const handleRepeatCall = (matchId: number) => {
     const match = matches[matchId]
@@ -1284,53 +1318,80 @@ useEffect(() => {
   })
 }
 
-  const confirmMatch = (matchId: number) => {
+
+
+
+
+//neu
+
+
+
+const confirmMatch = async (matchId: number) => {
+  if (!tournamentId) return
+
+  const currentMatch = matches[matchId]
+  if (!currentMatch) return
+
+  const match = { ...currentMatch }
+
+  if (match.score1 > match.score2) {
+    match.winner = match.player1
+    match.loser = match.player2
+  } else if (match.score2 > match.score1) {
+    match.winner = match.player2
+    match.loser = match.player1
+  } else {
+    alert("Unentschieden ist nicht erlaubt!")
+    return
+  }
+
+  match.machineNumber = undefined
+  match.callCount = 1
+  match._localUpdate = false
+
+  const newMatches = {
+    ...matches,
+    [matchId]: match,
+  }
+
   isRemoteUpdateRef.current = true
 
-  setMatches((prev) => {
-      const newMatches = { ...prev }
-      const match = { ...newMatches[matchId] }
-
-      if (match.score1 > match.score2) {
-        match.winner = match.player1
-        match.loser = match.player2
-      } else if (match.score2 > match.score1) {
-        match.winner = match.player2
-        match.loser = match.player1
+  try {
+    if (matchId === 30) {
+      if (match.winner === match.player1) {
+        await saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
       } else {
-        alert("Unentschieden ist nicht erlaubt!")
-        return prev
-      }
-
-      match.machineNumber = undefined
-      match.callCount = 1 // Reset callCount when match is confirmed
-
-      newMatches[matchId] = match
-
-      if (matchId === 30) {
-        if (match.winner === match.player1) {
-          console.log(`[v0] Grand Final: Winner's bracket player ${match.winner} wins! Tournament over.`)
-          saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
-        } else {
-          console.log(`[v0] Grand Final: Loser's bracket player ${match.winner} wins! Bracket reset required.`)
-          newMatches[31].player1 = match.player1
-          newMatches[31].player2 = match.player2
+        newMatches[31] = {
+          ...newMatches[31],
+          player1: match.player1,
+          player2: match.player2,
         }
-      } else if (matchId === 31) {
-        console.log(`[v0] Bracket Reset: ${match.winner} wins the tournament!`)
-        saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
-      } else {
-        progressPlayers(newMatches, matchId, match.winner, match.loser)
-        trackPlayerElimination(newMatches, match.loser, tournamentType, tournamentId, tournamentName, bracketSize)
       }
+    } else if (matchId === 31) {
+      await saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
+    } else {
+      progressPlayers(newMatches, matchId, match.winner, match.loser)
+      await trackPlayerElimination(newMatches, match.loser, tournamentType, tournamentId, tournamentName, bracketSize)
+    }
 
-           return newMatches
-    })
+    await saveMatchStatesToDatabase(newMatches, tournamentType, tournamentId, playerIdMap)
 
+    setMatches(newMatches)
+  } catch (error) {
+    console.error("Fehler beim Speichern des Ergebnisses:", error)
+    alert("Ergebnis konnte nicht gespeichert werden. Bitte erneut versuchen.")
+  } finally {
     setTimeout(() => {
       isRemoteUpdateRef.current = false
-    }, 500)
+    }, 1000)
   }
+}
+
+
+
+
+
+
   
   
   
@@ -2633,7 +2694,7 @@ function MatchCard({
           min="0"
           max="10"
           value={match.score1}
-          onChange={(e) => onScoreUpdate(match.id, 1, Number.parseInt(e.target.value) || 0)}
+          onChange={(e) => onScoreUpdate(match.id, 1, Number(e.target.value))}
           className="w-16 h-8 text-center"
           disabled={!match.player1 || !match.player2 || !match.machineNumber}
         />
@@ -2667,7 +2728,7 @@ function MatchCard({
           min="0"
           max="10"
           value={match.score2}
-          onChange={(e) => onScoreUpdate(match.id, 2, Number.parseInt(e.target.value) || 0)}
+          onChange={(e) => onScoreUpdate(match.id, 2, Number(e.target.value))}
           className="w-16 h-8 text-center"
           disabled={!match.player1 || !match.player2 || !match.machineNumber}
         />
