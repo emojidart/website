@@ -97,6 +97,9 @@ export default function AdminPage() {
 
   const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
   const [roleLoading, setRoleLoading] = useState(false)
+  
+  
+  
 
 
   useEffect(() => {
@@ -155,6 +158,12 @@ export default function AdminPage() {
     run()
     
   }, [user?.id, isAdmin])
+  
+  
+  
+  
+  
+  
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
   const [unreadCampusCount, setUnreadCampusCount] = useState(0)
@@ -405,7 +414,7 @@ export default function AdminPage() {
 
   if (card.view === "role-permissions") return false
 
-  return allowedViews.has(card.view)
+  return allowedViews.has(card.view) || card.view === "members-levels"
 })
 
   const canSeeView = (viewKey: string) => {
@@ -814,9 +823,9 @@ if (!hasAnyPermission) {
                           <CardContent>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               {dashboardByNavSection[section].map((card) => (
-                                <button
-                                  key={card.view}
-                                  onClick={() => setCurrentView(card.view)}
+  <button
+    key={`${card.view}-${allowedViews?.size ?? 0}`}
+    onClick={() => setCurrentView(card.view)}
                                   className="text-left group rounded-xl border border-gray-100 bg-white hover:shadow-lg transition-all duration-200 p-4"
                                 >
                                   <div className="flex items-start justify-between gap-3">
