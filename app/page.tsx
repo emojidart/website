@@ -309,10 +309,22 @@ export default function Home() {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [cupPrizePool, setCupPrizePool] = useState<number>(0)
-  const [lionTop5, setLionTop5] = useState<
-    Array<{ player_name: string; total_points: number; original_total_points: number; tournaments_played: number }>
-  >([])
-  const [lionTop5Loading, setLionTop5Loading] = useState<boolean>(true)
+  const [summerPrizePool, setSummerPrizePool] = useState<number>(0)
+ const [lionTop5, setLionTop5] = useState<
+  Array<{ player_name: string; total_points: number; original_total_points: number; tournaments_played: number }>
+>([])
+
+const [summerTop5, setSummerTop5] = useState<
+  Array<{ player_name: string; total_points: number; tournaments_played: number }>
+>([])
+
+const [summerTop5Loading, setSummerTop5Loading] = useState<boolean>(true)
+const [lionTop5Loading, setLionTop5Loading] = useState<boolean>(true)
+  
+
+  
+  
+    
   const [lionHalvingActive, setLionHalvingActive] = useState<boolean>(false)
   const [combinedEvents, setCombinedEvents] = useState<CombinedEvent[]>([])
   const [nextEvent, setNextEvent] = useState<LionCupEvent | null>(null)
@@ -624,8 +636,90 @@ const [membersChampionLoading, setMembersChampionLoading] = useState(true)
       }
     }
 
-    fetchLionTop5()
+        fetchLionTop5()
   }, [])
+
+useEffect(() => {
+  const fetchSummerTop5 = async () => {
+    try {
+      setSummerTop5Loading(true)
+
+      const { data, error } = await supabase
+        .from("summer_special_total_standings")
+        .select("player_name, total_points, tournaments_played")
+        .order("total_points", { ascending: false })
+        .limit(5)
+
+      if (error) throw error
+
+      setSummerTop5(data || [])
+    } catch (e) {
+      console.error("Error fetching Summer Top5:", e)
+      setSummerTop5([])
+    } finally {
+      setSummerTop5Loading(false)
+    }
+  }
+
+  fetchSummerTop5()
+}, [])
+
+
+
+
+
+
+
+useEffect(() => {
+  const fetchSummerPrizePool = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("summer_special_total_standings")
+        .select("tournaments_played")
+
+      if (error) throw error
+
+      const totalParticipants = data?.length || 0
+
+      const totalAppearances =
+        data?.reduce(
+          (sum: number, player: any) =>
+            sum + Number(player.tournaments_played || 0),
+          0
+        ) || 0
+
+      const participationFees = totalParticipants * 10
+      const tournamentFees = totalAppearances * 5
+
+      const totalPrizePool =
+        participationFees + tournamentFees
+
+      setSummerPrizePool(totalPrizePool)
+    } catch (e) {
+      console.error("Error fetching Summer prize pool:", e)
+      setSummerPrizePool(0)
+    }
+  }
+
+  fetchSummerPrizePool()
+}, [])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   useEffect(() => {
     const fetchEventsAndTournaments = async () => {
@@ -1409,7 +1503,178 @@ useEffect(() => {
 		
 		
 		
+	
+
+
+
+
 		
+{/* SUMMER SPECIAL CARD */}
+<div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
+  <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
+    <div className="absolute inset-0 opacity-10" />
+
+    <div className="relative p-4 sm:p-6 lg:p-10">
+      <div className="w-full mx-auto flex flex-col">
+        <div className="flex items-center justify-center mb-5 sm:mb-7">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center">
+            <Image src="/images/logo4.png" alt="EMD Summer Special" width={90} height={90} className="object-contain p-2" />
+          </div>
+        </div>
+
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-950 px-3 py-1.5 rounded-full font-black text-xs mb-3">
+            <Trophy className="w-3.5 h-3.5" />
+            <span>STEELDART SERIE 2026</span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">EMD Summer Special</h1>
+          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">Steeldart Tournament Competition Cup K26</p>
+
+          <div className="min-h-[40px] flex items-center justify-center mb-2">
+            {nextSummerTournamentEvent?.matchday ? (
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
+                <div className="flex items-center gap-2 text-xs">
+                  <Trophy className="w-3.5 h-3.5 text-yellow-300" />
+                  <span className="text-orange-100">Spieltag {nextSummerTournamentEvent.matchday}</span>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">Nächstes Turnier</p>
+
+          <p className="text-sm lg:text-base text-orange-200">
+            {nextSummerTournamentEvent
+              ? `${new Date(summerSpecialNextDate).toLocaleDateString("de-DE", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })} • ${nextSummerTournamentEvent.event_time || "19:00"} Uhr`
+              : summerSpecialLoading
+                ? "Lade Termin..."
+                : "Noch kein Termin eingetragen"}
+          </p>
+        </div>
+
+        <div className="mt-5 sm:mt-7 flex justify-center">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 sm:px-6 lg:px-10 py-3 sm:py-4 border border-white/20">
+            <CountdownTimer targetDate={summerSpecialNextDate} />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div className="p-4 sm:p-6 lg:p-8">
+    <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
+      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Trophy className="w-4 h-4 text-orange-600" />
+          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">Top 5 aktuell</span>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+          {!summerTop5Loading && summerTop5.length === 0 ? (
+            <div className="px-3 py-3 text-xs text-gray-600">Keine Daten verfügbar.</div>
+          ) : null}
+
+          {summerTop5.map((p, idx) => (
+            <div key={p.player_name} className="flex items-center justify-between px-3 py-2 border-b border-gray-100 last:border-b-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-[11px] font-black">
+                  {idx + 1}
+                </div>
+
+                <div className="min-w-0">
+                  <div className="text-xs sm:text-sm font-black text-gray-900 truncate max-w-[180px] sm:max-w-[260px]">
+                    {p.player_name}
+                  </div>
+
+                  <div className="text-[10px] sm:text-xs text-gray-500">
+                    Antritte: <span className="font-black text-gray-900">{p.tournaments_played}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-right flex-shrink-0">
+                <div className="text-xs sm:text-sm font-black text-orange-700">{p.total_points}</div>
+                <div className="text-[10px] text-gray-500">Punkte</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-4 h-4 text-orange-600" />
+          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">Preisgeld</span>
+        </div>
+
+        <div className="text-center rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
+          <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-1">
+            €{summerPrizePool.toFixed(2)}
+          </div>
+          <p className="text-gray-600 text-xs sm:text-sm">Wächst mit jedem Teilnehmer und jeder Teilnahme</p>
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+      <Button
+        size="lg"
+        className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
+        onClick={() => (window.location.href = "/summer-special")}
+      >
+        Zur Gesamtwertung
+        <ArrowRight className="w-4 h-4 ml-2" />
+      </Button>
+
+      <Button
+        size="lg"
+        variant="outline"
+        className="border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
+        onClick={() => (window.location.href = "/steeldart-competition-regelwerk")}
+      >
+        Regelwerk
+      </Button>
+
+      <Button
+        size="lg"
+        variant="outline"
+        className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
+        disabled
+      >
+        Anmelden
+      </Button>
+    </div>
+  </div>
+</div>
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 		
 		
 		
@@ -1560,152 +1825,19 @@ useEffect(() => {
 		
 		
 		
-		
-		
-		{/* SUMMER SPECIAL CARD */}
-<div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
-  <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
-    <div className="absolute inset-0 opacity-10" />
 
-    <div className="relative p-4 sm:p-6 lg:p-10">
-      <div className="w-full mx-auto flex flex-col">
-        <div className="flex items-center justify-center mb-5 sm:mb-7">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center">
-            <Image
-              src="/images/logo4.png"
-              alt="EMD Summer Special"
-              width={90}
-              height={90}
-              className="object-contain p-2"
-            />
-          </div>
-        </div>
-
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-950 px-3 py-1.5 rounded-full font-black text-xs mb-3">
-            <Trophy className="w-3.5 h-3.5" />
-            <span>STEELDART SERIE 2026</span>
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">
-            EMD Summer Special
-          </h1>
-
-          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
-            Steeldart Tournament Competition Cup K26
-          </p>
-
-          <div className="min-h-[40px] flex items-center justify-center mb-2">
-            {nextSummerTournamentEvent?.matchday ? (
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
-                <div className="flex items-center gap-2 text-xs">
-                  <Trophy className="w-3.5 h-3.5 text-yellow-300" />
-                  <span className="text-orange-100">
-                    Spieltag {nextSummerTournamentEvent.matchday}
-                  </span>
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
-            Nächstes Turnier
-          </p>
-
-          <p className="text-sm lg:text-base text-orange-200">
-            {nextSummerTournamentEvent
-              ? `${new Date(summerSpecialNextDate).toLocaleDateString("de-DE", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                })} • ${nextSummerTournamentEvent.event_time || "19:00"} Uhr`
-              : summerSpecialLoading
-                ? "Lade Termin..."
-                : "Noch kein Termin eingetragen"}
-          </p>
-        </div>
-
-        <div className="mt-5 sm:mt-7 flex justify-center">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 sm:px-6 lg:px-10 py-3 sm:py-4 border border-white/20">
-            <CountdownTimer targetDate={summerSpecialNextDate} />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div className="p-4 sm:p-6 lg:p-8">
-    <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
-      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy className="w-4 h-4 text-orange-600" />
-          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
-            Top 5 aktuell
-          </span>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600 font-semibold">
-          Die Serie ist noch nicht gestartet. Top 5 wird später angezeigt.
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-orange-600" />
-          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
-            Preisgeld
-          </span>
-        </div>
-
-        <div className="text-center rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
-          <div className="text-2xl sm:text-3xl font-black text-gray-900 mb-1">
-            Noch nicht gestartet
-          </div>
-          <p className="text-gray-600 text-xs sm:text-sm">
-            Preisgeld wird angezeigt, sobald die Serie läuft.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-      <Button
-  size="lg"
-  className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
-  onClick={() => (window.location.href = "/summer-special")}
->
-  Zur Gesamtwertung
-  <ArrowRight className="w-4 h-4 ml-2" />
-</Button>
-
-      <Button
-        size="lg"
-        variant="outline"
-        className="border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-        onClick={() => (window.location.href = "/steeldart-competition-regelwerk")}
-      >
-        Regelwerk
-      </Button>
-
-      <Button
-        size="lg"
-        variant="outline"
-        className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-        disabled
-      >
-        Anmelden
-      </Button>
-    </div>
-  </div>
-</div>
 		
 		
 		
 		
 		
 		
-  {/* LION CUP CARD */}
-  <div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
+		
+		
+		
+		
+		
+	<div className="hidden overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
     {/* TOP HERO (ORANGE) */}
     <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
      <div className="absolute inset-0 opacity-10" />
