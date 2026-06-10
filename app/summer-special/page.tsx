@@ -6,6 +6,7 @@ import Image from "@/components/image"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { supabase } from "@/lib/supabase"
+import Link from "next/link"
 import {
   Activity,
   Award,
@@ -437,7 +438,7 @@ const totalPrizePool = oneTimeFees + tournamentFees
             <motion.div variants={itemVariants} className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               <div className="h-2 bg-gradient-to-r from-orange-500 to-yellow-500" />
               <div className="p-4 sm:p-5">
-                <div className="flex items-start gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-gray-200 bg-orange-50 flex-shrink-0">
                     <Image src={selected.profile_picture_url || "/placeholder-user.jpg"} alt={selected.player_name} width={64} height={64} className="object-cover" unoptimized />
                   </div>
@@ -449,6 +450,12 @@ const totalPrizePool = oneTimeFees + tournamentFees
                     </div>
                   </div>
                 </div>
+				
+				
+				
+				
+				
+				
 
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                   <div className="rounded-xl border border-gray-200 bg-white p-3"><div className="text-[11px] font-bold text-gray-600">Antritte</div><div className="text-xl font-black">{selected.tournaments_played}/13</div></div>
@@ -502,6 +509,7 @@ const totalPrizePool = oneTimeFees + tournamentFees
                   <p className="text-sm text-gray-600 mt-1"><span className="font-semibold">Gesamtwertung</span> · keine Qualifikation nötig</p>
                 </div>
               </div>
+			  
 
               <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-center">
                 <h2 className="text-base sm:text-lg font-black text-gray-900">AKTUELLER POT</h2>

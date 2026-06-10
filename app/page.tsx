@@ -1278,6 +1278,64 @@ useEffect(() => {
 <PushEnableBanner />
 
       <PushNotificationDialog />
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  {/* BONUSPROGRAMM BANNER */}
+<div className="mx-4 sm:mx-6 mt-3">
+  <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
+    <div className="h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
+
+    <div className="p-4 sm:p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
+            <Sparkles className="w-6 h-6 text-orange-700" />
+          </div>
+
+          <div>
+            <div className="text-xs font-black uppercase tracking-wider text-orange-700">
+              Neu im Verein
+            </div>
+            <div className="text-lg sm:text-xl font-black text-gray-900">
+              EMD Bonusprogramm
+            </div>
+            <div className="text-sm font-semibold text-gray-600">
+              Sammle Punkte, steige im Rang auf und verfolge deinen Fortschritt.
+            </div>
+          </div>
+        </div>
+
+        <Button
+          className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm w-full sm:w-auto"
+          onClick={() => (window.location.href = "/meine-bonus-punkte")}
+        >
+          Meine Bonuspunkte
+          <ArrowRight className="w-4 h-4 ml-2" />
+        </Button>
+      </div>
+    </div>
+  </div>
+</div>
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
 
 
 
@@ -1804,6 +1862,15 @@ useEffect(() => {
       >
         Regelwerk
       </Button>
+	  
+	  <Button
+  size="lg"
+  variant="outline"
+  className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
+  onClick={() => (window.location.href = "/member-cup-einstufung")}
+>
+  Einstufung
+</Button>
 
       <Button
         size="lg"

@@ -52,6 +52,7 @@ import { AdminSpieldatenbankManagement } from "@/components/admin/spieldatenbank
 import { LeagueManagement } from "@/components/league-management"
 import { RolePermissionsManager } from "@/components/role-permissions-manager"
 import { AdminMembersLevelManagement } from "@/components/admin/members-champion-cup/admin-members-level-management"
+import { BonusVergabeManagement } from "@/components/admin/bonus-vergabe/bonus-vergabe"
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
@@ -93,6 +94,7 @@ export default function AdminPage() {
 	  | "bonus-system"
 	  | "admin-push"
 | "members-levels"
+| "bonus-vergabe"
   >("dashboard")
 
   const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
@@ -291,6 +293,14 @@ export default function AdminPage() {
   view: "bonus-system" as const,
   category: "verein" as const,
 },
+{
+  title: "Bonusvergabe",
+  description: "Bonuspunkte an Spieler vergeben",
+  icon: Trophy,
+  color: "bg-amber-600",
+  view: "bonus-vergabe" as const,
+  category: "verein" as const,
+},
     {
       title: "Veranstaltungen",
       description: "Turniere, Partys & Events verwalten",
@@ -462,6 +472,7 @@ export default function AdminPage() {
         { key: "events", label: "Veranstaltungen", icon: PartyPopper },
 		{ key: "admin-push", label: "Push Nachrichten", icon: BellRing },
 		{ key: "bonus-system", label: "Bonussystem", icon: Trophy },
+		{ key: "bonus-vergabe", label: "Bonusvergabe", icon: Trophy },
         { key: "club", label: "Vereinsverwaltung", icon: Users },
         { key: "support-tickets", label: "Support Tickets", icon: HelpCircle },
         {
@@ -512,7 +523,8 @@ export default function AdminPage() {
       "credit-loader",
       "advent-quiz",
 	  "admin-push",
-	  "bonus-system"
+"bonus-system",
+"bonus-vergabe"
     ].includes(c.view)
   ),
 } as const
@@ -971,6 +983,23 @@ if (!hasAnyPermission) {
 
       <CardContent>
         <AdminBonusManagement user={user} />
+      </CardContent>
+    </Card>
+  </div>
+)}
+
+{currentView === "bonus-vergabe" && (
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <Trophy className="h-5 w-5" />
+          <span>Bonusvergabe</span>
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <BonusVergabeManagement user={user} />
       </CardContent>
     </Card>
   </div>

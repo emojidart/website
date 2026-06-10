@@ -98,8 +98,57 @@ function normalizeName(s: string) {
   return (s ?? "").trim()
 }
 
+function shortPersonName(name: string) {
+  const parts = normalizeName(name).split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) return parts[0] || ""
+  const first = parts[0]
+  const lastInitial = parts[parts.length - 1]?.charAt(0)?.toUpperCase() || ""
+  return `${first} ${lastInitial}.`
+}
+
+function shortTeamName(name: string) {
+  const clean = normalizeName(name)
+  if (!clean) return ""
+  if (clean.includes("/")) {
+    return clean
+      .split("/")
+      .map((part) => shortPersonName(part))
+      .join(" / ")
+  }
+  return shortPersonName(clean)
+}
+
+function fullTeamTitle(name: string) {
+  return normalizeName(name) || "—"
+}
+
+
 function ptsFrom(wins: number) {
   return wins * 2 // wie deine Tabelle
+}
+
+const MEMBERS_CUP_POINTS: Record<number, number> = {
+  1: 100,
+  2: 95,
+  3: 85,
+  4: 70,
+  5: 50,
+  7: 35,
+  9: 25,
+  13: 15,
+  17: 10,
+}
+
+function getMembersCupPoints(placement: number) {
+  if (placement <= 1) return MEMBERS_CUP_POINTS[1]
+  if (placement === 2) return MEMBERS_CUP_POINTS[2]
+  if (placement === 3) return MEMBERS_CUP_POINTS[3]
+  if (placement === 4) return MEMBERS_CUP_POINTS[4]
+  if (placement <= 6) return MEMBERS_CUP_POINTS[5]
+  if (placement <= 8) return MEMBERS_CUP_POINTS[7]
+  if (placement <= 12) return MEMBERS_CUP_POINTS[9]
+  if (placement <= 16) return MEMBERS_CUP_POINTS[13]
+  return MEMBERS_CUP_POINTS[17]
 }
 
 function sameGroup(a?: Qualifier, b?: Qualifier) {
@@ -117,7 +166,10 @@ const PO_SF1 = PO_BASE + 5
 const PO_SF2 = PO_BASE + 6
 const PO_F = PO_BASE + 7
 
-type PlayoffSize = 4 | 8
+
+
+type PlayoffSize = 2 | 4 | 8
+type FinalMode = "single_ko" | "double_ko"
 
 type PoMatchDef = {
   id: number
@@ -139,6 +191,10 @@ const PO_DEFS_8: PoMatchDef[] = [
   { id: PO_SF2, round: "SF", label: "HF2", srcA: PO_QF3, srcB: PO_QF4 },
 
   { id: PO_F, round: "F", label: "FINAL", srcA: PO_SF1, srcB: PO_SF2 },
+]
+
+const PO_DEFS_2: PoMatchDef[] = [
+  { id: PO_F, round: "F", label: "FINAL" },
 ]
 
 
@@ -186,16 +242,26 @@ export default function RoundRobinClient() {
   const [matchStates, setMatchStates] = useState<Record<number, MatchState>>({})
   const [playoffStates, setPlayoffStates] = useState<Record<number, MatchState>>({})
 
+  const [savingResults, setSavingResults] = useState(false)
+  const [resultsSaved, setResultsSaved] = useState(false)
+  const [hasSavedResults, setHasSavedResults] = useState(false)
+  const [finishingTournament, setFinishingTournament] = useState(false)
+  const [finishConfirmOpen, setFinishConfirmOpen] = useState(false)
+  const [successOpen, setSuccessOpen] = useState(false)
+  const [successTitle, setSuccessTitle] = useState("")
+  const [successText, setSuccessText] = useState("")
+
   // ---- UI: group tabs
   const [activeGroupId, setActiveGroupId] = useState<string>("")
 
   // ---- Playoff UI
-  const [playoffSize, setPlayoffSize] = useState<PlayoffSize>(8)
+  const [playoffSize, setPlayoffSize] = useState<PlayoffSize>(4)
   const [qualifiersPerGroup, setQualifiersPerGroup] = useState<number>(2)
+  const [finalMode, setFinalMode] = useState<FinalMode>("single_ko")
 
   // ---- Load base schedule + saved states (both types)
   const loadAll = async () => {
-    if (!roundRobinId) {
+  if (!roundRobinId) {
       setLoading(false)
       return
     }
@@ -255,6 +321,19 @@ export default function RoundRobinClient() {
 
       setMatchStates(nextGroup)
       setPlayoffStates(nextPo)
+
+      const [{ count: membersCount }, { count: funCount }] = await Promise.all([
+        supabase
+          .from("members_cup_results")
+          .select("id", { count: "exact", head: true })
+          .eq("round_robin_id", roundRobinId),
+        supabase
+          .from("fun_tournament_results")
+          .select("id", { count: "exact", head: true })
+          .eq("round_robin_id", roundRobinId),
+      ])
+
+      setHasSavedResults(Number(membersCount || 0) > 0 || Number(funCount || 0) > 0)
     } catch (e) {
       console.error("[RR] load error:", e)
       alert("Fehler beim Laden des Round Robin Turniers (siehe Konsole).")
@@ -606,14 +685,20 @@ setPlayoffStates((prev) => {
     const g = groups.length
     // default qualifiers 2
     setQualifiersPerGroup(2)
-    if (g >= 4) setPlayoffSize(8)
+    if (g <= 1) setPlayoffSize(2) // 1 Gruppe => Top 2 spielen Finale
+    else if (g >= 4) setPlayoffSize(8)
     else if (g === 3) setPlayoffSize(8) // mit Wildcards
     else setPlayoffSize(4) // 2 Gruppen => klassisch 4er KO
   }, [groups.length])
 
   // ---- Build qualifiers from standings
+  const effectiveQualifiersPerGroup = useMemo(() => {
+    if (groups.length <= 1) return playoffSize
+    return Math.max(1, Math.min(8, qualifiersPerGroup || 2))
+  }, [groups.length, playoffSize, qualifiersPerGroup])
+
   const qualifiers = useMemo(() => {
-    const perGroup = Math.max(1, Math.min(4, qualifiersPerGroup || 2))
+    const perGroup = effectiveQualifiersPerGroup
     const list: Qualifier[] = []
 
     const groupOrder = [...groups].sort((a, b) => a.group_no - b.group_no)
@@ -646,11 +731,11 @@ setPlayoffStates((prev) => {
     })
 
     return list
-  }, [groups, standingsByGroup, qualifiersPerGroup])
+  }, [groups, standingsByGroup, effectiveQualifiersPerGroup])
 
   const recommendedPlayoffSize = useMemo((): PlayoffSize => {
-    // beste Größe, die zu 2-4 Gruppen passt
     const g = groups.length
+    if (g <= 1) return 2
     if (g >= 4) return 8
     if (g === 3) return 8
     return 4
@@ -661,7 +746,7 @@ setPlayoffStates((prev) => {
   
 
 const qualifiedFinalists = useMemo(() => {
-  const perGroup = Math.max(1, Math.min(4, qualifiersPerGroup || 2))
+  const perGroup = effectiveQualifiersPerGroup
   const groupOrder = [...groups].sort((a, b) => a.group_no - b.group_no)
 
   const list: Qualifier[] = []
@@ -694,7 +779,7 @@ const qualifiedFinalists = useMemo(() => {
   })
 
   return list
-}, [groups, standingsByGroup, qualifiersPerGroup])
+}, [groups, standingsByGroup, effectiveQualifiersPerGroup])
   
   
   
@@ -798,6 +883,11 @@ function buildPairings(size: PlayoffSize, players: Qualifier[]) {
 
   // ---- Create playoffs in DB (dko_match_states rows with playoff type)
   const createPlayoffs = async () => {
+    if (finalMode === "double_ko") {
+      alert("DKO-Finalrunde ist als Auswahl vorbereitet. Die Spiellogik bauen wir im nächsten Schritt ein. Für jetzt bitte Single KO verwenden.")
+      return
+    }
+
     if (!groupPhaseFinished) {
       alert("Gruppenphase ist noch nicht fertig.")
       return
@@ -810,11 +900,28 @@ function buildPairings(size: PlayoffSize, players: Qualifier[]) {
     }
 
     const pairs = buildPairings(size, players)
-    const defs = size === 8 ? PO_DEFS_8 : PO_DEFS_4
+    const defs = size === 8 ? PO_DEFS_8 : size === 4 ? PO_DEFS_4 : PO_DEFS_2
 
     const rows: any[] = []
 
-    if (size === 8) {
+    if (size === 2) {
+      const [a, b] = pairs[0] || []
+      rows.push({
+        tournament_type: tournamentTypePlayoff,
+        tournament_id: roundRobinId,
+        match_id: PO_F,
+        player1: a?.name ?? "",
+        player2: b?.name ?? "",
+        player1_id: a?.player_id ?? null,
+        player2_id: b?.player_id ?? null,
+        score1: 0,
+        score2: 0,
+        winner: null,
+        loser: null,
+        machine_number: null,
+        updated_at: new Date().toISOString(),
+      })
+    } else if (size === 8) {
       // QFs
       const qfs = [PO_QF1, PO_QF2, PO_QF3, PO_QF4]
       for (let i = 0; i < 4; i++) {
@@ -920,7 +1027,7 @@ function buildPairings(size: PlayoffSize, players: Qualifier[]) {
   useEffect(() => {
     if (!playoffExists) return
 
-    const defs = playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4
+    const defs = playoffSize === 8 ? PO_DEFS_8 : playoffSize === 4 ? PO_DEFS_4 : PO_DEFS_2
 
     const getWinnerOf = (mid?: number) => {
       if (!mid) return { name: "", id: null as string | null }
@@ -1224,7 +1331,7 @@ const resetMatch = (scope: "group" | "playoff", matchId: number, fallback?: Matc
 ]
 
 // ---- Playoff display list
-const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4), [playoffSize])
+const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize === 4 ? PO_DEFS_4 : PO_DEFS_2), [playoffSize])
 
 
 
@@ -1238,6 +1345,305 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4), [
     const f = playoffStates[PO_F]
     return normalizeName(f?.winner || "")
   }, [playoffStates])
+
+  const finalPlacements = useMemo(() => {
+    const allTeams = Object.values(standingsByGroup)
+      .flatMap((groupTable) => Object.values(groupTable))
+      .sort((a, b) => {
+        const pa = ptsFrom(a.w)
+        const pb = ptsFrom(b.w)
+        const da = a.legsFor - a.legsAgainst
+        const db = b.legsFor - b.legsAgainst
+
+        if (pb !== pa) return pb - pa
+        if (db !== da) return db - da
+        if (b.legsFor !== a.legsFor) return b.legsFor - a.legsFor
+        return a.name.localeCompare(b.name)
+      })
+
+    const byName = new Map<string, any>()
+    allTeams.forEach((team) => byName.set(normalizeName(team.name), team))
+
+    const result: Array<{ placement: number; team_id: string | null; team_name: string }> = []
+    const used = new Set<string>()
+
+    const addTeam = (placement: number, name?: string, id?: string | null) => {
+      const cleanName = normalizeName(name || "")
+      if (!cleanName || used.has(cleanName)) return
+
+      result.push({
+        placement,
+        team_id: id ?? byName.get(cleanName)?.player_id ?? null,
+        team_name: cleanName,
+      })
+
+      used.add(cleanName)
+    }
+
+    const final = playoffStates[PO_F]
+    const sf1 = playoffStates[PO_SF1]
+    const sf2 = playoffStates[PO_SF2]
+
+    if (playoffExists && final?.winner) {
+      addTeam(1, final.winner, final.winner === normalizeName(final.player1) ? final.player1_id : final.player2_id)
+      addTeam(2, final.loser, final.loser === normalizeName(final.player1) ? final.player1_id : final.player2_id)
+
+      const semiLosers = [sf1, sf2]
+        .filter(Boolean)
+        .map((state) => {
+          const loserName = normalizeName(state?.loser || "")
+          const tableRow = byName.get(loserName)
+          const loserId =
+            loserName === normalizeName(state?.player1 || "")
+              ? state?.player1_id
+              : loserName === normalizeName(state?.player2 || "")
+                ? state?.player2_id
+                : tableRow?.player_id
+
+          return { ...(tableRow || {}), name: loserName, player_id: loserId ?? tableRow?.player_id ?? null }
+        })
+        .filter((team) => team.name)
+
+      semiLosers
+        .sort((a, b) => {
+          const pa = ptsFrom(a.w || 0)
+          const pb = ptsFrom(b.w || 0)
+          const da = (a.legsFor || 0) - (a.legsAgainst || 0)
+          const db = (b.legsFor || 0) - (b.legsAgainst || 0)
+
+          if (pb !== pa) return pb - pa
+          if (db !== da) return db - da
+          return String(a.name).localeCompare(String(b.name))
+        })
+        .forEach((team, index) => addTeam(index === 0 ? 3 : 4, team.name, team.player_id))
+    }
+
+    allTeams.forEach((team) => {
+      if (!used.has(normalizeName(team.name))) {
+        addTeam(result.length + 1, team.name, team.player_id)
+      }
+    })
+
+    return result.sort((a, b) => a.placement - b.placement)
+  }, [standingsByGroup, playoffStates, playoffExists])
+
+  const showSuccess = (title: string, text: string) => {
+    setSuccessTitle(title)
+    setSuccessText(text)
+    setSuccessOpen(true)
+    setResultsSaved(true)
+    setHasSavedResults(true)
+
+    window.setTimeout(() => {
+      setResultsSaved(false)
+    }, 5000)
+  }
+
+  const saveFunTournamentResults = async () => {
+    if (finalPlacements.length === 0) {
+      alert("Keine Platzierungen gefunden.")
+      return
+    }
+
+    if (playoffExists && !champion) {
+      alert("Bitte zuerst die Finalrunde fertig spielen.")
+      return
+    }
+
+    try {
+      setSavingResults(true)
+
+      const rows = finalPlacements.map((row) => ({
+        round_robin_id: roundRobinId,
+        tournament_name: tournamentName,
+        team_id: row.team_id,
+        team_name: row.team_name,
+        placement: row.placement,
+      }))
+
+      const { error } = await supabase
+        .from("fun_tournament_results")
+        .upsert(rows, {
+          onConflict: "round_robin_id,team_name",
+        })
+
+      if (error) throw error
+
+      showSuccess("Fun-Turnier gespeichert", `${rows.length} Platzierungen wurden gespeichert oder aktualisiert.`)
+    } catch (error: any) {
+      console.error("[RR] save fun results error:", error)
+      alert(error?.message || "Fun-Turnier konnte nicht gespeichert werden.")
+    } finally {
+      setSavingResults(false)
+    }
+  }
+
+  const saveMembersCupResults = async () => {
+    if (finalPlacements.length === 0) {
+      alert("Keine Platzierungen gefunden.")
+      return
+    }
+
+    if (playoffExists && !champion) {
+      alert("Bitte zuerst die Finalrunde fertig spielen.")
+      return
+    }
+
+    try {
+      setSavingResults(true)
+
+      const { data: teamMembers, error: teamMembersError } = await supabase
+        .from("members_cup_team_members")
+        .select("team_id,team_name,player1_id,player1_name,player2_id,player2_name")
+        .eq("round_robin_id", roundRobinId)
+
+      if (teamMembersError) throw teamMembersError
+
+      if (!teamMembers || teamMembers.length === 0) {
+        alert("Keine Members-Cup-Teamzuordnung gefunden. Dieses Turnier wurde vermutlich nicht über die Members-Cup-Auslosung erstellt.")
+        return
+      }
+
+      const memberByTeamId = new Map<string, any>()
+      const memberByTeamName = new Map<string, any>()
+
+      teamMembers.forEach((row: any) => {
+        memberByTeamId.set(String(row.team_id), row)
+        memberByTeamName.set(normalizeName(row.team_name), row)
+      })
+
+      const rows: any[] = []
+
+      finalPlacements.forEach((placementRow) => {
+        const teamRow =
+          (placementRow.team_id ? memberByTeamId.get(String(placementRow.team_id)) : null) ||
+          memberByTeamName.get(normalizeName(placementRow.team_name))
+
+        if (!teamRow) return
+
+        const points = getMembersCupPoints(placementRow.placement)
+
+        rows.push({
+          round_robin_id: roundRobinId,
+          tournament_name: tournamentName,
+          team_id: String(teamRow.team_id),
+          team_name: teamRow.team_name,
+          player_id: String(teamRow.player1_id),
+          player_name: teamRow.player1_name,
+          placement: placementRow.placement,
+          points,
+        })
+
+        rows.push({
+          round_robin_id: roundRobinId,
+          tournament_name: tournamentName,
+          team_id: String(teamRow.team_id),
+          team_name: teamRow.team_name,
+          player_id: String(teamRow.player2_id),
+          player_name: teamRow.player2_name,
+          placement: placementRow.placement,
+          points,
+        })
+      })
+
+      if (rows.length === 0) {
+        alert("Keine Spielerpunkte erzeugt. Team-Zuordnung prüfen.")
+        return
+      }
+
+      const { error } = await supabase
+        .from("members_cup_results")
+        .upsert(rows, {
+          onConflict: "round_robin_id,player_id",
+        })
+
+      if (error) throw error
+
+      showSuccess("Members Cup gespeichert", `${rows.length} Punkte-Einträge wurden gespeichert oder aktualisiert.`)
+    } catch (error: any) {
+      console.error("[RR] save members cup results error:", error)
+      alert(error?.message || "Members Cup Punkte konnten nicht gespeichert werden.")
+    } finally {
+      setSavingResults(false)
+    }
+  }
+  
+  
+  
+  const handleFinishTournament = async () => {
+  if (!roundRobinId) return
+
+  try {
+    setFinishingTournament(true)
+
+    const [
+      { count: membersCount, error: membersCountError },
+      { count: funCount, error: funCountError },
+    ] = await Promise.all([
+      supabase
+        .from("members_cup_results")
+        .select("id", { count: "exact", head: true })
+        .eq("round_robin_id", roundRobinId),
+      supabase
+        .from("fun_tournament_results")
+        .select("id", { count: "exact", head: true })
+        .eq("round_robin_id", roundRobinId),
+    ])
+
+    if (membersCountError) throw membersCountError
+    if (funCountError) throw funCountError
+
+    const savedRows = Number(membersCount || 0) + Number(funCount || 0)
+
+    if (savedRows <= 0) {
+      setFinishConfirmOpen(false)
+      alert("Bitte zuerst Ergebnisse speichern.")
+      return
+    }
+
+    const { error: statusError } = await supabase
+      .from("tournaments_status")
+      .update({
+        status: "completed",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("tournament_id", roundRobinId)
+
+    if (statusError) throw statusError
+
+    const { error: roundRobinError } = await supabase
+      .from("round_robin")
+      .update({
+        status: "completed",
+      })
+      .eq("id", roundRobinId)
+
+    if (roundRobinError) throw roundRobinError
+
+    const { error: registrationError } = await supabase
+      .from("dko_tournament_registration")
+      .delete()
+      .not("id", "is", null)
+
+    if (registrationError) throw registrationError
+
+    setFinishConfirmOpen(false)
+    setSuccessTitle("Turnier abgeschlossen")
+    setSuccessText(
+      "Ergebnisse wurden gespeichert, das Turnier wurde abgeschlossen und die Anmeldung wurde geleert. Du wirst gleich zur Anmeldung weitergeleitet."
+    )
+    setSuccessOpen(true)
+
+    window.setTimeout(() => {
+      router.push("/dko_tournament_registration")
+    }, 1400)
+  } catch (error: any) {
+    console.error("[RR] finish tournament error:", error)
+    alert(error?.message || "Turnier konnte nicht abgeschlossen werden.")
+  } finally {
+    setFinishingTournament(false)
+  }
+}
 
   if (!roundRobinId) {
     return (
@@ -1289,7 +1695,7 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4), [
                 <Layers className="w-7 h-7" />
               </div>
               <div>
-                <h1 className="text-3xl sm:text-4xl font-black tracking-tight">{tournamentName}</h1>
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight line-clamp-2" title={tournamentName}>{tournamentName}</h1>
                 <div className="flex items-center gap-3 mt-2 flex-wrap">
                   <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm font-black">
                     <Users className="w-4 h-4" />
@@ -1325,11 +1731,11 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4), [
         </div>
       </div>
 
-      <main className="w-full px-8 py-10 space-y-8">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
 
         {/* TOP GRID */}
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-6 items-start">
           <Card className="rounded-2xl border-2 border-white shadow-lg p-5 bg-gradient-to-br from-orange-50 to-orange-100">
             <div className="flex items-center gap-3 mb-3">
               <Users className="w-5 h-5 text-orange-600" />
@@ -1462,7 +1868,7 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4), [
       Gerade kein Match frei (Spieler sind beschäftigt oder alles läuft/fertig).
     </div>
   ) : (
-    <div className="mt-3 space-y-2 max-h-[220px] overflow-auto pr-1">
+    <div className="mt-3 space-y-2 max-h-[180px] overflow-auto pr-1">
       {playableMatches.slice(0, 6).map((m) => (
         <div key={m.id} className="rounded-xl border-2 border-gray-200 bg-gray-50 px-3 py-2">
           <div className="flex items-center justify-between gap-3">
@@ -1470,8 +1876,10 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4), [
               <div className="text-xs font-black text-gray-600">
                 Runde {m.round_no} · Match {m.match_no}
               </div>
-              <div className="text-sm font-black text-gray-900 truncate">
-                {m.state.player1} vs {m.state.player2}
+              <div className="text-sm font-black text-gray-900 leading-tight" title={`${m.state.player1} vs ${m.state.player2}`}>
+                <div className="truncate">{shortTeamName(m.state.player1)}</div>
+                <div className="text-[10px] font-black text-orange-600 uppercase leading-none my-0.5">vs</div>
+                <div className="truncate">{shortTeamName(m.state.player2)}</div>
               </div>
             </div>
 
@@ -1498,163 +1906,334 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4), [
 
 
 
-        {/* FINALRUNDE PANEL */}
-        <Card className="rounded-2xl border-2 border-white shadow-lg p-6 bg-white">
-          <div className="flex items-start justify-between flex-wrap gap-4">
+        {/* FINALRUNDE PANEL - CLEAN */}
+        <Card className="rounded-2xl border-2 border-orange-100 shadow-lg p-5 bg-white">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-                <Crown className="w-6 h-6 text-orange-600" />
-                Finalrunde · Single KO
+              <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                <Crown className="w-5 h-5 text-orange-600" />
+                Finalrunde einstellen
               </h2>
               <p className="text-sm text-gray-600 font-semibold mt-1">
-                Einmal verloren = raus.
+                Erst Gruppenphase fertig spielen, dann Finalmodus wählen und Finalrunde erstellen.
               </p>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="inline-flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-3 py-2">
-                <span className="text-xs font-black text-gray-700">Finalgröße</span>
-                <Button
-                  type="button"
-                  variant={playoffSize === 4 ? "default" : "outline"}
-                  className={cn("h-8 px-3 font-black", playoffSize === 4 && "bg-orange-600 hover:bg-orange-700")}
-                  onClick={() => setPlayoffSize(4)}
-                >
-                  4
-                </Button>
-                <Button
-                  type="button"
-                  variant={playoffSize === 8 ? "default" : "outline"}
-                  className={cn("h-8 px-3 font-black", playoffSize === 8 && "bg-orange-600 hover:bg-orange-700")}
-                  onClick={() => setPlayoffSize(8)}
-                >
-                  8
-                </Button>
+              <span className={cn(
+                "inline-flex items-center rounded-full border-2 px-3 py-1 text-xs font-black",
+                groupPhaseFinished ? "bg-green-50 border-green-200 text-green-800" : "bg-orange-50 border-orange-200 text-orange-800"
+              )}>
+                {groupPhaseFinished ? "Gruppenphase fertig" : "Gruppenphase läuft"}
+              </span>
+              <span className="inline-flex items-center rounded-full border-2 border-gray-200 bg-gray-50 px-3 py-1 text-xs font-black text-gray-700">
+                Empfehlung: Top {recommendedPlayoffSize}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-5 grid xl:grid-cols-3 gap-4">
+            {/* Auswahl */}
+            <div className="xl:col-span-1 space-y-4">
+              <div className="rounded-2xl border-2 border-gray-200 bg-gray-50 p-4">
+                <div className="text-xs font-black text-gray-500 uppercase tracking-wide mb-3">1. Was wird gespielt?</div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFinalMode("single_ko")}
+                    className={cn(
+                      "rounded-xl border-2 p-3 text-left transition-all",
+                      finalMode === "single_ko"
+                        ? "bg-orange-600 border-orange-600 text-white shadow-md"
+                        : "bg-white border-gray-200 text-gray-800 hover:border-orange-300"
+                    )}
+                  >
+                    <div className="font-black text-sm">Single KO</div>
+                    <div className={cn("text-xs mt-1", finalMode === "single_ko" ? "text-orange-50" : "text-gray-500")}>1 Niederlage = raus</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFinalMode("double_ko")}
+                    className={cn(
+                      "rounded-xl border-2 p-3 text-left transition-all",
+                      finalMode === "double_ko"
+                        ? "bg-gray-900 border-gray-900 text-white shadow-md"
+                        : "bg-white border-gray-200 text-gray-800 hover:border-gray-400"
+                    )}
+                  >
+                    <div className="font-black text-sm">DKO</div>
+                    <div className={cn("text-xs mt-1", finalMode === "double_ko" ? "text-gray-200" : "text-gray-500")}>2 Niederlagen = raus</div>
+                  </button>
+                </div>
+
+                {finalMode === "double_ko" ? (
+                  <div className="mt-3 rounded-xl border-2 border-yellow-200 bg-yellow-50 px-3 py-2 text-xs font-bold text-yellow-900">
+                    DKO ist als Auswahl vorbereitet. Die DKO-Spiellogik bauen wir im nächsten Schritt ein. Aktuell kann nur Single KO erstellt werden.
+                  </div>
+                ) : null}
               </div>
 
-              <div className="inline-flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-3 py-2">
-                <span className="text-xs font-black text-gray-700">Quali/Gruppe</span>
-                <Input
-                  type="number"
-                  min={1}
-                  max={4}
-                  value={qualifiersPerGroup}
-                  onChange={(e) => setQualifiersPerGroup(Math.max(1, Math.min(4, Number(e.target.value) || 1)))}
-                  className="h-8 w-20 text-center font-black"
-                />
+              <div className="rounded-2xl border-2 border-gray-200 bg-gray-50 p-4">
+                <div className="text-xs font-black text-gray-500 uppercase tracking-wide mb-3">2. Wie viele kommen weiter?</div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {([2, 4, 8] as PlayoffSize[]).map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setPlayoffSize(size)}
+                      className={cn(
+                        "rounded-xl border-2 px-3 py-3 font-black transition-all",
+                        playoffSize === size
+                          ? "bg-orange-600 border-orange-600 text-white shadow-md"
+                          : "bg-white border-gray-200 text-gray-800 hover:border-orange-300"
+                      )}
+                    >
+                      Top {size}
+                    </button>
+                  ))}
+                </div>
+
+                {groups.length > 1 ? (
+                  <div className="mt-3 rounded-xl border-2 border-white bg-white p-3">
+                    <div className="text-xs font-black text-gray-500 mb-2">Qualifizierte je Gruppe</div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={8}
+                        value={qualifiersPerGroup}
+                        onChange={(e) => setQualifiersPerGroup(Math.max(1, Math.min(8, Number(e.target.value) || 1)))}
+                        className="h-9 w-24 text-center font-black"
+                      />
+                      <span className="text-xs font-bold text-gray-600">
+                        aktuell: {effectiveQualifiersPerGroup} pro Gruppe
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-xl border-2 border-white bg-white px-3 py-2 text-xs font-bold text-gray-700">
+                    Bei 1 Gruppe kommen automatisch die besten {playoffSize} Teams der Tabelle weiter.
+                  </div>
+                )}
               </div>
 
               <Button
                 className={cn(
-                  "font-black",
-                  groupPhaseFinished ? "bg-orange-600 hover:bg-orange-700" : "bg-gray-300 text-gray-500",
+                  "w-full h-12 rounded-xl font-black",
+                  groupPhaseFinished && finalMode === "single_ko" ? "bg-orange-600 hover:bg-orange-700" : "bg-gray-300 text-gray-500"
                 )}
-                disabled={!groupPhaseFinished}
+                disabled={!groupPhaseFinished || finalMode !== "single_ko"}
                 onClick={createPlayoffs}
               >
                 <Swords className="w-4 h-4 mr-2" />
-                {playoffExists ? "Finalrunde neu erstellen (überschreibt NICHT laufende Spiele)" : "Finalrunde erstellen"}
+                {playoffExists ? "Single KO neu erstellen" : "Single KO erstellen"}
               </Button>
-
-              <div className="text-xs font-black text-gray-700 rounded-full border-2 border-gray-200 bg-white px-3 py-2">
-                Empfehlung: {recommendedPlayoffSize}er KO
-              </div>
             </div>
-          </div>
 
-          <div className="mt-4 grid lg:grid-cols-3 gap-4">
+            {/* Qualifizierte */}
             <div className="rounded-2xl border-2 border-orange-100 bg-orange-50 p-4">
-              <div className="font-black text-gray-900 mb-2">Qualifizierte ({qualifiedFinalists.length}/{playoffSize})</div>
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <div className="font-black text-gray-900">Qualifizierte</div>
+                  <div className="text-xs font-bold text-gray-600">
+                    {qualifiedFinalists.length}/{playoffSize} Teams für die Finalrunde
+                  </div>
+                </div>
+                <div className="rounded-full bg-white border-2 border-orange-200 px-3 py-1 text-xs font-black text-orange-700">
+                  {finalMode === "single_ko" ? "Single KO" : "DKO"}
+                </div>
+              </div>
+
               {qualifiedFinalists.length === 0 ? (
-                <div className="text-sm text-gray-500 font-semibold">Noch keine Tabelle/Ergebnisse.</div>
+                <div className="rounded-xl border-2 border-white bg-white p-4 text-sm text-gray-500 font-semibold">
+                  Noch keine Ergebnisse in der Gruppenphase.
+                </div>
               ) : (
-                <div className="space-y-2 max-h-48 overflow-auto pr-1">
+                <div className="space-y-2 max-h-72 overflow-auto pr-1">
                   {qualifiedFinalists.slice(0, playoffSize).map((q, idx) => (
                     <div
                       key={`${q.group_id}-${q.name}`}
-                      className="flex items-center justify-between rounded-xl border-2 border-white bg-white px-3 py-2 shadow-sm"
+                      className="flex items-center justify-between gap-3 rounded-xl border-2 border-white bg-white px-3 py-2 shadow-sm"
                     >
-                      <div className="font-black text-gray-900 truncate">
-                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-500 text-white text-xs font-black mr-2">
+                      <div className="min-w-0 flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-500 text-white text-xs font-black shrink-0">
                           {idx + 1}
                         </span>
-                        {q.name}
+                        <span className="font-black text-gray-900 truncate" title={q.name}>{shortTeamName(q.name)}</span>
                       </div>
-                      <div className="text-xs font-black text-gray-600">
-                        G{q.group_no}#{q.place} · {q.points}P · {q.legsFor - q.legsAgainst}Δ
+                      <div className="text-[11px] font-black text-gray-600 shrink-0">
+                        G{q.group_no} · #{q.place} · {q.points}P · {q.legsFor - q.legsAgainst}Δ
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-              {!groupPhaseFinished && (
+
+              {!groupPhaseFinished ? (
                 <div className="mt-3 text-xs font-black text-orange-800 border-2 border-orange-200 bg-orange-100/60 rounded-xl px-3 py-2">
-                  Finalrunde erst möglich wenn Gruppenphase fertig ist.
+                  Finalrunde erst möglich, wenn alle Gruppenspiele fertig sind.
                 </div>
-              )}
+              ) : null}
             </div>
 
-            <div className="lg:col-span-2">
+            {/* Finalbaum */}
+            <div className="xl:col-span-1 rounded-2xl border-2 border-gray-200 bg-gray-50 p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="font-black text-gray-900">Finalbaum</div>
+                {playoffExists ? (
+                  <span className="rounded-full bg-green-50 border-2 border-green-200 px-3 py-1 text-xs font-black text-green-800">erstellt</span>
+                ) : (
+                  <span className="rounded-full bg-white border-2 border-gray-200 px-3 py-1 text-xs font-black text-gray-600">offen</span>
+                )}
+              </div>
+
               {!playoffExists ? (
-                <div className="h-full rounded-2xl border-2 border-gray-200 bg-gray-50 p-4 flex items-center justify-center text-gray-600 font-semibold">
-                  Noch keine Finalrunde erstellt.
+                <div className="h-[220px] rounded-xl border-2 border-dashed border-gray-300 bg-white flex items-center justify-center text-center p-4 text-gray-500 font-semibold">
+                  Noch keine Finalrunde erstellt. Oben Modus und Anzahl wählen.
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 max-h-[420px] overflow-auto pr-1">
                   {champion && (
-                    <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Crown className="w-6 h-6 text-green-700" />
-                        <div>
-                          <div className="text-sm font-black text-green-900">Champion</div>
-                          <div className="text-xl font-black text-green-800">{champion}</div>
-                        </div>
-                      </div>
-                      <div className="text-xs font-black text-green-800 border-2 border-green-200 bg-white rounded-full px-3 py-2">
-                        Final gewonnen ✓
-                      </div>
+                    <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-3">
+                      <div className="text-xs font-black text-green-900">Champion</div>
+                      <div className="text-lg font-black text-green-800 truncate" title={champion}>{shortTeamName(champion)}</div>
                     </div>
                   )}
 
-                  {/* Playoff rounds */}
                   {(["QF", "SF", "F"] as const).map((rnd) => {
                     const list = playoffRoundGroups[rnd] || []
                     if (!list.length) return null
                     return (
-                      <div key={rnd} className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-black text-orange-600 border-b-2 border-orange-600 pb-2">
-                            {rnd === "QF" ? "Viertelfinale" : rnd === "SF" ? "Halbfinale" : "Finale"}
-                          </h3>
-                        </div>
-                        <div className="grid xl:grid-cols-2 gap-4">
-                          {list.map((d) => {
-                            const st = playoffStates[d.id] || emptyState(d.id)
-                            return (
-                              <PlayoffMatchCard
-                                key={d.id}
-                                label={d.label}
-                                player1={st.player1}
-                                player2={st.player2}
-                                score1={st.score1}
-                                score2={st.score2}
-                                winner={st.winner}
-                                loser={st.loser}
-                                machineNumber={st.machineNumber}
-                                onStart={() => startMatch("playoff", d.id, st)}
-                                onReset={() => resetMatch("playoff", d.id, st)}
-                                onConfirm={() => confirmMatch("playoff", d.id, st)}
-                                onScore={(p, s) => updateScore("playoff", d.id, p, s, st)}
-                              />
-                            )
-                          })}
-                        </div>
+                      <div key={rnd} className="space-y-2">
+                        <h3 className="text-sm font-black text-orange-600">
+                          {rnd === "QF" ? "Viertelfinale" : rnd === "SF" ? "Halbfinale" : "Finale"}
+                        </h3>
+                        {list.map((d) => {
+                          const st = playoffStates[d.id] || emptyState(d.id)
+                          return (
+                            <PlayoffMatchCard
+                              key={d.id}
+                              label={d.label}
+                              player1={st.player1}
+                              player2={st.player2}
+                              score1={st.score1}
+                              score2={st.score2}
+                              winner={st.winner}
+                              loser={st.loser}
+                              machineNumber={st.machineNumber}
+                              onStart={() => startMatch("playoff", d.id, st)}
+                              onReset={() => resetMatch("playoff", d.id, st)}
+                              onConfirm={() => confirmMatch("playoff", d.id, st)}
+                              onScore={(p, s) => updateScore("playoff", d.id, p, s, st)}
+                            />
+                          )
+                        })}
                       </div>
                     )
                   })}
                 </div>
               )}
             </div>
+          </div>
+        </Card>
+
+        {/* ERGEBNISSE SPEICHERN */}
+        <Card className="rounded-2xl border-2 border-orange-100 shadow-lg p-5 bg-white">
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-orange-600" />
+                Ergebnisse speichern
+              </h2>
+              <p className="text-sm text-gray-600 font-semibold mt-1">
+                Fun-Turnier normal speichern oder Members-Cup-Punkte automatisch auf beide Doppelspieler verteilen.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={savingResults || finalPlacements.length === 0}
+                onClick={saveFunTournamentResults}
+                className="font-black"
+              >
+                {savingResults ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <Trophy className="w-4 h-4 mr-2" />}
+                Fun-Turnier speichern
+              </Button>
+
+              <Button
+                type="button"
+                disabled={savingResults || finalPlacements.length === 0}
+                onClick={saveMembersCupResults}
+                className="font-black bg-orange-600 hover:bg-orange-700"
+              >
+                {savingResults ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
+                Members Cup Punkte speichern
+              </Button>
+
+              <Button
+                type="button"
+                disabled={!hasSavedResults || finishingTournament}
+                onClick={() => setFinishConfirmOpen(true)}
+                className={cn(
+                  "font-black",
+                  hasSavedResults
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-gray-300 text-gray-500 hover:bg-gray-300",
+                )}
+              >
+                {finishingTournament ? (
+                  <RefreshCcw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4 mr-2" />
+                )}
+                Turnier abschließen
+              </Button>
+            </div>
+          </div>
+
+          {resultsSaved ? (
+            <div className="mt-4 rounded-xl border-2 border-green-200 bg-green-50 px-4 py-3 text-green-800 font-black">
+              Ergebnisse wurden gespeichert oder aktualisiert. Turnier abschließen ist jetzt möglich.
+            </div>
+          ) : null}
+
+          {!hasSavedResults ? (
+            <div className="mt-4 rounded-xl border-2 border-yellow-200 bg-yellow-50 px-4 py-3 text-yellow-900 font-bold">
+              Speichere zuerst Fun-Turnier oder Members-Cup-Punkte. Danach kannst du das Turnier sauber abschließen.
+            </div>
+          ) : null}
+
+          <div className="mt-5">
+            {finalPlacements.length === 0 ? (
+              <div className="rounded-2xl border-2 border-gray-200 bg-gray-50 p-4 text-sm font-semibold text-gray-600">
+                Noch keine Platzierungen berechenbar. Gruppenphase oder Finalrunde zuerst fertig spielen.
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-auto pr-1">
+                {finalPlacements.map((row) => (
+                  <div
+                    key={`${row.placement}-${row.team_name}`}
+                    className="flex items-center justify-between gap-3 rounded-2xl border-2 border-gray-100 bg-gray-50 px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-xs font-black text-gray-500">Platz {row.placement}</div>
+                      <div className="font-black text-gray-900 truncate" title={row.team_name}>
+                        {shortTeamName(row.team_name)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border-2 border-orange-200 bg-orange-50 px-3 py-2 text-sm font-black text-orange-700 shrink-0">
+                      {getMembersCupPoints(row.placement)} Punkte
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </Card>
 
@@ -1699,7 +2278,7 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4), [
                           <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 text-white text-xs font-black">
                             {idx + 1}
                           </span>
-                          {r.name}
+                          <span className="truncate" title={r.name}>{shortTeamName(r.name)}</span>
                         </div>
                         <div className="col-span-1 text-center font-bold">{r.played}</div>
                         <div className="col-span-1 text-center font-bold text-green-700">{r.w}</div>
@@ -1796,6 +2375,66 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : PO_DEFS_4), [
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={finishConfirmOpen} onOpenChange={setFinishConfirmOpen}>
+        <DialogContent className="max-w-md rounded-3xl border-0">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-orange-600">
+              <Check className="w-6 h-6" />
+              Turnier abschließen?
+            </DialogTitle>
+
+            <DialogDescription className="text-base pt-2">
+              Dadurch wird das Turnier als abgeschlossen markiert, die aktuelle Anmeldung geleert und du wirst zur Anmeldung weitergeleitet.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-2xl border-2 border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-bold text-yellow-900">
+            Wichtig: Ergebnisse müssen vorher gespeichert sein. Die Team- und Punktehistorie bleibt erhalten.
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setFinishConfirmOpen(false)}
+              disabled={finishingTournament}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              type="button"
+              onClick={handleFinishTournament}
+              disabled={finishingTournament}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {finishingTournament ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+              Ja, abschließen
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
+        <DialogContent className="max-w-md rounded-3xl border-0">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-green-600">
+              <Check className="w-6 h-6" />
+              {successTitle}
+            </DialogTitle>
+
+            <DialogDescription className="text-base pt-2">
+              {successText}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex justify-end pt-4">
+            <Button onClick={() => setSuccessOpen(false)} className="bg-green-600 hover:bg-green-700">
+              Schließen
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -1879,7 +2518,7 @@ function RRMatchCard(props: {
 
       {winner && (
         <div className="mt-3 rounded-xl border-2 border-green-200 bg-white px-3 py-2 text-sm font-black text-green-700">
-          Sieger: {winner}
+          Sieger: <span title={winner}>{shortTeamName(winner)}</span>
         </div>
       )}
 
@@ -1990,7 +2629,7 @@ function PlayoffMatchCard(props: {
 
       {winner && (
         <div className="mt-3 rounded-xl border-2 border-green-200 bg-white px-3 py-2 text-sm font-black text-green-700">
-          Sieger: {winner}
+          Sieger: <span title={winner}>{shortTeamName(winner)}</span>
         </div>
       )}
 
@@ -2041,14 +2680,15 @@ function Row(props: {
       )}
     >
       <p
+        title={fullTeamTitle(name)}
         className={cn(
-          "flex-1 text-sm truncate font-bold",
+          "flex-1 text-sm truncate font-bold leading-tight",
           winner && "text-orange-700",
           loser && "text-red-600",
           !winner && !loser && "text-gray-900"
         )}
       >
-        {name}
+        {shortTeamName(name) || name}
       </p>
 
       <Input
