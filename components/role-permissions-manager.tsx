@@ -28,6 +28,7 @@ type PageKey =
   | "admin-push"
   | "bonus-system"
   | "member-availability-all"
+| "members-levels"
 
 const PAGES: Array<{ key: PageKey; title: string }> = [
   { key: "users", title: "Benutzerverwaltung" },
@@ -49,7 +50,10 @@ const PAGES: Array<{ key: PageKey; title: string }> = [
   { key: "tournaments", title: "Turniere" },
   { key: "tournament-management", title: "Turnier verwalten" },
   { key: "player-database", title: "Spielerdatenbank" },
-  { key: "dart-competition", title: "Lion Cup" },
+
+{ key: "members-levels", title: "Members Cup Einstufung" },
+
+{ key: "dart-competition", title: "Lion Cup" },
 ]
 
 type TeamMember = {

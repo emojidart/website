@@ -364,21 +364,132 @@ export default function MembersChampionCupRegelwerkPage() {
                 <SubCard tone="success" title="Partner-Zulosung">
                   <p>
                     Zu Beginn jedes Turniers werden die Teilnehmer neu zu <strong>Zweierteams</strong> zusammengestellt.
-                    Die Zulosung erfolgt unter Berücksichtigung der Leistungstabelle:
+                    Die Zulosung erfolgt unter Berücksichtigung der offiziellen EMD Leistungstabellen.
                   </p>
+                </SubCard>
+
+                <SubCard tone="info" title="Offizielle Zulosungsregel">
+                  <p>
+                    Die Partner-Zulosung erfolgt auf Basis der offiziellen <strong>EMD Leistungstabellen</strong>.
+                  </p>
+
+                  <p className="mt-2">
+                    Spieler der höchsten Leistungstabelle werden grundsätzlich Spielern der niedrigeren Leistungsgruppen
+                    zugelost, um möglichst ausgeglichene Teams zu gewährleisten.
+                  </p>
+
+                  <p className="mt-2">
+                    Die mittlere Leistungstabelle dient dabei als <strong>flexible Ausgleichsgruppe</strong>. Spieler
+                    dieser Tabelle können – abhängig von Teilnehmeranzahl und Verteilung der Leistungsgruppen – sowohl der
+                    stärkeren als auch der schwächeren Gruppe zugeordnet werden.
+                  </p>
+
+                  <p className="mt-2">Vor jeder Auslosung wird daher geprüft:</p>
+
                   <ul className="mt-2 space-y-1">
-                    <li>• Anfänger</li>
-                    <li>• Fortgeschrittene</li>
-                    <li>• Experten</li>
+                    <li>• Anzahl der starken Spieler</li>
+                    <li>• Anzahl der schwächeren Spieler</li>
+                    <li>• Anzahl der Spieler der mittleren Tabelle</li>
+                  </ul>
+
+                  <p className="mt-2">
+                    Die mittlere Tabelle wird anschließend entsprechend aufgeteilt, um möglichst ausgeglichene
+                    Partner-Konstellationen zu ermöglichen.
+                  </p>
+
+                  <p className="mt-2">
+                    Erst danach erfolgt die zufällige Partner-Zulosung innerhalb der gebildeten Gruppen.
+                  </p>
+
+                  <p className="mt-2">
+                    Die Turnierleitung behält sich organisatorische Anpassungen vor, sofern diese zur Sicherstellung eines
+                    fairen Wettbewerbs erforderlich sind.
+                  </p>
+                </SubCard>
+
+                <SubCard tone="info" title="Zulosungsgruppen">
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <div className="rounded-xl border border-orange-100 bg-white p-4 text-center">
+                      <div className="font-black text-orange-900">Tabelle 1</div>
+                      <div className="text-sm font-bold text-gray-900 mt-1">Stark</div>
+                      <div className="text-xs text-gray-700 mt-1">höchste Leistungsgruppe</div>
+                    </div>
+
+                    <div className="rounded-xl border border-blue-100 bg-white p-4 text-center">
+                      <div className="font-black text-blue-900">Tabelle 2</div>
+                      <div className="text-sm font-bold text-gray-900 mt-1">Mitte</div>
+                      <div className="text-xs text-gray-700 mt-1">flexible Ausgleichsgruppe</div>
+                    </div>
+
+                    <div className="rounded-xl border border-emerald-100 bg-white p-4 text-center">
+                      <div className="font-black text-emerald-900">Tabelle 3</div>
+                      <div className="text-sm font-bold text-gray-900 mt-1">Schwach</div>
+                      <div className="text-xs text-gray-700 mt-1">niedrigere Leistungsgruppe</div>
+                    </div>
+                  </div>
+                </SubCard>
+
+                <SubCard title="Ablauf der Zulosung">
+                  <ol className="space-y-2 list-decimal list-inside">
+                    <li>Alle angemeldeten Spieler werden nach ihrer Leistungstabelle erfasst.</li>
+                    <li>Die Anzahl der starken, mittleren und schwächeren Spieler wird geprüft.</li>
+                    <li>Spieler aus Tabelle 2 werden bei Bedarf der stärkeren oder schwächeren Gruppe zugeteilt.</li>
+                    <li>Danach werden zwei möglichst gleich große Zulosungsgruppen gebildet.</li>
+                    <li>Aus jeder Gruppe wird anschließend per Zufall ein Spieler zu einem Doppelteam gelost.</li>
+                  </ol>
+                </SubCard>
+
+                <SubCard tone="success" title="Beispiel 1 – ausgeglichene Verteilung">
+                  <p>
+                    Sind zum Beispiel <strong>4 starke</strong>, <strong>4 mittlere</strong> und{" "}
+                    <strong>4 schwächere</strong> Spieler angemeldet, werden die 4 mittleren Spieler per Zufall
+                    aufgeteilt.
+                  </p>
+
+                  <ul className="mt-2 space-y-2">
+                    <li>• 2 mittlere Spieler werden der stärkeren Gruppe zugeordnet</li>
+                    <li>• 2 mittlere Spieler werden der schwächeren Gruppe zugeordnet</li>
+                    <li>• danach wird jeweils ein Spieler aus Gruppe A mit einem Spieler aus Gruppe B zusammengelost</li>
                   </ul>
                 </SubCard>
+				
+				
+				
+				
+
+                <SubCard tone="warn" title="Beispiel 2 – zu wenig schwächere Spieler">
+  <p>
+    Sind zum Beispiel <strong>6 starke</strong>, <strong>4 mittlere</strong> und{" "}
+    <strong>2 schwächere</strong> Spieler angemeldet, werden alle Spieler der mittleren Tabelle
+    der schwächeren Gruppe zugeteilt.
+  </p>
+
+  <p className="mt-2">
+    Dadurch entstehen zwei gleich große Zulosungsgruppen:
+  </p>
+
+  <ul className="mt-2 space-y-1">
+    <li>• Gruppe A: 6 starke Spieler</li>
+    <li>• Gruppe B: 2 schwächere + 4 mittlere Spieler</li>
+  </ul>
+
+  <p className="mt-2">
+    Anschließend erfolgt die zufällige Partner-Zulosung zwischen beiden Gruppen.
+  </p>
+</SubCard>
+				
+				
+				
+				
 
                 <SubCard title="Zielsetzung">
                   <ul className="space-y-2">
-                    <li>• Förderung von Teamfähigkeit und Anpassungsfähigkeit</li>
-                    <li>• Vermeidung fester Gruppen</li>
-                    <li>• Mehr Dynamik im Wettbewerb</li>
-                    <li>• Jeder Spieler sammelt trotzdem Punkte für seine Einzelwertung</li>
+                    <li>• faire und ausgeglichene Doppel-Teams</li>
+                    <li>• stärkere Spieler werden möglichst mit schwächeren Spielern kombiniert</li>
+                    <li>• mittlere Spieler gleichen fehlende Teilnehmergruppen flexibel aus</li>
+                    <li>• keine festen Partner oder fixen Leistungscluster</li>
+                    <li>• mehr Spannung und Chancengleichheit im Wettbewerb</li>
+                    <li>• jeder Spieler sammelt trotzdem Punkte für seine Einzelwertung</li>
                   </ul>
                 </SubCard>
               </div>

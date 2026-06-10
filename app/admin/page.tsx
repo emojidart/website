@@ -51,6 +51,7 @@ import { AdminBonusManagement } from "@/components/admin/bonus/admin-bonus-manag
 import { AdminSpieldatenbankManagement } from "@/components/admin/spieldatenbank/admin-spieldatenbank-management"
 import { LeagueManagement } from "@/components/league-management"
 import { RolePermissionsManager } from "@/components/role-permissions-manager"
+import { AdminMembersLevelManagement } from "@/components/admin/members-champion-cup/admin-members-level-management"
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
@@ -91,6 +92,7 @@ export default function AdminPage() {
 	  | "member-availability-all"
 	  | "bonus-system"
 	  | "admin-push"
+| "members-levels"
   >("dashboard")
 
   const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
@@ -353,6 +355,14 @@ export default function AdminPage() {
       view: "tournaments" as const,
       category: "sport" as const,
     },
+	{
+  title: "Members Cup Einstufung",
+  description: "Tabelle 1 / 2 / 3 Spieler verwalten",
+  icon: Trophy,
+  color: "bg-orange-600",
+  view: "members-levels" as const,
+  category: "sport" as const,
+},
     {
       title: "Turnier verwalten",
       description: "Serien, Spieltage & Stammdaten zentral pflegen",
@@ -388,11 +398,15 @@ export default function AdminPage() {
   ]
 
   const visibleDashboardCards = dashboardCards.filter((card) => {
-    if (allowedViews?.has("*")) return true
-    if (allowedViews === null) return false
-    if (card.view === "role-permissions") return false
-    return allowedViews.has(card.view)
-  })
+  // Während laden -> erstmal alles anzeigen
+  if (allowedViews === null) return true
+
+  if (allowedViews.has("*")) return true
+
+  if (card.view === "role-permissions") return false
+
+  return allowedViews.has(card.view)
+})
 
   const canSeeView = (viewKey: string) => {
     if (viewKey === "dashboard") return true
@@ -422,6 +436,7 @@ export default function AdminPage() {
         { key: "dart-competition", label: "Lion Cup", icon: Trophy },
         { key: "history", label: "Historie", icon: History },
         { key: "player-database", label: "Spielerdatenbank", icon: List },
+		{ key: "members-levels", label: "Members Cup Einstufung", icon: Trophy },
       ],
     },
     {
@@ -468,7 +483,14 @@ export default function AdminPage() {
     ["leagues", "member-availability-all"].includes(c.view)
   ),
   "Turnierbetrieb": visibleDashboardCards.filter((c) =>
-    ["tournaments", "tournament-management", "dart-competition", "history", "player-database"].includes(c.view)
+    [
+  "tournaments",
+  "tournament-management",
+  "dart-competition",
+  "history",
+  "player-database",
+  "members-levels"
+].includes(c.view)
   ),
   "Verein": visibleDashboardCards.filter((c) =>
     [
@@ -504,7 +526,7 @@ export default function AdminPage() {
   // ✅ Zugriff jetzt über user_page_permissions (allowedViews), nicht mehr über clubRoles
 if (session && !isAdmin) {
   // solange Berechtigungen laden: Spinner
-  if (roleLoading || allowedViews === null) {
+  if (roleLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -905,6 +927,24 @@ if (!hasAnyPermission) {
 
       <CardContent>
         <AdminPushManagement user={user} />
+      </CardContent>
+    </Card>
+  </div>
+)}
+
+
+{currentView === "members-levels" && (
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <Trophy className="h-5 w-5" />
+          <span>EMD Members Cup Einstufung</span>
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <AdminMembersLevelManagement user={user} />
       </CardContent>
     </Card>
   </div>
