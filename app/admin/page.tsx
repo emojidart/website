@@ -424,16 +424,29 @@ export default function AdminPage() {
 
   if (card.view === "role-permissions") return false
 
-  return allowedViews.has(card.view) || card.view === "members-levels"
+  return (
+  allowedViews.has(card.view) ||
+  card.view === "members-levels" ||
+  card.view === "bonus-vergabe"
+)
 })
 
-  const canSeeView = (viewKey: string) => {
-    if (viewKey === "dashboard") return true
-    if (allowedViews?.has("*")) return true
-    if (allowedViews === null) return false
-    if ((viewKey === "results" || viewKey === "history") && allowedViews.has("dart-competition")) return true
-    return allowedViews.has(viewKey)
+ const canSeeView = (viewKey: string) => {
+  if (viewKey === "dashboard") return true
+  if (allowedViews?.has("*")) return true
+  if (allowedViews === null) return false
+
+  if (viewKey === "members-levels" || viewKey === "bonus-vergabe") return true
+
+  if (
+    (viewKey === "results" || viewKey === "history") &&
+    allowedViews.has("dart-competition")
+  ) {
+    return true
   }
+
+  return allowedViews.has(viewKey)
+}
 
   const navSections = [
     {
