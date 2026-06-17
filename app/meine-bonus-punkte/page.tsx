@@ -609,10 +609,23 @@ export default function MemberBonusAppPage() {
                   </div>
                 </div>
 
-                <Link href="/praemien" className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black uppercase tracking-wide text-orange-700 shadow-lg transition hover:-translate-y-0.5 hover:bg-orange-50">
-                  Zu den Prämien
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+  <Link
+    href="/praemien"
+    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black uppercase tracking-wide text-orange-700 shadow-lg transition hover:-translate-y-0.5 hover:bg-orange-50"
+  >
+    <Gift className="h-4 w-4" />
+    Zu den Prämien
+  </Link>
+
+  <Link
+    href="/praemien-rangliste"
+    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/30 bg-white/15 px-5 py-3 text-sm font-black uppercase tracking-wide text-white backdrop-blur-sm transition hover:bg-white/25"
+  >
+    <Trophy className="h-4 w-4" />
+    Rangliste
+  </Link>
+</div>
               </div>
             </div>
           </motion.div>
