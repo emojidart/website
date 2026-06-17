@@ -42,6 +42,55 @@ const itemVariants = {
   },
 }
 
+const tabelle1Players = [
+  { platz: 1, name: "Tomas B.", punkte: "41,52" },
+  { platz: 2, name: "Huber L.", punkte: "33,57" },
+  { platz: 3, name: "Christoph St.", punkte: "32,25" },
+  { platz: 4, name: "Florian L.", punkte: "30,58" },
+  { platz: 5, name: "Orhan A.", punkte: "30,41" },
+  { platz: 6, name: "Roland Schw.", punkte: "28,82" },
+  { platz: 7, name: "Peter M.", punkte: "26,08" },
+  { platz: 8, name: "Rene St.", punkte: "24,86" },
+  { platz: 9, name: "Roland R.", punkte: "24,59" },
+  { platz: 10, name: "Patrik W.", punkte: "24,58" },
+  { platz: 11, name: "Tolga E.", punkte: "23,19" },
+  { platz: 12, name: "Karl K.", punkte: "23,05" },
+  { platz: 13, name: "Andreas T.", punkte: "22,50" },
+]
+
+const tabelle2Players = [
+  { platz: 14, name: "Jimmy W.", punkte: "21,47" },
+  { platz: 15, name: "Ramona R.", punkte: "21,00" },
+  { platz: 16, name: "Bernhard G.", punkte: "20,55" },
+  { platz: 17, name: "Michael G.", punkte: "20,00" },
+  { platz: 18, name: "Hasan C.", punkte: "19,94" },
+  { platz: 19, name: "Christoph K.", punkte: "19,16" },
+  { platz: 20, name: "Tina U.", punkte: "18,74" },
+  { platz: 21, name: "Rene J.", punkte: "18,66" },
+  { platz: 22, name: "Dominique H.", punkte: "18,42" },
+  { platz: 23, name: "Medine K.", punkte: "18,38" },
+  { platz: 24, name: "Christian M.", punkte: "18,25" },
+  { platz: 25, name: "Tanju E.", punkte: "15,04" },
+  { platz: 26, name: "Manfred E.", punkte: "14,85" },
+  { platz: 27, name: "Michael Schl.", punkte: "14,70" },
+]
+
+const tabelle3Players = [
+  { platz: 28, name: "Wolfgang E.", punkte: "13,66" },
+  { platz: 29, name: "Andrea G.", punkte: "12,74" },
+  { platz: 30, name: "Tamara R.", punkte: "12,29" },
+  { platz: 31, name: "Stefan N.", punkte: "10,71" },
+  { platz: 32, name: "Mike Th.", punkte: "8,67" },
+  { platz: 33, name: "Julia R.", punkte: "6,40" },
+  { platz: 34, name: "Ulrike F.", punkte: "5,50" },
+  { platz: 35, name: "Petra B.", punkte: "4,85" },
+  { platz: 36, name: "Angela Schm.", punkte: "4,20" },
+  { platz: 37, name: "Sibel N.", punkte: "0,00" },
+  { platz: 38, name: "Nicole R.", punkte: "0,00" },
+  { platz: 39, name: "Sabina S.", punkte: "0,00" },
+  { platz: 40, name: "Thomas R.", punkte: "0,00" },
+]
+
 function TierCard({
   title,
   subtitle,
@@ -66,20 +115,20 @@ function TierCard({
     >
       <div className={`h-2 w-full ${accent}`} />
 
-      <div className="relative p-5">
+      <div className="relative p-4 sm:p-5">
         <div className="text-center mb-5">
           <div className="inline-flex items-center gap-2 rounded-full bg-orange-50 border border-orange-200 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-orange-700">
             <Trophy className="w-4 h-4 text-orange-600" />
             {title}
           </div>
 
-          <h2 className="mt-4 text-3xl font-black text-gray-900">
+          <h2 className="mt-4 text-2xl sm:text-3xl font-black text-gray-900">
             {subtitle}
           </h2>
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="grid grid-cols-3 px-4 py-3 text-xs font-black uppercase tracking-wider bg-orange-50 text-orange-900 border-b border-orange-100">
+          <div className="grid grid-cols-[60px_1fr_90px] px-3 sm:px-4 py-3 text-xs font-black uppercase tracking-wider bg-orange-50 text-orange-900 border-b border-orange-100">
             <div>Platz</div>
             <div>Name</div>
             <div className="text-right">Punkte</div>
@@ -89,19 +138,19 @@ function TierCard({
             {players.map((player, index) => (
               <div
                 key={`${player.platz}-${player.name}`}
-                className={`grid grid-cols-3 items-center px-4 py-3 border-t border-gray-100 ${
+                className={`grid grid-cols-[60px_1fr_90px] items-center px-3 sm:px-4 py-2.5 border-t border-gray-100 ${
                   index % 2 === 0 ? "bg-white" : "bg-gray-50"
                 }`}
               >
-                <div className="font-black text-lg text-gray-900">
+                <div className="font-black text-base sm:text-lg text-gray-900">
                   {player.platz}
                 </div>
 
-                <div className="font-bold truncate text-base text-gray-800">
+                <div className="font-bold truncate text-sm sm:text-base text-gray-800">
                   {player.name}
                 </div>
 
-                <div className="text-right font-black text-lg text-orange-700">
+                <div className="text-right font-black text-base sm:text-lg text-orange-700">
                   {player.punkte}
                 </div>
               </div>
@@ -251,22 +300,13 @@ export default function MembersChampionCupEinstufungPage() {
             </div>
           </motion.div>
 
-          <div className="grid xl:grid-cols-3 gap-6 mt-8">
+          <div className="grid xl:grid-cols-3 gap-6 mt-8 items-start">
             <TierCard
               title="Tabelle 1"
               subtitle="Höchste Punkte"
               accent="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600"
               iconBg="bg-blue-500"
-              players={[
-                { platz: 1, name: "Tomas B.", punkte: "41,52" },
-                { platz: 2, name: "Huber L.", punkte: "33,57" },
-                { platz: 3, name: "Christoph St.", punkte: "32,25" },
-                { platz: 4, name: "Florian L.", punkte: "30,58" },
-                { platz: 5, name: "Orhan A.", punkte: "30,41" },
-                { platz: 6, name: "Roland Schw.", punkte: "28,82" },
-                { platz: 7, name: "Peter M.", punkte: "26,08" },
-                { platz: 8, name: "Rene St.", punkte: "24,86" },
-              ]}
+              players={tabelle1Players}
             />
 
             <TierCard
@@ -274,16 +314,7 @@ export default function MembersChampionCupEinstufungPage() {
               subtitle="Mittlere Punkte"
               accent="bg-gradient-to-r from-slate-400 via-slate-500 to-slate-700"
               iconBg="bg-slate-500"
-              players={[
-                { platz: 14, name: "Jimmy W.", punkte: "21,47" },
-                { platz: 15, name: "Ramona R.", punkte: "21,00" },
-                { platz: 16, name: "Bernhard G.", punkte: "20,55" },
-                { platz: 17, name: "Michael G.", punkte: "20,00" },
-                { platz: 18, name: "Hasan C.", punkte: "19,94" },
-                { platz: 19, name: "Christoph K.", punkte: "19,16" },
-                { platz: 20, name: "Tina U.", punkte: "18,74" },
-                { platz: 21, name: "Rene J.", punkte: "18,66" },
-              ]}
+              players={tabelle2Players}
             />
 
             <TierCard
@@ -291,16 +322,7 @@ export default function MembersChampionCupEinstufungPage() {
               subtitle="Niedrigste Punkte"
               accent="bg-gradient-to-r from-orange-500 via-orange-600 to-red-600"
               iconBg="bg-orange-500"
-              players={[
-                { platz: 28, name: "Wolfgang E.", punkte: "13,66" },
-                { platz: 29, name: "Andrea G.", punkte: "12,74" },
-                { platz: 30, name: "Tamara R.", punkte: "12,29" },
-                { platz: 31, name: "Stefan N.", punkte: "10,71" },
-                { platz: 32, name: "Mike Th.", punkte: "8,67" },
-                { platz: 33, name: "Julia R.", punkte: "6,40" },
-                { platz: 34, name: "Ulrike F.", punkte: "5,50" },
-                { platz: 35, name: "Petra B.", punkte: "4,85" },
-              ]}
+              players={tabelle3Players}
             />
           </div>
 

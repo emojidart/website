@@ -53,6 +53,8 @@ import { LeagueManagement } from "@/components/league-management"
 import { RolePermissionsManager } from "@/components/role-permissions-manager"
 import { AdminMembersLevelManagement } from "@/components/admin/members-champion-cup/admin-members-level-management"
 import { BonusVergabeManagement } from "@/components/admin/bonus-vergabe/bonus-vergabe"
+import { AdminPraemienRedemptions } from "@/components/admin/bonus/admin-praemien-redemptions"
+import { PackageCheck } from "lucide-react"
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
@@ -95,6 +97,7 @@ export default function AdminPage() {
 	  | "admin-push"
 | "members-levels"
 | "bonus-vergabe"
+| "praemien-redemptions"
   >("dashboard")
 
   const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
@@ -301,6 +304,14 @@ export default function AdminPage() {
   view: "bonus-vergabe" as const,
   category: "verein" as const,
 },
+{
+  title: "Prämien-Ausgabe",
+  description: "Eingelöste Prämien prüfen und abschließen",
+  icon: PackageCheck,
+  color: "bg-green-600",
+  view: "praemien-redemptions" as const,
+  category: "verein" as const,
+},
     {
       title: "Veranstaltungen",
       description: "Turniere, Partys & Events verwalten",
@@ -427,7 +438,8 @@ export default function AdminPage() {
   return (
   allowedViews.has(card.view) ||
   card.view === "members-levels" ||
-  card.view === "bonus-vergabe"
+card.view === "bonus-vergabe" ||
+card.view === "praemien-redemptions"
 )
 })
 
@@ -436,7 +448,11 @@ export default function AdminPage() {
   if (allowedViews?.has("*")) return true
   if (allowedViews === null) return false
 
-  if (viewKey === "members-levels" || viewKey === "bonus-vergabe") return true
+ if (
+  viewKey === "members-levels" ||
+  viewKey === "bonus-vergabe" ||
+  viewKey === "praemien-redemptions"
+) return true
 
   if (
     (viewKey === "results" || viewKey === "history") &&
@@ -486,6 +502,7 @@ export default function AdminPage() {
 		{ key: "admin-push", label: "Push Nachrichten", icon: BellRing },
 		{ key: "bonus-system", label: "Bonussystem", icon: Trophy },
 		{ key: "bonus-vergabe", label: "Bonusvergabe", icon: Trophy },
+		{ key: "praemien-redemptions", label: "Prämien-Ausgabe", icon: PackageCheck },
         { key: "club", label: "Vereinsverwaltung", icon: Users },
         { key: "support-tickets", label: "Support Tickets", icon: HelpCircle },
         {
@@ -537,7 +554,8 @@ export default function AdminPage() {
       "advent-quiz",
 	  "admin-push",
 "bonus-system",
-"bonus-vergabe"
+"bonus-vergabe",
+"praemien-redemptions"
     ].includes(c.view)
   ),
 } as const
@@ -1013,6 +1031,23 @@ if (!hasAnyPermission) {
 
       <CardContent>
         <BonusVergabeManagement user={user} />
+      </CardContent>
+    </Card>
+  </div>
+)}
+
+{currentView === "praemien-redemptions" && (
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <PackageCheck className="h-5 w-5" />
+          <span>Prämien-Ausgabe</span>
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <AdminPraemienRedemptions user={user} />
       </CardContent>
     </Card>
   </div>
