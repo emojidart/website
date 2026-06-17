@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
+  ArrowRight,
   Award,
   Calendar,
   ChevronDown,
@@ -93,7 +94,7 @@ const RANKS: RankInfo[] = [
     label: "Bronze Rang",
     icon: Medal,
     min: 1000,
-    next: 1200,
+    next: 1500,
     gradient: "from-amber-700 via-orange-700 to-orange-900",
     bg: "bg-amber-50",
     text: "text-amber-800",
@@ -105,8 +106,8 @@ const RANKS: RankInfo[] = [
     title: "Silber",
     label: "Silber Rang",
     icon: Shield,
-    min: 1200,
-    next: 1500,
+    min: 1500,
+    next: 2000,
     gradient: "from-slate-400 via-slate-500 to-slate-700",
     bg: "bg-slate-50",
     text: "text-slate-700",
@@ -118,7 +119,7 @@ const RANKS: RankInfo[] = [
     title: "Gold",
     label: "Gold Rang",
     icon: Crown,
-    min: 1500,
+    min: 2000,
     next: null,
     gradient: "from-yellow-400 via-orange-500 to-red-600",
     bg: "bg-yellow-50",
@@ -169,8 +170,8 @@ function getInitials(name: string) {
 }
 
 function getRank(totalPoints: number) {
-  if (totalPoints >= 1500) return RANKS[3]
-  if (totalPoints >= 1200) return RANKS[2]
+  if (totalPoints >= 2000) return RANKS[3]
+  if (totalPoints >= 1500) return RANKS[2]
   if (totalPoints >= 1000) return RANKS[1]
   return RANKS[0]
 }
@@ -565,6 +566,57 @@ export default function MemberBonusAppPage() {
             </Card>
           </motion.div>
 
+          <motion.div
+            variants={itemVariants}
+            className="relative overflow-hidden rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 p-5 text-white shadow-2xl shadow-orange-200/70 sm:p-6"
+          >
+            <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle_at_12%_20%,white,transparent_32%),radial-gradient(circle_at_85%_15%,white,transparent_30%),radial-gradient(circle_at_60%_100%,white,transparent_28%)]" />
+            <div className="relative grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/15 shadow-lg backdrop-blur-sm">
+                  <Gift className="h-7 w-7 text-white" />
+                </div>
+
+                <div className="min-w-0">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/90">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Prämien verfügbar
+                  </div>
+
+                  <h2 className="mt-3 text-2xl font-black leading-tight sm:text-3xl">
+                    Punkte sammeln und Sachprämien sichern
+                  </h2>
+
+                  <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/85">
+                    Im Prämienbereich siehst du alle verfügbaren Sachpreise, benötigte Punkte und ob du deine Wunschprämie bereits einlösen kannst.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-white/20 bg-white/15 p-4 backdrop-blur-sm">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-2xl bg-white/15 p-3">
+                    <div className="text-lg font-black">1000</div>
+                    <div className="text-[10px] font-black uppercase text-white/75">Bronze</div>
+                  </div>
+                  <div className="rounded-2xl bg-white/15 p-3">
+                    <div className="text-lg font-black">1500</div>
+                    <div className="text-[10px] font-black uppercase text-white/75">Silber</div>
+                  </div>
+                  <div className="rounded-2xl bg-white/15 p-3">
+                    <div className="text-lg font-black">2000</div>
+                    <div className="text-[10px] font-black uppercase text-white/75">Gold</div>
+                  </div>
+                </div>
+
+                <Link href="/praemien" className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black uppercase tracking-wide text-orange-700 shadow-lg transition hover:-translate-y-0.5 hover:bg-orange-50">
+                  Zu den Prämien
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <motion.div variants={itemVariants} className="lg:col-span-1">
               <Card className="rounded-3xl border border-gray-200 shadow-sm bg-white overflow-hidden">
@@ -679,7 +731,7 @@ export default function MemberBonusAppPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <div className="font-black text-gray-900">Ränge im Bonusprogramm</div>
-                <div className="text-sm font-semibold text-gray-500">Bronze ab 1000 · Silber ab 1200 · Gold ab 1500 Punkten</div>
+                <div className="text-sm font-semibold text-gray-500">Bronze ab 1000 · Silber ab 1500 · Gold ab 2000 Punkten</div>
               </div>
               
             </div>

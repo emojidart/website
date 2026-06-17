@@ -22,6 +22,7 @@ interface Match {
   loser?: string
   machineNumber?: number
   callCount?: number
+  _localUpdate?: boolean
 }
 
 interface TournamentBracketProps {
@@ -495,6 +496,7 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
   const [rankings, setRankings] = useState<Ranking[]>([])
   const [loadingRankings, setLoadingRankings] = useState(false)
   const [savingToSeries, setSavingToSeries] = useState(false)
+  const [savingToSummerSpecial, setSavingToSummerSpecial] = useState(false)
   const [successDialogOpen, setSuccessDialogOpen] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -627,21 +629,47 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
 
 
 
-  useEffect(() => {
-    // Prevent save loops on realtime updates
-    if (isRemoteUpdateRef.current) {
-      isRemoteUpdateRef.current = false
-      return
-    }
 
-    if (!loading && tournamentId) {
-      const timeoutId = setTimeout(() => {
-        saveMatchStatesToDatabase(matches, tournamentType, tournamentId, playerIdMap)
-      }, 1000)
 
-      return () => clearTimeout(timeoutId)
-    }
-  }, [matches, tournamentType, tournamentId, loading, playerIdMap])
+
+useEffect(() => {
+  if (isRemoteUpdateRef.current) {
+    return
+  }
+
+  if (!loading && tournamentId) {
+    const timeoutId = setTimeout(async () => {
+      await saveMatchStatesToDatabase(matches, tournamentType, tournamentId, playerIdMap)
+
+      setMatches((prev) => {
+        let changed = false
+        const cleaned: Record<number, Match> = {}
+
+        Object.entries(prev).forEach(([key, match]) => {
+          const numKey = Number(key)
+
+          if (match._localUpdate) {
+            changed = true
+            cleaned[numKey] = {
+              ...match,
+              _localUpdate: false,
+            }
+          } else {
+            cleaned[numKey] = match
+          }
+        })
+
+        return changed ? cleaned : prev
+      })
+    }, 1000)
+
+    return () => clearTimeout(timeoutId)
+  }
+}, [matches, tournamentType, tournamentId, loading, playerIdMap])
+  
+  
+  
+  
 
 
   // Realtime: when players enter results in the LIVE view, progress the bracket here (admin view) too.
@@ -663,7 +691,7 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
           if (!record) return
           if (record.tournament_type && record.tournament_type !== tournamentType) return
 
-          isRemoteUpdateRef.current = true
+          if (isRemoteUpdateRef.current) return
 
           let progressedMatches: Record<number, Match> | null = null
           let didProgress = false
@@ -678,6 +706,10 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
               score2: 0,
               callCount: 1,
             }
+			
+			if ((prevMatch as any)?._localUpdate) {
+  return prev
+}
 
             const wasFinished = Boolean(prevMatch.winner)
             const isFinishedNow = Boolean(record.winner)
@@ -1087,6 +1119,163 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
       setSavingToSeries(false)
     }
   }
+  
+  
+  const saveToSummerSpecial = async () => {
+  const winner = matches[63].winner || matches[62].winner
+
+  if (!winner) {
+    alert("Kein Gewinner gefunden!")
+    return
+  }
+
+  setSavingToSummerSpecial(true)
+
+  try {
+    const { data: existingRows, error: existingError } = await supabase
+      .from("summer_special_standings")
+      .select("id")
+      .eq("tournament_id", tournamentId)
+      .limit(1)
+
+    if (existingError) throw existingError
+
+    if (existingRows && existingRows.length > 0) {
+      alert("Dieses Turnier wurde bereits zum Summer Special hinzugefügt!")
+      return
+    }
+
+    const { data: rankings, error: rankingsError } = await supabase
+      .from("dko_rankings")
+      .select("player_name, placement")
+      .eq("tournament_type", tournamentType)
+      .eq("tournament_id", tournamentId)
+      .order("placement", { ascending: true })
+
+    if (rankingsError) throw rankingsError
+
+    if (!rankings || rankings.length === 0) {
+      alert("Keine Rangliste gefunden! Bitte stelle sicher, dass das Turnier vollständig ist.")
+      return
+    }
+
+    const placementCounts: Record<number, number> = {}
+    rankings.forEach((r) => {
+      placementCounts[r.placement] = (placementCounts[r.placement] || 0) + 1
+    })
+
+    const tiersBelow: Record<number, number> = {}
+    const sortedPlacements = Object.keys(placementCounts).map(Number).sort((a, b) => a - b)
+
+    sortedPlacements.forEach((placement, index) => {
+      tiersBelow[placement] = sortedPlacements.length - index - 1
+    })
+
+    const { data: matchStates, error: matchError } = await supabase
+      .from("dko_match_states")
+      .select("match_id, player1, player2, score1, score2, winner, updated_at")
+      .eq("tournament_type", tournamentType)
+      .eq("tournament_id", tournamentId)
+      .order("match_id", { ascending: true })
+
+    if (matchError) throw matchError
+
+    const bracketResetOccurred = matches[63].winner !== undefined
+    const playerStats: Record<string, any> = {}
+
+    rankings.forEach((ranking) => {
+      const placementPoints = 10 + tiersBelow[ranking.placement] * 2
+      const winnerSideBonus = ranking.placement === 1 && !bracketResetOccurred
+
+      playerStats[ranking.player_name] = {
+        placement: ranking.placement,
+        placement_points: placementPoints,
+        bonus_points: 0,
+        winner_side_bonus: winnerSideBonus,
+        legs_won: 0,
+        legs_lost: 0,
+        matches_played: 0,
+        matches_won: 0,
+        matches_lost: 0,
+        match_history: [],
+      }
+    })
+
+    matchStates?.forEach((match) => {
+      if (match.player1 && !isFreilos(match.player1) && playerStats[match.player1]) {
+        playerStats[match.player1].legs_won += match.score1 || 0
+        playerStats[match.player1].legs_lost += match.score2 || 0
+
+        if (match.winner) {
+          playerStats[match.player1].matches_played += 1
+          const result = match.winner === match.player1 ? "W" : "L"
+          if (result === "W") playerStats[match.player1].matches_won += 1
+          else playerStats[match.player1].matches_lost += 1
+
+          playerStats[match.player1].match_history.push({
+            match_id: match.match_id,
+            result,
+            timestamp: match.updated_at || new Date().toISOString(),
+          })
+        }
+      }
+
+      if (match.player2 && !isFreilos(match.player2) && playerStats[match.player2]) {
+        playerStats[match.player2].legs_won += match.score2 || 0
+        playerStats[match.player2].legs_lost += match.score1 || 0
+
+        if (match.winner) {
+          playerStats[match.player2].matches_played += 1
+          const result = match.winner === match.player2 ? "W" : "L"
+          if (result === "W") playerStats[match.player2].matches_won += 1
+          else playerStats[match.player2].matches_lost += 1
+
+          playerStats[match.player2].match_history.push({
+            match_id: match.match_id,
+            result,
+            timestamp: match.updated_at || new Date().toISOString(),
+          })
+        }
+      }
+    })
+
+    const summerRows = Object.entries(playerStats).map(([playerName, stats]: any) => {
+      stats.match_history.sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      const form = stats.match_history.map((h: any) => h.result).join(",")
+
+      return {
+        player_name: playerName,
+        tournament_id: tournamentId,
+        tournament_name: tournamentName,
+        tournament_type: tournamentType,
+        tournament_date: new Date().toISOString(),
+        placement: stats.placement,
+        placement_points: stats.placement_points,
+        bonus_points: stats.bonus_points,
+        winner_side_bonus: stats.winner_side_bonus,
+        legs_won: stats.legs_won,
+        legs_lost: stats.legs_lost,
+        matches_played: stats.matches_played,
+        matches_won: stats.matches_won,
+        matches_lost: stats.matches_lost,
+        form,
+      }
+    })
+
+    const { error: insertError } = await supabase.from("summer_special_standings").insert(summerRows)
+
+    if (insertError) throw insertError
+
+    alert("Turnier wurde zum Summer Special hinzugefügt!")
+  } catch (error) {
+    console.error("Fehler beim Speichern zum Summer Special:", error)
+    alert("Fehler beim Speichern zum Summer Special.")
+  } finally {
+    setSavingToSummerSpecial(false)
+  }
+}
+  
+  
 
   const startMatch = (matchId: number) => {
     const match = matches[matchId]
@@ -1144,102 +1333,157 @@ export default function TournamentBracket({ bracketSize = 32, tournamentType = "
     setSelectedMatchId(matchId)
     setMachineDialogOpen(true)
   }
+  
+  
+  
 
-  const assignMachine = (machineNumber: number) => {
-    if (selectedMatchId === null) return
+const assignMachine = async (machineNumber: number) => {
+  if (selectedMatchId === null) return
+  if (!tournamentId) return
 
-    const match = matches[selectedMatchId]
+  const match = matches[selectedMatchId]
+  if (!match) return
 
-    setMatches((prev) => ({
-      ...prev,
-      [selectedMatchId]: {
-        ...prev[selectedMatchId],
-        machineNumber,
-        callCount: 1,
-      },
-    }))
+  const updatedMatches = {
+    ...matches,
+    [selectedMatchId]: {
+      ...match,
+      machineNumber,
+      callCount: 1,
+      _localUpdate: false,
+    },
+  }
 
-    if (announcementsEnabled && match) {
+  isRemoteUpdateRef.current = true
+
+  try {
+    await saveMatchStatesToDatabase(updatedMatches, tournamentType, tournamentId, playerIdMap)
+
+    setMatches(updatedMatches)
+
+    if (announcementsEnabled) {
       announce(match.player1, match.player2, machineNumber, 1)
     }
 
     setMachineDialogOpen(false)
 
-    setVsIntro({ open: true, player1: match?.player1 ?? "", player2: match?.player2 ?? "", machineNumber })
+    setVsIntro({
+      open: true,
+      player1: match.player1 ?? "",
+      player2: match.player2 ?? "",
+      machineNumber,
+    })
 
     setSelectedMatchId(null)
+  } catch (error) {
+    console.error("Fehler beim Starten des Spiels:", error)
+    alert("Spiel konnte nicht gestartet werden. Bitte erneut versuchen.")
+  } finally {
+    setTimeout(() => {
+      isRemoteUpdateRef.current = false
+    }, 1000)
   }
+}
 
-  const handleRepeatCall = (matchId: number) => {
-    const match = matches[matchId]
-    const nextCallCount = (match.callCount || 1) + 1
+const handleRepeatCall = (matchId: number) => {
+  const match = matches[matchId]
+  const nextCallCount = (match.callCount || 1) + 1
 
-    if (nextCallCount > 3) return
+  if (nextCallCount > 3) return
 
-    setMatches((prev) => ({
+  setMatches((prev) => ({
+    ...prev,
+    [matchId]: {
+      ...prev[matchId],
+      callCount: nextCallCount,
+    },
+  }))
+
+  if (announcementsEnabled && match.machineNumber) {
+    announce(match.player1, match.player2, match.machineNumber, nextCallCount)
+  }
+}
+
+const updateScore = (matchId: number, player: 1 | 2, score: number) => {
+  setMatches((prev) => {
+    const match = prev[matchId]
+    if (!match) return prev
+
+    return {
       ...prev,
       [matchId]: {
-        ...prev[matchId],
-        callCount: nextCallCount,
+        ...match,
+        _localUpdate: true,
+        score1: player === 1 ? score : match.score1,
+        score2: player === 2 ? score : match.score2,
       },
-    }))
-
-    if (announcementsEnabled && match.machineNumber) {
-      announce(match.player1, match.player2, match.machineNumber, nextCallCount)
     }
+  })
+}
+  
+  
+  
+
+const confirmMatch = async (matchId: number) => {
+  if (!tournamentId) return
+
+  const currentMatch = matches[matchId]
+  if (!currentMatch) return
+
+  const match = { ...currentMatch }
+
+  if (match.score1 > match.score2) {
+    match.winner = match.player1
+    match.loser = match.player2
+  } else if (match.score2 > match.score1) {
+    match.winner = match.player2
+    match.loser = match.player1
+  } else {
+    alert("Unentschieden ist nicht erlaubt!")
+    return
   }
 
-  const updateScore = (matchId: number, player: 1 | 2, score: number) => {
-    setMatches((prev) => ({
-      ...prev,
-      [matchId]: {
-        ...prev[matchId],
-        [player === 1 ? "score1" : "score2"]: score,
-      },
-    }))
+  match.machineNumber = undefined
+  match.callCount = 1
+  match._localUpdate = false
+
+  const newMatches = {
+    ...matches,
+    [matchId]: match,
   }
 
-  const confirmMatch = (matchId: number) => {
-    setMatches((prev) => {
-      const newMatches = { ...prev }
-      const match = { ...newMatches[matchId] }
+  isRemoteUpdateRef.current = true
 
-      if (match.score1 > match.score2) {
-        match.winner = match.player1
-        match.loser = match.player2
-      } else if (match.score2 > match.score1) {
-        match.winner = match.player2
-        match.loser = match.player1
+  try {
+    if (matchId === 62) {
+      if (match.winner === match.player1) {
+        await saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
       } else {
-        alert("Unentschieden ist nicht erlaubt!")
-        return prev
-      }
-
-      match.machineNumber = undefined
-      match.callCount = undefined
-
-      newMatches[matchId] = match
-
-      if (matchId === 62) {
-        if (match.winner === match.player1) {
-          console.log(`[v0] Grand Final: Winner's bracket player ${match.winner} wins! Tournament over.`)
-          saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
-        } else {
-          console.log(`[v0] Grand Final: Loser's bracket player ${match.winner} wins! Bracket reset required.`)
-          newMatches[63].player1 = match.player1
-          newMatches[63].player2 = match.player2
+        newMatches[63] = {
+          ...newMatches[63],
+          player1: match.player1,
+          player2: match.player2,
         }
-      } else if (matchId === 63) {
-        console.log(`[v0] Bracket Reset: ${match.winner} wins the tournament!`)
-        saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
-      } else {
-        progressPlayers(newMatches, matchId, match.winner, match.loser)
-        trackPlayerElimination(newMatches, match.loser, tournamentType, tournamentId, tournamentName, bracketSize)
       }
+    } else if (matchId === 63) {
+      await saveFinalRankings(match.winner, match.loser, tournamentType, tournamentId, tournamentName)
+    } else {
+      progressPlayers(newMatches, matchId, match.winner, match.loser)
+      await trackPlayerElimination(newMatches, match.loser, tournamentType, tournamentId, tournamentName, bracketSize)
+    }
 
-      return newMatches
-    })
+    await saveMatchStatesToDatabase(newMatches, tournamentType, tournamentId, playerIdMap)
+
+    setMatches(newMatches)
+  } catch (error) {
+    console.error("Fehler beim Speichern des Ergebnisses:", error)
+    alert("Ergebnis konnte nicht gespeichert werden. Bitte erneut versuchen.")
+  } finally {
+    setTimeout(() => {
+      isRemoteUpdateRef.current = false
+    }, 1000)
   }
+}
 
   const progressPlayers = (allMatches: Record<number, Match>, matchId: number, winner: string, loser: string) => {
     console.log(`[v0] ========== PROGRESSING PLAYERS ==========`)
@@ -2182,6 +2426,19 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                 >
                   {savingToSeries ? "Speichere..." : "Zur Turnierserie hinzufügen"}
                 </Button>
+				
+				
+				<Button
+  onClick={saveToSummerSpecial}
+  disabled={savingToSummerSpecial}
+  size="lg"
+  variant="secondary"
+  className="font-semibold bg-orange-500 text-white hover:bg-orange-600"
+>
+  {savingToSummerSpecial ? "Speichere..." : "Zu Summer Special hinzufügen"}
+</Button>
+				
+				
                 <Button
                   onClick={async () => {
                     await markTournamentAsCompleted(tournamentId)

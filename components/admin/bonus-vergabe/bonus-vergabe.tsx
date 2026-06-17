@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -26,9 +25,9 @@ import {
 import { cn } from "@/lib/utils"
 
 type PlayerRow = {
-  id: string | number
+  id: string
   name: string
-  profile_picture_url?: string | null
+  photo_url?: string | null
 }
 
 type BonusRuleRow = {
@@ -157,9 +156,10 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
 
       const [playersResult, rulesResult, transactionsResult] = await Promise.all([
         supabase
-          .from("spieldatenbank")
-          .select("id,name,profile_picture_url")
+          .from("club_players")
+          .select("id,name,photo_url")
           .order("name", { ascending: true }),
+
         supabase
           .from("bonus_rules")
           .select(`
@@ -177,6 +177,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
           `)
           .eq("is_active", true)
           .order("sort_order", { ascending: true }),
+
         supabase
           .from("bonus_transactions")
           .select("*")
@@ -214,14 +215,20 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
   const filteredPlayers = useMemo(() => {
     const q = playerSearch.trim().toLowerCase()
     if (!q) return players.slice(0, 80)
-    return players.filter((player) => String(player.name || "").toLowerCase().includes(q)).slice(0, 80)
+
+    return players
+      .filter((player) => String(player.name || "").toLowerCase().includes(q))
+      .slice(0, 80)
   }, [players, playerSearch])
 
   const filteredRules = useMemo(() => {
     const q = ruleSearch.trim().toLowerCase()
+
     return rules.filter((rule) => {
       const categoryName = rule.bonus_categories?.name || ""
+
       if (!q) return true
+
       return (
         rule.title.toLowerCase().includes(q) ||
         categoryName.toLowerCase().includes(q) ||
@@ -232,6 +239,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
 
   const playerTransactions = useMemo(() => {
     if (!selectedPlayer) return []
+
     return transactions.filter((transaction) => String(transaction.player_id) === String(selectedPlayer.id))
   }, [transactions, selectedPlayer])
 
@@ -314,12 +322,14 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
           <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
             <Sparkles className="w-5 h-5 text-orange-600" />
           </div>
+
           <div className="min-w-0 flex-1">
             <h2 className="text-base sm:text-lg font-black">Bonuspunkte vergeben</h2>
             <p className="text-sm text-gray-600 mt-1">
               Wähle Spieler, Bonusregel und Quelle. Jede Vergabe wird sauber in der Bonus-Historie gespeichert.
             </p>
           </div>
+
           <Button type="button" variant="outline" onClick={() => void loadData()} disabled={loading}>
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
             Neu laden
@@ -354,6 +364,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <Label>1. Spieler auswählen</Label>
+
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <Input
@@ -392,8 +403,11 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                               >
                                 <div className="min-w-0">
                                   <div className="font-black text-gray-900 truncate">{player.name}</div>
-                                  <div className="text-xs font-semibold text-gray-500">ID: {String(player.id)}</div>
+                                  <div className="text-xs font-semibold text-gray-500">
+                                    Club-Spieler-ID: {String(player.id)}
+                                  </div>
                                 </div>
+
                                 {active ? <CheckCircle className="w-5 h-5 text-orange-600 flex-shrink-0" /> : null}
                               </button>
                             )
@@ -406,6 +420,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
 
                 <div className="space-y-3">
                   <Label>2. Bonusregel auswählen</Label>
+
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <Input
@@ -446,17 +461,20 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="min-w-0">
                                     <div className="font-black text-gray-900">{rule.title}</div>
+
                                     <div className="mt-2 flex flex-wrap gap-2">
                                       {rule.bonus_categories?.name ? (
                                         <Badge variant="outline" className={cn("rounded-lg", categoryColor)}>
                                           {rule.bonus_categories.name}
                                         </Badge>
                                       ) : null}
+
                                       <Badge variant="outline" className="rounded-lg bg-white">
                                         {rule.points} Punkte
                                       </Badge>
                                     </div>
                                   </div>
+
                                   {active ? <CheckCircle className="w-5 h-5 text-orange-600 flex-shrink-0" /> : null}
                                 </div>
 
@@ -476,10 +494,12 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
               <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>3. Quelle</Label>
+
                   <Select value={sourceType} onValueChange={setSourceType}>
                     <SelectTrigger className="bg-white">
                       <SelectValue placeholder="Quelle wählen" />
                     </SelectTrigger>
+
                     <SelectContent>
                       {SOURCE_OPTIONS.map((source) => (
                         <SelectItem key={source.value} value={source.value}>
@@ -488,6 +508,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                       ))}
                     </SelectContent>
                   </Select>
+
                   <div className="text-xs font-bold text-gray-500">Kontext: {selectedSource.context}</div>
                 </div>
 
@@ -516,12 +537,12 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-bold text-gray-600">Vorschau</div>
+
                     <div className="text-xl font-black text-gray-900 mt-1">
                       {selectedPlayer?.name || "Kein Spieler"}{" "}
-                      <span className="text-orange-700">
-                        +{selectedRule?.points ?? 0} Punkte
-                      </span>
+                      <span className="text-orange-700">+{selectedRule?.points ?? 0} Punkte</span>
                     </div>
+
                     <div className="text-sm font-semibold text-gray-600 mt-1">
                       {selectedRule?.title || "Keine Regel ausgewählt"} · {selectedSource.label}
                     </div>
@@ -571,20 +592,26 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                             <div className="min-w-0">
                               <div className="font-black text-gray-900 truncate">{row.player_name}</div>
                               <div className="text-sm font-semibold text-gray-600 truncate">{row.rule_title}</div>
+
                               <div className="mt-2 flex flex-wrap gap-2">
                                 {row.category_name ? (
                                   <Badge variant="outline" className="rounded-lg">
                                     {row.category_name}
                                   </Badge>
                                 ) : null}
+
                                 <Badge variant="outline" className="rounded-lg">
                                   {row.source_name || row.source_type}
                                 </Badge>
+
                                 <Badge variant="outline" className="rounded-lg">
                                   {formatDate(row.created_at)}
                                 </Badge>
                               </div>
-                              {row.note ? <div className="mt-2 text-xs text-gray-500 font-semibold">{row.note}</div> : null}
+
+                              {row.note ? (
+                                <div className="mt-2 text-xs text-gray-500 font-semibold">{row.note}</div>
+                              ) : null}
                             </div>
 
                             <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-right flex-shrink-0">
@@ -609,6 +636,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                 <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
                   <Trophy className="w-5 h-5 text-orange-600" />
                 </div>
+
                 <div>
                   <div className="text-sm text-gray-500 font-semibold">Gesamt vergebene Punkte</div>
                   <div className="text-3xl font-black">{totalBonusPoints}</div>
@@ -623,6 +651,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                 <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center">
                   <UserPlus className="w-5 h-5 text-blue-600" />
                 </div>
+
                 <div>
                   <div className="text-sm text-gray-500 font-semibold">Spieler mit Bonus</div>
                   <div className="text-3xl font-black">{uniquePlayersWithBonus}</div>
@@ -637,6 +666,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                 <div className="w-11 h-11 rounded-2xl bg-green-50 border border-green-200 flex items-center justify-center">
                   <Award className="w-5 h-5 text-green-600" />
                 </div>
+
                 <div>
                   <div className="text-sm text-gray-500 font-semibold">Aktive Bonusregeln</div>
                   <div className="text-3xl font-black">{rules.length}</div>
@@ -651,9 +681,12 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                 <CardTitle>Spieler-Historie</CardTitle>
                 <CardDescription>{selectedPlayer.name}</CardDescription>
               </CardHeader>
+
               <CardContent>
                 {playerTransactions.length === 0 ? (
-                  <div className="text-sm font-semibold text-gray-600">Für diesen Spieler gibt es noch keine Bonuspunkte.</div>
+                  <div className="text-sm font-semibold text-gray-600">
+                    Für diesen Spieler gibt es noch keine Bonuspunkte.
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     {playerTransactions.slice(0, 8).map((row) => (
@@ -663,6 +696,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                             <div className="font-black text-gray-900 truncate">{row.rule_title}</div>
                             <div className="text-xs font-semibold text-gray-500">{formatDate(row.created_at)}</div>
                           </div>
+
                           <div className="font-black text-orange-700">+{row.points}</div>
                         </div>
                       </div>
