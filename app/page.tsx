@@ -388,6 +388,8 @@ const [membersChampionLoading, setMembersChampionLoading] = useState(true)
 
   const [dkoRegistered, setDkoRegistered] = useState(false)
   const [dkoRegLoading, setDkoRegLoading] = useState(false)
+  const [membersCupRegistered, setMembersCupRegistered] = useState(false)
+const [membersCupRegLoading, setMembersCupRegLoading] = useState(false)
 
   // ✅ Modal Auto-Close Guard + Success Toast
   const modalOpenedAtRef = useRef<number>(0)
@@ -1208,6 +1210,64 @@ useEffect(() => {
 
   const liveDateLabel = liveSelfRegEvent ? formatGermanShortDateFromISO(liveSelfRegEvent.isoDate) : ""
   const liveTimeLabel = liveSelfRegEvent ? ensureUhr(liveSelfRegEvent.time) : ""
+  
+  // --- MEMBERS CHAMPIONS CUP Anmeldung oben auf Startseite ---
+const liveMembersSelfRegEvent = useMemo(() => {
+  const membersToday =
+    nextMembersChampionEvent &&
+    nextMembersChampionEvent.event_type?.toLowerCase() === "turnier" &&
+    nextMembersChampionEvent.event_date === todayISO
+
+  if (membersToday) {
+    return {
+      title: "Anmeldung geöffnet • MEMBERS CHAMPIONS CUP",
+      isoDate: nextMembersChampionEvent!.event_date,
+      time: nextMembersChampionEvent!.event_time || "19:30",
+    }
+  }
+
+  return null
+}, [nextMembersChampionEvent, todayISO])
+
+const liveMembersRegCloseDT = liveMembersSelfRegEvent
+  ? (() => {
+      const d = new Date(`${liveMembersSelfRegEvent.isoDate}T17:00:00`)
+      const today = new Date()
+
+      const isTodayTest =
+        startOfDay(d).getTime() === startOfDay(today).getTime()
+
+      // TEST-AUSNAHME NUR FÜR HEUTE: Anmeldung bis 20:00 Uhr
+      if (isTodayTest) {
+        d.setHours(20, 0, 0, 0)
+      }
+
+      return d
+    })()
+  : null
+
+const liveMembersUnregCloseDT = liveMembersSelfRegEvent
+  ? new Date(`${liveMembersSelfRegEvent.isoDate}T14:00:00`)
+  : null
+
+const liveMembersSecondsLeft = liveMembersRegCloseDT
+  ? Math.ceil((liveMembersRegCloseDT.getTime() - nowTick) / 1000)
+  : null
+
+const liveMembersUnregSecondsLeft = liveMembersUnregCloseDT
+  ? Math.ceil((liveMembersUnregCloseDT.getTime() - nowTick) / 1000)
+  : null
+
+const liveMembersRegOpen = liveMembersSelfRegEvent && (liveMembersSecondsLeft ?? 0) > 0
+const liveMembersUnregOpen = liveMembersSelfRegEvent && (liveMembersUnregSecondsLeft ?? 0) > 0
+
+const liveMembersDateLabel = liveMembersSelfRegEvent
+  ? formatGermanShortDateFromISO(liveMembersSelfRegEvent.isoDate)
+  : ""
+
+const liveMembersTimeLabel = liveMembersSelfRegEvent
+  ? ensureUhr(liveMembersSelfRegEvent.time)
+  : ""
 
   const fetchDkoRegStatus = async () => {
     setDkoRegLoading(true)
@@ -1265,6 +1325,73 @@ useEffect(() => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUserId, liveSelfRegEvent])
+
+
+
+const fetchMembersCupRegStatus = async () => {
+  setMembersCupRegLoading(true)
+  setMembersCupRegistered(false)
+
+  try {
+    if (!liveMembersSelfRegEvent) return
+    if (!authUserId) return
+
+    const { data: profile, error: profErr } = await supabase
+      .from("user_profiles")
+      .select("club_players(spieldatenbank_id)")
+      .eq("user_id", authUserId)
+      .single()
+
+    if (profErr) throw profErr
+
+    const clubPlayersRel: any = (profile as any)?.club_players
+    const spieldatenbankId = Array.isArray(clubPlayersRel)
+      ? clubPlayersRel?.[0]?.spieldatenbank_id
+      : clubPlayersRel?.spieldatenbank_id
+
+    if (!spieldatenbankId) return
+
+    const pid = String(spieldatenbankId)
+
+    const { data: reg, error: regErr } = await supabase
+      .from("dko_tournament_registration")
+      .select("id")
+      .eq("player_id", pid)
+      .limit(1)
+
+    if (regErr) throw regErr
+
+    setMembersCupRegistered((reg?.length ?? 0) > 0)
+  } catch (e) {
+    console.error("Members Cup registration status error:", e)
+  } finally {
+    setMembersCupRegLoading(false)
+  }
+}
+
+useEffect(() => {
+  fetchMembersCupRegStatus()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [authUserId, liveMembersSelfRegEvent])
+
+useEffect(() => {
+  if (!authUserId || !liveMembersSelfRegEvent) return
+
+  const channel = supabase
+    .channel("members-cup-registration-realtime-home")
+    .on("postgres_changes", { event: "*", schema: "public", table: "dko_tournament_registration" }, () => {
+      fetchMembersCupRegStatus()
+    })
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [authUserId, liveMembersSelfRegEvent])
+
+
+
 
   
 
@@ -1549,7 +1676,155 @@ useEffect(() => {
 	  
 	  
 	  
-	  
+	{liveMembersSelfRegEvent && (
+  <div className="sticky top-12 sm:top-14 z-40">
+    <div className="mx-4 sm:mx-6 mt-3">
+      <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
+        <div
+          className={`h-1.5 ${
+            membersCupRegistered
+              ? "bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-600"
+              : "bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600"
+          }`}
+        />
+
+        <div className="p-3 sm:p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="relative flex-shrink-0 mt-0.5">
+                <div
+                  className={`w-11 h-11 rounded-2xl border flex items-center justify-center ${
+                    membersCupRegistered
+                      ? "bg-emerald-50 border-emerald-200"
+                      : "bg-orange-50 border-orange-200"
+                  }`}
+                >
+                  <UserPlus
+                    className={`w-5 h-5 ${
+                      membersCupRegistered ? "text-emerald-700" : "text-orange-700"
+                    }`}
+                  />
+                </div>
+
+                <span
+                  className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-white animate-pulse ${
+                    liveMembersRegOpen ? "bg-emerald-500" : "bg-gray-300"
+                  }`}
+                />
+              </div>
+
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
+                    MEMBERS CUP
+                  </span>
+
+                  <span className="inline-flex items-center rounded-full bg-gray-50 text-gray-800 border border-gray-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
+                    TURNIERTAG
+                  </span>
+
+                  {membersCupRegistered && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[11px] font-black">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Angemeldet
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-1 text-sm sm:text-base font-black text-gray-900 truncate">
+                  {liveMembersSelfRegEvent.title}
+                </div>
+
+                <div className="mt-0.5 text-[11px] sm:text-xs text-gray-600 flex flex-wrap items-center gap-3">
+                  <span className="inline-flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                    {liveMembersDateLabel}
+                  </span>
+
+                  <span className="inline-flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-orange-600" />
+                    {liveMembersTimeLabel}
+                  </span>
+                </div>
+
+                <div className="mt-2 text-[11px] sm:text-xs text-gray-700 flex items-center gap-2">
+                  <Info className="w-3.5 h-3.5 text-gray-400" />
+
+                  {liveMembersRegOpen ? (
+                    <span className="font-bold">
+                      Anmeldung noch: {formatHoursMinutesSeconds(liveMembersSecondsLeft ?? 0)}
+                      <span className="font-semibold text-gray-500">
+  {liveMembersRegCloseDT &&
+  startOfDay(liveMembersRegCloseDT).getTime() === startOfDay(new Date()).getTime()
+    ? " (heute ausnahmsweise bis 20:00 Uhr)"
+    : " (schließt um 17:00 Uhr)"}
+</span>
+                    </span>
+                  ) : (
+                    <span className="font-bold">
+                      Anmeldung geschlossen{" "}
+<span className="font-semibold text-gray-500">
+  {liveMembersRegCloseDT &&
+  startOfDay(liveMembersRegCloseDT).getTime() === startOfDay(new Date()).getTime()
+    ? "(20:00 Uhr)"
+    : "(17:00 Uhr)"}
+</span>
+                    </span>
+                  )}
+                </div>
+
+                {liveMembersUnregOpen ? (
+                  <div className="mt-1 text-[11px] sm:text-xs text-red-700 font-bold">
+                    Abmeldung möglich bis 14:00 Uhr.
+                  </div>
+                ) : (
+                  <div className="mt-1 text-[11px] sm:text-xs text-red-700 font-bold">
+                    Abmeldung geschlossen.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-shrink-0">
+              <Button
+                size="sm"
+                disabled={!liveMembersRegOpen}
+                className={`rounded-xl font-black shadow-sm px-3 sm:px-4 disabled:opacity-60 disabled:cursor-not-allowed ${
+                  membersCupRegistered
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    : "bg-orange-600 hover:bg-orange-700 text-white"
+                }`}
+                onClick={() => (window.location.href = "/member-cup-anmeldung")}
+              >
+                {membersCupRegLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    ...
+                  </span>
+                ) : membersCupRegistered ? (
+                  <>
+                    <span className="hidden sm:inline">Anmeldung verwalten</span>
+                    <span className="sm:hidden">Verwalten</span>
+                  </>
+                ) : liveMembersRegOpen ? (
+                  <>
+                    <span className="hidden sm:inline">Jetzt anmelden</span>
+                    <span className="sm:hidden">Anmelden</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Geschlossen</span>
+                    <span className="sm:hidden">Zu</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}  
 	  
 	  
 	  
@@ -1873,13 +2148,13 @@ useEffect(() => {
 </Button>
 
       <Button
-        size="lg"
-        variant="outline"
-        className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-        disabled
-      >
-        Anmelden
-      </Button>
+  size="lg"
+  variant="outline"
+  className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
+  onClick={() => (window.location.href = "/member-cup-anmeldung")}
+>
+  Anmelden
+</Button>
     </div>
   </div>
 </div>

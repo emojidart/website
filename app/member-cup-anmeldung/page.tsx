@@ -113,6 +113,18 @@ function getRegistrationOpenDT(startDT: Date) {
 
 function getRegistrationCloseDT(startDT: Date) {
   const d = new Date(startDT)
+
+  // TEST-AUSNAHME NUR FÜR HEUTE
+  const today = new Date()
+  const isTodayTest =
+    startOfDay(startDT).getTime() === startOfDay(today).getTime()
+
+  if (isTodayTest) {
+    d.setHours(20, 0, 0, 0)
+    return d
+  }
+
+  // Normaler Members Cup: Anmeldung bis 17:00 Uhr
   d.setHours(17, 0, 0, 0)
   return d
 }
@@ -404,7 +416,7 @@ export default function UpcomingTournamentsAppPage() {
                     <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2">
                       <div className="inline-flex items-center gap-2 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-900">
                         <ShieldAlert className="h-4 w-4 text-orange-700" />
-                        Anmeldung am Spieltag bis <strong>17:00 Uhr</strong>
+                       Anmeldung heute ausnahmsweise bis <strong>20:00 Uhr</strong>
                       </div>
 
                       <div className="inline-flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-900">
