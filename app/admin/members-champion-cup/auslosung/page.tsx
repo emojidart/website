@@ -21,6 +21,7 @@ import {
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { supabase } from "@/lib/supabase"
+import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -166,8 +167,9 @@ function PlayerMiniCard({ player }: { player: DrawPlayer | GroupedDrawPlayer }) 
   )
 }
 
-export default function MembersChampionCupAuslosungPage() {
+export default function AdminMembersChampionCupAuslosungPage() {
   const router = useRouter()
+  const { user, isAdmin, loading: authLoading, adminLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
 
@@ -244,10 +246,14 @@ export default function MembersChampionCupAuslosungPage() {
   }
 
   useEffect(() => {
-    void loadData()
-  }, [])
+    if (!authLoading && !adminLoading && user && isAdmin) {
+      void loadData()
+    }
+  }, [authLoading, adminLoading, user, isAdmin])
 
   useEffect(() => {
+    if (authLoading || adminLoading || !user || !isAdmin) return
+
     const channel = supabase
       .channel("members-cup-auslosung-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "dko_tournament_registration" }, () => {
@@ -261,7 +267,7 @@ export default function MembersChampionCupAuslosungPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [groupsLocked, teamsLocked])
+  }, [authLoading, adminLoading, user, isAdmin, groupsLocked, teamsLocked])
 
   const table1Players = useMemo(() => players.filter((p) => p.level?.level_group === 1), [players])
   const table2Players = useMemo(() => players.filter((p) => p.level?.level_group === 2), [players])
@@ -551,6 +557,41 @@ return
     setMessage({ type: "info", text: "Auslosung wurde lokal zurückgesetzt. Du kannst neu auslosen." })
   }
 
+  if (authLoading || adminLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 md:pb-0">
+        <Header />
+        <main className="pt-20 px-4">
+          <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white shadow-sm p-6 flex items-center gap-3">
+            <Loader2 className="w-5 h-5 animate-spin text-orange-600" />
+            <p className="text-gray-700 font-medium">Lade Adminbereich...</p>
+          </div>
+        </main>
+        <MobileBottomNav />
+      </div>
+    )
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 md:pb-0">
+        <Header />
+        <main className="pt-20 px-4">
+          <Card className="mx-auto w-full max-w-md p-6 shadow-lg rounded-2xl">
+            <CardTitle className="text-2xl font-bold text-center mb-6">Zugriff verweigert</CardTitle>
+            <CardContent className="text-center space-y-4">
+              <p className="text-gray-700">Du benötigst Admin-Rechte, um die Members Champion Cup Auslosung zu öffnen.</p>
+              <Button onClick={() => router.push("/admin")} className="w-full rounded-xl">
+                Zurück zur Admin-Seite
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+        <MobileBottomNav />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24 md:pb-0">
       <Header />
@@ -564,7 +605,7 @@ return
         >
           <motion.div variants={itemVariants} className="mb-5">
             <Link
-              href="/members-champion-cup"
+              href="/admin/turnier_spieltage_starten"
               className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50"
             >
               <ArrowLeft className="w-4 h-4" />

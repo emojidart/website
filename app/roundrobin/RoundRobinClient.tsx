@@ -166,6 +166,10 @@ const PO_SF1 = PO_BASE + 5
 const PO_SF2 = PO_BASE + 6
 const PO_F = PO_BASE + 7
 
+// ---- DKO Finalrunde IDs (eigener Bereich, damit Single-KO und DKO sich nicht vermischen)
+const DKO_BASE = 910000
+const DKO_M = (n: number) => DKO_BASE + n
+
 
 
 type PlayoffSize = 2 | 4 | 8
@@ -173,7 +177,7 @@ type FinalMode = "single_ko" | "double_ko"
 
 type PoMatchDef = {
   id: number
-  round: "QF" | "SF" | "F"
+  round: "QF" | "SF" | "F" | "WB" | "LB" | "GF" | "RESET"
   label: string
   // sources: match ids whose winners feed into this match (for SF/F)
   srcA?: number
@@ -196,6 +200,81 @@ const PO_DEFS_8: PoMatchDef[] = [
 const PO_DEFS_2: PoMatchDef[] = [
   { id: PO_F, round: "F", label: "FINAL" },
 ]
+
+const DKO_DEFS_8: PoMatchDef[] = [
+  { id: DKO_M(1), round: "QF", label: "WB 1" },
+  { id: DKO_M(2), round: "QF", label: "WB 2" },
+  { id: DKO_M(3), round: "QF", label: "WB 3" },
+  { id: DKO_M(4), round: "QF", label: "WB 4" },
+  { id: DKO_M(5), round: "SF", label: "WB HF1" },
+  { id: DKO_M(6), round: "SF", label: "WB HF2" },
+  { id: DKO_M(7), round: "WB", label: "WB Finale" },
+  { id: DKO_M(8), round: "LB", label: "LB 1" },
+  { id: DKO_M(9), round: "LB", label: "LB 2" },
+  { id: DKO_M(10), round: "LB", label: "LB 3" },
+  { id: DKO_M(11), round: "LB", label: "LB 4" },
+  { id: DKO_M(12), round: "LB", label: "LB HF" },
+  { id: DKO_M(13), round: "LB", label: "LB Finale" },
+  { id: DKO_M(14), round: "GF", label: "Grand Final" },
+  { id: DKO_M(15), round: "RESET", label: "Reset Final" },
+]
+
+const DKO_DEFS_4: PoMatchDef[] = [
+  { id: DKO_M(1), round: "SF", label: "WB HF1" },
+  { id: DKO_M(2), round: "SF", label: "WB HF2" },
+  { id: DKO_M(3), round: "WB", label: "WB Finale" },
+  { id: DKO_M(4), round: "LB", label: "LB 1" },
+  { id: DKO_M(5), round: "LB", label: "LB Finale" },
+  { id: DKO_M(6), round: "GF", label: "Grand Final" },
+  { id: DKO_M(7), round: "RESET", label: "Reset Final" },
+]
+
+const DKO_DEFS_2: PoMatchDef[] = [
+  { id: DKO_M(1), round: "GF", label: "Finale" },
+]
+
+type DkoTarget = { matchId: number; position: 1 | 2 }
+type DkoProgression = { winner?: DkoTarget; loser?: DkoTarget }
+
+const DKO_PROGRESS_8: Record<number, DkoProgression> = {
+  [DKO_M(1)]: { winner: { matchId: DKO_M(5), position: 1 }, loser: { matchId: DKO_M(8), position: 1 } },
+  [DKO_M(2)]: { winner: { matchId: DKO_M(5), position: 2 }, loser: { matchId: DKO_M(8), position: 2 } },
+  [DKO_M(3)]: { winner: { matchId: DKO_M(6), position: 1 }, loser: { matchId: DKO_M(9), position: 1 } },
+  [DKO_M(4)]: { winner: { matchId: DKO_M(6), position: 2 }, loser: { matchId: DKO_M(9), position: 2 } },
+  [DKO_M(5)]: { winner: { matchId: DKO_M(7), position: 1 }, loser: { matchId: DKO_M(11), position: 2 } },
+  [DKO_M(6)]: { winner: { matchId: DKO_M(7), position: 2 }, loser: { matchId: DKO_M(10), position: 2 } },
+  [DKO_M(7)]: { winner: { matchId: DKO_M(14), position: 1 }, loser: { matchId: DKO_M(13), position: 2 } },
+  [DKO_M(8)]: { winner: { matchId: DKO_M(10), position: 1 } },
+  [DKO_M(9)]: { winner: { matchId: DKO_M(11), position: 1 } },
+  [DKO_M(10)]: { winner: { matchId: DKO_M(12), position: 1 } },
+  [DKO_M(11)]: { winner: { matchId: DKO_M(12), position: 2 } },
+  [DKO_M(12)]: { winner: { matchId: DKO_M(13), position: 1 } },
+  [DKO_M(13)]: { winner: { matchId: DKO_M(14), position: 2 } },
+}
+
+const DKO_PROGRESS_4: Record<number, DkoProgression> = {
+  [DKO_M(1)]: { winner: { matchId: DKO_M(3), position: 1 }, loser: { matchId: DKO_M(4), position: 1 } },
+  [DKO_M(2)]: { winner: { matchId: DKO_M(3), position: 2 }, loser: { matchId: DKO_M(4), position: 2 } },
+  [DKO_M(3)]: { winner: { matchId: DKO_M(6), position: 1 }, loser: { matchId: DKO_M(5), position: 2 } },
+  [DKO_M(4)]: { winner: { matchId: DKO_M(5), position: 1 } },
+  [DKO_M(5)]: { winner: { matchId: DKO_M(6), position: 2 } },
+}
+
+function getDkoDefs(size: PlayoffSize) {
+  if (size === 8) return DKO_DEFS_8
+  if (size === 4) return DKO_DEFS_4
+  return DKO_DEFS_2
+}
+
+function getDkoProgression(size: PlayoffSize) {
+  if (size === 8) return DKO_PROGRESS_8
+  if (size === 4) return DKO_PROGRESS_4
+  return {} as Record<number, DkoProgression>
+}
+
+function isDkoMatchId(id: number) {
+  return id >= DKO_BASE && id < DKO_BASE + 100
+}
 
 
 
@@ -788,6 +867,16 @@ const qualifiedFinalists = useMemo(() => {
     return Object.keys(playoffStates).length > 0
   }, [playoffStates])
 
+  useEffect(() => {
+    const ids = Object.keys(playoffStates).map(Number)
+    if (ids.some(isDkoMatchId)) {
+      setFinalMode("double_ko")
+      const maxDkoId = Math.max(...ids.filter(isDkoMatchId).map((id) => id - DKO_BASE))
+      if (maxDkoId >= 15) setPlayoffSize(8)
+      else if (maxDkoId >= 7) setPlayoffSize(4)
+    }
+  }, [playoffStates])
+
   
   
 function buildPairings(size: PlayoffSize, players: Qualifier[]) {
@@ -883,139 +972,98 @@ function buildPairings(size: PlayoffSize, players: Qualifier[]) {
 
   // ---- Create playoffs in DB (dko_match_states rows with playoff type)
   const createPlayoffs = async () => {
-    if (finalMode === "double_ko") {
-      alert("DKO-Finalrunde ist als Auswahl vorbereitet. Die Spiellogik bauen wir im nächsten Schritt ein. Für jetzt bitte Single KO verwenden.")
-      return
-    }
-
     if (!groupPhaseFinished) {
       alert("Gruppenphase ist noch nicht fertig.")
       return
     }
+
     const size = playoffSize
     const players = qualifiedFinalists
+
     if (players.length < size) {
       alert(`Nicht genug Qualifizierte für ${size}er Finalrunde.`)
       return
     }
 
-    const pairs = buildPairings(size, players)
-    const defs = size === 8 ? PO_DEFS_8 : size === 4 ? PO_DEFS_4 : PO_DEFS_2
+    if (finalMode === "double_ko" && size === 2) {
+      alert("DKO macht erst ab 4 Teams Sinn. Bei Top 2 bitte Single KO verwenden.")
+      return
+    }
 
+    const pairs = buildPairings(size, players)
     const rows: any[] = []
 
-    if (size === 2) {
+    const makeRow = (matchId: number, a?: Qualifier, b?: Qualifier) => ({
+      tournament_type: tournamentTypePlayoff,
+      tournament_id: roundRobinId,
+      match_id: matchId,
+      player1: a?.name ?? "",
+      player2: b?.name ?? "",
+      player1_id: a?.player_id ?? null,
+      player2_id: b?.player_id ?? null,
+      score1: 0,
+      score2: 0,
+      winner: null,
+      loser: null,
+      machine_number: null,
+      updated_at: new Date().toISOString(),
+    })
+
+    if (finalMode === "double_ko") {
+      if (size === 8) {
+        for (let i = 0; i < 4; i++) {
+          const [a, b] = pairs[i] || []
+          rows.push(makeRow(DKO_M(i + 1), a, b))
+        }
+
+        for (let id = 5; id <= 15; id++) {
+          rows.push(makeRow(DKO_M(id)))
+        }
+      } else if (size === 4) {
+        const s1 = pairs[0] || []
+        const s2 = pairs[1] || []
+        rows.push(makeRow(DKO_M(1), s1[0], s1[1]))
+        rows.push(makeRow(DKO_M(2), s2[0], s2[1]))
+
+        for (let id = 3; id <= 7; id++) {
+          rows.push(makeRow(DKO_M(id)))
+        }
+      }
+    } else if (size === 2) {
       const [a, b] = pairs[0] || []
-      rows.push({
-        tournament_type: tournamentTypePlayoff,
-        tournament_id: roundRobinId,
-        match_id: PO_F,
-        player1: a?.name ?? "",
-        player2: b?.name ?? "",
-        player1_id: a?.player_id ?? null,
-        player2_id: b?.player_id ?? null,
-        score1: 0,
-        score2: 0,
-        winner: null,
-        loser: null,
-        machine_number: null,
-        updated_at: new Date().toISOString(),
-      })
+      rows.push(makeRow(PO_F, a, b))
     } else if (size === 8) {
-      // QFs
       const qfs = [PO_QF1, PO_QF2, PO_QF3, PO_QF4]
       for (let i = 0; i < 4; i++) {
         const [a, b] = pairs[i] || []
-        rows.push({
-          tournament_type: tournamentTypePlayoff,
-          tournament_id: roundRobinId,
-          match_id: qfs[i],
-          player1: a?.name ?? "",
-          player2: b?.name ?? "",
-          player1_id: a?.player_id ?? null,
-          player2_id: b?.player_id ?? null,
-          score1: 0,
-          score2: 0,
-          winner: null,
-          loser: null,
-          machine_number: null,
-          updated_at: new Date().toISOString(),
-        })
+        rows.push(makeRow(qfs[i], a, b))
       }
-      // SF/F placeholders
-      for (const d of defs.filter((x) => x.round !== "QF")) {
-        rows.push({
-          tournament_type: tournamentTypePlayoff,
-          tournament_id: roundRobinId,
-          match_id: d.id,
-          player1: "",
-          player2: "",
-          player1_id: null,
-          player2_id: null,
-          score1: 0,
-          score2: 0,
-          winner: null,
-          loser: null,
-          machine_number: null,
-          updated_at: new Date().toISOString(),
-        })
+      for (const d of PO_DEFS_8.filter((x) => x.round !== "QF")) {
+        rows.push(makeRow(d.id))
       }
     } else {
-      // size 4 => Semis from pairs[0], pairs[1]
       const s1 = pairs[0] || []
       const s2 = pairs[1] || []
-      rows.push({
-        tournament_type: tournamentTypePlayoff,
-        tournament_id: roundRobinId,
-        match_id: PO_SF1,
-        player1: s1[0]?.name ?? "",
-        player2: s1[1]?.name ?? "",
-        player1_id: s1[0]?.player_id ?? null,
-        player2_id: s1[1]?.player_id ?? null,
-        score1: 0,
-        score2: 0,
-        winner: null,
-        loser: null,
-        machine_number: null,
-        updated_at: new Date().toISOString(),
-      })
-      rows.push({
-        tournament_type: tournamentTypePlayoff,
-        tournament_id: roundRobinId,
-        match_id: PO_SF2,
-        player1: s2[0]?.name ?? "",
-        player2: s2[1]?.name ?? "",
-        player1_id: s2[0]?.player_id ?? null,
-        player2_id: s2[1]?.player_id ?? null,
-        score1: 0,
-        score2: 0,
-        winner: null,
-        loser: null,
-        machine_number: null,
-        updated_at: new Date().toISOString(),
-      })
-      rows.push({
-        tournament_type: tournamentTypePlayoff,
-        tournament_id: roundRobinId,
-        match_id: PO_F,
-        player1: "",
-        player2: "",
-        player1_id: null,
-        player2_id: null,
-        score1: 0,
-        score2: 0,
-        winner: null,
-        loser: null,
-        machine_number: null,
-        updated_at: new Date().toISOString(),
-      })
+      rows.push(makeRow(PO_SF1, s1[0], s1[1]))
+      rows.push(makeRow(PO_SF2, s2[0], s2[1]))
+      rows.push(makeRow(PO_F))
     }
 
     try {
+      // Alte Finalrunde löschen, damit Single-KO und DKO nicht vermischt werden.
+      const { error: deleteError } = await supabase
+        .from("dko_match_states")
+        .delete()
+        .eq("tournament_type", tournamentTypePlayoff)
+        .eq("tournament_id", roundRobinId)
+
+      if (deleteError) throw deleteError
+
       const { error } = await supabase.from("dko_match_states").upsert(rows, {
         onConflict: "tournament_type,tournament_id,match_id",
       })
       if (error) throw error
+
       await loadAll()
     } catch (e) {
       console.error("[RR] create playoffs error:", e)
@@ -1027,66 +1075,114 @@ function buildPairings(size: PlayoffSize, players: Qualifier[]) {
   useEffect(() => {
     if (!playoffExists) return
 
-    const defs = playoffSize === 8 ? PO_DEFS_8 : playoffSize === 4 ? PO_DEFS_4 : PO_DEFS_2
+    const patchTarget = (
+      states: Record<number, MatchState>,
+      targetId: number,
+      position: 1 | 2,
+      player: { name: string; id: string | null }
+    ) => {
+      if (!player.name) return null
 
-    const getWinnerOf = (mid?: number) => {
-      if (!mid) return { name: "", id: null as string | null }
-      const s = playoffStates[mid]
-      const name = normalizeName(s?.winner || "")
-      if (!name) return { name: "", id: null as string | null }
-      // map winner name to id from that match
-      const wId =
-        s?.winner === normalizeName(s.player1) ? s.player1_id : s?.winner === normalizeName(s.player2) ? s.player2_id : null
-      return { name, id: wId ?? null }
+      const cur = states[targetId] || emptyState(targetId)
+      if (!canAutoFillTarget(cur)) return null
+
+      const samePlayer =
+        position === 1
+          ? normalizeName(cur.player1) === player.name && (cur.player1_id ?? null) === (player.id ?? null)
+          : normalizeName(cur.player2) === player.name && (cur.player2_id ?? null) === (player.id ?? null)
+
+      if (samePlayer) return null
+
+      const next: MatchState = {
+        ...cur,
+        player1: position === 1 ? player.name : cur.player1,
+        player2: position === 2 ? player.name : cur.player2,
+        player1_id: position === 1 ? player.id : cur.player1_id,
+        player2_id: position === 2 ? player.id : cur.player2_id,
+        score1: 0,
+        score2: 0,
+        winner: undefined,
+        loser: undefined,
+        machineNumber: undefined,
+        callCount: undefined,
+        _localUpdate: true,
+      }
+
+      return next
     }
 
-    const patchTarget = (
-  targetId: number,
-  p1: { name: string; id: string | null },
-  p2: { name: string; id: string | null }
-) => {
-  const cur = playoffStates[targetId] || emptyState(targetId)
-  if (!canAutoFillTarget(cur)) return null
+    const getWinnerOf = (states: Record<number, MatchState>, mid?: number) => {
+      if (!mid) return { name: "", id: null as string | null }
+      const st = states[mid]
+      const name = normalizeName(st?.winner || "")
+      if (!name) return { name: "", id: null as string | null }
+      const id = name === normalizeName(st.player1) ? st.player1_id : name === normalizeName(st.player2) ? st.player2_id : null
+      return { name, id: id ?? null }
+    }
 
-  // ✅ NEU: Wenn Teilnehmer schon gleich sind -> KEIN Update -> kein Loop
-  const curP1 = normalizeName(cur.player1)
-  const curP2 = normalizeName(cur.player2)
-  const samePlayers =
-    curP1 === p1.name &&
-    curP2 === p2.name &&
-    (cur.player1_id ?? null) === (p1.id ?? null) &&
-    (cur.player2_id ?? null) === (p2.id ?? null)
-
-  if (samePlayers) return null
-
-  const next: MatchState = {
-    ...cur,
-    player1: p1.name,
-    player2: p2.name,
-    player1_id: p1.id,
-    player2_id: p2.id,
-  }
-
-  // clear winner/loser if participants change
-  next.score1 = 0
-  next.score2 = 0
-  next.winner = undefined
-  next.loser = undefined
-  next.machineNumber = undefined
-  next.callCount = undefined
-
-  return next
-}
-
+    const getLoserOf = (states: Record<number, MatchState>, mid?: number) => {
+      if (!mid) return { name: "", id: null as string | null }
+      const st = states[mid]
+      const name = normalizeName(st?.loser || "")
+      if (!name) return { name: "", id: null as string | null }
+      const id = name === normalizeName(st.player1) ? st.player1_id : name === normalizeName(st.player2) ? st.player2_id : null
+      return { name, id: id ?? null }
+    }
 
     const updates: Array<{ id: number; st: MatchState }> = []
+    const stagedStates: Record<number, MatchState> = { ...playoffStates }
+    const stageUpdate = (id: number, st: MatchState | null) => {
+      if (!st) return
+      stagedStates[id] = st
+      updates.push({ id, st })
+    }
 
-    for (const d of defs) {
-      if (!d.srcA || !d.srcB) continue
-      const a = getWinnerOf(d.srcA)
-      const b = getWinnerOf(d.srcB)
-      const st = patchTarget(d.id, a, b)
-      if (st) updates.push({ id: d.id, st })
+    if (finalMode === "double_ko") {
+      const progression = getDkoProgression(playoffSize)
+
+      Object.entries(progression).forEach(([sourceIdRaw, target]) => {
+        const sourceId = Number(sourceIdRaw)
+        const source = playoffStates[sourceId]
+        if (!source?.winner || !source?.loser) return
+
+        if (target.winner) {
+          const winner = getWinnerOf(playoffStates, sourceId)
+          const st = patchTarget(stagedStates, target.winner.matchId, target.winner.position, winner)
+          stageUpdate(target.winner.matchId, st)
+        }
+
+        if (target.loser) {
+          const loser = getLoserOf(playoffStates, sourceId)
+          const st = patchTarget(stagedStates, target.loser.matchId, target.loser.position, loser)
+          stageUpdate(target.loser.matchId, st)
+        }
+      })
+
+      const grandFinalId = playoffSize === 8 ? DKO_M(14) : playoffSize === 4 ? DKO_M(6) : DKO_M(1)
+      const resetFinalId = playoffSize === 8 ? DKO_M(15) : playoffSize === 4 ? DKO_M(7) : 0
+      const grandFinal = playoffStates[grandFinalId]
+
+      // Reset-Finale nur dann befüllen, wenn der Spieler aus dem Loser-Bracket das erste Grand Final gewinnt.
+      if (resetFinalId && grandFinal?.winner && grandFinal?.winner === normalizeName(grandFinal.player2)) {
+        const wbChampion = { name: normalizeName(grandFinal.player1), id: grandFinal.player1_id ?? null }
+        const lbChampion = { name: normalizeName(grandFinal.player2), id: grandFinal.player2_id ?? null }
+        const reset1 = patchTarget(stagedStates, resetFinalId, 1, wbChampion)
+        stageUpdate(resetFinalId, reset1)
+        const reset2 = patchTarget(stagedStates, resetFinalId, 2, lbChampion)
+        stageUpdate(resetFinalId, reset2)
+      }
+    } else {
+      const defs = playoffSize === 8 ? PO_DEFS_8 : playoffSize === 4 ? PO_DEFS_4 : PO_DEFS_2
+
+      for (const d of defs) {
+        if (!d.srcA || !d.srcB) continue
+        const a = getWinnerOf(playoffStates, d.srcA)
+        const b = getWinnerOf(playoffStates, d.srcB)
+        const first = patchTarget(stagedStates, d.id, 1, a)
+        stageUpdate(d.id, first)
+        const second = patchTarget(stagedStates, d.id, 2, b)
+        stageUpdate(d.id, second)
+      }
     }
 
     if (updates.length) {
@@ -1097,7 +1193,7 @@ function buildPairings(size: PlayoffSize, players: Qualifier[]) {
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playoffStates, playoffExists, playoffSize])
+  }, [playoffStates, playoffExists, playoffSize, finalMode])
 
   // ---- Machines (shared pool for group+playoff)
   const getAvailableMachines = (): number[] => {
@@ -1331,20 +1427,41 @@ const resetMatch = (scope: "group" | "playoff", matchId: number, fallback?: Matc
 ]
 
 // ---- Playoff display list
-const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize === 4 ? PO_DEFS_4 : PO_DEFS_2), [playoffSize])
+const playoffDefs = useMemo(
+  () => (finalMode === "double_ko" ? getDkoDefs(playoffSize) : playoffSize === 8 ? PO_DEFS_8 : playoffSize === 4 ? PO_DEFS_4 : PO_DEFS_2),
+  [playoffSize, finalMode]
+)
 
 
 
   const playoffRoundGroups = useMemo(() => {
-    const by: Record<string, PoMatchDef[]> = { QF: [], SF: [], F: [] }
+    const by: Record<string, PoMatchDef[]> = { QF: [], SF: [], WB: [], LB: [], GF: [], RESET: [], F: [] }
     playoffDefs.forEach((d) => by[d.round].push(d))
     return by
   }, [playoffDefs])
 
   const champion = useMemo(() => {
+    if (finalMode === "double_ko") {
+      if (playoffSize === 8) {
+        const grandFinal = playoffStates[DKO_M(14)]
+        const resetFinal = playoffStates[DKO_M(15)]
+        if (resetFinal?.winner) return normalizeName(resetFinal.winner)
+        if (grandFinal?.winner && grandFinal.winner === normalizeName(grandFinal.player1)) return normalizeName(grandFinal.winner)
+        return ""
+      }
+
+      if (playoffSize === 4) {
+        const grandFinal = playoffStates[DKO_M(6)]
+        const resetFinal = playoffStates[DKO_M(7)]
+        if (resetFinal?.winner) return normalizeName(resetFinal.winner)
+        if (grandFinal?.winner && grandFinal.winner === normalizeName(grandFinal.player1)) return normalizeName(grandFinal.winner)
+        return ""
+      }
+    }
+
     const f = playoffStates[PO_F]
     return normalizeName(f?.winner || "")
-  }, [playoffStates])
+  }, [playoffStates, finalMode, playoffSize])
 
   const finalPlacements = useMemo(() => {
     const allTeams = Object.values(standingsByGroup)
@@ -1380,42 +1497,85 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize =
       used.add(cleanName)
     }
 
-    const final = playoffStates[PO_F]
-    const sf1 = playoffStates[PO_SF1]
-    const sf2 = playoffStates[PO_SF2]
+    const addDkoLoser = (placement: number, matchId: number) => {
+      const state = playoffStates[matchId]
+      const loserName = normalizeName(state?.loser || "")
+      if (!loserName) return
+      const loserId =
+        loserName === normalizeName(state?.player1 || "")
+          ? state?.player1_id
+          : loserName === normalizeName(state?.player2 || "")
+            ? state?.player2_id
+            : byName.get(loserName)?.player_id
+      addTeam(placement, loserName, loserId ?? null)
+    }
 
-    if (playoffExists && final?.winner) {
-      addTeam(1, final.winner, final.winner === normalizeName(final.player1) ? final.player1_id : final.player2_id)
-      addTeam(2, final.loser, final.loser === normalizeName(final.player1) ? final.player1_id : final.player2_id)
+    if (playoffExists && finalMode === "double_ko") {
+      if (playoffSize === 8) {
+        const grandFinal = playoffStates[DKO_M(14)]
+        const resetFinal = playoffStates[DKO_M(15)]
+        const finalMatch = resetFinal?.winner ? resetFinal : grandFinal
 
-      const semiLosers = [sf1, sf2]
-        .filter(Boolean)
-        .map((state) => {
-          const loserName = normalizeName(state?.loser || "")
-          const tableRow = byName.get(loserName)
-          const loserId =
-            loserName === normalizeName(state?.player1 || "")
-              ? state?.player1_id
-              : loserName === normalizeName(state?.player2 || "")
-                ? state?.player2_id
-                : tableRow?.player_id
+        if (champion && finalMatch?.winner) {
+          addTeam(1, finalMatch.winner, finalMatch.winner === normalizeName(finalMatch.player1) ? finalMatch.player1_id : finalMatch.player2_id)
+          addTeam(2, finalMatch.loser, finalMatch.loser === normalizeName(finalMatch.player1) ? finalMatch.player1_id : finalMatch.player2_id)
+          addDkoLoser(3, DKO_M(13))
+          addDkoLoser(4, DKO_M(12))
+          addDkoLoser(5, DKO_M(10))
+          addDkoLoser(5, DKO_M(11))
+          addDkoLoser(7, DKO_M(8))
+          addDkoLoser(7, DKO_M(9))
+        }
+      } else if (playoffSize === 4) {
+        const grandFinal = playoffStates[DKO_M(6)]
+        const resetFinal = playoffStates[DKO_M(7)]
+        const finalMatch = resetFinal?.winner ? resetFinal : grandFinal
 
-          return { ...(tableRow || {}), name: loserName, player_id: loserId ?? tableRow?.player_id ?? null }
-        })
-        .filter((team) => team.name)
+        if (champion && finalMatch?.winner) {
+          addTeam(1, finalMatch.winner, finalMatch.winner === normalizeName(finalMatch.player1) ? finalMatch.player1_id : finalMatch.player2_id)
+          addTeam(2, finalMatch.loser, finalMatch.loser === normalizeName(finalMatch.player1) ? finalMatch.player1_id : finalMatch.player2_id)
+          addDkoLoser(3, DKO_M(5))
+          addDkoLoser(4, DKO_M(4))
+        }
+      }
+    } else {
+      const final = playoffStates[PO_F]
+      const sf1 = playoffStates[PO_SF1]
+      const sf2 = playoffStates[PO_SF2]
 
-      semiLosers
-        .sort((a, b) => {
-          const pa = ptsFrom(a.w || 0)
-          const pb = ptsFrom(b.w || 0)
-          const da = (a.legsFor || 0) - (a.legsAgainst || 0)
-          const db = (b.legsFor || 0) - (b.legsAgainst || 0)
+      if (playoffExists && final?.winner) {
+        addTeam(1, final.winner, final.winner === normalizeName(final.player1) ? final.player1_id : final.player2_id)
+        addTeam(2, final.loser, final.loser === normalizeName(final.player1) ? final.player1_id : final.player2_id)
 
-          if (pb !== pa) return pb - pa
-          if (db !== da) return db - da
-          return String(a.name).localeCompare(String(b.name))
-        })
-        .forEach((team, index) => addTeam(index === 0 ? 3 : 4, team.name, team.player_id))
+        const semiLosers = [sf1, sf2]
+          .filter(Boolean)
+          .map((state) => {
+            const loserName = normalizeName(state?.loser || "")
+            const tableRow = byName.get(loserName)
+            const loserId =
+              loserName === normalizeName(state?.player1 || "")
+                ? state?.player1_id
+                : loserName === normalizeName(state?.player2 || "")
+                  ? state?.player2_id
+                  : tableRow?.player_id
+
+            return { ...(tableRow || {}), name: loserName, player_id: loserId ?? tableRow?.player_id ?? null }
+          })
+          .filter((team) => team.name)
+
+        semiLosers
+          .sort((a, b) => {
+            const pa = ptsFrom(a.w || 0)
+            const pb = ptsFrom(b.w || 0)
+            const da = (a.legsFor || 0) - (a.legsAgainst || 0)
+            const db = (b.legsFor || 0) - (b.legsAgainst || 0)
+
+            if (pb !== pa) return pb - pa
+            if (db !== da) return db - da
+            return String(a.name).localeCompare(String(b.name))
+          })
+          .forEach((team, index) => addTeam(index === 0 ? 3 : 4, team.name, team.player_id))
+      }
     }
 
     allTeams.forEach((team) => {
@@ -1425,7 +1585,11 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize =
     })
 
     return result.sort((a, b) => a.placement - b.placement)
-  }, [standingsByGroup, playoffStates, playoffExists])
+  }, [standingsByGroup, playoffStates, playoffExists, finalMode, playoffSize, champion])
+
+  // ✅ Speicher-Buttons erst anzeigen, wenn das Turnier wirklich fertig ist:
+  // Gruppenphase fertig + Finalrunde erstellt + Finale gespielt + Platzierungen vorhanden
+  const resultSaveReady = groupPhaseFinished && playoffExists && Boolean(champion) && finalPlacements.length > 0
 
   const showSuccess = (title: string, text: string) => {
     setSuccessTitle(title)
@@ -1440,13 +1604,13 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize =
   }
 
   const saveFunTournamentResults = async () => {
-    if (finalPlacements.length === 0) {
-      alert("Keine Platzierungen gefunden.")
+    if (!resultSaveReady) {
+      alert("Bitte zuerst Gruppenphase und Finalrunde vollständig fertig spielen.")
       return
     }
 
-    if (playoffExists && !champion) {
-      alert("Bitte zuerst die Finalrunde fertig spielen.")
+    if (finalPlacements.length === 0) {
+      alert("Keine Platzierungen gefunden.")
       return
     }
 
@@ -1469,23 +1633,23 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize =
 
       if (error) throw error
 
-      showSuccess("Fun-Turnier gespeichert", `${rows.length} Platzierungen wurden gespeichert oder aktualisiert.`)
+      showSuccess("Normales Turnier gespeichert", `${rows.length} Platzierungen wurden gespeichert oder aktualisiert.`)
     } catch (error: any) {
       console.error("[RR] save fun results error:", error)
-      alert(error?.message || "Fun-Turnier konnte nicht gespeichert werden.")
+      alert(error?.message || "Normales-Turnier konnte nicht gespeichert werden.")
     } finally {
       setSavingResults(false)
     }
   }
 
   const saveMembersCupResults = async () => {
-    if (finalPlacements.length === 0) {
-      alert("Keine Platzierungen gefunden.")
+    if (!resultSaveReady) {
+      alert("Bitte zuerst Gruppenphase und Finalrunde vollständig fertig spielen.")
       return
     }
 
-    if (playoffExists && !champion) {
-      alert("Bitte zuerst die Finalrunde fertig spielen.")
+    if (finalPlacements.length === 0) {
+      alert("Keine Platzierungen gefunden.")
       return
     }
 
@@ -1868,8 +2032,8 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize =
       Gerade kein Match frei (Spieler sind beschäftigt oder alles läuft/fertig).
     </div>
   ) : (
-    <div className="mt-3 space-y-2 max-h-[180px] overflow-auto pr-1">
-      {playableMatches.slice(0, 6).map((m) => (
+    <div className="mt-3 space-y-2 max-h-[120px] overflow-auto pr-1">
+      {playableMatches.slice(0, 3).map((m) => (
         <div key={m.id} className="rounded-xl border-2 border-gray-200 bg-gray-50 px-3 py-2">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -1959,18 +2123,18 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize =
                     className={cn(
                       "rounded-xl border-2 p-3 text-left transition-all",
                       finalMode === "double_ko"
-                        ? "bg-gray-900 border-gray-900 text-white shadow-md"
-                        : "bg-white border-gray-200 text-gray-800 hover:border-gray-400"
+                        ? "bg-orange-600 border-orange-600 text-white shadow-md"
+                        : "bg-white border-gray-200 text-gray-800 hover:border-orange-300"
                     )}
                   >
-                    <div className="font-black text-sm">DKO</div>
-                    <div className={cn("text-xs mt-1", finalMode === "double_ko" ? "text-gray-200" : "text-gray-500")}>2 Niederlagen = raus</div>
+                    <div className="font-black text-sm">Doppel KO</div>
+                    <div className={cn("text-xs mt-1", finalMode === "double_ko" ? "text-orange-50" : "text-gray-500")}>2 Niederlagen = raus</div>
                   </button>
                 </div>
 
                 {finalMode === "double_ko" ? (
-                  <div className="mt-3 rounded-xl border-2 border-yellow-200 bg-yellow-50 px-3 py-2 text-xs font-bold text-yellow-900">
-                    DKO ist als Auswahl vorbereitet. Die DKO-Spiellogik bauen wir im nächsten Schritt ein. Aktuell kann nur Single KO erstellt werden.
+                  <div className="mt-3 rounded-xl border-2 border-green-200 bg-green-50 px-3 py-2 text-xs font-bold text-green-900">
+                    Doppel KO aktiv: Wer zweimal verliert, ist ausgeschieden. Bei Top 2 bitte Single KO verwenden.
                   </div>
                 ) : null}
               </div>
@@ -2023,13 +2187,17 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize =
               <Button
                 className={cn(
                   "w-full h-12 rounded-xl font-black",
-                  groupPhaseFinished && finalMode === "single_ko" ? "bg-orange-600 hover:bg-orange-700" : "bg-gray-300 text-gray-500"
+                  groupPhaseFinished && qualifiedFinalists.length >= playoffSize && !(finalMode === "double_ko" && playoffSize === 2)
+                    ? "bg-orange-600 hover:bg-orange-700"
+                    : "bg-gray-300 text-gray-500"
                 )}
-                disabled={!groupPhaseFinished || finalMode !== "single_ko"}
+                disabled={!groupPhaseFinished || qualifiedFinalists.length < playoffSize || (finalMode === "double_ko" && playoffSize === 2)}
                 onClick={createPlayoffs}
               >
                 <Swords className="w-4 h-4 mr-2" />
-                {playoffExists ? "Single KO neu erstellen" : "Single KO erstellen"}
+                {playoffExists
+                  ? `${finalMode === "single_ko" ? "Single KO" : "Doppel KO"} neu erstellen`
+                  : `${finalMode === "single_ko" ? "Single KO" : "Doppel KO"} erstellen`}
               </Button>
             </div>
 
@@ -2103,13 +2271,25 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize =
                     </div>
                   )}
 
-                  {(["QF", "SF", "F"] as const).map((rnd) => {
+                  {(["QF", "SF", "WB", "LB", "GF", "RESET", "F"] as const).map((rnd) => {
                     const list = playoffRoundGroups[rnd] || []
                     if (!list.length) return null
                     return (
                       <div key={rnd} className="space-y-2">
                         <h3 className="text-sm font-black text-orange-600">
-                          {rnd === "QF" ? "Viertelfinale" : rnd === "SF" ? "Halbfinale" : "Finale"}
+                          {rnd === "QF"
+                            ? "Viertelfinale / Runde 1"
+                            : rnd === "SF"
+                              ? "Halbfinale"
+                              : rnd === "WB"
+                                ? "Winner-Bracket Finale"
+                                : rnd === "LB"
+                                  ? "Loser-Bracket"
+                                  : rnd === "GF"
+                                    ? "Grand Final"
+                                    : rnd === "RESET"
+                                      ? "Reset Final"
+                                      : "Finale"}
                         </h3>
                         {list.map((d) => {
                           const st = playoffStates[d.id] || emptyState(d.id)
@@ -2149,31 +2329,36 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize =
                 Ergebnisse speichern
               </h2>
               <p className="text-sm text-gray-600 font-semibold mt-1">
-                Fun-Turnier normal speichern oder Members-Cup-Punkte automatisch auf beide Doppelspieler verteilen.
+                Speichere die Turnierergebnisse entweder als normales Turnier oder werte sie für den Members Cup aus.  
+Bei Members-Cup-Turnieren werden die Punkte automatisch beiden Doppelspielern gutgeschrieben.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={savingResults || finalPlacements.length === 0}
-                onClick={saveFunTournamentResults}
-                className="font-black"
-              >
-                {savingResults ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <Trophy className="w-4 h-4 mr-2" />}
-                Fun-Turnier speichern
-              </Button>
+              {resultSaveReady ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={savingResults}
+                    onClick={saveFunTournamentResults}
+                    className="font-black"
+                  >
+                    {savingResults ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <Trophy className="w-4 h-4 mr-2" />}
+                    Normales-Turnier speichern
+                  </Button>
 
-              <Button
-                type="button"
-                disabled={savingResults || finalPlacements.length === 0}
-                onClick={saveMembersCupResults}
-                className="font-black bg-orange-600 hover:bg-orange-700"
-              >
-                {savingResults ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
-                Members Cup Punkte speichern
-              </Button>
+                  <Button
+                    type="button"
+                    disabled={savingResults}
+                    onClick={saveMembersCupResults}
+                    className="font-black bg-orange-600 hover:bg-orange-700"
+                  >
+                    {savingResults ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
+                    Members Cup Punkte speichern
+                  </Button>
+                </>
+              ) : null}
 
               <Button
                 type="button"
@@ -2202,9 +2387,17 @@ const playoffDefs = useMemo(() => (playoffSize === 8 ? PO_DEFS_8 : playoffSize =
             </div>
           ) : null}
 
-          {!hasSavedResults ? (
+          {!resultSaveReady && !hasSavedResults ? (
             <div className="mt-4 rounded-xl border-2 border-yellow-200 bg-yellow-50 px-4 py-3 text-yellow-900 font-bold">
-              Speichere zuerst Fun-Turnier oder Members-Cup-Punkte. Danach kannst du das Turnier sauber abschließen.
+              Die Speicher-Buttons erscheinen erst, wenn Gruppenphase und Finalrunde vollständig fertig gespielt sind.  
+
+            </div>
+          ) : null}
+
+          {resultSaveReady && !hasSavedResults ? (
+            <div className="mt-4 rounded-xl border-2 border-green-200 bg-green-50 px-4 py-3 text-green-900 font-bold">
+              Das Turnier ist fertig. Speichere jetzt die Ergebnisse als normales Turnier oder als Members-Cup-Wertung.  
+Danach kannst du das Turnier vollständig.
             </div>
           ) : null}
 

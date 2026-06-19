@@ -81,6 +81,11 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
 }
 
+function isMembersChampionCupSeries(seriesName: string) {
+  const normalized = seriesName.toLowerCase()
+  return normalized.includes("members") && normalized.includes("champion")
+}
+
 export default function TournamentDaysPrettyPage() {
   const { user, isAdmin, loading: authLoading, adminLoading } = useAuth()
   const router = useRouter()
@@ -470,6 +475,17 @@ const todaysRegistrations = useMemo(() => {
           onClick={() => {
             const first = todayMatchdays[0]?.ev
             if (!first) return
+
+            const firstSeriesName = first.dko_series?.name ?? ""
+            const isMembersChampionCup = isMembersChampionCupSeries(firstSeriesName)
+
+            if (isMembersChampionCup) {
+              router.push(
+                `/admin/members-champion-cup/auslosung?seriesId=${encodeURIComponent(first.series_id)}&eventId=${encodeURIComponent(first.id)}`
+              )
+              return
+            }
+
             router.push(
               `/dko_tournament_registration?seriesId=${encodeURIComponent(first.series_id)}&eventId=${encodeURIComponent(first.id)}`
             )
@@ -477,11 +493,15 @@ const todaysRegistrations = useMemo(() => {
           className="font-black rounded-xl px-4 py-6 shadow-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white flex items-center gap-2 justify-center"
         >
           <Play className="w-5 h-5" />
-          Turniertag starten
+          {todayMatchdays[0]?.ev?.dko_series?.name && isMembersChampionCupSeries(todayMatchdays[0].ev.dko_series.name)
+            ? "Auslosung öffnen"
+            : "Turniertag starten"}
         </Button>
 
         <div className="text-[11px] text-gray-600 font-semibold text-right">
-          Startet den ersten heutigen Turniertag.
+          {todayMatchdays[0]?.ev?.dko_series?.name && isMembersChampionCupSeries(todayMatchdays[0].ev.dko_series.name)
+            ? "Öffnet die Members-Cup-Auslosung."
+            : "Startet den ersten heutigen Turniertag."}
         </div>
       </div>
     </div>
@@ -515,6 +535,7 @@ const todaysRegistrations = useMemo(() => {
                       const isToday = dayKey === todayKey
                       const isTournamentDay = !!ev.is_matchday
                       const canStart = isToday && isTournamentDay
+                      const isMembersChampionCup = isMembersChampionCupSeries(seriesName)
 
                       const regs = registrationsByDay[dayKey] ?? []
                       const paidCount = regs.filter((r) => r.paid === true).length
@@ -604,17 +625,34 @@ const todaysRegistrations = useMemo(() => {
                             </div>
 
                             <Button
-                              onClick={() => router.push(`/dko_tournament_registration?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`)}
+                              onClick={() => {
+                                if (isMembersChampionCup) {
+                                  router.push(
+                                    `/admin/members-champion-cup/auslosung?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`
+                                  )
+                                  return
+                                }
+
+                                router.push(
+                                  `/dko_tournament_registration?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`
+                                )
+                              }}
                               disabled={!canStart}
                               className={`w-full font-black py-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg ${
                                 canStart
                                   ? "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
                                   : "bg-gray-200 text-gray-500 cursor-not-allowed"
                               }`}
-                              title={canStart ? "Turniertag starten" : "Nur am heutigen Turniertag aktiv"}
+                              title={
+                                canStart
+                                  ? isMembersChampionCup
+                                    ? "Members-Cup-Auslosung öffnen"
+                                    : "Turniertag starten"
+                                  : "Nur am heutigen Turniertag aktiv"
+                              }
                             >
                               <Play className="w-5 h-5" />
-                              Turniertag starten
+                              {isMembersChampionCup ? "Auslosung öffnen" : "Turniertag starten"}
                             </Button>
                           </div>
                         </div>
