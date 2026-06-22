@@ -7,7 +7,8 @@ import { PushSubscriptionRepair } from "@/components/push-subscription-repair"
 import KillServiceWorker from "@/components/KillServiceWorker"
 import PushInit from "./PushInit"
 import AppPlatformClass from "./AppPlatformClass"
-import SupabaseSessionGuard from "@/components/SupabaseSessionGuard" // ✅ NEU
+import SupabaseSessionGuard from "@/components/SupabaseSessionGuard"
+import { AppRouteGuard } from "@/components/auth/app-route-guard"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -54,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PushSubscriptionRepair />
           <PushInit />
 
-          {children}
+          <AppRouteGuard>{children}</AppRouteGuard>
         </div>
       </body>
     </html>
