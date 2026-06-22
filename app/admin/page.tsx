@@ -54,6 +54,7 @@ import { RolePermissionsManager } from "@/components/role-permissions-manager"
 import { AdminMembersLevelManagement } from "@/components/admin/members-champion-cup/admin-members-level-management"
 import { BonusVergabeManagement } from "@/components/admin/bonus-vergabe/bonus-vergabe"
 import { AdminPraemienRedemptions } from "@/components/admin/bonus/admin-praemien-redemptions"
+import { GuestRequestsManagement } from "@/components/admin/guest-requests/guest-requests"
 import { PackageCheck } from "lucide-react"
 
 export default function AdminPage() {
@@ -98,6 +99,7 @@ export default function AdminPage() {
 | "members-levels"
 | "bonus-vergabe"
 | "praemien-redemptions"
+| "guest-requests"
   >("dashboard")
 
   const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
@@ -312,6 +314,14 @@ export default function AdminPage() {
   view: "praemien-redemptions" as const,
   category: "verein" as const,
 },
+{
+  title: "Gastzugänge",
+  description: "Gastanträge prüfen und freischalten",
+  icon: Users,
+  color: "bg-cyan-600",
+  view: "guest-requests" as const,
+  category: "verein" as const,
+},
     {
       title: "Veranstaltungen",
       description: "Turniere, Partys & Events verwalten",
@@ -503,6 +513,7 @@ card.view === "praemien-redemptions"
 		{ key: "bonus-system", label: "Bonussystem", icon: Trophy },
 		{ key: "bonus-vergabe", label: "Bonusvergabe", icon: Trophy },
 		{ key: "praemien-redemptions", label: "Prämien-Ausgabe", icon: PackageCheck },
+		{ key: "guest-requests", label: "Gastzugänge", icon: Users },
         { key: "club", label: "Vereinsverwaltung", icon: Users },
         { key: "support-tickets", label: "Support Tickets", icon: HelpCircle },
         {
@@ -555,7 +566,8 @@ card.view === "praemien-redemptions"
 	  "admin-push",
 "bonus-system",
 "bonus-vergabe",
-"praemien-redemptions"
+"praemien-redemptions",
+"guest-requests"
     ].includes(c.view)
   ),
 } as const
@@ -1048,6 +1060,23 @@ if (!hasAnyPermission) {
 
       <CardContent>
         <AdminPraemienRedemptions user={user} />
+      </CardContent>
+    </Card>
+  </div>
+)}
+
+{currentView === "guest-requests" && (
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <Users className="h-5 w-5" />
+          <span>Gastzugänge</span>
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <GuestRequestsManagement />
       </CardContent>
     </Card>
   </div>

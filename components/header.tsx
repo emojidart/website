@@ -120,7 +120,7 @@ export function Header({
 
   const handleAuthClick = () => {
     if (user) router.push("/member-profile-app")
-    else router.push("/member-login")
+    else router.push("/login")
   }
 
   const handleApplyClick = () => {
@@ -298,7 +298,7 @@ export function Header({
       title: "Account",
       items: [
         {
-          href: user ? "/member-profile-app" : "/member-login",
+          href: user ? "/member-profile-app" : "/login",
           label: user ? "Profil" : "Login",
           icon: user ? UserCircle : LogIn,
         },

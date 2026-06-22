@@ -161,7 +161,7 @@ export function MobileBottomNav() {
       {
         key: "q_profile",
         name: isLoggedIn ? "Profil" : "Login",
-        href: isLoggedIn ? "/member-profile-app" : "/member-login",
+        href: isLoggedIn ? "/member-profile-app" : "/login",
         icon: isLoggedIn ? UserCircle : LogIn,
       },
     ]
