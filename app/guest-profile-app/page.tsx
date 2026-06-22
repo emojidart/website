@@ -260,8 +260,7 @@ export default function GuestProfileAppPage() {
               </h3>
 
               <p className="text-gray-600">
-                Hier werden später offene Turniere, dein Spielerprofil,
-                Statistiken und weitere Gastfunktionen angezeigt.
+                Noch keine Daten verfügbar.
               </p>
             </CardContent>
           </Card>

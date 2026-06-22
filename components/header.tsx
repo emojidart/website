@@ -48,6 +48,8 @@ type DrawerItem = {
   icon: React.ComponentType<{ className?: string }>
   requiresLogin?: boolean
   adminOnly?: boolean
+  memberOnly?: boolean
+  guestOnly?: boolean
 }
 
 type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand"
@@ -90,24 +92,73 @@ export function Header({
 
   const [drawerOpen, setDrawerOpen] = React.useState(false)
   const [chatUnreadCount, setChatUnreadCount] = React.useState(0)
+  const [isGuest, setIsGuest] = React.useState(false)
+  const [profileChecked, setProfileChecked] = React.useState(false)
 
   const closeDrawer = () => setDrawerOpen(false)
   const toggleDrawer = () => setDrawerOpen((v) => !v)
 
   const authReadyRef = React.useRef(false)
+
   React.useEffect(() => {
     if (user !== undefined) authReadyRef.current = true
   }, [user])
+
   const authReady = authReadyRef.current
-  
-  
-  
+
+  React.useEffect(() => {
+    let mounted = true
+
+    const checkGuestProfile = async () => {
+      try {
+        setProfileChecked(false)
+
+        if (!user?.id) {
+          if (!mounted) return
+          setIsGuest(false)
+          setProfileChecked(true)
+          return
+        }
+
+        const { data, error } = await supabase
+          .from("user_profiles")
+          .select("is_guest")
+          .eq("user_id", user.id)
+          .maybeSingle()
+
+        if (!mounted) return
+
+        if (error) {
+          console.error("[Header] Gaststatus konnte nicht geladen werden:", error)
+          setIsGuest(false)
+          setProfileChecked(true)
+          return
+        }
+
+        setIsGuest(Boolean(data?.is_guest))
+        setProfileChecked(true)
+      } catch (error) {
+        console.error("[Header] Gaststatus Fehler:", error)
+        if (!mounted) return
+        setIsGuest(false)
+        setProfileChecked(true)
+      }
+    }
+
+    void checkGuestProfile()
+
+    return () => {
+      mounted = false
+    }
+  }, [user?.id])
 
   React.useEffect(() => {
     if (!drawerOpen) return
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeDrawer()
     }
+
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [drawerOpen])
@@ -119,8 +170,17 @@ export function Header({
   }, [pathname])
 
   const handleAuthClick = () => {
-    if (user) router.push("/member-profile-app")
-    else router.push("/login")
+    if (user && isGuest) {
+      router.push("/guest-profile-app")
+      return
+    }
+
+    if (user) {
+      router.push("/member-profile-app")
+      return
+    }
+
+    router.push("/login")
   }
 
   const handleApplyClick = () => {
@@ -136,6 +196,7 @@ export function Header({
   }
 
   const handleChatClick = () => {
+    if (isGuest) return
     router.push("/chat-app")
   }
 
@@ -147,7 +208,7 @@ export function Header({
   const unreadKey = React.useCallback((roomId: string, scope: ChatScope) => `${roomId}:${scope}`, [])
 
   const loadChatUnreadCount = React.useCallback(async () => {
-    if (!user?.id) {
+    if (!user?.id || isGuest) {
       setChatUnreadCount(0)
       return
     }
@@ -155,11 +216,11 @@ export function Header({
     try {
       const { data: profile, error: profileError } = await supabase
         .from("user_profiles")
-        .select("id,user_id,player_id")
+        .select("id,user_id,player_id,is_guest")
         .eq("user_id", user.id)
         .maybeSingle()
 
-      if (profileError || !profile?.id) {
+      if (profileError || !profile?.id || profile?.is_guest) {
         setChatUnreadCount(0)
         return
       }
@@ -248,21 +309,13 @@ export function Header({
       console.error("loadChatUnreadCount error", error)
       setChatUnreadCount(0)
     }
-  }, [user?.id, unreadKey])
+  }, [user?.id, isGuest, unreadKey])
 
   React.useEffect(() => {
     if (!authReady) return
+    if (!profileChecked) return
     loadChatUnreadCount()
-  }, [authReady, loadChatUnreadCount])
-  
-  
-  
-
-
-  
-  
-  
-  
+  }, [authReady, profileChecked, loadChatUnreadCount])
 
   const drawerSections: Array<{ title: string; items: DrawerItem[] }> = [
     {
@@ -280,9 +333,9 @@ export function Header({
         { href: "/tournament-series-app", label: "Lion Cup", icon: Trophy },
         { href: "/live-all-app", label: "Live", icon: Radio },
         { href: "/tournament-history", label: "History", icon: History },
-        { href: "/chat-app", label: "Chat", icon: MessageCircle, requiresLogin: true },
-        { href: "/vereinskalender-app", label: "Vereinskalender", icon: CalendarDays, requiresLogin: true },
-        { href: "/member-availability", label: "Aufstellung", icon: ClipboardList, requiresLogin: true },
+        { href: "/chat-app", label: "Chat", icon: MessageCircle, requiresLogin: true, memberOnly: true },
+        { href: "/vereinskalender-app", label: "Vereinskalender", icon: CalendarDays, requiresLogin: true, memberOnly: true },
+        { href: "/member-availability", label: "Aufstellung", icon: ClipboardList, requiresLogin: true, memberOnly: true },
       ],
     },
     {
@@ -298,13 +351,13 @@ export function Header({
       title: "Account",
       items: [
         {
-          href: user ? "/member-profile-app" : "/login",
-          label: user ? "Profil" : "Login",
+          href: user ? (isGuest ? "/guest-profile-app" : "/member-profile-app") : "/login",
+          label: user ? (isGuest ? "Gast-Profil" : "Profil") : "Login",
           icon: user ? UserCircle : LogIn,
         },
         { href: "/admin", label: "Admin", icon: LayoutDashboard, adminOnly: true },
-        { href: "/member-card", label: "Mitgliedskarte", icon: CreditCard, requiresLogin: true },
-        { href: "/match-galerie", label: "Match Galerie", icon: Images, requiresLogin: true },
+        { href: "/member-card", label: "Mitgliedskarte", icon: CreditCard, requiresLogin: true, memberOnly: true },
+        { href: "/match-galerie", label: "Match Galerie", icon: Images, requiresLogin: true, memberOnly: true },
       ],
     },
   ]
@@ -312,11 +365,13 @@ export function Header({
   const canShow = (it: DrawerItem) => {
     if (it.requiresLogin && !user) return false
     if (it.adminOnly && !(user && isAdmin)) return false
+    if (it.memberOnly && (!user || isGuest)) return false
+    if (it.guestOnly && (!user || !isGuest)) return false
     return true
   }
 
   const renderChatBadge = () => {
-    if (!user || chatUnreadCount <= 0) return null
+    if (!user || isGuest || chatUnreadCount <= 0) return null
 
     return (
       <span className="ml-auto inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
@@ -333,8 +388,8 @@ export function Header({
     }
 
     return (
-    <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm pt-[env(safe-area-inset-top)]">
-  <div className="bg-white">
+      <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm pt-[env(safe-area-inset-top)]">
+        <div className="bg-white">
           <div className="mx-auto w-full max-w-7xl px-4">
             <div className="flex h-14 items-center gap-3">
               {backHref || onBackClick ? (
@@ -381,19 +436,21 @@ export function Header({
                 <div className="min-w-0 flex items-center gap-2">
                   <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-orange-600 shadow-sm">
                     <Image
-  src="/images/brutal-darts-bg---.png"
-  alt="EMD Logo"
-  width={28}
-  height={28}
-  className="h-auto object-contain"
-  style={{ width: "auto", height: "28px" }}
-  priority
-/>
+                      src="/images/brutal-darts-bg---.png"
+                      alt="EMD Logo"
+                      width={28}
+                      height={28}
+                      className="h-auto object-contain"
+                      style={{ width: "auto", height: "28px" }}
+                      priority
+                    />
                   </span>
                   <div className="min-w-0">
                     <div className="truncate font-extrabold text-gray-900">{title}</div>
                     {user ? (
-                      <div className="truncate text-xs text-gray-500">{user.email}</div>
+                      <div className="truncate text-xs text-gray-500">
+                        {isGuest ? "Gastzugang" : user.email}
+                      </div>
                     ) : (
                       <div className="text-xs text-gray-500">Willkommen bei EMD</div>
                     )}
@@ -407,16 +464,18 @@ export function Header({
             </div>
 
             <div className="h-full overflow-y-auto p-3 pb-[env(safe-area-inset-bottom)]">
-              <Button
-                onClick={() => {
-                  closeDrawer()
-                  handleApplyClick()
-                }}
-                className="mb-2 h-11 w-full rounded-xl bg-orange-600 font-semibold text-white hover:bg-orange-700"
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                Jetzt bewerben
-              </Button>
+              {!user ? (
+                <Button
+                  onClick={() => {
+                    closeDrawer()
+                    handleApplyClick()
+                  }}
+                  className="mb-2 h-11 w-full rounded-xl bg-orange-600 font-semibold text-white hover:bg-orange-700"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Jetzt bewerben
+                </Button>
+              ) : null}
 
               <Button
                 onClick={() => {
@@ -431,41 +490,47 @@ export function Header({
               </Button>
 
               <div className="space-y-5 pb-20">
-                {drawerSections.map((sec) => (
-                  <section key={sec.title}>
-                    <div className="mb-2 px-2 text-xs font-bold uppercase tracking-wide text-gray-500">
-                      {sec.title}
-                    </div>
+                {drawerSections.map((sec) => {
+                  const visibleItems = sec.items.filter(canShow)
 
-                    <div className="space-y-1">
-                      {sec.items.filter(canShow).map((it) => {
-                        const Icon = it.icon
-                        const active = isActive(it.href)
-                        const isChatItem = it.href === "/chat-app"
+                  if (visibleItems.length === 0) return null
 
-                        return (
-                          <Link
-                            key={it.href + it.label}
-                            href={it.href}
-                            className={cn(
-                              "flex items-center gap-3 rounded-xl px-3 py-2.5 transition",
-                              active
-                                ? "bg-orange-50 text-orange-800 ring-1 ring-orange-200"
-                                : "text-gray-800 hover:bg-gray-50",
-                            )}
-                            onClick={closeDrawer}
-                          >
-                            <Icon className={cn("h-5 w-5 shrink-0", active ? "text-orange-700" : "text-orange-600")} />
-                            <span className="font-semibold">{it.label}</span>
-                            {isChatItem ? renderChatBadge() : <ChevronRight className="ml-auto h-4 w-4 text-gray-400" />}
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  </section>
-                ))}
+                  return (
+                    <section key={sec.title}>
+                      <div className="mb-2 px-2 text-xs font-bold uppercase tracking-wide text-gray-500">
+                        {sec.title}
+                      </div>
 
-                {user && isAdmin ? (
+                      <div className="space-y-1">
+                        {visibleItems.map((it) => {
+                          const Icon = it.icon
+                          const active = isActive(it.href)
+                          const isChatItem = it.href === "/chat-app"
+
+                          return (
+                            <Link
+                              key={it.href + it.label}
+                              href={it.href}
+                              className={cn(
+                                "flex items-center gap-3 rounded-xl px-3 py-2.5 transition",
+                                active
+                                  ? "bg-orange-50 text-orange-800 ring-1 ring-orange-200"
+                                  : "text-gray-800 hover:bg-gray-50",
+                              )}
+                              onClick={closeDrawer}
+                            >
+                              <Icon className={cn("h-5 w-5 shrink-0", active ? "text-orange-700" : "text-orange-600")} />
+                              <span className="font-semibold">{it.label}</span>
+                              {isChatItem ? renderChatBadge() : <ChevronRight className="ml-auto h-4 w-4 text-gray-400" />}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </section>
+                  )
+                })}
+
+                {user && isAdmin && !isGuest ? (
                   <Button
                     onClick={() => {
                       closeDrawer()
@@ -488,7 +553,7 @@ export function Header({
                   className="h-11 w-full rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
                 >
                   {user ? <UserCircle className="mr-2 h-4 w-4" /> : <LogIn className="mr-2 h-4 w-4" />}
-                  {user ? "Profil öffnen" : "Login"}
+                  {user ? (isGuest ? "Gast-Profil öffnen" : "Profil öffnen") : "Login"}
                 </Button>
               </div>
             </div>
@@ -497,7 +562,7 @@ export function Header({
       )}
 
       <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm pt-[env(safe-area-inset-top)]">
-  <div className="bg-white">
+        <div className="bg-white">
           <div className="mx-auto w-full max-w-2xl px-4 lg:max-w-screen-xl 2xl:max-w-screen-2xl">
             <div className="flex h-14 items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
@@ -527,7 +592,7 @@ export function Header({
               </div>
 
               <div className="hidden items-center gap-2 lg:flex">
-                {user ? (
+                {user && !isGuest ? (
                   <Button
                     onClick={handleChatClick}
                     variant="outline"
@@ -552,16 +617,18 @@ export function Header({
                   EMD Campus
                 </Button>
 
-                <Button
-                  onClick={handleApplyClick}
-                  className="h-10 rounded-xl bg-orange-600 px-4 font-semibold text-white hover:bg-orange-700"
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Jetzt bewerben
-                </Button>
+                {!user ? (
+                  <Button
+                    onClick={handleApplyClick}
+                    className="h-10 rounded-xl bg-orange-600 px-4 font-semibold text-white hover:bg-orange-700"
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Jetzt bewerben
+                  </Button>
+                ) : null}
 
                 {authReady ? (
-                  user && isAdmin ? (
+                  user && isAdmin && !isGuest ? (
                     <Button
                       onClick={handleAdminClick}
                       variant="outline"
@@ -586,10 +653,10 @@ export function Header({
                       </span>
                       <span className="min-w-0">
                         <span className="block text-[11px] font-medium uppercase tracking-wide text-orange-500">
-                          Profil
+                          {isGuest ? "Gast" : "Profil"}
                         </span>
                         <span className="block truncate text-sm font-semibold text-gray-900">
-                          {getUserLabel(user)}
+                          {isGuest ? "Gastzugang" : getUserLabel(user)}
                         </span>
                       </span>
                     </button>

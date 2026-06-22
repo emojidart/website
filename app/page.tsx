@@ -426,9 +426,13 @@ const [membersCupRegLoading, setMembersCupRegLoading] = useState(false)
     }
   }, [])
 
-  // DKO: Sekunden-Tick für Countdown
-  useEffect(() => {
-  return () => {}
+ // DKO: Sekunden-Tick für Countdown
+useEffect(() => {
+  const id = window.setInterval(() => {
+    setNowTick(Date.now())
+  }, 1000)
+
+  return () => window.clearInterval(id)
 }, [])
 
   // DKO: Auth User id (für Self-Registration)
@@ -1268,6 +1272,50 @@ const liveMembersDateLabel = liveMembersSelfRegEvent
 const liveMembersTimeLabel = liveMembersSelfRegEvent
   ? ensureUhr(liveMembersSelfRegEvent.time)
   : ""
+  
+  // --- SUMMER SPECIAL Anmeldung oben auf Startseite ---
+const liveSummerSelfRegEvent = useMemo(() => {
+  const summerToday =
+    nextSummerTournamentEvent &&
+    nextSummerTournamentEvent.event_type?.toLowerCase() === "turnier" &&
+    nextSummerTournamentEvent.event_date === todayISO
+
+  if (summerToday) {
+    return {
+      title: "Anmeldung geöffnet • SUMMER SPECIAL",
+      isoDate: nextSummerTournamentEvent!.event_date,
+      time: nextSummerTournamentEvent!.event_time || "19:00",
+    }
+  }
+
+  return null
+}, [nextSummerTournamentEvent, todayISO])
+
+const liveSummerStartDT = liveSummerSelfRegEvent
+  ? getStartDateTimeFromISO(
+      liveSummerSelfRegEvent.isoDate,
+      liveSummerSelfRegEvent.time
+    )
+  : null
+
+const liveSummerRegCloseDT = liveSummerStartDT
+  ? new Date(liveSummerStartDT.getTime() - 10 * 60 * 1000)
+  : null
+
+const liveSummerSecondsLeft = liveSummerRegCloseDT
+  ? Math.ceil((liveSummerRegCloseDT.getTime() - nowTick) / 1000)
+  : null
+
+const liveSummerRegOpen =
+  liveSummerSelfRegEvent && (liveSummerSecondsLeft ?? 0) > 0
+
+const liveSummerDateLabel = liveSummerSelfRegEvent
+  ? formatGermanShortDateFromISO(liveSummerSelfRegEvent.isoDate)
+  : ""
+
+const liveSummerTimeLabel = liveSummerSelfRegEvent
+  ? ensureUhr(liveSummerSelfRegEvent.time)
+  : ""
 
   const fetchDkoRegStatus = async () => {
     setDkoRegLoading(true)
@@ -1455,7 +1503,60 @@ useEffect(() => {
 	  
 	  
 	  
-	  
+{/* GASTZUGANG BANNER */}
+<div className="mx-4 sm:mx-6 mt-3">
+  <div className="rounded-2xl border border-cyan-200 bg-white shadow-lg overflow-hidden">
+    <div className="h-1.5 bg-gradient-to-r from-cyan-500 via-sky-400 to-cyan-600" />
+
+    <div className="p-4 sm:p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-cyan-50 border border-cyan-200 flex items-center justify-center shrink-0">
+            <UserPlus className="w-6 h-6 text-cyan-700" />
+          </div>
+
+          <div>
+            <div className="text-xs font-black uppercase tracking-wider text-cyan-700">
+              Neu für Gäste
+            </div>
+
+            <div className="text-lg sm:text-xl font-black text-gray-900">
+              Gastzugang für Turniere & Vereinsinfos
+            </div>
+
+            <div className="text-sm font-semibold text-gray-600 max-w-3xl">
+              Ab sofort können sich auch Gäste bei uns anmelden. So bleibst du über Turniere,
+              Anmeldungen und wichtige Vereinsinfos informiert. Eigene Statistiken und weitere
+              Funktionen werden in Zukunft ebenfalls für Gäste ersichtlich sein.
+            </div>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          className="
+            w-full sm:w-auto
+            rounded-xl
+            border border-cyan-200
+            bg-white
+            px-5 py-3
+            text-sm font-black
+            text-cyan-800
+            shadow-sm
+            transition
+            hover:bg-cyan-50
+            hover:text-cyan-900
+            whitespace-nowrap
+          "
+          onClick={() => (window.location.href = "/gastzugang")}
+        >
+          Hier geht&apos;s zur Anmeldung
+          <ArrowRight className="w-4 h-4 ml-2 text-cyan-800" />
+        </Button>
+      </div>
+    </div>
+  </div>
+</div>
 	  
 	  
 	  
@@ -1673,6 +1774,9 @@ useEffect(() => {
     </div>
   </div>
 )} 
+
+
+
 	  
 	  
 	  
@@ -1830,6 +1934,136 @@ useEffect(() => {
 	  
 	  
 	  
+	  
+	  
+	  
+	  
+	  
+	  {liveSummerSelfRegEvent && (
+  <div className="sticky top-12 sm:top-14 z-40">
+    <div className="mx-4 sm:mx-6 mt-3">
+      <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
+        <div
+          className={`h-1.5 ${
+            liveSummerRegOpen
+              ? "bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600"
+              : "bg-gradient-to-r from-gray-300 via-gray-200 to-gray-300"
+          }`}
+        />
+
+        <div className="p-3 sm:p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="relative flex-shrink-0 mt-0.5">
+                <div
+                  className={`w-11 h-11 rounded-2xl border flex items-center justify-center ${
+                    liveSummerRegOpen
+                      ? "bg-orange-50 border-orange-200"
+                      : "bg-gray-50 border-gray-200"
+                  }`}
+                >
+                  <UserPlus
+                    className={`w-5 h-5 ${
+                      liveSummerRegOpen ? "text-orange-700" : "text-gray-500"
+                    }`}
+                  />
+                </div>
+
+                <span
+                  className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-white animate-pulse ${
+                    liveSummerRegOpen ? "bg-emerald-500" : "bg-gray-300"
+                  }`}
+                />
+              </div>
+
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
+                    SUMMER SPECIAL
+                  </span>
+
+                  <span className="inline-flex items-center rounded-full bg-gray-50 text-gray-800 border border-gray-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
+                    TURNIERTAG
+                  </span>
+                </div>
+
+                <div className="mt-1 text-sm sm:text-base font-black text-gray-900 truncate">
+                  {liveSummerSelfRegEvent.title}
+                </div>
+
+                <div className="mt-0.5 text-[11px] sm:text-xs text-gray-600 flex flex-wrap items-center gap-3">
+                  <span className="inline-flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                    {liveSummerDateLabel}
+                  </span>
+
+                  <span className="inline-flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-orange-600" />
+                    {liveSummerTimeLabel}
+                  </span>
+                </div>
+
+                <div className="mt-2 text-[11px] sm:text-xs text-gray-700 flex items-center gap-2">
+                  <Info className="w-3.5 h-3.5 text-gray-400" />
+
+                  {liveSummerRegOpen ? (
+                    <span className="font-bold">
+                      An- und Abmeldung noch:{" "}
+                      {formatHoursMinutesSeconds(liveSummerSecondsLeft ?? 0)}
+                      <span className="font-semibold text-gray-500">
+                        {" "}
+                        (schließt 10 Min vor Start)
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="font-bold">
+                      An- und Abmeldung geschlossen{" "}
+                      <span className="font-semibold text-gray-500">
+                        (10 Min vor Start)
+                      </span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0">
+              <Button
+                size="sm"
+                disabled={!liveSummerRegOpen}
+                className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm px-3 sm:px-4 disabled:opacity-60 disabled:cursor-not-allowed"
+                onClick={() => (window.location.href = "/summer-special/anmeldung")}
+              >
+                {liveSummerRegOpen ? (
+                  <>
+                    <span className="hidden sm:inline">Jetzt anmelden</span>
+                    <span className="sm:hidden">Anmelden</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Geschlossen</span>
+                    <span className="sm:hidden">Zu</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
 
       <section className="container mx-auto px-4 py-8 lg:py-12 overflow-x-hidden">
         <div className="grid lg:grid-cols-2 gap-6">
@@ -1973,14 +2207,15 @@ useEffect(() => {
         Regelwerk
       </Button>
 
-      <Button
-        size="lg"
-        variant="outline"
-        className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-        disabled
-      >
-        Anmelden
-      </Button>
+     <Button
+  size="lg"
+  variant="outline"
+  className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
+  onClick={() => (window.location.href = "/summer-special/anmeldung")}
+>
+  Zur Anmeldung
+  <ArrowRight className="w-4 h-4 ml-2" />
+</Button>
     </div>
   </div>
 </div>

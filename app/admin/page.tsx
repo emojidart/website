@@ -445,11 +445,12 @@ export default function AdminPage() {
 
   if (card.view === "role-permissions") return false
 
-  return (
+return (
   allowedViews.has(card.view) ||
   card.view === "members-levels" ||
-card.view === "bonus-vergabe" ||
-card.view === "praemien-redemptions"
+  card.view === "bonus-vergabe" ||
+  card.view === "praemien-redemptions" ||
+  card.view === "guest-requests"
 )
 })
 
@@ -458,10 +459,11 @@ card.view === "praemien-redemptions"
   if (allowedViews?.has("*")) return true
   if (allowedViews === null) return false
 
- if (
+if (
   viewKey === "members-levels" ||
   viewKey === "bonus-vergabe" ||
-  viewKey === "praemien-redemptions"
+  viewKey === "praemien-redemptions" ||
+  viewKey === "guest-requests"
 ) return true
 
   if (

@@ -5,12 +5,31 @@ export const MEMBER_HOME_ROUTE = "/member-profile-app"
 
 export const publicRoutes = [
   "/",
+  "/login",
+  "/login-auswahl",
   "/gastzugang",
   "/guest-login",
   "/member-login",
-  "/login-auswahl",
+
+  "/veranstaltungen",
+  "/liga-statistiken-app",
+  "/new-club",
+  "/tournament-series-app",
+  "/live-all-app",
+  "/livestream",
+  "/tournament-history",
+  "/emd-campus",
+  "/faq",
+  "/uber-uns",
+  "/kontakt",
+
   "/impressum",
   "/datenschutz",
+  
+   "/player-search",
+  "/sponsoring",
+  "/steeldart-competition-regelwerk",
+  "/summer-special",
 ]
 
 export const guestRoutes = [

@@ -36,6 +36,8 @@ type NavItem = {
   icon: LucideIcon
   requiresLogin?: boolean
   adminOnly?: boolean
+  memberOnly?: boolean
+  guestOnly?: boolean
   danger?: boolean
   onClick?: () => void
 }
@@ -46,7 +48,7 @@ type Section = {
   items: NavItem[]
 }
 
-/** ---------- CONFIG (klar & zentral) ---------- */
+/** ---------- CONFIG ---------- */
 
 const BOTTOM_BAR: NavItem[] = [
   { key: "home", name: "Home", href: "/", icon: Home },
@@ -59,9 +61,27 @@ const QUICK_BASE: Omit<NavItem, "key">[] = [
   { name: "Lion Cup", href: "/tournament-series-app", icon: Trophy },
   { name: "Live", href: "/live-all-app", icon: Radio },
   { name: "History", href: "/tournament-history", icon: History },
-  { name: "Chat", href: "/chat-app", icon: MessageCircle, requiresLogin: true },
-  { name: "Vereinskalender", href: "/vereinskalender-app", icon: CalendarDays, requiresLogin: true },
-  { name: "Aufstellung", href: "/member-availability", icon: ClipboardList, requiresLogin: true },
+  {
+    name: "Chat",
+    href: "/chat-app",
+    icon: MessageCircle,
+    requiresLogin: true,
+    memberOnly: true,
+  },
+  {
+    name: "Vereinskalender",
+    href: "/vereinskalender-app",
+    icon: CalendarDays,
+    requiresLogin: true,
+    memberOnly: true,
+  },
+  {
+    name: "Aufstellung",
+    href: "/member-availability",
+    icon: ClipboardList,
+    requiresLogin: true,
+    memberOnly: true,
+  },
 ]
 
 const LIVE_ITEMS: NavItem[] = [
@@ -78,10 +98,17 @@ const INFO_ITEMS: NavItem[] = [
 
 /** ---------- HELPERS ---------- */
 
-function filterByAuth(items: NavItem[], isLoggedIn: boolean, isAdmin: boolean) {
+function filterByAuth(
+  items: NavItem[],
+  isLoggedIn: boolean,
+  isAdmin: boolean,
+  isGuest: boolean,
+) {
   return items.filter((it) => {
     if (it.requiresLogin && !isLoggedIn) return false
-    if (it.adminOnly && !isAdmin) return false
+    if (it.adminOnly && (!isLoggedIn || !isAdmin || isGuest)) return false
+    if (it.memberOnly && (!isLoggedIn || isGuest)) return false
+    if (it.guestOnly && (!isLoggedIn || !isGuest)) return false
     return true
   })
 }
@@ -96,6 +123,7 @@ function NavLink({
   className?: string
 }) {
   const Icon = item.icon
+
   return (
     <Link
       href={item.href!}
@@ -114,6 +142,7 @@ function NavLink({
 
 function NavButton({ item, className }: { item: NavItem; className?: string }) {
   const Icon = item.icon
+
   return (
     <button
       onClick={item.onClick}
@@ -137,10 +166,59 @@ export function MobileBottomNav() {
   const { user, loading, isAdmin } = useAuth()
 
   const isLoggedIn = !!user
+
   const [isMoreOpen, setIsMoreOpen] = useState(false)
+  const [isGuest, setIsGuest] = useState(false)
+  const [profileChecked, setProfileChecked] = useState(false)
 
   const closeMore = useCallback(() => setIsMoreOpen(false), [])
   const toggleMore = useCallback(() => setIsMoreOpen((v) => !v), [])
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadGuestStatus = async () => {
+      try {
+        setProfileChecked(false)
+
+        if (!user?.id) {
+          if (!mounted) return
+          setIsGuest(false)
+          setProfileChecked(true)
+          return
+        }
+
+        const { data, error } = await supabase
+          .from("user_profiles")
+          .select("is_guest")
+          .eq("user_id", user.id)
+          .maybeSingle()
+
+        if (!mounted) return
+
+        if (error) {
+          console.error("[MobileBottomNav] Gaststatus konnte nicht geladen werden:", error)
+          setIsGuest(false)
+          setProfileChecked(true)
+          return
+        }
+
+        setIsGuest(Boolean(data?.is_guest))
+        setProfileChecked(true)
+      } catch (error) {
+        console.error("[MobileBottomNav] Gaststatus Fehler:", error)
+        if (!mounted) return
+        setIsGuest(false)
+        setProfileChecked(true)
+      }
+    }
+
+    void loadGuestStatus()
+
+    return () => {
+      mounted = false
+    }
+  }, [user?.id])
 
   const handleLogout = useCallback(async () => {
     await supabase.auth.signOut()
@@ -150,28 +228,56 @@ export function MobileBottomNav() {
 
   useEffect(() => {
     if (!isMoreOpen) return
+
     const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && closeMore()
+
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [isMoreOpen, closeMore])
 
   const sections: Section[] = useMemo(() => {
+    const profileHref = isLoggedIn
+      ? isGuest
+        ? "/guest-profile-app"
+        : "/member-profile-app"
+      : "/login"
+
+    const profileName = isLoggedIn ? (isGuest ? "Gast-Profil" : "Profil") : "Login"
+
     const quickRaw: NavItem[] = [
       ...QUICK_BASE.map((x) => ({ ...x, key: `q_${x.name}` })),
       {
         key: "q_profile",
-        name: isLoggedIn ? "Profil" : "Login",
-        href: isLoggedIn ? "/member-profile-app" : "/login",
+        name: profileName,
+        href: profileHref,
         icon: isLoggedIn ? UserCircle : LogIn,
       },
     ]
 
-    const quick = filterByAuth(quickRaw, isLoggedIn, isAdmin)
-
     const accountRaw: NavItem[] = [
-      { key: "admin", name: "Admin", href: "/admin", icon: LayoutDashboard, adminOnly: true },
-      { key: "card", name: "Mitgliedskarte", href: "/member-card", icon: CreditCard, requiresLogin: true },
-      { key: "gallery", name: "Match Galerie", href: "/match-galerie", icon: Images, requiresLogin: true },
+      {
+        key: "admin",
+        name: "Admin",
+        href: "/admin",
+        icon: LayoutDashboard,
+        adminOnly: true,
+      },
+      {
+        key: "card",
+        name: "Mitgliedskarte",
+        href: "/member-card",
+        icon: CreditCard,
+        requiresLogin: true,
+        memberOnly: true,
+      },
+      {
+        key: "gallery",
+        name: "Match Galerie",
+        href: "/match-galerie",
+        icon: Images,
+        requiresLogin: true,
+        memberOnly: true,
+      },
       {
         key: "logout",
         name: "Abmelden",
@@ -182,9 +288,10 @@ export function MobileBottomNav() {
       },
     ]
 
-    const account = filterByAuth(accountRaw, isLoggedIn, isAdmin)
-    const live = filterByAuth(LIVE_ITEMS, isLoggedIn, isAdmin)
-    const info = filterByAuth(INFO_ITEMS, isLoggedIn, isAdmin)
+    const quick = filterByAuth(quickRaw, isLoggedIn, isAdmin, isGuest)
+    const account = filterByAuth(accountRaw, isLoggedIn, isAdmin, isGuest)
+    const live = filterByAuth(LIVE_ITEMS, isLoggedIn, isAdmin, isGuest)
+    const info = filterByAuth(INFO_ITEMS, isLoggedIn, isAdmin, isGuest)
 
     return [
       { title: "Schnellzugriff", variant: "grid", items: quick },
@@ -192,14 +299,14 @@ export function MobileBottomNav() {
       { title: "Live", variant: "list", items: live },
       { title: "Info", variant: "list", items: info },
     ]
-  }, [isLoggedIn, isAdmin, handleLogout])
+  }, [isLoggedIn, isAdmin, isGuest, handleLogout])
 
-  // 👉 Offset, damit die Nav in "richtiger App" (WebView) nicht unter der Systemleiste hängt
-  // env(...) ist auf manchen WebViews 0, daher Fallback 12px
   const BOTTOM_OFFSET = "0px"
   const SPACER_H = "calc(4rem + max(12px, env(safe-area-inset-bottom)))"
 
-  if (loading) return <div className="md:hidden" style={{ height: SPACER_H }} />
+  if (loading || (isLoggedIn && !profileChecked)) {
+    return <div className="md:hidden" style={{ height: SPACER_H }} />
+  }
 
   return (
     <>
@@ -209,58 +316,75 @@ export function MobileBottomNav() {
       {/* MORE OVERLAY */}
       {isMoreOpen && (
         <div className="fixed inset-0 z-[60] md:hidden">
-          <button aria-label="Schließen" className="absolute inset-0 bg-black/40" onClick={closeMore} />
+          <button
+            aria-label="Schließen"
+            className="absolute inset-0 bg-black/40"
+            onClick={closeMore}
+          />
 
           {/* Sheet sitzt über Nav + Offset */}
           <div className="absolute left-0 right-0 bottom-0" style={{ paddingBottom: SPACER_H }}>
             <div className="mx-3 overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b bg-white p-4">
-                <h3 className="text-lg font-bold text-gray-900">Mehr Optionen</h3>
-                <button onClick={closeMore} className="rounded-lg p-2 hover:bg-gray-100" aria-label="Schließen">
+                <h3 className="text-lg font-bold text-gray-900">
+                  Mehr Optionen
+                </h3>
+
+                <button
+                  onClick={closeMore}
+                  className="rounded-lg p-2 hover:bg-gray-100"
+                  aria-label="Schließen"
+                >
                   <X className="h-5 w-5 text-gray-700" />
                 </button>
               </div>
 
               <div className="max-h-[60vh] overflow-y-auto p-4 space-y-5">
-                {sections.map((sec) => (
-                  <section key={sec.title}>
-                    <div className="mb-2 text-xs font-bold uppercase text-gray-500">{sec.title}</div>
+                {sections.map((sec) => {
+                  if (sec.items.length === 0) return null
 
-                    {sec.variant === "grid" ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        {sec.items.map((item) => (
-                          <NavLink
-                            key={item.key}
-                            item={item}
-                            onAfter={closeMore}
-                            className="bg-white border border-gray-200 hover:bg-gray-50"
-                          />
-                        ))}
+                  return (
+                    <section key={sec.title}>
+                      <div className="mb-2 text-xs font-bold uppercase text-gray-500">
+                        {sec.title}
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {sec.items.map((item) =>
-                          item.onClick ? (
-                            <NavButton key={item.key} item={item} />
-                          ) : (
-                            <NavLink key={item.key} item={item} onAfter={closeMore} />
-                          ),
-                        )}
-                      </div>
-                    )}
-                  </section>
-                ))}
+
+                      {sec.variant === "grid" ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          {sec.items.map((item) => (
+                            <NavLink
+                              key={item.key}
+                              item={item}
+                              onAfter={closeMore}
+                              className="bg-white border border-gray-200 hover:bg-gray-50"
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {sec.items.map((item) =>
+                            item.onClick ? (
+                              <NavButton key={item.key} item={item} />
+                            ) : (
+                              <NavLink key={item.key} item={item} onAfter={closeMore} />
+                            ),
+                          )}
+                        </div>
+                      )}
+                    </section>
+                  )
+                })}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* BOTTOM NAV (normal hoch, nur nach oben versetzt) */}
-     <nav
-  className="fixed left-0 right-0 bottom-0 z-50 md:hidden border-t border-gray-200 bg-white shadow-2xl"
-  style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
->
+      {/* BOTTOM NAV */}
+      <nav
+        className="fixed left-0 right-0 bottom-0 z-50 md:hidden border-t border-gray-200 bg-white shadow-2xl"
+        style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+      >
         <div className="grid h-16 grid-cols-5">
           {BOTTOM_BAR.map((item) => {
             const isActive = pathname === item.href
@@ -276,7 +400,9 @@ export function MobileBottomNav() {
                 )}
               >
                 <Icon className="h-6 w-6" strokeWidth={isActive ? 2.6 : 2.2} />
-                <span className="text-[10px] font-semibold">{item.name}</span>
+                <span className="text-[10px] font-semibold">
+                  {item.name}
+                </span>
               </Link>
             )
           })}

@@ -65,7 +65,7 @@ export default function GastzugangPage() {
 
       setSuccess(true)
       setMessage(
-        "Dein Gastantrag wurde erfolgreich übermittelt. Nach Prüfung wird dein Zugang freigeschaltet.",
+        "Dein Gastantrag wurde erfolgreich übermittelt. Nach Prüfung wird dein Zugang freigeschaltet.Du erhältst anschließend eine Bestätigung per E-Mail",
       )
 
       setFullName("")
