@@ -179,6 +179,13 @@ interface ActiveTournament {
   status: string
 }
 
+type BirthdayPlayer = {
+  id: string
+  name: string
+  birthdate: string
+  age: number | null
+}
+
 function CountdownTimer({ targetDate }: { targetDate: Date }) {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -241,14 +248,18 @@ function getEventTypeIcon(eventType: string) {
 }
 
 function getEventTypeLabel(eventType: string) {
-  const type = eventType.toLowerCase()
+  const type = String(eventType || "").toLowerCase()
+
   if (type.includes("party")) return "Party"
   if (type.includes("spiel")) return "Spielabend"
-  if (type.includes("turnier")) return "Turnier"
+  if (type.includes("turnier") || type === "tournament") return "Turnier"
   if (type.includes("versammlung")) return "Versammlung"
-  return eventType
-}
+  if (type === "other") return "Veranstaltung"
+  if (type === "announcement") return "Ankündigung"
+  if (type === "console" || type === "gaming") return "Konsole"
 
+  return "Veranstaltung"
+}
 function pad2(n: number) {
   return String(n).padStart(2, "0")
 }
@@ -284,7 +295,8 @@ function formatGermanDateRange(startIso: string | null | undefined, endIso: stri
 
 
 function ensureUhr(time: string) {
-  const t = time.replace("Uhr", "").trim()
+  const raw = String(time || "19:00").replace("Uhr", "").trim()
+  const t = raw.length >= 5 ? raw.slice(0, 5) : raw
   return t.includes(":") ? `${t} Uhr` : `${t}:00 Uhr`
 }
 
@@ -336,6 +348,8 @@ const [nextMembersChampionEvent, setNextMembersChampionEvent] = useState<LionCup
 const [membersChampionLoading, setMembersChampionLoading] = useState(true)
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null)
   const [activeTournament, setActiveTournament] = useState<ActiveTournament | null>(null)
+  const [birthdayPlayers, setBirthdayPlayers] = useState<BirthdayPlayer[]>([])
+const [birthdayLoading, setBirthdayLoading] = useState(true)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [showInstallButton, setShowInstallButton] = useState(false)
   const handleApkDownload = () => {
@@ -1189,6 +1203,18 @@ useEffect(() => {
   // --- Turniertag (Lion) Self-Registration Box ---
   const now = new Date()
   const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+  
+  
+  const todaysEvents = useMemo(() => {
+  return combinedEvents.filter((event) => {
+    const start = event.start_date || event.date
+    const end = event.end_date || event.date
+
+    if (!start || !end) return false
+
+    return todayISO >= start && todayISO <= end
+  })
+}, [combinedEvents, todayISO])
 
   const liveSelfRegEvent = useMemo(() => {
     const lionToday =
@@ -1439,7 +1465,62 @@ useEffect(() => {
 }, [authUserId, liveMembersSelfRegEvent])
 
 
+useEffect(() => {
+  const loadTodayBirthdays = async () => {
+    try {
+      setBirthdayLoading(true)
 
+      const today = new Date()
+      const todayMonth = String(today.getMonth() + 1).padStart(2, "0")
+      const todayDay = String(today.getDate()).padStart(2, "0")
+
+      const { data, error } = await supabase
+        .from("club_players")
+        .select("id, name, birthdate")
+        .not("birthdate", "is", null)
+
+      if (error) throw error
+
+      const birthdays =
+        (data || [])
+          .filter((player: any) => {
+            if (!player.birthdate || !player.name) return false
+
+            const birthdate = String(player.birthdate).slice(0, 10)
+            const parts = birthdate.split("-")
+
+            if (parts.length !== 3) return false
+
+            const month = parts[1]
+            const day = parts[2]
+
+            return month === todayMonth && day === todayDay
+          })
+          .map((player: any) => {
+            const birthdate = String(player.birthdate).slice(0, 10)
+            const birthYear = Number(birthdate.split("-")[0])
+            const currentYear = today.getFullYear()
+
+            return {
+              id: String(player.id),
+              name: String(player.name),
+              birthdate,
+              age: Number.isFinite(birthYear) ? currentYear - birthYear : null,
+            }
+          })
+          .sort((a: BirthdayPlayer, b: BirthdayPlayer) => a.name.localeCompare(b.name, "de"))
+
+      setBirthdayPlayers(birthdays)
+    } catch (error) {
+      console.error("Error loading birthdays:", error)
+      setBirthdayPlayers([])
+    } finally {
+      setBirthdayLoading(false)
+    }
+  }
+
+  loadTodayBirthdays()
+}, [])
 
   
 
@@ -1455,8 +1536,158 @@ useEffect(() => {
       <PushNotificationDialog />
 	  
 	  
+	  {todaysEvents.length > 0 && (
+  <div className="mx-4 sm:mx-6 mt-3">
+    <div className="rounded-2xl border border-blue-200 bg-white shadow-lg overflow-hidden">
+      <div className="h-1.5 bg-gradient-to-r from-blue-500 via-sky-400 to-cyan-500" />
+
+      <div className="p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center shrink-0">
+              <Calendar className="w-6 h-6 text-blue-700" />
+            </div>
+
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-blue-700">
+                Heute im Verein
+              </div>
+
+              <div className="text-lg sm:text-xl font-black text-gray-900">
+                {todaysEvents.length === 1
+                  ? todaysEvents[0].name
+                  : `${todaysEvents.length} Veranstaltungen heute`}
+              </div>
+
+              <div className="mt-2 space-y-2">
+                {todaysEvents.map((event) => (
+                  <div
+                    key={`${event.type}-${event.id}`}
+                    className="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2"
+                  >
+                    <div className="text-sm font-black text-gray-900">
+                      {event.name}
+                    </div>
+
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-semibold text-gray-600">
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-blue-700" />
+                        {ensureUhr(event.time)}
+                      </span>
+
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-blue-700" />
+                        {event.location}
+                      </span>
+
+                      {event.type === "tournament" && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-2 py-0.5 text-orange-800 font-black">
+                          Turnier
+                        </span>
+                      )}
+
+                      {event.type === "event" && event.eventType && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white border border-blue-200 px-2 py-0.5 text-blue-800 font-black">
+                          {getEventTypeLabel(event.eventType)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <Button
+  type="button"
+  className="w-full sm:w-auto rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-sm"
+  onClick={() => {
+    if (todaysEvents.length === 1) {
+      window.location.href = `/veranstaltungen/${todaysEvents[0].id}`
+      return
+    }
+
+    window.location.href = "/veranstaltungen"
+  }}
+>
+  Details ansehen
+  <ArrowRight className="w-4 h-4 ml-2" />
+</Button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 	  
 	  
+	  {!birthdayLoading && birthdayPlayers.length > 0 && (
+  <div className="mx-4 sm:mx-6 mt-3">
+    <div className="rounded-2xl border border-pink-200 bg-white shadow-lg overflow-hidden">
+      <div className="h-1.5 bg-gradient-to-r from-pink-500 via-rose-400 to-orange-500" />
+
+      <div className="p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-pink-50 border border-pink-200 flex items-center justify-center shrink-0">
+              <PartyPopper className="w-6 h-6 text-pink-700" />
+            </div>
+
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-pink-700">
+                Geburtstag im Verein
+              </div>
+
+              <div className="text-lg sm:text-xl font-black text-gray-900">
+                Heute feiern wir{" "}
+                {birthdayPlayers.length === 1
+                  ? birthdayPlayers[0].name
+                  : `${birthdayPlayers.length} Vereinsmitglieder`}
+                🎉
+              </div>
+
+              <div className="mt-1 text-sm font-semibold text-gray-600">
+                {birthdayPlayers.length === 1 ? (
+                  <>
+                    Alles Gute zum Geburtstag,{" "}
+                    <span className="font-black text-gray-900">{birthdayPlayers[0].name}</span>
+                    {birthdayPlayers[0].age ? (
+                      <> zum {birthdayPlayers[0].age}. Geburtstag</>
+                    ) : null}
+                    !
+                  </>
+                ) : (
+                  <>
+                    Alles Gute an{" "}
+                    <span className="font-black text-gray-900">
+                      {birthdayPlayers.map((p) => p.name).join(", ")}
+                    </span>
+                    !
+                  </>
+                )}
+              </div>
+
+              <div className="mt-2 flex flex-wrap gap-2">
+                {birthdayPlayers.map((player) => (
+                  <span
+                    key={player.id}
+                    className="inline-flex items-center gap-1 rounded-full bg-pink-50 border border-pink-200 px-3 py-1 text-xs font-black text-pink-800"
+                  >
+                    🎂 {player.name}
+                    {player.age ? ` • ${player.age}` : ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="hidden sm:flex items-center justify-center text-4xl">
+            🎁
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 	  
 	  
 	  
