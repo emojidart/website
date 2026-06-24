@@ -439,6 +439,152 @@ const saveFinalRankings = async (
   }
 }
 
+
+
+const rebuildRankingsFromMatches = async ({
+  tournamentId,
+  tournamentType,
+  tournamentName,
+  bracketSize,
+  matches,
+}: {
+  tournamentId: string
+  tournamentType: string
+  tournamentName: string
+  bracketSize: number
+  matches: Record<number, Match>
+}) => {
+  if (!tournamentId) {
+    alert("Keine Turnier-ID gefunden!")
+    return false
+  }
+
+  const cleanName = (name?: string | null) => String(name || "").trim()
+
+  const isRealPlayer = (name?: string | null) => {
+    const n = cleanName(name)
+    return n !== "" && !isFreilos(n)
+  }
+
+  const realPlayers = new Set<string>()
+
+  Object.values(matches).forEach((match) => {
+    if (isRealPlayer(match.player1)) realPlayers.add(cleanName(match.player1))
+    if (isRealPlayer(match.player2)) realPlayers.add(cleanName(match.player2))
+  })
+
+  if (realPlayers.size === 0) {
+    alert("Keine echten Spieler im Turnier gefunden!")
+    return false
+  }
+
+  const finalMatchId =
+    bracketSize === 32
+      ? matches[63]?.winner
+        ? 63
+        : 62
+      : bracketSize === 16
+        ? matches[31]?.winner
+          ? 31
+          : 30
+        : matches[15]?.winner
+          ? 15
+          : 14
+
+  const finalMatch = matches[finalMatchId]
+
+  if (!finalMatch?.winner || !finalMatch?.loser) {
+    alert("Finale ist noch nicht fertig. Rangliste kann nicht vollständig neu berechnet werden.")
+    return false
+  }
+
+  const rebuiltRankings: {
+    tournament_type: string
+    tournament_id: string
+    tournament_name: string
+    player_name: string
+    placement: number
+    eliminated_at: string
+  }[] = []
+
+  realPlayers.forEach((playerName) => {
+    const lostMatches = Object.values(matches)
+      .filter((match) => match.winner && match.loser === playerName)
+      .sort((a, b) => a.id - b.id)
+
+    if (playerName === finalMatch.winner) {
+      rebuiltRankings.push({
+        tournament_type: tournamentType,
+        tournament_id: tournamentId,
+        tournament_name: tournamentName,
+        player_name: playerName,
+        placement: 1,
+        eliminated_at: new Date().toISOString(),
+      })
+      return
+    }
+
+    if (playerName === finalMatch.loser) {
+      rebuiltRankings.push({
+        tournament_type: tournamentType,
+        tournament_id: tournamentId,
+        tournament_name: tournamentName,
+        player_name: playerName,
+        placement: 2,
+        eliminated_at: new Date().toISOString(),
+      })
+      return
+    }
+
+    if (lostMatches.length >= 2) {
+      const eliminationMatch = lostMatches[lostMatches.length - 1]
+      const placement = getPlacementForEliminationMatch(eliminationMatch.id, bracketSize)
+
+      rebuiltRankings.push({
+        tournament_type: tournamentType,
+        tournament_id: tournamentId,
+        tournament_name: tournamentName,
+        player_name: playerName,
+        placement,
+        eliminated_at: new Date().toISOString(),
+      })
+    }
+  })
+
+  const missingPlayers = Array.from(realPlayers).filter(
+    (playerName) => !rebuiltRankings.some((r) => r.player_name === playerName),
+  )
+
+  if (missingPlayers.length > 0) {
+    alert("Rangliste konnte nicht vollständig berechnet werden. Diese Spieler fehlen noch: " + missingPlayers.join(", "))
+    return false
+  }
+
+  const { error: deleteError } = await supabase
+    .from("dko_rankings")
+    .delete()
+    .eq("tournament_type", tournamentType)
+    .eq("tournament_id", tournamentId)
+
+  if (deleteError) {
+    console.error("Fehler beim Löschen der alten Rankings:", deleteError)
+    alert("Alte Rangliste konnte nicht gelöscht werden.")
+    return false
+  }
+
+  const { error: insertError } = await supabase.from("dko_rankings").insert(rebuiltRankings)
+
+  if (insertError) {
+    console.error("Fehler beim Neuaufbau der Rankings:", insertError)
+    alert("Neue Rangliste konnte nicht gespeichert werden.")
+    return false
+  }
+
+  console.log("[DKO] Rangliste komplett neu berechnet:", rebuiltRankings)
+  return true
+}
+
+
 const markTournamentAsCompleted = async (tournamentId: string) => {
   try {
     console.log(`[v0] Marking tournament ${tournamentId} as completed`)
@@ -1144,6 +1290,20 @@ useEffect(() => {
       alert("Dieses Turnier wurde bereits zum Summer Special hinzugefügt!")
       return
     }
+	
+	
+	const rankingsRebuilt = await rebuildRankingsFromMatches({
+      tournamentId,
+      tournamentType,
+      tournamentName,
+      bracketSize,
+      matches,
+    })
+
+if (!rankingsRebuilt) {
+  setSavingToSummerSpecial(false)
+  return
+}
 
     const { data: rankings, error: rankingsError } = await supabase
       .from("dko_rankings")
@@ -1266,7 +1426,11 @@ useEffect(() => {
 
     if (insertError) throw insertError
 
-    alert("Turnier wurde zum Summer Special hinzugefügt!")
+    await markTournamentAsCompleted(tournamentId)
+    await deleteFreiloseFromDatabase(tournamentType, tournamentId)
+    await clearTournamentRegistration(tournamentId)
+
+    router.push("/dko_tournament_registration")
   } catch (error) {
     console.error("Fehler beim Speichern zum Summer Special:", error)
     alert("Fehler beim Speichern zum Summer Special.")
@@ -2051,7 +2215,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
 
         if (savedMatches) {
           console.log("[v0] ✓ Loaded saved tournament state - tournament will continue from where it left off")
-          setMatches(savedMatches)
+          setMatches((prev) => ({ ...prev, ...savedMatches }))
           setLoading(false)
           return
         }

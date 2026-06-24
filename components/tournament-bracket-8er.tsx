@@ -497,6 +497,150 @@ const saveFinalRankings = async (
   }
 }
 
+
+const rebuildRankingsFromMatches = async ({
+  tournamentId,
+  tournamentType,
+  tournamentName,
+  bracketSize,
+  matches,
+}: {
+  tournamentId: string
+  tournamentType: string
+  tournamentName: string
+  bracketSize: number
+  matches: Record<number, Match>
+}) => {
+  if (!tournamentId) {
+    alert("Keine Turnier-ID gefunden!")
+    return false
+  }
+
+  const cleanName = (name?: string | null) => String(name || "").trim()
+
+  const isRealPlayer = (name?: string | null) => {
+    const n = cleanName(name)
+    return n !== "" && !isFreilos(n)
+  }
+
+  const realPlayers = new Set<string>()
+
+  Object.values(matches).forEach((match) => {
+    if (isRealPlayer(match.player1)) realPlayers.add(cleanName(match.player1))
+    if (isRealPlayer(match.player2)) realPlayers.add(cleanName(match.player2))
+  })
+
+  if (realPlayers.size === 0) {
+    alert("Keine echten Spieler im Turnier gefunden!")
+    return false
+  }
+
+  const finalMatchId =
+    bracketSize === 32
+      ? matches[63]?.winner
+        ? 63
+        : 62
+      : bracketSize === 16
+        ? matches[31]?.winner
+          ? 31
+          : 30
+        : matches[15]?.winner
+          ? 15
+          : 14
+
+  const finalMatch = matches[finalMatchId]
+
+  if (!finalMatch?.winner || !finalMatch?.loser) {
+    alert("Finale ist noch nicht fertig. Rangliste kann nicht vollständig neu berechnet werden.")
+    return false
+  }
+
+  const rebuiltRankings: {
+    tournament_type: string
+    tournament_id: string
+    tournament_name: string
+    player_name: string
+    placement: number
+    eliminated_at: string
+  }[] = []
+
+  realPlayers.forEach((playerName) => {
+    const lostMatches = Object.values(matches)
+      .filter((match) => match.winner && match.loser === playerName)
+      .sort((a, b) => a.id - b.id)
+
+    if (playerName === finalMatch.winner) {
+      rebuiltRankings.push({
+        tournament_type: tournamentType,
+        tournament_id: tournamentId,
+        tournament_name: tournamentName,
+        player_name: playerName,
+        placement: 1,
+        eliminated_at: new Date().toISOString(),
+      })
+      return
+    }
+
+    if (playerName === finalMatch.loser) {
+      rebuiltRankings.push({
+        tournament_type: tournamentType,
+        tournament_id: tournamentId,
+        tournament_name: tournamentName,
+        player_name: playerName,
+        placement: 2,
+        eliminated_at: new Date().toISOString(),
+      })
+      return
+    }
+
+    if (lostMatches.length >= 2) {
+      const eliminationMatch = lostMatches[lostMatches.length - 1]
+      const placement = getPlacementForEliminationMatch(eliminationMatch.id, bracketSize)
+
+      rebuiltRankings.push({
+        tournament_type: tournamentType,
+        tournament_id: tournamentId,
+        tournament_name: tournamentName,
+        player_name: playerName,
+        placement,
+        eliminated_at: new Date().toISOString(),
+      })
+    }
+  })
+
+  const missingPlayers = Array.from(realPlayers).filter(
+    (playerName) => !rebuiltRankings.some((r) => r.player_name === playerName),
+  )
+
+  if (missingPlayers.length > 0) {
+    alert("Rangliste konnte nicht vollständig berechnet werden. Diese Spieler fehlen noch: " + missingPlayers.join(", "))
+    return false
+  }
+
+  const { error: deleteError } = await supabase
+    .from("dko_rankings")
+    .delete()
+    .eq("tournament_type", tournamentType)
+    .eq("tournament_id", tournamentId)
+
+  if (deleteError) {
+    console.error("Fehler beim Löschen der alten Rankings:", deleteError)
+    alert("Alte Rangliste konnte nicht gelöscht werden.")
+    return false
+  }
+
+  const { error: insertError } = await supabase.from("dko_rankings").insert(rebuiltRankings)
+
+  if (insertError) {
+    console.error("Fehler beim Neuaufbau der Rankings:", insertError)
+    alert("Neue Rangliste konnte nicht gespeichert werden.")
+    return false
+  }
+
+  console.log("[DKO] Rangliste komplett neu berechnet:", rebuiltRankings)
+  return true
+}
+
 const markTournamentAsCompleted = async (tournamentId: string) => {
   try {
     debugLog(`[v0] Marking tournament ${tournamentId} as completed`)
@@ -547,6 +691,7 @@ export default function TournamentBracket({ bracketSize = 8, tournamentType = "8
   const [rankings, setRankings] = useState<Ranking[]>([])
   const [loadingRankings, setLoadingRankings] = useState(false)
   const [savingToSeries, setSavingToSeries] = useState(false)
+  const [savingToSummerSpecial, setSavingToSummerSpecial] = useState(false)
   const [successDialogOpen, setSuccessDialogOpen] = useState(false)
   const [speechEnabled, setSpeechEnabled] = useState(false)
   const [profilePictures, setProfilePictures] = useState<Record<string, string>>({})
@@ -650,8 +795,12 @@ useEffect(() => {
         if (!record) return
         if (record.tournament_type && record.tournament_type !== tournamentType) return
 
+        let progressedMatches: Record<number, Match> | null = null
+        let didProgress = false
+
         setMatches((prev) => {
-          const prevMatch = prev[record.match_id] || {
+          const next = { ...prev }
+          const prevMatch = next[record.match_id] || {
             id: record.match_id,
             player1: "",
             player2: "",
@@ -659,6 +808,9 @@ useEffect(() => {
             score2: 0,
             callCount: 1,
           }
+
+          const wasFinished = Boolean(prevMatch.winner)
+          const isFinishedNow = Boolean(record.winner)
 
           const nextMatch = {
             ...prevMatch,
@@ -687,13 +839,27 @@ useEffect(() => {
             return prev
           }
 
-          isRemoteUpdateRef.current = true
+          next[record.match_id] = nextMatch
 
-          return {
-            ...prev,
-            [record.match_id]: nextMatch,
+          // Wichtig: Wenn Ergebnis aus dem LIVE-Center kommt, muss der Spieler hier
+          // sofort in das nächste Match weitergeschrieben werden.
+          if (!wasFinished && isFinishedNow && record.winner && record.loser) {
+            applyCompletedMatch(next, record.match_id, record.winner, record.loser, {
+              score1: typeof record.score1 === "number" ? record.score1 : nextMatch.score1,
+              score2: typeof record.score2 === "number" ? record.score2 : nextMatch.score2,
+            })
+
+            didProgress = true
+            progressedMatches = next
           }
+
+          isRemoteUpdateRef.current = true
+          return next
         })
+
+        if (didProgress && progressedMatches) {
+          saveMatchStatesToDatabase(progressedMatches, tournamentType, tournamentId, playerIdMap)
+        }
       },
     )
     .subscribe()
@@ -701,7 +867,7 @@ useEffect(() => {
   return () => {
     supabase.removeChannel(channel)
   }
-}, [loading, tournamentId, tournamentType])
+}, [loading, tournamentId, tournamentType, tournamentName, bracketSize, playerIdMap])
   
   
   
@@ -816,7 +982,7 @@ useEffect(() => {
   }
 
   const saveToTournamentSeries = async () => {
-    const winner = matches[15].winner || matches[14].winner
+    const winner = matches[15]?.winner || matches[14]?.winner
 
     if (!winner) {
       alert("Kein Gewinner gefunden!")
@@ -837,6 +1003,19 @@ useEffect(() => {
     setSavingToSeries(true)
 
     try {
+      const rankingsRebuiltForSeries = await rebuildRankingsFromMatches({
+        tournamentId,
+        tournamentType,
+        tournamentName,
+        bracketSize,
+        matches,
+      })
+
+      if (!rankingsRebuiltForSeries) {
+        setSavingToSeries(false)
+        return
+      }
+
       const { data: rankings, error: rankingsError } = await supabase
         .from("dko_rankings")
         .select("player_name, placement")
@@ -912,7 +1091,7 @@ useEffect(() => {
 
       debugLog("[v0] Player match history:", playerMatchHistory)
 
-      const bracketResetOccurred = matches[15].winner !== undefined
+      const bracketResetOccurred = matches[15]?.winner !== undefined
       debugLog("[v0] Bracket reset occurred:", bracketResetOccurred)
 
       const playerStats: Record<
@@ -1086,6 +1265,178 @@ useEffect(() => {
       alert("Fehler beim Speichern zur Turnierserie. Bitte versuche es erneut.")
     } finally {
       setSavingToSeries(false)
+    }
+  }
+
+
+  const saveToSummerSpecial = async () => {
+    const winner = matches[15]?.winner || matches[14]?.winner
+
+    if (!winner) {
+      alert("Kein Gewinner gefunden!")
+      return
+    }
+
+    setSavingToSummerSpecial(true)
+
+    try {
+      const { data: existingRows, error: existingError } = await supabase
+        .from("summer_special_standings")
+        .select("id")
+        .eq("tournament_id", tournamentId)
+        .limit(1)
+
+      if (existingError) throw existingError
+
+      if (existingRows && existingRows.length > 0) {
+        alert("Dieses Turnier wurde bereits zum Summer Special hinzugefügt!")
+        return
+      }
+
+      const rankingsRebuilt = await rebuildRankingsFromMatches({
+        tournamentId,
+        tournamentType,
+        tournamentName,
+        bracketSize,
+        matches,
+      })
+
+      if (!rankingsRebuilt) {
+        setSavingToSummerSpecial(false)
+        return
+      }
+
+      const { data: rankings, error: rankingsError } = await supabase
+        .from("dko_rankings")
+        .select("player_name, placement")
+        .eq("tournament_type", tournamentType)
+        .eq("tournament_id", tournamentId)
+        .order("placement", { ascending: true })
+
+      if (rankingsError) throw rankingsError
+
+      if (!rankings || rankings.length === 0) {
+        alert("Keine Rangliste gefunden! Bitte stelle sicher, dass das Turnier vollständig ist.")
+        return
+      }
+
+      const placementCounts: Record<number, number> = {}
+      rankings.forEach((r) => {
+        placementCounts[r.placement] = (placementCounts[r.placement] || 0) + 1
+      })
+
+      const tiersBelow: Record<number, number> = {}
+      const sortedPlacements = Object.keys(placementCounts).map(Number).sort((a, b) => a - b)
+
+      sortedPlacements.forEach((placement, index) => {
+        tiersBelow[placement] = sortedPlacements.length - index - 1
+      })
+
+      const { data: matchStates, error: matchError } = await supabase
+        .from("dko_match_states")
+        .select("match_id, player1, player2, score1, score2, winner, updated_at")
+        .eq("tournament_type", tournamentType)
+        .eq("tournament_id", tournamentId)
+        .order("match_id", { ascending: true })
+
+      if (matchError) throw matchError
+
+      const bracketResetOccurred = matches[15]?.winner !== undefined
+      const playerStats: Record<string, any> = {}
+
+      rankings.forEach((ranking) => {
+        const placementPoints = 10 + tiersBelow[ranking.placement] * 2
+        const winnerSideBonus = ranking.placement === 1 && !bracketResetOccurred
+
+        playerStats[ranking.player_name] = {
+          placement: ranking.placement,
+          placement_points: placementPoints,
+          bonus_points: 0,
+          winner_side_bonus: winnerSideBonus,
+          legs_won: 0,
+          legs_lost: 0,
+          matches_played: 0,
+          matches_won: 0,
+          matches_lost: 0,
+          match_history: [],
+        }
+      })
+
+      matchStates?.forEach((match) => {
+        if (match.player1 && !isFreilos(match.player1) && playerStats[match.player1]) {
+          playerStats[match.player1].legs_won += match.score1 || 0
+          playerStats[match.player1].legs_lost += match.score2 || 0
+
+          if (match.winner) {
+            playerStats[match.player1].matches_played += 1
+            const result = match.winner === match.player1 ? "W" : "L"
+            if (result === "W") playerStats[match.player1].matches_won += 1
+            else playerStats[match.player1].matches_lost += 1
+
+            playerStats[match.player1].match_history.push({
+              match_id: match.match_id,
+              result,
+              timestamp: match.updated_at || new Date().toISOString(),
+            })
+          }
+        }
+
+        if (match.player2 && !isFreilos(match.player2) && playerStats[match.player2]) {
+          playerStats[match.player2].legs_won += match.score2 || 0
+          playerStats[match.player2].legs_lost += match.score1 || 0
+
+          if (match.winner) {
+            playerStats[match.player2].matches_played += 1
+            const result = match.winner === match.player2 ? "W" : "L"
+            if (result === "W") playerStats[match.player2].matches_won += 1
+            else playerStats[match.player2].matches_lost += 1
+
+            playerStats[match.player2].match_history.push({
+              match_id: match.match_id,
+              result,
+              timestamp: match.updated_at || new Date().toISOString(),
+            })
+          }
+        }
+      })
+
+      const summerRows = Object.entries(playerStats).map(([playerName, stats]: any) => {
+        stats.match_history.sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        const form = stats.match_history.map((h: any) => h.result).join(",")
+
+        return {
+          player_name: playerName,
+          tournament_id: tournamentId,
+          tournament_name: tournamentName,
+          tournament_type: tournamentType,
+          tournament_date: new Date().toISOString(),
+          placement: stats.placement,
+          placement_points: stats.placement_points,
+          bonus_points: stats.bonus_points,
+          winner_side_bonus: stats.winner_side_bonus,
+          legs_won: stats.legs_won,
+          legs_lost: stats.legs_lost,
+          matches_played: stats.matches_played,
+          matches_won: stats.matches_won,
+          matches_lost: stats.matches_lost,
+          form,
+        }
+      })
+
+      const { error: insertError } = await supabase.from("summer_special_standings").insert(summerRows)
+
+      if (insertError) throw insertError
+
+      await markTournamentAsCompleted(tournamentId)
+      await deleteFreiloseFromDatabase(tournamentType, tournamentId)
+      await clearTournamentRegistration(tournamentId)
+
+      router.push("/dko_tournament_registration")
+    } catch (error) {
+      console.error("Fehler beim Speichern zum Summer Special:", error)
+      alert("Fehler beim Speichern zum Summer Special.")
+    } finally {
+      setSavingToSummerSpecial(false)
     }
   }
 
@@ -1746,7 +2097,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
 
         if (savedMatches) {
           debugLog("[v0] ✓ Loaded saved tournament state - tournament will continue from where it left off")
-          setMatches(savedMatches)
+          setMatches((prev) => ({ ...prev, ...savedMatches }))
           setLoading(false)
           return
         }
@@ -1838,7 +2189,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
   const completedCount = completedMatches.length
   const remainingCount = Math.max(totalMatchCount - completedCount, 0)
   const liveCompletion = Math.round((completedCount / totalMatchCount) * 100)
-  const winnerName = matches[15].winner || (matches[14].winner === matches[14].player1 ? matches[14].winner : undefined)
+  const winnerName = matches[15]?.winner || (matches[14]?.winner === matches[14]?.player1 ? matches[14]?.winner : undefined)
 
   if (loading) {
     return (
@@ -2210,10 +2561,10 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
             />
           </div>
 
-          {(matches[15].player1 ||
-            matches[15].player2 ||
-            (matches[14].winner === matches[14].player2 && matches[14].winner)) &&
-            !matches[15].winner && (
+          {(matches[15]?.player1 ||
+            matches[15]?.player2 ||
+            (matches[14]?.winner === matches[14]?.player2 && matches[14]?.winner)) &&
+            !matches[15]?.winner && (
               <div className="space-y-3">
                 <h2 className="text-xl font-bold text-purple-600 border-b-2 border-purple-600 pb-2">Bracket Reset</h2>
                 <p className="text-sm text-muted-foreground">
@@ -2232,10 +2583,10 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
               </div>
             )}
 
-          {(matches[15].winner || (matches[14].winner === matches[14].player1 && matches[14].player1)) && (
+          {(matches[15]?.winner || (matches[14]?.winner === matches[14]?.player1 && matches[14]?.player1)) && (
             <Card className="p-6 bg-primary text-primary-foreground">
               <h3 className="text-2xl font-bold text-center">🏆 Turniersieger</h3>
-              <p className="text-3xl font-bold text-center mt-4">{matches[15].winner || matches[14].winner}</p>
+              <p className="text-3xl font-bold text-center mt-4">{matches[15]?.winner || matches[14]?.winner}</p>
 
               <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
                 <Button
@@ -2246,6 +2597,14 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                   className="font-semibold"
                 >
                   {savingToSeries ? "Speichere..." : "Zur Turnierserie hinzufügen"}
+                </Button>
+                <Button
+                  onClick={saveToSummerSpecial}
+                  disabled={savingToSummerSpecial}
+                  size="lg"
+                  className="font-semibold bg-orange-600 text-white hover:bg-orange-700"
+                >
+                  {savingToSummerSpecial ? "Speichere..." : "Zu Summer Special hinzufügen"}
                 </Button>
                 <Button
                   onClick={async () => {
