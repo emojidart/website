@@ -37,13 +37,14 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 
-type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand";
+type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand" | "community";
 
 // GLOBAL room ids (müssen zum SQL passen)
 const CLUB_ROOM_ID = "11111111-1111-1111-1111-111111111111";
 const FREIZEIT_ROOM_ID = "22222222-2222-2222-2222-222222222222";
 const VORSTAND_ROOM_ID = "33333333-3333-3333-3333-333333333333";
 const CAPTAINS_ROOM_ID = "44444444-4444-4444-4444-444444444444";
+const COMMUNITY_ROOM_ID = "55555555-5555-5555-5555-555555555555";
 
 // Rollen-Tabelle (falls du sie anders benannt hast, hier anpassen)
 const ROLE_TABLE = "club_roles";
@@ -106,6 +107,9 @@ type UserProfileLite = {
   id: string;
   user_id: string;
   player_id: string | null;
+  is_guest: boolean | null;
+  is_blocked: boolean | null;
+  blocked_reason: string | null;
 };
 
 type TeamMember = {
@@ -224,7 +228,7 @@ export default function TeamChatPage() {
   const urlScopeRaw = searchParams.get("scope") as ChatScope | null;
   const urlScope: ChatScope | null =
     urlScopeRaw &&
-    (["team", "captains", "club", "freizeit", "vorstand"] as const).includes(
+    (["team", "captains", "club", "freizeit", "vorstand", "community"] as const).includes(
       urlScopeRaw,
     )
       ? urlScopeRaw
@@ -286,13 +290,14 @@ export default function TeamChatPage() {
   const [selectedRoom, setSelectedRoom] = useState<TeamRoom | null>(null);
 
   // selectedScope determines which chat is shown
-  const [selectedScope, setSelectedScope] = useState<ChatScope>("team");
+  const [selectedScope, setSelectedScope] = useState<ChatScope>("community");
 
   const currentRoomId = useMemo(() => {
     if (selectedScope === "club") return CLUB_ROOM_ID;
     if (selectedScope === "freizeit") return FREIZEIT_ROOM_ID;
     if (selectedScope === "vorstand") return VORSTAND_ROOM_ID;
     if (selectedScope === "captains") return CAPTAINS_ROOM_ID;
+    if (selectedScope === "community") return COMMUNITY_ROOM_ID;
     return selectedRoom?.id ?? null; // ✅ chat_rooms.id
   }, [selectedScope, selectedRoom?.id]);
 
@@ -423,6 +428,15 @@ export default function TeamChatPage() {
   useEffect(() => {
     if (!profile?.id) return;
 
+    // Gäste dürfen nur in den Community-Chat.
+    if (profile.is_guest) {
+      setSelectedScope("community");
+      setChatRooms([]);
+      setSelectedRoom(null);
+      setRoomsLoading(false);
+      return;
+    }
+
     // Vorstand sieht ALLE Team-Chats (auch ohne Spieler-Zuordnung)
     if (isVorstand) {
       fetchAllTeamRooms();
@@ -438,7 +452,7 @@ export default function TeamChatPage() {
       setRoomsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id, profile?.player_id, isVorstand]);
+  }, [profile?.id, profile?.player_id, profile?.is_guest, isVorstand]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -573,6 +587,7 @@ export default function TeamChatPage() {
   }, [loading, currentRoomId, selectedScope, messages.length]);
 
   const selectedRoomName = useMemo(() => {
+    if (selectedScope === "community") return "EMD Community";
     if (selectedScope === "club") return "Vereinsinfo";
     if (selectedScope === "freizeit") return "Freizeit";
     if (selectedScope === "vorstand") return "Vorstand";
@@ -603,9 +618,15 @@ export default function TeamChatPage() {
   const fetchLastMessagePreviews = async (roomsOverride?: TeamRoom[]) => {
     const rooms = roomsOverride ?? chatRooms;
     const targets: Array<{ roomId: string; scope: ChatScope }> = [
-      { roomId: CLUB_ROOM_ID, scope: "club" },
-      { roomId: FREIZEIT_ROOM_ID, scope: "freizeit" },
+      { roomId: COMMUNITY_ROOM_ID, scope: "community" },
     ];
+
+    if (!profile?.is_guest) {
+      targets.push(
+        { roomId: CLUB_ROOM_ID, scope: "club" },
+        { roomId: FREIZEIT_ROOM_ID, scope: "freizeit" },
+      );
+    }
 
     if (canSeeVorstandChat)
       targets.push({ roomId: VORSTAND_ROOM_ID, scope: "vorstand" });
@@ -1073,11 +1094,31 @@ export default function TeamChatPage() {
       setProfileLoading(true);
       const { data, error } = await supabase
         .from("user_profiles")
-        .select("id,user_id,player_id")
+        .select("id,user_id,player_id,is_guest,is_blocked,blocked_reason")
         .eq("user_id", session!.user.id)
         .maybeSingle();
 
       if (error) throw error;
+
+      if ((data as any)?.is_blocked) {
+        toast({
+          title: "Zugang gesperrt",
+          description:
+            (data as any)?.blocked_reason ||
+            "Dein Zugang wurde gesperrt. Bitte wende dich an den Verein.",
+          variant: "destructive",
+        });
+        await supabase.auth.signOut();
+        router.push("/member-login");
+        setProfile(null);
+        return;
+      }
+
+      if ((data as any)?.is_guest) {
+        setSelectedScope("community");
+        setSelectedRoom(null);
+      }
+
       setProfile((data as any) ?? null);
     } catch (e) {
       console.error("loadMyProfile error", e);
@@ -1455,6 +1496,12 @@ export default function TeamChatPage() {
   };
 
   const fetchMessages = async () => {
+    if (profile?.is_guest && selectedScope !== "community") {
+      setSelectedScope("community");
+      setMessages([]);
+      return;
+    }
+
     if (selectedScope === "team") {
       if (!selectedRoom) {
         setMessages([]);
@@ -1516,7 +1563,7 @@ export default function TeamChatPage() {
 
       const { data: profiles } = await supabase
         .from("user_profiles")
-        .select("id,player_id")
+        .select("id,player_id,is_guest,user_id")
         .in("id", profileIds);
 
       const profileToPlayer = new Map<string, string>();
@@ -1544,9 +1591,54 @@ export default function TeamChatPage() {
         playerMap.set(p.id, { name: p.name, photo_url: p.photo_url ?? null });
       });
 
+      const guestAuthUserIds = Array.from(
+        new Set(
+          ((profiles as any[] | null) ?? [])
+            .filter((p) => p?.is_guest)
+            .map((p) => p.user_id)
+            .filter(Boolean),
+        ),
+      );
+
+      const guestNameMap = new Map<string, string>();
+
+      if (guestAuthUserIds.length > 0) {
+        const { data: guests } = await supabase
+          .from("guest_requests")
+          .select("auth_user_id,full_name,player_name")
+          .in("auth_user_id", guestAuthUserIds);
+
+        (guests as any[] | null)?.forEach((g) => {
+          if (!g?.auth_user_id) return;
+          guestNameMap.set(
+            g.auth_user_id,
+            g.player_name || g.full_name || "Gast",
+          );
+        });
+      }
+
+      const profileInfoMap = new Map<string, any>();
+      (profiles as any[] | null)?.forEach((p) => {
+        if (p?.id) profileInfoMap.set(p.id, p);
+      });
+
       const withSender = rows.map((r) => {
+        const info = profileInfoMap.get(r.user_id);
         const playerId = profileToPlayer.get(r.user_id);
-        const sender = playerId ? (playerMap.get(playerId) ?? null) : null;
+
+        let sender = playerId ? (playerMap.get(playerId) ?? null) : null;
+
+        if (!sender && info?.is_guest) {
+          sender = {
+            name: guestNameMap.get(info.user_id) || "Gast",
+            photo_url: null,
+          };
+        }
+
+        if (!sender) {
+          sender = { name: "Unbekannt", photo_url: null };
+        }
+
         return { ...r, sender_player_id: playerId ?? null, sender };
       });
 
@@ -1775,6 +1867,16 @@ export default function TeamChatPage() {
   const sendMessage = async () => {
     if ((!newMessage.trim() && selectedFiles.length === 0) || sending) return;
 
+    if (profile?.is_guest && selectedScope !== "community") {
+      toast({
+        title: "Kein Zugriff",
+        description: "Gäste können nur im Community-Chat schreiben.",
+        variant: "destructive",
+      });
+      setSelectedScope("community");
+      return;
+    }
+
     if (selectedScope === "captains" && !canSeeCaptainChat && !isVorstand) {
       toast({
         title: "Kein Zugriff",
@@ -1908,6 +2010,13 @@ export default function TeamChatPage() {
         counts[unreadKey(roomId, scope)] = count || 0;
       };
 
+      await computeGlobalUnread(COMMUNITY_ROOM_ID, "community");
+
+      if (profile.is_guest) {
+        setUnreadCounts(counts);
+        return;
+      }
+
       await computeGlobalUnread(CLUB_ROOM_ID, "club");
       await computeGlobalUnread(FREIZEIT_ROOM_ID, "freizeit");
 
@@ -2007,6 +2116,11 @@ export default function TeamChatPage() {
       "bg-orange-600 hover:bg-orange-700 text-white rounded-full shadow-sm",
   };
 
+  const communityUnread =
+    unreadCounts[unreadKey(COMMUNITY_ROOM_ID, "community")] ??
+    unreadCounts[COMMUNITY_ROOM_ID] ??
+    0;
+
   const clubUnread =
     unreadCounts[unreadKey(CLUB_ROOM_ID, "club")] ??
     unreadCounts[CLUB_ROOM_ID] ??
@@ -2025,21 +2139,27 @@ export default function TeamChatPage() {
     0;
 
   const totalUnread =
-    clubUnread +
-    freizeitUnread +
-    captainsUnread +
-    vorstandUnread +
-    chatRooms.reduce((sum, room) => {
+    communityUnread +
+    (profile?.is_guest
+      ? 0
+      : clubUnread +
+        freizeitUnread +
+        captainsUnread +
+        vorstandUnread +
+        chatRooms.reduce((sum, room) => {
       const count =
         unreadCounts[unreadKey(room.id, "team")] ?? unreadCounts[room.id] ?? 0;
       return sum + count;
-    }, 0);
+    }, 0));
 
   const visibleRoomCount =
-    2 +
-    (canSeeCaptainChat || isVorstand ? 1 : 0) +
-    (canSeeVorstandChat ? 1 : 0) +
-    chatRooms.length;
+    1 +
+    (profile?.is_guest
+      ? 0
+      : 2 +
+        (canSeeCaptainChat || isVorstand ? 1 : 0) +
+        (canSeeVorstandChat ? 1 : 0) +
+        chatRooms.length);
 
   const headerPeople = useMemo(() => {
     if (selectedScope === "team") return teamMembers;
@@ -2230,6 +2350,58 @@ export default function TeamChatPage() {
                               </span>
                             )}
                           </div>
+                          <Button
+                            variant="ghost"
+                            className={`${WA.sidebarItemBase} ${selectedScope === "community" ? WA.sidebarItemSelected : WA.sidebarItemUnselected}`}
+                            onClick={() => {
+                              setSelectedScope("community");
+                              setSidebarOpen(false);
+                              setMobileChatOpen(true);
+                              setTimeout(
+                                () =>
+                                  markRoomAsVisited(
+                                    COMMUNITY_ROOM_ID,
+                                    "community",
+                                  ),
+                                50,
+                              );
+                            }}
+                          >
+                            <div className="flex items-center gap-3 w-full">
+                              <div
+                                className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                  selectedScope === "community"
+                                    ? "bg-white/20"
+                                    : "bg-orange-100"
+                                }`}
+                              >
+                                <MessageCircle
+                                  className={`h-5 w-5 ${selectedScope === "community" ? WA.iconInSelected : WA.iconInUnselected}`}
+                                />
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate text-sm">
+                                  EMD Community
+                                </div>
+                                <p className="text-xs mt-1 truncate text-slate-500">
+                                  Gäste & Mitglieder
+                                </p>
+                              </div>
+
+                              {communityUnread > 0 && (
+                                <Badge
+                                  variant="destructive"
+                                  className={WA.unreadBadge}
+                                >
+                                  {communityUnread > 99 ? "99+" : communityUnread}
+                                </Badge>
+                              )}
+                            </div>
+                          </Button>
+
+                          {!profile?.is_guest && (
+                            <>
                           <Button
                             variant="ghost"
                             className={`${WA.sidebarItemBase} ${selectedScope === "club" ? WA.sidebarItemSelected : WA.sidebarItemUnselected}`}
@@ -2468,8 +2640,12 @@ export default function TeamChatPage() {
                               </div>
                             </Button>
                           )}
+                            </>
+                          )}
                         </div>
 
+                        {!profile?.is_guest && (
+                          <>
                         {roomsLoading ? (
                           <div className="p-4 text-center">
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto" />
@@ -2598,6 +2774,8 @@ export default function TeamChatPage() {
                             })}
                           </div>
                         )}
+                          </>
+                        )}
                       </ScrollArea>
                     </CardContent>
                   </Card>
@@ -2639,7 +2817,9 @@ export default function TeamChatPage() {
                             </Avatar>
                           ) : (
                             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                              {selectedScope === "club" ? (
+                              {selectedScope === "community" ? (
+                                <MessageCircle className="h-5 w-5 text-orange-600" />
+                              ) : selectedScope === "club" ? (
                                 <Info className="h-5 w-5 text-orange-600" />
                               ) : selectedScope === "freizeit" ? (
                                 <Coffee className="h-5 w-5 text-orange-600" />

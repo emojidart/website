@@ -66,7 +66,6 @@ const QUICK_BASE: Omit<NavItem, "key">[] = [
     href: "/chat-app",
     icon: MessageCircle,
     requiresLogin: true,
-    memberOnly: true,
   },
   {
     name: "Vereinskalender",
@@ -245,7 +244,12 @@ export function MobileBottomNav() {
     const profileName = isLoggedIn ? (isGuest ? "Gast-Profil" : "Profil") : "Login"
 
     const quickRaw: NavItem[] = [
-      ...QUICK_BASE.map((x) => ({ ...x, key: `q_${x.name}` })),
+      ...QUICK_BASE.map((x) => ({
+        ...x,
+        key: `q_${x.name}`,
+        name: x.name,
+        href: x.name === "Chat" && isGuest ? "/chat-app?scope=community" : x.href,
+      })),
       {
         key: "q_profile",
         name: profileName,

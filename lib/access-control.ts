@@ -30,6 +30,7 @@ export const publicRoutes = [
   "/sponsoring",
   "/steeldart-competition-regelwerk",
   "/summer-special",
+    "/chat-app",
 ]
 
 export const guestRoutes = [
@@ -59,10 +60,10 @@ export const forbiddenForGuestsRoutes = [
   "/member-league-app",
   "/vereinskalender-app",
   "/community-app",
-  "/chat-app",
   "/support-app",
   "/profil-daten-app",
   "/member-card",
+  "/member-tournament-statistics-app",
 ]
 
 function normalizePath(pathname: string) {

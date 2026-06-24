@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 
 import { Header } from "@/components/header"
@@ -21,6 +21,15 @@ import {
   Mail,
   ShieldCheck,
   AlertTriangle,
+  Trophy,
+  Medal,
+  Target,
+  Activity,
+  CalendarDays,
+  Star,
+  Gift,
+  Swords,
+  TrendingUp,
 } from "lucide-react"
 
 type GuestRequest = {
@@ -31,6 +40,152 @@ type GuestRequest = {
   phone: string | null
   status: string
   created_at: string
+  auth_user_id?: string | null
+  linked_spieldatenbank_id?: string | number | null
+}
+
+type SpieldatenbankPlayer = {
+  id: string
+  name: string
+  verein: string | null
+  ligastatus: string | null
+  geschlecht: string | null
+}
+
+type SummerStanding = {
+  player_name: string
+  total_points: number | null
+  placement_points: number | null
+  legs_won: number | null
+  legs_lost: number | null
+  tournaments_played: number | null
+  total_matches_played: number | null
+  total_matches_won: number | null
+  total_matches_lost: number | null
+  manual_bonus_points: number | null
+  winner_side_bonus_points: number | null
+  participation_bonus_points: number | null
+}
+
+type SummerEntry = {
+  id: string
+  tournament_id: string | null
+  tournament_name: string | null
+  tournament_type: string | null
+  tournament_date: string | null
+  player_name: string
+  placement: number | null
+  legs_won: number | null
+  legs_lost: number | null
+  matches_played: number | null
+  matches_won: number | null
+  matches_lost: number | null
+  placement_points: number | null
+  bonus_points: number | null
+  winner_side_bonus: boolean | null
+  form: string | null
+}
+
+type DkoRanking = {
+  id?: string
+  tournament_id: string
+  tournament_type: string
+  tournament_name: string | null
+  player_name: string
+  placement: number | null
+  eliminated_at: string | null
+}
+
+function n(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "—"
+
+  try {
+    return new Date(value).toLocaleDateString("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+  } catch {
+    return "—"
+  }
+}
+
+function getPlacementLabel(placement?: number | null) {
+  if (!placement) return "—"
+  if (placement === 1) return "1. Platz"
+  if (placement === 2) return "2. Platz"
+  if (placement === 3) return "3. Platz"
+  return `${placement}. Platz`
+}
+
+function getPlacementBadgeClass(placement?: number | null) {
+  if (placement === 1) return "bg-yellow-500 text-white"
+  if (placement === 2) return "bg-gray-500 text-white"
+  if (placement === 3) return "bg-amber-600 text-white"
+  return "bg-orange-600 text-white"
+}
+
+function StatBox({
+  label,
+  value,
+  icon,
+  tone = "orange",
+}: {
+  label: string
+  value: string | number
+  icon: ReactNode
+  tone?: "orange" | "green" | "blue" | "purple" | "gray" | "yellow"
+}) {
+  const styles =
+    tone === "green"
+      ? "bg-green-50 border-green-200 text-green-800"
+      : tone === "blue"
+        ? "bg-blue-50 border-blue-200 text-blue-800"
+        : tone === "purple"
+          ? "bg-purple-50 border-purple-200 text-purple-800"
+          : tone === "gray"
+            ? "bg-gray-50 border-gray-200 text-gray-800"
+            : tone === "yellow"
+              ? "bg-yellow-50 border-yellow-200 text-yellow-800"
+              : "bg-orange-50 border-orange-200 text-orange-800"
+
+  return (
+    <div className={`rounded-2xl border p-4 ${styles}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-xs font-black uppercase opacity-80">
+            {label}
+          </div>
+          <div className="text-2xl font-black mt-1">{value}</div>
+        </div>
+
+        <div className="w-11 h-11 rounded-2xl bg-white/70 flex items-center justify-center">
+          {icon}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MiniInfo({
+  label,
+  value,
+}: {
+  label: string
+  value: string | number
+}) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+      <div className="text-[11px] font-black uppercase text-gray-500">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-black text-gray-900">{value}</div>
+    </div>
+  )
 }
 
 export default function GuestProfileAppPage() {
@@ -38,8 +193,17 @@ export default function GuestProfileAppPage() {
   const { session, loading: authLoading } = useAuth()
 
   const [loading, setLoading] = useState(true)
+  const [statsLoading, setStatsLoading] = useState(false)
+
   const [guestRequest, setGuestRequest] = useState<GuestRequest | null>(null)
+  const [linkedPlayer, setLinkedPlayer] = useState<SpieldatenbankPlayer | null>(null)
+
+  const [summerStanding, setSummerStanding] = useState<SummerStanding | null>(null)
+  const [summerEntries, setSummerEntries] = useState<SummerEntry[]>([])
+  const [dkoRankings, setDkoRankings] = useState<DkoRanking[]>([])
+
   const [message, setMessage] = useState("")
+  const [statsMessage, setStatsMessage] = useState("")
 
   useEffect(() => {
     if (!authLoading && !session?.user) {
@@ -51,7 +215,15 @@ export default function GuestProfileAppPage() {
     if (session?.user) {
       void loadGuestProfile()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id])
+
+  useEffect(() => {
+    if (guestRequest) {
+      void loadGuestStats(guestRequest)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guestRequest?.id, guestRequest?.linked_spieldatenbank_id, guestRequest?.player_name])
 
   const loadGuestProfile = async () => {
     if (!session?.user) return
@@ -108,10 +280,142 @@ export default function GuestProfileAppPage() {
     }
   }
 
+  const loadGuestStats = async (request: GuestRequest) => {
+    try {
+      setStatsLoading(true)
+      setStatsMessage("")
+      setLinkedPlayer(null)
+      setSummerStanding(null)
+      setSummerEntries([])
+      setDkoRankings([])
+
+      let cleanName = request.player_name?.trim() || ""
+
+      if (request.linked_spieldatenbank_id) {
+        const { data: playerData, error: playerError } = await supabase
+          .from("spieldatenbank")
+          .select("id,name,verein,ligastatus,geschlecht")
+          .eq("id", request.linked_spieldatenbank_id)
+          .maybeSingle()
+
+        if (playerError) throw playerError
+
+        if (playerData) {
+          const player = playerData as SpieldatenbankPlayer
+          setLinkedPlayer(player)
+          cleanName = player.name?.trim() || cleanName
+        }
+      }
+
+      if (!request.linked_spieldatenbank_id && !cleanName) {
+        setStatsMessage(
+          "Dein Gastkonto wurde noch nicht mit einem Spieler aus der Spieldatenbank verknüpft.",
+        )
+        return
+      }
+
+      if (!cleanName) {
+        setStatsMessage(
+          "Der verknüpfte Spieler wurde gefunden, aber es konnte kein Spielername gelesen werden.",
+        )
+        return
+      }
+
+      const { data: standingData, error: standingError } = await supabase
+        .from("summer_special_total_standings")
+        .select("*")
+        .eq("player_name", cleanName)
+        .maybeSingle()
+
+      if (standingError) {
+        console.warn("Summer total standings warning:", standingError)
+      }
+
+      setSummerStanding((standingData as SummerStanding | null) ?? null)
+
+      const { data: entriesData, error: entriesError } = await supabase
+        .from("summer_special_standings")
+        .select("*")
+        .eq("player_name", cleanName)
+        .order("tournament_date", { ascending: false })
+
+      if (entriesError) {
+        console.warn("Summer entries warning:", entriesError)
+      }
+
+      const cleanSummerEntries = (entriesData ?? []) as SummerEntry[]
+      setSummerEntries(cleanSummerEntries)
+
+      const { data: dkoData, error: dkoError } = await supabase
+        .from("dko_rankings")
+        .select("*")
+        .eq("player_name", cleanName)
+        .order("eliminated_at", { ascending: false })
+
+      if (dkoError) {
+        console.warn("DKO rankings warning:", dkoError)
+      }
+
+      const summerTournamentIds = new Set(
+        cleanSummerEntries
+          .map((entry) => entry.tournament_id)
+          .filter(Boolean) as string[],
+      )
+
+      const cleanedDkoRankings = ((dkoData ?? []) as DkoRanking[]).filter((ranking) => {
+        const name = String(ranking.tournament_name ?? "").toLowerCase()
+        const type = String(ranking.tournament_type ?? "").toLowerCase()
+        const id = String(ranking.tournament_id ?? "")
+
+        if (summerTournamentIds.has(id)) return false
+        if (name.includes("summer special")) return false
+        if (type.includes("summer")) return false
+
+        return true
+      })
+
+      setDkoRankings(cleanedDkoRankings)
+    } catch (err: any) {
+      console.error("Guest stats error:", err)
+      setStatsMessage("Statistiken konnten nicht geladen werden.")
+    } finally {
+      setStatsLoading(false)
+    }
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push("/guest-login")
   }
+
+  const displayPlayerName =
+    linkedPlayer?.name ||
+    guestRequest?.player_name ||
+    "Noch kein Spieler verknüpft"
+
+  const totalBonus = useMemo(() => {
+    if (!summerStanding) return 0
+
+    return (
+      n(summerStanding.manual_bonus_points) +
+      n(summerStanding.winner_side_bonus_points) +
+      n(summerStanding.participation_bonus_points)
+    )
+  }, [summerStanding])
+
+  const winRate = useMemo(() => {
+    if (!summerStanding) return "0.0"
+    const played = n(summerStanding.total_matches_played)
+    const won = n(summerStanding.total_matches_won)
+
+    if (played <= 0) return "0.0"
+    return ((won / played) * 100).toFixed(1)
+  }, [summerStanding])
+
+  const legDiff = useMemo(() => {
+    if (!summerStanding) return 0
+    return n(summerStanding.legs_won) - n(summerStanding.legs_lost)
+  }, [summerStanding])
 
   if (authLoading || loading) {
     return (
@@ -169,7 +473,7 @@ export default function GuestProfileAppPage() {
       <Header />
 
       <main className="flex-grow px-4 pt-20 pb-28">
-        <div className="mx-auto w-full max-w-2xl space-y-6">
+        <div className="mx-auto w-full max-w-5xl space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="text-sm font-bold text-orange-600 uppercase">
@@ -220,11 +524,16 @@ export default function GuestProfileAppPage() {
                     {guestRequest.full_name}
                   </h2>
 
-                  {guestRequest.player_name && (
-                    <p className="text-gray-600 font-semibold mt-1">
-                      Spielername: {guestRequest.player_name}
+                  <p className="text-gray-600 font-semibold mt-1">
+                    Spieler: {displayPlayerName}
+                  </p>
+
+                  {linkedPlayer?.verein || linkedPlayer?.ligastatus ? (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {linkedPlayer?.verein || "Kein Verein"} ·{" "}
+                      {linkedPlayer?.ligastatus || "Kein Ligastatus"}
                     </p>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
@@ -253,15 +562,283 @@ export default function GuestProfileAppPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-black text-gray-900 mb-2">
-                Gastbereich
-              </h3>
+          <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
-              <p className="text-gray-600">
-                Noch keine Daten verfügbar.
-              </p>
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900">
+                    Meine Statistiken
+                  </h3>
+
+                  <p className="text-sm text-gray-600 mt-1">
+                    Deine persönlichen Turnierdaten aus der EMD VereinsApp.
+                  </p>
+                </div>
+
+                {statsLoading ? (
+                  <Badge variant="outline" className="w-fit">
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Lade Statistiken
+                  </Badge>
+                ) : (
+                  <Badge className="w-fit bg-orange-600 text-white">
+                    <Activity className="w-3 h-3 mr-1" />
+                    Live Daten
+                  </Badge>
+                )}
+              </div>
+
+              {!guestRequest.linked_spieldatenbank_id && !guestRequest.player_name ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="font-black">
+                        Noch nicht mit Spieler verknüpft
+                      </div>
+                      <p className="text-sm mt-1">
+                        Dein Gastkonto wurde noch nicht mit einem Spieler aus der
+                        Spieldatenbank verknüpft. Sobald die Freischaltung fertig ist,
+                        erscheinen hier deine Turnierstatistiken.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : statsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-9 h-9 animate-spin text-orange-600" />
+                    <p className="text-sm font-semibold text-gray-600">
+                      Statistiken werden geladen...
+                    </p>
+                  </div>
+                </div>
+              ) : statsMessage ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="font-black">Hinweis</div>
+                      <p className="text-sm mt-1">{statsMessage}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : !summerStanding && summerEntries.length === 0 && dkoRankings.length === 0 ? (
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 text-gray-700">
+                  <div className="flex items-start gap-3">
+                    <Trophy className="w-5 h-5 mt-0.5 text-orange-600 flex-shrink-0" />
+                    <div>
+                      <div className="font-black text-gray-900">
+                        Noch keine Turnierdaten gefunden
+                      </div>
+                      <p className="text-sm mt-1">
+                        Dein Spieler ist verknüpft. Sobald Ergebnisse für{" "}
+                        <span className="font-black">{displayPlayerName}</span>{" "}
+                        gespeichert wurden, erscheinen deine Statistiken automatisch hier.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {summerStanding && (
+                    <section>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Trophy className="w-5 h-5 text-orange-600" />
+                        <h4 className="text-xl font-black text-gray-900">
+                          Summer Special Gesamtwertung
+                        </h4>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <StatBox
+                          label="Gesamtpunkte"
+                          value={n(summerStanding.total_points)}
+                          icon={<Trophy className="w-6 h-6" />}
+                          tone="orange"
+                        />
+
+                        <StatBox
+                          label="Turniere"
+                          value={`${n(summerStanding.tournaments_played)}/13`}
+                          icon={<CalendarDays className="w-6 h-6" />}
+                          tone="blue"
+                        />
+
+                        <StatBox
+                          label="Siegrate"
+                          value={`${winRate}%`}
+                          icon={<TrendingUp className="w-6 h-6" />}
+                          tone="green"
+                        />
+
+                        <StatBox
+                          label="Bonus"
+                          value={totalBonus}
+                          icon={<Gift className="w-6 h-6" />}
+                          tone="yellow"
+                        />
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <MiniInfo
+                          label="Platzierungspunkte"
+                          value={n(summerStanding.placement_points)}
+                        />
+                        <MiniInfo
+                          label="Legs gewonnen"
+                          value={n(summerStanding.legs_won)}
+                        />
+                        <MiniInfo
+                          label="Legs verloren"
+                          value={n(summerStanding.legs_lost)}
+                        />
+                        <MiniInfo
+                          label="Leg-Differenz"
+                          value={legDiff >= 0 ? `+${legDiff}` : legDiff}
+                        />
+                        <MiniInfo
+                          label="Matches"
+                          value={n(summerStanding.total_matches_played)}
+                        />
+                        <MiniInfo
+                          label="Matches gewonnen"
+                          value={n(summerStanding.total_matches_won)}
+                        />
+                        <MiniInfo
+                          label="Matches verloren"
+                          value={n(summerStanding.total_matches_lost)}
+                        />
+                        <MiniInfo
+                          label="Gewinnerseiten-Bonus"
+                          value={n(summerStanding.winner_side_bonus_points)}
+                        />
+                      </div>
+                    </section>
+                  )}
+
+                  {summerEntries.length > 0 && (
+                    <section>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Medal className="w-5 h-5 text-orange-600" />
+                        <h4 className="text-xl font-black text-gray-900">
+                          Meine Summer-Special Turniere
+                        </h4>
+                      </div>
+
+                      <div className="space-y-3">
+                        {summerEntries.map((entry, index) => {
+                          const bonus =
+                            n(entry.bonus_points) + (entry.winner_side_bonus ? 5 : 0)
+
+                          return (
+                            <div
+                              key={
+                                entry.id ||
+                                `${entry.player_name}-${entry.tournament_date}-${index}`
+                              }
+                              className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                                    <Badge className={getPlacementBadgeClass(entry.placement)}>
+                                      {getPlacementLabel(entry.placement)}
+                                    </Badge>
+
+                                    {entry.winner_side_bonus ? (
+                                      <Badge className="bg-yellow-500 text-white">
+                                        <Star className="w-3 h-3 mr-1" />
+                                        Gewinnerseite +5
+                                      </Badge>
+                                    ) : null}
+                                  </div>
+
+                                  <div className="font-black text-gray-900">
+                                    {entry.tournament_name || "Summer Special Turnier"}
+                                  </div>
+
+                                  <div className="text-sm text-gray-600 mt-1">
+                                    {formatDate(entry.tournament_date)}
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                                  <MiniInfo
+                                    label="Punkte"
+                                    value={
+                                      n(entry.placement_points) +
+                                      n(entry.legs_won) +
+                                      bonus
+                                    }
+                                  />
+                                  <MiniInfo
+                                    label="Legs"
+                                    value={`${n(entry.legs_won)}:${n(entry.legs_lost)}`}
+                                  />
+                                  <MiniInfo
+                                    label="Matches"
+                                    value={`${n(entry.matches_won)}/${n(entry.matches_played)}`}
+                                  />
+                                  <MiniInfo label="Bonus" value={bonus} />
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </section>
+                  )}
+
+                  {dkoRankings.length > 0 && (
+                    <section>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Swords className="w-5 h-5 text-orange-600" />
+                        <h4 className="text-xl font-black text-gray-900">
+                          Meine weiteren Turniere
+                        </h4>
+                      </div>
+
+                      <div className="space-y-3">
+                        {dkoRankings.map((ranking, index) => (
+                          <div
+                            key={`${ranking.tournament_id}-${ranking.tournament_type}-${index}`}
+                            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                  <Badge className={getPlacementBadgeClass(ranking.placement)}>
+                                    {getPlacementLabel(ranking.placement)}
+                                  </Badge>
+
+                                  <Badge variant="outline">
+                                    {ranking.tournament_type}
+                                  </Badge>
+                                </div>
+
+                                <div className="font-black text-gray-900">
+                                  {ranking.tournament_name || "DKO Turnier"}
+                                </div>
+
+                                <div className="text-sm text-gray-600 mt-1">
+                                  {formatDate(ranking.eliminated_at)}
+                                </div>
+                              </div>
+
+                              <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
+                                <Target className="w-6 h-6 text-orange-600" />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

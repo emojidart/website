@@ -733,6 +733,7 @@ const fetchProfile = async () => {
     { title: "Zusagen & Aufstellung", description: "Spieler zusagen verwalten und Teamaufstellung erstellen", icon: CheckCircle, href: "/member-availability", color: "from-green-500 to-emerald-600" },
     { title: "Meine Teams", description: "Teams und Teammitglieder verwalten", icon: Users, href: "/meine-teams-app", color: "from-teal-500 to-teal-600" },
     { title: "Spieler Statistiken", description: "Detaillierte Leistungsanalyse", icon: BarChart3, href: "/member-statistics-app", color: "from-indigo-500 to-indigo-600" },
+	{ title: "Turnierstatistiken", description: "Summer Special, DKO und Kratzer-Ergebnisse", icon: Trophy, href: "/member-tournament-statistics-app", color: "from-orange-500 to-yellow-600" },
     { title: "Statistik Blätter drucken", description: "Statistik-/Spielerblätter auswählen und drucken", icon: Printer, href: "/team-print-sheet", color: "from-orange-500 to-orange-600", requiresLeadership: true },
 	{ title: "Trainingstreff", description: "Trainings, Turniere und Treffen mit Spielern", icon: Calendar, href: "/training_event", color: "from-violet-500 to-purple-600" },
     { title: "Mein Training", description: "Trainingsübungen und Trainingsplan für dein eigenes Training", icon: Dumbbell, href: "/training-app", color: "from-orange-500 to-red-600" },

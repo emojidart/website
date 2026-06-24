@@ -52,7 +52,7 @@ type DrawerItem = {
   guestOnly?: boolean
 }
 
-type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand"
+type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand" | "community"
 
 type TeamMembershipRow = {
   role: string | null
@@ -70,6 +70,7 @@ const CLUB_ROOM_ID = "11111111-1111-1111-1111-111111111111"
 const FREIZEIT_ROOM_ID = "22222222-2222-2222-2222-222222222222"
 const VORSTAND_ROOM_ID = "33333333-3333-3333-3333-333333333333"
 const CAPTAINS_ROOM_ID = "44444444-4444-4444-4444-444444444444"
+const COMMUNITY_ROOM_ID = "55555555-5555-5555-5555-555555555555"
 
 const BOARD_ROLES = ["Vorstand", "Kassier", "Schriftführer"]
 
@@ -196,8 +197,7 @@ export function Header({
   }
 
   const handleChatClick = () => {
-    if (isGuest) return
-    router.push("/chat-app")
+    router.push(isGuest ? "/chat-app?scope=community" : "/chat-app")
   }
 
   const isActive = (href: string) => {
@@ -208,7 +208,7 @@ export function Header({
   const unreadKey = React.useCallback((roomId: string, scope: ChatScope) => `${roomId}:${scope}`, [])
 
   const loadChatUnreadCount = React.useCallback(async () => {
-    if (!user?.id || isGuest) {
+    if (!user?.id) {
       setChatUnreadCount(0)
       return
     }
@@ -220,13 +220,15 @@ export function Header({
         .eq("user_id", user.id)
         .maybeSingle()
 
-      if (profileError || !profile?.id || profile?.is_guest) {
+      if (profileError || !profile?.id) {
         setChatUnreadCount(0)
         return
       }
 
       const profileId = profile.id
       const playerId = profile.player_id ?? null
+
+      const isGuestProfile = Boolean(profile?.is_guest)
 
       const { data: roleRows } = await supabase
         .from("club_roles")
@@ -254,24 +256,30 @@ export function Header({
       )
 
       const targets: Array<{ roomId: string; scope: ChatScope }> = [
-        { roomId: CLUB_ROOM_ID, scope: "club" },
-        { roomId: FREIZEIT_ROOM_ID, scope: "freizeit" },
+        { roomId: COMMUNITY_ROOM_ID, scope: "community" },
       ]
 
-      if (canSeeVorstandChat) {
-        targets.push({ roomId: VORSTAND_ROOM_ID, scope: "vorstand" })
-      }
+      if (!isGuestProfile) {
+        targets.push(
+          { roomId: CLUB_ROOM_ID, scope: "club" },
+          { roomId: FREIZEIT_ROOM_ID, scope: "freizeit" },
+        )
 
-      if (canSeeCaptainChat || canSeeVorstandChat) {
-        targets.push({ roomId: CAPTAINS_ROOM_ID, scope: "captains" })
-      }
-
-      memberships.forEach((m) => {
-        const roomId = m.teams?.chat_room_id
-        if (roomId) {
-          targets.push({ roomId, scope: "team" })
+        if (canSeeVorstandChat) {
+          targets.push({ roomId: VORSTAND_ROOM_ID, scope: "vorstand" })
         }
-      })
+
+        if (canSeeCaptainChat || canSeeVorstandChat) {
+          targets.push({ roomId: CAPTAINS_ROOM_ID, scope: "captains" })
+        }
+
+        memberships.forEach((m) => {
+          const roomId = m.teams?.chat_room_id
+          if (roomId) {
+            targets.push({ roomId, scope: "team" })
+          }
+        })
+      }
 
       const dedupedTargets = Array.from(
         new Map(targets.map((t) => [unreadKey(t.roomId, t.scope), t])).values(),
@@ -333,7 +341,7 @@ export function Header({
         { href: "/tournament-series-app", label: "Lion Cup", icon: Trophy },
         { href: "/live-all-app", label: "Live", icon: Radio },
         { href: "/tournament-history", label: "History", icon: History },
-        { href: "/chat-app", label: "Chat", icon: MessageCircle, requiresLogin: true, memberOnly: true },
+        { href: user && isGuest ? "/chat-app?scope=community" : "/chat-app", label: "Chat", icon: MessageCircle, requiresLogin: true },
         { href: "/vereinskalender-app", label: "Vereinskalender", icon: CalendarDays, requiresLogin: true, memberOnly: true },
         { href: "/member-availability", label: "Aufstellung", icon: ClipboardList, requiresLogin: true, memberOnly: true },
       ],
@@ -371,7 +379,7 @@ export function Header({
   }
 
   const renderChatBadge = () => {
-    if (!user || isGuest || chatUnreadCount <= 0) return null
+    if (!user || chatUnreadCount <= 0) return null
 
     return (
       <span className="ml-auto inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
@@ -505,7 +513,8 @@ export function Header({
                         {visibleItems.map((it) => {
                           const Icon = it.icon
                           const active = isActive(it.href)
-                          const isChatItem = it.href === "/chat-app"
+                          const isChatItem = it.href === "/chat-app" || it.href.startsWith("/chat-app?")
+                          const chatBadge = isChatItem ? renderChatBadge() : null
 
                           return (
                             <Link
@@ -521,7 +530,7 @@ export function Header({
                             >
                               <Icon className={cn("h-5 w-5 shrink-0", active ? "text-orange-700" : "text-orange-600")} />
                               <span className="font-semibold">{it.label}</span>
-                              {isChatItem ? renderChatBadge() : <ChevronRight className="ml-auto h-4 w-4 text-gray-400" />}
+                              {chatBadge || <ChevronRight className="ml-auto h-4 w-4 text-gray-400" />}
                             </Link>
                           )
                         })}
@@ -592,7 +601,7 @@ export function Header({
               </div>
 
               <div className="hidden items-center gap-2 lg:flex">
-                {user && !isGuest ? (
+                {user ? (
                   <Button
                     onClick={handleChatClick}
                     variant="outline"
