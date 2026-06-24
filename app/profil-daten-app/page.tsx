@@ -213,7 +213,7 @@ export default function ProfilDatenAppPage() {
           birthdate, player_number, jersey_size, email, phone,
           club_joined_at
         `)
-        .eq("user_id", session!.user.id)
+        .eq("auth_user_id", session!.user.id)
         .order("id", { ascending: false })
         .limit(1)
         .maybeSingle()
