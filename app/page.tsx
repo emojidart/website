@@ -1260,21 +1260,9 @@ const liveMembersSelfRegEvent = useMemo(() => {
 }, [nextMembersChampionEvent, todayISO])
 
 const liveMembersRegCloseDT = liveMembersSelfRegEvent
-  ? (() => {
-      const d = new Date(`${liveMembersSelfRegEvent.isoDate}T17:00:00`)
-      const today = new Date()
-
-      const isTodayTest =
-        startOfDay(d).getTime() === startOfDay(today).getTime()
-
-      // TEST-AUSNAHME NUR FÜR HEUTE: Anmeldung bis 20:00 Uhr
-      if (isTodayTest) {
-        d.setHours(20, 0, 0, 0)
-      }
-
-      return d
-    })()
+  ? new Date(`${liveMembersSelfRegEvent.isoDate}T17:00:00`)
   : null
+
 
 const liveMembersUnregCloseDT = liveMembersSelfRegEvent
   ? new Date(`${liveMembersSelfRegEvent.isoDate}T14:00:00`)
@@ -2086,26 +2074,21 @@ useEffect(() => {
                   <Info className="w-3.5 h-3.5 text-gray-400" />
 
                   {liveMembersRegOpen ? (
-                    <span className="font-bold">
-                      Anmeldung noch: {formatHoursMinutesSeconds(liveMembersSecondsLeft ?? 0)}
-                      <span className="font-semibold text-gray-500">
-  {liveMembersRegCloseDT &&
-  startOfDay(liveMembersRegCloseDT).getTime() === startOfDay(new Date()).getTime()
-    ? " (heute ausnahmsweise bis 20:00 Uhr)"
-    : " (schließt um 17:00 Uhr)"}
-</span>
-                    </span>
-                  ) : (
-                    <span className="font-bold">
-                      Anmeldung geschlossen{" "}
-<span className="font-semibold text-gray-500">
-  {liveMembersRegCloseDT &&
-  startOfDay(liveMembersRegCloseDT).getTime() === startOfDay(new Date()).getTime()
-    ? "(20:00 Uhr)"
-    : "(17:00 Uhr)"}
-</span>
-                    </span>
-                  )}
+  <span className="font-bold">
+    Anmeldung noch: {formatHoursMinutesSeconds(liveMembersSecondsLeft ?? 0)}
+    <span className="font-semibold text-gray-500">
+      {" "}
+      (schließt um 17:00 Uhr)
+    </span>
+  </span>
+) : (
+  <span className="font-bold">
+    Anmeldung geschlossen{" "}
+    <span className="font-semibold text-gray-500">
+      (17:00 Uhr)
+    </span>
+  </span>
+)}
                 </div>
 
                 {liveMembersUnregOpen ? (
