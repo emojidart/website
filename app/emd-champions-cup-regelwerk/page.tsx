@@ -270,7 +270,7 @@ export default function MembersChampionCupRegelwerkPage() {
                     <div className="flex items-start gap-2">
                       <Bell className="w-4 h-4 mt-0.5 text-emerald-700" />
                       <div>
-                        <strong>Am Turniertag von 07:00 Uhr bis 17:00 Uhr</strong>
+                        <strong>Am Turniertag von 00:00 Uhr bis 17:00 Uhr</strong>
                         <br />
                         Anmeldung über Vereins-Webseite oder VereinsApp.
                       </div>
