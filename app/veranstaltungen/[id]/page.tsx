@@ -67,6 +67,13 @@ type EventParticipantRow = {
   } | null
 }
 
+
+type GuestRequestRow = {
+  auth_user_id: string | null
+  full_name: string | null
+  player_name: string | null
+}
+
 /* ---------------- helpers ---------------- */
 
 function getEventTypeIcon(type: string) {
@@ -254,6 +261,7 @@ export default function VeranstaltungDetailPage() {
   const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null)
   const [participants, setParticipants] = useState<EventParticipantRow[]>([])
   const [savingStatus, setSavingStatus] = useState(false)
+  const [guestNameMap, setGuestNameMap] = useState<Record<string, string>>({})
 
   useEffect(() => {
     let cancelled = false
@@ -287,34 +295,77 @@ export default function VeranstaltungDetailPage() {
       cancelled = true
     }
   }, [])
+  
+  
+  
+  
 
-  async function loadParticipants(eventId: string) {
-    const { data, error } = await supabase
-      .from("event_participants")
-      .select(`
+async function loadParticipants(eventId: string) {
+  const { data, error } = await supabase
+    .from("event_participants")
+    .select(`
+      id,
+      event_id,
+      user_id,
+      player_id,
+      status,
+      created_at,
+      updated_at,
+      club_players (
         id,
-        event_id,
-        user_id,
-        player_id,
-        status,
-        created_at,
-        updated_at,
-        club_players (
-          id,
-          name,
-          photo_url
-        )
-      `)
-      .eq("event_id", eventId)
-      .order("created_at", { ascending: true })
+        name,
+        photo_url
+      )
+    `)
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: true })
 
-    if (error) {
-      console.error("Error loading participants:", error)
-      return
-    }
-
-    setParticipants((data as EventParticipantRow[]) || [])
+  if (error) {
+    console.error("Error loading participants:", error)
+    return
   }
+
+  const rows = (data as EventParticipantRow[]) || []
+  setParticipants(rows)
+
+  const guestUserIds = rows
+    .filter((p) => !p.club_players?.name)
+    .map((p) => p.user_id)
+    .filter(Boolean)
+
+  if (guestUserIds.length === 0) {
+    setGuestNameMap({})
+    return
+  }
+
+  const { data: guestData, error: guestError } = await supabase
+    .from("guest_requests")
+    .select("auth_user_id, full_name, player_name")
+    .in("auth_user_id", guestUserIds)
+
+  if (guestError) {
+    console.error("Error loading guest names:", guestError)
+    setGuestNameMap({})
+    return
+  }
+
+  const map: Record<string, string> = {}
+
+  ;((guestData as GuestRequestRow[]) || []).forEach((g) => {
+    if (!g.auth_user_id) return
+
+    const name = g.full_name?.trim() || g.player_name?.trim() || ""
+
+    if (name) {
+      map[g.auth_user_id] = name
+    }
+  })
+
+  setGuestNameMap(map)
+}
+  
+  
+  
 
   async function saveParticipation(status: ParticipantStatus) {
     if (!id || !currentUserId) return
@@ -658,7 +709,7 @@ export default function VeranstaltungDetailPage() {
                                     )}
                                   </div>
                                   <span className="text-sm text-gray-900 font-medium">
-                                    {p.club_players?.name || "Unbekannt"}
+                                    {p.club_players?.name || guestNameMap[p.user_id] || "Unbekannt"}
                                   </span>
                                 </div>
                               ))}
@@ -692,7 +743,7 @@ export default function VeranstaltungDetailPage() {
                                     )}
                                   </div>
                                   <span className="text-sm text-gray-900 font-medium">
-                                    {p.club_players?.name || "Unbekannt"}
+                                    {p.club_players?.name || guestNameMap[p.user_id] || "Unbekannt"}
                                   </span>
                                 </div>
                               ))}
@@ -726,7 +777,7 @@ export default function VeranstaltungDetailPage() {
                                     )}
                                   </div>
                                   <span className="text-sm text-gray-900 font-medium">
-                                    {p.club_players?.name || "Unbekannt"}
+                                    {p.club_players?.name || guestNameMap[p.user_id] || "Unbekannt"}
                                   </span>
                                 </div>
                               ))}
