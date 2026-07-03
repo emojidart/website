@@ -1328,7 +1328,7 @@ const assignMachine = (machineNumber: number) => {
     }))
   }
 
-  if (matchToAnnounce?.player1 && matchToAnnounce?.player2) {
+  if (speechEnabled && matchToAnnounce?.player1 && matchToAnnounce?.player2) {
     announce(matchToAnnounce.player1, matchToAnnounce.player2, machineNumber, 1)
   }
 
@@ -1887,11 +1887,7 @@ const resultSaveReady =
     <div className="min-h-screen bg-white">
       <Header />
 
-<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-  <Card className="p-4 rounded-2xl border border-orange-200 bg-orange-50">
-    <SpeechAnnouncerSettings enabled={speechEnabled} onToggle={setSpeechEnabled} />
-  </Card>
-</div>
+
 
       {/* HERO */}
       <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white py-14 px-4 sm:px-6 lg:px-8">
@@ -1920,20 +1916,25 @@ const resultSaveReady =
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="border-white/40 text-white bg-white/10 hover:bg-white/20"
-                onClick={() => router.push("/dko_tournament_registration")}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Zurück
-              </Button>
-              <Button className="bg-white text-orange-600 hover:bg-white/90 font-black" onClick={loadAll}>
-                <RefreshCcw className="w-4 h-4 mr-2" />
-                Reload
-              </Button>
-            </div>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+  <div className="rounded-2xl bg-white px-4 py-3 shadow-md">
+    <SpeechAnnouncerSettings enabled={speechEnabled} onToggle={setSpeechEnabled} />
+  </div>
+
+  <Button
+    variant="outline"
+    className="border-white/40 text-white bg-white/10 hover:bg-white/20"
+    onClick={() => router.push("/dko_tournament_registration")}
+  >
+    <ArrowLeft className="w-4 h-4 mr-2" />
+    Zurück
+  </Button>
+
+  <Button className="bg-white text-orange-600 hover:bg-white/90 font-black" onClick={loadAll}>
+    <RefreshCcw className="w-4 h-4 mr-2" />
+    Reload
+  </Button>
+</div>
           </div>
         </div>
       </div>
