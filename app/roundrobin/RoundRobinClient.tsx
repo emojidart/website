@@ -165,6 +165,7 @@ const PO_QF4 = PO_BASE + 4
 const PO_SF1 = PO_BASE + 5
 const PO_SF2 = PO_BASE + 6
 const PO_F = PO_BASE + 7
+const PO_3RD = PO_BASE + 8
 
 // ---- DKO Finalrunde IDs (eigener Bereich, damit Single-KO und DKO sich nicht vermischen)
 const DKO_BASE = 910000
@@ -177,7 +178,7 @@ type FinalMode = "single_ko" | "double_ko"
 
 type PoMatchDef = {
   id: number
-  round: "QF" | "SF" | "F" | "WB" | "LB" | "GF" | "RESET"
+  round: "QF" | "SF" | "F" | "P3" | "WB" | "LB" | "GF" | "RESET"
   label: string
   // sources: match ids whose winners feed into this match (for SF/F)
   srcA?: number
@@ -195,6 +196,7 @@ const PO_DEFS_8: PoMatchDef[] = [
   { id: PO_SF2, round: "SF", label: "HF2", srcA: PO_QF3, srcB: PO_QF4 },
 
   { id: PO_F, round: "F", label: "FINAL", srcA: PO_SF1, srcB: PO_SF2 },
+  { id: PO_3RD, round: "P3", label: "Platz 3" },
 ]
 
 const PO_DEFS_2: PoMatchDef[] = [
@@ -1042,12 +1044,13 @@ function buildPairings(size: PlayoffSize, players: Qualifier[]) {
         rows.push(makeRow(d.id))
       }
     } else {
-      const s1 = pairs[0] || []
-      const s2 = pairs[1] || []
-      rows.push(makeRow(PO_SF1, s1[0], s1[1]))
-      rows.push(makeRow(PO_SF2, s2[0], s2[1]))
-      rows.push(makeRow(PO_F))
-    }
+  const s1 = pairs[0] || []
+  const s2 = pairs[1] || []
+  rows.push(makeRow(PO_SF1, s1[0], s1[1]))
+  rows.push(makeRow(PO_SF2, s2[0], s2[1]))
+  rows.push(makeRow(PO_F))
+  rows.push(makeRow(PO_3RD))
+}
 
     try {
       // Alte Finalrunde löschen, damit Single-KO und DKO nicht vermischt werden.
@@ -1172,18 +1175,30 @@ function buildPairings(size: PlayoffSize, players: Qualifier[]) {
         stageUpdate(resetFinalId, reset2)
       }
     } else {
-      const defs = playoffSize === 8 ? PO_DEFS_8 : playoffSize === 4 ? PO_DEFS_4 : PO_DEFS_2
+  const defs = playoffSize === 8 ? PO_DEFS_8 : playoffSize === 4 ? PO_DEFS_4 : PO_DEFS_2
 
-      for (const d of defs) {
-        if (!d.srcA || !d.srcB) continue
-        const a = getWinnerOf(playoffStates, d.srcA)
-        const b = getWinnerOf(playoffStates, d.srcB)
-        const first = patchTarget(stagedStates, d.id, 1, a)
-        stageUpdate(d.id, first)
-        const second = patchTarget(stagedStates, d.id, 2, b)
-        stageUpdate(d.id, second)
-      }
-    }
+  for (const d of defs) {
+    if (!d.srcA || !d.srcB) continue
+    const a = getWinnerOf(playoffStates, d.srcA)
+    const b = getWinnerOf(playoffStates, d.srcB)
+    const first = patchTarget(stagedStates, d.id, 1, a)
+    stageUpdate(d.id, first)
+    const second = patchTarget(stagedStates, d.id, 2, b)
+    stageUpdate(d.id, second)
+  }
+
+  // ✅ Spiel um Platz 3 automatisch mit den beiden Halbfinal-Verlierern befüllen
+  if (playoffSize === 4 || playoffSize === 8) {
+    const loser1 = getLoserOf(playoffStates, PO_SF1)
+    const loser2 = getLoserOf(playoffStates, PO_SF2)
+
+    const thirdPlace1 = patchTarget(stagedStates, PO_3RD, 1, loser1)
+    stageUpdate(PO_3RD, thirdPlace1)
+
+    const thirdPlace2 = patchTarget(stagedStates, PO_3RD, 2, loser2)
+    stageUpdate(PO_3RD, thirdPlace2)
+  }
+}
 
     if (updates.length) {
       setPlayoffStates((prev) => {
@@ -1424,6 +1439,7 @@ const resetMatch = (scope: "group" | "playoff", matchId: number, fallback?: Matc
   { id: PO_SF1, round: "SF", label: "HF1" },
   { id: PO_SF2, round: "SF", label: "HF2" },
   { id: PO_F, round: "F", label: "FINAL", srcA: PO_SF1, srcB: PO_SF2 },
+  { id: PO_3RD, round: "P3", label: "Platz 3" },
 ]
 
 // ---- Playoff display list
@@ -1435,7 +1451,7 @@ const playoffDefs = useMemo(
 
 
   const playoffRoundGroups = useMemo(() => {
-    const by: Record<string, PoMatchDef[]> = { QF: [], SF: [], WB: [], LB: [], GF: [], RESET: [], F: [] }
+    const by: Record<string, PoMatchDef[]> = { QF: [], SF: [], WB: [], LB: [], GF: [], RESET: [], F: [], P3: [] }
     playoffDefs.forEach((d) => by[d.round].push(d))
     return by
   }, [playoffDefs])
@@ -1539,44 +1555,42 @@ const playoffDefs = useMemo(
         }
       }
     } else {
-      const final = playoffStates[PO_F]
-      const sf1 = playoffStates[PO_SF1]
-      const sf2 = playoffStates[PO_SF2]
+  const final = playoffStates[PO_F]
+  const thirdPlaceMatch = playoffStates[PO_3RD]
 
-      if (playoffExists && final?.winner) {
-        addTeam(1, final.winner, final.winner === normalizeName(final.player1) ? final.player1_id : final.player2_id)
-        addTeam(2, final.loser, final.loser === normalizeName(final.player1) ? final.player1_id : final.player2_id)
+  if (playoffExists && final?.winner) {
+    addTeam(
+      1,
+      final.winner,
+      final.winner === normalizeName(final.player1) ? final.player1_id : final.player2_id
+    )
 
-        const semiLosers = [sf1, sf2]
-          .filter(Boolean)
-          .map((state) => {
-            const loserName = normalizeName(state?.loser || "")
-            const tableRow = byName.get(loserName)
-            const loserId =
-              loserName === normalizeName(state?.player1 || "")
-                ? state?.player1_id
-                : loserName === normalizeName(state?.player2 || "")
-                  ? state?.player2_id
-                  : tableRow?.player_id
+    addTeam(
+      2,
+      final.loser,
+      final.loser === normalizeName(final.player1) ? final.player1_id : final.player2_id
+    )
 
-            return { ...(tableRow || {}), name: loserName, player_id: loserId ?? tableRow?.player_id ?? null }
-          })
-          .filter((team) => team.name)
+    // Bei Top 4 / Top 8 zählt das echte Spiel um Platz 3
+    if ((playoffSize === 4 || playoffSize === 8) && thirdPlaceMatch?.winner) {
+      addTeam(
+        3,
+        thirdPlaceMatch.winner,
+        thirdPlaceMatch.winner === normalizeName(thirdPlaceMatch.player1)
+          ? thirdPlaceMatch.player1_id
+          : thirdPlaceMatch.player2_id
+      )
 
-        semiLosers
-          .sort((a, b) => {
-            const pa = ptsFrom(a.w || 0)
-            const pb = ptsFrom(b.w || 0)
-            const da = (a.legsFor || 0) - (a.legsAgainst || 0)
-            const db = (b.legsFor || 0) - (b.legsAgainst || 0)
-
-            if (pb !== pa) return pb - pa
-            if (db !== da) return db - da
-            return String(a.name).localeCompare(String(b.name))
-          })
-          .forEach((team, index) => addTeam(index === 0 ? 3 : 4, team.name, team.player_id))
-      }
+      addTeam(
+        4,
+        thirdPlaceMatch.loser,
+        thirdPlaceMatch.loser === normalizeName(thirdPlaceMatch.player1)
+          ? thirdPlaceMatch.player1_id
+          : thirdPlaceMatch.player2_id
+      )
     }
+  }
+}
 
     allTeams.forEach((team) => {
       if (!used.has(normalizeName(team.name))) {
@@ -1589,7 +1603,11 @@ const playoffDefs = useMemo(
 
   // ✅ Speicher-Buttons erst anzeigen, wenn das Turnier wirklich fertig ist:
   // Gruppenphase fertig + Finalrunde erstellt + Finale gespielt + Platzierungen vorhanden
-  const resultSaveReady = groupPhaseFinished && playoffExists && Boolean(champion) && finalPlacements.length > 0
+  const thirdPlaceReady =
+  finalMode !== "single_ko" || playoffSize === 2 || Boolean(playoffStates[PO_3RD]?.winner)
+
+const resultSaveReady =
+  groupPhaseFinished && playoffExists && Boolean(champion) && thirdPlaceReady && finalPlacements.length > 0
 
   const showSuccess = (title: string, text: string) => {
     setSuccessTitle(title)
@@ -2271,7 +2289,7 @@ const playoffDefs = useMemo(
                     </div>
                   )}
 
-                  {(["QF", "SF", "WB", "LB", "GF", "RESET", "F"] as const).map((rnd) => {
+                  {(["QF", "SF", "WB", "LB", "GF", "RESET", "F", "P3"] as const).map((rnd) => {
                     const list = playoffRoundGroups[rnd] || []
                     if (!list.length) return null
                     return (
@@ -2288,8 +2306,10 @@ const playoffDefs = useMemo(
                                   : rnd === "GF"
                                     ? "Grand Final"
                                     : rnd === "RESET"
-                                      ? "Reset Final"
-                                      : "Finale"}
+  ? "Reset Final"
+  : rnd === "P3"
+    ? "Spiel um Platz 3"
+    : "Finale"}
                         </h3>
                         {list.map((d) => {
                           const st = playoffStates[d.id] || emptyState(d.id)
