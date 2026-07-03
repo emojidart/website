@@ -25,6 +25,8 @@ import {
   Swords,
 } from "lucide-react"
 
+import { useSpeechAnnouncer, SpeechAnnouncerSettings } from "@/components/speech-announcer"
+
 /**
  * ✅ Datenmodell (OHNE 400 Fehler):
  * - round_robin_groups + round_robin_matches: NUR bestehende Spalten (kein score/winner/status dort!)
@@ -331,6 +333,8 @@ export default function RoundRobinClient() {
   const [successOpen, setSuccessOpen] = useState(false)
   const [successTitle, setSuccessTitle] = useState("")
   const [successText, setSuccessText] = useState("")
+  const [speechEnabled, setSpeechEnabled] = useState(false)
+  const { announce } = useSpeechAnnouncer({ enabled: speechEnabled })
 
   // ---- UI: group tabs
   const [activeGroupId, setActiveGroupId] = useState<string>("")
@@ -1284,17 +1288,25 @@ function buildPairings(size: PlayoffSize, players: Qualifier[]) {
   }
   
   
+  
+  
+  
 
 const assignMachine = (machineNumber: number) => {
   if (selectedMatchId == null) return
 
   isRemoteUpdateRef.current = true
 
+  let matchToAnnounce: MatchState | null = null
+
   if (selectedMatchScope === "playoff") {
+    const base = playoffStates[selectedMatchId] || emptyState(selectedMatchId)
+    matchToAnnounce = base
+
     setPlayoffStates((prev) => ({
       ...prev,
       [selectedMatchId]: {
-        ...(prev[selectedMatchId] || emptyState(selectedMatchId)),
+        ...(prev[selectedMatchId] || base),
         machineNumber,
         callCount: 1,
         _localUpdate: true,
@@ -1303,6 +1315,7 @@ const assignMachine = (machineNumber: number) => {
   } else {
     const m = displayMatches.find((x) => x.id === selectedMatchId)
     const base = m?.state || emptyState(selectedMatchId)
+    matchToAnnounce = base
 
     setMatchStates((prev) => ({
       ...prev,
@@ -1313,6 +1326,10 @@ const assignMachine = (machineNumber: number) => {
         _localUpdate: true,
       },
     }))
+  }
+
+  if (matchToAnnounce?.player1 && matchToAnnounce?.player2) {
+    announce(matchToAnnounce.player1, matchToAnnounce.player2, machineNumber, 1)
   }
 
   setMachineDialogOpen(false)
@@ -1831,6 +1848,8 @@ const resultSaveReady =
     return (
       <div className="min-h-screen bg-white">
         {/* <Header /> */}
+		
+	
 
         <main className="max-w-3xl mx-auto p-6">
           <Card className="p-6 rounded-2xl shadow-lg border-2 border-white">
@@ -1867,6 +1886,12 @@ const resultSaveReady =
   return (
     <div className="min-h-screen bg-white">
       <Header />
+
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+  <Card className="p-4 rounded-2xl border border-orange-200 bg-orange-50">
+    <SpeechAnnouncerSettings enabled={speechEnabled} onToggle={setSpeechEnabled} />
+  </Card>
+</div>
 
       {/* HERO */}
       <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white py-14 px-4 sm:px-6 lg:px-8">
