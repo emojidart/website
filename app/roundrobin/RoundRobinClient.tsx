@@ -2314,7 +2314,7 @@ const resultSaveReady =
                     </div>
                   )}
 
-                  {(["QF", "SF", "WB", "LB", "GF", "RESET", "F", "P3"] as const).map((rnd) => {
+                  {(["QF", "SF", "WB", "LB", "GF", "RESET", "P3", "F"] as const).map((rnd) => {
                     const list = playoffRoundGroups[rnd] || []
                     if (!list.length) return null
                     return (
