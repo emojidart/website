@@ -2572,7 +2572,7 @@ useEffect(() => {
       <Button
         size="lg"
         className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
-        disabled
+        onClick={() => (window.location.href = "/members-champion-cup-tabelle")}
       >
         Zur Gesamtwertung
         <ArrowRight className="w-4 h-4 ml-2" />
