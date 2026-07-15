@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic"
 
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -30,6 +31,10 @@ import {
   Gift,
   Swords,
   TrendingUp,
+  PlusCircle,
+  ListChecks,
+  Globe2,
+  ArrowRight,
 } from "lucide-react"
 
 type GuestRequest = {
@@ -558,6 +563,86 @@ export default function GuestProfileAppPage() {
                     Zugang freigeschaltet
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="h-2 bg-gradient-to-r from-slate-900 via-orange-600 to-orange-500" />
+
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                <div>
+                  <div className="text-xs font-black uppercase text-orange-600">
+                    DACH-Turnierkalender
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 mt-1">
+                    Veranstaltungen verwalten
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Eigene Turniere einreichen, Prüfstatus verfolgen, bearbeiten oder absagen.
+                  </p>
+                </div>
+
+                <Button asChild className="rounded-2xl bg-orange-600 hover:bg-orange-700">
+                  <Link href="/dach-veranstaltungen/neu">
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Veranstaltung anlegen
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Link
+                  href="/dach-veranstaltungen/meine"
+                  className="group rounded-2xl border border-gray-200 bg-gray-50 p-4 hover:border-orange-300 hover:bg-orange-50 transition"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-white border border-gray-200 flex items-center justify-center">
+                    <ListChecks className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="font-black text-gray-900 mt-3">Meine Veranstaltungen</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Status sehen, bearbeiten und absagen.
+                  </div>
+                  <div className="mt-3 flex items-center text-sm font-bold text-orange-700">
+                    Öffnen
+                    <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" />
+                  </div>
+                </Link>
+
+                <Link
+                  href="/dach-veranstaltungen/neu"
+                  className="group rounded-2xl border border-gray-200 bg-gray-50 p-4 hover:border-orange-300 hover:bg-orange-50 transition"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-white border border-gray-200 flex items-center justify-center">
+                    <PlusCircle className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="font-black text-gray-900 mt-3">Neue Veranstaltung</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Turnier oder Event zur Prüfung einreichen.
+                  </div>
+                  <div className="mt-3 flex items-center text-sm font-bold text-orange-700">
+                    Jetzt anlegen
+                    <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" />
+                  </div>
+                </Link>
+
+                <Link
+                  href="/dach-veranstaltungen"
+                  className="group rounded-2xl border border-gray-200 bg-gray-50 p-4 hover:border-orange-300 hover:bg-orange-50 transition"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-white border border-gray-200 flex items-center justify-center">
+                    <Globe2 className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="font-black text-gray-900 mt-3">Alle Veranstaltungen</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Freigegebene DACH-Turniere durchsuchen.
+                  </div>
+                  <div className="mt-3 flex items-center text-sm font-bold text-orange-700">
+                    Kalender ansehen
+                    <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" />
+                  </div>
+                </Link>
               </div>
             </CardContent>
           </Card>

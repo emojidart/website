@@ -23,6 +23,28 @@ type UserAccessProfile = {
   blocked_reason: string | null
 }
 
+
+function isPublicDachEventsPath(pathname: string) {
+  if (pathname === "/dach-veranstaltungen") return true
+
+  const parts = pathname.split("/").filter(Boolean)
+
+  // Öffentliche Detailseite: /dach-veranstaltungen/[id]
+  return (
+    parts.length === 2 &&
+    parts[0] === "dach-veranstaltungen" &&
+    !["neu", "meine"].includes(parts[1])
+  )
+}
+
+function isDachEventsManagementPath(pathname: string) {
+  return (
+    pathname === "/dach-veranstaltungen/neu" ||
+    pathname === "/dach-veranstaltungen/meine" ||
+    /^\/dach-veranstaltungen\/[^/]+\/bearbeiten$/.test(pathname)
+  )
+}
+
 function LoadingScreen() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -52,8 +74,10 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
 
         if (authLoading) return
 
-        const pathIsPublic = isPublicPath(pathname)
+        const pathIsPublic =
+          isPublicPath(pathname) || isPublicDachEventsPath(pathname)
         const pathIsGuest = isGuestPath(pathname)
+        const pathIsDachManagement = isDachEventsManagementPath(pathname)
         const pathIsMemberProtected = isProtectedMemberPath(pathname)
 
         if (!session?.user) {
@@ -62,7 +86,10 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
             return
           }
 
-          if (pathIsGuest && pathname !== GUEST_LOGIN_ROUTE) {
+          if (
+            (pathIsGuest || pathIsDachManagement) &&
+            pathname !== GUEST_LOGIN_ROUTE
+          ) {
             router.replace(GUEST_LOGIN_ROUTE)
             return
           }
@@ -110,7 +137,7 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
             return
           }
 
-          if (!pathIsPublic && !pathIsGuest) {
+          if (!pathIsPublic && !pathIsGuest && !pathIsDachManagement) {
             router.replace(GUEST_HOME_ROUTE)
             return
           }

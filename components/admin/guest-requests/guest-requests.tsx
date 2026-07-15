@@ -236,6 +236,40 @@ export function GuestRequestsManagement() {
     }
   }
 
+  const ensurePlayerCanBeLinked = async (
+    request: GuestRequest,
+    selectedPlayerId: string,
+  ) => {
+    const { data: existingGuestLink, error: existingGuestError } = await supabase
+      .from("guest_requests")
+      .select("id, full_name, email, status")
+      .eq("linked_spieldatenbank_id", selectedPlayerId)
+      .neq("id", request.id)
+      .maybeSingle()
+
+    if (existingGuestError) throw existingGuestError
+
+    if (existingGuestLink) {
+      throw new Error(
+        `Dieser Spieler ist bereits mit dem Gast "${existingGuestLink.full_name}" verknüpft.`,
+      )
+    }
+
+    const { data: existingClubLink, error: existingClubError } = await supabase
+      .from("club_players")
+      .select("id, name")
+      .eq("spieldatenbank_id", selectedPlayerId)
+      .maybeSingle()
+
+    if (existingClubError) throw existingClubError
+
+    if (existingClubLink) {
+      throw new Error(
+        `Dieser Spieler ist bereits mit dem Vereinsmitglied "${existingClubLink.name}" verknüpft.`,
+      )
+    }
+  }
+
   const handleApprove = async (request: GuestRequest) => {
     if (!request.auth_user_id) {
       setMessage({
@@ -245,51 +279,14 @@ export function GuestRequestsManagement() {
       return
     }
 
-    const selectedPlayerId = selectedPlayerByRequestId[request.id]
-
-    if (!selectedPlayerId) {
-      setMessage({
-        type: "error",
-        text: "Bitte zuerst einen Spieler aus der Spieldatenbank auswählen.",
-      })
-      return
-    }
+    const selectedPlayerId = selectedPlayerByRequestId[request.id] || null
 
     try {
       setSavingId(request.id)
       setMessage(null)
 
-      const { data: existingGuestLink, error: existingGuestError } = await supabase
-        .from("guest_requests")
-        .select("id, full_name, email, status")
-        .eq("linked_spieldatenbank_id", selectedPlayerId)
-        .neq("id", request.id)
-        .maybeSingle()
-
-      if (existingGuestError) throw existingGuestError
-
-      if (existingGuestLink) {
-        setMessage({
-          type: "error",
-          text: `Dieser Spieler ist bereits mit dem Gast "${existingGuestLink.full_name}" verknüpft.`,
-        })
-        return
-      }
-
-      const { data: existingClubLink, error: existingClubError } = await supabase
-        .from("club_players")
-        .select("id, name")
-        .eq("spieldatenbank_id", selectedPlayerId)
-        .maybeSingle()
-
-      if (existingClubError) throw existingClubError
-
-      if (existingClubLink) {
-        setMessage({
-          type: "error",
-          text: `Dieser Spieler ist bereits mit dem Vereinsmitglied "${existingClubLink.name}" verknüpft.`,
-        })
-        return
+      if (selectedPlayerId) {
+        await ensurePlayerCanBeLinked(request, selectedPlayerId)
       }
 
       const { error: profileError } = await supabase
@@ -315,22 +312,37 @@ export function GuestRequestsManagement() {
 
       if (requestError) throw requestError
 
-      const linkedPlayer = players.find((p) => p.id === selectedPlayerId)
+      const linkedPlayer = selectedPlayerId
+        ? players.find((p) => p.id === selectedPlayerId)
+        : null
 
       let mailWasSent = true
 
       try {
         await sendGuestApprovedMail(request)
       } catch (mailError: any) {
-        console.error("[GuestRequestsManagement] Mail konnte nicht gesendet werden:", mailError)
+        console.error(
+          "[GuestRequestsManagement] Mail konnte nicht gesendet werden:",
+          mailError,
+        )
         mailWasSent = false
       }
+
+      const approvalText = linkedPlayer
+        ? `${request.full_name} wurde mit ${linkedPlayer.name} verknüpft und freigeschaltet.`
+        : `${request.full_name} wurde ohne Spieler-Verknüpfung freigeschaltet. Die Verknüpfung kann später nachgeholt werden.`
 
       setMessage({
         type: mailWasSent ? "success" : "error",
         text: mailWasSent
-          ? `${request.full_name} wurde mit ${linkedPlayer?.name || "Spieler"} verknüpft, freigeschaltet und per Mail informiert.`
-          : `${request.full_name} wurde mit ${linkedPlayer?.name || "Spieler"} verknüpft und freigeschaltet. Achtung: Die Bestätigungsmail konnte nicht gesendet werden.`,
+          ? `${approvalText} Bestätigungsmail wurde gesendet.`
+          : `${approvalText} Achtung: Die Bestätigungsmail konnte nicht gesendet werden.`,
+      })
+
+      setSelectedPlayerByRequestId((prev) => {
+        const next = { ...prev }
+        delete next[request.id]
+        return next
       })
 
       await loadAll()
@@ -339,6 +351,58 @@ export function GuestRequestsManagement() {
       setMessage({
         type: "error",
         text: err?.message || "Gastzugang konnte nicht freigeschaltet werden.",
+      })
+    } finally {
+      setSavingId(null)
+    }
+  }
+
+  const handleLinkLater = async (request: GuestRequest) => {
+    const selectedPlayerId = selectedPlayerByRequestId[request.id]
+
+    if (!selectedPlayerId) {
+      setMessage({
+        type: "error",
+        text: "Bitte zuerst einen Spieler aus der Spieldatenbank auswählen.",
+      })
+      return
+    }
+
+    try {
+      setSavingId(request.id)
+      setMessage(null)
+
+      await ensurePlayerCanBeLinked(request, selectedPlayerId)
+
+      const { error } = await supabase
+        .from("guest_requests")
+        .update({
+          linked_spieldatenbank_id: selectedPlayerId,
+        })
+        .eq("id", request.id)
+        .eq("status", "approved")
+
+      if (error) throw error
+
+      const linkedPlayer = players.find((p) => p.id === selectedPlayerId)
+
+      setMessage({
+        type: "success",
+        text: `${request.full_name} wurde nachträglich mit ${linkedPlayer?.name || "dem ausgewählten Spieler"} verknüpft.`,
+      })
+
+      setSelectedPlayerByRequestId((prev) => {
+        const next = { ...prev }
+        delete next[request.id]
+        return next
+      })
+
+      await loadAll()
+    } catch (err: any) {
+      console.error(err)
+      setMessage({
+        type: "error",
+        text: err?.message || "Spieler konnte nicht verknüpft werden.",
       })
     } finally {
       setSavingId(null)
@@ -449,8 +513,8 @@ export function GuestRequestsManagement() {
             <div>
               <h2 className="text-xl font-black">Gastanträge</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Gäste müssen vor der Freischaltung eindeutig mit einem Spieler
-                aus der Spieldatenbank verknüpft werden.
+                Gäste können sofort freigeschaltet werden. Die Verknüpfung mit einem Spieler
+                aus der Spieldatenbank kann auch später erfolgen.
               </p>
             </div>
 
@@ -481,6 +545,9 @@ export function GuestRequestsManagement() {
                 const isSaving = savingId === request.id
                 const isPending = request.status === "pending"
                 const linkedPlayer = getLinkedPlayer(request.linked_spieldatenbank_id)
+                const canLinkPlayer =
+                  request.status === "pending" ||
+                  (request.status === "approved" && !linkedPlayer)
                 const filteredPlayers = getFilteredPlayers(request)
                 const selectedPlayerId = selectedPlayerByRequestId[request.id]
                 const selectedPlayer =
@@ -563,15 +630,18 @@ export function GuestRequestsManagement() {
                         )}
                       </div>
 
-                      {isPending && (
+                      {canLinkPlayer && (
                         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
                           <div className="mb-3">
                             <div className="text-sm font-black text-gray-900">
-                              Spieler aus Spieldatenbank verknüpfen
+                              {isPending
+                                ? "Spieler optional verknüpfen"
+                                : "Spieler nachträglich verknüpfen"}
                             </div>
                             <div className="text-xs text-gray-600 mt-1">
-                              Wähle hier den richtigen Spieler aus. Bereits
-                              verknüpfte Spieler sind gesperrt.
+                              {isPending
+                                ? "Du kannst einen Spieler auswählen oder den Gast zuerst ohne Verknüpfung freischalten."
+                                : "Wähle den richtigen Spieler aus. Bereits verknüpfte Spieler sind gesperrt."}
                             </div>
                           </div>
 
@@ -695,38 +765,61 @@ export function GuestRequestsManagement() {
                           )}
 
                           <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                            <Button
-                              type="button"
-                              onClick={() => void handleApprove(request)}
-                              disabled={
-                                isSaving ||
-                                !selectedPlayerId ||
-                                selectedLockInfo.locked
-                              }
-                              className="bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl"
-                            >
-                              {isSaving ? (
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              ) : (
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                              )}
-                              Verknüpfen & freischalten
-                            </Button>
+                            {isPending ? (
+                              <>
+                                <Button
+                                  type="button"
+                                  onClick={() => void handleApprove(request)}
+                                  disabled={
+                                    isSaving ||
+                                    Boolean(selectedPlayerId && selectedLockInfo.locked)
+                                  }
+                                  className="bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl"
+                                >
+                                  {isSaving ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                  )}
+                                  {selectedPlayerId
+                                    ? "Verknüpfen & freischalten"
+                                    : "Ohne Spieler freischalten"}
+                                </Button>
 
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              onClick={() => void handleReject(request)}
-                              disabled={isSaving}
-                              className="rounded-xl font-bold"
-                            >
-                              {isSaving ? (
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              ) : (
-                                <XCircle className="w-4 h-4 mr-2" />
-                              )}
-                              Ablehnen
-                            </Button>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  onClick={() => void handleReject(request)}
+                                  disabled={isSaving}
+                                  className="rounded-xl font-bold"
+                                >
+                                  {isSaving ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <XCircle className="w-4 h-4 mr-2" />
+                                  )}
+                                  Ablehnen
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                type="button"
+                                onClick={() => void handleLinkLater(request)}
+                                disabled={
+                                  isSaving ||
+                                  !selectedPlayerId ||
+                                  selectedLockInfo.locked
+                                }
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
+                              >
+                                {isSaving ? (
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                ) : (
+                                  <LinkIcon className="w-4 h-4 mr-2" />
+                                )}
+                                Spieler nachträglich verknüpfen
+                              </Button>
+                            )}
                           </div>
                         </div>
                       )}
