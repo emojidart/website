@@ -51,6 +51,7 @@ export default function MeineDachVeranstaltungenPage() {
   const [query, setQuery] = useState("")
   const [message, setMessage] = useState("")
   const [cancelEvent, setCancelEvent] = useState<EventRow | null>(null)
+  const [deleteEvent, setDeleteEvent] = useState<EventRow | null>(null)
   const [cancellationReason, setCancellationReason] = useState("")
 
   async function loadEvents() {
@@ -123,11 +124,24 @@ export default function MeineDachVeranstaltungenPage() {
     setSavingId(null)
   }
 
-  async function removeEvent(id: string) {
-    if (!window.confirm("Diese Veranstaltung wirklich dauerhaft löschen?")) return
-    setSavingId(id)
-    const { error } = await supabase.from("dach_events").delete().eq("id", id)
-    if (error) setMessage(error.message); else await loadEvents()
+  async function removeSelectedEvent() {
+    if (!deleteEvent) return
+
+    setSavingId(deleteEvent.id)
+    setMessage("")
+
+    const { error } = await supabase
+      .from("dach_events")
+      .delete()
+      .eq("id", deleteEvent.id)
+
+    if (error) {
+      setMessage(error.message)
+    } else {
+      setDeleteEvent(null)
+      await loadEvents()
+    }
+
     setSavingId(null)
   }
 
@@ -199,7 +213,18 @@ export default function MeineDachVeranstaltungenPage() {
                 Neu einreichen
               </Button>
             )}
-            {['draft','rejected','cancelled'].includes(event.event_status) && <Button size="sm" variant="ghost" disabled={busy} onClick={()=>void removeEvent(event.id)} className="rounded-xl text-red-600"><Trash2 className="w-4 h-4 mr-1"/>Löschen</Button>}
+            {['draft','rejected','cancelled'].includes(event.event_status) && (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => setDeleteEvent(event)}
+                className="rounded-xl text-red-600"
+              >
+                <Trash2 className="w-4 h-4 mr-1"/>
+                Löschen
+              </Button>
+            )}
           </div>
         </CardContent></Card>})}
       </div>}
@@ -216,58 +241,110 @@ export default function MeineDachVeranstaltungenPage() {
     >
       <AlertDialogContent className="rounded-3xl">
         <AlertDialogHeader>
-  <AlertDialogTitle>
-    Veranstaltung absagen?
-  </AlertDialogTitle>
+          <AlertDialogTitle>Veranstaltung wirklich absagen?</AlertDialogTitle>
+          <AlertDialogDescription>
+            <span className="font-bold text-gray-900">
+              {cancelEvent?.name}
+            </span>{" "}
+            bleibt im Veranstaltungskalender sichtbar, wird dort aber deutlich als
+            „ABGESAGT“ markiert. Eine Anmeldung ist anschließend nicht mehr möglich.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-  <AlertDialogDescription>
-    Möchtest du{" "}
-    <span className="font-bold text-gray-900">
-      „{cancelEvent?.name}“
-    </span>{" "}
-    wirklich absagen?
-  </AlertDialogDescription>
-</AlertDialogHeader>
+        <div className="space-y-2">
+          <label className="text-sm font-black text-gray-900">
+            Absagegrund (optional)
+          </label>
+          <Textarea
+            value={cancellationReason}
+            onChange={(e) => setCancellationReason(e.target.value)}
+            placeholder="z. B. zu wenige Anmeldungen, Lokal geschlossen oder Terminverschiebung"
+            className="min-h-[100px] rounded-xl"
+          />
+          <p className="text-xs text-gray-500">
+            Der Grund wird öffentlich bei der Veranstaltung angezeigt.
+          </p>
+        </div>
 
-<div className="space-y-2">
-  <label className="text-sm font-black text-gray-900">
-    Grund für die Absage (optional)
-  </label>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={Boolean(savingId)}>
+            Zurück
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault()
+              void cancelSelectedEvent()
+            }}
+            disabled={Boolean(savingId)}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            {savingId ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <XCircle className="w-4 h-4 mr-2" />
+            )}
+            Wirklich absagen
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
-  <Textarea
-    value={cancellationReason}
-    onChange={(e) => setCancellationReason(e.target.value)}
-    placeholder="z. B. zu wenige Anmeldungen, technische Probleme, Ausfall des Veranstaltungsortes oder unvorhersehbare organisatorische Gründe."
-    className="min-h-[100px] rounded-xl"
-  />
 
-  <p className="text-xs text-gray-500">
-    Dieser Hinweis wird bei der Veranstaltung angezeigt.
-  </p>
-</div>
+    <AlertDialog
+      open={Boolean(deleteEvent)}
+      onOpenChange={(open) => {
+        if (!open && !savingId) {
+          setDeleteEvent(null)
+        }
+      }}
+    >
+      <AlertDialogContent className="rounded-3xl">
+        <AlertDialogHeader>
+          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+            <Trash2 className="h-7 w-7 text-red-600" />
+          </div>
 
-<AlertDialogFooter>
-  <AlertDialogCancel disabled={Boolean(savingId)}>
-    Zurück
-  </AlertDialogCancel>
+          <AlertDialogTitle className="text-center text-xl">
+            Veranstaltung löschen?
+          </AlertDialogTitle>
 
-  <AlertDialogAction
-    onClick={(e) => {
-      e.preventDefault()
-      void cancelSelectedEvent()
-    }}
-    disabled={Boolean(savingId)}
-    className="bg-red-600 hover:bg-red-700"
-  >
-    {savingId ? (
-      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-    ) : (
-      <XCircle className="w-4 h-4 mr-2" />
-    )}
+          <AlertDialogDescription className="text-center">
+            Möchtest du{" "}
+            <span className="font-bold text-gray-900">
+              „{deleteEvent?.name}“
+            </span>{" "}
+            wirklich dauerhaft löschen?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-    Veranstaltung absagen
-  </AlertDialogAction>
-</AlertDialogFooter>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          Diese Aktion kann nicht rückgängig gemacht werden.
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel
+            disabled={Boolean(savingId)}
+            className="rounded-xl"
+          >
+            Abbrechen
+          </AlertDialogCancel>
+
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault()
+              void removeSelectedEvent()
+            }}
+            disabled={Boolean(savingId)}
+            className="rounded-xl bg-red-600 hover:bg-red-700"
+          >
+            {savingId ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="mr-2 h-4 w-4" />
+            )}
+            Veranstaltung löschen
+          </AlertDialogAction>
+        </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
 

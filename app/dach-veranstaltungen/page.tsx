@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import Image from "next/image"
 import { createBrowserClient } from "@supabase/ssr"
@@ -10,6 +11,8 @@ import {
   Filter,
   Image as ImageIcon,
   MapPin,
+  Map as MapIcon,
+  List,
   Plus,
   Search,
   Swords,
@@ -28,6 +31,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+)
+
+const DachEventsMap = dynamic(
+  () =>
+    import("@/components/dach-events-map").then(
+      (module) => module.DachEventsMap,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[520px] items-center justify-center rounded-3xl border border-gray-200 bg-white text-gray-500">
+        Karte wird geladen …
+      </div>
+    ),
+  },
 )
 
 type TimeFilter = "upcoming" | "past" | "all"
@@ -56,8 +74,8 @@ type EventRow = {
   startgeld_details: string | null
   source: string | null
   event_status: string | null
-  cancellation_reason: string | null
-  cancelled_at: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 const countryNames: Record<string, string> = {
@@ -99,7 +117,7 @@ function DartIcon({ value }: { value: string | null }) {
   return <Users className="w-3.5 h-3.5" />
 }
 
-function Chip({ children, tone = "gray" }: { children: React.ReactNode; tone?: "gray" | "orange" | "blue" | "green" | "amber" | "red" }) {
+function Chip({ children, tone = "gray" }: { children: React.ReactNode; tone?: "gray" | "orange" | "blue" | "green" | "amber" }) {
   const style =
     tone === "orange"
       ? "bg-orange-50 text-orange-800 border-orange-200"
@@ -109,9 +127,7 @@ function Chip({ children, tone = "gray" }: { children: React.ReactNode; tone?: "
           ? "bg-green-50 text-green-800 border-green-200"
           : tone === "amber"
             ? "bg-amber-50 text-amber-800 border-amber-200"
-            : tone === "red"
-              ? "bg-red-50 text-red-800 border-red-200"
-              : "bg-gray-50 text-gray-700 border-gray-200"
+            : "bg-gray-50 text-gray-700 border-gray-200"
 
   return <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${style}`}>{children}</span>
 }
@@ -125,6 +141,7 @@ export default function VeranstaltungenPage() {
   const [disciplineFilter, setDisciplineFilter] = useState("all")
   const [dateFilter, setDateFilter] = useState("")
   const [query, setQuery] = useState("")
+  const [view, setView] = useState<"list" | "map">("list")
 
   useEffect(() => {
     let active = true
@@ -136,9 +153,9 @@ export default function VeranstaltungenPage() {
       const { data, error } = await supabase
         .from("dach_events")
         .select(
-          "id,name,event_type,event_date,start_date,end_date,event_time,location,country_code,postal_code,city,region,organizer_name,entry_fee,max_participants,details,photo_url,mode,discipline,format,startgeld_details,source,event_status,cancellation_reason,cancelled_at",
+          "id,name,event_type,event_date,start_date,end_date,event_time,location,country_code,postal_code,city,region,organizer_name,entry_fee,max_participants,details,photo_url,mode,discipline,format,startgeld_details,source,event_status,latitude,longitude",
         )
-        .in("event_status", ["approved", "cancelled"])
+        .eq("event_status", "approved")
         .order("start_date", { ascending: true })
         .order("event_time", { ascending: true })
 
@@ -276,6 +293,34 @@ export default function VeranstaltungenPage() {
           </Card>
 
           <div className="mt-5">
+            {!loading && !error && filtered.length > 0 ? (
+              <div className="mb-4 flex justify-end">
+                <div className="inline-flex rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={view === "list" ? "default" : "ghost"}
+                    onClick={() => setView("list")}
+                    className="rounded-xl"
+                  >
+                    <List className="mr-2 h-4 w-4" />
+                    Liste
+                  </Button>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={view === "map" ? "default" : "ghost"}
+                    onClick={() => setView("map")}
+                    className="rounded-xl"
+                  >
+                    <MapIcon className="mr-2 h-4 w-4" />
+                    Karte
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
             {loading ? (
               <div className="py-16 text-center text-gray-600">Veranstaltungen werden geladen …</div>
             ) : error ? (
@@ -286,21 +331,17 @@ export default function VeranstaltungenPage() {
                 <p className="font-bold">Keine passenden Veranstaltungen gefunden.</p>
                 <p className="text-sm text-gray-500 mt-1">Ändere Datum, Land oder Suchort.</p>
               </CardContent></Card>
+            ) : view === "map" ? (
+              <DachEventsMap events={filtered} />
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filtered.map((event) => {
                   const discipline = event.discipline || event.mode
                   const country = event.country_code ? countryNames[event.country_code] : null
                   const isPast = eventEnd(event).getTime() < Date.now()
-                  const isCancelled = event.event_status === "cancelled"
 
                   return (
-                    <Card key={event.id} className={`relative rounded-3xl overflow-hidden border shadow-sm bg-white ${isCancelled ? "border-red-300" : "border-gray-200"}`}>
-                      {isCancelled ? (
-                        <div className="absolute left-3 top-3 z-10 rounded-full bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-lg">
-                          ABGESAGT
-                        </div>
-                      ) : null}
+                    <Card key={event.id} className="rounded-3xl overflow-hidden border border-gray-200 shadow-sm bg-white">
                       {event.photo_url && !event.photo_url.toLowerCase().endsWith(".pdf") ? (
                         <div className="relative h-44 bg-gray-200">
                           <Image src={event.photo_url} alt={event.name} fill className="object-cover" />

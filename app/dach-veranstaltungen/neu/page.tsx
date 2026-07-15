@@ -288,6 +288,37 @@ export default function NeueVeranstaltungPage() {
         .filter(Boolean)
         .join(", ");
 
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+
+      try {
+        const geocodeResponse = await fetch("/api/dach-events/geocode", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            street: form.street.trim(),
+            postalCode: form.postalCode.trim(),
+            city: form.city.trim(),
+            countryCode: form.countryCode,
+          }),
+        });
+
+        const geocodeData = await geocodeResponse.json().catch(() => null);
+
+        latitude =
+          typeof geocodeData?.latitude === "number"
+            ? geocodeData.latitude
+            : null;
+        longitude =
+          typeof geocodeData?.longitude === "number"
+            ? geocodeData.longitude
+            : null;
+      } catch (geocodeError) {
+        console.error("[DachVeranstaltungNeu] Geocoding:", geocodeError);
+      }
+
       const { error } = await supabase.from("dach_events").insert({
         name: form.name.trim(),
         event_type: form.eventType,
@@ -322,6 +353,8 @@ export default function NeueVeranstaltungPage() {
         photo_url: photoUrl,
         source: "external",
         event_status: "pending",
+        latitude,
+        longitude,
         created_by: user.id,
       });
 

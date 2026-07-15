@@ -161,7 +161,9 @@ function InfoItem({
   )
 }
 
-async function sendApprovedMail(event: EventRow) {
+async function sendApprovedMail(
+  event: Pick<EventRow, "id" | "name" | "organizer_name" | "organizer_email">,
+) {
   if (!event.organizer_email) return
 
   const response = await fetch("/api/dach-event-approved-mail", {
@@ -300,33 +302,39 @@ export default function AdminVeranstaltungenPage() {
       setSavingId(id)
       setMessage("")
 
-      const event = events.find((item) => item.id === id)
+      const { data: authData } = await supabase.auth.getUser()
 
-      if (!event) {
-        throw new Error("Veranstaltung wurde nicht gefunden.")
-      }
-
-      const { data } = await supabase.auth.getUser()
-
-      const { error } = await supabase
+      const { data: updatedEvent, error } = await supabase
         .from("dach_events")
         .update({
           event_status: "approved",
           rejection_reason: null,
-          approved_by: data.user?.id || null,
+          approved_by: authData.user?.id || null,
           approved_at: new Date().toISOString(),
         })
         .eq("id", id)
+        .select(`
+          id,
+          name,
+          organizer_name,
+          organizer_email
+        `)
+        .single()
 
       if (error) throw error
+
+      if (!updatedEvent) {
+        throw new Error("Veranstaltungsdaten konnten nicht geladen werden.")
+      }
 
       let mailError = ""
 
       try {
-        await sendApprovedMail(event)
+        await sendApprovedMail(updatedEvent)
       } catch (error: any) {
         console.error("[AdminVeranstaltungen] Freigabe-Mail:", error)
-        mailError = error?.message || "Freigabe-Mail konnte nicht gesendet werden."
+        mailError =
+          error?.message || "Freigabe-Mail konnte nicht gesendet werden."
       }
 
       setEvents((old) => old.filter((item) => item.id !== id))
@@ -337,7 +345,9 @@ export default function AdminVeranstaltungenPage() {
           : "Veranstaltung wurde freigegeben und der Veranstalter per E-Mail informiert.",
       )
     } catch (error: any) {
-      setMessage(error?.message || "Veranstaltung konnte nicht freigegeben werden.")
+      setMessage(
+        error?.message || "Veranstaltung konnte nicht freigegeben werden.",
+      )
     } finally {
       setSavingId("")
     }
