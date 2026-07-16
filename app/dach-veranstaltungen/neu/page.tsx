@@ -7,6 +7,8 @@ import { createBrowserClient } from "@supabase/ssr";
 import {
   ArrowLeft,
   CalendarDays,
+  ChevronRight,
+  Info,
   CheckCircle2,
   FileImage,
   Loader2,
@@ -424,36 +426,58 @@ export default function NeueVeranstaltungPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-900 pb-24">
+    <div className="min-h-screen overflow-x-hidden bg-[#f6f7f9] pb-24 text-slate-950">
       <Header />
-      <main className="pt-16 px-4">
-        <div className="mx-auto max-w-3xl py-6">
-          <Button
-            variant="outline"
-            className="rounded-xl mb-4"
-            onClick={() => router.push("/dach-veranstaltungen")}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Zurück
-          </Button>
 
-          <div className="rounded-3xl bg-white border border-gray-200 shadow-sm overflow-hidden mb-5">
-            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-            <div className="p-5 flex gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
-                <CalendarDays className="w-6 h-6 text-orange-600" />
+      <main className="pt-14">
+        <section className="relative overflow-hidden bg-slate-950">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.30),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_36%)]" />
+          <div className="relative mx-auto max-w-5xl px-4 pb-20 pt-8 sm:pb-24 sm:pt-12">
+            <button
+              type="button"
+              onClick={() => router.push("/dach-veranstaltungen")}
+              className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Zur Übersicht
+            </button>
+
+            <div className="max-w-3xl">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/25 bg-orange-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-orange-300">
+                <CalendarDays className="h-4 w-4" />
+                DACH Veranstaltungskalender
               </div>
-              <div>
-                <h1 className="text-2xl font-black">
-                  Veranstaltung einreichen
-                </h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  Für Dartturniere in Österreich, Deutschland und der Schweiz.
-                </p>
-              </div>
+              <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">
+                Veranstaltung einreichen
+              </h1>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+                Trage dein Dartturnier schnell und übersichtlich ein. Nach einer kurzen Prüfung wird die Veranstaltung im Kalender veröffentlicht.
+              </p>
             </div>
           </div>
+        </section>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="relative z-10 mx-auto -mt-10 max-w-5xl px-4 pb-10">
+          <div className="mb-5 grid gap-3 sm:grid-cols-3">
+            {["Daten eintragen", "Prüfung durch den Verein", "Veröffentlichung im Kalender"].map((label, index) => (
+              <div key={label} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-50 text-sm font-black text-orange-600">
+                  {index + 1}
+                </span>
+                <span className="text-xs font-bold text-slate-700 sm:text-sm">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-5 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+            <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+            <p><strong>Hinweis:</strong> Felder mit einem Stern sind Pflichtfelder. Je vollständiger die Angaben sind, desto schneller kann die Veranstaltung freigegeben werden.</p>
+          </div>
+
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-5 [&_input]:h-12 [&_input]:rounded-xl [&_input]:border-slate-200 [&_input]:bg-slate-50/70 [&_input]:transition [&_input]:focus-visible:bg-white [&_button[role=combobox]]:h-12 [&_button[role=combobox]]:rounded-xl [&_button[role=combobox]]:border-slate-200 [&_button[role=combobox]]:bg-slate-50/70"
+          >
             <Section
               title="Veranstaltung"
               icon={<Trophy className="w-5 h-5" />}
@@ -707,7 +731,7 @@ export default function NeueVeranstaltungPage() {
                   value={form.details}
                   onChange={(e) => setField("details", e.target.value)}
                   rows={7}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
                   placeholder="Modus, Preisgeld, Einlass, Anmeldung und weitere Hinweise …"
                 />
               </Field>
@@ -722,7 +746,7 @@ export default function NeueVeranstaltungPage() {
 
             {message ? (
               <div
-                className={`rounded-2xl border p-4 text-sm font-semibold ${success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-700"}`}
+                className={`rounded-2xl border p-4 text-sm font-semibold shadow-sm ${success ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-700"}`}
               >
                 <div className="flex gap-2 items-start">
                   {success ? (
@@ -735,18 +759,24 @@ export default function NeueVeranstaltungPage() {
               </div>
             ) : null}
 
-            <Button
-              type="submit"
-              disabled={saving}
-              className="w-full h-12 rounded-xl text-base font-bold"
-            >
+            <div className="sticky bottom-20 z-20 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_-8px_30px_rgba(15,23,42,0.10)] backdrop-blur sm:bottom-4">
+              <Button
+                type="submit"
+                disabled={saving}
+                className="h-14 w-full rounded-xl bg-orange-600 text-base font-black shadow-lg shadow-orange-600/20 hover:bg-orange-700"
+              >
               {saving ? (
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
               ) : (
                 <Send className="w-5 h-5 mr-2" />
               )}
-              {saving ? "Wird eingereicht …" : "Zur Freigabe einreichen"}
-            </Button>
+                {saving ? "Wird eingereicht …" : "Zur Freigabe einreichen"}
+                {!saving ? <ChevronRight className="ml-2 h-5 w-5" /> : null}
+              </Button>
+              <p className="mt-2 text-center text-[11px] text-slate-500">
+                Die Veröffentlichung erfolgt erst nach der Freigabe.
+              </p>
+            </div>
           </form>
         </div>
       </main>
@@ -765,13 +795,18 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="rounded-3xl border border-gray-200 shadow-sm">
-      <CardContent className="p-5 sm:p-6 space-y-4">
-        <div className="flex items-center gap-2 font-black text-lg text-gray-900">
-          <span className="text-orange-600">{icon}</span>
-          {title}
+    <Card className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+      <CardContent className="p-0">
+        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/80 px-5 py-4 sm:px-6">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600 ring-1 ring-orange-100">
+            {icon}
+          </span>
+          <div>
+            <h2 className="text-lg font-black text-slate-950">{title}</h2>
+            <p className="text-xs text-slate-500">Bitte möglichst vollständig ausfüllen</p>
+          </div>
         </div>
-        {children}
+        <div className="space-y-5 p-5 sm:p-6">{children}</div>
       </CardContent>
     </Card>
   );
@@ -786,7 +821,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-xs font-black uppercase tracking-wide text-gray-600 mb-1.5">
+      <span className="mb-2 block text-xs font-black uppercase tracking-[0.08em] text-slate-600">
         {label}
       </span>
       {children}

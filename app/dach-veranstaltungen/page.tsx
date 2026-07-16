@@ -1,29 +1,30 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import dynamic from "next/dynamic"
 import Link from "next/link"
 import Image from "next/image"
 import { createBrowserClient } from "@supabase/ssr"
 import {
   Calendar,
+  ChevronRight,
   Clock,
   Filter,
   Image as ImageIcon,
-  MapPin,
-  Map as MapIcon,
   List,
+  MapPin,
   Plus,
   Search,
+  SlidersHorizontal,
   Swords,
   Target,
   Trophy,
   Users,
+  X,
 } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -33,22 +34,9 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 )
 
-const DachEventsMap = dynamic(
-  () =>
-    import("@/components/dach-events-map").then(
-      (module) => module.DachEventsMap,
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex min-h-[520px] items-center justify-center rounded-3xl border border-gray-200 bg-white text-gray-500">
-        Karte wird geladen …
-      </div>
-    ),
-  },
-)
 
 type TimeFilter = "upcoming" | "past" | "all"
+type QuickFilter = "all" | "today" | "weekend" | "next7"
 
 type EventRow = {
   id: string
@@ -84,10 +72,20 @@ const countryNames: Record<string, string> = {
   CH: "Schweiz",
 }
 
+const timeOptions: { value: TimeFilter; label: string }[] = [
+  { value: "upcoming", label: "Anstehend" },
+  { value: "past", label: "Vergangen" },
+  { value: "all", label: "Alle" },
+]
+
 function formatDateRange(startDate: string | null, endDate: string | null, fallback: string) {
   const start = startDate || fallback
   const end = endDate || fallback
-  const options: Intl.DateTimeFormatOptions = { day: "2-digit", month: "2-digit", year: "numeric" }
+  const options: Intl.DateTimeFormatOptions = {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }
   const first = new Date(`${start}T12:00:00`).toLocaleDateString("de-DE", options)
   const last = new Date(`${end}T12:00:00`).toLocaleDateString("de-DE", options)
   return start === end ? first : `${first} – ${last}`
@@ -104,6 +102,62 @@ function eventStart(event: EventRow) {
   return new Date(`${date}T${rawTime.slice(0, 5)}:00`)
 }
 
+function startOfLocalDay(date: Date) {
+  const result = new Date(date)
+  result.setHours(0, 0, 0, 0)
+  return result
+}
+
+function endOfLocalDay(date: Date) {
+  const result = new Date(date)
+  result.setHours(23, 59, 59, 999)
+  return result
+}
+
+function isEventInQuickRange(event: EventRow, filter: QuickFilter) {
+  if (filter === "all") return true
+
+  const now = new Date()
+  const eventStartDate = startOfLocalDay(eventStart(event))
+  const eventEndDate = endOfLocalDay(eventEnd(event))
+
+  if (filter === "today") {
+    const todayStart = startOfLocalDay(now)
+    const todayEnd = endOfLocalDay(now)
+    return eventEndDate >= todayStart && eventStartDate <= todayEnd
+  }
+
+  if (filter === "next7") {
+    const rangeStart = startOfLocalDay(now)
+    const rangeEnd = endOfLocalDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7))
+    return eventEndDate >= rangeStart && eventStartDate <= rangeEnd
+  }
+
+  const day = now.getDay()
+  const daysUntilSaturday = (6 - day + 7) % 7
+  const saturday = startOfLocalDay(
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilSaturday),
+  )
+  const sunday = endOfLocalDay(
+    new Date(saturday.getFullYear(), saturday.getMonth(), saturday.getDate() + 1),
+  )
+
+  return eventEndDate >= saturday && eventStartDate <= sunday
+}
+
+function shortMonth(value: string) {
+  return new Date(`${value}T12:00:00`)
+    .toLocaleDateString("de-DE", { month: "short" })
+    .replace(".", "")
+    .toUpperCase()
+}
+
+function dayNumber(value: string) {
+  return new Date(`${value}T12:00:00`).toLocaleDateString("de-DE", {
+    day: "2-digit",
+  })
+}
+
 function dartLabel(value: string | null) {
   if (value === "edart") return "E-Dart"
   if (value === "steeldart") return "Steel-Dart"
@@ -112,24 +166,32 @@ function dartLabel(value: string | null) {
 }
 
 function DartIcon({ value }: { value: string | null }) {
-  if (value === "edart") return <Target className="w-3.5 h-3.5" />
-  if (value === "steeldart") return <Swords className="w-3.5 h-3.5" />
-  return <Users className="w-3.5 h-3.5" />
+  if (value === "edart") return <Target className="h-3.5 w-3.5" />
+  if (value === "steeldart") return <Swords className="h-3.5 w-3.5" />
+  return <Users className="h-3.5 w-3.5" />
 }
 
-function Chip({ children, tone = "gray" }: { children: React.ReactNode; tone?: "gray" | "orange" | "blue" | "green" | "amber" }) {
+function Chip({
+  children,
+  tone = "slate",
+}: {
+  children: React.ReactNode
+  tone?: "slate" | "orange" | "blue" | "green"
+}) {
   const style =
     tone === "orange"
-      ? "bg-orange-50 text-orange-800 border-orange-200"
+      ? "border-orange-200 bg-orange-50 text-orange-700"
       : tone === "blue"
-        ? "bg-blue-50 text-blue-800 border-blue-200"
+        ? "border-blue-200 bg-blue-50 text-blue-700"
         : tone === "green"
-          ? "bg-green-50 text-green-800 border-green-200"
-          : tone === "amber"
-            ? "bg-amber-50 text-amber-800 border-amber-200"
-            : "bg-gray-50 text-gray-700 border-gray-200"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-slate-200 bg-slate-50 text-slate-600"
 
-  return <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${style}`}>{children}</span>
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold ${style}`}>
+      {children}
+    </span>
+  )
 }
 
 export default function VeranstaltungenPage() {
@@ -138,10 +200,12 @@ export default function VeranstaltungenPage() {
   const [error, setError] = useState("")
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("upcoming")
   const [countryFilter, setCountryFilter] = useState("all")
+  const [regionFilter, setRegionFilter] = useState("all")
   const [disciplineFilter, setDisciplineFilter] = useState("all")
   const [dateFilter, setDateFilter] = useState("")
   const [query, setQuery] = useState("")
-  const [view, setView] = useState<"list" | "map">("list")
+  const [showFilters, setShowFilters] = useState(false)
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>("all")
 
   useEffect(() => {
     let active = true
@@ -155,7 +219,7 @@ export default function VeranstaltungenPage() {
         .select(
           "id,name,event_type,event_date,start_date,end_date,event_time,location,country_code,postal_code,city,region,organizer_name,entry_fee,max_participants,details,photo_url,mode,discipline,format,startgeld_details,source,event_status,latitude,longitude",
         )
-        .eq("event_status", "approved")
+        .in("event_status", ["approved", "cancelled"])
         .order("start_date", { ascending: true })
         .order("event_time", { ascending: true })
 
@@ -171,6 +235,20 @@ export default function VeranstaltungenPage() {
     }
   }, [])
 
+  const availableRegions = useMemo(() => {
+    return Array.from(
+      new Set(
+        events
+          .filter(
+            (event) =>
+              countryFilter === "all" || event.country_code === countryFilter,
+          )
+          .map((event) => event.region?.trim())
+          .filter((region): region is string => Boolean(region)),
+      ),
+    ).sort((a, b) => a.localeCompare(b, "de"))
+  }, [events, countryFilter])
+
   const filtered = useMemo(() => {
     const now = Date.now()
     const search = query.trim().toLowerCase()
@@ -182,7 +260,9 @@ export default function VeranstaltungenPage() {
         if (timeFilter === "past") return end < now
         return true
       })
+      .filter((event) => isEventInQuickRange(event, quickFilter))
       .filter((event) => countryFilter === "all" || event.country_code === countryFilter)
+      .filter((event) => regionFilter === "all" || event.region === regionFilter)
       .filter((event) => {
         const discipline = event.discipline || event.mode
         return disciplineFilter === "all" || discipline === disciplineFilter || discipline === "both"
@@ -214,175 +294,381 @@ export default function VeranstaltungenPage() {
         const second = eventStart(b).getTime()
         return timeFilter === "past" ? second - first : first - second
       })
-  }, [events, timeFilter, countryFilter, disciplineFilter, dateFilter, query])
+  }, [events, timeFilter, quickFilter, countryFilter, regionFilter, disciplineFilter, dateFilter, query])
+
+  const activeFilterCount = [
+    countryFilter !== "all",
+    regionFilter !== "all",
+    disciplineFilter !== "all",
+    Boolean(dateFilter),
+  ].filter(Boolean).length
 
   const resetFilters = () => {
+    setQuickFilter("all")
     setCountryFilter("all")
+    setRegionFilter("all")
     setDisciplineFilter("all")
     setDateFilter("")
     setQuery("")
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f6f7f9] pb-24 text-slate-950">
       <Header />
+
       <main className="pt-14">
-        <div className="mx-auto w-full max-w-screen-xl px-4 py-6">
-          <div className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-            <div className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
-                  <Trophy className="w-6 h-6 text-orange-600" />
+        <section className="relative overflow-hidden bg-slate-950">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.28),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_35%)]" />
+          <div className="relative mx-auto w-full max-w-screen-xl px-4 pb-24 pt-10 sm:pb-28 sm:pt-14">
+            <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold text-orange-200 backdrop-blur">
+                  <Trophy className="h-3.5 w-3.5" />
+                  Die Turnierübersicht für den DACH-Raum
                 </div>
-                <div>
-                  <h1 className="text-2xl font-black">Dart-Veranstaltungen DACH</h1>
-                  <p className="text-sm text-gray-600 mt-1">Turniere in Österreich, Deutschland und der Schweiz finden.</p>
-                </div>
+                <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">
+                  Finde dein nächstes
+                  <span className="block text-orange-400">Dart-Turnier.</span>
+                </h1>
+                <p className="mt-4 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
+                  Durchsuche Veranstaltungen in Österreich, Deutschland und der Schweiz nach Ort, Verein, Datum oder Dartart.
+                </p>
               </div>
-              <Button asChild className="rounded-xl">
-                <Link href="/dach-veranstaltungen/neu"><Plus className="w-4 h-4 mr-2" /> Veranstaltung einreichen</Link>
+
+              <Button asChild className="h-12 rounded-2xl bg-orange-500 px-5 font-bold text-white shadow-lg shadow-orange-950/30 hover:bg-orange-600">
+                <Link href="/dach-veranstaltungen/neu">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Veranstaltung einreichen
+                </Link>
               </Button>
             </div>
           </div>
+        </section>
 
-          <Card className="sticky top-[56px] z-20 mt-4 rounded-3xl border border-gray-200 shadow-sm">
-            <CardContent className="p-4 space-y-3">
-              <div className="grid grid-cols-3 gap-2">
-                <Button size="sm" variant={timeFilter === "upcoming" ? "default" : "outline"} onClick={() => setTimeFilter("upcoming")}>Anstehend</Button>
-                <Button size="sm" variant={timeFilter === "past" ? "default" : "outline"} onClick={() => setTimeFilter("past")}>Vergangen</Button>
-                <Button size="sm" variant={timeFilter === "all" ? "default" : "outline"} onClick={() => setTimeFilter("all")}>Alle</Button>
-              </div>
-
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ort, PLZ, Verein oder Turnier suchen …" className="pl-9 rounded-xl" />
-              </div>
-
-              <div className="grid sm:grid-cols-3 gap-2">
-                <Select value={countryFilter} onValueChange={setCountryFilter}>
-                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Land" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Länder</SelectItem>
-                    <SelectItem value="AT">Österreich</SelectItem>
-                    <SelectItem value="DE">Deutschland</SelectItem>
-                    <SelectItem value="CH">Schweiz</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={disciplineFilter} onValueChange={setDisciplineFilter}>
-                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Dartart" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">E-Dart + Steel</SelectItem>
-                    <SelectItem value="edart">Nur E-Dart</SelectItem>
-                    <SelectItem value="steeldart">Nur Steel-Dart</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="pl-9 rounded-xl" />
+        <div className="relative z-20 mx-auto -mt-14 w-full max-w-screen-xl px-4">
+          <Card className="overflow-hidden rounded-[28px] border-0 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.14)]">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Turnier, Ort, PLZ, Bundesland oder Verein suchen"
+                    className="h-14 rounded-2xl border-slate-200 bg-slate-50 pl-12 pr-12 text-base shadow-none focus-visible:ring-orange-500"
+                  />
+                  {query ? (
+                    <button
+                      type="button"
+                      onClick={() => setQuery("")}
+                      aria-label="Suche löschen"
+                      className="absolute right-4 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-slate-200 text-slate-600 transition hover:bg-slate-300"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowFilters((current) => !current)}
+                  className="h-14 rounded-2xl border-slate-200 px-5 font-bold lg:min-w-40"
+                >
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Filter
+                  {activeFilterCount > 0 ? (
+                    <span className="ml-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs text-white">
+                      {activeFilterCount}
+                    </span>
+                  ) : null}
+                </Button>
               </div>
 
-              <div className="flex items-center justify-between gap-3 text-xs text-gray-600">
-                <span>{loading ? "Lade …" : `${filtered.length} Veranstaltung(en)`}</span>
-                <button type="button" onClick={resetFilters} className="font-bold text-orange-700">Filter zurücksetzen</button>
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {[
+                  { value: "all", label: "Alle" },
+                  { value: "today", label: "Heute" },
+                  { value: "weekend", label: "Dieses Wochenende" },
+                  { value: "next7", label: "Nächste 7 Tage" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setQuickFilter(option.value as QuickFilter)}
+                    className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition ${
+                      quickFilter === option.value
+                        ? "bg-orange-500 text-white shadow-sm"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {timeOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setTimeFilter(option.value)}
+                    className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                      timeFilter === option.value
+                        ? "bg-slate-950 text-white"
+                        : "bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              {showFilters ? (
+                <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <Select
+                    value={countryFilter}
+                    onValueChange={(value) => {
+                      setCountryFilter(value)
+                      setRegionFilter("all")
+                    }}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
+                      <SelectValue placeholder="Land auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Alle Länder</SelectItem>
+                      <SelectItem value="AT">Österreich</SelectItem>
+                      <SelectItem value="DE">Deutschland</SelectItem>
+                      <SelectItem value="CH">Schweiz</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={regionFilter}
+                    onValueChange={setRegionFilter}
+                    disabled={availableRegions.length === 0}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
+                      <SelectValue placeholder="Bundesland / Kanton" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Alle Bundesländer / Kantone</SelectItem>
+                      {availableRegions.map((region) => (
+                        <SelectItem key={region} value={region}>
+                          {region}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={disciplineFilter} onValueChange={setDisciplineFilter}>
+                    <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
+                      <SelectValue placeholder="Dartart auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">E-Dart und Steel-Dart</SelectItem>
+                      <SelectItem value="edart">Nur E-Dart</SelectItem>
+                      <SelectItem value="steeldart">Nur Steel-Dart</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <div className="relative">
+                    <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      type="date"
+                      value={dateFilter}
+                      onChange={(event) => setDateFilter(event.target.value)}
+                      className="h-12 rounded-xl border-slate-200 pl-10"
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3 text-sm">
+                <span className="font-semibold text-slate-500">
+                  {loading ? "Veranstaltungen werden geladen …" : `${filtered.length} Treffer gefunden`}
+                </span>
+                {(activeFilterCount > 0 || query) ? (
+                  <button type="button" onClick={resetFilters} className="font-bold text-orange-600 transition hover:text-orange-700">
+                    Alles zurücksetzen
+                  </button>
+                ) : null}
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          <div className="mt-5">
-            {!loading && !error && filtered.length > 0 ? (
-              <div className="mb-4 flex justify-end">
-                <div className="inline-flex rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={view === "list" ? "default" : "ghost"}
-                    onClick={() => setView("list")}
-                    className="rounded-xl"
-                  >
-                    <List className="mr-2 h-4 w-4" />
-                    Liste
-                  </Button>
-
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={view === "map" ? "default" : "ghost"}
-                    onClick={() => setView("map")}
-                    className="rounded-xl"
-                  >
-                    <MapIcon className="mr-2 h-4 w-4" />
-                    Karte
-                  </Button>
-                </div>
+        <div className="mx-auto w-full max-w-screen-xl px-4 py-8">
+          {!loading && !error && filtered.length > 0 ? (
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-black tracking-tight sm:text-2xl">
+                  {timeFilter === "past" ? "Vergangene Veranstaltungen" : timeFilter === "all" ? "Alle Veranstaltungen" : "Kommende Veranstaltungen"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">Entdecke Turniere und öffne die Detailansicht für weitere Informationen.</p>
               </div>
-            ) : null}
+            </div>
+          ) : null}
 
-            {loading ? (
-              <div className="py-16 text-center text-gray-600">Veranstaltungen werden geladen …</div>
-            ) : error ? (
-              <div className="py-16 text-center text-red-600">{error}</div>
-            ) : filtered.length === 0 ? (
-              <Card className="rounded-3xl"><CardContent className="py-14 text-center">
-                <Filter className="w-10 h-10 mx-auto text-gray-400 mb-3" />
-                <p className="font-bold">Keine passenden Veranstaltungen gefunden.</p>
-                <p className="text-sm text-gray-500 mt-1">Ändere Datum, Land oder Suchort.</p>
-              </CardContent></Card>
-            ) : view === "map" ? (
-              <DachEventsMap events={filtered} />
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filtered.map((event) => {
-                  const discipline = event.discipline || event.mode
-                  const country = event.country_code ? countryNames[event.country_code] : null
-                  const isPast = eventEnd(event).getTime() < Date.now()
+          {loading ? (
+            <div className="space-y-3">
+              {[0, 1, 2, 3, 4, 5].map((item) => (
+                <div key={item} className="flex gap-4 rounded-[24px] border border-slate-200 bg-white p-4">
+                  <div className="h-24 w-20 animate-pulse rounded-2xl bg-slate-200" />
+                  <div className="flex-1 space-y-3 py-1">
+                    <div className="h-5 w-2/3 animate-pulse rounded bg-slate-200" />
+                    <div className="h-4 w-1/2 animate-pulse rounded bg-slate-100" />
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <Card className="rounded-[28px] border-red-200 bg-red-50">
+              <CardContent className="py-14 text-center text-red-700">{error}</CardContent>
+            </Card>
+          ) : filtered.length === 0 ? (
+            <Card className="rounded-[28px] border-0 bg-white shadow-sm">
+              <CardContent className="py-16 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+                  <Filter className="h-6 w-6 text-slate-500" />
+                </div>
+                <p className="mt-4 text-lg font-black">Keine passenden Veranstaltungen gefunden</p>
+                <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+                  Passe den Suchbegriff oder die Filter an, um weitere Turniere zu entdecken.
+                </p>
+                <Button type="button" variant="outline" onClick={resetFilters} className="mt-5 rounded-xl">
+                  Suche zurücksetzen
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((event) => {
+                const discipline = event.discipline || event.mode
+                const country = event.country_code ? countryNames[event.country_code] : null
+                const isPast = eventEnd(event).getTime() < Date.now()
+                const isCancelled = event.event_status === "cancelled"
+                const startDate = event.start_date || event.event_date
+                const location =
+                  [event.postal_code, event.city].filter(Boolean).join(" ") ||
+                  event.location ||
+                  "Ort folgt"
+                const regionLabel = event.region?.trim() || null
 
-                  return (
-                    <Card key={event.id} className="rounded-3xl overflow-hidden border border-gray-200 shadow-sm bg-white">
-                      {event.photo_url && !event.photo_url.toLowerCase().endsWith(".pdf") ? (
-                        <div className="relative h-44 bg-gray-200">
-                          <Image src={event.photo_url} alt={event.name} fill className="object-cover" />
-                        </div>
-                      ) : (
-                        <div className="h-44 bg-gradient-to-br from-slate-900 to-slate-700 text-white flex items-center justify-center">
-                          <div className="text-center px-5">
-                            <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-80" />
-                            <div className="font-black line-clamp-2">{event.name}</div>
+                return (
+                  <Link
+                    key={event.id}
+                    href={`/dach-veranstaltungen/${event.id}`}
+                    className="group block"
+                  >
+                    <article
+                      className={`relative overflow-hidden rounded-[24px] border bg-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-xl ${
+                        isCancelled
+                          ? "border-red-300 ring-2 ring-red-50"
+                          : "border-slate-200 hover:border-orange-200"
+                      }`}
+                    >
+                      <div className="flex min-h-[150px]">
+                        <div
+                          className={`flex w-24 shrink-0 flex-col items-center justify-center px-3 text-center sm:w-28 ${
+                            isCancelled
+                              ? "bg-red-600 text-white"
+                              : "bg-slate-950 text-white"
+                          }`}
+                        >
+                          <div className="text-3xl font-black leading-none sm:text-4xl">
+                            {dayNumber(startDate)}
+                          </div>
+                          <div className={`mt-1 text-sm font-black tracking-widest ${
+                            isCancelled ? "text-red-100" : "text-orange-400"
+                          }`}>
+                            {shortMonth(startDate)}
+                          </div>
+                          <div className="mt-3 text-xs font-bold text-white/65">
+                            {(event.event_time || "19:00").slice(0, 5)} Uhr
                           </div>
                         </div>
-                      )}
 
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-black leading-snug line-clamp-2">{event.name}</CardTitle>
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          <Chip tone="orange"><DartIcon value={discipline} /> {dartLabel(discipline)}</Chip>
-                          {country ? <Chip tone="blue">{event.country_code} · {country}</Chip> : null}
-                          <Chip tone={isPast ? "gray" : "green"}>{isPast ? "Vergangen" : "Anstehend"}</Chip>
-                        </div>
-                      </CardHeader>
+                        <div className="min-w-0 flex-1 p-4 sm:p-5">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap gap-2">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-black text-orange-700">
+                                  <DartIcon value={discipline} />
+                                  {dartLabel(discipline)}
+                                </span>
 
-                      <CardContent className="pt-1">
-                        <div className="space-y-2 text-sm text-gray-700">
-                          <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-orange-600" /><span className="font-semibold">{formatDateRange(event.start_date, event.end_date, event.event_date)}</span></div>
-                          <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-orange-600" /><span>{(event.event_time || "19:00").slice(0, 5)} Uhr</span></div>
-                          <div className="flex items-start gap-2"><MapPin className="w-4 h-4 text-orange-600 mt-0.5" /><span className="line-clamp-2">{[event.postal_code, event.city].filter(Boolean).join(" ") || event.location || "Ort folgt"}</span></div>
-                          {event.organizer_name ? <div className="flex items-center gap-2"><Users className="w-4 h-4 text-orange-600" /><span className="line-clamp-1">{event.organizer_name}</span></div> : null}
-                          {event.startgeld_details ? <p className="font-bold text-orange-700 pt-1">Startgeld: {event.startgeld_details}</p> : null}
-                          {event.details ? <p className="text-gray-600 line-clamp-3 pt-1">{event.details}</p> : null}
+                                {event.country_code ? (
+                                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-600">
+                                    {event.country_code} · {country}
+                                  </span>
+                                ) : null}
+
+                                {isCancelled ? (
+                                  <span className="rounded-full bg-red-600 px-2.5 py-1 text-[11px] font-black text-white">
+                                    ABGESAGT
+                                  </span>
+                                ) : isPast ? (
+                                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-500">
+                                    VERGANGEN
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              <h3
+                                className={`mt-3 line-clamp-2 text-lg font-black leading-snug sm:text-xl ${
+                                  isCancelled
+                                    ? "text-red-700 line-through decoration-2"
+                                    : "text-slate-950 group-hover:text-orange-600"
+                                }`}
+                              >
+                                {event.name}
+                              </h3>
+
+                              <div className="mt-2 flex items-start gap-2 text-sm font-semibold text-slate-600">
+                                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+                                <span className="line-clamp-1">
+                                  {location}
+                                  {regionLabel ? ` · ${regionLabel}` : ""}
+                                </span>
+                              </div>
+
+                              {event.details ? (
+                                <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-500">
+                                  {event.details}
+                                </p>
+                              ) : null}
+
+                              {event.startgeld_details ? (
+                                <div className="mt-3 inline-flex rounded-xl bg-orange-50 px-3 py-1.5 text-xs font-black text-orange-700">
+                                  Startgeld: {event.startgeld_details}
+                                </div>
+                              ) : null}
+                            </div>
+
+                            <span
+                              className={`mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition ${
+                                isCancelled
+                                  ? "bg-red-100 text-red-700 group-hover:bg-red-600 group-hover:text-white"
+                                  : "bg-slate-100 text-slate-700 group-hover:bg-orange-500 group-hover:text-white"
+                              }`}
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </span>
+                          </div>
                         </div>
-                        <Button asChild className="w-full rounded-xl mt-4"><Link href={`/dach-veranstaltungen/${event.id}`}>Details anzeigen</Link></Button>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+                      </div>
+                    </article>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
         </div>
       </main>
+
       <MobileBottomNav />
     </div>
   )

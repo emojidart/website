@@ -11,6 +11,7 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { MarketplaceUnreadBadge } from "@/components/dartboerse/marketplace-unread-badge"
 
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
@@ -35,6 +36,9 @@ import {
   ListChecks,
   Globe2,
   ArrowRight,
+  MessageCircle,
+  ShoppingBag,
+  Store,
 } from "lucide-react"
 
 type GuestRequest = {
@@ -494,14 +498,18 @@ export default function GuestProfileAppPage() {
               </p>
             </div>
 
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="border-red-200 text-red-600 hover:bg-red-50"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Abmelden
-            </Button>
+           <div className="flex items-center gap-2">
+  <MarketplaceUnreadBadge compact />
+
+  <Button
+    variant="outline"
+    onClick={handleLogout}
+    className="border-red-200 text-red-600 hover:bg-red-50"
+  >
+    <LogOut className="w-4 h-4 mr-2" />
+    Abmelden
+  </Button>
+</div>
           </div>
 
           <Card className="rounded-3xl shadow-xl border border-gray-200 bg-white overflow-hidden">
@@ -642,6 +650,39 @@ export default function GuestProfileAppPage() {
                     Kalender ansehen
                     <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" />
                   </div>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="h-2 bg-gradient-to-r from-slate-950 via-orange-600 to-orange-500" />
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                <div>
+                  <div className="text-xs font-black uppercase text-orange-600">Dartbörse</div>
+                  <h3 className="text-2xl font-black text-gray-900 mt-1">Kaufen, verkaufen und schreiben</h3>
+                  <p className="text-sm text-gray-600 mt-1">Inserate durchsuchen, eigene Artikel anbieten und direkt mit Verkäufern schreiben.</p>
+                </div>
+                <Button asChild className="rounded-2xl bg-orange-600 hover:bg-orange-700">
+                  <Link href="/dartboerse/neu"><PlusCircle className="w-4 h-4 mr-2" />Inserat erstellen</Link>
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Link href="/dartboerse" className="group rounded-2xl border border-gray-200 bg-gray-50 p-4 hover:border-orange-300 hover:bg-orange-50 transition">
+                  <div className="w-11 h-11 rounded-2xl bg-white border flex items-center justify-center"><Store className="w-5 h-5 text-orange-600" /></div>
+                  <div className="font-black mt-3">Dartbörse öffnen</div><div className="text-sm text-gray-600 mt-1">Aktuelle Angebote entdecken.</div>
+                  <div className="mt-3 flex items-center text-sm font-bold text-orange-700">Öffnen<ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" /></div>
+                </Link>
+                <Link href="/dartboerse/meine" className="group rounded-2xl border border-gray-200 bg-gray-50 p-4 hover:border-orange-300 hover:bg-orange-50 transition">
+                  <div className="w-11 h-11 rounded-2xl bg-white border flex items-center justify-center"><ShoppingBag className="w-5 h-5 text-orange-600" /></div>
+                  <div className="font-black mt-3">Meine Inserate</div><div className="text-sm text-gray-600 mt-1">Angebote verwalten und Status sehen.</div>
+                  <div className="mt-3 flex items-center text-sm font-bold text-orange-700">Verwalten<ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" /></div>
+                </Link>
+                <Link href="/dartboerse/nachrichten" className="group rounded-2xl border border-gray-200 bg-gray-50 p-4 hover:border-orange-300 hover:bg-orange-50 transition">
+                  <div className="w-11 h-11 rounded-2xl bg-white border flex items-center justify-center"><MessageCircle className="w-5 h-5 text-orange-600" /></div>
+                  <div className="font-black mt-3">Meine Nachrichten</div><div className="text-sm text-gray-600 mt-1">Direkt mit Käufern und Verkäufern schreiben.</div>
+                  <div className="mt-3 flex items-center text-sm font-bold text-orange-700">Nachrichten<ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" /></div>
                 </Link>
               </div>
             </CardContent>

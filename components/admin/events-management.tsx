@@ -38,6 +38,8 @@ import {
   MessageSquare,
   Trophy,
   ListChecks,
+  Globe2,
+  Link2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -57,6 +59,16 @@ interface Event {
   details: string | null
   photo_url: string | null
   user_id: string
+}
+
+type EventForm = Omit<Event, "id" | "user_id"> & {
+  photo_file: File | null
+  publish_in_dach: boolean
+  dach_country_code: "AT" | "DE" | "CH"
+  dach_postal_code: string
+  dach_city: string
+  dach_region: string
+  dach_organizer_name: string
 }
 
 type ClubPlayer = {
@@ -142,7 +154,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
   const [events, setEvents] = useState<Event[]>([])
   const [vacations, setVacations] = useState<Vacation[]>([])
   const [players, setPlayers] = useState<ClubPlayer[]>([])
-  const [form, setForm] = useState<Omit<Event, "id" | "user_id"> & { photo_file: File | null }>({
+  const [form, setForm] = useState<EventForm>({
   name: "",
   event_type: "party",
   source: "internal",
@@ -157,6 +169,12 @@ export function EventsManagement({ user }: EventsManagementProps) {
   details: "",
   photo_url: null,
   photo_file: null,
+  publish_in_dach: false,
+  dach_country_code: "AT",
+  dach_postal_code: "",
+  dach_city: "Salzburg",
+  dach_region: "Salzburg",
+  dach_organizer_name: "EMD",
 })
 
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
@@ -251,6 +269,95 @@ export function EventsManagement({ user }: EventsManagementProps) {
       } catch {}
       throw new Error(msg)
     }
+  }
+
+
+  const syncTournamentToDach = async (
+    eventId: string,
+    eventData: {
+      name: string
+      event_type: string
+      start_date: string
+      end_date: string
+      event_time: string
+      location: string
+      entry_fee: number
+      max_participants: number | null
+      details: string | null
+      photo_url: string | null
+      mode: string | null
+      startgeld_details: string | null
+    },
+  ) => {
+    if (!user) throw new Error("Nicht authentifiziert.")
+
+    if (eventData.event_type !== "tournament" || !form.publish_in_dach) {
+      const { error: deleteError } = await supabase
+        .from("dach_events")
+        .delete()
+        .eq("internal_event_id", eventId)
+
+      if (deleteError) throw deleteError
+      return
+    }
+
+    if (!form.dach_postal_code.trim() || !form.dach_city.trim() || !form.dach_region.trim()) {
+      throw new Error(
+        "Für die Veröffentlichung im DACH-Kalender bitte PLZ, Ort und Bundesland/Kanton ausfüllen.",
+      )
+    }
+
+    const dachData = {
+      internal_event_id: eventId,
+      name: eventData.name,
+      event_type: "tournament",
+      event_date: eventData.start_date,
+      start_date: eventData.start_date,
+      end_date: eventData.end_date,
+      event_time: eventData.event_time || null,
+      location: eventData.location,
+      country_code: form.dach_country_code,
+      postal_code: form.dach_postal_code.trim(),
+      city: form.dach_city.trim(),
+      region: form.dach_region.trim(),
+      organizer_name: form.dach_organizer_name.trim() || "EMD",
+      organizer_email: user.email || null,
+      organizer_phone: null,
+      registration_url: null,
+      registration_deadline: null,
+      entry_fee: eventData.entry_fee,
+      max_participants: eventData.max_participants,
+      details: eventData.details,
+      photo_url: eventData.photo_url,
+      mode: eventData.mode,
+      discipline: eventData.mode,
+      format: null,
+      startgeld_details: eventData.startgeld_details,
+      source: "internal",
+      event_status: "approved",
+      created_by: user.id,
+    }
+
+    const { error } = await supabase
+      .from("dach_events")
+      .upsert(dachData, {
+        onConflict: "internal_event_id",
+      })
+
+    if (error) throw error
+  }
+
+  const loadDachLinkForEvent = async (eventId: string) => {
+    const { data, error } = await supabase
+      .from("dach_events")
+      .select(
+        "internal_event_id,country_code,postal_code,city,region,organizer_name",
+      )
+      .eq("internal_event_id", eventId)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
   }
 
   const fetchEvents = async () => {
@@ -449,6 +556,12 @@ const birthdaysInRange = useMemo(() => {
     details: "",
     photo_url: null,
     photo_file: null,
+    publish_in_dach: false,
+    dach_country_code: "AT",
+    dach_postal_code: "",
+    dach_city: "Salzburg",
+    dach_region: "Salzburg",
+    dach_organizer_name: "EMD",
   })
     if (createdObjectUrlRef.current) {
       URL.revokeObjectURL(createdObjectUrlRef.current)
@@ -505,22 +618,49 @@ const eventData = {
 }
 
       if (editingEventId) {
-        const { error } = await supabase.from("events").update(eventData).eq("id", editingEventId)
+        const { error } = await supabase
+          .from("events")
+          .update(eventData)
+          .eq("id", editingEventId)
+
         if (error) throw error
+
+        await syncTournamentToDach(editingEventId, eventData)
         await sendPushToAll({ eventId: editingEventId, action: "updated" })
-        setFormMessage({ type: "success", text: "Veranstaltung aktualisiert + Push versendet!" })
+
+        setFormMessage({
+          type: "success",
+          text:
+            form.event_type === "tournament" && form.publish_in_dach
+              ? "Veranstaltung aktualisiert, im DACH-Kalender synchronisiert und Push versendet!"
+              : "Veranstaltung aktualisiert + Push versendet!",
+        })
       } else {
-        const { data: insertedData, error } = await supabase.from("events").insert([eventData]).select()
+        const { data: insertedData, error } = await supabase
+          .from("events")
+          .insert([eventData])
+          .select("id")
+          .single()
+
         if (error) throw error
 
-        const newEventId = insertedData?.[0]?.id
-        if (newEventId) await sendPushToAll({ eventId: newEventId, action: "created" })
+        const newEventId = insertedData?.id
+        if (!newEventId) throw new Error("Neue Veranstaltungs-ID konnte nicht gelesen werden.")
 
-        setFormMessage({ type: "success", text: "Veranstaltung angelegt + Push versendet!" })
+        await syncTournamentToDach(newEventId, eventData)
+        await sendPushToAll({ eventId: newEventId, action: "created" })
+
+        setFormMessage({
+          type: "success",
+          text:
+            form.event_type === "tournament" && form.publish_in_dach
+              ? "Veranstaltung angelegt, im DACH-Kalender veröffentlicht und Push versendet!"
+              : "Veranstaltung angelegt + Push versendet!",
+        })
       }
 
       resetForm()
-      fetchEvents()
+      void fetchEvents()
     } catch (error: any) {
       console.error("Error saving event:", error)
       setFormMessage({ type: "error", text: `Fehler beim Speichern: ${error.message}` })
@@ -529,26 +669,51 @@ const eventData = {
     }
   }
 
-  const handleEdit = (event: Event) => {
-    setEditingEventId(event.id)
-    setForm({
-  name: event.name,
-  event_type: event.event_type,
-  source: event.source ?? "internal",
-  mode: event.mode ?? "both",
-  startgeld_details: event.startgeld_details ?? "",
-  start_date: event.start_date,
-  end_date: event.end_date,
-  event_time: event.event_time,
-  location: event.location,
-  entry_fee: event.entry_fee,
-  max_participants: event.max_participants,
-  details: event.details,
-  photo_url: event.photo_url,
-  photo_file: null,
-})
-    setPhotoPreview(event.photo_url)
+  const handleEdit = async (event: Event) => {
     setFormMessage(null)
+
+    try {
+      const dachLink =
+        event.event_type === "tournament"
+          ? await loadDachLinkForEvent(event.id)
+          : null
+
+      setEditingEventId(event.id)
+      setForm({
+        name: event.name,
+        event_type: event.event_type,
+        source: event.source ?? "internal",
+        mode: event.mode ?? "both",
+        startgeld_details: event.startgeld_details ?? "",
+        start_date: event.start_date,
+        end_date: event.end_date,
+        event_time: event.event_time,
+        location: event.location,
+        entry_fee: event.entry_fee,
+        max_participants: event.max_participants,
+        details: event.details,
+        photo_url: event.photo_url,
+        photo_file: null,
+        publish_in_dach: Boolean(dachLink),
+        dach_country_code:
+          dachLink?.country_code === "DE" || dachLink?.country_code === "CH"
+            ? dachLink.country_code
+            : "AT",
+        dach_postal_code: dachLink?.postal_code ?? "",
+        dach_city: dachLink?.city ?? "Salzburg",
+        dach_region: dachLink?.region ?? "Salzburg",
+        dach_organizer_name: dachLink?.organizer_name ?? "EMD",
+      })
+
+      setPhotoPreview(event.photo_url)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    } catch (error: any) {
+      console.error("Error loading DACH link:", error)
+      setFormMessage({
+        type: "error",
+        text: `DACH-Verknüpfung konnte nicht geladen werden: ${error.message}`,
+      })
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -557,6 +722,21 @@ const eventData = {
 
     if (!user) {
       setFormMessage({ type: "error", text: "Fehler: Nicht authentifiziert." })
+      setIsSaving(false)
+      return
+    }
+
+    const { error: dachDeleteError } = await supabase
+      .from("dach_events")
+      .delete()
+      .eq("internal_event_id", id)
+
+    if (dachDeleteError) {
+      console.error("Error deleting linked DACH event:", dachDeleteError)
+      setFormMessage({
+        type: "error",
+        text: `DACH-Verknüpfung konnte nicht gelöscht werden: ${dachDeleteError.message}`,
+      })
       setIsSaving(false)
       return
     }
@@ -693,7 +873,17 @@ const eventData = {
                 <label htmlFor="event_type" className="text-sm font-bold text-gray-700">
                   Veranstaltungstyp
                 </label>
-                <Select value={form.event_type} onValueChange={(v) => handleSelectChange("event_type", v)}>
+                <Select
+                  value={form.event_type}
+                  onValueChange={(value) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      event_type: value,
+                      publish_in_dach:
+                        value === "tournament" ? prev.publish_in_dach : false,
+                    }))
+                  }
+                >
                   <SelectTrigger className="h-11 rounded-2xl">
                     <SelectValue placeholder="Wähle einen Typ" />
                   </SelectTrigger>
@@ -893,6 +1083,176 @@ const eventData = {
                 </div>
               </div>
             ) : null}
+
+            <div
+              className={`rounded-3xl border p-4 sm:p-5 ${
+                form.event_type === "tournament"
+                  ? "border-orange-200 bg-orange-50/50"
+                  : "border-gray-200 bg-gray-50"
+              }`}
+            >
+              <label
+                className={`flex items-start gap-3 ${
+                  form.event_type === "tournament"
+                    ? "cursor-pointer"
+                    : "cursor-not-allowed opacity-60"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={form.publish_in_dach}
+                  disabled={form.event_type !== "tournament"}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      publish_in_dach: e.target.checked,
+                    }))
+                  }
+                  className="mt-1 h-5 w-5 rounded border-orange-300 text-orange-600 focus:ring-orange-500 disabled:cursor-not-allowed"
+                />
+
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2 font-black text-gray-900">
+                    <Globe2
+                      className={`h-5 w-5 ${
+                        form.event_type === "tournament"
+                          ? "text-orange-600"
+                          : "text-gray-400"
+                      }`}
+                    />
+                    Zusätzlich im DACH-Turnierkalender veröffentlichen
+                  </span>
+
+                  {form.event_type === "tournament" ? (
+                    <span className="mt-1 block text-sm text-gray-600">
+                      Das Turnier bleibt vollständig in der Vereinsverwaltung.
+                      Anmeldung, Push-Nachrichten und interne Funktionen laufen
+                      weiterhin ausschließlich über die Vereinsveranstaltung.
+                    </span>
+                  ) : (
+                    <span className="mt-1 block text-sm font-bold text-gray-500">
+                      Nur für den Veranstaltungstyp „Turnier“ verfügbar.
+                    </span>
+                  )}
+                </span>
+              </label>
+
+              {form.event_type === "tournament" && form.publish_in_dach ? (
+                <div className="mt-5 space-y-4 border-t border-orange-200 pt-5">
+                  <div className="flex items-center gap-2 text-sm font-black text-orange-900">
+                    <Link2 className="h-4 w-4" />
+                    Öffentliche Angaben für den DACH-Kalender
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700">
+                        Land
+                      </label>
+                      <Select
+                        value={form.dach_country_code}
+                        onValueChange={(value: "AT" | "DE" | "CH") =>
+                          setForm((prev) => ({
+                            ...prev,
+                            dach_country_code: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="h-11 rounded-2xl bg-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AT">Österreich</SelectItem>
+                          <SelectItem value="DE">Deutschland</SelectItem>
+                          <SelectItem value="CH">Schweiz</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700">
+                        PLZ
+                      </label>
+                      <Input
+                        value={form.dach_postal_code}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            dach_postal_code: e.target.value.replace(/\D/g, ""),
+                          }))
+                        }
+                        inputMode="numeric"
+                        placeholder="z. B. 5020"
+                        className="h-11 rounded-2xl bg-white"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700">
+                        Ort
+                      </label>
+                      <Input
+                        value={form.dach_city}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            dach_city: e.target.value,
+                          }))
+                        }
+                        placeholder="z. B. Salzburg"
+                        className="h-11 rounded-2xl bg-white"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700">
+                        Bundesland / Kanton
+                      </label>
+                      <Input
+                        value={form.dach_region}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            dach_region: e.target.value,
+                          }))
+                        }
+                        placeholder="z. B. Salzburg"
+                        className="h-11 rounded-2xl bg-white"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700">
+                        Veranstalter
+                      </label>
+                      <Input
+                        value={form.dach_organizer_name}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            dach_organizer_name: e.target.value,
+                          }))
+                        }
+                        placeholder="EMD"
+                        className="h-11 rounded-2xl bg-white"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-orange-200 bg-white p-3 text-xs font-semibold text-gray-600">
+                    Änderungen am Vereins-Turnier werden beim Speichern
+                    automatisch auch im DACH-Kalender aktualisiert. Wird das
+                    Häkchen entfernt, verschwindet nur der DACH-Eintrag.
+                  </div>
+                </div>
+              ) : null}
+            </div>
 
             <div className="space-y-2">
               <label htmlFor="details" className="text-sm font-bold text-gray-700">
@@ -1225,7 +1585,7 @@ const eventData = {
 
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => handleEdit(event)} className="h-9 w-9 p-0 rounded-xl">
+                          <Button variant="outline" size="sm" onClick={() => void handleEdit(event)} className="h-9 w-9 p-0 rounded-xl">
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Bearbeiten</span>
                           </Button>

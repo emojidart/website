@@ -1722,69 +1722,131 @@ useEffect(() => {
 	  
 	  
 	  
-{/* GASTZUGANG BANNER */}
+{/* GASTZUGANG WERBUNG */}
 <div className="mx-4 sm:mx-6 mt-3">
-  <div className="rounded-2xl border border-cyan-200 bg-white shadow-lg overflow-hidden">
-    <div className="h-1.5 bg-gradient-to-r from-cyan-500 via-sky-400 to-cyan-600" />
+  <div className="relative overflow-hidden rounded-3xl border border-orange-200 bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 text-white shadow-xl">
+    <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-orange-400/10 blur-3xl" />
+    <div className="absolute -bottom-24 left-1/4 h-56 w-56 rounded-full bg-orange-500/10 blur-3xl" />
 
-    <div className="p-4 sm:p-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-50 border border-cyan-200 flex items-center justify-center shrink-0">
-            <UserPlus className="w-6 h-6 text-cyan-700" />
+    <div className="relative h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
+
+    <div className="relative p-5 sm:p-7">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-orange-300/30 bg-orange-400/10">
+              <UserPlus className="h-7 w-7 text-orange-300" />
+            </div>
+
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-2 rounded-full border border-orange-300/20 bg-orange-400/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-orange-200">
+                <Sparkles className="h-3.5 w-3.5" />
+                Jetzt auch für Gäste
+              </div>
+
+              <h2 className="mt-3 text-2xl font-black leading-tight sm:text-3xl">
+                Dein Dartprofil. Deine Turniere. Deine Dartbörse.
+              </h2>
+
+              <p className="mt-3 max-w-3xl text-sm font-medium leading-6 text-slate-300 sm:text-base">
+                Melde dich kostenlos als Gast an und nutze die wichtigsten Funktionen
+                der EMD VereinsApp – auch ohne Vereinsmitgliedschaft.
+              </p>
+            </div>
           </div>
 
-          <div>
-            <div className="text-xs font-black uppercase tracking-wider text-cyan-700">
-              Neu für Gäste
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/15">
+                <TrendingUp className="h-5 w-5 text-orange-300" />
+              </div>
+              <div className="mt-3 font-black text-white">Eigene Statistiken</div>
+              <div className="mt-1 text-sm leading-5 text-slate-300">
+                Ergebnisse, Punkte, Platzierungen und Turnierverlauf ansehen.
+              </div>
             </div>
 
-            <div className="text-lg sm:text-xl font-black text-gray-900">
-              Gastzugang für Turniere & Vereinsinfos
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/15">
+                <Calendar className="h-5 w-5 text-orange-300" />
+              </div>
+              <div className="mt-3 font-black text-white">DACH-Turniere finden</div>
+              <div className="mt-1 text-sm leading-5 text-slate-300">
+                Turniere in Österreich, Deutschland und der Schweiz entdecken.
+              </div>
             </div>
 
-            <div className="text-sm font-semibold text-gray-600 max-w-3xl">
-              Ab sofort können sich auch Gäste bei uns anmelden. So bleibst du über Turniere,
-              Anmeldungen und wichtige Vereinsinfos informiert. Eigene Statistiken und weitere
-              Funktionen werden in Zukunft ebenfalls für Gäste ersichtlich sein.
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15">
+                <Trophy className="h-5 w-5 text-emerald-300" />
+              </div>
+              <div className="mt-3 font-black text-white">Turniere einreichen</div>
+              <div className="mt-1 text-sm leading-5 text-slate-300">
+                Eigene Turniere veröffentlichen, bearbeiten und verwalten.
+              </div>
             </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15">
+                <Target className="h-5 w-5 text-violet-300" />
+              </div>
+              <div className="mt-3 font-black text-white">Dartbörse nutzen</div>
+              <div className="mt-1 text-sm leading-5 text-slate-300">
+                Zubehör kaufen, verkaufen, schreiben und Preisangebote senden.
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold text-slate-300">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              Kostenlos anmelden
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              Direktnachrichten & Preisangebote
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              Turniere im gesamten DACH-Raum
+            </span>
           </div>
         </div>
 
-        <Button
-          type="button"
-          className="
-            w-full sm:w-auto
-            rounded-xl
-            border border-cyan-200
-            bg-white
-            px-5 py-3
-            text-sm font-black
-            text-cyan-800
-            shadow-sm
-            transition
-            hover:bg-cyan-50
-            hover:text-cyan-900
-            whitespace-nowrap
-          "
-          onClick={() => (window.location.href = "/gastzugang")}
-        >
-          Hier geht&apos;s zur Anmeldung
-          <ArrowRight className="w-4 h-4 ml-2 text-cyan-800" />
-        </Button>
+        <div className="w-full shrink-0 lg:w-auto">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center backdrop-blur-sm lg:w-72">
+            <div className="text-xs font-black uppercase tracking-wider text-orange-200">
+              In wenigen Minuten dabei
+            </div>
+            <div className="mt-2 text-xl font-black text-white">
+              Jetzt Gastzugang erstellen
+            </div>
+            <p className="mt-2 text-sm text-slate-300">
+              Registrieren, freischalten lassen und alle Gastfunktionen nutzen.
+            </p>
+
+            <Button
+              type="button"
+              className="mt-4 h-12 w-full rounded-xl bg-orange-600 font-black text-white shadow-lg shadow-orange-950/30 hover:bg-orange-500"
+              onClick={() => (window.location.href = "/gastzugang")}
+            >
+              Kostenlos anmelden
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => (window.location.href = "/guest-login")}
+              className="mt-3 text-sm font-bold text-orange-200 transition hover:text-white"
+            >
+              Bereits registriert? Zum Gast-Login
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-
-
 
 {activeTournament && (
   <div className="sticky top-12 sm:top-14 z-40">

@@ -23,7 +23,6 @@ type UserAccessProfile = {
   blocked_reason: string | null
 }
 
-
 function isPublicDachEventsPath(pathname: string) {
   if (pathname === "/dach-veranstaltungen") return true
 
@@ -33,7 +32,7 @@ function isPublicDachEventsPath(pathname: string) {
   return (
     parts.length === 2 &&
     parts[0] === "dach-veranstaltungen" &&
-    !["neu", "meine"].includes(parts[1])
+    !["neu", "meine", "nachrichten"].includes(parts[1])
   )
 }
 
@@ -42,6 +41,29 @@ function isDachEventsManagementPath(pathname: string) {
     pathname === "/dach-veranstaltungen/neu" ||
     pathname === "/dach-veranstaltungen/meine" ||
     /^\/dach-veranstaltungen\/[^/]+\/bearbeiten$/.test(pathname)
+  )
+}
+
+function isPublicDartMarketplacePath(pathname: string) {
+  if (pathname === "/dartboerse") return true
+
+  const parts = pathname.split("/").filter(Boolean)
+
+  // Öffentliche Detailseite: /dartboerse/[id]
+  return (
+    parts.length === 2 &&
+    parts[0] === "dartboerse" &&
+    !["neu", "meine", "nachrichten"].includes(parts[1])
+  )
+}
+
+function isDartMarketplaceManagementPath(pathname: string) {
+  return (
+    pathname === "/dartboerse/neu" ||
+    pathname === "/dartboerse/meine" ||
+    pathname === "/dartboerse/nachrichten" ||
+    /^\/dartboerse\/nachrichten\/[^/]+$/.test(pathname) ||
+    /^\/dartboerse\/[^/]+\/bearbeiten$/.test(pathname)
   )
 }
 
@@ -75,9 +97,16 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
         if (authLoading) return
 
         const pathIsPublic =
-          isPublicPath(pathname) || isPublicDachEventsPath(pathname)
+          isPublicPath(pathname) ||
+          isPublicDachEventsPath(pathname) ||
+          isPublicDartMarketplacePath(pathname)
+
         const pathIsGuest = isGuestPath(pathname)
         const pathIsDachManagement = isDachEventsManagementPath(pathname)
+        const pathIsDartMarketplaceManagement =
+          isDartMarketplaceManagementPath(pathname)
+        const pathIsSharedManagement =
+          pathIsDachManagement || pathIsDartMarketplaceManagement
         const pathIsMemberProtected = isProtectedMemberPath(pathname)
 
         if (!session?.user) {
@@ -87,7 +116,7 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
           }
 
           if (
-            (pathIsGuest || pathIsDachManagement) &&
+            (pathIsGuest || pathIsSharedManagement) &&
             pathname !== GUEST_LOGIN_ROUTE
           ) {
             router.replace(GUEST_LOGIN_ROUTE)
@@ -107,7 +136,10 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
         if (!mounted) return
 
         if (error) {
-          console.error("[AppRouteGuard] Profil konnte nicht geprüft werden:", error)
+          console.error(
+            "[AppRouteGuard] Profil konnte nicht geprüft werden:",
+            error,
+          )
           setChecking(false)
           return
         }
@@ -132,12 +164,18 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
         }
 
         if (userProfile.is_guest) {
-          if (isForbiddenForGuestsPath(pathname)) {
+          // DACH-Veranstaltungen und Dartbörse sind ausdrücklich auch für
+          // freigeschaltete Gastzugänge erlaubt.
+          if (
+            isForbiddenForGuestsPath(pathname) &&
+            !pathIsPublic &&
+            !pathIsSharedManagement
+          ) {
             router.replace(GUEST_HOME_ROUTE)
             return
           }
 
-          if (!pathIsPublic && !pathIsGuest && !pathIsDachManagement) {
+          if (!pathIsPublic && !pathIsGuest && !pathIsSharedManagement) {
             router.replace(GUEST_HOME_ROUTE)
             return
           }
@@ -146,7 +184,9 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
           return
         }
 
-        if (!userProfile.is_guest && pathIsGuest) {
+        // Mitglieder dürfen ebenfalls alle Dartbörsen- und
+        // DACH-Veranstaltungsseiten verwenden.
+        if (!userProfile.is_guest && pathIsGuest && !pathIsSharedManagement) {
           router.replace(MEMBER_HOME_ROUTE)
           return
         }
