@@ -92,6 +92,7 @@ export function GuestRequestsManagement() {
 
   const [searchByRequestId, setSearchByRequestId] = useState<Record<string, string>>({})
   const [selectedPlayerByRequestId, setSelectedPlayerByRequestId] = useState<Record<string, string>>({})
+  const [editingLinkByRequestId, setEditingLinkByRequestId] = useState<Record<string, boolean>>({})
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -397,12 +398,62 @@ export function GuestRequestsManagement() {
         return next
       })
 
+      setEditingLinkByRequestId((prev) => {
+        const next = { ...prev }
+        delete next[request.id]
+        return next
+      })
+
       await loadAll()
     } catch (err: any) {
       console.error(err)
       setMessage({
         type: "error",
         text: err?.message || "Spieler konnte nicht verknüpft werden.",
+      })
+    } finally {
+      setSavingId(null)
+    }
+  }
+
+  const handleUnlink = async (request: GuestRequest) => {
+    try {
+      setSavingId(request.id)
+      setMessage(null)
+
+      const { error } = await supabase
+        .from("guest_requests")
+        .update({
+          linked_spieldatenbank_id: null,
+        })
+        .eq("id", request.id)
+        .eq("status", "approved")
+
+      if (error) throw error
+
+      setSelectedPlayerByRequestId((prev) => {
+        const next = { ...prev }
+        delete next[request.id]
+        return next
+      })
+
+      setEditingLinkByRequestId((prev) => {
+        const next = { ...prev }
+        delete next[request.id]
+        return next
+      })
+
+      setMessage({
+        type: "success",
+        text: `Die Spieler-Verknüpfung von ${request.full_name} wurde aufgehoben.`,
+      })
+
+      await loadAll()
+    } catch (err: any) {
+      console.error(err)
+      setMessage({
+        type: "error",
+        text: err?.message || "Verknüpfung konnte nicht aufgehoben werden.",
       })
     } finally {
       setSavingId(null)
@@ -545,9 +596,10 @@ export function GuestRequestsManagement() {
                 const isSaving = savingId === request.id
                 const isPending = request.status === "pending"
                 const linkedPlayer = getLinkedPlayer(request.linked_spieldatenbank_id)
+                const isEditingLink = Boolean(editingLinkByRequestId[request.id])
                 const canLinkPlayer =
                   request.status === "pending" ||
-                  (request.status === "approved" && !linkedPlayer)
+                  (request.status === "approved" && (!linkedPlayer || isEditingLink))
                 const filteredPlayers = getFilteredPlayers(request)
                 const selectedPlayerId = selectedPlayerByRequestId[request.id]
                 const selectedPlayer =
@@ -626,6 +678,45 @@ export function GuestRequestsManagement() {
                               {linkedPlayer.verein || "Kein Verein"} ·{" "}
                               {linkedPlayer.ligastatus || "Kein Ligastatus"}
                             </div>
+
+                            <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={isSaving}
+                                onClick={() => {
+                                  setEditingLinkByRequestId((prev) => ({
+                                    ...prev,
+                                    [request.id]: true,
+                                  }))
+                                  setSelectedPlayerByRequestId((prev) => ({
+                                    ...prev,
+                                    [request.id]: linkedPlayer.id,
+                                  }))
+                                }}
+                                className="font-bold bg-white"
+                              >
+                                <LinkIcon className="w-4 h-4 mr-2" />
+                                Verknüpfung ändern
+                              </Button>
+
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="destructive"
+                                disabled={isSaving}
+                                onClick={() => void handleUnlink(request)}
+                                className="font-bold"
+                              >
+                                {isSaving ? (
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                ) : (
+                                  <XCircle className="w-4 h-4 mr-2" />
+                                )}
+                                Aufheben
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -636,12 +727,16 @@ export function GuestRequestsManagement() {
                             <div className="text-sm font-black text-gray-900">
                               {isPending
                                 ? "Spieler optional verknüpfen"
-                                : "Spieler nachträglich verknüpfen"}
+                                : linkedPlayer
+                                  ? "Spieler-Verknüpfung ändern"
+                                  : "Spieler nachträglich verknüpfen"}
                             </div>
                             <div className="text-xs text-gray-600 mt-1">
                               {isPending
                                 ? "Du kannst einen Spieler auswählen oder den Gast zuerst ohne Verknüpfung freischalten."
-                                : "Wähle den richtigen Spieler aus. Bereits verknüpfte Spieler sind gesperrt."}
+                                : linkedPlayer
+                                  ? "Wähle einen anderen freien Spieler aus und speichere die neue Verknüpfung."
+                                  : "Wähle den richtigen Spieler aus. Bereits verknüpfte Spieler sind gesperrt."}
                             </div>
                           </div>
 
@@ -802,23 +897,50 @@ export function GuestRequestsManagement() {
                                 </Button>
                               </>
                             ) : (
-                              <Button
-                                type="button"
-                                onClick={() => void handleLinkLater(request)}
-                                disabled={
-                                  isSaving ||
-                                  !selectedPlayerId ||
-                                  selectedLockInfo.locked
-                                }
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
-                              >
-                                {isSaving ? (
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                ) : (
-                                  <LinkIcon className="w-4 h-4 mr-2" />
+                              <>
+                                <Button
+                                  type="button"
+                                  onClick={() => void handleLinkLater(request)}
+                                  disabled={
+                                    isSaving ||
+                                    !selectedPlayerId ||
+                                    selectedLockInfo.locked
+                                  }
+                                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
+                                >
+                                  {isSaving ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <LinkIcon className="w-4 h-4 mr-2" />
+                                  )}
+                                  {linkedPlayer
+                                    ? "Neue Verknüpfung speichern"
+                                    : "Spieler nachträglich verknüpfen"}
+                                </Button>
+
+                                {linkedPlayer && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={isSaving}
+                                    onClick={() => {
+                                      setEditingLinkByRequestId((prev) => {
+                                        const next = { ...prev }
+                                        delete next[request.id]
+                                        return next
+                                      })
+                                      setSelectedPlayerByRequestId((prev) => {
+                                        const next = { ...prev }
+                                        delete next[request.id]
+                                        return next
+                                      })
+                                    }}
+                                    className="rounded-xl font-bold bg-white"
+                                  >
+                                    Abbrechen
+                                  </Button>
                                 )}
-                                Spieler nachträglich verknüpfen
-                              </Button>
+                              </>
                             )}
                           </div>
                         </div>
