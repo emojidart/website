@@ -280,78 +280,177 @@ export default function AdminMembersChampionCupAuslosungPage() {
   const isOdd = players.length % 2 !== 0
   const canCreateGroups = players.length >= 2 && !isOdd && unsetPlayers.length === 0 && !groupsLocked
   const canDrawTeams = groupedPlayers.length === players.length && groupA.length === groupB.length && groupA.length > 0 && !teamsLocked
+  
+  
+  
+  
 
-  const handleCreateGroups = () => {
-    if (groupsLocked) {
-      setMessage({ type: "info", text: "Gruppen wurden bereits fix ausgelost." })
-      return
-    }
 
-    if (!canCreateGroups) {
-      setMessage({
-        type: "error",
-        text: "Gruppenbildung nicht möglich: Spieleranzahl muss gerade sein und alle Spieler brauchen eine Einstufung.",
-      })
-      return
-    }
+const handleCreateGroups = () => {
+  if (groupsLocked) {
+    setMessage({
+      type: "info",
+      text: "Gruppen wurden bereits fix ausgelost.",
+    })
+    return
+  }
 
-    setActionLoading(true)
-    setMessage(null)
-    setTeams([])
-    setTeamsLocked(false)
-    setTeamsDrawnAt(null)
+  if (!canCreateGroups) {
+    setMessage({
+      type: "error",
+      text:
+        "Gruppenbildung nicht möglich: Spieleranzahl muss gerade sein " +
+        "und alle Spieler brauchen eine Einstufung.",
+    })
+    return
+  }
 
-    try {
-      const target = players.length / 2
+  setActionLoading(true)
+  setMessage(null)
+  setTeams([])
+  setTeamsLocked(false)
+  setTeamsDrawnAt(null)
 
-      const resultA: GroupedDrawPlayer[] = shuffleArray(table1Players).map((p) => ({
-        ...p,
-        draw_group: "A",
-      }))
+  try {
+    const target = players.length / 2
 
-      const resultB: GroupedDrawPlayer[] = shuffleArray(table3Players).map((p) => ({
-        ...p,
-        draw_group: "B",
-      }))
+    // Tabelle 1 ist grundsätzlich Gruppe A.
+    const resultA: GroupedDrawPlayer[] = table1Players.map((player) => ({
+      ...player,
+      draw_group: "A",
+    }))
 
-      const middle = shuffleArray(table2Players)
+    // Tabelle 3 ist grundsätzlich Gruppe B.
+    const resultB: GroupedDrawPlayer[] = table3Players.map((player) => ({
+      ...player,
+      draw_group: "B",
+    }))
 
-      middle.forEach((player) => {
-        if (resultA.length < target && resultB.length < target) {
-          if (resultA.length <= resultB.length) {
-            resultA.push({ ...player, draw_group: "A" })
-          } else {
-            resultB.push({ ...player, draw_group: "B" })
-          }
-          return
-        }
+    // Tabelle 2 nach Punkten sortieren.
+    // Bei gleichen oder fehlenden Punkten entscheidet die Zufallsreihenfolge.
+    const middle = shuffleArray(table2Players).sort(
+      (a, b) =>
+        (b.level?.average_points ?? 0) -
+        (a.level?.average_points ?? 0),
+    )
 
-        if (resultA.length < target) {
+    /*
+     * Tabelle 2 wird als flexible Ausgleichsgruppe verwendet.
+     * Zuerst werden freie Plätze in A und B aufgefüllt.
+     */
+    for (const player of middle) {
+      if (resultA.length < target && resultB.length < target) {
+        const targetGroup =
+          resultA.length <= resultB.length ? "A" : "B"
+
+        if (targetGroup === "A") {
           resultA.push({ ...player, draw_group: "A" })
-          return
+        } else {
+          resultB.push({ ...player, draw_group: "B" })
         }
-
+      } else if (resultA.length < target) {
+        resultA.push({ ...player, draw_group: "A" })
+      } else if (resultB.length < target) {
         resultB.push({ ...player, draw_group: "B" })
-      })
+      } else {
+        throw new Error(
+          `Spieler ${player.player_name} konnte keiner Gruppe zugeteilt werden.`,
+        )
+      }
+    }
 
-      if (resultA.length !== target || resultB.length !== target) {
-        throw new Error(`Gruppen nicht gleich groß: A=${resultA.length}, B=${resultB.length}`)
+    /*
+     * Falls Gruppe B zu groß ist:
+     * Die stärksten Spieler aus B wechseln nur für diese Auslosung in A.
+     */
+    while (resultA.length < target && resultB.length > target) {
+      resultB.sort(
+        (a, b) =>
+          (b.level?.average_points ?? 0) -
+          (a.level?.average_points ?? 0),
+      )
+
+      const strongestFromB = resultB.shift()
+
+      if (!strongestFromB) {
+        throw new Error(
+          "Es konnte kein Spieler aus Gruppe B verschoben werden.",
+        )
       }
 
-      setGroupedPlayers([...resultA, ...resultB])
-      setGroupsLocked(true)
-      setGroupsDrawnAt(new Date().toLocaleString("de-AT"))
-      setMessage({
-        type: "success",
-        text: `Schritt 1 fertig und fixiert: Gruppe A und Gruppe B wurden gebildet (${resultA.length}:${resultB.length}).`,
+      resultA.push({
+        ...strongestFromB,
+        draw_group: "A",
       })
-    } catch (error: any) {
-      console.error("group draw error:", error)
-      setMessage({ type: "error", text: error?.message || "Fehler bei Gruppenauslosung." })
-    } finally {
-      setActionLoading(false)
     }
+
+    /*
+     * Umgekehrter Sonderfall:
+     * Falls A zu groß und B zu klein ist, wechseln die schwächsten Spieler
+     * aus A nur für diese Auslosung in B.
+     */
+    while (resultB.length < target && resultA.length > target) {
+      resultA.sort(
+        (a, b) =>
+          (a.level?.average_points ?? 0) -
+          (b.level?.average_points ?? 0),
+      )
+
+      const weakestFromA = resultA.shift()
+
+      if (!weakestFromA) {
+        throw new Error(
+          "Es konnte kein Spieler aus Gruppe A verschoben werden.",
+        )
+      }
+
+      resultB.push({
+        ...weakestFromA,
+        draw_group: "B",
+      })
+    }
+
+    if (
+      resultA.length !== target ||
+      resultB.length !== target
+    ) {
+      throw new Error(
+        `Gruppen konnten nicht ausgeglichen werden: ` +
+        `A=${resultA.length}, B=${resultB.length}, Ziel=${target}`,
+      )
+    }
+
+    // Reihenfolge innerhalb der fertigen Gruppen zufällig mischen.
+    const finalA = shuffleArray(resultA)
+    const finalB = shuffleArray(resultB)
+
+    setGroupedPlayers([...finalA, ...finalB])
+    setGroupsLocked(true)
+    setGroupsDrawnAt(new Date().toLocaleString("de-AT"))
+
+    setMessage({
+      type: "success",
+      text:
+        `Schritt 1 fertig und fixiert: ` +
+        `Gruppe A und Gruppe B wurden gebildet ` +
+        `(${finalA.length}:${finalB.length}).`,
+    })
+  } catch (error: any) {
+    console.error("group draw error:", error)
+
+    setMessage({
+      type: "error",
+      text: error?.message || "Fehler bei der Gruppenbildung.",
+    })
+  } finally {
+    setActionLoading(false)
   }
+}
+  
+  
+  
+  
+  
 
   const handleDrawTeams = () => {
     if (teamsLocked) {
