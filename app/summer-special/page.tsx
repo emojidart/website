@@ -28,6 +28,8 @@ import {
 interface SummerStanding {
   player_name: string
   total_points: number
+  best8_points: number
+  eligible_for_ranking: boolean
   placement_points: number
   legs_won: number
   legs_lost: number
@@ -162,16 +164,20 @@ function PlayerCard({ player, position, onClick }: { player: SummerStanding; pos
           </div>
           <div className="min-w-0">
             <div className="font-black text-gray-900 truncate">{player.player_name}</div>
-            <div className="text-xs font-bold text-orange-700">{getNextBonusText(player.tournaments_played)}</div>
+            <div className="text-xs font-bold text-orange-700">
+              {player.eligible_for_ranking
+                ? getNextBonusText(player.tournaments_played)
+                : `Noch ${8 - player.tournaments_played} Antritt${8 - player.tournaments_played === 1 ? "" : "e"} bis zur Wertung`}
+            </div>
           </div>
         </div>
 
         <div className="text-right flex-shrink-0">
           <div className="flex items-center justify-end gap-1 text-2xl font-black text-orange-700">
-            {player.total_points}
+            {player.best8_points}
             <Trophy className="h-5 w-5 text-orange-500" />
           </div>
-          <div className="text-[11px] font-bold text-gray-500">Punkte</div>
+          <div className="text-[11px] font-bold text-gray-500">Best-8 Punkte</div>
         </div>
       </div>
 
@@ -281,7 +287,8 @@ export default function SummerSpecialPage() {
   const fetchAll = async () => {
     try {
       setLoading(true)
-      await Promise.all([fetchSettings(), fetchStandings(), fetchTournaments()])
+      await Promise.all([fetchSettings(), fetchTournaments()])
+      await fetchStandings()
     } finally {
       setLoading(false)
     }
@@ -319,27 +326,67 @@ export default function SummerSpecialPage() {
       if (p.name && p.profile_picture_url) pictureMap.set(String(p.name).toLowerCase(), p.profile_picture_url)
     })
 
-    const mapped = (data || []).map((row: any) => ({
-      player_name: row.player_name,
-      total_points: Number(row.total_points || 0),
-      placement_points: Number(row.placement_points || 0),
-      legs_won: Number(row.legs_won || 0),
-      legs_lost: Number(row.legs_lost || 0),
-      tournaments_played: Number(row.tournaments_played || 0),
-      total_matches_played: Number(row.total_matches_played || 0),
-      total_matches_won: Number(row.total_matches_won || 0),
-      total_matches_lost: Number(row.total_matches_lost || 0),
-      manual_bonus_points: Number(row.manual_bonus_points || 0),
-      winner_side_bonus_points: Number(row.winner_side_bonus_points || 0),
-      participation_bonus_points: Number(row.participation_bonus_points ?? getParticipationBonus(Number(row.tournaments_played || 0))),
-      profile_picture_url: pictureMap.get(String(row.player_name).toLowerCase()),
-    }))
+    const { data: tournamentRows, error: tournamentRowsError } = await supabase
+      .from("summer_special_standings")
+      .select("player_name, placement_points, legs_won, bonus_points, winner_side_bonus")
+
+    if (tournamentRowsError) {
+      console.error("Summer Best-8 rows error:", tournamentRowsError)
+    }
+
+    const best8Map = new Map<string, number[]>()
+    ;(tournamentRows || []).forEach((entry: any) => {
+      const key = String(entry.player_name || "").toLowerCase()
+      const points =
+        Number(entry.placement_points || 0) +
+        Number(entry.legs_won || 0) +
+        Number(entry.bonus_points || 0) +
+        (entry.winner_side_bonus ? settings.winner_side_bonus_points : 0)
+
+      const current = best8Map.get(key) || []
+      current.push(points)
+      best8Map.set(key, current)
+    })
+
+    const mapped = (data || []).map((row: any) => {
+      const playerKey = String(row.player_name).toLowerCase()
+      const scores = [...(best8Map.get(playerKey) || [])]
+      const best8Base = scores
+        .sort((a: number, b: number) => b - a)
+        .slice(0, 8)
+        .reduce((sum: number, value: number) => sum + value, 0)
+
+      const participationBonus = Number(
+        row.participation_bonus_points ?? getParticipationBonus(Number(row.tournaments_played || 0))
+      )
+      const manualBonus = Number(row.manual_bonus_points || 0)
+
+      return {
+        player_name: row.player_name,
+        total_points: Number(row.total_points || 0),
+        best8_points: best8Base + participationBonus + manualBonus,
+        eligible_for_ranking: Number(row.tournaments_played || 0) >= 8,
+        placement_points: Number(row.placement_points || 0),
+        legs_won: Number(row.legs_won || 0),
+        legs_lost: Number(row.legs_lost || 0),
+        tournaments_played: Number(row.tournaments_played || 0),
+        total_matches_played: Number(row.total_matches_played || 0),
+        total_matches_won: Number(row.total_matches_won || 0),
+        total_matches_lost: Number(row.total_matches_lost || 0),
+        manual_bonus_points: manualBonus,
+        winner_side_bonus_points: Number(row.winner_side_bonus_points || 0),
+        participation_bonus_points: participationBonus,
+        profile_picture_url: pictureMap.get(playerKey),
+      }
+    })
 
     mapped.sort((a, b) => {
-      if (b.total_points !== a.total_points) return b.total_points - a.total_points
-      if (b.legs_won !== a.legs_won) return b.legs_won - a.legs_won
+      if (a.eligible_for_ranking !== b.eligible_for_ranking) return a.eligible_for_ranking ? -1 : 1
+      if (b.best8_points !== a.best8_points) return b.best8_points - a.best8_points
+      if (b.tournaments_played !== a.tournaments_played) return b.tournaments_played - a.tournaments_played
+      if (b.winner_side_bonus_points !== a.winner_side_bonus_points) return b.winner_side_bonus_points - a.winner_side_bonus_points
       if (b.placement_points !== a.placement_points) return b.placement_points - a.placement_points
-      return a.tournaments_played - b.tournaments_played
+      return b.legs_won - a.legs_won
     })
 
     setStandings(mapped)
@@ -446,7 +493,7 @@ const totalPrizePool = oneTimeFees + tournamentFees
                     <h1 className="text-xl sm:text-2xl font-black text-gray-900 truncate">{selected.player_name}</h1>
                     <p className="text-sm font-bold text-gray-600">Summer Special Detailansicht</p>
                     <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-orange-50 border border-orange-200 px-4 py-2 text-sm font-black text-orange-700">
-                      <Trophy className="h-4 w-4" /> {selected.total_points} Punkte
+                      <Trophy className="h-4 w-4" /> {selected.best8_points} Best-8 Punkte
                     </div>
                   </div>
                 </div>
@@ -506,7 +553,7 @@ const totalPrizePool = oneTimeFees + tournamentFees
                     <h1 className="text-lg sm:text-2xl font-black text-gray-900">EMD - SUMMER SPECIAL</h1>
                     <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-black text-orange-700"><Crown className="w-3.5 h-3.5" /> 2026</span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1"><span className="font-semibold">Gesamtwertung</span> · keine Qualifikation nötig</p>
+                  <p className="text-sm text-gray-600 mt-1"><span className="font-semibold">Best-8 Gesamtwertung</span> · mindestens 8 Antritte für die Wertung</p>
                 </div>
               </div>
 			  
@@ -536,7 +583,7 @@ const totalPrizePool = oneTimeFees + tournamentFees
               <Gift className="h-5 w-5 text-yellow-700 flex-shrink-0 mt-0.5" />
               <div>
                 <h2 className="font-black text-gray-900">Bonus-Regeln</h2>
-                <p className="text-sm font-bold text-gray-700 mt-1">5 Antritte +2 · 8 Antritte +5 · 11 Antritte +8 · alle 13 gespielt +12 · Gewinner-Seite Platz 1 zusätzlich +5.</p>
+                <p className="text-sm font-bold text-gray-700 mt-1">Für die Serienwertung zählen die 8 besten Turnierergebnisse. Mindestens 8 Antritte sind erforderlich. Teilnahmebonus: 5 Antritte +2 · 8 Antritte +5 · 11 Antritte +8 · alle 13 gespielt +12 · Gewinner-Seite Platz 1 zusätzlich +5.</p>
               </div>
             </div>
           </motion.div>
