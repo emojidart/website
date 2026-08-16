@@ -10,7 +10,7 @@ export const publicRoutes = [
   "/gastzugang",
   "/guest-login",
   "/member-login",
-
+  "/lion-cup-regelwerk",
   "/veranstaltungen",
   "/liga-statistiken-app",
   "/new-club",
