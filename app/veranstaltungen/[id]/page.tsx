@@ -26,6 +26,8 @@ import {
   ZoomIn,
 } from "lucide-react"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { useMembershipAccess } from "@/hooks/use-membership-access"
+import { saveEventParticipation } from "@/actions/event-participation"
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,6 +49,7 @@ type EventRow = {
   mode: string | null
   startgeld_details: string | null
   source: string | null
+  access_type: "public" | "club" | null
   max_participants: number | null
 }
 
@@ -262,6 +265,7 @@ export default function VeranstaltungDetailPage() {
   const [participants, setParticipants] = useState<EventParticipantRow[]>([])
   const [savingStatus, setSavingStatus] = useState(false)
   const [guestNameMap, setGuestNameMap] = useState<Record<string, string>>({})
+  const { loading: membershipLoading, hasModule } = useMembershipAccess()
 
   useEffect(() => {
     let cancelled = false
@@ -368,30 +372,23 @@ async function loadParticipants(eventId: string) {
   
 
   async function saveParticipation(status: ParticipantStatus) {
-    if (!id || !currentUserId) return
+    if (!id || !currentUserId || !event) return
 
     try {
       setSavingStatus(true)
 
-      const { error } = await supabase
-        .from("event_participants")
-        .upsert(
-          {
-            event_id: id,
-            user_id: currentUserId,
-            player_id: currentPlayerId,
-            status,
-          },
-          {
-            onConflict: "event_id,user_id",
-          },
-        )
+      const result = await saveEventParticipation(id, status)
 
-      if (error) throw error
+      if (!result.success) {
+        setError(result.message)
+        return
+      }
 
+      setError(null)
       await loadParticipants(id)
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error saving participation:", e)
+      setError(e?.message || "Teilnahmestatus konnte nicht gespeichert werden.")
     } finally {
       setSavingStatus(false)
     }
@@ -409,7 +406,7 @@ async function loadParticipants(eventId: string) {
         const { data, error } = await supabase
           .from("events")
           .select(
-            "id,name,event_type,event_date,start_date,end_date,event_time,location,entry_fee,details,photo_url,mode,startgeld_details,source,max_participants",
+            "id,name,event_type,event_date,start_date,end_date,event_time,location,entry_fee,details,photo_url,mode,startgeld_details,source,access_type,max_participants",
           )
           .eq("id", id)
           .maybeSingle()
@@ -457,6 +454,16 @@ async function loadParticipants(eventId: string) {
   const goingParticipants = useMemo(() => participants.filter((p) => p.status === "going"), [participants])
   const maybeParticipants = useMemo(() => participants.filter((p) => p.status === "maybe"), [participants])
   const declinedParticipants = useMemo(() => participants.filter((p) => p.status === "declined"), [participants])
+
+  const isClubOnlyEvent = (event?.access_type || "public") === "club"
+  const requiredEventModule =
+    event?.source === "external" ? "external_events" : "club_events"
+  const requiredEventPackageLabel =
+    event?.source === "external" ? "Externe Veranstaltungen" : "Vereinsveranstaltungen"
+  const hasRequiredEventPackage =
+    !isClubOnlyEvent || hasModule(requiredEventModule as any)
+  const canRespondToEvent =
+    !membershipLoading && hasRequiredEventPackage
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-900 overflow-x-hidden">
@@ -519,6 +526,10 @@ async function loadParticipants(eventId: string) {
                     <Chip tone="gray">
                       {view?.Icon ? <view.Icon className="w-3.5 h-3.5" /> : null}
                       {getEventTypeLabel(event.event_type)}
+                    </Chip>
+
+                    <Chip tone={(event.access_type || "public") === "club" ? "orange" : "blue"}>
+                      {(event.access_type || "public") === "club" ? "Nur Verein" : "Öffentlich"}
                     </Chip>
 
                     <Chip tone={view?.isExternal ? "amber" : "emerald"}>
@@ -623,6 +634,22 @@ async function loadParticipants(eventId: string) {
                             </div>
                           </div>
                         </div>
+                      ) : membershipLoading ? (
+                        <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-600">
+                          Berechtigung wird geprüft…
+                        </div>
+                      ) : isClubOnlyEvent && !hasRequiredEventPackage ? (
+                        <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4">
+                          <div className="font-black text-orange-900">
+                            Paket „{requiredEventPackageLabel}“ erforderlich
+                          </div>
+                          <div className="mt-1 text-sm font-semibold text-orange-800">
+                            Diese Veranstaltung ist nur für Vereinsmitglieder mit diesem Paket freigeschaltet.
+                          </div>
+                          <Button asChild variant="outline" className="mt-3 rounded-xl border-orange-300 bg-white font-bold">
+                            <Link href="/member-membership">Mitgliedschaft ansehen</Link>
+                          </Button>
+                        </div>
                       ) : (
                         <>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -632,7 +659,7 @@ async function loadParticipants(eventId: string) {
                               className={`rounded-xl font-semibold ${
                                 myParticipation?.status === "going" ? "bg-green-600 hover:bg-green-700 text-white" : ""
                               }`}
-                              disabled={savingStatus || !!view?.isPast}
+                              disabled={savingStatus || !!view?.isPast || !canRespondToEvent}
                               onClick={() => saveParticipation("going")}
                             >
                               Dabei
@@ -644,7 +671,7 @@ async function loadParticipants(eventId: string) {
                               className={`rounded-xl font-semibold ${
                                 myParticipation?.status === "maybe" ? "bg-amber-500 hover:bg-amber-600 text-white" : ""
                               }`}
-                              disabled={savingStatus || !!view?.isPast}
+                              disabled={savingStatus || !!view?.isPast || !canRespondToEvent}
                               onClick={() => saveParticipation("maybe")}
                             >
                               Vielleicht
@@ -656,7 +683,7 @@ async function loadParticipants(eventId: string) {
                               className={`rounded-xl font-semibold ${
                                 myParticipation?.status === "declined" ? "bg-red-600 hover:bg-red-700 text-white" : ""
                               }`}
-                              disabled={savingStatus || !!view?.isPast}
+                              disabled={savingStatus || !!view?.isPast || !canRespondToEvent}
                               onClick={() => saveParticipation("declined")}
                             >
                               Absage
@@ -669,6 +696,12 @@ async function loadParticipants(eventId: string) {
                               {myParticipation ? getParticipantStatusLabel(myParticipation.status) : "Noch keine Antwort"}
                             </span>
                           </div>
+
+                          {(event.access_type || "public") === "public" ? (
+                            <div className="mt-2 text-xs font-semibold text-blue-700">
+                              Öffentliche Veranstaltung – kein Veranstaltungspaket erforderlich.
+                            </div>
+                          ) : null}
 
                           {view?.isPast ? (
                             <div className="mt-2 text-xs text-gray-500">

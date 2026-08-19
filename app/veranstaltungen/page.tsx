@@ -50,7 +50,8 @@ type EventRow = {
   mode: string | null
   startgeld_details: string | null
 
-  source: string | null // "internal" | "external"
+  source: string | null // Ort/Art: "internal" | "external"
+  access_type: "public" | "club" | null
 }
 
 function getEventTypeIcon(eventType: string) {
@@ -216,7 +217,7 @@ export default function VeranstaltungenPage() {
        const { data, error } = await supabase
   .from("events")
   .select(
-    "id,name,event_type,event_date,start_date,end_date,event_time,location,entry_fee,max_participants,details,photo_url,mode,startgeld_details,source"
+    "id,name,event_type,event_date,start_date,end_date,event_time,location,entry_fee,max_participants,details,photo_url,mode,startgeld_details,source,access_type"
   )
   .order("start_date", { ascending: true })
   .order("event_time", { ascending: true })
@@ -381,12 +382,12 @@ export default function VeranstaltungenPage() {
                       <Filter className="w-4 h-4 text-gray-500" />
                       <Select value={sourceFilter} onValueChange={setSourceFilter}>
                         <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="Quelle" />
+                          <SelectValue placeholder="Ort / Art" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Intern + Extern</SelectItem>
-                          <SelectItem value="internal">Nur intern</SelectItem>
-                          <SelectItem value="external">Nur extern</SelectItem>
+                          <SelectItem value="internal">Vereinslokal / intern</SelectItem>
+                          <SelectItem value="external">Anderer Ort / extern</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -443,7 +444,13 @@ const isPast = endDt.getTime() < Date.now()
                                 {getEventTypeLabel(e.event_type)}
                               </Chip>
 
-                              <Chip tone={isExternal ? "amber" : "emerald"}>{isExternal ? "Extern" : "Intern"}</Chip>
+                              <Chip tone={(e.access_type || "public") === "club" ? "orange" : "blue"}>
+                                {(e.access_type || "public") === "club" ? "Nur Verein" : "Öffentlich"}
+                              </Chip>
+
+                              <Chip tone={isExternal ? "amber" : "emerald"}>
+                                {isExternal ? "Extern" : "Intern"}
+                              </Chip>
 
                               <Chip tone={isPast ? "slate" : "blue"}>{isPast ? "Abgelaufen" : "Anstehend"}</Chip>
                             </div>

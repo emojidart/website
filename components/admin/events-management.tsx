@@ -48,6 +48,7 @@ interface Event {
   name: string
   event_type: string
   source?: string | null
+  access_type?: "public" | "club" | null
   mode?: string | null
   startgeld_details?: string | null
   start_date: string
@@ -158,6 +159,7 @@ export function EventsManagement({ user }: EventsManagementProps) {
   name: "",
   event_type: "party",
   source: "internal",
+  access_type: "public",
   mode: "both",
   startgeld_details: "",
   start_date: "",
@@ -545,6 +547,7 @@ const birthdaysInRange = useMemo(() => {
     name: "",
     event_type: "party",
     source: "internal",
+    access_type: "public",
     mode: "both",
     startgeld_details: "",
     start_date: "",
@@ -612,6 +615,7 @@ const eventData = {
   details: form.details,
   photo_url: photoUrl,
   source: form.source,
+  access_type: form.access_type || "public",
   mode: form.event_type === "tournament" ? (form.mode || null) : null,
   startgeld_details: form.event_type === "tournament" ? (form.startgeld_details || null) : null,
   user_id: user.id,
@@ -683,6 +687,7 @@ const eventData = {
         name: event.name,
         event_type: event.event_type,
         source: event.source ?? "internal",
+        access_type: event.access_type === "club" ? "club" : "public",
         mode: event.mode ?? "both",
         startgeld_details: event.startgeld_details ?? "",
         start_date: event.start_date,
@@ -770,6 +775,12 @@ const eventData = {
     }
   }
 
+  const getEventSourceLabel = (source?: string | null) => {
+    return source === "external"
+      ? "Extern – Ausflug / Hütte / außerhalb"
+      : "Intern – Vereinsveranstaltung"
+  }
+
   const getEventTypeLabel = (type: string) => {
     switch (type) {
       case "party":
@@ -852,19 +863,47 @@ const eventData = {
                 />
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="source" className="text-sm font-bold text-gray-700">
-                  Quelle
-                </label>
-                <Select value={form.source ?? "internal"} onValueChange={(v) => handleSelectChange("source", v)}>
-                  <SelectTrigger className="h-11 rounded-2xl">
-                    <SelectValue placeholder="Quelle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="internal">Intern</SelectItem>
-                    <SelectItem value="external">Extern</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-1">
+                <div className="space-y-2">
+                  <label htmlFor="access_type" className="text-sm font-bold text-gray-700">
+                    Zugang
+                  </label>
+                  <Select
+                    value={form.access_type ?? "public"}
+                    onValueChange={(v) => handleSelectChange("access_type", v)}
+                  >
+                    <SelectTrigger className="h-11 rounded-2xl">
+                      <SelectValue placeholder="Zugang wählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Öffentlich – alle dürfen teilnehmen</SelectItem>
+                      <SelectItem value="club">Nur Verein – Paket erforderlich</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="source" className="text-sm font-bold text-gray-700">
+                    Ort / Art
+                  </label>
+                  <Select value={form.source ?? "internal"} onValueChange={(v) => handleSelectChange("source", v)}>
+                    <SelectTrigger className="h-11 rounded-2xl">
+                      <SelectValue placeholder="Intern oder extern" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="internal">Intern – Vereinslokal / Vereinsbereich</SelectItem>
+                      <SelectItem value="external">Extern – Hütte / Ausflug / anderer Ort</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="sm:col-span-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600">
+                  {form.access_type === "public"
+                    ? "Öffentlich: kein Veranstaltungspaket erforderlich."
+                    : form.source === "external"
+                      ? "Nur Verein + extern: Paket „Externe Veranstaltungen“ erforderlich."
+                      : "Nur Verein + intern: Paket „Vereinsveranstaltungen“ erforderlich."}
+                </div>
               </div>
             </div>
 
@@ -1548,7 +1587,10 @@ const eventData = {
                       <TableCell className="font-medium">
                         <div className="min-w-[200px]">
                           <div className="font-black text-gray-900">{event.name}</div>
-                          <div className="text-xs text-gray-500">{event.source === "external" ? "Extern" : "Intern"}</div>
+                          <div className="text-xs text-gray-500">
+                            {event.access_type === "club" ? "Nur Verein" : "Öffentlich"} ·{" "}
+                            {event.source === "external" ? "Extern" : "Intern"}
+                          </div>
                         </div>
                       </TableCell>
 
