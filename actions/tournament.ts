@@ -11,6 +11,246 @@ interface ServerActionResponse {
   data?: any
 }
 
+type TournamentAccessType = "public" | "club_internal" | "club_external"
+
+type PlayerEligibility = {
+  eligible: boolean
+  reason: string
+}
+
+const requiredModuleForAccessType = (
+  accessType: TournamentAccessType,
+): "internal_tournaments" | "external_tournaments" | null => {
+  if (accessType === "club_internal") return "internal_tournaments"
+  if (accessType === "club_external") return "external_tournaments"
+  return null
+}
+
+const packageLabelForAccessType = (accessType: TournamentAccessType) =>
+  accessType === "club_internal" ? "Interne Turniere" : "Externe Turniere"
+
+const chunk = <T,>(items: T[], size = 100): T[][] => {
+  const result: T[][] = []
+  for (let i = 0; i < items.length; i += size) {
+    result.push(items.slice(i, i + size))
+  }
+  return result
+}
+
+async function buildKratzerEligibility(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  playerIds: Array<string | number>,
+  accessType: TournamentAccessType,
+): Promise<Record<string, PlayerEligibility>> {
+  const result: Record<string, PlayerEligibility> = {}
+
+  playerIds.forEach((id) => {
+    result[String(id)] =
+      accessType === "public"
+        ? { eligible: true, reason: "" }
+        : { eligible: false, reason: "Nur für Vereinsmitglieder" }
+  })
+
+  if (accessType === "public" || playerIds.length === 0) return result
+
+  const requiredModule = requiredModuleForAccessType(accessType)
+  if (!requiredModule) return result
+
+  const today = new Date().toISOString().slice(0, 10)
+
+  // Zuerst die Namen der ausgewählten Spieldatenbank-Einträge laden.
+  // Bei älteren Vereinsmitgliedern ist spieldatenbank_id teilweise nicht gesetzt.
+  // Deshalb verwenden wir zusätzlich einen sicheren Fallback über einen eindeutigen exakten Namen.
+  const spieldatenbankPlayers: any[] = []
+  for (const playerIdChunk of chunk(playerIds, 100)) {
+    const { data, error } = await supabase
+      .from("spieldatenbank")
+      .select("id,name")
+      .in("id", playerIdChunk)
+
+    if (error) throw error
+    spieldatenbankPlayers.push(...(data || []))
+  }
+
+  const clubPlayers: any[] = []
+  for (const playerIdChunk of chunk(playerIds, 100)) {
+    const { data, error } = await supabase
+      .from("club_players")
+      .select("id,name,spieldatenbank_id")
+      .in("spieldatenbank_id", playerIdChunk)
+
+    if (error) throw error
+    clubPlayers.push(...(data || []))
+  }
+
+  const directlyLinkedSpieldatenbankIds = new Set(
+    clubPlayers
+      .map((row: any) => row.spieldatenbank_id)
+      .filter((value: any) => value !== null && value !== undefined)
+      .map((value: any) => String(value)),
+  )
+
+  const unmatchedPlayers = spieldatenbankPlayers.filter(
+    (player: any) => !directlyLinkedSpieldatenbankIds.has(String(player.id)),
+  )
+
+  if (unmatchedPlayers.length > 0) {
+    const unmatchedNames = Array.from(
+      new Set(
+        unmatchedPlayers
+          .map((player: any) => String(player.name || "").trim())
+          .filter(Boolean),
+      ),
+    )
+
+    const possibleClubPlayers: any[] = []
+    for (const nameChunk of chunk(unmatchedNames, 100)) {
+      const { data, error } = await supabase
+        .from("club_players")
+        .select("id,name,spieldatenbank_id")
+        .in("name", nameChunk)
+
+      if (error) throw error
+      possibleClubPlayers.push(...(data || []))
+    }
+
+    const clubPlayersByNormalizedName = new Map<string, any[]>()
+
+    possibleClubPlayers.forEach((clubPlayer: any) => {
+      const key = String(clubPlayer.name || "").trim().toLocaleLowerCase("de-AT")
+      if (!key) return
+      const existing = clubPlayersByNormalizedName.get(key) || []
+      existing.push(clubPlayer)
+      clubPlayersByNormalizedName.set(key, existing)
+    })
+
+    unmatchedPlayers.forEach((player: any) => {
+      const key = String(player.name || "").trim().toLocaleLowerCase("de-AT")
+      const matches = clubPlayersByNormalizedName.get(key) || []
+
+      // Nur bei genau einem Treffer automatisch zuordnen.
+      // So werden gleichnamige Personen nicht versehentlich verwechselt.
+      if (matches.length === 1) {
+        const match = matches[0]
+        clubPlayers.push({
+          ...match,
+          spieldatenbank_id: player.id,
+          matched_by_name: true,
+        })
+      }
+    })
+  }
+
+  const clubPlayerIds = Array.from(
+    new Set(clubPlayers.map((row: any) => row.id).filter(Boolean).map((id: any) => String(id))),
+  )
+
+  if (clubPlayerIds.length === 0) return result
+
+  const memberships: any[] = []
+  for (const clubPlayerIdChunk of chunk(clubPlayerIds, 100)) {
+    const { data, error } = await supabase
+      .from("member_memberships")
+      .select("id,player_id,starts_on,ends_on,status")
+      .in("player_id", clubPlayerIdChunk)
+      .eq("status", "active")
+      .lte("starts_on", today)
+      .or(`ends_on.is.null,ends_on.gte.${today}`)
+
+    if (error) throw error
+    memberships.push(...(data || []))
+  }
+
+  const membershipIds = memberships.map((row: any) => row.id).filter(Boolean)
+
+  const { data: requiredModuleRow, error: requiredModuleError } = await supabase
+    .from("membership_modules")
+    .select("id,code,is_active")
+    .eq("code", requiredModule)
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (requiredModuleError) throw requiredModuleError
+
+  if (!requiredModuleRow?.id) {
+    throw new Error(`Mitgliedschaftsmodul ${requiredModule} wurde nicht gefunden.`)
+  }
+
+  const membershipModuleRows: any[] = []
+  if (membershipIds.length > 0) {
+    for (const membershipIdChunk of chunk(membershipIds, 100)) {
+      const { data, error } = await supabase
+        .from("member_membership_modules")
+        .select("membership_id,module_id")
+        .in("membership_id", membershipIdChunk)
+        .eq("module_id", requiredModuleRow.id)
+
+      if (error) throw error
+      membershipModuleRows.push(...(data || []))
+    }
+  }
+
+  const eligibleMembershipIds = new Set(
+    membershipModuleRows.map((row: any) => String(row.membership_id)),
+  )
+
+  const eligibleClubPlayerIds = new Set<string>()
+
+  ;(memberships || []).forEach((membership: any) => {
+    if (eligibleMembershipIds.has(String(membership.id))) {
+      eligibleClubPlayerIds.add(String(membership.player_id))
+    }
+  })
+
+  const trials: any[] = []
+  for (const clubPlayerIdChunk of chunk(clubPlayerIds, 100)) {
+    const { data, error } = await supabase
+      .from("membership_trials")
+      .select("player_id,module_code,starts_on,ends_on,status")
+      .in("player_id", clubPlayerIdChunk)
+      .eq("module_code", requiredModule)
+      .eq("status", "active")
+      .lte("starts_on", today)
+      .gte("ends_on", today)
+
+    if (error) throw error
+    trials.push(...(data || []))
+  }
+
+  trials.forEach((trial: any) => {
+    eligibleClubPlayerIds.add(String(trial.player_id))
+  })
+
+  clubPlayers.forEach((clubPlayer: any) => {
+    const key = String(clubPlayer.spieldatenbank_id)
+    result[key] = eligibleClubPlayerIds.has(String(clubPlayer.id))
+      ? { eligible: true, reason: "" }
+      : { eligible: false, reason: `Paket „${packageLabelForAccessType(accessType)}“ fehlt` }
+  })
+
+  return result
+}
+
+export async function getKratzerPlayerEligibility(
+  playerIds: Array<string | number>,
+  accessType: TournamentAccessType,
+): Promise<ServerActionResponse & { data?: Record<string, PlayerEligibility> }> {
+  const userId = await getCurrentUserId()
+  if (!userId) return { success: false, message: "Benutzer nicht authentifiziert." }
+
+  try {
+    const supabase = createServerSupabaseClient(await cookies())
+    const data = await buildKratzerEligibility(supabase, playerIds, accessType)
+    return { success: true, message: "Berechtigungen geladen.", data }
+  } catch (error: any) {
+    console.error("getKratzerPlayerEligibility error:", error)
+    return {
+      success: false,
+      message: `Fehler beim Prüfen der Turnierberechtigungen: ${error?.message || "Unbekannter Fehler"}`,
+    }
+  }
+}
+
 async function getCurrentUserId(): Promise<string | null> {
   const supabase = createServerSupabaseClient(await cookies())
   const {
@@ -19,7 +259,7 @@ async function getCurrentUserId(): Promise<string | null> {
   return user?.id || null
 }
 
-export async function registerPlayers(playerIds: string[]): Promise<ServerActionResponse> {
+export async function registerPlayers(playerIds: string[], accessType: TournamentAccessType): Promise<ServerActionResponse> {
   console.log("registerPlayers: Funktion gestartet. Empfangene Player IDs:", playerIds)
 
   const allCookies = (await cookies()).getAll()
@@ -54,11 +294,24 @@ export async function registerPlayers(playerIds: string[]): Promise<ServerAction
 
     console.log("registerPlayers: Spielerdetails erfolgreich geladen:", playersData)
 
+    const eligibility = await buildKratzerEligibility(supabase, playerIds, accessType)
+    const blockedPlayer = playersData.find((player) => !eligibility[String(player.id)]?.eligible)
+
+    if (blockedPlayer) {
+      return {
+        success: false,
+        message: `${blockedPlayer.name} kann nicht registriert werden: ${
+          eligibility[String(blockedPlayer.id)]?.reason || "Nicht teilnahmeberechtigt"
+        }`,
+      }
+    }
+
     const registrationsToInsert = playersData.map((player) => ({
       player_id: player.id,
       player_name: player.name,
       ligastatus: player.ligastatus || "N/A",
       paid: false,
+      access_type: accessType,
     }))
 
     console.log("registerPlayers: Vorbereitet für Upsert:", registrationsToInsert)
@@ -99,7 +352,7 @@ export async function loadRegisteredPlayers(): Promise<ServerActionResponse & { 
   try {
     const { data, error } = await supabase
       .from("kratzer_tournament_registrations")
-      .select("player_id, player_name, ligastatus, paid")
+      .select("player_id, player_name, ligastatus, paid, access_type")
       .order("registered_at", { ascending: true })
 
     if (error) throw error
@@ -111,7 +364,15 @@ export async function loadRegisteredPlayers(): Promise<ServerActionResponse & { 
       paid: reg.paid,
     }))
 
-    return { success: true, message: "Registrierte Spieler geladen.", data: registeredPlayers }
+    const accessType =
+      (data || []).find((row: any) => row.access_type)?.access_type || null
+
+    return {
+      success: true,
+      message: "Registrierte Spieler geladen.",
+      data: registeredPlayers,
+      accessType,
+    } as any
   } catch (error: any) {
     console.error("Fehler beim Laden registrierter Spieler:", error)
     return {
@@ -150,6 +411,35 @@ export async function clearRegisteredPlayers(): Promise<ServerActionResponse> {
   }
 }
 
+export async function markAllRegisteredPlayersPaid(): Promise<ServerActionResponse> {
+  const supabase = createServerSupabaseClient(await cookies())
+  const userId = await getCurrentUserId()
+
+  if (!userId) {
+    return { success: false, message: "Benutzer nicht authentifiziert." }
+  }
+
+  try {
+    const { error } = await supabase
+      .from("kratzer_tournament_registrations")
+      .update({ paid: true })
+      .eq("paid", false)
+
+    if (error) throw error
+
+    return {
+      success: true,
+      message: "Alle registrierten Spieler wurden als bezahlt markiert.",
+    }
+  } catch (error: any) {
+    console.error("Fehler beim Markieren aller Spieler als bezahlt:", error)
+    return {
+      success: false,
+      message: `Fehler beim Markieren aller Spieler als bezahlt: ${error.message}`,
+    }
+  }
+}
+
 export async function updatePlayerPaidStatus(playerId: string, paid: boolean): Promise<ServerActionResponse> {
   const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
@@ -179,6 +469,7 @@ export async function updatePlayerPaidStatus(playerId: string, paid: boolean): P
 export async function createKratzerTournament(
   settings: TournamentSettings,
   initialPlayers: KratzerPlayer[],
+  accessType: TournamentAccessType,
   _requestedUserId?: string,
 ): Promise<ServerActionResponse & { data?: { tournamentId: string } }> {
   const supabase = createServerSupabaseClient(await cookies())
@@ -222,6 +513,7 @@ export async function createKratzerTournament(
         sudden_death_enabled: settings.suddenDeathEnabled,
         sudden_death_time: settings.suddenDeathTime,
         speech_enabled: settings.speechEnabled,
+        access_type: accessType,
       })
       .select("id")
       .single()

@@ -142,6 +142,7 @@ export default function MemberProfileAppPage() {
     loading: membershipAccessLoading,
     endsOn: normalMembershipEndsOn,
     activeTrials,
+    hasModule,
   } = useMembershipAccess()
 
   const router = useRouter()
@@ -347,6 +348,15 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
   }, [profile?.id, chatRooms?.length])
 
   useEffect(() => {
+    if (membershipAccessLoading) return
+    const playerId = (profile as any)?.player_id
+    if (!playerId) return
+
+    void fetchNextMatchSummary(playerId, teamMemberships)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membershipAccessLoading, profile?.player_id, teamMemberships])
+
+  useEffect(() => {
     if (!profile?.id) return
 
     const channel = supabase
@@ -479,7 +489,18 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
 
   const fetchNextMatchSummary = async (playerId: string, memberships: TeamMembership[]) => {
     try {
-      const teamIds = memberships.map((t: any) => t.team_id).filter(Boolean)
+      const eligibleMemberships = memberships.filter((membership: any) => {
+        const dartType = membership?.teams?.dart_type
+
+        if (dartType === "edart") return hasModule("edart_league")
+        if (dartType === "steeldart") return hasModule("steeldart_league")
+
+        // Alte/sonstige Teams ohne Liga-Typ sollen hier keinen Liga-Hinweis erzeugen.
+        return false
+      })
+
+      const teamIds = eligibleMemberships.map((t: any) => t.team_id).filter(Boolean)
+
       if (!playerId || teamIds.length === 0) {
         setNextMatchSummary(null)
         return
@@ -622,7 +643,7 @@ const fetchProfile = async () => {
           id,
           team_id,
           role,
-          teams (id, name, logo_url, chat_room_id)
+          teams (id, name, logo_url, chat_room_id, dart_type)
         `)
         .eq("player_id", (profileData as any).player_id)
         .is("left_at", null)

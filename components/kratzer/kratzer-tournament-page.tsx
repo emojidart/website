@@ -61,6 +61,8 @@ interface PrizeMoneySettings {
   percentages: number[]
 }
 
+type TournamentAccessType = "" | "public" | "club_internal" | "club_external"
+
 const defaultPrizeMoneySettings: PrizeMoneySettings = {
   entryFee: 10,
   placesToPay: 4,
@@ -97,6 +99,7 @@ export function KratzerTournamentPage() {
   const [isPrizeMoneyModalOpen, setIsPrizeMoneyModalOpen] = useState(false)
 
   const [activeTab, setActiveTab] = useState<"register" | "tournament">("register")
+  const [tournamentAccessType, setTournamentAccessType] = useState<TournamentAccessType>("")
 
   const timers = useRef<Record<number, NodeJS.Timeout>>({})
   const prizeMoneySettings = useRef<PrizeMoneySettings>(defaultPrizeMoneySettings)
@@ -120,7 +123,10 @@ export function KratzerTournamentPage() {
     handleRegisterPlayers,
     handleClearRegisteredPlayers,
     handleUpdatePlayerPaidStatus,
+    handleMarkAllPlayersPaid,
+    registrationAccessType,
   } = useKratzerRegistration({
+    tournamentAccessType,
     showToast,
     setLoading,
     setConfirmationModalConfig,
@@ -128,24 +134,10 @@ export function KratzerTournamentPage() {
   })
 
   useEffect(() => {
-    const userId = currentUser?.id
-    if (!userId) {
-      initializedUserIdRef.current = null
-      return
+    if (!tournamentAccessType && registrationAccessType) {
+      setTournamentAccessType(registrationAccessType)
     }
-
-    // Nur einmal pro Benutzer initialisieren.
-    // Das verhindert die doppelten/mehrfachen Server-Action-POSTs,
-    // die in Development durch React Strict Mode und zusätzliche
-    // Supabase-Auth-Events entstehen können.
-    if (initializedUserIdRef.current === userId) return
-    initializedUserIdRef.current = userId
-
-    void Promise.all([
-      checkForActiveTournament(),
-      loadRegisteredPlayersState(),
-    ])
-  }, [currentUser?.id, checkForActiveTournament, loadRegisteredPlayersState])
+  }, [registrationAccessType, tournamentAccessType])
 
   const handleLogout = useCallback(async () => {
     setLoading(true)
@@ -167,6 +159,7 @@ export function KratzerTournamentPage() {
         players: [],
       }))
       setIsTournamentRunning(false)
+      setTournamentAccessType("")
     }
 
     setLoading(false)
@@ -570,6 +563,23 @@ export function KratzerTournamentPage() {
     setIsTournamentRunning,
   })
 
+  useEffect(() => {
+    const userId = currentUser?.id
+    if (!userId) {
+      initializedUserIdRef.current = null
+      return
+    }
+
+    // Erst ausführen, nachdem useKratzerRecovery initialisiert wurde.
+    if (initializedUserIdRef.current === userId) return
+    initializedUserIdRef.current = userId
+
+    void Promise.all([
+      checkForActiveTournament(),
+      loadRegisteredPlayersState(),
+    ])
+  }, [currentUser?.id, checkForActiveTournament, loadRegisteredPlayersState])
+
   const startTournament = useCallback(async () => {
     if (isTournamentRunning) {
       showToast("warning", "Turnier läuft bereits.")
@@ -578,6 +588,12 @@ export function KratzerTournamentPage() {
 
     if (tournamentState.tournamentFinished) {
       showToast("warning", "Das Turnier ist bereits beendet. Bitte starten Sie ein neues Turnier.")
+      return
+    }
+
+    if (!tournamentAccessType) {
+      showToast("warning", "Bitte zuerst die Turnierart auswählen.")
+      setActiveTab("register")
       return
     }
 
@@ -612,6 +628,7 @@ export function KratzerTournamentPage() {
       const { success, message, data } = await createKratzerTournament(
         tournamentState.settings,
         initialPlayers,
+        tournamentAccessType,
         currentUser.id,
       )
 
@@ -638,6 +655,7 @@ export function KratzerTournamentPage() {
     isTournamentRunning,
     tournamentState.tournamentFinished,
     tournamentState.settings,
+    tournamentAccessType,
     showToast,
     startNewRound,
     setLoading,
@@ -834,12 +852,15 @@ export function KratzerTournamentPage() {
         {activeTab === "register" ? (
           <RegistrationTab
             currentUser={currentUser}
+            tournamentAccessType={tournamentAccessType}
+            setTournamentAccessType={setTournamentAccessType}
             registeredPlayers={registeredPlayers}
             selectedPlayersForRegistration={selectedPlayersForRegistration}
             setSelectedPlayersForRegistration={setSelectedPlayersForRegistration}
             handleRegisterPlayers={handleRegisterPlayers}
             handleClearRegisteredPlayers={handleClearRegisteredPlayers}
             handleUpdatePlayerPaidStatus={handleUpdatePlayerPaidStatus}
+            handleMarkAllPlayersPaid={handleMarkAllPlayersPaid}
             isRegisteringPlayers={isRegisteringPlayers}
             loading={loading}
           />

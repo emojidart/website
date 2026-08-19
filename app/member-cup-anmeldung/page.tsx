@@ -21,6 +21,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
+import { useMembershipAccess } from "@/hooks/use-membership-access"
 
 type DkoSeries = {
   id: string
@@ -165,6 +166,12 @@ const itemVariants = {
 
 export default function UpcomingTournamentsAppPage() {
   const { session } = useAuth() as any
+  const {
+    loading: membershipAccessLoading,
+    hasModule,
+  } = useMembershipAccess()
+
+  const hasInternalTournamentAccess = hasModule("internal_tournaments")
 
   const [series, setSeries] = useState<DkoSeries | null>(null)
   const [events, setEvents] = useState<UiEvent[]>([])
@@ -360,6 +367,12 @@ export default function UpcomingTournamentsAppPage() {
   const openModal = (ev: UiEvent) => {
     const status = getEventStatus(ev, nowTick)
 
+    // Members Champion Cup = internes Vereinsturnier.
+    // Nur Mitglieder mit dem Modul "Interne Turniere" (oder aktivem Testpaket)
+    // dürfen die Selbstanmeldung öffnen.
+    if (membershipAccessLoading) return
+    if (!hasInternalTournamentAccess) return
+
     if (!isToday(ev.effectiveDT)) return
     if (!ev.is_matchday) return
     if (!status.open) return
@@ -434,6 +447,30 @@ export default function UpcomingTournamentsAppPage() {
               <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700" />
             </div>
           </motion.div>
+
+          {!membershipAccessLoading && !hasInternalTournamentAccess ? (
+            <motion.div variants={itemVariants} className="mb-4">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white border border-amber-200">
+                    <ShieldAlert className="h-4 w-4 text-amber-700" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-black text-gray-900">
+                      Internes Vereinsturnier
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-gray-700">
+                      Für die Anmeldung zum Members Champion Cup benötigst du das Paket
+                      <span className="font-black"> „Interne Turniere“</span>.
+                    </div>
+                    <div className="mt-1 text-xs font-semibold text-gray-500">
+                      Eine aktive Testfreischaltung für „Interne Turniere“ zählt ebenfalls.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ) : null}
 
           {loading ? (
             <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm">
@@ -545,7 +582,13 @@ export default function UpcomingTournamentsAppPage() {
                     const today = isToday(ev.effectiveDT)
                     const past = isPastDay(ev.effectiveDT)
                     const status = getEventStatus(ev, nowTick)
-                    const canRegister = today && ev.is_matchday && status.open && !status.registrationClosed
+                    const timeAllowsRegistration =
+                      today && ev.is_matchday && status.open && !status.registrationClosed
+
+                    const canRegister =
+                      !membershipAccessLoading &&
+                      hasInternalTournamentAccess &&
+                      timeAllowsRegistration
 
                     return (
                       <div key={ev.id} className={today ? "p-4 sm:p-5 bg-orange-50/50" : "p-4 sm:p-5 bg-white"}>
@@ -616,6 +659,15 @@ export default function UpcomingTournamentsAppPage() {
                                 Anmeldung geschlossen.
                               </div>
                             ) : null}
+
+                            {!membershipAccessLoading &&
+                            timeAllowsRegistration &&
+                            !hasInternalTournamentAccess ? (
+                              <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-800">
+                                <ShieldAlert className="h-3.5 w-3.5" />
+                                Paket „Interne Turniere“ erforderlich
+                              </div>
+                            ) : null}
                           </div>
 
                           <Button
@@ -629,8 +681,16 @@ export default function UpcomingTournamentsAppPage() {
                             }
                             variant={canRegister ? "default" : "outline"}
                           >
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            {alreadyRegistered ? "Anmeldung anzeigen" : "Anmelden"}
+                            {hasInternalTournamentAccess ? (
+                              <UserPlus className="h-4 w-4 mr-2" />
+                            ) : (
+                              <ShieldAlert className="h-4 w-4 mr-2" />
+                            )}
+                            {!membershipAccessLoading && !hasInternalTournamentAccess
+                              ? "Paket erforderlich"
+                              : alreadyRegistered
+                                ? "Anmeldung anzeigen"
+                                : "Anmelden"}
                           </Button>
                         </div>
                       </div>
@@ -644,7 +704,7 @@ export default function UpcomingTournamentsAppPage() {
       </main>
 
       <DKOSelfRegistrationModal
-        isOpen={dkoModal.isOpen}
+        isOpen={dkoModal.isOpen && !membershipAccessLoading && hasInternalTournamentAccess}
         onClose={() => {
           setDkoModal((prev) => ({ ...prev, isOpen: false }))
           loadRegistrations()

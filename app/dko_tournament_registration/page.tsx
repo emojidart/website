@@ -18,6 +18,7 @@ import {
   QrCode,
   Lock,
   Info,
+  CheckCircle,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
@@ -28,6 +29,13 @@ import { SpieldatenbankForm } from "@/components/admin/spieldatenbank/spieldaten
 interface Player {
   id: number
   name: string
+}
+
+type TournamentAccessType = "" | "public" | "club_internal" | "club_external"
+
+type PlayerEligibility = {
+  eligible: boolean
+  reason: string
 }
 
 interface PlayerWithFrequency extends Player {
@@ -44,6 +52,7 @@ interface RegisteredPlayer {
   entry_fee: number
   deducted_from_credit?: boolean | string
   payment_method?: string | null
+  access_type?: TournamentAccessType | null
 }
 
 type TournamentMode = "dko" | "round_robin"
@@ -153,13 +162,14 @@ async function createRoundRobinWithSchedule(opts: {
   name: string
   groupCount: number
   players: RRPlayer[]
+  accessType: Exclude<TournamentAccessType, "">
 }) {
-  const { name, groupCount, players } = opts
+  const { name, groupCount, players, accessType } = opts
 
   // 1) round_robin anlegen
   const { data: rr, error: rrErr } = await supabase
     .from("round_robin")
-    .insert({ name, status: "created" })
+    .insert({ name, status: "created", access_type: accessType })
     .select("id")
     .single()
 
@@ -242,6 +252,7 @@ async function createRoundRobinWithSchedule(opts: {
     tournament_id: roundRobinId,
     tournament_type: "round_robin",
     tournament_name: name,
+    access_type: accessType,
     status: "active",
   })
   if (statusErr && (statusErr as any).code !== "23505") throw statusErr
@@ -263,6 +274,9 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
   const [loading, setLoading] = useState(true)
   const [tournamentName, setTournamentName] = useState("")
   const [tournamentEntryFee, setTournamentEntryFee] = useState("")
+  const [tournamentAccessType, setTournamentAccessType] = useState<TournamentAccessType>("")
+  const [eligibilityByPlayerId, setEligibilityByPlayerId] = useState<Record<string, PlayerEligibility>>({})
+  const [eligibilityLoading, setEligibilityLoading] = useState(false)
   const [tournamentMode, setTournamentMode] = useState<TournamentMode>("dko")
   const [allowDoubleEntry, setAllowDoubleEntry] = useState(false)
   const [rrGroupCount, setRrGroupCount] = useState<number>(2)
@@ -275,6 +289,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     tournamentId: string
     tournamentName: string
     tournamentType: string
+    accessType?: TournamentAccessType | null
     incompleteMatches: number
   } | null>(null)
   const [showCancelActiveTournamentDialog, setShowCancelActiveTournamentDialog] = useState(false)
@@ -355,10 +370,255 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     }, 200)
   }
 
+
+  const requiredModuleForAccessType = (
+    accessType: TournamentAccessType,
+  ): "internal_tournaments" | "external_tournaments" | null => {
+    if (accessType === "club_internal") return "internal_tournaments"
+    if (accessType === "club_external") return "external_tournaments"
+    return null
+  }
+
+  const accessTypeLabel = (accessType: TournamentAccessType) => {
+    if (accessType === "public") return "Öffentlich"
+    if (accessType === "club_internal") return "Vereinsintern"
+    if (accessType === "club_external") return "Vereins-Auswärts"
+    return "Nicht gewählt"
+  }
+
+  const getPlayerEligibility = (playerId: number | string): PlayerEligibility => {
+    if (!tournamentAccessType) {
+      return { eligible: false, reason: "Zuerst Turnierart auswählen" }
+    }
+
+    if (tournamentAccessType === "public") {
+      return { eligible: true, reason: "" }
+    }
+
+    return (
+      eligibilityByPlayerId[String(playerId)] || {
+        eligible: false,
+        reason: eligibilityLoading ? "Berechtigung wird geprüft…" : "Nicht teilnahmeberechtigt",
+      }
+    )
+  }
+
+  const verifyPlayerEligibility = async (playerId: number | string): Promise<PlayerEligibility> => {
+    if (!tournamentAccessType) {
+      return { eligible: false, reason: "Bitte zuerst die Turnierart festlegen." }
+    }
+
+    if (tournamentAccessType === "public") {
+      return { eligible: true, reason: "" }
+    }
+
+    const requiredModule = requiredModuleForAccessType(tournamentAccessType)
+    if (!requiredModule) return { eligible: true, reason: "" }
+
+    const today = new Date().toISOString().split("T")[0]
+
+    const { data: clubPlayer, error: clubPlayerError } = await supabase
+      .from("club_players")
+      .select("id")
+      .eq("spieldatenbank_id", playerId)
+      .maybeSingle()
+
+    if (clubPlayerError) throw clubPlayerError
+
+    if (!clubPlayer?.id) {
+      return { eligible: false, reason: "Nur für Vereinsmitglieder" }
+    }
+
+    const { data: trialRows, error: trialError } = await supabase
+      .from("membership_trials")
+      .select("id")
+      .eq("player_id", clubPlayer.id)
+      .eq("module_code", requiredModule)
+      .eq("status", "active")
+      .lte("starts_on", today)
+      .gte("ends_on", today)
+      .limit(1)
+
+    if (trialError) throw trialError
+    if ((trialRows || []).length > 0) return { eligible: true, reason: "" }
+
+    const { data: memberships, error: membershipError } = await supabase
+      .from("member_memberships")
+      .select("id")
+      .eq("player_id", clubPlayer.id)
+      .eq("status", "active")
+      .lte("starts_on", today)
+      .or(`ends_on.is.null,ends_on.gte.${today}`)
+
+    if (membershipError) throw membershipError
+
+    const membershipIds = (memberships || []).map((row: any) => row.id).filter(Boolean)
+    if (membershipIds.length === 0) {
+      return { eligible: false, reason: "Keine aktive Mitgliedschaft" }
+    }
+
+    const { data: moduleRow, error: moduleError } = await supabase
+      .from("membership_modules")
+      .select("id")
+      .eq("code", requiredModule)
+      .maybeSingle()
+
+    if (moduleError) throw moduleError
+    if (!moduleRow?.id) {
+      return { eligible: false, reason: "Benötigtes Turnierpaket nicht gefunden" }
+    }
+
+    const { data: membershipModules, error: membershipModuleError } = await supabase
+      .from("member_membership_modules")
+      .select("membership_id")
+      .in("membership_id", membershipIds)
+      .eq("module_id", moduleRow.id)
+      .limit(1)
+
+    if (membershipModuleError) throw membershipModuleError
+
+    if ((membershipModules || []).length > 0) {
+      return { eligible: true, reason: "" }
+    }
+
+    return {
+      eligible: false,
+      reason:
+        tournamentAccessType === "club_internal"
+          ? "Paket „Interne Turniere“ fehlt"
+          : "Paket „Externe Turniere“ fehlt",
+    }
+  }
+
+  const loadEligibilityMap = async () => {
+    if (!tournamentAccessType || tournamentAccessType === "public") {
+      setEligibilityByPlayerId({})
+      setEligibilityLoading(false)
+      return
+    }
+
+    try {
+      setEligibilityLoading(true)
+
+      const requiredModule = requiredModuleForAccessType(tournamentAccessType)
+      if (!requiredModule) {
+        setEligibilityByPlayerId({})
+        return
+      }
+
+      const today = new Date().toISOString().split("T")[0]
+
+      const { data: clubPlayers, error: clubPlayersError } = await supabase
+        .from("club_players")
+        .select("id,spieldatenbank_id")
+        .not("spieldatenbank_id", "is", null)
+
+      if (clubPlayersError) throw clubPlayersError
+
+      const clubPlayerIds = (clubPlayers || []).map((row: any) => row.id).filter(Boolean)
+
+      const [{ data: moduleRow, error: moduleError }, membershipsResult, trialsResult] = await Promise.all([
+        supabase.from("membership_modules").select("id").eq("code", requiredModule).maybeSingle(),
+        clubPlayerIds.length
+          ? supabase
+              .from("member_memberships")
+              .select("id,player_id")
+              .in("player_id", clubPlayerIds)
+              .eq("status", "active")
+              .lte("starts_on", today)
+              .or(`ends_on.is.null,ends_on.gte.${today}`)
+          : Promise.resolve({ data: [], error: null } as any),
+        clubPlayerIds.length
+          ? supabase
+              .from("membership_trials")
+              .select("player_id")
+              .in("player_id", clubPlayerIds)
+              .eq("module_code", requiredModule)
+              .eq("status", "active")
+              .lte("starts_on", today)
+              .gte("ends_on", today)
+          : Promise.resolve({ data: [], error: null } as any),
+      ])
+
+      if (moduleError) throw moduleError
+      if (membershipsResult.error) throw membershipsResult.error
+      if (trialsResult.error) throw trialsResult.error
+
+      const membershipIds = (membershipsResult.data || []).map((row: any) => row.id).filter(Boolean)
+
+      const membershipModulesResult =
+        moduleRow?.id && membershipIds.length
+          ? await supabase
+              .from("member_membership_modules")
+              .select("membership_id")
+              .in("membership_id", membershipIds)
+              .eq("module_id", moduleRow.id)
+          : ({ data: [], error: null } as any)
+
+      if (membershipModulesResult.error) throw membershipModulesResult.error
+
+      const eligibleMembershipIds = new Set(
+        (membershipModulesResult.data || []).map((row: any) => String(row.membership_id)),
+      )
+      const eligiblePlayerIds = new Set<string>()
+
+      ;(membershipsResult.data || []).forEach((row: any) => {
+        if (eligibleMembershipIds.has(String(row.id))) {
+          eligiblePlayerIds.add(String(row.player_id))
+        }
+      })
+
+      ;(trialsResult.data || []).forEach((row: any) => {
+        eligiblePlayerIds.add(String(row.player_id))
+      })
+
+      const nextMap: Record<string, PlayerEligibility> = {}
+
+      ;(clubPlayers || []).forEach((clubPlayer: any) => {
+        if (clubPlayer.spieldatenbank_id === null || clubPlayer.spieldatenbank_id === undefined) return
+
+        nextMap[String(clubPlayer.spieldatenbank_id)] = eligiblePlayerIds.has(String(clubPlayer.id))
+          ? { eligible: true, reason: "" }
+          : {
+              eligible: false,
+              reason:
+                tournamentAccessType === "club_internal"
+                  ? "Paket „Interne Turniere“ fehlt"
+                  : "Paket „Externe Turniere“ fehlt",
+            }
+      })
+
+      setEligibilityByPlayerId(nextMap)
+    } catch (error) {
+      console.error("Fehler beim Laden der Turnier-Berechtigungen:", error)
+      setEligibilityByPlayerId({})
+    } finally {
+      setEligibilityLoading(false)
+    }
+  }
+
+  const ensurePlayersEligible = async (playerIds: Array<number | string>) => {
+    for (const playerId of playerIds) {
+      const result = await verifyPlayerEligibility(playerId)
+      if (!result.eligible) {
+        const player = availablePlayers.find((item) => String(item.id) === String(playerId))
+        alert(`${player?.name || "Spieler"} kann nicht hinzugefügt werden: ${result.reason}`)
+        return false
+      }
+    }
+    return true
+  }
+
   const handleScannedPlayerConfirm = async (shouldDeduct: boolean) => {
     if (!scannedPlayerForConfirm) return
 
     try {
+      const eligibility = await verifyPlayerEligibility(scannedPlayerForConfirm.id)
+      if (!eligibility.eligible) {
+        setScannerMessage(`${scannedPlayerForConfirm.name}: ${eligibility.reason}`)
+        setScannedPlayerForConfirm(null)
+        return
+      }
       const alreadyRegisteredEntries = registeredPlayers.filter(
   (rp) => stripDoubleSuffix(rp.player_name) === stripDoubleSuffix(scannedPlayerForConfirm.name),
 )
@@ -388,6 +648,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
         entry_fee: scannedPlayerForConfirm.entryFee,
         deducted_from_credit: shouldDeduct,
         payment_method: "admin",
+        access_type: tournamentAccessType,
       })
 
       if (registerError) {
@@ -455,13 +716,15 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
 
   const handleRegisterPlayers = async () => {
     if (!tournamentFormCompleted) {
-      alert("Bitte gib zuerst den Turniernamen und das Startgeld ein!")
+      alert("Bitte Turniername, Turnierart und Startgeld vollständig festlegen!")
       return
     }
 
     if (selectedPlayers.size === 0) return
 
     try {
+      const eligible = await ensurePlayersEligible(Array.from(selectedPlayers))
+      if (!eligible) return
       const entryFee = Number.parseFloat(tournamentEntryFee) || 0
 
       const playersWithCredit: Array<{
@@ -542,6 +805,12 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
         const player = availablePlayers.find((p) => p.id === playerId)
         if (!player) continue
 
+        const eligibility = await verifyPlayerEligibility(playerId)
+        if (!eligibility.eligible) {
+          alert(`${player.name} kann nicht hinzugefügt werden: ${eligibility.reason}`)
+          continue
+        }
+
         const alreadyRegisteredNormally = registeredPlayers.some(
           (rp) => stripDoubleSuffix(rp.player_name) === stripDoubleSuffix(player.name) && !isDoubleEntryName(rp.player_name),
         )
@@ -556,6 +825,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
           entry_fee: entryFee,
           deducted_from_credit: false,
           payment_method: "admin",
+        access_type: tournamentAccessType,
         })
 
         if (registerError) {
@@ -626,6 +896,12 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
         const player = availablePlayers.find((p) => p.id === playerWithCredit.id)
         if (!player) continue
 
+        const eligibility = await verifyPlayerEligibility(playerWithCredit.id)
+        if (!eligibility.eligible) {
+          alert(`${player.name} kann nicht hinzugefügt werden: ${eligibility.reason}`)
+          continue
+        }
+
         const alreadyRegisteredNormally = registeredPlayers.some(
           (rp) => getBasePlayerId(rp.player_id) === playerWithCredit.id.toString() && !isDoubleEntryName(rp.player_name),
         )
@@ -640,6 +916,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
           entry_fee: entryFee,
           deducted_from_credit: true,
           payment_method: "admin",
+        access_type: tournamentAccessType,
         })
 
         if (registerError) {
@@ -681,6 +958,12 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
         const player = availablePlayers.find((p) => p.id === playerId)
         if (!player) continue
 
+        const eligibility = await verifyPlayerEligibility(playerId)
+        if (!eligibility.eligible) {
+          alert(`${player.name} kann nicht hinzugefügt werden: ${eligibility.reason}`)
+          continue
+        }
+
         const alreadyRegisteredNormally = registeredPlayers.some(
           (rp) => stripDoubleSuffix(rp.player_name) === stripDoubleSuffix(player.name) && !isDoubleEntryName(rp.player_name),
         )
@@ -694,6 +977,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
           paid: false,
           entry_fee: entryFee,
           payment_method: "admin",
+        access_type: tournamentAccessType,
         })
 
         if (registerError) {
@@ -743,7 +1027,19 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
         .order("registered_at", { ascending: false })
 
       if (error) throw error
-      setRegisteredPlayers(data || [])
+
+      const rows = (data || []) as RegisteredPlayer[]
+      setRegisteredPlayers(rows)
+
+      const savedAccessType = rows.find((row) => row.access_type)?.access_type
+      if (
+        !tournamentAccessType &&
+        (savedAccessType === "public" ||
+          savedAccessType === "club_internal" ||
+          savedAccessType === "club_external")
+      ) {
+        setTournamentAccessType(savedAccessType)
+      }
     } catch (error) {
       console.error("Fehler beim Laden der registrierten Spieler:", error)
     }
@@ -821,7 +1117,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
         // Erwartet: Tabelle "dko_series" mit Spalten: id, name, startgeld (oder entry_fee)
         const { data, error } = await supabase
           .from("dko_series")
-          .select("id, name, startgeld")
+          .select("id, name, startgeld, access_type")
           .eq("id", seriesId)
           .maybeSingle()
 
@@ -834,10 +1130,18 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
 
         const nameFromDb = (data as any).name ?? ""
         const feeFromDbRaw = (data as any).startgeld ?? ""
+        const accessTypeFromDb = (data as any).access_type as TournamentAccessType | null
 
         // Inputs setzen (als Strings, weil deine State-Types strings sind)
         if (nameFromDb) setTournamentName(String(nameFromDb))
         if (feeFromDbRaw !== null && feeFromDbRaw !== undefined) setTournamentEntryFee(String(feeFromDbRaw))
+        if (
+          accessTypeFromDb === "public" ||
+          accessTypeFromDb === "club_internal" ||
+          accessTypeFromDb === "club_external"
+        ) {
+          setTournamentAccessType(accessTypeFromDb)
+        }
 
         setIsSeriesPrefilled(true)
       } catch (e) {
@@ -885,9 +1189,21 @@ useEffect(() => {
   }, [authLoading, adminLoading, user, isAdmin])
 
   useEffect(() => {
-    const isCompleted = tournamentName.trim() !== "" && tournamentEntryFee.trim() !== ""
+    const isCompleted =
+      tournamentName.trim() !== "" &&
+      tournamentEntryFee.trim() !== "" &&
+      tournamentAccessType !== ""
+
     setTournamentFormCompleted(isCompleted)
-  }, [tournamentName, tournamentEntryFee])
+  }, [tournamentName, tournamentEntryFee, tournamentAccessType])
+
+  useEffect(() => {
+    setSelectedPlayers(new Set())
+    setDoublePlayer1Id("")
+    setDoublePlayer2Id("")
+    void loadEligibilityMap()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tournamentAccessType])
 
   const buildRegistrationPayload = (playerId: number, playerName: string, useDoubleEntry: boolean) => {
     if (!useDoubleEntry) {
@@ -931,6 +1247,9 @@ const registerDoubleTeam = async () => {
       return
     }
 
+    const eligible = await ensurePlayersEligible([player1.id, player2.id])
+    if (!eligible) return
+
     const sortedNames = [player1.name, player2.name].sort((a, b) => a.localeCompare(b, "de"))
     const baseTeamName = buildDoubleTeamName(sortedNames[0], sortedNames[1])
 
@@ -971,6 +1290,7 @@ const registerDoubleTeam = async () => {
       entry_fee: entryFee,
       deducted_from_credit: false,
       payment_method: "admin",
+        access_type: tournamentAccessType,
     })
 
     if (error) throw error
@@ -993,6 +1313,9 @@ const registerDoubleTeam = async () => {
 
 
   const handlePlayerSelect = (playerId: number) => {
+    const eligibility = getPlayerEligibility(playerId)
+    if (!eligibility.eligible) return
+
     const newSelected = new Set(selectedPlayers)
     if (newSelected.has(playerId)) {
       newSelected.delete(playerId)
@@ -1163,7 +1486,7 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
     try {
       const { data: activeTournament, error } = await supabase
         .from("tournaments_status")
-        .select("tournament_id, tournament_type, tournament_name")
+        .select("tournament_id, tournament_type, tournament_name, access_type")
         .eq("status", "active")
         .limit(1)
         .maybeSingle()
@@ -1179,6 +1502,7 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
         tournamentId: activeTournament.tournament_id,
         tournamentName: activeTournament.tournament_name,
         tournamentType: activeTournament.tournament_type,
+        accessType: (activeTournament as any).access_type || null,
         incompleteMatches: 0,
       })
     } catch (error) {
@@ -1216,10 +1540,11 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
 
   const { tournamentType, tournamentId, tournamentName } = activeTournament
   const encodedName = encodeURIComponent(tournamentName)
+  const encodedAccessType = encodeURIComponent(activeTournament.accessType || "public")
 
   // ✅ Round Robin extra behandeln
   if (tournamentType === "round_robin") {
-    router.push(`/roundrobin?roundRobinId=${tournamentId}&tournamentName=${encodedName}`)
+    router.push(`/roundrobin?roundRobinId=${tournamentId}&tournamentName=${encodedName}&accessType=${encodedAccessType}`)
     return
   }
 
@@ -1232,13 +1557,13 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
 
   const route = routeMap[tournamentType] || "/16erdko"
 
-  router.push(`${route}?tournamentId=${tournamentId}&tournamentName=${encodedName}`)
+  router.push(`${route}?tournamentId=${tournamentId}&tournamentName=${encodedName}&accessType=${encodedAccessType}`)
 }
 
 
   const startScanner = async () => {
     if (!tournamentFormCompleted) {
-      alert("Bitte gib zuerst den Turniernamen und das Startgeld ein, bevor du Spieler scannst!")
+      alert("Bitte zuerst Turniername, Turnierart und Startgeld vollständig festlegen!")
       return
     }
 
@@ -1297,6 +1622,18 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
           setScannerMessage("USB-Scanner bereit...")
           scannerInputRef.current?.focus()
         }, 2000)
+        return
+      }
+
+      const eligibility = await verifyPlayerEligibility(spielData.id)
+      if (!eligibility.eligible) {
+        setScannerMessage(`🔒 ${spielData.name}: ${eligibility.reason}`)
+        setIsScanning(false)
+        setScannerInput("")
+        setTimeout(() => {
+          setScannerMessage("USB-Scanner bereit...")
+          scannerInputRef.current?.focus()
+        }, 2500)
         return
       }
 
@@ -1359,6 +1696,7 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
                 paid: false,
                 entry_fee: entryFee,
                 payment_method: "admin",
+        access_type: tournamentAccessType,
               })
 
               if (insertError) throw insertError
@@ -1390,6 +1728,7 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
           paid: false,
           entry_fee: entryFee,
           payment_method: "admin",
+        access_type: tournamentAccessType,
         })
 
         if (insertError) throw insertError
@@ -1417,6 +1756,7 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
           paid: false,
           entry_fee: entryFee,
           payment_method: "admin",
+        access_type: tournamentAccessType,
         })
 
         if (insertError) throw insertError
@@ -1475,6 +1815,11 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
       return
     }
 
+    if (!tournamentAccessType) {
+      alert("Bitte zuerst die Turnierart festlegen.")
+      return
+    }
+
     if (!allPlayersPaid) {
       setShowPaymentWarning(true)
       return
@@ -1502,10 +1847,11 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
         name: tournamentName.trim(),
         groupCount,
         players: rrPlayers,
+        accessType: tournamentAccessType as Exclude<TournamentAccessType, "">,
       })
 
       // Weiterleiten zur RoundRobin Seite
-      router.push(`/roundrobin?roundRobinId=${roundRobinId}&tournamentName=${encodedName}`)
+      router.push(`/roundrobin?roundRobinId=${roundRobinId}&tournamentName=${encodedName}&accessType=${encodeURIComponent(tournamentAccessType)}`)
       return
     } catch (e) {
       console.error("[RR] start error:", e)
@@ -1518,15 +1864,15 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
 
 
     if (tournamentSize === 16) {
-  router.push(`/16erdko?shuffle=true&tournamentName=${encodedName}`)
+  router.push(`/16erdko?shuffle=true&tournamentName=${encodedName}&accessType=${encodeURIComponent(tournamentAccessType)}`)
 } else if (tournamentSize === 8) {
-  router.push(`/8erdko?shuffle=true&tournamentName=${encodedName}`)
+  router.push(`/8erdko?shuffle=true&tournamentName=${encodedName}&accessType=${encodeURIComponent(tournamentAccessType)}`)
 } else if (tournamentSize === 32) {
-  router.push(`/32erdko?shuffle=true&tournamentName=${encodedName}`)
+  router.push(`/32erdko?shuffle=true&tournamentName=${encodedName}&accessType=${encodeURIComponent(tournamentAccessType)}`)
 } else if (tournamentSize === 64) {
-  router.push(`/64erdko?shuffle=true&tournamentName=${encodedName}`)
+  router.push(`/64erdko?shuffle=true&tournamentName=${encodedName}&accessType=${encodeURIComponent(tournamentAccessType)}`)
 } else if (tournamentSize === 128) {
-  router.push(`/128erdko?shuffle=true&tournamentName=${encodedName}`)
+  router.push(`/128erdko?shuffle=true&tournamentName=${encodedName}&accessType=${encodeURIComponent(tournamentAccessType)}`)
 }
   }
 
@@ -2117,6 +2463,62 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
             </div>
           </div>
 
+          <div className="mt-6">
+            <div className="mb-3 flex items-center gap-2">
+              <Lock className="h-5 w-5 text-orange-600" />
+              <h3 className="text-base font-bold text-gray-900">Turnierart / Teilnahme</h3>
+              <span className="font-bold text-red-500">*</span>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-3">
+              {[
+                {
+                  value: "public" as const,
+                  title: "Öffentlich",
+                  text: "Alle Spieler – auch Gäste und Fremdspieler",
+                },
+                {
+                  value: "club_internal" as const,
+                  title: "Vereinsintern",
+                  text: "Nur Mitglieder mit Paket „Interne Turniere“",
+                },
+                {
+                  value: "club_external" as const,
+                  title: "Vereins-Auswärts",
+                  text: "Nur Mitglieder mit Paket „Externe Turniere“",
+                },
+              ].map((option) => {
+                const active = tournamentAccessType === option.value
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    disabled={isSeriesPrefilled}
+                    onClick={() => setTournamentAccessType(option.value)}
+                    className={`rounded-xl border-2 p-3 text-left transition ${
+                      active
+                        ? "border-orange-500 bg-orange-50"
+                        : "border-gray-200 bg-white hover:border-orange-300"
+                    } ${isSeriesPrefilled ? "cursor-not-allowed opacity-70" : ""}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-black text-gray-900">{option.title}</span>
+                      {active ? <CheckCircle className="h-4 w-4 text-orange-600" /> : null}
+                    </div>
+                    <div className="mt-1 text-xs font-medium leading-4 text-gray-500">{option.text}</div>
+                  </button>
+                )
+              })}
+            </div>
+
+            {!tournamentAccessType ? (
+              <p className="mt-2 text-xs font-semibold text-orange-700">
+                Pflichtfeld – ohne Turnierart können keine Spieler registriert werden.
+              </p>
+            ) : null}
+          </div>
+
           <div className="mt-6 p-4 bg-white rounded-lg border-2 border-orange-200">
             {tournamentFormCompleted ? (
               <p className="text-green-600 font-semibold flex items-center gap-2">
@@ -2126,7 +2528,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
             ) : (
               <p className="text-orange-600 font-semibold flex items-center gap-2">
                 <AlertCircle className="w-4 h-4" />
-                Bitte fülle beide Felder aus, um Spieler zu registrieren
+                Bitte Turniername, Turnierart und Startgeld vollständig festlegen
               </p>
             )}
           </div>
@@ -2173,9 +2575,12 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Turnier bereit zum Starten</h3>
                 <p className="text-gray-600">
-                  {registeredPlayers.length} Spieler registriert →{" "}{tournamentMode === "dko" ? `${tournamentSize}er DKO Turnier` : `Round Robin (${rrGroupCount} Gruppen)`}
-
+                  {registeredPlayers.length} Spieler registriert →{" "}
+                  {tournamentMode === "dko" ? `${tournamentSize}er DKO Turnier` : `Round Robin (${rrGroupCount} Gruppen)`}
                 </p>
+                <div className="mt-1 text-sm font-bold text-gray-700">
+                  Teilnahme: {accessTypeLabel(tournamentAccessType)}
+                </div>
 				
 				
 				<div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -2226,7 +2631,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
               </div>
               <button
                 onClick={handleStartTournament}
-                disabled={!allPlayersPaid || startingTournament}
+                disabled={!allPlayersPaid || startingTournament || !tournamentAccessType}
 
                 className={`flex items-center gap-2 font-bold py-3 px-6 rounded-lg transition-colors ${
                   allPlayersPaid
@@ -2264,7 +2669,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
             <button
               onClick={startScanner}
-              disabled={!tournamentFormCompleted}
+              disabled={!tournamentFormCompleted || eligibilityLoading}
               className={`w-full mb-4 font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg ${
                 tournamentFormCompleted
                   ? "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
@@ -2319,53 +2724,90 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
                 availableFrequentPlayers.length === 0 ? (
                   <p className="text-center text-gray-500 py-8">Keine häufig verwendeten Spieler gefunden</p>
                 ) : (
-                  availableFrequentPlayers.map((player) => (
-                    <label
-                      key={player.id}
-                      className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-200 rounded-lg hover:border-orange-400 cursor-pointer transition-colors shadow-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedPlayers.has(player.id)}
-                        onChange={() => handlePlayerSelect(player.id)}
-                        className="w-5 h-5 border-2 border-white rounded focus:ring-orange-500 accent-orange-500 shadow-sm"
-                      />
-                      <div className="flex-1">
-                        <span className="font-semibold text-gray-900">{player.name}</span>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-orange-600 font-medium">{player.playCount}x gespielt</span>
+                  availableFrequentPlayers.map((player) => {
+                    const eligibility = getPlayerEligibility(player.id)
+
+                    return (
+                      <label
+                        key={player.id}
+                        className={`flex items-center gap-3 rounded-lg border-2 p-3 shadow-sm transition-colors ${
+                          eligibility.eligible
+                            ? "cursor-pointer border-orange-200 bg-orange-50 hover:border-orange-400"
+                            : "cursor-not-allowed border-gray-200 bg-gray-100 opacity-75"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedPlayers.has(player.id)}
+                          disabled={!eligibility.eligible}
+                          onChange={() => handlePlayerSelect(player.id)}
+                          className="h-5 w-5 rounded border-2 accent-orange-500"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <span className="font-semibold text-gray-900">{player.name}</span>
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-medium text-gray-500">{player.playCount}x gespielt</span>
+                            {!eligibility.eligible ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold text-gray-600">
+                                <Lock className="h-3 w-3" />
+                                {eligibility.reason}
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
-                      </div>
-                      <Star className="w-4 h-4 text-orange-500 fill-orange-500" />
-                    </label>
-                  ))
+                        {eligibility.eligible ? (
+                          <Star className="h-4 w-4 fill-orange-500 text-orange-500" />
+                        ) : (
+                          <Lock className="h-4 w-4 text-gray-500" />
+                        )}
+                      </label>
+                    )
+                  })
                 )
               ) : filteredPlayers.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">Keine Spieler gefunden</p>
               ) : (
-                filteredPlayers.map((player) => (
-                  <label
-                    key={player.id}
-                    className="flex items-center gap-3 p-3 bg-white border-2 border-white rounded-lg hover:border-orange-500 cursor-pointer transition-colors shadow-sm"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedPlayers.has(player.id)}
-                      onChange={() => handlePlayerSelect(player.id)}
-                      className="w-5 h-5 border-2 border-white rounded focus:ring-orange-500 accent-orange-500 shadow-sm"
-                    />
-                    <span className="font-medium text-gray-900">{player.name}</span>
-                  </label>
-                ))
+                filteredPlayers.map((player) => {
+                  const eligibility = getPlayerEligibility(player.id)
+
+                  return (
+                    <label
+                      key={player.id}
+                      className={`flex items-center gap-3 rounded-lg border-2 p-3 shadow-sm transition-colors ${
+                        eligibility.eligible
+                          ? "cursor-pointer border-gray-200 bg-white hover:border-orange-400"
+                          : "cursor-not-allowed border-gray-200 bg-gray-100 opacity-75"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedPlayers.has(player.id)}
+                        disabled={!eligibility.eligible}
+                        onChange={() => handlePlayerSelect(player.id)}
+                        className="h-5 w-5 rounded border-2 accent-orange-500"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-gray-900">{player.name}</div>
+                        {!eligibility.eligible ? (
+                          <div className="mt-1 flex items-center gap-1 text-xs font-bold text-gray-600">
+                            <Lock className="h-3 w-3" />
+                            {eligibility.reason}
+                          </div>
+                        ) : null}
+                      </div>
+                      {!eligibility.eligible ? <Lock className="h-4 w-4 text-gray-500" /> : null}
+                    </label>
+                  )
+                })
               )}
             </div>
 
             {!doubleMode ? (
   <button
     onClick={handleRegisterPlayers}
-    disabled={selectedPlayers.size === 0 || !tournamentFormCompleted}
+    disabled={selectedPlayers.size === 0 || !tournamentFormCompleted || eligibilityLoading}
     className={`w-full font-bold py-3 px-6 rounded-lg transition-colors ${
-      selectedPlayers.size > 0 && tournamentFormCompleted
+      selectedPlayers.size > 0 && tournamentFormCompleted && !eligibilityLoading
         ? "bg-orange-500 hover:bg-orange-600 text-white"
         : "bg-gray-300 text-gray-500 cursor-not-allowed"
     }`}
@@ -2383,11 +2825,14 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
           className="w-full px-4 py-3 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none bg-white shadow-md"
         >
           <option value="">Bitte wählen</option>
-          {availablePlayers.map((player) => (
-            <option key={player.id} value={player.id}>
-              {player.name}
-            </option>
-          ))}
+          {availablePlayers.map((player) => {
+            const eligibility = getPlayerEligibility(player.id)
+            return (
+              <option key={player.id} value={player.id} disabled={!eligibility.eligible}>
+                {player.name}{eligibility.eligible ? "" : ` — 🔒 ${eligibility.reason}`}
+              </option>
+            )
+          })}
         </select>
       </div>
 
@@ -2401,11 +2846,14 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
           <option value="">Bitte wählen</option>
           {availablePlayers
             .filter((player) => String(player.id) !== doublePlayer1Id)
-            .map((player) => (
-              <option key={player.id} value={player.id}>
-                {player.name}
-              </option>
-            ))}
+            .map((player) => {
+              const eligibility = getPlayerEligibility(player.id)
+              return (
+                <option key={player.id} value={player.id} disabled={!eligibility.eligible}>
+                  {player.name}{eligibility.eligible ? "" : ` — 🔒 ${eligibility.reason}`}
+                </option>
+              )
+            })}
         </select>
       </div>
     </div>
@@ -2425,9 +2873,9 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
     <button
       onClick={registerDoubleTeam}
-      disabled={!doublePlayer1Id || !doublePlayer2Id || !tournamentFormCompleted}
+      disabled={!doublePlayer1Id || !doublePlayer2Id || !tournamentFormCompleted || eligibilityLoading}
       className={`w-full font-bold py-3 px-6 rounded-lg transition-colors ${
-        doublePlayer1Id && doublePlayer2Id && tournamentFormCompleted
+        doublePlayer1Id && doublePlayer2Id && tournamentFormCompleted && !eligibilityLoading
           ? "bg-orange-500 hover:bg-orange-600 text-white"
           : "bg-gray-300 text-gray-500 cursor-not-allowed"
       }`}
