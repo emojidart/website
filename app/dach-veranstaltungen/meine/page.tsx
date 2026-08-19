@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import {
+  ArrowLeft,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -228,6 +229,19 @@ export default function MeineDachVeranstaltungenPage() {
       <Header />
 
       <main className="mx-auto max-w-6xl space-y-5 px-4 pt-20 sm:px-6">
+        <div>
+          <Button
+            asChild
+            variant="ghost"
+            className="-ml-2 rounded-xl text-slate-600 hover:bg-white hover:text-slate-950"
+          >
+            <Link href="/dach-veranstaltungen">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Zur Turnierübersicht
+            </Link>
+          </Button>
+        </div>
+
         <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 px-6 py-7 text-white shadow-2xl shadow-slate-300/60 sm:px-8 sm:py-9">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl" />
           <div className="absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-amber-300/10 blur-3xl" />

@@ -64,6 +64,9 @@ type EventRow = {
   event_status: string | null
   latitude: number | null
   longitude: number | null
+  internal_event_id: string | null
+  _source_kind?: "dach" | "internal"
+  _internal_id?: string | null
 }
 
 const countryNames: Record<string, string> = {
@@ -206,27 +209,6 @@ export default function VeranstaltungenPage() {
   const [query, setQuery] = useState("")
   const [showFilters, setShowFilters] = useState(false)
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all")
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-  useEffect(() => {
-    let active = true
-
-    async function checkAuth() {
-      const { data } = await supabase.auth.getUser()
-      if (active) setIsLoggedIn(Boolean(data.user))
-    }
-
-    void checkAuth()
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active) setIsLoggedIn(Boolean(session?.user))
-    })
-
-    return () => {
-      active = false
-      authListener.subscription.unsubscribe()
-    }
-  }, [])
 
   useEffect(() => {
     let active = true
@@ -235,18 +217,86 @@ export default function VeranstaltungenPage() {
       setLoading(true)
       setError("")
 
-      const { data, error } = await supabase
-        .from("dach_events")
-        .select(
-          "id,name,event_type,event_date,start_date,end_date,event_time,location,country_code,postal_code,city,region,organizer_name,entry_fee,max_participants,details,photo_url,mode,discipline,format,startgeld_details,source,event_status,latitude,longitude",
-        )
-        .in("event_status", ["approved", "cancelled"])
-        .order("start_date", { ascending: true })
-        .order("event_time", { ascending: true })
+      const [dachRes, internalRes] = await Promise.all([
+        supabase
+          .from("dach_events")
+          .select(
+            "id,internal_event_id,name,event_type,event_date,start_date,end_date,event_time,location,country_code,postal_code,city,region,organizer_name,entry_fee,max_participants,details,photo_url,mode,discipline,format,startgeld_details,source,event_status,latitude,longitude",
+          )
+          .in("event_status", ["approved", "cancelled"])
+          .order("start_date", { ascending: true })
+          .order("event_time", { ascending: true }),
+
+        supabase
+          .from("events")
+          .select(
+            "id,name,event_type,event_date,start_date,end_date,event_time,location,entry_fee,max_participants,details,photo_url,mode,startgeld_details,source",
+          )
+          .eq("event_type", "tournament")
+          .order("start_date", { ascending: true })
+          .order("event_time", { ascending: true }),
+      ])
 
       if (!active) return
-      if (error) setError(error.message)
-      else setEvents((data || []) as EventRow[])
+
+      if (dachRes.error) {
+        setError(dachRes.error.message)
+        setLoading(false)
+        return
+      }
+
+      if (internalRes.error) {
+        setError(internalRes.error.message)
+        setLoading(false)
+        return
+      }
+
+      const dachRows = ((dachRes.data || []) as any[]).map((row) => ({
+        ...row,
+        _source_kind: "dach" as const,
+        _internal_id: row.internal_event_id || null,
+      }))
+
+      const linkedInternalIds = new Set(
+        dachRows
+          .map((row) => row.internal_event_id)
+          .filter((id): id is string => Boolean(id)),
+      )
+
+      const internalOnly = ((internalRes.data || []) as any[])
+        .filter((row) => !linkedInternalIds.has(String(row.id)))
+        .map((row) => ({
+          id: String(row.id),
+          internal_event_id: String(row.id),
+          name: row.name,
+          event_type: row.event_type,
+          event_date: row.event_date || row.start_date,
+          start_date: row.start_date,
+          end_date: row.end_date,
+          event_time: row.event_time,
+          location: row.location,
+          country_code: "AT",
+          postal_code: null,
+          city: null,
+          region: null,
+          organizer_name: "EMD",
+          entry_fee: row.entry_fee,
+          max_participants: row.max_participants,
+          details: row.details,
+          photo_url: row.photo_url,
+          mode: row.mode,
+          discipline: row.mode,
+          format: null,
+          startgeld_details: row.startgeld_details,
+          source: row.source || "internal",
+          event_status: "approved",
+          latitude: null,
+          longitude: null,
+          _source_kind: "internal" as const,
+          _internal_id: String(row.id),
+        }))
+
+      setEvents([...dachRows, ...internalOnly] as EventRow[])
       setLoading(false)
     }
 
@@ -345,41 +395,23 @@ export default function VeranstaltungenPage() {
               <div className="max-w-2xl">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold text-orange-200 backdrop-blur">
                   <Trophy className="h-3.5 w-3.5" />
-                  Die Turnierübersicht für den DACH-Raum
+                  Alle Dart-Turniere auf einen Blick
                 </div>
                 <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">
                   Finde dein nächstes
                   <span className="block text-orange-400">Dart-Turnier.</span>
                 </h1>
                 <p className="mt-4 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-                  Durchsuche Veranstaltungen in Österreich, Deutschland und der Schweiz nach Ort, Verein, Datum oder Dartart.
+                  EMD-Turniere und öffentliche DACH-Turniere gemeinsam – ohne doppelte Einträge.
                 </p>
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row">
-                {isLoggedIn ? (
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-12 rounded-2xl border-white/20 bg-white/10 px-5 font-bold text-white backdrop-blur hover:bg-white/20 hover:text-white"
-                  >
-                    <Link href="/dach-veranstaltungen/meine">
-                      <List className="mr-2 h-4 w-4" />
-                      Meine Turniere
-                    </Link>
-                  </Button>
-                ) : null}
-
-                <Button
-                  asChild
-                  className="h-12 rounded-2xl bg-orange-500 px-5 font-bold text-white shadow-lg shadow-orange-950/30 hover:bg-orange-600"
-                >
-                  <Link href="/dach-veranstaltungen/neu">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Turnier einreichen
-                  </Link>
-                </Button>
-              </div>
+              <Button asChild className="h-12 rounded-2xl bg-orange-500 px-5 font-bold text-white shadow-lg shadow-orange-950/30 hover:bg-orange-600">
+                <Link href="/dach-veranstaltungen/neu">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Veranstaltung einreichen
+                </Link>
+              </Button>
             </div>
           </div>
         </section>
@@ -599,7 +631,7 @@ export default function VeranstaltungenPage() {
                 return (
                   <Link
                     key={event.id}
-                    href={`/dach-veranstaltungen/${event.id}`}
+                    href={event._source_kind === "internal" ? `/veranstaltungen/${event._internal_id || event.id}` : `/dach-veranstaltungen/${event.id}`}
                     className="group block"
                   >
                     <article

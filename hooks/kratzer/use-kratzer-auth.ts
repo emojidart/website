@@ -8,23 +8,43 @@ export function useKratzerAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
+
+    const applyUser = (nextUser: any) => {
+      if (!mounted) return
+
+      setCurrentUser((previousUser: any) => {
+        const previousId = previousUser?.id ?? null
+        const nextId = nextUser?.id ?? null
+
+        // Supabase kann bei INITIAL_SESSION, SIGNED_IN und TOKEN_REFRESH
+        // denselben Benutzer mehrfach liefern. Solange sich die User-ID
+        // nicht ändert, behalten wir dasselbe State-Objekt und verhindern
+        // damit unnötige Folge-Effects auf der Kratzer-Seite.
+        if (previousId === nextId) return previousUser
+
+        return nextUser
+      })
+
+      setLoading(false)
+    }
+
     const checkUser = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser()
 
-      setCurrentUser(user)
-      setLoading(false)
+      applyUser(user)
     }
 
     checkUser()
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUser(session?.user || null)
-      setLoading(false)
+      applyUser(session?.user || null)
     })
 
     return () => {
+      mounted = false
       authListener.subscription.unsubscribe()
     }
   }, [])

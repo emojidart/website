@@ -198,12 +198,31 @@ export default function ProfilDatenAppPage() {
   }
 
   const loadMyClubPlayer = async () => {
+    if (!session?.user) return
+
     try {
       setLoading(true)
       setError(null)
       setSuccess(null)
 
-      // ✅ Fix: mehrere rows pro user_id → order + limit(1)
+      // Konto-Verknüpfung ist die einzige Quelle der Wahrheit:
+      // auth user -> user_profiles.player_id -> club_players.id
+      const { data: profile, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("player_id")
+        .eq("user_id", session.user.id)
+        .maybeSingle()
+
+      if (profileError) throw profileError
+
+      if (!profile?.player_id) {
+        setRow(null)
+        setError(
+          "Dein Benutzerkonto ist noch keinem Vereinsmitglied zugeordnet. Bitte wende dich an den Vorstand.",
+        )
+        return
+      }
+
       const { data, error } = await supabase
         .from("club_players")
         .select(`
@@ -213,34 +232,41 @@ export default function ProfilDatenAppPage() {
           birthdate, player_number, jersey_size, email, phone,
           club_joined_at
         `)
-        .eq("auth_user_id", session!.user.id)
-        .order("id", { ascending: false })
-        .limit(1)
+        .eq("id", profile.player_id)
         .maybeSingle()
 
       if (error) throw error
 
-      const cp = (data ?? null) as ClubPlayer | null
+      if (!data) {
+        setRow(null)
+        setError(
+          "Der mit deinem Benutzerkonto verknüpfte Mitgliedsdatensatz wurde nicht gefunden.",
+        )
+        return
+      }
+
+      const cp = data as ClubPlayer
       setRow(cp)
 
       setForm({
-        name: cp?.name ?? "",
-        throwing_hand: mapThrowingHandFromDB(cp?.throwing_hand ?? null),
-        origin: cp?.origin ?? "",
+        name: cp.name ?? "",
+        throwing_hand: mapThrowingHandFromDB(cp.throwing_hand ?? null),
+        origin: cp.origin ?? "",
 
-        street: cp?.street ?? "",
-        house_number: cp?.house_number ?? "",
-        postal_code: cp?.postal_code ?? "",
-        city: cp?.city ?? "",
+        street: cp.street ?? "",
+        house_number: cp.house_number ?? "",
+        postal_code: cp.postal_code ?? "",
+        city: cp.city ?? "",
 
-        birthdate: toDateInput(cp?.birthdate ?? null),
-        player_number: cp?.player_number ?? "",
-        jersey_size: cp?.jersey_size ?? "",
-        email: cp?.email ?? "",
-        phone: cp?.phone ?? "",
+        birthdate: toDateInput(cp.birthdate ?? null),
+        player_number: cp.player_number ?? "",
+        jersey_size: cp.jersey_size ?? "",
+        email: cp.email ?? "",
+        phone: cp.phone ?? "",
       })
     } catch (e: any) {
       console.error("loadMyClubPlayer ERROR:", e)
+      setRow(null)
       setError(e?.message ? `Fehler: ${e.message}` : "Fehler beim Laden deiner Daten.")
     } finally {
       setLoading(false)
@@ -249,20 +275,46 @@ export default function ProfilDatenAppPage() {
 
   const handleSave = async () => {
     if (!session?.user) return
+
     setSaving(true)
     setError(null)
     setSuccess(null)
 
     try {
       const cleanName = String(form.name || "").trim()
+
       if (!cleanName) {
         setError("Bitte trage deinen Vor- und Nachnamen ein.")
-        setSaving(false)
+        return
+      }
+
+      // Sicherheitsregel:
+      // Diese Seite darf niemals selbst einen neuen club_players-Datensatz anlegen.
+      if (!row?.id) {
+        setError(
+          "Dein Konto ist keinem Mitglied zugeordnet. Speichern wurde aus Sicherheitsgründen verhindert.",
+        )
+        return
+      }
+
+      // Noch einmal prüfen, ob der eingeloggte User wirklich mit genau diesem
+      // club_players-Datensatz verknüpft ist.
+      const { data: profile, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("player_id")
+        .eq("user_id", session.user.id)
+        .maybeSingle()
+
+      if (profileError) throw profileError
+
+      if (!profile?.player_id || profile.player_id !== row.id) {
+        setError(
+          "Die Mitglieds-Verknüpfung ist nicht eindeutig. Speichern wurde aus Sicherheitsgründen verhindert.",
+        )
         return
       }
 
       const payload = {
-        user_id: session.user.id,
         name: cleanName,
         throwing_hand: mapThrowingHandToDB(form.throwing_hand),
         origin: normalizeEmptyToNull(form.origin),
@@ -279,22 +331,12 @@ export default function ProfilDatenAppPage() {
         phone: normalizeEmptyToNull(form.phone),
       }
 
-      if (row?.id) {
-        const { error: upErr } = await supabase
-          .from("club_players")
-          .update(payload)
-          .eq("id", row.id)
-          .eq("user_id", session.user.id)
+      const { error: updateError } = await supabase
+        .from("club_players")
+        .update(payload)
+        .eq("id", row.id)
 
-        if (upErr) throw upErr
-
-        setSuccess("Gespeichert ✅")
-        await loadMyClubPlayer()
-        return
-      }
-
-      const { error: insErr } = await supabase.from("club_players").insert(payload)
-      if (insErr) throw insErr
+      if (updateError) throw updateError
 
       setSuccess("Gespeichert ✅")
       await loadMyClubPlayer()

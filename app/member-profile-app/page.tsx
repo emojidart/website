@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/hooks/use-auth"
+import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useDues } from "@/hooks/vereinsverwaltung/useDues"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
@@ -26,6 +27,7 @@ import {
   ShieldCheck,
   Target,
   Trophy,
+  Sparkles,
   ArrowRight,
   LogOut,
   Camera,
@@ -40,6 +42,8 @@ import {
     Dumbbell,
   Printer,
   Trash2,
+  ShoppingBag,
+  Gift,
 } from "lucide-react"
 import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
 
@@ -98,14 +102,51 @@ const formatMonthYearDE = (iso: string) => {
   return d.toLocaleDateString("de-DE", { month: "long", year: "numeric" })
 }
 
+
+const daysUntilDate = (iso: string | null | undefined) => {
+  if (!iso) return null
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const target = new Date(`${iso}T00:00:00`)
+  target.setHours(0, 0, 0, 0)
+
+  return Math.ceil((target.getTime() - today.getTime()) / 86400000)
+}
+
+const formatShortDateAT = (iso: string) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString("de-AT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+
+const trialModuleLabel = (code: string) => {
+  if (code === "premium_app") return "EMD App"
+  if (code === "edart_league") return "E-Dart Liga"
+  if (code === "steeldart_league") return "Steeldart Liga"
+  if (code === "internal_tournaments") return "Interne Turniere"
+  if (code === "external_tournaments") return "Externe Turniere"
+  if (code === "external_events") return "Externe Veranstaltungen"
+  if (code === "club_events") return "Vereinsveranstaltungen"
+  if (code === "base_membership") return "Grundmitgliedschaft"
+  return code
+}
+
 export default function MemberProfileAppPage() {
   const CHAT_SCOPE: "team" | "captains" | "club" = "team"
 
   const { session, loading: authLoading } = useAuth()
+  const {
+    loading: membershipAccessLoading,
+    endsOn: normalMembershipEndsOn,
+    activeTrials,
+  } = useMembershipAccess()
+
   const router = useRouter()
 
   const [profile, setProfile] = useState<UserProfileWithLastSeen | null>(null)
-const [tournamentPushEnabled, setTournamentPushEnabled] = useState<boolean | null>(null)
 const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
 const [loading, setLoading] = useState(true)
 const [error, setError] = useState<string | null>(null)
@@ -222,6 +263,30 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
     if (due > 0) parts.push(`${due}× fällig`)
     return parts.join(" • ")
   }, [myDuesDetail])
+
+  const membershipExpiryDays = daysUntilDate(normalMembershipEndsOn)
+
+  const expiringTrials = useMemo(
+    () =>
+      (activeTrials || [])
+        .map((trial: any) => ({
+          ...trial,
+          daysLeft: daysUntilDate(trial.ends_on),
+        }))
+        .filter(
+          (trial: any) =>
+            trial.daysLeft !== null &&
+            trial.daysLeft >= 0 &&
+            trial.daysLeft <= 30,
+        )
+        .sort((a: any, b: any) => Number(a.daysLeft) - Number(b.daysLeft)),
+    [activeTrials],
+  )
+
+  const showNormalMembershipExpiry =
+    membershipExpiryDays !== null &&
+    membershipExpiryDays >= 0 &&
+    membershipExpiryDays <= 30
 
   const [pendingMatches, setPendingMatches] = useState<Match[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -536,16 +601,6 @@ const fetchProfile = async () => {
 
     setProfile(profileData as any)
 
-    const { data: pushData, error: pushError } = await supabase
-      .from("push_preferences")
-      .select("tournament_push_enabled")
-      .eq("user_id", session.user.id)
-      .maybeSingle()
-
-    if (pushError) throw pushError
-
-    setTournamentPushEnabled(pushData?.tournament_push_enabled ?? false)
-
     if ((profileData as any)?.player_id) {
       const { data: permissionRows, error: permissionErr } = await supabase
         .from("user_page_permissions")
@@ -728,23 +783,45 @@ const fetchProfile = async () => {
 
   const hasClubRole = userPagePermissions.some((p) => p.allowed)
 
-  const navigationItems = [
-    { title: "Dashboard", description: "Statistiken, Ergebnisse und Spielpläne", icon: BarChart3, href: "/member-dashboard-app", color: "from-blue-500 to-blue-600" },
-    { title: "Zusagen & Aufstellung", description: "Spieler zusagen verwalten und Teamaufstellung erstellen", icon: CheckCircle, href: "/member-availability", color: "from-green-500 to-emerald-600" },
-    { title: "Meine Teams", description: "Teams und Teammitglieder verwalten", icon: Users, href: "/meine-teams-app", color: "from-teal-500 to-teal-600" },
-    { title: "Spieler Statistiken", description: "Detaillierte Leistungsanalyse", icon: BarChart3, href: "/member-statistics-app", color: "from-indigo-500 to-indigo-600" },
-	{ title: "Turnierstatistiken", description: "Summer Special, DKO und Kratzer-Ergebnisse", icon: Trophy, href: "/member-tournament-statistics-app", color: "from-orange-500 to-yellow-600" },
-    { title: "Statistik Blätter drucken", description: "Statistik-/Spielerblätter auswählen und drucken", icon: Printer, href: "/team-print-sheet", color: "from-orange-500 to-orange-600", requiresLeadership: true },
-	{ title: "Trainingstreff", description: "Trainings, Turniere und Treffen mit Spielern", icon: Calendar, href: "/training_event", color: "from-violet-500 to-purple-600" },
-    { title: "Mein Training", description: "Trainingsübungen und Trainingsplan für dein eigenes Training", icon: Dumbbell, href: "/training-app", color: "from-orange-500 to-red-600" },
-    { title: "Lobby", description: "Spiele gegen andere Spieler", icon: Target, href: "/lobby-app", color: "from-pink-500 to-pink-600" },
-    { title: "Match Galerie", description: "Match-Galerie und Spielfotos", icon: Camera, href: "/match-galerie", color: "from-purple-500 to-purple-600" },
-    { title: "Bonusgeld", description: "Bonuspunkte und Belohnungen", icon: Euro, href: "/member-bonus-app", color: "from-yellow-500 to-yellow-600" },
-    { title: "Liga Tabellen", description: "Aktuelle Ligastände", icon: Table, href: "/member-league-app", color: "from-emerald-500 to-emerald-600" },
-    { title: "Vereinskalender", description: "Termine und Events verwalten", icon: Calendar, href: "/vereinskalender-app", color: "from-green-500 to-green-600" },
-    { title: "Feed", description: "Poste, kommentiere und bleib verbunden", icon: MessageCircle, href: "/community-app", color: "from-orange-500 to-red-600" },
-    { title: "Team Chat", description: "Kommunikation mit dem Team", icon: MessageCircle, href: "/chat-app", color: "from-purple-500 to-purple-600" },
-    { title: "Support", description: "Hilfe und Support-Anfragen", icon: HelpCircle, href: "/support-app", color: "from-red-500 to-red-600" },
+  const navigationGroups = [
+    {
+      title: "Spielen & Teams",
+      description: "Alles rund um Liga, Teams und Ergebnisse",
+      items: [
+        { title: "Dashboard", description: "Ergebnisse & Spielpläne", icon: BarChart3, href: "/member-dashboard-app" },
+        { title: "Zusagen & Aufstellung", description: "Für kommende Spiele zu- oder absagen", icon: CheckCircle, href: "/member-availability" },
+        { title: "Meine Teams", description: "Teams & Mitspieler", icon: Users, href: "/meine-teams-app" },
+        { title: "Liga Tabellen", description: "Aktuelle Ligastände", icon: Table, href: "/member-league-app" },
+        { title: "Spieler Statistiken", description: "Deine Liga-Leistung", icon: BarChart3, href: "/member-statistics-app" },
+        { title: "Turnierstatistiken", description: "Summer Special, DKO & Kratzer", icon: Trophy, href: "/member-tournament-statistics-app" },
+      ],
+    },
+    {
+      title: "Training & Community",
+      description: "Trainieren, spielen und mit anderen austauschen",
+      items: [
+        { title: "Trainingstreff", description: "Gemeinsame Trainings & Treffen", icon: Calendar, href: "/training_event" },
+        { title: "Mein Training", description: "Übungen & Trainingsplan", icon: Dumbbell, href: "/training-app" },
+        { title: "Lobby", description: "Gegen andere Spieler spielen", icon: Target, href: "/lobby-app" },
+        { title: "Team Chat", description: "Mit deinem Team schreiben", icon: MessageCircle, href: "/chat-app" },
+        { title: "Feed", description: "Beiträge & Neuigkeiten", icon: MessageCircle, href: "/community-app" },
+        { title: "Match Galerie", description: "Spielfotos ansehen", icon: Camera, href: "/match-galerie" },
+      ],
+    },
+    {
+      title: "Verein & Extras",
+      description: "Mitgliedschaft, Termine und weitere Bereiche",
+      items: [
+        { title: "Vereinskalender", description: "Termine & Veranstaltungen", icon: Calendar, href: "/vereinskalender-app" },
+        { title: "DACH Turniere", description: "Turniere in AT, DE & CH", icon: Trophy, href: "/dach-veranstaltungen" },
+        { title: "Dartbörse", description: "Darts & Zubehör", icon: ShoppingBag, href: "/dartboerse" },
+        { title: "Meine Bonuspunkte", description: "Punkte & Rang ansehen", icon: Sparkles, href: "/meine-bonus-punkte" },
+        { title: "Bonusgeld", description: "Belohnungen ansehen", icon: Euro, href: "/member-bonus-app" },
+        { title: "Meine Mitgliedschaft", description: "Paket & Zahlungsweise", icon: Euro, href: "/member-membership" },
+        { title: "Support", description: "Hilfe & Anfragen", icon: HelpCircle, href: "/support-app" },
+        { title: "Statistikblätter drucken", description: "Nur für Teamleitung", icon: Printer, href: "/team-print-sheet", requiresLeadership: true },
+      ],
+    },
   ]
 
   const formatMatchDate = (dateString: string) => {
@@ -903,13 +980,13 @@ if (error || !profile) {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Header />
 
-      <main className="flex-grow mx-auto w-full px-4 py-6 sm:py-8 pb-24 md:pb-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+      <main className="flex-grow mx-auto w-full px-3 sm:px-4 pt-14 sm:pt-14 pb-24 md:pb-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
        
 
    
 
  {/* Willkommen */}
-<div className="mt-8 sm:mt-10 mb-5 sm:mb-6">
+<div className="mt-2 sm:mt-4 mb-4 sm:mb-6">
   <div className="flex items-center justify-between">
     <div>
       
@@ -925,85 +1002,98 @@ if (error || !profile) {
 </div>
 
 
- {/* ✅ Beiträge: überfällig / fällig inkl. Beträge */}
-        {myDuesDetail.overdueCount > 0 && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-500">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl shadow-lg">
-                    <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
-                </div>
-                <div className="flex-grow w-full">
-                  <h3 className="text-base sm:text-lg font-bold text-red-700 mb-2">Beitrag überfällig</h3>
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    Du hast{" "}
-                    <b>
-                      {myDuesDetail.overdueCount}×{" "}
-                      {myDuesDetail.overdueCount === 1 ? "überfälligen Beitrag" : "überfällige Beiträge"}
-                    </b>{" "}
-                    offen (Summe: <b>{formatCurrencyEUR(myDuesDetail.overdueAmount)}</b>).
-                    <br />
-                    <span className="font-medium text-red-700">
-                      {myDuesDetail.overdueCount === 1
-                        ? "Der offene Betrag muss schnellstmöglich beglichen werden."
-                        : "Die offenen Beträge müssen schnellstmöglich beglichen werden."}
-                    </span>
-                    <br />
-                    Solltest du Zahlungsschwierigkeiten haben, wende dich bitte an die Vereinsleitung.
-                  </p>
-
-                  {overdueMonthsLabel.length > 0 && (
-                    <div className="text-sm text-gray-700 mb-3">
-                      Überfällig für: <b>{overdueMonthsLabel.join(", ")}</b>
-                    </div>
-                  )}
-
-                  <Badge className="bg-red-600 text-white">{myDuesDetail.overdueCount}× überfällig</Badge>
-                </div>
+ {/* Neue Hinweise für Mitgliedschaft & Testfreischaltungen */}
+  {!membershipAccessLoading && (showNormalMembershipExpiry || expiringTrials.length > 0) ? (
+    <div className="mb-6 sm:mb-8 space-y-3">
+      {showNormalMembershipExpiry && normalMembershipEndsOn ? (
+        <Card
+          className={
+            membershipExpiryDays !== null && membershipExpiryDays <= 7
+              ? "border-0 shadow-xl bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-500"
+              : "border-0 shadow-xl bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-l-amber-500"
+          }
+        >
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <div
+                className={
+                  membershipExpiryDays !== null && membershipExpiryDays <= 7
+                    ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white"
+                    : "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white"
+                }
+              >
+                <AlertTriangle className="h-5 w-5" />
               </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* ✅ Fällig immer anzeigen, auch wenn es zusätzlich überfällige gibt (gelb) */}
-        {myDuesDetail.dueCount > 0 && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-l-yellow-500">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-xl shadow-lg">
-                    <Bell className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-black text-gray-900">Mitgliedschaft läuft bald aus</h3>
+                  <Badge
+                    className={
+                      membershipExpiryDays !== null && membershipExpiryDays <= 7
+                        ? "rounded-full bg-red-600 text-white"
+                        : "rounded-full bg-amber-500 text-white"
+                    }
+                  >
+                    {membershipExpiryDays === 0
+                      ? "Heute"
+                      : `Noch ${membershipExpiryDays} ${membershipExpiryDays === 1 ? "Tag" : "Tage"}`}
+                  </Badge>
                 </div>
-                <div className="flex-grow w-full">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">Beitrag fällig</h3>
-                  {dueMonthsLabel.length > 0 && (
-                    <div className="text-sm text-gray-700 mb-3">
-                      Fällig für: <b>{dueMonthsLabel.join(", ")}</b>
-                    </div>
-                  )}
 
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-                    Du hast{" "}
-                    <b>
-                      {myDuesDetail.dueCount}× {myDuesDetail.dueCount === 1 ? "fälligen Beitrag" : "fällige Beiträge"}
-                    </b>{" "}
-                    offen (Summe: <b>{formatCurrencyEUR(myDuesDetail.dueAmount)}</b>).
-                    <br />
-                    {myDuesDetail.dueCount === 1
-                      ? "Der Betrag muss spätestens bis zum 20. des Monats auf unserem Vereinskonto eingegangen sein."
-                      : "Die Beträge müssen spätestens bis zum 20. des Monats auf unserem Vereinskonto eingegangen sein."}
-                  </p>
+                <p className="mt-1 text-sm font-semibold text-gray-700">
+                  Dein aktuelles Paket ist bis <b>{formatShortDateAT(normalMembershipEndsOn)}</b> freigeschaltet.
+                </p>
 
-                  <Badge className="bg-yellow-500 text-white">{myDuesDetail.dueCount}× fällig</Badge>
-                </div>
+                <Button asChild size="sm" variant="outline" className="mt-3 rounded-xl bg-white">
+                  <Link href="/member-membership">Mitgliedschaft ansehen</Link>
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
+      {expiringTrials.map((trial: any) => (
+        <Card
+          key={trial.id}
+          className={
+            trial.daysLeft <= 7
+              ? "border-0 shadow-xl bg-gradient-to-r from-purple-50 to-red-50 border-l-4 border-l-purple-600"
+              : "border-0 shadow-xl bg-gradient-to-r from-purple-50 to-fuchsia-50 border-l-4 border-l-purple-500"
+          }
+        >
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white">
+                <Gift className="h-5 w-5" />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-black text-gray-900">Testfreischaltung läuft bald aus</h3>
+                  <Badge className="rounded-full bg-purple-600 text-white">
+                    {trial.daysLeft === 0
+                      ? "Heute"
+                      : `Noch ${trial.daysLeft} ${trial.daysLeft === 1 ? "Tag" : "Tage"}`}
+                  </Badge>
+                </div>
+
+                <p className="mt-1 text-sm font-semibold text-gray-700">
+                  <b>{trialModuleLabel(trial.module_code)}</b> ist noch bis{" "}
+                  <b>{formatShortDateAT(trial.ends_on)}</b> kostenlos freigeschaltet.
+                </p>
+
+                <Button asChild size="sm" variant="outline" className="mt-3 rounded-xl bg-white">
+                  <Link href="/member-membership">Details ansehen</Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  ) : null}
 
 
   {totalUnread > 0 && (
@@ -1136,7 +1226,7 @@ if (error || !profile) {
 
       {/* Willkommen */}
       <div className="mt-4 rounded-xl border bg-white/70 backdrop-blur-sm p-3 text-sm text-gray-700">
-        Hier findest du alles rund um deine Teams, Spiele und Vereinsinfos.
+        Dein persönlicher Bereich – wichtige Infos zuerst, alles Weitere übersichtlich darunter.
       </div>
 	  
 	  
@@ -1302,60 +1392,6 @@ if (error || !profile) {
   </CardContent>
 </Card>
 
-{/* Spiel-Benachrichtigungen */}
-<Card
-  className="mb-6 sm:mb-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm cursor-pointer hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden"
-  onClick={() => router.push("/push_preferences")}
->
- <CardContent className="p-0">
-  <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b bg-gradient-to-r from-gray-50 to-white">
-    <div className="min-w-0">
-      <div className="text-[11px] uppercase tracking-wide text-gray-500">Benachrichtigungen</div>
-      <div className="text-sm font-semibold text-gray-900">Spiel-Push (Live)</div>
-    </div>
-
-    <div className="shrink-0">
-      {tournamentPushEnabled ? (
-        <Badge className="bg-green-600 text-white rounded-full">Aktiv</Badge>
-      ) : (
-        <Badge className="bg-red-600 text-white rounded-full">Aus</Badge>
-      )}
-    </div>
-  </div>
-
-  <div className="px-4 sm:px-5 py-4">
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex items-start gap-3 min-w-0">
-        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md shrink-0">
-          <Bell className="h-5 w-5 text-white" />
-        </div>
-
-        <div className="min-w-0">
-          <div className="text-sm font-bold text-gray-900">Spielstart & Updates</div>
-          <div className="text-sm text-gray-600 mt-1 leading-snug">
-            Erhalte Push-Infos bei Spielstart & Änderungen.
-          </div>
-
-    
-        </div>
-      </div>
-
-      <div className="shrink-0">
-        <div className="w-10 h-10 rounded-xl border bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all">
-          <ArrowRight className="h-5 w-5 text-purple-700" />
-        </div>
-      </div>
-    </div>
-
-    <div className="mt-4 text-xs text-gray-500">
-      Tippe zum Ändern der Einstellungen
-    </div>
-  </div>
-</CardContent>
-</Card>
-
-
-
         {hasClubRole && (
   <Card
     className="mb-6 border-0 cursor-pointer overflow-hidden rounded-2xl text-white shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500"
@@ -1383,44 +1419,63 @@ if (error || !profile) {
     </CardContent>
   </Card>
 )}
+        {/* Bereiche – bewusst gruppiert statt vieler einzelner Kacheln */}
+        <div className="space-y-4 sm:space-y-5 mb-6 sm:mb-8">
+          {navigationGroups.map((group) => {
+            const visibleItems = group.items.filter(
+              (item: any) => !item.requiresLeadership || isLeadershipRole(),
+            )
 
-       {/* Navigation */}
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8">
-  {navigationItems
-    .filter((item: any) => !item.requiresLeadership || isLeadershipRole())
-    .map((item, index) => (
-      <Card
-        key={index}
-        className="border-0 bg-white/95 backdrop-blur-sm shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group rounded-2xl overflow-hidden"
-        onClick={() => router.push(item.href)}
-      >
-        <CardContent className="p-4 sm:p-5 min-h-[170px] flex flex-col">
-          <div
-            className={`inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br ${item.color} rounded-2xl mb-3 shadow-md group-hover:scale-[1.06] transition-transform duration-300`}
-          >
-            <item.icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-          </div>
+            if (visibleItems.length === 0) return null
 
-          <h3 className="text-lg font-bold text-gray-900 mb-1">
-            {item.title}
-          </h3>
+            return (
+              <section
+                key={group.title}
+                className="rounded-2xl sm:rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+              >
+                <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-gray-100 bg-gray-50/80">
+                  <h2 className="text-base sm:text-lg font-black text-gray-900">
+                    {group.title}
+                  </h2>
+                  <p className="mt-0.5 text-xs sm:text-sm text-gray-500 font-medium">
+                    {group.description}
+                  </p>
+                </div>
 
-          <p className="text-sm text-gray-600 mb-3">
-            {item.description}
-          </p>
+                <div className="divide-y divide-gray-100">
+                  {visibleItems.map((item: any) => {
+                    const Icon = item.icon
+                    return (
+                      <button
+                        key={item.href}
+                        type="button"
+                        onClick={() => router.push(item.href)}
+                        className="w-full flex items-center gap-3.5 px-4 sm:px-5 py-4 sm:py-3.5 text-left hover:bg-orange-50/60 active:bg-orange-50 transition-colors min-h-[72px]"
+                      >
+                        <div className="w-11 h-11 sm:w-10 sm:h-10 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+                          <Icon className="h-5 w-5 text-orange-700" />
+                        </div>
 
-          <div className="mt-auto flex items-center justify-between pt-3">
-            <span className="text-sm font-semibold text-gray-900 group-hover:text-orange-700 transition-colors">
-              Öffnen
-            </span>
-            <div className="w-9 h-9 rounded-xl border bg-white flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
-              <ArrowRight className="h-4 w-4 text-orange-600 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    ))}
-</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[15px] sm:text-sm font-black text-gray-900 leading-snug">
+                            {item.title}
+                          </div>
+                          <div className="mt-0.5 text-[12px] sm:text-sm text-gray-500 leading-snug sm:leading-normal">
+                            {item.description}
+                          </div>
+                        </div>
+
+                        <div className="w-8 h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+                          <ArrowRight className="h-4 w-4 text-gray-500" />
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+            )
+          })}
+        </div>
 
        {/* Stats */}
 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

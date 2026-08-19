@@ -151,80 +151,142 @@ export function PlayerRecruitmentList({ onDataSaved }: PlayerRecruitmentListProp
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-        <CardHeader className="border-b border-gray-100 pb-6">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg">
-              <Search className="h-5 w-5 text-white" />
+    <div className="w-full">
+      <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-gray-100 px-4 py-4 sm:px-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+              <Search className="h-4 w-4 text-gray-700" />
             </div>
             <div>
-              <CardTitle className="text-xl font-semibold text-gray-900">Spielergesuche anzeigen</CardTitle>
-              <p className="text-sm text-gray-500 mt-1">Übersicht und Verwaltung der eingetragenen Bedürfnisse</p>
+              <CardTitle className="text-base font-black text-gray-900 sm:text-lg">Aktuelle Rekrutierungen</CardTitle>
+              <p className="mt-0.5 text-xs font-semibold text-gray-500 sm:text-sm">Spielergesuche bearbeiten oder löschen</p>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="pt-6">
+        <CardContent className="p-4 sm:p-5">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+              <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
               <p className="ml-3 text-gray-600">Lade Spielergesuche...</p>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center py-8 text-red-600">
-              <AlertCircle className="h-8 w-8 mr-2" />
+              <AlertCircle className="mr-2 h-5 w-5" />
               <p>{error}</p>
             </div>
           ) : needs.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <PlusCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg font-medium">Noch keine Spielergesuche vorhanden.</p>
-              <p className="text-sm mt-2">
+            <div className="py-8 text-center text-gray-500">
+              <PlusCircle className="mx-auto mb-3 h-8 w-8 text-gray-300" />
+              <p className="text-sm font-black text-gray-700">Noch keine Spielergesuche vorhanden.</p>
+              <p className="mt-1 text-xs font-semibold">
                 Fügen Sie neue Bedürfnisse über den Tab "Spielergesuche eingeben" hinzu.
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Verein / Mannschaft</TableHead>
-                    <TableHead>Liga</TableHead>
-                    <TableHead>Ab wann</TableHead>
-                    <TableHead>Beschreibung</TableHead>
-                    <TableHead className="text-right">Aktionen</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {needs.map((need) => (
-                    <TableRow key={need.id}>
-                      <TableCell className="font-medium">{need.team_name}</TableCell>
-                      <TableCell>{need.league}</TableCell>
-                      <TableCell>{format(new Date(need.start_date), "dd.MM.yyyy", { locale: de })}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{need.description || "-"}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(need)} className="mr-2">
-                          <Edit className="h-4 w-4 text-blue-500" />
+            <>
+              <div className="space-y-2 md:hidden">
+                {needs.map((need) => (
+                  <div key={need.id} className="rounded-xl border border-gray-200 bg-white p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-black text-gray-900">{need.team_name}</div>
+                        <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs font-semibold text-gray-500">
+                          <span>{need.league}</span>
+                          <span>·</span>
+                          <span>{format(new Date(need.start_date), "dd.MM.yyyy", { locale: de })}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex shrink-0 gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditClick(need)}
+                          className="h-8 w-8 rounded-lg text-gray-600 hover:bg-gray-100"
+                        >
+                          <Edit className="h-4 w-4" />
                           <span className="sr-only">Bearbeiten</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(need)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteClick(need)}
+                          className="h-8 w-8 rounded-lg text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Löschen</span>
                         </Button>
-                      </TableCell>
+                      </div>
+                    </div>
+
+                    {need.description ? (
+                      <div className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm font-medium leading-5 text-gray-700">
+                        {need.description}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden overflow-x-auto md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Verein / Mannschaft</TableHead>
+                      <TableHead>Liga</TableHead>
+                      <TableHead>Ab wann</TableHead>
+                      <TableHead>Beschreibung</TableHead>
+                      <TableHead className="text-right">Aktionen</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {needs.map((need) => (
+                      <TableRow key={need.id}>
+                        <TableCell className="font-semibold">{need.team_name}</TableCell>
+                        <TableCell>{need.league}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {format(new Date(need.start_date), "dd.MM.yyyy", { locale: de })}
+                        </TableCell>
+                        <TableCell className="max-w-[260px] truncate">{need.description || "-"}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditClick(need)}
+                            className="mr-1 h-8 w-8"
+                          >
+                            <Edit className="h-4 w-4 text-gray-600" />
+                            <span className="sr-only">Bearbeiten</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteClick(need)}
+                            className="h-8 w-8"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                            <span className="sr-only">Löschen</span>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-[460px]">
           <DialogHeader>
             <DialogTitle>Spielergesuche bearbeiten</DialogTitle>
             <DialogDescription>
@@ -232,33 +294,33 @@ export function PlayerRecruitmentList({ onDataSaved }: PlayerRecruitmentListProp
             </DialogDescription>
           </DialogHeader>
           {currentNeed && (
-            <form onSubmit={handleSaveEdit} className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="editTeamName" className="text-right">
+            <form onSubmit={handleSaveEdit} className="space-y-4 py-2">
+              <div className="space-y-2">
+                <label htmlFor="editTeamName" className="text-xs font-black uppercase tracking-wide text-gray-500">
                   Verein
                 </label>
                 <Input
                   id="editTeamName"
                   value={currentNeed.team_name}
                   onChange={(e) => setCurrentNeed({ ...currentNeed, team_name: e.target.value })}
-                  className="col-span-3"
+                  className="h-10 rounded-xl"
                   required
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="editLeague" className="text-right">
+              <div className="space-y-2">
+                <label htmlFor="editLeague" className="text-xs font-black uppercase tracking-wide text-gray-500">
                   Liga
                 </label>
                 <Input
                   id="editLeague"
                   value={currentNeed.league}
                   onChange={(e) => setCurrentNeed({ ...currentNeed, league: e.target.value })}
-                  className="col-span-3"
+                  className="h-10 rounded-xl"
                   required
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="editStartDate" className="text-right">
+              <div className="space-y-2">
+                <label htmlFor="editStartDate" className="text-xs font-black uppercase tracking-wide text-gray-500">
                   Ab wann
                 </label>
                 <Input
@@ -266,19 +328,19 @@ export function PlayerRecruitmentList({ onDataSaved }: PlayerRecruitmentListProp
                   type="date"
                   value={currentNeed.start_date}
                   onChange={(e) => setCurrentNeed({ ...currentNeed, start_date: e.target.value })}
-                  className="col-span-3"
+                  className="h-10 rounded-xl"
                   required
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="editDescription" className="text-right">
+              <div className="space-y-2">
+                <label htmlFor="editDescription" className="text-xs font-black uppercase tracking-wide text-gray-500">
                   Beschreibung
                 </label>
                 <Textarea
                   id="editDescription"
                   value={currentNeed.description || ""}
                   onChange={(e) => setCurrentNeed({ ...currentNeed, description: e.target.value })}
-                  className="col-span-3"
+                  className="min-h-[90px] rounded-xl"
                 />
               </div>
               {editFormMessage && (
@@ -302,7 +364,7 @@ export function PlayerRecruitmentList({ onDataSaved }: PlayerRecruitmentListProp
                 </div>
               )}
               <DialogFooter>
-                <Button type="submit" disabled={editLoading}>
+                <Button type="submit" disabled={editLoading} className="h-10 rounded-xl">
                   {editLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
                   Speichern
                 </Button>
@@ -314,7 +376,7 @@ export function PlayerRecruitmentList({ onDataSaved }: PlayerRecruitmentListProp
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="rounded-2xl sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Spielergesuche löschen</DialogTitle>
             <DialogDescription>
@@ -323,12 +385,15 @@ export function PlayerRecruitmentList({ onDataSaved }: PlayerRecruitmentListProp
             </DialogDescription>
           </DialogHeader>
           {currentNeed && (
-            <div className="py-4">
-              <p className="text-sm text-gray-700">**Verein:** {currentNeed.team_name}</p>
-              <p className="text-sm text-gray-700">**Liga:** {currentNeed.league}</p>
-              <p className="text-sm text-gray-700">
-                **Ab wann:** {format(new Date(currentNeed.start_date), "dd.MM.yyyy", { locale: de })}
-              </p>
+            <div className="py-2">
+              <div className="rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
+                <div><span className="font-black">Verein:</span> {currentNeed.team_name}</div>
+                <div className="mt-1"><span className="font-black">Liga:</span> {currentNeed.league}</div>
+                <div className="mt-1">
+                  <span className="font-black">Ab wann:</span>{" "}
+                  {format(new Date(currentNeed.start_date), "dd.MM.yyyy", { locale: de })}
+                </div>
+              </div>
               {editFormMessage && (
                 <div
                   className={`mt-4 p-3 rounded-lg text-sm font-medium flex items-center space-x-2 ${

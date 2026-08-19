@@ -44,16 +44,72 @@ const saveMatchStatesToDatabase = async (
   tournamentType: string,
   tournamentId: string,
   playerIdMap: Record<string, string>,
-
+  _previousMatches?: Record<number, Match>,
 ) => {
-  try {
-    const getId = (name: string) => {
-      const key = (name ?? "").toLowerCase().trim()
-      if (!key || key.startsWith("freilos")) return null
-      return playerIdMap[key] ?? null
-    }
+  const getId = (name: string) => {
+    const key = (name ?? "").toLowerCase().trim()
+    if (!key || key.startsWith("freilos")) return null
+    return playerIdMap[key] ?? null
+  }
 
-    const matchStates = Object.values(matches).map((match) => ({
+  const hasMeaningfulData = (match: Match) => {
+    const player1 = (match.player1 ?? "").trim()
+    const player2 = (match.player2 ?? "").trim()
+
+    return (
+      player1 !== "" ||
+      player2 !== "" ||
+      (match.score1 ?? 0) > 0 ||
+      (match.score2 ?? 0) > 0 ||
+      !!match.winner ||
+      !!match.loser ||
+      !!match.machineNumber
+    )
+  }
+
+  const normalize = (value: any) => (value === undefined || value === "" ? null : value)
+
+  try {
+    // NICHT gegen previousMatches vorfiltern.
+    // Die Bracket-Logik verändert Ziel-Matches teilweise per flacher Objektkopie.
+    // Dadurch kann previousMatches bereits denselben neuen Spieler enthalten und
+    // ein notwendiges Weiter-Schreiben würde fälschlich übersprungen.
+    const relevantMatches = Object.values(matches).filter(hasMeaningfulData)
+
+    if (relevantMatches.length === 0) return
+
+    const { data: existingRows, error: existingError } = await supabase
+      .from("dko_match_states")
+      .select("match_id, player1, player2, player1_id, player2_id, score1, score2, winner, loser, machine_number")
+      .eq("tournament_type", tournamentType)
+      .eq("tournament_id", tournamentId)
+
+    if (existingError) throw existingError
+
+    const existingByMatchId = new Map<number, any>(
+      (existingRows ?? []).map((row: any) => [Number(row.match_id), row]),
+    )
+
+    const changedMatches = relevantMatches.filter((match) => {
+      const existing = existingByMatchId.get(match.id)
+      if (!existing) return true
+
+      return (
+        normalize(existing.player1) !== normalize(match.player1) ||
+        normalize(existing.player2) !== normalize(match.player2) ||
+        normalize(existing.player1_id) !== normalize(getId(match.player1)) ||
+        normalize(existing.player2_id) !== normalize(getId(match.player2)) ||
+        Number(existing.score1 ?? 0) !== Number(match.score1 ?? 0) ||
+        Number(existing.score2 ?? 0) !== Number(match.score2 ?? 0) ||
+        normalize(existing.winner) !== normalize(match.winner) ||
+        normalize(existing.loser) !== normalize(match.loser) ||
+        normalize(existing.machine_number) !== normalize(match.machineNumber)
+      )
+    })
+
+    if (changedMatches.length === 0) return
+
+    const matchStates = changedMatches.map((match) => ({
       tournament_type: tournamentType,
       tournament_id: tournamentId,
       match_id: match.id,
@@ -74,11 +130,12 @@ const saveMatchStatesToDatabase = async (
     })
 
     if (error) throw error
-    console.log("[v0] Match states saved successfully")
   } catch (error) {
     console.error("Fehler beim Speichern der Match-States:", error)
+    throw error
   }
 }
+
 
 const loadMatchStatesFromDatabase = async (
   tournamentType: string,
@@ -2225,6 +2282,15 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
               <h3 className="text-2xl font-bold text-center">🏆 Turniersieger</h3>
               <p className="text-3xl font-bold text-center mt-4">{matches[127].winner || matches[126].winner}</p>
 
+              <div className="mt-5 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-center">
+                <p className="text-sm font-semibold">
+                  Normales Turnier? Dann einfach „Turnier abschließen“ wählen.
+                </p>
+                <p className="mt-1 text-xs opacity-90">
+                  Die Serien-Buttons nur verwenden, wenn dieses Turnier wirklich zur jeweiligen Gesamtwertung zählt.
+                </p>
+              </div>
+
               <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
                 <Button
                   onClick={saveToTournamentSeries}
@@ -2233,7 +2299,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                   variant="secondary"
                   className="font-semibold"
                 >
-                  {savingToSeries ? "Speichere..." : "Zur Turnierserie hinzufügen"}
+                  {savingToSeries ? "Speichere..." : "In Lion Cup / Turnierserie speichern"}
                 </Button>
                 <Button
                   onClick={saveToSummerSpecial}
@@ -2242,7 +2308,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                   variant="secondary"
                   className="font-semibold bg-orange-500 text-white hover:bg-orange-600"
                 >
-                  {savingToSummerSpecial ? "Speichere..." : "Zu Summer Special hinzufügen"}
+                  {savingToSummerSpecial ? "Speichere..." : "In Summer Special speichern"}
                 </Button>
                 <Button
                   onClick={async () => {
@@ -2255,7 +2321,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                   variant="outline"
                   className="font-semibold bg-background text-foreground hover:bg-background/90"
                 >
-                  Weiter zu Ergebnissen
+                  Turnier abschließen
                 </Button>
               </div>
             </Card>

@@ -26,6 +26,16 @@ interface SeasonSettings {
   halving_date: string | null
   division_active: boolean
   division_date: string | null
+  qualification_requirement: number
+}
+
+interface ActiveSeries {
+  id: string
+  name: string
+  halving_active: boolean
+  halving_date: string | null
+  division_active: boolean
+  division_date: string | null
 }
 
 interface Player {
@@ -44,29 +54,52 @@ export default function AdminPage() {
     division_date: null,
   })
   const [players, setPlayers] = useState<Player[]>([])
+  const [activeSeries, setActiveSeries] = useState<ActiveSeries | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [assigningDivisions, setAssigningDivisions] = useState(false)
 
   useEffect(() => {
     fetchSettings()
-    fetchPlayers()
   }, [])
+
+  useEffect(() => {
+    if (activeSeries?.id) {
+      fetchPlayers()
+    } else {
+      setPlayers([])
+    }
+  }, [activeSeries?.id])
 
   const fetchSettings = async () => {
     try {
-      const { data, error } = await supabase.from("season_settings").select("*").eq("id", 1).single()
+      const { data, error } = await supabase
+        .from("dko_series")
+        .select("id,name,halving_active,halving_date,division_active,division_date,qualification_requirement")
+        .eq("series_type", "lion_cup")
+        .eq("is_active", true)
+        .maybeSingle()
 
       if (error) throw error
 
-      if (data) {
+      if (!data) {
+        setActiveSeries(null)
         setSettings({
-          halving_active: data.halving_active ?? false,
-          halving_date: data.halving_date,
-          division_active: data.division_active ?? false,
-          division_date: data.division_date,
+          halving_active: false,
+          halving_date: null,
+          division_active: false,
+          division_date: null,
         })
+        return
       }
+
+      setActiveSeries(data as ActiveSeries)
+      setSettings({
+        halving_active: data.halving_active ?? false,
+        halving_date: data.halving_date,
+        division_active: data.division_active ?? false,
+        division_date: data.division_date,
+      })
     } catch (error) {
       console.error("Error fetching settings:", error)
       toast.error("Fehler beim Laden der Einstellungen")
@@ -77,13 +110,38 @@ export default function AdminPage() {
 
   const fetchPlayers = async () => {
     try {
-      // 1. Hole alle Spieler mit Punkten aus dem aggregierten View
-      const { data: aggregatedData, error: aggError } = await supabase
-        .from("tournament_series_aggregated")
-        .select("player_name, total_points, tournaments_played")
-        .order("total_points", { ascending: false })
+      if (!activeSeries?.id) {
+        setPlayers([])
+        return
+      }
 
-      if (aggError) throw aggError
+      // Aktuelle Saison laden und pro Spieler aggregieren
+      const { data: seasonRows, error: seasonError } = await supabase
+        .from("tournament_series_standings")
+        .select("player_name, placement_points, bonus_points, legs_won, tournament_id")
+        .eq("series_id", activeSeries.id)
+
+      if (seasonError) throw seasonError
+
+      const aggregateMap = new Map<string, { player_name: string; total_points: number; tournaments: Set<string> }>()
+      ;(seasonRows || []).forEach((row: any) => {
+        const current = aggregateMap.get(row.player_name) || {
+          player_name: row.player_name,
+          total_points: 0,
+          tournaments: new Set<string>(),
+        }
+        current.total_points += Number(row.placement_points || 0) + Number(row.bonus_points || 0) + Number(row.legs_won || 0)
+        if (row.tournament_id) current.tournaments.add(String(row.tournament_id))
+        aggregateMap.set(row.player_name, current)
+      })
+
+      const aggregatedData = Array.from(aggregateMap.values())
+        .map((p) => ({
+          player_name: p.player_name,
+          total_points: p.total_points,
+          tournaments_played: p.tournaments.size,
+        }))
+        .sort((a, b) => b.total_points - a.total_points)
 
       // 2. Hole alle Spieler mit ihren IDs aus der spieldatenbank Tabelle
       const { data: playersData, error: playersError } = await supabase.from("spieldatenbank").select("id, name")
@@ -92,8 +150,9 @@ export default function AdminPage() {
 
       // 3. Hole alle Division-Zuweisungen
       const { data: divisionsData, error: divError } = await supabase
-        .from("player_divisions")
+        .from("dko_series_player_divisions")
         .select("player_id, division")
+        .eq("series_id", activeSeries.id)
 
       if (divError) throw divError
 
@@ -125,19 +184,23 @@ export default function AdminPage() {
   }
 
   const toggleHalving = async () => {
+    if (!activeSeries?.id) {
+      toast.error("Keine aktive Lion-Cup-Serie vorhanden")
+      return
+    }
     setSaving(true)
     try {
       const newActive = !settings.halving_active
       const newDate = newActive && !settings.halving_date ? new Date().toISOString() : settings.halving_date
 
       const { error } = await supabase
-        .from("season_settings")
+        .from("dko_series")
         .update({
           halving_active: newActive,
           halving_date: newDate,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", 1)
+        .eq("id", activeSeries?.id)
 
       if (error) throw error
 
@@ -157,19 +220,23 @@ export default function AdminPage() {
   }
 
   const toggleDivision = async () => {
+    if (!activeSeries?.id) {
+      toast.error("Keine aktive Lion-Cup-Serie vorhanden")
+      return
+    }
     setSaving(true)
     try {
       const newActive = !settings.division_active
       const newDate = newActive && !settings.division_date ? new Date().toISOString() : settings.division_date
 
       const { error } = await supabase
-        .from("season_settings")
+        .from("dko_series")
         .update({
           division_active: newActive,
           division_date: newDate,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", 1)
+        .eq("id", activeSeries?.id)
 
       if (error) throw error
 
@@ -189,17 +256,21 @@ export default function AdminPage() {
   }
 
   const resetHalvingDate = async () => {
+    if (!activeSeries?.id) {
+      toast.error("Keine aktive Lion-Cup-Serie vorhanden")
+      return
+    }
     setSaving(true)
     try {
       const newDate = new Date().toISOString()
 
       const { error } = await supabase
-        .from("season_settings")
+        .from("dko_series")
         .update({
           halving_date: newDate,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", 1)
+        .eq("id", activeSeries?.id)
 
       if (error) throw error
 
@@ -218,6 +289,10 @@ export default function AdminPage() {
   }
 
   const autoAssignDivisions = async () => {
+    if (!activeSeries?.id) {
+      toast.error("Keine aktive Lion-Cup-Serie vorhanden")
+      return
+    }
     setAssigningDivisions(true)
     try {
       // Spieler nach Punkten sortieren (bereits sortiert)
@@ -228,7 +303,7 @@ export default function AdminPage() {
       // Zuerst alle bestehenden Divisionen löschen
       const playerIds = sortedPlayers.map((p) => p.player_id).filter((id) => id)
       if (playerIds.length > 0) {
-        const { error: deleteError } = await supabase.from("player_divisions").delete().in("player_id", playerIds)
+        const { error: deleteError } = await supabase.from("dko_series_player_divisions").delete().eq("series_id", activeSeries!.id).in("player_id", playerIds)
 
         if (deleteError) throw deleteError
       }
@@ -237,6 +312,7 @@ export default function AdminPage() {
       const newDivisions = sortedPlayers
         .filter((p) => p.player_id) // Nur Spieler mit gültiger ID
         .map((player, index) => ({
+          series_id: activeSeries!.id,
           player_id: player.player_id,
           division: index < halfPoint ? "A" : "B",
           total_points_at_split: player.total_points,
@@ -245,7 +321,7 @@ export default function AdminPage() {
         }))
 
       if (newDivisions.length > 0) {
-        const { error: insertError } = await supabase.from("player_divisions").insert(newDivisions)
+        const { error: insertError } = await supabase.from("dko_series_player_divisions").insert(newDivisions)
 
         if (insertError) throw insertError
       }
@@ -265,6 +341,10 @@ export default function AdminPage() {
   }
 
   const updatePlayerDivision = async (playerId: string, newDivision: string | null) => {
+    if (!activeSeries?.id) {
+      toast.error("Keine aktive Lion-Cup-Serie vorhanden")
+      return
+    }
     if (!playerId) {
       toast.error("Spieler-ID nicht gefunden")
       return
@@ -273,22 +353,23 @@ export default function AdminPage() {
     try {
       if (newDivision === null) {
         // Division entfernen
-        const { error } = await supabase.from("player_divisions").delete().eq("player_id", playerId)
+        const { error } = await supabase.from("dko_series_player_divisions").delete().eq("series_id", activeSeries!.id).eq("player_id", playerId)
 
         if (error) throw error
       } else {
         // Prüfen ob schon ein Eintrag existiert
-        const { data: existing } = await supabase.from("player_divisions").select("id").eq("player_id", playerId).maybeSingle()
+        const { data: existing } = await supabase.from("dko_series_player_divisions").select("id").eq("series_id", activeSeries!.id).eq("player_id", playerId).maybeSingle()
 
         if (existing) {
           // Update
-          const { error } = await supabase.from("player_divisions").update({ division: newDivision }).eq("player_id", playerId)
+          const { error } = await supabase.from("dko_series_player_divisions").update({ division: newDivision }).eq("series_id", activeSeries!.id).eq("player_id", playerId)
 
           if (error) throw error
         } else {
           // Insert
           const player = players.find((p) => p.player_id === playerId)
-          const { error } = await supabase.from("player_divisions").insert({
+          const { error } = await supabase.from("dko_series_player_divisions").insert({
+            series_id: activeSeries!.id,
             player_id: playerId,
             division: newDivision,
             total_points_at_split: player?.total_points || 0,
@@ -310,9 +391,16 @@ export default function AdminPage() {
   }
 
   const clearAllDivisions = async () => {
+    if (!activeSeries?.id) {
+      toast.error("Keine aktive Lion-Cup-Serie vorhanden")
+      return
+    }
     setAssigningDivisions(true)
     try {
-      const { error } = await supabase.from("player_divisions").delete().neq("id", 0) // Lösche alle Einträge
+      const { error } = await supabase
+        .from("dko_series_player_divisions")
+        .delete()
+        .eq("series_id", activeSeries!.id)
 
       if (error) throw error
 
@@ -346,7 +434,7 @@ export default function AdminPage() {
       <div className="w-full max-w-none px-4 py-12">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin-Bereich</h1>
-          <p className="text-gray-600">Verwaltung der LION CUP -Einstellungen</p>
+          <p className="text-gray-600">Verwaltung der LION CUP-Einstellungen {activeSeries ? `· ${activeSeries.name}` : "· keine aktive Serie"}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -358,8 +446,8 @@ export default function AdminPage() {
               <AlertDescription className="text-blue-900">
                 <strong>Saisonverlauf</strong>
                 <ul className="mt-2 ml-4 list-disc space-y-1 text-sm">
-                  <li>Nach Spieltag 17: Punktehalbierung aktivieren</li>
-                  <li>Nach Spieltag 24: Tabellenteilung aktivieren</li>
+                  <li>Punktehalbierung bei Bedarf zum gewünschten Stichtag aktivieren</li>
+                  <li>Tabellenteilung A/B bei Bedarf aktivieren</li>
                   <li>Obere Tabelle (A) = Meisterrunde</li>
                   <li>Untere Tabelle (B) = Platzierungsrunde</li>
                 </ul>
@@ -373,7 +461,7 @@ export default function AdminPage() {
                   <Calendar className="h-5 w-5" />
                   Punktehalbierung
                 </CardTitle>
-                <CardDescription>Nach Spieltag 17 - Punkte werden halbiert</CardDescription>
+                <CardDescription>Halbiert alle Punkte vor dem gesetzten Stichtag</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -416,7 +504,7 @@ export default function AdminPage() {
                   <Split className="h-5 w-5" />
                   Tabellenteilung (A/B)
                 </CardTitle>
-                <CardDescription>Nach Spieltag 24 - Tabelle wird in zwei Gruppen geteilt</CardDescription>
+                <CardDescription>Teilt die aktuelle Saison bei Bedarf in zwei Gruppen</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
@@ -479,7 +567,7 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent className="text-sm text-orange-800 space-y-2">
                 <ul className="ml-4 list-disc space-y-1">
-                  <li>Division-Zuteilung erfolgt einmalig nach Spieltag 24</li>
+                  <li>Division-Zuteilung erfolgt nur, wenn du die A/B-Teilung bewusst aktivierst</li>
                   <li>Bei ungerader Spieleranzahl kommt der mittlere Spieler in Tabelle A</li>
                   <li>Manuelle Korrekturen sind jederzeit möglich</li>
                 </ul>
@@ -519,7 +607,7 @@ export default function AdminPage() {
                           <tr
                             key={player.player_id}
                             className={`border-b border-amber-100 hover:bg-amber-50 ${
-                              player.tournaments_played >= 20 ? "bg-green-100" : "bg-red-100"
+                              (activeSeries?.qualification_requirement ?? 0) <= 0 || player.tournaments_played >= (activeSeries?.qualification_requirement ?? 0) ? "bg-green-100" : "bg-red-100"
                             }`}
                           >
                             <td className="p-2 text-sm text-gray-500">{index + 1}</td>
@@ -528,7 +616,7 @@ export default function AdminPage() {
                             <td className="p-2 text-center">
                               <span
                                 className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-bold ${
-                                  player.tournaments_played >= 20 ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                                  (activeSeries?.qualification_requirement ?? 0) <= 0 || player.tournaments_played >= (activeSeries?.qualification_requirement ?? 0) ? "bg-green-500 text-white" : "bg-red-500 text-white"
                                 }`}
                               >
                                 {player.tournaments_played}
@@ -586,7 +674,7 @@ export default function AdminPage() {
                           <tr
                             key={player.player_id}
                             className={`border-b border-slate-100 hover:bg-slate-50 ${
-                              player.tournaments_played >= 20 ? "bg-green-100" : "bg-red-100"
+                              (activeSeries?.qualification_requirement ?? 0) <= 0 || player.tournaments_played >= (activeSeries?.qualification_requirement ?? 0) ? "bg-green-100" : "bg-red-100"
                             }`}
                           >
                             <td className="p-2 text-sm text-gray-500">{index + 1}</td>
@@ -595,7 +683,7 @@ export default function AdminPage() {
                             <td className="p-2 text-center">
                               <span
                                 className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-bold ${
-                                  player.tournaments_played >= 20 ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                                  (activeSeries?.qualification_requirement ?? 0) <= 0 || player.tournaments_played >= (activeSeries?.qualification_requirement ?? 0) ? "bg-green-500 text-white" : "bg-red-500 text-white"
                                 }`}
                               >
                                 {player.tournaments_played}
@@ -651,7 +739,7 @@ export default function AdminPage() {
                           <tr
                             key={player.player_id || player.player_name}
                             className={`border-b border-gray-100 hover:bg-gray-50 ${
-                              player.tournaments_played >= 20 ? "bg-green-100" : "bg-red-100"
+                              (activeSeries?.qualification_requirement ?? 0) <= 0 || player.tournaments_played >= (activeSeries?.qualification_requirement ?? 0) ? "bg-green-100" : "bg-red-100"
                             }`}
                           >
                             <td className="p-2 text-sm text-gray-500">{index + 1}</td>
@@ -660,7 +748,7 @@ export default function AdminPage() {
                             <td className="p-2 text-center">
                               <span
                                 className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-bold ${
-                                  player.tournaments_played >= 20 ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                                  (activeSeries?.qualification_requirement ?? 0) <= 0 || player.tournaments_played >= (activeSeries?.qualification_requirement ?? 0) ? "bg-green-500 text-white" : "bg-red-500 text-white"
                                 }`}
                               >
                                 {player.tournaments_played}

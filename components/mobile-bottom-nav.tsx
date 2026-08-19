@@ -58,7 +58,7 @@ const BOTTOM_BAR: NavItem[] = [
 ]
 
 const QUICK_BASE: Omit<NavItem, "key">[] = [
-  { name: "Lion Cup", href: "/tournament-series-app", icon: Trophy },
+  { name: "Lion Cup", href: "/lion-cup", icon: Trophy },
   { name: "Live", href: "/live-all-app", icon: Radio },
   { name: "History", href: "/tournament-history", icon: History },
   {

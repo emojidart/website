@@ -101,6 +101,7 @@ type TeamRoom = {
   created_at?: string;
   logo_url?: string | null;
   role?: string | null; // Player | Captain | Co-Captain
+  membership_visible_from?: string | null; // ab diesem Zeitpunkt darf die Team-Historie sichtbar sein
 };
 
 type UserProfileLite = {
@@ -243,6 +244,7 @@ export default function TeamChatPage() {
 
   const [profile, setProfile] = useState<UserProfileLite | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [clubVisibleFrom, setClubVisibleFrom] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [pollsByMessage, setPollsByMessage] = useState<
@@ -615,37 +617,71 @@ export default function TeamChatPage() {
     return text || "Nachricht";
   };
 
+  const getVisibleFromForChat = (
+    roomId: string,
+    scope: ChatScope,
+    roomsOverride?: TeamRoom[],
+  ) => {
+    if (scope === "club" || scope === "freizeit") {
+      return clubVisibleFrom;
+    }
+
+    if (scope === "team") {
+      const rooms = roomsOverride ?? chatRooms;
+      return rooms.find((room) => room.id === roomId)?.membership_visible_from ?? null;
+    }
+
+    // Community, Vorstand und Captain-Chat bleiben unverändert.
+    return null;
+  };
+
   const fetchLastMessagePreviews = async (roomsOverride?: TeamRoom[]) => {
     const rooms = roomsOverride ?? chatRooms;
-    const targets: Array<{ roomId: string; scope: ChatScope }> = [
-      { roomId: COMMUNITY_ROOM_ID, scope: "community" },
+    const targets: Array<{
+      roomId: string;
+      scope: ChatScope;
+      visibleFrom?: string | null;
+    }> = [
+      { roomId: COMMUNITY_ROOM_ID, scope: "community", visibleFrom: null },
     ];
 
     if (!profile?.is_guest) {
       targets.push(
-        { roomId: CLUB_ROOM_ID, scope: "club" },
-        { roomId: FREIZEIT_ROOM_ID, scope: "freizeit" },
+        { roomId: CLUB_ROOM_ID, scope: "club", visibleFrom: clubVisibleFrom },
+        { roomId: FREIZEIT_ROOM_ID, scope: "freizeit", visibleFrom: clubVisibleFrom },
       );
     }
 
     if (canSeeVorstandChat)
-      targets.push({ roomId: VORSTAND_ROOM_ID, scope: "vorstand" });
+      targets.push({ roomId: VORSTAND_ROOM_ID, scope: "vorstand", visibleFrom: null });
     if (canSeeCaptainChat || isVorstand)
-      targets.push({ roomId: CAPTAINS_ROOM_ID, scope: "captains" });
-    rooms.forEach((room) => targets.push({ roomId: room.id, scope: "team" }));
+      targets.push({ roomId: CAPTAINS_ROOM_ID, scope: "captains", visibleFrom: null });
+    rooms.forEach((room) =>
+      targets.push({
+        roomId: room.id,
+        scope: "team",
+        visibleFrom: room.membership_visible_from ?? null,
+      }),
+    );
 
     try {
       const next: Record<string, LastMessagePreview | null> = {};
 
       await Promise.all(
         targets.map(async (target) => {
-          const { data, error } = await supabase
+          let previewQuery = supabase
             .from("chat_messages")
             .select(
               "id,user_id,message,room_id,scope,created_at,message_type,attachment_name,attachment_type,attachment_size",
             )
             .eq("room_id", target.roomId)
-            .eq("scope", target.scope)
+            .eq("scope", target.scope);
+
+          if (target.visibleFrom) {
+            previewQuery = previewQuery.gte("created_at", target.visibleFrom);
+          }
+
+          const { data, error } = await previewQuery
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle();
@@ -1117,6 +1153,27 @@ export default function TeamChatPage() {
       if ((data as any)?.is_guest) {
         setSelectedScope("community");
         setSelectedRoom(null);
+        setClubVisibleFrom(null);
+      } else if ((data as any)?.player_id) {
+        const { data: clubPlayer, error: clubPlayerError } = await supabase
+          .from("club_players")
+          .select("club_joined_at,created_at")
+          .eq("id", (data as any).player_id)
+          .maybeSingle();
+
+        if (clubPlayerError) {
+          console.error("loadMyProfile club_players error", clubPlayerError);
+          setClubVisibleFrom(null);
+        } else {
+          // Bevorzugt echtes Beitrittsdatum, sonst Zeitpunkt der Anlage des Mitglieds.
+          setClubVisibleFrom(
+            (clubPlayer as any)?.club_joined_at ??
+              (clubPlayer as any)?.created_at ??
+              null,
+          );
+        }
+      } else {
+        setClubVisibleFrom(null);
       }
 
       setProfile((data as any) ?? null);
@@ -1197,7 +1254,7 @@ export default function TeamChatPage() {
       const { data: memberships, error: membershipsError } = await supabase
         .from("team_members")
         .select(
-          "role, teams:teams(id, name, description, created_at, logo_url, chat_room_id)",
+          "role, joined_at, created_at, teams:teams(id, name, description, created_at, logo_url, chat_room_id)",
         )
         .eq("player_id", playerId)
         .is("left_at", null);
@@ -1217,6 +1274,7 @@ export default function TeamChatPage() {
               created_at: t.created_at,
               logo_url: t.logo_url ?? null,
               role: m.role ?? null,
+              membership_visible_from: m.joined_at ?? m.created_at ?? null,
             } as TeamRoom;
           })
           .filter(Boolean) || [];
@@ -1528,7 +1586,13 @@ export default function TeamChatPage() {
     try {
       setLoading(true);
 
-      const { data: messagesData, error: messagesError } = await supabase
+      const visibleFrom = getVisibleFromForChat(
+        roomId,
+        selectedScope,
+        selectedScope === "team" && selectedRoom ? [selectedRoom] : undefined,
+      );
+
+      let messagesQuery = supabase
         .from("chat_messages")
         .select(
           `
@@ -1547,7 +1611,13 @@ export default function TeamChatPage() {
 `,
         )
         .eq("room_id", roomId)
-        .eq("scope", selectedScope)
+        .eq("scope", selectedScope);
+
+      if (visibleFrom) {
+        messagesQuery = messagesQuery.gte("created_at", visibleFrom);
+      }
+
+      const { data: messagesData, error: messagesError } = await messagesQuery
         .order("created_at", { ascending: true })
         .limit(200);
 
@@ -1988,7 +2058,11 @@ export default function TeamChatPage() {
     try {
       const counts: Record<string, number> = {};
 
-      const computeGlobalUnread = async (roomId: string, scope: ChatScope) => {
+      const computeGlobalUnread = async (
+        roomId: string,
+        scope: ChatScope,
+        visibleFrom?: string | null,
+      ) => {
         const { data: visitData } = await supabase
           .from("user_room_visits")
           .select("last_visit_at")
@@ -2000,11 +2074,17 @@ export default function TeamChatPage() {
         const lastVisit =
           (visitData as any)?.last_visit_at || "1970-01-01T00:00:00Z";
 
+        const effectiveAfter =
+          visibleFrom && new Date(visibleFrom).getTime() > new Date(lastVisit).getTime()
+            ? visibleFrom
+            : lastVisit;
+
         const { count } = await supabase
           .from("chat_messages")
           .select("*", { count: "exact", head: true })
           .eq("room_id", roomId)
-          .gt("created_at", lastVisit)
+          .eq("scope", scope)
+          .gt("created_at", effectiveAfter)
           .neq("user_id", profile.id);
 
         counts[unreadKey(roomId, scope)] = count || 0;
@@ -2017,8 +2097,8 @@ export default function TeamChatPage() {
         return;
       }
 
-      await computeGlobalUnread(CLUB_ROOM_ID, "club");
-      await computeGlobalUnread(FREIZEIT_ROOM_ID, "freizeit");
+      await computeGlobalUnread(CLUB_ROOM_ID, "club", clubVisibleFrom);
+      await computeGlobalUnread(FREIZEIT_ROOM_ID, "freizeit", clubVisibleFrom);
 
       if (canSeeVorstandChat) {
         await computeGlobalUnread(VORSTAND_ROOM_ID, "vorstand");
@@ -2047,11 +2127,18 @@ export default function TeamChatPage() {
         const lastVisit =
           (visitData as any)?.last_visit_at || "1970-01-01T00:00:00Z";
 
+        const visibleFrom = room.membership_visible_from ?? null;
+        const effectiveAfter =
+          visibleFrom && new Date(visibleFrom).getTime() > new Date(lastVisit).getTime()
+            ? visibleFrom
+            : lastVisit;
+
         const { count } = await supabase
           .from("chat_messages")
           .select("*", { count: "exact", head: true })
           .eq("room_id", room.id)
-          .gt("created_at", lastVisit)
+          .eq("scope", scope)
+          .gt("created_at", effectiveAfter)
           .neq("user_id", profile.id);
 
         counts[unreadKey(room.id, scope)] = count || 0;

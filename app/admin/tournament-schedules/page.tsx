@@ -21,9 +21,16 @@ type DkoSeries = {
   name: string
   slug: string
   is_active: boolean
+  series_type: string
 
-  // NEW: startgeld for series
+  // Serien-Einstellungen
   startgeld: number
+  qualification_requirement: number
+  total_tournament_days: number
+  halving_active: boolean
+  halving_date: string | null
+  division_active: boolean
+  division_date: string | null
 
   created_at: string
   updated_at: string
@@ -98,9 +105,12 @@ export default function AdminTournamentSchedulesPage() {
   const [newSeriesName, setNewSeriesName] = useState("")
   const [newSeriesSlug, setNewSeriesSlug] = useState("")
   const [newSeriesActive, setNewSeriesActive] = useState(true)
+  const [newSeriesType, setNewSeriesType] = useState("other")
 
   // NEW: startgeld create
   const [newSeriesStartgeld, setNewSeriesStartgeld] = useState<number>(0)
+  const [newSeriesQualification, setNewSeriesQualification] = useState<number>(0)
+  const [newSeriesTournamentDays, setNewSeriesTournamentDays] = useState<number>(0)
 
   // Edit series inline
   const [editSeries, setEditSeries] = useState<DkoSeries | null>(null)
@@ -209,14 +219,31 @@ export default function AdminTournamentSchedulesPage() {
     }
 
     const safeStartgeld = Number.isFinite(Number(newSeriesStartgeld)) ? Math.max(0, Number(newSeriesStartgeld)) : 0
+    const safeQualification = Number.isFinite(Number(newSeriesQualification)) ? Math.max(0, Math.floor(Number(newSeriesQualification))) : 0
+    const safeTournamentDays = Number.isFinite(Number(newSeriesTournamentDays)) ? Math.max(0, Math.floor(Number(newSeriesTournamentDays))) : 0
+
+    // Es darf je Serientyp immer nur eine aktive Serie geben.
+    if (newSeriesActive) {
+      const { error: deactivateError } = await supabase
+        .from("dko_series")
+        .update({ is_active: false })
+        .eq("series_type", newSeriesType)
+        .eq("is_active", true)
+
+      if (deactivateError) {
+        toast({ title: "Fehler", description: deactivateError.message, variant: "destructive" })
+        return
+      }
+    }
 
     const { error } = await supabase.from("dko_series").insert({
       name,
       slug,
       is_active: newSeriesActive,
-
-      // NEW
+      series_type: newSeriesType,
       startgeld: safeStartgeld,
+      qualification_requirement: safeQualification,
+      total_tournament_days: safeTournamentDays,
     })
 
     if (error) {
@@ -229,7 +256,10 @@ export default function AdminTournamentSchedulesPage() {
     setNewSeriesName("")
     setNewSeriesSlug("")
     setNewSeriesActive(true)
+    setNewSeriesType("other")
     setNewSeriesStartgeld(0)
+    setNewSeriesQualification(0)
+    setNewSeriesTournamentDays(0)
     fetchSeries()
   }
 
@@ -245,6 +275,26 @@ export default function AdminTournamentSchedulesPage() {
     }
 
     const safeStartgeld = Number.isFinite(Number(editSeries.startgeld)) ? Math.max(0, Number(editSeries.startgeld)) : 0
+    const safeQualification = Number.isFinite(Number(editSeries.qualification_requirement))
+      ? Math.max(0, Math.floor(Number(editSeries.qualification_requirement)))
+      : 0
+    const safeTournamentDays = Number.isFinite(Number(editSeries.total_tournament_days))
+      ? Math.max(0, Math.floor(Number(editSeries.total_tournament_days)))
+      : 0
+
+    if (editSeries.is_active) {
+      const { error: deactivateError } = await supabase
+        .from("dko_series")
+        .update({ is_active: false })
+        .neq("id", editSeries.id)
+        .eq("series_type", editSeries.series_type)
+        .eq("is_active", true)
+
+      if (deactivateError) {
+        toast({ title: "Fehler", description: deactivateError.message, variant: "destructive" })
+        return
+      }
+    }
 
     const { error } = await supabase
       .from("dko_series")
@@ -252,9 +302,10 @@ export default function AdminTournamentSchedulesPage() {
         name,
         slug,
         is_active: editSeries.is_active,
-
-        // NEW
+        series_type: editSeries.series_type,
         startgeld: safeStartgeld,
+        qualification_requirement: safeQualification,
+        total_tournament_days: safeTournamentDays,
       })
       .eq("id", editSeries.id)
 
@@ -507,6 +558,22 @@ export default function AdminTournamentSchedulesPage() {
                     <div className="text-xs text-gray-500">Wenn leer, wird automatisch aus dem Namen erzeugt.</div>
                   </div>
 
+                  <div className="grid gap-2">
+                    <Label>Serientyp *</Label>
+                    <select
+                      value={newSeriesType}
+                      onChange={(e) => setNewSeriesType(e.target.value)}
+                      className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="lion_cup">Lion Cup</option>
+                      <option value="summer_special">Summer Special</option>
+                      <option value="members_cup">Members Champion Cup</option>
+                      <option value="challenge_division">Challenge Division</option>
+                      <option value="buffalo_cup">Buffalo Steel Cup</option>
+                      <option value="other">Andere Serie</option>
+                    </select>
+                  </div>
+
                   {/* NEW: Startgeld */}
                   <div className="grid gap-2">
                     <Label>Startgeld</Label>
@@ -520,9 +587,35 @@ export default function AdminTournamentSchedulesPage() {
                     />
                   </div>
 
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-2">
+                      <Label>Qualifikation ab Antritten</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={newSeriesQualification}
+                        onChange={(e) => setNewSeriesQualification(Number(e.target.value))}
+                        placeholder="z.B. 8"
+                      />
+                      <div className="text-xs text-gray-500">0 = keine Mindestanzahl</div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Qualifikationstage gesamt</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={newSeriesTournamentDays}
+                        onChange={(e) => setNewSeriesTournamentDays(Number(e.target.value))}
+                        placeholder="z.B. 14"
+                      />
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={newSeriesActive} onChange={(e) => setNewSeriesActive(e.target.checked)} />
-                    <span>Aktiv (anzeigen auf Startseite/Upcoming)</span>
+                    <span>Aktiv = aktuelle Serie dieses Serientyps</span>
                   </div>
 
                   <div className="flex justify-end gap-2 pt-2">
@@ -563,7 +656,7 @@ export default function AdminTournamentSchedulesPage() {
                     <div className="min-w-0">
                       <div className="font-semibold truncate">{s.name}</div>
                       <div className="text-xs text-gray-600 truncate">
-                        slug: <span className="font-mono">{s.slug}</span> • {s.is_active ? "aktiv" : "inaktiv"}
+                        slug: <span className="font-mono">{s.slug}</span> • {s.series_type} • {s.is_active ? "aktiv" : "inaktiv"}
                       </div>
                     </div>
 
@@ -610,6 +703,22 @@ export default function AdminTournamentSchedulesPage() {
                     <Input value={editSeries.slug} onChange={(e) => setEditSeries({ ...editSeries, slug: e.target.value })} />
                   </div>
 
+                  <div className="grid gap-2">
+                    <Label>Serientyp</Label>
+                    <select
+                      value={editSeries.series_type ?? "other"}
+                      onChange={(e) => setEditSeries({ ...editSeries, series_type: e.target.value })}
+                      className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="lion_cup">Lion Cup</option>
+                      <option value="summer_special">Summer Special</option>
+                      <option value="members_cup">Members Champion Cup</option>
+                      <option value="challenge_division">Challenge Division</option>
+                      <option value="buffalo_cup">Buffalo Steel Cup</option>
+                      <option value="other">Andere Serie</option>
+                    </select>
+                  </div>
+
                   {/* NEW: Startgeld */}
                   <div className="grid gap-2">
                     <Label>Startgeld</Label>
@@ -620,6 +729,33 @@ export default function AdminTournamentSchedulesPage() {
                       value={editSeries.startgeld ?? 0}
                       onChange={(e) => setEditSeries({ ...editSeries, startgeld: Number(e.target.value) })}
                     />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-2">
+                      <Label>Qualifikation ab Antritten</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={editSeries.qualification_requirement ?? 0}
+                        onChange={(e) =>
+                          setEditSeries({ ...editSeries, qualification_requirement: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Qualifikationstage gesamt</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={editSeries.total_tournament_days ?? 0}
+                        onChange={(e) =>
+                          setEditSeries({ ...editSeries, total_tournament_days: Number(e.target.value) })
+                        }
+                      />
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 text-sm">

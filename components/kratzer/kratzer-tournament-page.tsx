@@ -102,6 +102,7 @@ export function KratzerTournamentPage() {
   const prizeMoneySettings = useRef<PrizeMoneySettings>(defaultPrizeMoneySettings)
   const leagueStatusLivesMap = useRef<Record<string, number>>({})
   const pauseMinutesRef = useRef<HTMLInputElement>(null)
+  const initializedUserIdRef = useRef<string | null>(null)
 
   const showToast = useCallback(
     (variant: "success" | "error" | "info" | "warning", description: string) => {
@@ -127,11 +128,24 @@ export function KratzerTournamentPage() {
   })
 
   useEffect(() => {
-    if (currentUser) {
-      checkForActiveTournament()
-      loadRegisteredPlayersState()
+    const userId = currentUser?.id
+    if (!userId) {
+      initializedUserIdRef.current = null
+      return
     }
-  }, [currentUser])
+
+    // Nur einmal pro Benutzer initialisieren.
+    // Das verhindert die doppelten/mehrfachen Server-Action-POSTs,
+    // die in Development durch React Strict Mode und zusätzliche
+    // Supabase-Auth-Events entstehen können.
+    if (initializedUserIdRef.current === userId) return
+    initializedUserIdRef.current = userId
+
+    void Promise.all([
+      checkForActiveTournament(),
+      loadRegisteredPlayersState(),
+    ])
+  }, [currentUser?.id, checkForActiveTournament, loadRegisteredPlayersState])
 
   const handleLogout = useCallback(async () => {
     setLoading(true)
@@ -141,6 +155,7 @@ export function KratzerTournamentPage() {
       showToast("error", `Abmeldung fehlgeschlagen: ${error.message}`)
     } else {
       showToast("info", "Erfolgreich abgemeldet.")
+      initializedUserIdRef.current = null
       setCurrentUser(null)
       setTournamentState((prev) => ({
         ...prev,

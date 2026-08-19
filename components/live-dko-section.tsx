@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -61,6 +61,7 @@ export default function LiveDKOSection() {
   const [loading, setLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
   const [activeTournament, setActiveTournament] = useState<ActiveTournament | null>(null)
+  const activeTournamentRef = useRef<ActiveTournament | null>(null)
   const [rankings, setRankings] = useState<Ranking[]>([])
 
   const [currentPlayerSpieldbId, setCurrentPlayerSpieldbId] = useState<string | null>(null)
@@ -132,8 +133,9 @@ export default function LiveDKOSection() {
           .from("tournaments_status")
           .select("tournament_id, tournament_type, status, tournament_name, created_at")
           .eq("status", "active")
+          .order("created_at", { ascending: false })
           .limit(1)
-          .single()
+          .maybeSingle()
 
         if (error) {
           setLoading(false)
@@ -141,15 +143,25 @@ export default function LiveDKOSection() {
         }
 
         if (data) {
-          setActiveTournament({
+          const nextTournament: ActiveTournament = {
             tournament_id: data.tournament_id,
             tournament_type: data.tournament_type,
             status: data.status,
             tournament_name: data.tournament_name,
             created_at: data.created_at,
-          })
+          }
+
+          activeTournamentRef.current = nextTournament
+          setActiveTournament(nextTournament)
+        } else {
+          activeTournamentRef.current = null
+          setActiveTournament(null)
+          setMatches({})
+          setRankings([])
         }
       } catch (error) {
+        console.error("Fehler beim Laden des aktiven DKO-Turniers:", error)
+      } finally {
         setLoading(false)
       }
     }
@@ -168,31 +180,52 @@ export default function LiveDKOSection() {
         (payload) => {
           if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
             const data = payload.new as any
+
+            const nextTournament: ActiveTournament = {
+              tournament_id: data.tournament_id,
+              tournament_type: data.tournament_type,
+              status: data.status,
+              tournament_name: data.tournament_name,
+              created_at: data.created_at,
+            }
+
             if (data.status === "active") {
-              setActiveTournament({
-                tournament_id: data.tournament_id,
-                tournament_type: data.tournament_type,
-                status: data.status,
-                tournament_name: data.tournament_name,
-                created_at: data.created_at,
-              })
-              setLoading(false)
+              // Nur das neueste aktive Turnier darf die Live-Ansicht übernehmen.
+              const current = activeTournamentRef.current
+              const currentCreatedAt = current?.created_at ? new Date(current.created_at).getTime() : 0
+              const nextCreatedAt = data.created_at ? new Date(data.created_at).getTime() : 0
+
+              if (!current || current.status !== "active" || nextCreatedAt >= currentCreatedAt) {
+                activeTournamentRef.current = nextTournament
+                setActiveTournament(nextTournament)
+                setLoading(false)
+              }
             } else if (data.status === "cancelled" || data.status === "completed") {
+              // Statusänderungen anderer/alter DKO-Turniere dürfen das aktuell
+              // angezeigte Turnier nicht mehr löschen oder überschreiben.
+              const current = activeTournamentRef.current
+              if (!current || current.tournament_id !== data.tournament_id) return
+
               if (data.status === "completed") {
-                setActiveTournament({
-                  tournament_id: data.tournament_id,
-                  tournament_type: data.tournament_type,
-                  status: data.status,
-                  tournament_name: data.tournament_name,
-                  created_at: data.created_at,
-                })
+                activeTournamentRef.current = nextTournament
+                setActiveTournament(nextTournament)
               } else {
+                activeTournamentRef.current = null
                 setActiveTournament(null)
                 setMatches({})
+                setRankings([])
               }
             }
           } else if (payload.eventType === "DELETE") {
-            setActiveTournament(null)
+            const deleted = payload.old as any
+            const current = activeTournamentRef.current
+
+            if (current && current.tournament_id === deleted.tournament_id) {
+              activeTournamentRef.current = null
+              setActiveTournament(null)
+              setMatches({})
+              setRankings([])
+            }
           }
         },
       )

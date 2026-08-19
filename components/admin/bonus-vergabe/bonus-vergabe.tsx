@@ -101,7 +101,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   green: "bg-green-50 text-green-700 border-green-200",
   blue: "bg-blue-50 text-blue-700 border-blue-200",
   yellow: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  orange: "bg-orange-50 text-orange-700 border-orange-200",
+  orange: "bg-orange-50 text-gray-900 border-orange-200",
   purple: "bg-purple-50 text-purple-700 border-purple-200",
   red: "bg-red-50 text-red-700 border-red-200",
   brown: "bg-amber-50 text-amber-700 border-amber-200",
@@ -315,24 +315,23 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
   const uniquePlayersWithBonus = new Set(transactions.map((row) => row.player_id)).size
 
   return (
-    <div className="w-full space-y-6">
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="h-2 bg-gradient-to-r from-orange-500 to-yellow-500" />
-        <div className="p-4 sm:p-5 flex items-start gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-orange-600" />
+    <div className="w-full space-y-4">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-center gap-3 p-4 sm:p-5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+            <Sparkles className="h-4 w-4 text-gray-700" />
           </div>
 
           <div className="min-w-0 flex-1">
-            <h2 className="text-base sm:text-lg font-black">Bonuspunkte vergeben</h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <h2 className="text-base font-black text-gray-900 sm:text-lg">Bonuspunkte vergeben</h2>
+            <p className="mt-0.5 text-xs font-semibold text-gray-500 sm:text-sm">
               Wähle Spieler, Bonusregel und Quelle. Jede Vergabe wird sauber in der Bonus-Historie gespeichert.
             </p>
           </div>
 
-          <Button type="button" variant="outline" onClick={() => void loadData()} disabled={loading}>
+          <Button type="button" variant="outline" size="sm" onClick={() => void loadData()} disabled={loading} className="ml-auto shrink-0 rounded-xl">
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-            Neu laden
+            <span className="hidden sm:inline">Neu laden</span>
           </Button>
         </div>
       </div>
@@ -340,7 +339,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
       {message ? (
         <div
           className={cn(
-            "rounded-xl px-4 py-3 text-sm font-bold border",
+            "rounded-xl border px-3 py-2.5 text-sm font-bold",
             message.type === "success" && "bg-green-50 border-green-200 text-green-800",
             message.type === "error" && "bg-red-50 border-red-200 text-red-800",
             message.type === "info" && "bg-blue-50 border-blue-200 text-blue-800",
@@ -350,20 +349,20 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 space-y-6">
-          <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <CardHeader>
-              <CardTitle>Neue Bonusvergabe</CardTitle>
-              <CardDescription>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
+        <div className="space-y-4">
+          <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-gray-100 px-4 py-4 sm:px-5">
+              <CardTitle className="text-base font-black">Neue Bonusvergabe</CardTitle>
+              <CardDescription className="text-xs font-semibold text-gray-500 sm:text-sm">
                 Die Punkte werden automatisch aus der ausgewählten Bonusregel übernommen.
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CardContent className="space-y-4 p-4 sm:p-5">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <div className="space-y-3">
-                  <Label>1. Spieler auswählen</Label>
+                  <Label className="text-xs font-black uppercase tracking-wide text-gray-500">1. Spieler auswählen</Label>
 
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -371,12 +370,12 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                       value={playerSearch}
                       onChange={(event) => setPlayerSearch(event.target.value)}
                       placeholder="Spieler suchen..."
-                      className="pl-9"
+                      className="h-10 rounded-xl pl-9 text-sm"
                     />
                   </div>
 
                   <div className="rounded-2xl border overflow-hidden">
-                    <ScrollArea className="h-[320px]">
+                    <ScrollArea className="h-[220px] sm:h-[280px]">
                       <div className="p-3 space-y-2">
                         {loading ? (
                           <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -395,7 +394,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                                 type="button"
                                 onClick={() => setSelectedPlayerId(String(player.id))}
                                 className={cn(
-                                  "w-full rounded-2xl border px-4 py-3 text-left flex items-center justify-between gap-3 transition-all",
+                                  "flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left transition",
                                   active
                                     ? "border-orange-300 bg-orange-50 shadow-sm"
                                     : "border-gray-200 bg-white hover:border-orange-200",
@@ -403,9 +402,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                               >
                                 <div className="min-w-0">
                                   <div className="font-black text-gray-900 truncate">{player.name}</div>
-                                  <div className="text-xs font-semibold text-gray-500">
-                                    Club-Spieler-ID: {String(player.id)}
-                                  </div>
+                                  <div className="hidden text-[11px] font-semibold text-gray-400 sm:block">ID: {String(player.id)}</div>
                                 </div>
 
                                 {active ? <CheckCircle className="w-5 h-5 text-orange-600 flex-shrink-0" /> : null}
@@ -419,7 +416,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                 </div>
 
                 <div className="space-y-3">
-                  <Label>2. Bonusregel auswählen</Label>
+                  <Label className="text-xs font-black uppercase tracking-wide text-gray-500">2. Bonusregel auswählen</Label>
 
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -427,12 +424,12 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                       value={ruleSearch}
                       onChange={(event) => setRuleSearch(event.target.value)}
                       placeholder="Regel suchen..."
-                      className="pl-9"
+                      className="h-10 rounded-xl pl-9 text-sm"
                     />
                   </div>
 
                   <div className="rounded-2xl border overflow-hidden">
-                    <ScrollArea className="h-[320px]">
+                    <ScrollArea className="h-[220px] sm:h-[280px]">
                       <div className="p-3 space-y-2">
                         {loading ? (
                           <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -452,7 +449,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                                 type="button"
                                 onClick={() => setSelectedRuleId(rule.id)}
                                 className={cn(
-                                  "w-full rounded-2xl border px-4 py-3 text-left transition-all",
+                                  "w-full rounded-xl border px-3 py-2.5 text-left transition",
                                   active
                                     ? "border-orange-300 bg-orange-50 shadow-sm"
                                     : "border-gray-200 bg-white hover:border-orange-200",
@@ -491,12 +488,12 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <Label>3. Quelle</Label>
+                  <Label className="text-xs font-black uppercase tracking-wide text-gray-500">3. Quelle</Label>
 
                   <Select value={sourceType} onValueChange={setSourceType}>
-                    <SelectTrigger className="bg-white">
+                    <SelectTrigger className="h-10 rounded-xl bg-white text-sm">
                       <SelectValue placeholder="Quelle wählen" />
                     </SelectTrigger>
 
@@ -509,46 +506,46 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                     </SelectContent>
                   </Select>
 
-                  <div className="text-xs font-bold text-gray-500">Kontext: {selectedSource.context}</div>
+                  <div className="hidden text-[11px] font-semibold text-gray-400 sm:block">Kontext: {selectedSource.context}</div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Quellenname optional</Label>
+                  <Label className="text-xs font-black uppercase tracking-wide text-gray-500">Quellenname optional</Label>
                   <Input
                     value={sourceName}
                     onChange={(event) => setSourceName(event.target.value)}
                     placeholder="z. B. Members Cup Spieltag 1"
-                    className="bg-white"
+                    className="h-10 rounded-xl bg-white text-sm"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Notiz optional</Label>
+                  <Label className="text-xs font-black uppercase tracking-wide text-gray-500">Notiz optional</Label>
                   <Input
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
                     placeholder="z. B. Nachweis liegt vor"
-                    className="bg-white"
+                    className="h-10 rounded-xl bg-white text-sm"
                   />
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <div className="text-sm font-bold text-gray-600">Vorschau</div>
+                    <div className="text-[11px] font-black uppercase tracking-wide text-gray-500">Vorschau</div>
 
-                    <div className="text-xl font-black text-gray-900 mt-1">
+                    <div className="mt-1 text-base font-black text-gray-900">
                       {selectedPlayer?.name || "Kein Spieler"}{" "}
-                      <span className="text-orange-700">+{selectedRule?.points ?? 0} Punkte</span>
+                      <span className="text-gray-900">+{selectedRule?.points ?? 0} Punkte</span>
                     </div>
 
-                    <div className="text-sm font-semibold text-gray-600 mt-1">
+                    <div className="mt-1 text-xs font-semibold text-gray-500">
                       {selectedRule?.title || "Keine Regel ausgewählt"} · {selectedSource.label}
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex gap-2">
                     <Button type="button" variant="outline" onClick={resetForm} className="rounded-xl">
                       Zurücksetzen
                     </Button>
@@ -557,7 +554,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                       type="button"
                       onClick={handleSave}
                       disabled={!canSave}
-                      className="rounded-xl bg-orange-600 hover:bg-orange-700 font-black"
+                      className="h-10 rounded-xl bg-gray-950 text-sm font-black text-white hover:bg-gray-800"
                     >
                       {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
                       Bonuspunkte speichern
@@ -568,15 +565,15 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <CardHeader>
-              <CardTitle>Letzte Bonusvergaben</CardTitle>
-              <CardDescription>Hier siehst du die letzten gespeicherten Bonuspunkte.</CardDescription>
+          <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-gray-100 px-4 py-4 sm:px-5">
+              <CardTitle className="text-base font-black">Letzte Bonusvergaben</CardTitle>
+              <CardDescription className="text-xs font-semibold text-gray-500 sm:text-sm">Zuletzt gespeicherte Bonuspunkte.</CardDescription>
             </CardHeader>
 
-            <CardContent>
-              <div className="rounded-2xl border overflow-hidden">
-                <ScrollArea className="h-[520px]">
+            <CardContent className="p-4 sm:p-5">
+              <div className="overflow-hidden rounded-xl border">
+                <ScrollArea className="h-[360px] sm:h-[460px]">
                   <div className="p-3 space-y-2">
                     {loading ? (
                       <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -587,7 +584,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                       <div className="text-sm text-gray-500 p-3">Noch keine Bonuspunkte vergeben.</div>
                     ) : (
                       transactions.map((row) => (
-                        <div key={row.id} className="rounded-2xl border border-gray-200 bg-white p-4">
+                        <div key={row.id} className="rounded-xl border border-gray-200 bg-white p-3">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className="font-black text-gray-900 truncate">{row.player_name}</div>
@@ -614,8 +611,8 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                               ) : null}
                             </div>
 
-                            <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-right flex-shrink-0">
-                              <div className="text-2xl font-black text-orange-700">+{row.points}</div>
+                            <div className="shrink-0 rounded-xl bg-gray-50 px-3 py-2 text-right">
+                              <div className="text-lg font-black text-gray-900">+{row.points}</div>
                               <div className="text-[10px] font-bold text-gray-500">Punkte</div>
                             </div>
                           </div>
@@ -629,54 +626,54 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
           </Card>
         </div>
 
-        <div className="space-y-6">
-          <Card className="rounded-2xl border border-gray-200 shadow-sm">
-            <CardContent className="p-5">
+        <div className="hidden space-y-3 sm:block">
+          <Card className="rounded-xl border border-gray-200 shadow-sm">
+            <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
+                <div className="h-9 w-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center">
                   <Trophy className="w-5 h-5 text-orange-600" />
                 </div>
 
                 <div>
                   <div className="text-sm text-gray-500 font-semibold">Gesamt vergebene Punkte</div>
-                  <div className="text-3xl font-black">{totalBonusPoints}</div>
+                  <div className="text-2xl font-black">{totalBonusPoints}</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="rounded-2xl border border-gray-200 shadow-sm">
-            <CardContent className="p-5">
+            <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center">
+                <div className="h-9 w-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center">
                   <UserPlus className="w-5 h-5 text-blue-600" />
                 </div>
 
                 <div>
                   <div className="text-sm text-gray-500 font-semibold">Spieler mit Bonus</div>
-                  <div className="text-3xl font-black">{uniquePlayersWithBonus}</div>
+                  <div className="text-2xl font-black">{uniquePlayersWithBonus}</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="rounded-2xl border border-gray-200 shadow-sm">
-            <CardContent className="p-5">
+            <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-green-50 border border-green-200 flex items-center justify-center">
+                <div className="h-9 w-9 rounded-xl bg-green-50 border border-green-200 flex items-center justify-center">
                   <Award className="w-5 h-5 text-green-600" />
                 </div>
 
                 <div>
                   <div className="text-sm text-gray-500 font-semibold">Aktive Bonusregeln</div>
-                  <div className="text-3xl font-black">{rules.length}</div>
+                  <div className="text-2xl font-black">{rules.length}</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {selectedPlayer ? (
-            <Card className="rounded-2xl border border-orange-200 bg-orange-50 shadow-sm">
+            <Card className="rounded-xl border border-gray-200 bg-white shadow-sm">
               <CardHeader>
                 <CardTitle>Spieler-Historie</CardTitle>
                 <CardDescription>{selectedPlayer.name}</CardDescription>
@@ -690,14 +687,14 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                 ) : (
                   <div className="space-y-2">
                     {playerTransactions.slice(0, 8).map((row) => (
-                      <div key={row.id} className="rounded-xl bg-white border border-orange-100 p-3">
+                      <div key={row.id} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
                             <div className="font-black text-gray-900 truncate">{row.rule_title}</div>
                             <div className="text-xs font-semibold text-gray-500">{formatDate(row.created_at)}</div>
                           </div>
 
-                          <div className="font-black text-orange-700">+{row.points}</div>
+                          <div className="font-black text-gray-900">+{row.points}</div>
                         </div>
                       </div>
                     ))}

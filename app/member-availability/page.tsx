@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
+import { MembershipAccessGate } from "@/components/member/membership/membership-access-gate"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -52,7 +53,12 @@ interface TeamMembership {
   id: string
   team_id: string
   role: string | null
-  teams: { id: string; name: string; logo_url: string | null } | null
+  teams: {
+    id: string
+    name: string
+    logo_url: string | null
+    dart_type?: "edart" | "steeldart" | null
+  } | null
 }
 
 interface OpponentTeam {
@@ -389,7 +395,7 @@ useEffect(() => {
     if (profileData?.player_id) {
       const { data: teamData } = await supabase
         .from("team_members")
-        .select(`id, team_id, role, teams (id, name, logo_url)`)
+        .select(`id, team_id, role, teams (id, name, logo_url, dart_type)`)
         .eq("player_id", profileData.player_id)
         .is("left_at", null) // ✅ nur aktive Mitgliedschaften
 
@@ -410,8 +416,8 @@ useEffect(() => {
         .select(
           `
           *,
-          home_team:teams!matches_home_team_id_fkey(id, name),
-          away_team:teams!matches_away_team_id_fkey(id, name),
+          home_team:teams!matches_home_team_id_fkey(id, name, dart_type),
+          away_team:teams!matches_away_team_id_fkey(id, name, dart_type),
           season:seasons(id, name, type)
         `
         )
@@ -748,10 +754,64 @@ else failed += 1
   }, [isDialogOpen, activeRoomId])
 
 
+  function getRequiredLeagueModuleForMatch(match: Match | null, teamId: string | null) {
+    if (!teamId) return null
+
+    // WICHTIG:
+    // Beim Öffnen des Dialogs ist setDialogMatch(match) noch asynchron.
+    // Deshalb darf die Ermittlung NICHT davon abhängen, dass dialogMatch
+    // bereits im State angekommen ist. Zuerst immer die Dartart des eigenen
+    // Teams verwenden; das Match ist nur der Fallback.
+    const myTeam = teamMemberships.find((membership) => membership.team_id === teamId)
+    const teamDartType = String(myTeam?.teams?.dart_type || "").toLowerCase()
+    const matchDartType = String(match?.dart_type || "").toLowerCase()
+
+    const dartType = teamDartType || matchDartType
+
+    if (dartType === "edart") return "edart_league"
+    if (dartType === "steeldart") return "steeldart_league"
+
+    return null
+  }
+
   async function loadMatchData(matchId: string, teamId: string) {
     if (!profile?.player_id) return
 
-   // Teamspieler (NUR aktive Mitglieder)
+   // Teamspieler: nur aktive Teammitglieder MIT passendem Liga-Paket
+   // Testfreischaltungen zählen ebenfalls, weil die RPC beide Varianten prüft.
+const requiredModule = getRequiredLeagueModuleForMatch(dialogMatch, teamId)
+
+if (!requiredModule) {
+  console.error("Liga-Modul konnte für Team nicht ermittelt werden:", teamId)
+  setLineupError("Die Liga-Art des Teams konnte nicht ermittelt werden. Bitte prüfe teams.dart_type.")
+  setTeamPlayers([])
+  setAvailability([])
+  setLineupPlayers([])
+  setDraftLineup([])
+  return
+}
+
+const { data: eligibleRows, error: eligibleErr } = await supabase.rpc(
+  "eligible_team_players_for_league",
+  {
+    p_team_id: teamId,
+    p_required_module_code: requiredModule,
+  },
+)
+
+if (eligibleErr) {
+  console.error("eligible_team_players_for_league error:", eligibleErr)
+  setTeamPlayers([])
+  setAvailability([])
+  setLineupPlayers([])
+  setDraftLineup([])
+  return
+}
+
+const eligiblePlayerIds = new Set<string>(
+  ((eligibleRows as any[]) || []).map((row: any) => row.player_id).filter(Boolean),
+)
+
 const { data: tm, error: tmErr } = await supabase
   .from("team_members")
   .select(`player_id, club_players:club_players!team_members_player_id_fkey(id, name, photo_url)`)
@@ -760,9 +820,14 @@ const { data: tm, error: tmErr } = await supabase
 
 if (tmErr) console.error("team_members error:", tmErr)
 
-const activePlayerIds = new Set<string>(((tm as any) || []).map((r: any) => r.player_id).filter(Boolean))
+const activePlayerIds = new Set<string>(
+  ((tm as any) || [])
+    .map((r: any) => r.player_id)
+    .filter((playerId: string) => eligiblePlayerIds.has(playerId)),
+)
 
 const players: TeamPlayer[] = ((tm as any) || [])
+  .filter((r: any) => activePlayerIds.has(r.player_id))
   .map((r: any) => r.club_players)
   .filter(Boolean)
 
@@ -952,7 +1017,13 @@ function setLineupPlayer(playerId: string, mode: "remove" | "starter" | "substit
   if (!dialogMatch || !selectedTeamId) return
   if (!isCaptainOrCoForTeam) return
   if (isMatchLocked(dialogMatch)) return
- if ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode) return
+  if ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode) return
+
+  // Zusätzliche UI-Sicherung: nur Spieler aus der bereits paketgefilterten Liste dürfen gesetzt werden.
+  if (mode !== "remove" && !teamPlayers.some((player) => player.id === playerId)) {
+    setLineupError("Dieser Spieler hat für diese Liga kein aktives Paket bzw. keine gültige Testfreischaltung.")
+    return
+  }
 
   setDraftLineup((prev) => {
     const next = [...prev]
@@ -1023,13 +1094,17 @@ async function saveDraftLineup() {
     await supabase.from("match_lineups").delete().eq("match_id", matchId).eq("team_id", teamId)
 
     // 2) Draft neu einfügen
-    const rowsToInsert = draftLineup.map((p) => ({
-      match_id: matchId,
-      team_id: teamId,
-      player_id: p.player_id,
-      position: p.is_substitute ? 0 : p.position,
-      is_substitute: p.is_substitute,
-    }))
+    const allowedPlayerIds = new Set(teamPlayers.map((player) => player.id))
+
+    const rowsToInsert = draftLineup
+      .filter((p) => allowedPlayerIds.has(p.player_id))
+      .map((p) => ({
+        match_id: matchId,
+        team_id: teamId,
+        player_id: p.player_id,
+        position: p.is_substitute ? 0 : p.position,
+        is_substitute: p.is_substitute,
+      }))
 
     if (rowsToInsert.length > 0) {
       const { error } = await supabase.from("match_lineups").insert(rowsToInsert)
@@ -1085,13 +1160,17 @@ async function confirmLineup() {
       await supabase.from("match_lineups").delete().eq("match_id", matchId).eq("team_id", teamId)
 
       // 2) Draft neu einfügen
-      const rowsToInsert = draftLineup.map((p) => ({
-        match_id: matchId,
-        team_id: teamId,
-        player_id: p.player_id,
-        position: p.is_substitute ? 0 : p.position,
-        is_substitute: p.is_substitute,
-      }))
+      const allowedPlayerIds = new Set(teamPlayers.map((player) => player.id))
+
+      const rowsToInsert = draftLineup
+        .filter((p) => allowedPlayerIds.has(p.player_id))
+        .map((p) => ({
+          match_id: matchId,
+          team_id: teamId,
+          player_id: p.player_id,
+          position: p.is_substitute ? 0 : p.position,
+          is_substitute: p.is_substitute,
+        }))
 
       if (rowsToInsert.length > 0) {
         const { error } = await supabase.from("match_lineups").insert(rowsToInsert)
@@ -1216,6 +1295,12 @@ if (authLoading || loading) {
 />
 
       <main className="pt-12 sm:pt-14">
+        <MembershipAccessGate
+          required={["edart_league", "steeldart_league"]}
+          requireAll={false}
+          title="Zusagen & Aufstellung nicht freigeschaltet"
+          description="Für diesen Bereich brauchst du ein aktives E-Dart- oder Steeldart-Ligapaket bzw. eine gültige Testfreischaltung."
+        >
   <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl overflow-x-hidden">
 
         <div className="mb-4">
@@ -2038,10 +2123,10 @@ if (authLoading || loading) {
   </DialogContent>
 </Dialog>
   </div>
-		
+        </MembershipAccessGate>
       </main>
 
-            <MobileBottomNav />
+      <MobileBottomNav />
     </div>
   )
 }

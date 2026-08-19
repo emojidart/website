@@ -6,6 +6,7 @@ import { Header } from "@/components/header"
 import { Card, CardContent } from "@/components/ui/card"
 import { PushEnableBanner } from "@/components/push-enable-banner"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { createBrowserClient } from "@supabase/ssr"
 import {
@@ -26,15 +27,18 @@ import {
   X,
   Zap,
   CheckCircle2,
+  Bell,
   Download,
   Loader2,
   Timer,
   LogOut,
   UserPlus,
+  ShoppingBag,
 } from "lucide-react"
 import Image from "next/image"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { DKOSelfRegistrationModal } from "@/components/dko-self-registration-modal"
 import { PushNotificationDialog } from "@/components/push-notification-dialog"
 
@@ -54,6 +58,7 @@ interface Match {
   matchday: number
   status: string
   match_time?: string
+  dart_type?: string | null
   home_team?: {
     id: string
     name: string
@@ -118,6 +123,8 @@ interface CombinedEvent {
   startgeld_details?: string | null
   mode?: string | null
   max_participants?: number | null
+  sourceKind?: "internal" | "dach"
+  internalEventId?: string | null
 }
 
 interface LionCupEvent {
@@ -317,20 +324,45 @@ function formatHoursMinutesSeconds(totalSeconds: number) {
   return `${hours} Std ${pad2(minutes)} Min ${pad2(seconds)} Sek`
 }
 
+
+type HomeLeagueMatch = Match & {
+  my_team_id: string
+  my_status: "none" | "yes" | "maybe" | "no"
+}
+
+
+function getLeagueDartTypeForMyTeam(match: any, myTeamIds: string[]) {
+  if (match?.home_team_id && myTeamIds.includes(match.home_team_id)) {
+    return String(match?.home_team?.dart_type || match?.dart_type || "").toLowerCase()
+  }
+
+  if (match?.away_team_id && myTeamIds.includes(match.away_team_id)) {
+    return String(match?.away_team?.dart_type || match?.dart_type || "").toLowerCase()
+  }
+
+  return String(match?.dart_type || "").toLowerCase()
+}
+
 export default function Home() {
+  const { loading: membershipLoading, hasModule } = useMembershipAccess()
+  const canSeeEDartLeague = hasModule("edart_league")
+  const canSeeSteeldartLeague = hasModule("steeldart_league")
+  const hasLeaguePackage = canSeeEDartLeague || canSeeSteeldartLeague
+
+  const [myPlayerId, setMyPlayerId] = useState<string | null>(null)
+  const [myLeagueMatches, setMyLeagueMatches] = useState<HomeLeagueMatch[]>([])
+  const [myLeagueLoading, setMyLeagueLoading] = useState(false)
+  const [myLeagueSaving, setMyLeagueSaving] = useState<string>("")
+
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [cupPrizePool, setCupPrizePool] = useState<number>(0)
   const [summerPrizePool, setSummerPrizePool] = useState<number>(0)
+  const [membersPrizePool, setMembersPrizePool] = useState<number>(0)
  const [lionTop5, setLionTop5] = useState<
   Array<{ player_name: string; total_points: number; original_total_points: number; tournaments_played: number }>
 >([])
 
-const [summerTop5, setSummerTop5] = useState<
-  Array<{ player_name: string; total_points: number; tournaments_played: number }>
->([])
-
-const [summerTop5Loading, setSummerTop5Loading] = useState<boolean>(true)
 const [lionTop5Loading, setLionTop5Loading] = useState<boolean>(true)
   
 
@@ -466,6 +498,192 @@ useEffect(() => {
     }
   }, [])
 
+  useEffect(() => {
+    if (membershipLoading) return
+
+    const loadMyLeagueMatches = async () => {
+      if (!authUserId || !hasLeaguePackage) {
+        setMyPlayerId(null)
+        setMyLeagueMatches([])
+        return
+      }
+
+      try {
+        setMyLeagueLoading(true)
+
+        const { data: profileData, error: profileError } = await supabase
+          .from("user_profiles")
+          .select("player_id")
+          .eq("user_id", authUserId)
+          .maybeSingle()
+
+        if (profileError) throw profileError
+
+        const playerId = (profileData as any)?.player_id as string | undefined
+        if (!playerId) {
+          setMyPlayerId(null)
+          setMyLeagueMatches([])
+          return
+        }
+
+        setMyPlayerId(playerId)
+
+        const { data: teamRows, error: teamError } = await supabase
+          .from("team_members")
+          .select("team_id, teams(id,name,dart_type)")
+          .eq("player_id", playerId)
+          .is("left_at", null)
+
+        if (teamError) throw teamError
+
+        const eligibleTeams = ((teamRows as any[]) || []).filter((row: any) => {
+          const dartType = String(row?.teams?.dart_type || "").toLowerCase()
+          if (dartType === "edart") return canSeeEDartLeague
+          if (dartType === "steeldart") return canSeeSteeldartLeague
+          return false
+        })
+
+        const teamIds = eligibleTeams.map((row: any) => row.team_id).filter(Boolean)
+        if (teamIds.length === 0) {
+          setMyLeagueMatches([])
+          return
+        }
+
+        const today = new Date().toISOString().split("T")[0]
+
+        const [{ data: upcoming, error: matchError }, { data: opponentTeamsData }] = await Promise.all([
+          supabase
+            .from("matches")
+            .select(`
+              *,
+              home_team:teams!matches_home_team_id_fkey(id,name,logo_url,dart_type),
+              away_team:teams!matches_away_team_id_fkey(id,name,logo_url,dart_type)
+            `)
+            .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
+            .gte("match_date", today)
+            .neq("status", "completed")
+            .order("match_date", { ascending: true })
+            .order("match_time", { ascending: true })
+            .limit(30),
+          supabase.from("opponent_teams").select("*"),
+        ])
+
+        if (matchError) throw matchError
+
+        const eligibleMatches = ((upcoming as any[]) || []).filter((match: any) => {
+          const dartType = getLeagueDartTypeForMyTeam(match, teamIds)
+
+          if (dartType === "edart") return canSeeEDartLeague
+          if (dartType === "steeldart") return canSeeSteeldartLeague
+
+          return false
+        })
+
+        const selected: any[] = []
+
+        if (canSeeEDartLeague) {
+          const next = eligibleMatches.find(
+            (match: any) => getLeagueDartTypeForMyTeam(match, teamIds) === "edart",
+          )
+          if (next) selected.push(next)
+        }
+
+        if (canSeeSteeldartLeague) {
+          const next = eligibleMatches.find(
+            (match: any) => getLeagueDartTypeForMyTeam(match, teamIds) === "steeldart",
+          )
+          if (next) selected.push(next)
+        }
+
+        const enriched: HomeLeagueMatch[] = []
+
+        for (const match of selected) {
+          const myTeamId = teamIds.includes(match.home_team_id)
+            ? match.home_team_id
+            : match.away_team_id
+
+          const { data: availability } = await supabase
+            .from("match_availability")
+            .select("status")
+            .eq("match_id", match.id)
+            .eq("player_id", playerId)
+            .maybeSingle()
+
+          const homeOpponentTeam = match.home_opponent_team_id
+            ? (opponentTeamsData as any[])?.find((team: any) => team.id === match.home_opponent_team_id)
+            : null
+          const awayOpponentTeam = match.away_opponent_team_id
+            ? (opponentTeamsData as any[])?.find((team: any) => team.id === match.away_opponent_team_id)
+            : null
+
+          enriched.push({
+            ...match,
+            dart_type: getLeagueDartTypeForMyTeam(match, teamIds),
+            home_opponent_team: homeOpponentTeam,
+            away_opponent_team: awayOpponentTeam,
+            my_team_id: myTeamId,
+            my_status: ((availability as any)?.status || "none") as "none" | "yes" | "maybe" | "no",
+          })
+        }
+
+        enriched.sort((a, b) => {
+          const aKey = `${a.match_date}T${a.match_time || "23:59"}`
+          const bKey = `${b.match_date}T${b.match_time || "23:59"}`
+          return aKey.localeCompare(bKey)
+        })
+
+        setMyLeagueMatches(enriched)
+      } catch (error) {
+        console.error("loadMyLeagueMatches error:", error)
+        setMyLeagueMatches([])
+      } finally {
+        setMyLeagueLoading(false)
+      }
+    }
+
+    void loadMyLeagueMatches()
+  }, [
+    authUserId,
+    membershipLoading,
+    canSeeEDartLeague,
+    canSeeSteeldartLeague,
+    hasLeaguePackage,
+  ])
+
+  const setHomeLeagueAvailability = async (
+    match: HomeLeagueMatch,
+    status: "yes" | "maybe" | "no",
+  ) => {
+    if (!myPlayerId) return
+
+    try {
+      setMyLeagueSaving(`${match.id}-${status}`)
+
+      const { error } = await supabase.from("match_availability").upsert(
+        {
+          match_id: match.id,
+          team_id: match.my_team_id,
+          player_id: myPlayerId,
+          status,
+          note: null,
+        },
+        { onConflict: "match_id,player_id" },
+      )
+
+      if (error) throw error
+
+      setMyLeagueMatches((prev) =>
+        prev.map((item) =>
+          item.id === match.id ? { ...item, my_status: status } : item,
+        ),
+      )
+    } catch (error) {
+      console.error("setHomeLeagueAvailability error:", error)
+    } finally {
+      setMyLeagueSaving("")
+    }
+  }
+
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
       alert("Installation nicht verfügbar. Auf iOS: Teilen-Menü → Zum Home-Bildschirm hinzufügen")
@@ -535,28 +753,46 @@ useEffect(() => {
   useEffect(() => {
     const fetchCupData = async () => {
       try {
-        const { data, error } = await supabase.from("tournament_series_aggregated").select("player_name, tournaments_played")
+        const { data: activeSeries, error: seriesError } = await supabase
+          .from("dko_series")
+          .select("id")
+          .eq("series_type", "lion_cup")
+          .eq("is_active", true)
+          .maybeSingle()
 
-        if (error) {
-          throw error
+        if (seriesError) throw seriesError
+        if (!activeSeries?.id) {
+          setCupPrizePool(0)
+          return
         }
 
-        const totalParticipants = data?.length || 0
-        const totalAppearances = data?.reduce((sum: number, player: any) => sum + player.tournaments_played, 0) || 0
+        const { data, error } = await supabase
+          .from("tournament_series_standings")
+          .select("player_name,tournament_id")
+          .eq("series_id", activeSeries.id)
+
+        if (error) throw error
+
+        const participants = new Set(
+          (data || []).map((r: any) => String(r.player_name || "").trim()).filter(Boolean)
+        )
+        const appearances = new Set(
+          (data || [])
+            .filter((r: any) => r?.player_name && r?.tournament_id)
+            .map((r: any) => `${String(r.player_name).trim()}:${String(r.tournament_id)}`)
+        )
+
+        const totalParticipants = participants.size
+        const totalAppearances = appearances.size
 
         const prizePoolFromParticipants = totalParticipants * 5
         const prizePoolFromAppearances = totalAppearances * 4
 
         let hostSponsoring = 0
-        if (totalAppearances >= 501) {
-          hostSponsoring = 250
-        } else if (totalAppearances >= 500) {
-          hostSponsoring = 100
-        }
+        if (totalAppearances >= 501) hostSponsoring = 250
+        else if (totalAppearances >= 500) hostSponsoring = 100
 
-        const totalPrizePool = prizePoolFromParticipants + prizePoolFromAppearances + hostSponsoring
-
-        setCupPrizePool(totalPrizePool)
+        setCupPrizePool(prizePoolFromParticipants + prizePoolFromAppearances + hostSponsoring)
       } catch (error) {
         console.error("Error fetching cup data:", error)
         setCupPrizePool(0)
@@ -566,123 +802,9 @@ useEffect(() => {
     fetchCupData()
   }, [])
 
-  useEffect(() => {
-    const fetchLionTop5 = async () => {
-      try {
-        setLionTop5Loading(true)
 
-        const { data: settings } = await supabase.from("season_settings").select("halving_active, halving_date").single()
 
-        const halvingActive = Boolean(settings?.halving_active)
-        const halvingDate = settings?.halving_date ? new Date(settings.halving_date).getTime() : null
 
-        const { data: entries, error } = await supabase
-          .from("tournament_series_standings")
-          .select("player_name, placement_points, bonus_points, legs_won, tournament_date")
-
-        if (error) throw error
-
-        const stats = new Map<
-          string,
-          {
-            current_total: number
-            original_total: number
-            current_legs_won: number
-            current_placement_points: number
-            tournaments: number
-          }
-        >()
-
-        ;(entries || []).forEach((e: any) => {
-          const name = String(e.player_name || "").trim()
-          if (!name) return
-
-          const placement = Number(e.placement_points || 0)
-          const bonus = Number(e.bonus_points || 0)
-          const legsWon = Number(e.legs_won || 0)
-          const entryTotal = placement + bonus + legsWon
-
-          let multiplier = 1
-          if (halvingActive && halvingDate && e.tournament_date) {
-            const t = new Date(e.tournament_date).getTime()
-            if (!Number.isNaN(t) && t < halvingDate) multiplier = 0.5
-          }
-
-          const prev =
-            stats.get(name) ||
-            ({
-              current_total: 0,
-              original_total: 0,
-              current_legs_won: 0,
-              current_placement_points: 0,
-              tournaments: 0,
-            } as const)
-
-          stats.set(name, {
-            current_total: prev.current_total + entryTotal * multiplier,
-            original_total: prev.original_total + entryTotal,
-            current_legs_won: prev.current_legs_won + legsWon * multiplier,
-            current_placement_points: prev.current_placement_points + placement * multiplier,
-            tournaments: prev.tournaments + 1,
-          })
-        })
-
-        const top5 = Array.from(stats.entries())
-          .map(([player_name, v]) => ({
-            player_name,
-            total_points: Math.round(v.current_total * 100) / 100,
-            original_total_points: Math.round(v.original_total * 100) / 100,
-            tournaments_played: v.tournaments,
-            _legs: v.current_legs_won,
-            _placement: v.current_placement_points,
-          }))
-          .sort((a, b) => {
-            if (b.total_points !== a.total_points) return b.total_points - a.total_points
-            if (b._legs !== a._legs) return b._legs - a._legs
-            if (b._placement !== a._placement) return b._placement - a._placement
-            return a.tournaments_played - b.tournaments_played
-          })
-          .slice(0, 5)
-          .map(({ _legs, _placement, ...rest }) => rest)
-
-        setLionHalvingActive(halvingActive)
-        setLionTop5(top5)
-      } catch (e) {
-        console.error("Error fetching Lion Top5:", e)
-        setLionTop5([])
-        setLionHalvingActive(false)
-      } finally {
-        setLionTop5Loading(false)
-      }
-    }
-
-        fetchLionTop5()
-  }, [])
-
-useEffect(() => {
-  const fetchSummerTop5 = async () => {
-    try {
-      setSummerTop5Loading(true)
-
-      const { data, error } = await supabase
-        .from("summer_special_total_standings")
-        .select("player_name, total_points, tournaments_played")
-        .order("total_points", { ascending: false })
-        .limit(5)
-
-      if (error) throw error
-
-      setSummerTop5(data || [])
-    } catch (e) {
-      console.error("Error fetching Summer Top5:", e)
-      setSummerTop5([])
-    } finally {
-      setSummerTop5Loading(false)
-    }
-  }
-
-  fetchSummerTop5()
-}, [])
 
 
 
@@ -724,6 +846,34 @@ useEffect(() => {
   fetchSummerPrizePool()
 }, [])
 
+useEffect(() => {
+  const fetchMembersPrizePool = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("members_cup_results")
+        .select("round_robin_id, player_id")
+
+      if (error) throw error
+
+      // Pro Spieler und gespieltem Qualifikationsturnier fließen € 10,00
+      // aus dem Startgeld in den Finalpreisfonds.
+      const uniqueAppearances = new Set(
+        (data || [])
+          .filter((row: any) => row?.round_robin_id && row?.player_id)
+          .map((row: any) => `${row.round_robin_id}:${row.player_id}`)
+      )
+
+      setMembersPrizePool(uniqueAppearances.size * 10)
+    } catch (error) {
+      console.error("Error fetching Members Champion prize pool:", error)
+      setMembersPrizePool(0)
+    }
+  }
+
+  fetchMembersPrizePool()
+}, [])
+
+
 
 
 
@@ -746,72 +896,113 @@ useEffect(() => {
       try {
         const today = new Date().toISOString().split("T")[0]
 
-        const { data: tournamentsData, error: tournamentsError } = await supabase
-  .from("events")
-  .select("*")
-  .eq("event_type", "tournament")
-  .gte("end_date", today)
-  .order("start_date", { ascending: true })
-  .order("event_time", { ascending: true })
+        const [tournamentsRes, eventsRes, dachRes] = await Promise.all([
+          supabase
+            .from("events")
+            .select("*")
+            .eq("event_type", "tournament")
+            .gte("end_date", today)
+            .order("start_date", { ascending: true })
+            .order("event_time", { ascending: true }),
 
-        if (tournamentsError) {
-          console.error("Error fetching tournaments:", tournamentsError)
-        }
+          supabase
+            .from("events")
+            .select("*")
+            .neq("event_type", "tournament")
+            .not("name", "ilike", "%LION%")
+            .gte("end_date", today)
+            .order("start_date", { ascending: true })
+            .order("event_time", { ascending: true }),
 
-        const { data: eventsData, error: eventsError } = await supabase
-  .from("events")
-  .select("*")
-  .neq("event_type", "tournament")
-  .not("name", "ilike", "%LION%")
-  .gte("end_date", today)
-  .order("start_date", { ascending: true })
-  .order("event_time", { ascending: true })
+          supabase
+            .from("dach_events")
+            .select("id,internal_event_id,name,event_type,event_date,start_date,end_date,event_time,location,details,photo_url,entry_fee,startgeld_details,max_participants,mode,event_status")
+            .eq("event_type", "tournament")
+            .in("event_status", ["approved"])
+            .gte("end_date", today)
+            .order("start_date", { ascending: true })
+            .order("event_time", { ascending: true }),
+        ])
 
-        if (eventsError) {
-          console.error("Error fetching events:", eventsError)
-        }
+        if (tournamentsRes.error) console.error("Error fetching tournaments:", tournamentsRes.error)
+        if (eventsRes.error) console.error("Error fetching events:", eventsRes.error)
+        if (dachRes.error) console.error("Error fetching DACH tournaments:", dachRes.error)
+
+        const tournamentsData = tournamentsRes.data || []
+        const eventsData = eventsRes.data || []
+        const dachData = dachRes.data || []
+
+        const linkedInternalIds = new Set(
+          dachData
+            .map((event: any) => event.internal_event_id)
+            .filter(Boolean)
+            .map(String),
+        )
 
         const combined: CombinedEvent[] = []
 
-       if (tournamentsData) {
-  tournamentsData.forEach((tournament: any) => {
-    combined.push({
-      id: tournament.id,
-      name: tournament.name,
-      date: tournament.start_date || tournament.event_date,
-      start_date: tournament.start_date || tournament.event_date,
-      end_date: tournament.end_date || tournament.event_date,
-      time: tournament.event_time || "19:00",
-      location: tournament.location || "Ort folgt",
-      details: tournament.details ?? tournament.description ?? null,
-      photo_url: tournament.photo_url,
-      type: "tournament",
-      entry_fee: tournament.entry_fee ?? null,
-      startgeld_details: tournament.startgeld_details ?? null,
-      max_participants: tournament.max_participants ?? null,
-      mode: tournament.mode ?? null,
-    })
-  })
-}
+        tournamentsData.forEach((tournament: any) => {
+          combined.push({
+            id: tournament.id,
+            name: tournament.name,
+            date: tournament.start_date || tournament.event_date,
+            start_date: tournament.start_date || tournament.event_date,
+            end_date: tournament.end_date || tournament.event_date,
+            time: tournament.event_time || "19:00",
+            location: tournament.location || "Ort folgt",
+            details: tournament.details ?? tournament.description ?? null,
+            photo_url: tournament.photo_url,
+            type: "tournament",
+            entry_fee: tournament.entry_fee ?? null,
+            startgeld_details: tournament.startgeld_details ?? null,
+            max_participants: tournament.max_participants ?? null,
+            mode: tournament.mode ?? null,
+            sourceKind: "internal",
+            internalEventId: tournament.id,
+          })
+        })
 
-        if (eventsData) {
-  eventsData.forEach((event: any) => {
-    combined.push({
-      id: event.id,
-      name: event.name,
-      date: event.start_date || event.event_date,
-      start_date: event.start_date || event.event_date,
-      end_date: event.end_date || event.event_date,
-      time: event.event_time || "19:00",
-      location: event.location || "Wird bekannt gegeben",
-      details: event.details ?? event.description ?? null,
-      photo_url: event.photo_url,
-      type: "event",
-      eventType: event.event_type,
-      max_participants: event.max_participants,
-    })
-  })
-}
+        dachData
+          .filter((event: any) => !event.internal_event_id || !tournamentsData.some((t: any) => String(t.id) === String(event.internal_event_id)))
+          .forEach((event: any) => {
+            combined.push({
+              id: event.id,
+              name: event.name,
+              date: event.start_date || event.event_date,
+              start_date: event.start_date || event.event_date,
+              end_date: event.end_date || event.event_date,
+              time: event.event_time || "19:00",
+              location: event.location || "Ort folgt",
+              details: event.details ?? null,
+              photo_url: event.photo_url,
+              type: "tournament",
+              entry_fee: event.entry_fee ?? null,
+              startgeld_details: event.startgeld_details ?? null,
+              max_participants: event.max_participants ?? null,
+              mode: event.mode ?? null,
+              sourceKind: "dach",
+              internalEventId: event.internal_event_id ?? null,
+            })
+          })
+
+        eventsData.forEach((event: any) => {
+          combined.push({
+            id: event.id,
+            name: event.name,
+            date: event.start_date || event.event_date,
+            start_date: event.start_date || event.event_date,
+            end_date: event.end_date || event.event_date,
+            time: event.event_time || "19:00",
+            location: event.location || "Wird bekannt gegeben",
+            details: event.details ?? event.description ?? null,
+            photo_url: event.photo_url,
+            type: "event",
+            eventType: event.event_type,
+            max_participants: event.max_participants,
+            sourceKind: "internal",
+            internalEventId: event.id,
+          })
+        })
 
         combined.sort((a, b) => {
           const dateA = new Date(`${a.date}T${a.time}`)
@@ -819,7 +1010,7 @@ useEffect(() => {
           return dateA.getTime() - dateB.getTime()
         })
 
-        setCombinedEvents(combined.slice(0, 6))
+        setCombinedEvents(combined.slice(0, 12))
       } catch (error) {
         console.error("Error fetching events and tournaments:", error)
       }
@@ -911,22 +1102,28 @@ useEffect(() => {
       try {
         setLionCupLoading(true)
 
-        // Serien (fixe ID)
-        const LION_SERIES_ID = "bae7b8fe-7013-4160-8a85-f46ac765e003"
-
-        
-        const { data: seriesRows, error: seriesErr } = await supabase
+        // Aktuelle Lion-Cup-Serie automatisch laden
+        const { data: activeLionSeries, error: seriesErr } = await supabase
           .from("dko_series")
-          .select("id,startgeld")
-          .in("id", [LION_SERIES_ID])
+          .select("id,name,startgeld")
+          .eq("series_type", "lion_cup")
+          .eq("is_active", true)
+          .maybeSingle()
 
-        if (!seriesErr && seriesRows) {
-          const map: Record<string, number> = {}
-          for (const r of seriesRows as any[]) {
-            map[String((r as any).id)] = Number((r as any).startgeld ?? 0)
-          }
-          setSeriesStartgeldById(map)
+        if (seriesErr) throw seriesErr
+
+        if (!activeLionSeries?.id) {
+          setNextEvent(null)
+          setNextTournamentEvent(null)
+          return
         }
+
+        const LION_SERIES_ID = String(activeLionSeries.id)
+
+        setSeriesStartgeldById((prev) => ({
+          ...prev,
+          [LION_SERIES_ID]: Number(activeLionSeries.startgeld ?? 0),
+        }))
 
         const fetchEvents = async (seriesId: string) => {
           const { data, error } = await supabase
@@ -1512,6 +1709,261 @@ useEffect(() => {
 
   
 
+  const emdUpcomingEvents = combinedEvents
+    .filter((item) => item.sourceKind === "internal")
+    .slice(0, 2)
+
+  const emdHomepageKeys = new Set(
+    emdUpcomingEvents.map((item) => `${item.sourceKind}:${item.id}`),
+  )
+
+  const discoverTournaments = combinedEvents
+    .filter((item) => item.type === "tournament")
+    .filter((item) => !emdHomepageKeys.has(`${item.sourceKind}:${item.id}`))
+    .slice(0, 2)
+
+  const renderHomeEventCard = (item: CombinedEvent) => {
+
+  const EventIcon = item.type === "event" && item.eventType ? getEventTypeIcon(item.eventType) : Trophy
+  const badgeText = item.type === "tournament" ? "TURNIER" : getEventTypeLabel(item.eventType || "").toUpperCase()
+
+  return (
+    <Dialog key={item.id}>
+      <DialogTrigger asChild>
+        <div className="min-w-[300px] sm:min-w-0 rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer active:scale-[0.99]">
+          {/* Image / Header */}
+          <div className="relative h-40 bg-gray-100">
+            {item.photo_url ? (
+              <Image
+                src={item.photo_url || "/placeholder.svg"}
+                alt={item.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
+                <EventIcon className="h-12 w-12 text-orange-600" />
+              </div>
+            )}
+
+            <div className="absolute top-3 left-3">
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-3 py-1 text-[11px] font-black text-gray-900 border border-gray-200">
+                {badgeText}
+              </span>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-4">
+           <p className="text-[11px] text-gray-500 font-bold mb-1">
+  {formatGermanDateRange(item.start_date, item.end_date, item.date)}
+  {item.time ? ` • ${item.time.slice(0,5)} Uhr` : ""}
+</p>
+
+            <h3 className="font-black text-gray-900 mb-1 line-clamp-2">{item.name}</h3>
+
+            <p className="text-sm text-gray-600 line-clamp-2">
+  {item.type === "tournament" ? (
+    <>
+      {item.details && <span>{item.details} • </span>}
+
+      {item.startgeld_details && (
+        <span>Startgeld: {item.startgeld_details} • </span>
+      )}
+
+      {typeof item.entry_fee === "number" && item.entry_fee > 0 && (
+        <span>Eintritt: €{item.entry_fee.toFixed(2)} • </span>
+      )}
+
+      {item.mode === "edart"
+        ? "E-Dart"
+        : item.mode === "steeldart"
+        ? "Steel Dart"
+        : item.mode === "both"
+        ? "Beide Modi"
+        : ""}
+    </>
+  ) : (
+    item.details || `${getEventTypeLabel(item.eventType || "")} • ${item.location}`
+  )}
+</p>
+
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-xs text-gray-500 inline-flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-orange-600" />
+                {item.location || "Wird bekannt gegeben"}
+              </span>
+
+              <span className="inline-flex items-center gap-1 text-orange-700 text-xs font-black">
+                Details
+                <ArrowRight className="w-4 h-4" />
+              </span>
+            </div>
+          </div>
+        </div>
+      </DialogTrigger>
+
+      {/* MOBILE: fullscreen sheet | DESKTOP: card modal */}
+     {/* */}
+<DialogContent
+  className={[
+    // Layout / Größe
+    "p-0 gap-0",
+    "w-[calc(100vw-16px)] sm:w-full sm:max-w-3xl",
+    
+    "max-h-[90svh] sm:max-h-[92vh]",
+    
+    "overflow-hidden",
+    
+    "flex flex-col",
+    
+    "rounded-3xl",
+  ].join(" ")}
+>
+  {/* Sticky Header */}
+  <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
+    <div className="px-4 sm:px-6 py-4 flex items-start justify-between gap-3">
+      <DialogHeader className="space-y-1">
+        <DialogTitle className="text-lg sm:text-2xl font-black text-gray-900 leading-tight">
+          {item.name}
+        </DialogTitle>
+
+        <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-gray-600 font-semibold">
+          <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5">
+            <EventIcon className="w-3.5 h-3.5" />
+            {badgeText}
+          </span>
+         <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 px-2 py-0.5">
+  <Calendar className="w-3.5 h-3.5" />
+  {formatGermanDateRange(item.start_date, item.end_date, item.date)}
+</span>
+          {item.time ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 px-2 py-0.5">
+              <Clock className="w-3.5 h-3.5" />
+              {item.time?.slice(0,5)} Uhr
+            </span>
+          ) : null}
+        </div>
+      </DialogHeader>
+
+      {/* CLOSE: immer sichtbar */}
+      <DialogClose asChild>
+        <button
+          type="button"
+          className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 text-gray-700 active:scale-[0.98]"
+          aria-label="Schließen"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </DialogClose>
+    </div>
+  </div>
+
+  {/* ✅ Scrollbarer Body */}
+  <div
+    className={[
+      "flex-1", 
+      "overflow-y-auto",
+      "overscroll-contain", 
+      "px-4 sm:px-6 py-4 sm:py-6",
+      "space-y-4 sm:space-y-6",
+      "bg-gray-50",
+      // iOS safe area unten
+      "pb-[max(0.5rem,env(safe-area-inset-bottom))]",
+    ].join(" ")}
+  >
+    {/* Photo */}
+    {item.photo_url ? (
+      <div
+        className="relative w-full h-52 sm:h-72 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm cursor-pointer"
+        onClick={() => setFullscreenPhoto(item.photo_url)}
+      >
+        <Image
+          src={item.photo_url || "/placeholder.svg"}
+          alt={item.name}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 900px"
+        />
+      </div>
+    ) : (
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 flex items-center gap-3">
+        <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
+          <EventIcon className="w-5 h-5 text-orange-700" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-black text-gray-900">Keine Foto-Vorschau</p>
+          <p className="text-xs text-gray-600">Details findest du weiter unten.</p>
+        </div>
+      </div>
+    )}
+
+    {/* Info Cards */}
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Ort</p>
+        <p className="mt-1 text-sm font-bold text-gray-900 line-clamp-2">
+          {item.location || "Wird bekannt gegeben"}
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Typ</p>
+        <p className="mt-1 text-sm font-bold text-gray-900">
+          {item.type === "tournament" ? "Turnier" : getEventTypeLabel(item.eventType || "")}
+        </p>
+      </div>
+
+      {item.type === "tournament" ? (
+  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+    <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Infos</p>
+
+    <p className="mt-1 text-sm font-bold text-gray-900">
+      {item.mode === "edart"
+        ? "E-Dart"
+        : item.mode === "steeldart"
+        ? "Steel Dart"
+        : "Beide Modi"}
+
+      {item.startgeld_details
+  ? ` • Startgeld: ${
+      isNaN(Number(item.startgeld_details))
+        ? item.startgeld_details
+        : `€ ${Number(item.startgeld_details).toFixed(2)}`
+    }`
+  : ""}
+    </p>
+  </div>
+) : null}
+    </div>
+
+    {/* Details */}
+    {item.details ? (
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+        <div className="flex items-center gap-2">
+          <Info className="w-4 h-4 text-orange-600" />
+          <p className="text-sm font-black text-gray-900">Beschreibung</p>
+        </div>
+        <p className="mt-2 text-sm text-gray-700 leading-relaxed whitespace-pre-line">{item.details}</p>
+      </div>
+    ) : null}
+
+    {/* Bottom Close Button */}
+    <div className="pt-1">
+      <DialogClose asChild>
+        <Button className="w-full h-12 rounded-2xl bg-gray-900 hover:bg-gray-900/90 text-white font-black">
+          Schließen
+        </Button>
+      </DialogClose>
+    </div>
+  </div>
+</DialogContent>
+    </Dialog>
+  )
+
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -1522,6 +1974,192 @@ useEffect(() => {
 <PushEnableBanner />
 
       <PushNotificationDialog />
+
+      {/* WICHTIG: persönliche Ligaspiele ganz oben auf der Startseite */}
+      <div className="container mx-auto px-4 pt-4 sm:pt-5">
+        <div className="space-y-4">
+          {/* ================= DEINE LIGASPIELE ================= */}
+    {authUserId && hasLeaguePackage ? (
+      <section className="mb-8">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+              <Swords className="h-5 w-5 text-orange-600" />
+            </div>
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-orange-600">
+                Liga
+              </div>
+              <h2 className="text-lg font-black leading-tight text-gray-950 sm:text-xl">
+                Deine nächsten Spiele
+              </h2>
+            </div>
+          </div>
+
+          <Button
+            variant="ghost"
+            className="h-9 rounded-xl px-3 font-bold text-gray-600 hover:bg-white hover:text-orange-700"
+            onClick={() => (window.location.href = "/member-availability")}
+          >
+            Alle
+          </Button>
+        </div>
+
+        {myLeagueLoading ? (
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Deine Ligaspiele werden geladen...
+            </div>
+          </div>
+        ) : myLeagueMatches.length === 0 ? (
+          <div className="rounded-3xl border border-gray-200/80 bg-white p-7 text-center shadow-sm">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-50">
+              <Calendar className="h-5 w-5 text-gray-400" />
+            </div>
+            <p className="mt-3 font-bold text-gray-800">
+              Aktuell kein Ligaspiel geplant
+            </p>
+            <p className="mt-1 text-sm text-gray-500">
+              Sobald ein neues Spiel angesetzt ist, erscheint es hier.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {myLeagueMatches.map((match) => {
+              const dartType = String(match.dart_type || "").toLowerCase()
+              const isSteel = dartType === "steeldart"
+
+              return (
+                <div
+                  key={match.id}
+                  className="overflow-hidden rounded-3xl border border-gray-200/80 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)]"
+                >
+                  <div className="flex items-center justify-between gap-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-4 py-3">
+                    <Badge
+                      variant="outline"
+                      className={
+                        isSteel
+                          ? "rounded-full border-slate-200 bg-slate-900 px-3 py-1 text-[11px] font-black tracking-wide text-white"
+                          : "rounded-full border-orange-200 bg-orange-600 px-3 py-1 text-[11px] font-black tracking-wide text-white"
+                      }
+                    >
+                      {isSteel ? "STEELDART" : "E-DART"}
+                    </Badge>
+
+                    <div className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-gray-600 ring-1 ring-gray-200">
+                      <Calendar className="h-3.5 w-3.5 text-orange-600" />
+                      {new Date(match.match_date).toLocaleDateString("de-DE", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
+                      {match.match_time ? ` · ${String(match.match_time).slice(0, 5)}` : ""}
+                    </div>
+                  </div>
+
+                  <div className="p-4">
+                    <div className="text-xl font-black leading-tight tracking-tight text-gray-950">
+                      {getTeamName(match, true)}{" "}
+                      <span className="font-semibold text-gray-400">vs</span>{" "}
+                      {getTeamName(match, false)}
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50/80 px-3.5 py-3">
+                      <div className="text-xs font-bold uppercase tracking-wide text-gray-500">
+                        Deine Antwort
+                      </div>
+                      <div className="mt-1">
+                        {match.my_status === "yes" ? (
+                          <Badge className="rounded-full bg-green-600 text-white">Zugesagt ✓</Badge>
+                        ) : match.my_status === "maybe" ? (
+                          <Badge className="rounded-full bg-yellow-600 text-white">Vielleicht</Badge>
+                        ) : match.my_status === "no" ? (
+                          <Badge className="rounded-full bg-red-600 text-white">Abgesagt</Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="rounded-full border-amber-300 bg-amber-50 text-amber-800"
+                          >
+                            Noch keine Antwort
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {match.my_status === "none" ? (
+                      <div className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm font-bold text-amber-900">
+                        <Bell className="h-4 w-4 shrink-0" />
+                        Bitte noch zu- oder absagen – wichtig für die Aufstellung.
+                      </div>
+                    ) : null}
+
+                    <div className="mt-4 grid grid-cols-3 gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={!!myLeagueSaving}
+                        onClick={() => void setHomeLeagueAvailability(match, "yes")}
+                        className="rounded-2xl bg-green-600 px-2 font-bold text-white hover:bg-green-700"
+                      >
+                        {myLeagueSaving === `${match.id}-yes` ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Zusage"
+                        )}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={!!myLeagueSaving}
+                        onClick={() => void setHomeLeagueAvailability(match, "maybe")}
+                        className="rounded-2xl bg-yellow-600 px-2 font-bold text-white hover:bg-yellow-700"
+                      >
+                        {myLeagueSaving === `${match.id}-maybe` ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Vielleicht"
+                        )}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={!!myLeagueSaving}
+                        onClick={() => void setHomeLeagueAvailability(match, "no")}
+                        className="rounded-2xl bg-red-600 px-2 font-bold text-white hover:bg-red-700"
+                      >
+                        {myLeagueSaving === `${match.id}-no` ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Absage"
+                        )}
+                      </Button>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-3 w-full rounded-2xl font-bold"
+                      onClick={() =>
+                        (window.location.href = `/member-availability?match_id=${match.id}&team_id=${match.my_team_id}`)
+                      }
+                    >
+                      Details & Aufstellung
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
+    ) : null}
+
+        </div>
+      </div>
 	  
 	  
 	  {todaysEvents.length > 0 && (
@@ -1591,11 +2229,11 @@ useEffect(() => {
   className="w-full sm:w-auto rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-sm"
   onClick={() => {
     if (todaysEvents.length === 1) {
-      window.location.href = `/veranstaltungen/${todaysEvents[0].id}`
+      window.location.href = todaysEvents[0].sourceKind === "dach" ? `/dach-veranstaltungen/${todaysEvents[0].id}` : `/veranstaltungen/${todaysEvents[0].internalEventId || todaysEvents[0].id}`
       return
     }
 
-    window.location.href = "/veranstaltungen"
+    window.location.href = "/turniere"
   }}
 >
   Details ansehen
@@ -1679,171 +2317,109 @@ useEffect(() => {
 	  
 	  
 	  
-	  {/* BONUSPROGRAMM BANNER */}
+
+
+{/* GASTZUGANG KOMPAKT */}
 <div className="mx-4 sm:mx-6 mt-3">
-  <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
+  <div className="rounded-2xl border border-orange-200 bg-white shadow-md overflow-hidden">
     <div className="h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
 
-    <div className="p-4 sm:p-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-orange-700" />
-          </div>
-
-          <div>
-            <div className="text-xs font-black uppercase tracking-wider text-orange-700">
-              Neu im Verein
-            </div>
-            <div className="text-lg sm:text-xl font-black text-gray-900">
-              EMD Bonusprogramm
-            </div>
-            <div className="text-sm font-semibold text-gray-600">
-              Sammle Punkte, steige im Rang auf und verfolge deinen Fortschritt.
-            </div>
-          </div>
+    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
+          <UserPlus className="w-5 h-5 text-orange-700" />
         </div>
 
-        <Button
-          className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm w-full sm:w-auto"
-          onClick={() => (window.location.href = "/meine-bonus-punkte")}
-        >
-          Meine Bonuspunkte
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
+        <div className="min-w-0">
+          <div className="text-xs font-black uppercase tracking-wider text-orange-700">
+            Auch für Gäste
+          </div>
+          <div className="text-base sm:text-lg font-black text-gray-900">
+            EMD VereinsApp kostenlos kennenlernen
+          </div>
+          <div className="text-sm font-semibold text-gray-600">
+            Dartprofil, Turniere, Community und mehr.
+          </div>
+        </div>
       </div>
+
+      <Button
+        className="w-full sm:w-auto rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm"
+        onClick={() => (window.location.href = "/gastzugang-info")}
+      >
+        Mehr erfahren
+        <ArrowRight className="w-4 h-4 ml-2" />
+      </Button>
     </div>
   </div>
 </div>
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-{/* GASTZUGANG WERBUNG */}
+
+{/* DARTBÖRSE KOMPAKT */}
 <div className="mx-4 sm:mx-6 mt-3">
-  <div className="relative overflow-hidden rounded-3xl border border-orange-200 bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 text-white shadow-xl">
-    <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-orange-400/10 blur-3xl" />
-    <div className="absolute -bottom-24 left-1/4 h-56 w-56 rounded-full bg-orange-500/10 blur-3xl" />
+  <div className="rounded-2xl border border-slate-200 bg-white shadow-md overflow-hidden">
+    <div className="h-1.5 bg-gradient-to-r from-slate-800 via-orange-500 to-slate-900" />
 
-    <div className="relative h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
-
-    <div className="relative p-5 sm:p-7">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-orange-300/30 bg-orange-400/10">
-              <UserPlus className="h-7 w-7 text-orange-300" />
-            </div>
-
-            <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 rounded-full border border-orange-300/20 bg-orange-400/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-orange-200">
-                <Sparkles className="h-3.5 w-3.5" />
-                Jetzt auch für Gäste
-              </div>
-
-              <h2 className="mt-3 text-2xl font-black leading-tight sm:text-3xl">
-                Dein Dartprofil. Deine Turniere. Deine Dartbörse.
-              </h2>
-
-              <p className="mt-3 max-w-3xl text-sm font-medium leading-6 text-slate-300 sm:text-base">
-                Melde dich kostenlos als Gast an und nutze die wichtigsten Funktionen
-                der EMD VereinsApp – auch ohne Vereinsmitgliedschaft.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/15">
-                <TrendingUp className="h-5 w-5 text-orange-300" />
-              </div>
-              <div className="mt-3 font-black text-white">Eigene Statistiken</div>
-              <div className="mt-1 text-sm leading-5 text-slate-300">
-                Ergebnisse, Punkte, Platzierungen und Turnierverlauf ansehen.
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/15">
-                <Calendar className="h-5 w-5 text-orange-300" />
-              </div>
-              <div className="mt-3 font-black text-white">DACH-Turniere finden</div>
-              <div className="mt-1 text-sm leading-5 text-slate-300">
-                Turniere in Österreich, Deutschland und der Schweiz entdecken.
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15">
-                <Trophy className="h-5 w-5 text-emerald-300" />
-              </div>
-              <div className="mt-3 font-black text-white">Turniere einreichen</div>
-              <div className="mt-1 text-sm leading-5 text-slate-300">
-                Eigene Turniere veröffentlichen, bearbeiten und verwalten.
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15">
-                <Target className="h-5 w-5 text-violet-300" />
-              </div>
-              <div className="mt-3 font-black text-white">Dartbörse nutzen</div>
-              <div className="mt-1 text-sm leading-5 text-slate-300">
-                Zubehör kaufen, verkaufen, schreiben und Preisangebote senden.
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold text-slate-300">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-              Kostenlos anmelden
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-              Direktnachrichten & Preisangebote
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-              Turniere im gesamten DACH-Raum
-            </span>
-          </div>
+    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0">
+          <ShoppingBag className="w-5 h-5 text-orange-700" />
         </div>
 
-        <div className="w-full shrink-0 lg:w-auto">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center backdrop-blur-sm lg:w-72">
-            <div className="text-xs font-black uppercase tracking-wider text-orange-200">
-              In wenigen Minuten dabei
-            </div>
-            <div className="mt-2 text-xl font-black text-white">
-              Jetzt Gastzugang erstellen
-            </div>
-            <p className="mt-2 text-sm text-slate-300">
-              Registrieren, freischalten lassen und alle Gastfunktionen nutzen.
-            </p>
-
-            <Button
-              type="button"
-              className="mt-4 h-12 w-full rounded-xl bg-orange-600 font-black text-white shadow-lg shadow-orange-950/30 hover:bg-orange-500"
-              onClick={() => (window.location.href = "/gastzugang")}
-            >
-              Kostenlos anmelden
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-
-            <button
-              type="button"
-              onClick={() => (window.location.href = "/guest-login")}
-              className="mt-3 text-sm font-bold text-orange-200 transition hover:text-white"
-            >
-              Bereits registriert? Zum Gast-Login
-            </button>
+        <div className="min-w-0">
+          <div className="text-xs font-black uppercase tracking-wider text-orange-700">
+            Dartbörse DACH
+          </div>
+          <div className="text-base sm:text-lg font-black text-gray-900">
+            Darts kaufen & verkaufen
+          </div>
+          <div className="text-sm font-semibold text-gray-600">
+            Darts, Barrels, Boards & Zubehör aus Österreich, Deutschland und der Schweiz.
           </div>
         </div>
       </div>
+
+      <Button
+        className="w-full sm:w-auto rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black shadow-sm"
+        onClick={() => (window.location.href = "/dartboerse")}
+      >
+        Zur Dartbörse
+        <ArrowRight className="w-4 h-4 ml-2" />
+      </Button>
+    </div>
+  </div>
+</div>
+
+{/* DACH TURNIERE KOMPAKT */}
+<div className="mx-4 sm:mx-6 mt-3">
+  <div className="rounded-2xl border border-orange-200 bg-white shadow-md overflow-hidden">
+    <div className="h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
+
+    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
+          <Trophy className="w-5 h-5 text-orange-700" />
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-xs font-black uppercase tracking-wider text-orange-700">
+            DACH Turniere
+          </div>
+          <div className="text-base sm:text-lg font-black text-gray-900">
+            Dart-Turniere entdecken
+          </div>
+          <div className="text-sm font-semibold text-gray-600">
+            Turniere aus Österreich, Deutschland und der Schweiz finden und eintragen.
+          </div>
+        </div>
+      </div>
+
+      <Button
+        className="w-full sm:w-auto rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm"
+        onClick={() => (window.location.href = "/turniere")}
+      >
+        Zu den Turnieren
+        <ArrowRight className="w-4 h-4 ml-2" />
+      </Button>
     </div>
   </div>
 </div>
@@ -1852,7 +2428,13 @@ useEffect(() => {
   <div className="sticky top-12 sm:top-14 z-40">
     <div className="mx-4 sm:mx-6 mt-3">
       <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
-        {/* Top accent bar */}
+        
+
+
+
+
+
+{/* Top accent bar */}
         <div className="h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
 
         <div className="p-3 sm:p-4">
@@ -2010,21 +2592,7 @@ useEffect(() => {
                     ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                     : "bg-orange-600 hover:bg-orange-700 text-white"
                 }`}
-                onClick={async () => {
-                  modalOpenedAtRef.current = Date.now()
-
-                  const seriesId = "bae7b8fe-7013-4160-8a85-f46ac765e003"
-                  const startgeld = await ensureStartgeldForSeriesId(seriesId)
-
-                  setDkoModal({
-                    isOpen: true,
-                    title: "LION CUP • Anmeldung",
-                    dateLabel: liveDateLabel,
-                    timeLabel: liveTimeLabel,
-                    seriesId,
-                    startgeld,
-                  })
-                }}
+                onClick={() => (window.location.href = "/lion-cup/anmeldung")}
               >
                 {dkoRegLoading ? (
                   <span className="flex items-center gap-2">
@@ -2410,57 +2978,17 @@ useEffect(() => {
   </div>
 
   <div className="p-4 sm:p-6 lg:p-8">
-    <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
-      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy className="w-4 h-4 text-orange-600" />
-          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">Top 5 aktuell</span>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-          {!summerTop5Loading && summerTop5.length === 0 ? (
-            <div className="px-3 py-3 text-xs text-gray-600">Keine Daten verfügbar.</div>
-          ) : null}
-
-          {summerTop5.map((p, idx) => (
-            <div key={p.player_name} className="flex items-center justify-between px-3 py-2 border-b border-gray-100 last:border-b-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-[11px] font-black">
-                  {idx + 1}
-                </div>
-
-                <div className="min-w-0">
-                  <div className="text-xs sm:text-sm font-black text-gray-900 truncate max-w-[180px] sm:max-w-[260px]">
-                    {p.player_name}
-                  </div>
-
-                  <div className="text-[10px] sm:text-xs text-gray-500">
-                    Antritte: <span className="font-black text-gray-900">{p.tournaments_played}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-right flex-shrink-0">
-                <div className="text-xs sm:text-sm font-black text-orange-700">{p.total_points}</div>
-                <div className="text-[10px] text-gray-500">Punkte</div>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles className="w-4 h-4 text-orange-600" />
+        <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">Preisgeld</span>
       </div>
 
-      <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-orange-600" />
-          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">Preisgeld</span>
+      <div className="text-center rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
+        <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-1">
+          €{summerPrizePool.toFixed(2)}
         </div>
-
-        <div className="text-center rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
-          <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-1">
-            €{summerPrizePool.toFixed(2)}
-          </div>
-          <p className="text-gray-600 text-xs sm:text-sm">Wächst mit jedem Teilnehmer und jeder Teilnahme</p>
-        </div>
+        <p className="text-gray-600 text-xs sm:text-sm">Wächst mit jedem Teilnehmer und jeder Teilnahme</p>
       </div>
     </div>
 
@@ -2597,35 +3125,44 @@ useEffect(() => {
   </div>
 
   <div className="p-4 sm:p-6 lg:p-8">
-    <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
-      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy className="w-4 h-4 text-orange-600" />
-          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
-            Top 5 aktuell
-          </span>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600 font-semibold">
-          Die Serie ist noch nicht gestartet. Top 5 wird später angezeigt.
-        </div>
+    <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles className="w-4 h-4 text-orange-600" />
+        <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
+          Finalpreisfonds
+        </span>
       </div>
 
-      <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-orange-600" />
-          <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
-            Preisgeld
-          </span>
+      <div className="rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
+        <div className="text-center">
+          <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900">
+            €{membersPrizePool.toFixed(2)}
+          </div>
+          <p className="mt-1 text-xs sm:text-sm font-semibold text-gray-600">
+            Aktueller Finalpreisfonds
+          </p>
         </div>
 
-        <div className="text-center rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
-          <div className="text-2xl sm:text-3xl font-black text-gray-900 mb-1">
-            Noch nicht gestartet
-          </div>
-          <p className="text-gray-600 text-xs sm:text-sm">
-            Preisgeld wird angezeigt, sobald die Serie läuft.
+        <div className="mt-5 border-t border-orange-100 pt-4">
+          <p className="text-center text-sm font-bold text-gray-700">
+            Startgeld: <span className="font-black text-orange-700">€ 15,00</span> pro Spieler und Turniertag
           </p>
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-center">
+              <div className="text-xl sm:text-2xl font-black text-orange-700">€ 10,00</div>
+              <div className="mt-1 text-[11px] sm:text-xs font-bold text-gray-600">
+                fließen in den Finalpreisfonds
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-3 text-center">
+              <div className="text-xl sm:text-2xl font-black text-yellow-700">€ 5,00</div>
+              <div className="mt-1 text-[11px] sm:text-xs font-bold text-gray-600">
+                werden am jeweiligen Turniertag ausgeschüttet
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2690,7 +3227,7 @@ useEffect(() => {
 		
 		
 		
-	<div className="hidden overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
+	<div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
     {/* TOP HERO (ORANGE) */}
     <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
      <div className="absolute inset-0 opacity-10" />
@@ -2714,7 +3251,7 @@ useEffect(() => {
           <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-950 px-3 py-1.5 rounded-full font-black text-xs mb-3">
               <Trophy className="w-3.5 h-3.5" />
-              <span>TURNIERSERIE 2025/26</span>
+              <span>LION CUP PART 3 • HERBST 2026</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">
@@ -2776,74 +3313,7 @@ useEffect(() => {
 
     {/* BOTTOM CONTENT (WHITE) */}
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
-        {/* TOP 5 */}
-        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-orange-600" />
-              <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
-                Top 5 aktuell
-              </span>
-            </div>
-            {lionTop5Loading ? (
-              <span className="text-[10px] sm:text-xs text-gray-500 font-bold">
-                Lade…
-              </span>
-            ) : null}
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-            {!lionTop5Loading && lionTop5.length === 0 ? (
-              <div className="px-3 py-3 text-xs text-gray-600">
-                Keine Daten verfügbar.
-              </div>
-            ) : null}
-
-            {lionTop5.map((p, idx) => (
-              <div
-                key={p.player_name}
-                className="flex items-center justify-between px-3 py-2 border-b border-gray-100 last:border-b-0"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-[11px] font-black">
-                    {idx + 1}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs sm:text-sm font-black text-gray-900 truncate max-w-[180px] sm:max-w-[260px]">
-                      {p.player_name}
-                    </div>
-                    <div className="text-[10px] sm:text-xs text-gray-500">
-                      Antritte:{" "}
-                      <span className="font-black text-gray-900">
-                        {p.tournaments_played}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-right flex-shrink-0">
-                  {lionHalvingActive && p.original_total_points !== p.total_points ? (
-                    <div className="flex flex-col items-end">
-                      <span className="text-[10px] text-gray-400 line-through">
-                        {p.original_total_points}
-                      </span>
-                      <span className="text-xs sm:text-sm font-black text-orange-700">
-                        {p.total_points}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="text-xs sm:text-sm font-black text-orange-700">
-                      {p.total_points}
-                    </div>
-                  )}
-                  <div className="text-[10px] text-gray-500">Punkte</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 gap-4 lg:gap-6">
         {/* PRIZE POOL */}
         <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -2877,7 +3347,7 @@ useEffect(() => {
         <Button
           size="lg"
           className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
-          onClick={() => (window.location.href = "/tournament-series-app")}
+          onClick={() => (window.location.href = "/lion-cup")}
         >
           Zur Gesamtwertung
           <ArrowRight className="w-4 h-4 ml-2" />
@@ -2887,7 +3357,7 @@ useEffect(() => {
           size="lg"
           variant="outline"
           className="border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-          onClick={() => (window.location.href = "/lion-cup-regelwerk")}
+          onClick={() => (window.location.href = "/lion-cup/regelwerk")}
         >
           Regelwerk
         </Button>
@@ -2896,7 +3366,7 @@ useEffect(() => {
           size="lg"
           variant="outline"
           className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-          onClick={() => (window.location.href = "/upcoming-tournaments-app")}
+          onClick={() => (window.location.href = "/lion-cup/anmeldung")}
         >
           Anmelden
         </Button>
@@ -3031,12 +3501,12 @@ useEffect(() => {
       )}
     </section>
 
-    {/* ================= EVENTS & TURNIERE ================= */}
+    {/* ================= DEMNÄCHST BEI EMD ================= */}
     <section>
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-base sm:text-lg font-black text-gray-900">Turniere & Veranstaltungen</h2>
-          <p className="text-xs sm:text-sm text-gray-500">Alles was als nächstes ansteht</p>
+          <h2 className="text-base sm:text-lg font-black text-gray-900">Demnächst bei EMD</h2>
+          <p className="text-xs sm:text-sm text-gray-500">Turniere, Spielabende, Partys & Vereinsveranstaltungen</p>
         </div>
 
         <Button
@@ -3048,258 +3518,51 @@ useEffect(() => {
         </Button>
       </div>
 
-      {combinedEvents.length === 0 ? (
+      {emdUpcomingEvents.length === 0 ? (
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8 text-center">
           <Info className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-600 font-semibold">Derzeit sind keine weiteren Turniere oder Veranstaltungen geplant.</p>
+          <p className="text-gray-600 font-semibold">Derzeit sind keine EMD-Veranstaltungen geplant.</p>
         </div>
       ) : (
         <div className="-mx-4 px-4 overflow-x-auto">
-          <div className="flex gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
-		  
-		  
-		  
-		  
-		  
-            {combinedEvents.map((item) => {
-  const EventIcon = item.type === "event" && item.eventType ? getEventTypeIcon(item.eventType) : Trophy
-  const badgeText = item.type === "tournament" ? "TURNIER" : getEventTypeLabel(item.eventType || "").toUpperCase()
-
-  return (
-    <Dialog key={item.id}>
-      <DialogTrigger asChild>
-        <div className="min-w-[300px] sm:min-w-0 rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer active:scale-[0.99]">
-          {/* Image / Header */}
-          <div className="relative h-40 bg-gray-100">
-            {item.photo_url ? (
-              <Image
-                src={item.photo_url || "/placeholder.svg"}
-                alt={item.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
-                <EventIcon className="h-12 w-12 text-orange-600" />
-              </div>
-            )}
-
-            <div className="absolute top-3 left-3">
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-3 py-1 text-[11px] font-black text-gray-900 border border-gray-200">
-                {badgeText}
-              </span>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-4">
-           <p className="text-[11px] text-gray-500 font-bold mb-1">
-  {formatGermanDateRange(item.start_date, item.end_date, item.date)}
-  {item.time ? ` • ${item.time.slice(0,5)} Uhr` : ""}
-</p>
-
-            <h3 className="font-black text-gray-900 mb-1 line-clamp-2">{item.name}</h3>
-
-            <p className="text-sm text-gray-600 line-clamp-2">
-  {item.type === "tournament" ? (
-    <>
-      {item.details && <span>{item.details} • </span>}
-
-      {item.startgeld_details && (
-        <span>Startgeld: {item.startgeld_details} • </span>
-      )}
-
-      {typeof item.entry_fee === "number" && item.entry_fee > 0 && (
-        <span>Eintritt: €{item.entry_fee.toFixed(2)} • </span>
-      )}
-
-      {item.mode === "edart"
-        ? "E-Dart"
-        : item.mode === "steeldart"
-        ? "Steel Dart"
-        : item.mode === "both"
-        ? "Beide Modi"
-        : ""}
-    </>
-  ) : (
-    item.details || `${getEventTypeLabel(item.eventType || "")} • ${item.location}`
-  )}
-</p>
-
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs text-gray-500 inline-flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-orange-600" />
-                {item.location || "Wird bekannt gegeben"}
-              </span>
-
-              <span className="inline-flex items-center gap-1 text-orange-700 text-xs font-black">
-                Details
-                <ArrowRight className="w-4 h-4" />
-              </span>
-            </div>
+          <div className="flex gap-4 sm:grid sm:grid-cols-2 sm:gap-6">
+            {emdUpcomingEvents.map((item) => renderHomeEventCard(item))}
           </div>
         </div>
-      </DialogTrigger>
+      )}
+    </section>
 
-      {/* MOBILE: fullscreen sheet | DESKTOP: card modal */}
-     {/* */}
-<DialogContent
-  className={[
-    // Layout / Größe
-    "p-0 gap-0",
-    "w-[calc(100vw-16px)] sm:w-full sm:max-w-3xl",
-    
-    "max-h-[90svh] sm:max-h-[92vh]",
-    
-    "overflow-hidden",
-    
-    "flex flex-col",
-    
-    "rounded-3xl",
-  ].join(" ")}
->
-  {/* Sticky Header */}
-  <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
-    <div className="px-4 sm:px-6 py-4 flex items-start justify-between gap-3">
-      <DialogHeader className="space-y-1">
-        <DialogTitle className="text-lg sm:text-2xl font-black text-gray-900 leading-tight">
-          {item.name}
-        </DialogTitle>
-
-        <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-gray-600 font-semibold">
-          <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5">
-            <EventIcon className="w-3.5 h-3.5" />
-            {badgeText}
-          </span>
-         <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 px-2 py-0.5">
-  <Calendar className="w-3.5 h-3.5" />
-  {formatGermanDateRange(item.start_date, item.end_date, item.date)}
-</span>
-          {item.time ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 px-2 py-0.5">
-              <Clock className="w-3.5 h-3.5" />
-              {item.time?.slice(0,5)} Uhr
+    {/* ================= DART-TURNIERE ENTDECKEN ================= */}
+    <section className="mt-7 sm:mt-9">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-black text-gray-900">Dart-Turniere entdecken</h2>
+            <span className="hidden sm:inline-flex rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-orange-700">
+              DACH
             </span>
-          ) : null}
+          </div>
+          <p className="text-xs sm:text-sm text-gray-500">Österreich, Deutschland & Schweiz</p>
         </div>
-      </DialogHeader>
 
-      {/* CLOSE: immer sichtbar */}
-      <DialogClose asChild>
-        <button
-          type="button"
-          className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 text-gray-700 active:scale-[0.98]"
-          aria-label="Schließen"
+        <Button
+          variant="ghost"
+          className="h-9 px-3 text-orange-700 hover:text-orange-800 hover:bg-orange-50 font-bold"
+          onClick={() => (window.location.href = "/turniere")}
         >
-          <X className="w-5 h-5" />
-        </button>
-      </DialogClose>
-    </div>
-  </div>
-
-  {/* ✅ Scrollbarer Body */}
-  <div
-    className={[
-      "flex-1", 
-      "overflow-y-auto",
-      "overscroll-contain", 
-      "px-4 sm:px-6 py-4 sm:py-6",
-      "space-y-4 sm:space-y-6",
-      "bg-gray-50",
-      // iOS safe area unten
-      "pb-[max(0.5rem,env(safe-area-inset-bottom))]",
-    ].join(" ")}
-  >
-    {/* Photo */}
-    {item.photo_url ? (
-      <div
-        className="relative w-full h-52 sm:h-72 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm cursor-pointer"
-        onClick={() => setFullscreenPhoto(item.photo_url)}
-      >
-        <Image
-          src={item.photo_url || "/placeholder.svg"}
-          alt={item.name}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 900px"
-        />
-      </div>
-    ) : (
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 flex items-center gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
-          <EventIcon className="w-5 h-5 text-orange-700" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-black text-gray-900">Keine Foto-Vorschau</p>
-          <p className="text-xs text-gray-600">Details findest du weiter unten.</p>
-        </div>
-      </div>
-    )}
-
-    {/* Info Cards */}
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
-        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Ort</p>
-        <p className="mt-1 text-sm font-bold text-gray-900 line-clamp-2">
-          {item.location || "Wird bekannt gegeben"}
-        </p>
-      </div>
-
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
-        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Typ</p>
-        <p className="mt-1 text-sm font-bold text-gray-900">
-          {item.type === "tournament" ? "Turnier" : getEventTypeLabel(item.eventType || "")}
-        </p>
-      </div>
-
-      {item.type === "tournament" ? (
-  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
-    <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Infos</p>
-
-    <p className="mt-1 text-sm font-bold text-gray-900">
-      {item.mode === "edart"
-        ? "E-Dart"
-        : item.mode === "steeldart"
-        ? "Steel Dart"
-        : "Beide Modi"}
-
-      {item.startgeld_details
-  ? ` • Startgeld: ${
-      isNaN(Number(item.startgeld_details))
-        ? item.startgeld_details
-        : `€ ${Number(item.startgeld_details).toFixed(2)}`
-    }`
-  : ""}
-    </p>
-  </div>
-) : null}
-    </div>
-
-    {/* Details */}
-    {item.details ? (
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
-        <div className="flex items-center gap-2">
-          <Info className="w-4 h-4 text-orange-600" />
-          <p className="text-sm font-black text-gray-900">Beschreibung</p>
-        </div>
-        <p className="mt-2 text-sm text-gray-700 leading-relaxed whitespace-pre-line">{item.details}</p>
-      </div>
-    ) : null}
-
-    {/* Bottom Close Button */}
-    <div className="pt-1">
-      <DialogClose asChild>
-        <Button className="w-full h-12 rounded-2xl bg-gray-900 hover:bg-gray-900/90 text-white font-black">
-          Schließen
+          Alle Turniere
         </Button>
-      </DialogClose>
-    </div>
-  </div>
-</DialogContent>
-    </Dialog>
-  )
-})}
+      </div>
+
+      {discoverTournaments.length === 0 ? (
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8 text-center">
+          <Trophy className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+          <p className="text-gray-600 font-semibold">Derzeit sind keine weiteren DACH-Turniere verfügbar.</p>
+        </div>
+      ) : (
+        <div className="-mx-4 px-4 overflow-x-auto">
+          <div className="flex gap-4 sm:grid sm:grid-cols-2 sm:gap-6">
+            {discoverTournaments.map((item) => renderHomeEventCard(item))}
           </div>
         </div>
       )}

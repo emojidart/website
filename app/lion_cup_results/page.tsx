@@ -6,6 +6,15 @@ import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Calendar, ChevronDown, ChevronUp, Search, Trophy, Target, Award, Loader2 } from "lucide-react"
 
+
+interface LionCupSeries {
+  id: string
+  name: string
+  is_active: boolean
+  series_type: string
+  created_at: string
+}
+
 interface MatchResult {
   id: string
   tournament_id: string
@@ -64,10 +73,46 @@ export default function TournamentsPage() {
   const [loading, setLoading] = useState(true)
   const [loadingMatches, setLoadingMatches] = useState<Set<string>>(new Set())
   const [query, setQuery] = useState("")
+  const [seriesList, setSeriesList] = useState<LionCupSeries[]>([])
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchTournaments()
+    fetchSeries()
   }, [])
+
+  useEffect(() => {
+    if (selectedSeriesId) {
+      fetchTournaments()
+    } else {
+      setTournaments([])
+      setLoading(false)
+    }
+  }, [selectedSeriesId])
+
+  const fetchSeries = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from("dko_series")
+        .select("id,name,is_active,series_type,created_at")
+        .eq("series_type", "lion_cup")
+        .order("created_at", { ascending: false })
+
+      if (error) throw error
+
+      const list = (data || []) as LionCupSeries[]
+      setSeriesList(list)
+      setSelectedSeriesId((current) => {
+        if (current && list.some((s) => s.id === current)) return current
+        return list.find((s) => s.is_active)?.id ?? list[0]?.id ?? null
+      })
+    } catch (error) {
+      console.error("Error fetching Lion Cup series:", error)
+      setSeriesList([])
+      setSelectedSeriesId(null)
+      setLoading(false)
+    }
+  }
 
   const fetchTournaments = async () => {
     try {
@@ -76,6 +121,7 @@ export default function TournamentsPage() {
       const { data: uniqueTournaments, error: tournamentsError } = await supabase
         .from("tournament_series_standings")
         .select("tournament_id, tournament_name, tournament_date, tournament_type")
+        .eq("series_id", selectedSeriesId)
         .order("tournament_date", { ascending: false })
 
       if (tournamentsError) throw tournamentsError
@@ -291,7 +337,7 @@ export default function TournamentsPage() {
 
       <main className="pt-12 sm:pt-14">
         <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8 space-y-4">
-          <a href="/tournament-series-app" className="flex items-center gap-2 text-red-600 hover:text-red-700 font-semibold">
+          <a href="/lion-cup" className="flex items-center gap-2 text-red-600 hover:text-red-700 font-semibold">
             <ChevronDown className="h-5 w-5 rotate-90" />
             Zurück zur Tabelle
           </a>
@@ -308,6 +354,26 @@ export default function TournamentsPage() {
                     <div className="min-w-0">
                       <h1 className="text-base sm:text-lg font-black text-gray-900">Lion Cup Ergebnisse</h1>
                       <p className="text-xs sm:text-sm text-gray-600 mt-1">Übersicht aller gespielten Matches</p>
+                      {seriesList.length > 0 && (
+                        <div className="mt-3">
+                          <label className="text-[11px] font-bold text-gray-500">Saison / Archiv</label>
+                          <select
+                            value={selectedSeriesId ?? ""}
+                            onChange={(e) => {
+                              setExpandedTournament(null)
+                              setMatches(new Map())
+                              setSelectedSeriesId(e.target.value)
+                            }}
+                            className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-800 outline-none focus:border-orange-400"
+                          >
+                            {seriesList.map((series) => (
+                              <option key={series.id} value={series.id}>
+                                {series.name}{series.is_active ? " – aktuell" : " – Archiv"}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

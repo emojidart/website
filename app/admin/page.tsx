@@ -27,6 +27,7 @@ import {
   Zap,
   UserCheck,
   Activity,
+  CreditCard,
 } from "lucide-react"
 
 import { AuthSection } from "@/components/auth-section"
@@ -55,6 +56,8 @@ import { AdminMembersLevelManagement } from "@/components/admin/members-champion
 import { BonusVergabeManagement } from "@/components/admin/bonus-vergabe/bonus-vergabe"
 import { AdminPraemienRedemptions } from "@/components/admin/bonus/admin-praemien-redemptions"
 import { GuestRequestsManagement } from "@/components/admin/guest-requests/guest-requests"
+import { AdminMembershipManagement } from "@/components/admin/membership/admin-membership-management"
+import { AdminApprovalsManagement } from "@/components/admin/admin-freigaben"
 import { PackageCheck } from "lucide-react"
 
 export default function AdminPage() {
@@ -64,12 +67,15 @@ export default function AdminPage() {
   const [selectedPlayerName, setSelectedPlayerName] = useState<string | null>(null)
   const [isPlayerSelectedViaModal, setIsPlayerSelectedViaModal] = useState(false)
   const [navQuery, setNavQuery] = useState("")
+  const [adminViewRestored, setAdminViewRestored] = useState(false)
+  const [dataViewKey, setDataViewKey] = useState(0)
 
   const [loggingOut, setLoggingOut] = useState(false)
 
   const [currentView, setCurrentView] = useState<
     | "dashboard"
     | "players"
+
     | "results"
     | "history"
     | "management"
@@ -97,13 +103,81 @@ export default function AdminPage() {
 	  | "bonus-system"
 	  | "admin-push"
 | "members-levels"
+| "membership-management"
 | "bonus-vergabe"
 | "praemien-redemptions"
 | "guest-requests"
+| "approvals"
   >("dashboard")
+
+  // Admin-Ansicht merken: selbst wenn eine Unterkomponente/Browser die Seite neu lädt,
+  // landest du wieder in derselben Kachel statt im Dashboard.
+  useEffect(() => {
+    try {
+      const saved = window.sessionStorage.getItem("emd-admin-current-view")
+      if (saved) setCurrentView(saved as any)
+    } catch (error) {
+      console.warn("Admin view restore failed:", error)
+    } finally {
+      setAdminViewRestored(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!adminViewRestored) return
+    try {
+      window.sessionStorage.setItem("emd-admin-current-view", currentView)
+    } catch (error) {
+      console.warn("Admin view save failed:", error)
+    }
+  }, [currentView, adminViewRestored])
+
+  useEffect(() => {
+    if (!adminViewRestored || !session || !user?.id) return
+    if (currentView !== "membership-management" && currentView !== "approvals") return
+
+    void supabase.auth.getSession().then(() => {
+      setDataViewKey((key) => key + 1)
+    })
+  }, [adminViewRestored, session?.user?.id, user?.id])
 
   const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
   const [roleLoading, setRoleLoading] = useState(false)
+  const [adminProfileFlag, setAdminProfileFlag] = useState(false)
+
+  useEffect(() => {
+    if (isAdmin) {
+      setAdminProfileFlag(true)
+      return
+    }
+
+    if (!user?.id) {
+      setAdminProfileFlag(false)
+      return
+    }
+
+    let cancelled = false
+
+    void supabase
+      .from("user_profiles")
+      .select("is_admin")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) {
+          console.warn("Admin flag load failed:", error)
+          return
+        }
+        setAdminProfileFlag(Boolean(data?.is_admin))
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id, isAdmin])
+
+  const stableIsAdmin = isAdmin || adminProfileFlag
   
   
   
@@ -174,6 +248,50 @@ export default function AdminPage() {
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
   const [unreadCampusCount, setUnreadCampusCount] = useState(0)
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0)
+
+  const fetchPendingApprovalsCount = useCallback(async () => {
+    if (!session || !stableIsAdmin) {
+      setPendingApprovalsCount(0)
+      return
+    }
+
+    const [dachRes, marketRes] = await Promise.all([
+      supabase
+        .from("dach_events")
+        .select("id", { count: "exact", head: true })
+        .eq("event_status", "pending"),
+      supabase
+        .from("dart_marketplace_listings")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
+    ])
+
+    const dachCount = dachRes.error ? 0 : dachRes.count || 0
+    const marketCount = marketRes.error ? 0 : marketRes.count || 0
+    setPendingApprovalsCount(dachCount + marketCount)
+  }, [session, stableIsAdmin])
+
+  useEffect(() => {
+    void fetchPendingApprovalsCount()
+
+    if (!session || !stableIsAdmin) return
+
+    const channel = supabase
+      .channel("admin_approvals_count")
+      .on("postgres_changes", { event: "*", schema: "public", table: "dach_events" }, () => {
+        void fetchPendingApprovalsCount()
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "dart_marketplace_listings" }, () => {
+        void fetchPendingApprovalsCount()
+      })
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [session, stableIsAdmin, fetchPendingApprovalsCount])
+
 
   const fetchUnreadApplicationsCount = useCallback(async () => {
     if (!session) {
@@ -236,6 +354,9 @@ export default function AdminPage() {
   const handleLogout = async () => {
     setLoggingOut(true)
     try {
+      try {
+        window.sessionStorage.removeItem("emd-admin-current-view")
+      } catch {}
       await supabase.auth.signOut()
       window.location.reload()
     } catch (err: any) {
@@ -271,6 +392,17 @@ export default function AdminPage() {
     setIsPlayerSelectedViaModal(false)
   }
 
+  const openAdminView = async (view: typeof currentView) => {
+    // Bei datenintensiven Bereichen zuerst sicherstellen, dass die
+    // Supabase-Session im Browser wirklich bereit ist.
+    if (view === "membership-management" || view === "approvals") {
+      await supabase.auth.getSession()
+      setDataViewKey((key) => key + 1)
+    }
+
+    setCurrentView(view)
+  }
+
   const dashboardCards = [
     {
       title: "Benutzerverwaltung",
@@ -299,6 +431,14 @@ export default function AdminPage() {
   category: "verein" as const,
 },
 {
+  title: "Mitgliedschaften",
+  description: "Pakete, Module und Zahlungsarten verwalten",
+  icon: CreditCard,
+  color: "bg-emerald-600",
+  view: "membership-management" as const,
+  category: "verein" as const,
+},
+{
   title: "Bonusvergabe",
   description: "Bonuspunkte an Spieler vergeben",
   icon: Trophy,
@@ -322,6 +462,15 @@ export default function AdminPage() {
   view: "guest-requests" as const,
   category: "verein" as const,
 },
+    {
+      title: "Freigaben",
+      description: "DACH-Turniere & Dartbörse prüfen",
+      icon: Shield,
+      color: "bg-orange-600",
+      view: "approvals" as const,
+      category: "verein" as const,
+      badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
+    },
     {
       title: "Veranstaltungen",
       description: "Turniere, Partys & Events verwalten",
@@ -438,33 +587,41 @@ export default function AdminPage() {
   ]
 
   const visibleDashboardCards = dashboardCards.filter((card) => {
-  // Während laden -> erstmal alles anzeigen
-  if (allowedViews === null) return true
+    // Diese Bereiche sollen wie Bonusvergabe/Gastzugänge nicht kurz verschwinden,
+    // nur weil die Rechteabfrage beim ersten Render noch nicht fertig ist.
+    if (card.view === "membership-management") return stableIsAdmin || allowedViews?.has("membership-management") === true
+    if (card.view === "approvals") return stableIsAdmin
 
-  if (allowedViews.has("*")) return true
+    // Während Rechte laden: bekannte Navigation nicht flackern lassen.
+    if (allowedViews === null) return true
+    if (allowedViews.has("*")) return true
+    if (card.view === "role-permissions") return false
 
-  if (card.view === "role-permissions") return false
-
-return (
-  allowedViews.has(card.view) ||
-  card.view === "members-levels" ||
-  card.view === "bonus-vergabe" ||
-  card.view === "praemien-redemptions" ||
-  card.view === "guest-requests"
-)
-})
+    return (
+      allowedViews.has(card.view) ||
+      card.view === "members-levels" ||
+      card.view === "bonus-vergabe" ||
+      card.view === "praemien-redemptions" ||
+      card.view === "guest-requests"
+    )
+  })
 
  const canSeeView = (viewKey: string) => {
   if (viewKey === "dashboard") return true
+  if (viewKey === "approvals") return stableIsAdmin
+  if (viewKey === "membership-management") {
+    return stableIsAdmin || allowedViews?.has("membership-management") === true || allowedViews?.has("*") === true
+  }
+
   if (allowedViews?.has("*")) return true
   if (allowedViews === null) return false
 
-if (
-  viewKey === "members-levels" ||
-  viewKey === "bonus-vergabe" ||
-  viewKey === "praemien-redemptions" ||
-  viewKey === "guest-requests"
-) return true
+  if (
+    viewKey === "members-levels" ||
+    viewKey === "bonus-vergabe" ||
+    viewKey === "praemien-redemptions" ||
+    viewKey === "guest-requests"
+  ) return true
 
   if (
     (viewKey === "results" || viewKey === "history") &&
@@ -500,16 +657,24 @@ if (
       ],
     },
     {
-      label: "Verein",
-      items: [
-        { key: "users", label: "Benutzerverwaltung", icon: Users },
-        {
-          key: "recruitment",
-          label: "Rekrutierung",
-          icon: Mail,
+  label: "Verein",
+  items: [
+    { key: "users", label: "Benutzerverwaltung", icon: Users },
+    { key: "membership-management", label: "Mitgliedschaften", icon: CreditCard },
+    {
+      key: "recruitment",
+      label: "Rekrutierung",
+      icon: Mail,
           badge: unreadApplicationsCount > 0 ? unreadApplicationsCount : undefined,
         },
+		
         
+        {
+          key: "approvals",
+          label: "Freigaben",
+          icon: Shield,
+          badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
+        },
         { key: "events", label: "Veranstaltungen", icon: PartyPopper },
 		{ key: "admin-push", label: "Push Nachrichten", icon: BellRing },
 		{ key: "bonus-system", label: "Bonussystem", icon: Trophy },
@@ -555,25 +720,27 @@ if (
   "members-levels"
 ].includes(c.view)
   ),
-  "Verein": visibleDashboardCards.filter((c) =>
-    [
-      "users",
-      "recruitment",
-      "events",
-      "club",
-      "support-tickets",
-      "campus-registrations",
-      "credit-loader",
-      "advent-quiz",
-	  "admin-push",
-"bonus-system",
-"bonus-vergabe",
-"praemien-redemptions",
-"guest-requests"
-    ].includes(c.view)
-  ),
+"Verein": visibleDashboardCards.filter((c) =>
+  [
+    "users",
+    "membership-management",
+    "recruitment",
+    "approvals",
+    "events",
+    "club",
+    "support-tickets",
+    "campus-registrations",
+    "credit-loader",
+    "advent-quiz",
+    "admin-push",
+    "bonus-system",
+    "bonus-vergabe",
+    "praemien-redemptions",
+    "guest-requests"
+  ].includes(c.view)
+),
 } as const
-  if (authLoading || adminLoading) {
+  if (authLoading || adminLoading || !adminViewRestored) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -711,7 +878,7 @@ if (!hasAnyPermission) {
                                   ? "bg-red-50 text-red-700 hover:bg-red-50"
                                   : "text-gray-700 hover:bg-gray-50")
                               }
-                              onClick={() => setCurrentView(item.key as any)}
+                              onClick={() => void openAdminView(item.key as any)}
                             >
                               <span className="flex items-center gap-2">
                                 <item.icon className="h-4 w-4" />
@@ -742,66 +909,54 @@ if (!hasAnyPermission) {
 
             {/* Main content */}
             <section className="flex-1 space-y-6">
-              {/* Mobile navigation */}
-              <div className="lg:hidden">
-                <details className="bg-white rounded-xl shadow-md border border-gray-100">
-                  <summary className="cursor-pointer select-none p-4 flex items-center justify-between">
-                    <span className="font-semibold text-gray-900">Menü</span>
-                    <ChevronRight className="h-4 w-4 text-gray-400" />
-                  </summary>
-                  <div className="px-4 pb-4">
-                    <div className="mb-3">
-                      <input
-                        value={navQuery}
-                        onChange={(e) => setNavQuery(e.target.value)}
-                        placeholder="Suchen..."
-                        className="w-full h-10 rounded-md border border-gray-200 bg-gray-50 px-3 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-red-200"
-                      />
+              {/* Mobile: immer sichtbare, einfache Bereichsauswahl */}
+              <div className="sticky top-12 z-40 -mx-4 border-y border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:top-14 lg:hidden">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void openAdminView("dashboard")}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700"
+                    aria-label="Admin Übersicht"
+                  >
+                    <Home className="h-4 w-4" />
+                  </button>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                      Admin-Bereich
                     </div>
-                    <div className="space-y-2">
+                    <select
+                      value={currentView}
+                      onChange={(e) => void openAdminView(e.target.value as typeof currentView)}
+                      className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm font-bold text-gray-900 outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
+                    >
                       {filteredNavSections.map((section) => (
-                        <div key={section.label}>
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider py-2">{section.label}</div>
-                          <div className="space-y-1">
-                            {section.items.map((item) => (
-                              <Button
-                                key={item.key}
-                                variant="ghost"
-                                className={
-                                  "w-full justify-between px-3 " +
-                                  (currentView === (item.key as any)
-                                    ? "bg-red-50 text-red-700 hover:bg-red-50"
-                                    : "text-gray-700 hover:bg-gray-50")
-                                }
-                                onClick={() => setCurrentView(item.key as any)}
-                              >
-                                <span className="flex items-center gap-2">
-                                  <item.icon className="h-4 w-4" />
-                                  <span className="text-sm">{item.label}</span>
-                                </span>
-                                {item.badge ? (
-                                  <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
-                                    {item.badge}
-                                  </span>
-                                ) : (
-                                  <ChevronRight className="h-4 w-4 text-gray-300" />
-                                )}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
+                        <optgroup key={section.label} label={section.label}>
+                          {section.items.map((item) => (
+                            <option key={item.key} value={item.key}>
+                              {item.label}{item.badge ? ` (${item.badge})` : ""}
+                            </option>
+                          ))}
+                        </optgroup>
                       ))}
-                    </div>
-                    <div className="mt-4">
-                      <Button variant="outline" className="w-full bg-transparent" onClick={handleLogout} disabled={loggingOut}>
-                        {loggingOut ? "Abmelden..." : "Abmelden"}
-                      </Button>
-                    </div>
+                    </select>
                   </div>
-                </details>
+                </div>
               </div>
 
               <div className="space-y-6">
+                {currentView !== "dashboard" ? (
+                  <div className="hidden lg:flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                    <div className="text-sm font-bold text-gray-600">
+                      Admin / <span className="text-gray-900">{filteredNavSections.flatMap((section) => section.items).find((item) => item.key === currentView)?.label || "Bereich"}</span>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={() => void openAdminView("dashboard")}>
+                      <Home className="mr-2 h-4 w-4" />
+                      Übersicht
+                    </Button>
+                  </div>
+                ) : null}
+
                 {authMessage && (
                   <div
                     className={`p-4 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -816,7 +971,7 @@ if (!hasAnyPermission) {
 
                 {currentView === "dashboard" && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="hidden md:grid md:grid-cols-3 gap-4">
                       <Card className="border-0 shadow-md">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
@@ -862,7 +1017,52 @@ if (!hasAnyPermission) {
                         </CardContent>
                       </Card>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Handy: keine Kachelwand, sondern klare Bereichsliste */}
+                    <div className="space-y-3 lg:hidden">
+                      {(["Ligabetrieb", "Turnierbetrieb", "Verein"] as const).map((section) => (
+                        <div key={`mobile-${section}`} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                          <div className="border-b border-gray-100 bg-gray-50 px-4 py-3">
+                            <div className="flex items-center gap-2 text-sm font-black text-gray-900">
+                              {section === "Ligabetrieb" ? (
+                                <Target className="h-4 w-4 text-green-600" />
+                              ) : section === "Turnierbetrieb" ? (
+                                <Trophy className="h-4 w-4 text-orange-600" />
+                              ) : (
+                                <Users className="h-4 w-4 text-blue-600" />
+                              )}
+                              {section}
+                            </div>
+                          </div>
+
+                          <div className="divide-y divide-gray-100">
+                            {dashboardByNavSection[section].map((card) => (
+                              <button
+                                key={`mobile-row-${card.view}`}
+                                type="button"
+                                onClick={() => void openAdminView(card.view)}
+                                className="flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50"
+                              >
+                                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${card.color}`}>
+                                  <card.icon className="h-4 w-4 text-white" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate text-sm font-black text-gray-900">{card.title}</div>
+                                  <div className="truncate text-xs font-semibold text-gray-500">{card.description}</div>
+                                </div>
+                                {card.badge ? (
+                                  <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs font-black text-white">
+                                    {card.badge}
+                                  </span>
+                                ) : null}
+                                <ChevronRight className="h-4 w-4 shrink-0 text-gray-300" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="hidden lg:grid lg:grid-cols-3 gap-6">
                       {(["Ligabetrieb", "Turnierbetrieb", "Verein"] as const).map((section) => (
                         <Card key={section} className="border-0 shadow-md">
                           <CardHeader className="pb-3">
@@ -882,7 +1082,7 @@ if (!hasAnyPermission) {
                               {dashboardByNavSection[section].map((card) => (
   <button
     key={`${card.view}-${allowedViews?.size ?? 0}`}
-    onClick={() => setCurrentView(card.view)}
+    onClick={() => void openAdminView(card.view)}
                                   className="text-left group rounded-xl border border-gray-100 bg-white hover:shadow-lg transition-all duration-200 p-4"
                                 >
                                   <div className="flex items-start justify-between gap-3">
@@ -962,6 +1162,22 @@ if (!hasAnyPermission) {
                         </div>
                       </CardContent>
                     </Card>
+                  </div>
+                )}
+
+                {currentView === "approvals" && (
+                  <div className="space-y-6">
+                    {session && stableIsAdmin ? (
+                      <AdminApprovalsManagement
+                        key={`approvals-${user?.id || "admin"}-${dataViewKey}`}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center py-10">
+                        <div className="text-sm font-semibold text-gray-500">
+                          Freigaben werden geladen...
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1079,6 +1295,34 @@ if (!hasAnyPermission) {
 
       <CardContent>
         <GuestRequestsManagement />
+      </CardContent>
+    </Card>
+  </div>
+)}
+
+{currentView === "membership-management" && (
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <CreditCard className="h-5 w-5" />
+          <span>Mitgliedschaften & Module</span>
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        {user?.id ? (
+          <AdminMembershipManagement
+            key={`membership-management-${user.id}-${dataViewKey}`}
+            user={user}
+          />
+        ) : (
+          <div className="flex items-center justify-center py-10">
+            <div className="text-sm font-semibold text-gray-500">
+              Mitgliedschaften werden geladen...
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   </div>

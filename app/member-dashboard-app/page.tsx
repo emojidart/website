@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/hooks/use-auth"
+import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
@@ -162,6 +163,14 @@ interface BonusConfig {
 
 export default function DashboardPage() {
   const { session, user, loading: authLoading } = useAuth()
+  const {
+    loading: membershipLoading,
+    hasModule,
+  } = useMembershipAccess()
+
+  const canSeeEDart = hasModule("edart_league")
+  const canSeeSteeldart = hasModule("steeldart_league")
+
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
@@ -1015,7 +1024,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
         .in("player_id", teamPlayerIds)
         .order("created_at", { ascending: false })
 
-      if (error) {
+        if (error) {
         throw error
       }
 
@@ -1492,17 +1501,29 @@ const getTeamName = (match: any, isHome: boolean): string => {
   return "Unbekannt"
 }
 
-// Helper functions to filter matches by status
+// Helper functions to filter matches by membership + status
+const getMembershipVisibleMatches = () => {
+  return matches.filter((match) => {
+    if (match.dart_type === "edart") return canSeeEDart
+    if (match.dart_type === "steeldart") return canSeeSteeldart
+
+    // Unbekannte Dartart sicherheitshalber nicht freigeben.
+    return false
+  })
+}
+
 const getUpcomingMatches = () => {
-  return matches.filter((match) => match.status !== "completed" && match.status !== "postponed")
+  return getMembershipVisibleMatches().filter(
+    (match) => match.status !== "completed" && match.status !== "postponed",
+  )
 }
 
 const getPostponedMatches = () => {
-  return matches.filter((match) => match.status === "postponed")
+  return getMembershipVisibleMatches().filter((match) => match.status === "postponed")
 }
 
 const getCompletedMatches = () => {
-  return matches
+  return getMembershipVisibleMatches()
     .filter((match) => match.status === "completed")
     .sort((a, b) => {
       // zuerst nach Datum (neueste zuerst)
@@ -1573,7 +1594,7 @@ const postponeMatch = async (
   
   
 
-if (authLoading || loading) {
+if (authLoading || loading || membershipLoading) {
   return (
     <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       
@@ -1638,6 +1659,48 @@ if (authLoading || loading) {
             </Button>
           </div>
         </div>
+      </main>
+    )
+  }
+
+  if (!canSeeEDart && !canSeeSteeldart) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-4 pb-20">
+        <Header
+          variant="app"
+          title="Liga"
+          subtitle="E-Dart & Steeldart"
+          backHref="/member-profile-app"
+        />
+
+        <div className="mx-auto mt-8 max-w-xl">
+          <Card className="overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-sm">
+            <CardContent className="p-6 text-center sm:p-8">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
+                <ShieldCheck className="h-7 w-7 text-orange-600" />
+              </div>
+
+              <h1 className="mt-4 text-xl font-black text-gray-900">
+                Kein Liga-Paket gebucht
+              </h1>
+
+              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-gray-600">
+                Für diesen Bereich benötigst du mindestens eines der Liga-Module:
+                E-Dart oder Steeldart.
+              </p>
+
+              <Button
+                type="button"
+                onClick={() => router.push("/member-membership")}
+                className="mt-5 rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700"
+              >
+                Paket buchen
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <MobileBottomNav />
       </main>
     )
   }
@@ -1828,7 +1891,45 @@ const modalAwayName = modalMatch
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Tabs
+                  <div className="mb-4 flex flex-wrap items-center gap-2">
+        {canSeeEDart ? (
+          <Badge variant="outline" className="rounded-full border-blue-200 bg-blue-50 text-blue-700">
+            E-Dart freigeschaltet
+          </Badge>
+        ) : null}
+
+        {canSeeSteeldart ? (
+          <Badge variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-700">
+            Steeldart freigeschaltet
+          </Badge>
+        ) : null}
+
+        {canSeeEDart && !canSeeSteeldart ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/member-membership")}
+            className="rounded-full border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
+          >
+            Steeldart dazubuchen
+          </Button>
+        ) : null}
+
+        {canSeeSteeldart && !canSeeEDart ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/member-membership")}
+            className="rounded-full border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
+          >
+            E-Dart dazubuchen
+          </Button>
+        ) : null}
+      </div>
+
+      <Tabs
                     value={activeMatchTab}
                     onValueChange={(value) => setActiveMatchTab(value as "upcoming" | "completed" | "postponed")}
                     className="w-full"

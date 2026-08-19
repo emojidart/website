@@ -56,9 +56,9 @@ function getStatusLabel(status: string) {
 }
 
 function getStatusClass(status: string) {
-  if (status === "approved") return "bg-green-600 text-white"
-  if (status === "rejected") return "bg-red-600 text-white"
-  return "bg-orange-500 text-white"
+  if (status === "approved") return "border-green-200 bg-green-50 text-green-700"
+  if (status === "rejected") return "border-red-200 bg-red-50 text-red-700"
+  return "border-amber-200 bg-amber-50 text-amber-700"
 }
 
 async function sendGuestApprovedMail(request: GuestRequest) {
@@ -509,61 +509,61 @@ export function GuestRequestsManagement() {
   const linkedCount = requests.filter((r) => !!r.linked_spieldatenbank_id).length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {message && (
         <div
           className={
             message.type === "success"
-              ? "rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-800"
-              : "rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800"
+              ? "rounded-xl border border-green-200 bg-green-50 px-3 py-2.5 text-sm font-bold text-green-800"
+              : "rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-bold text-red-800"
           }
         >
           {message.text}
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="hidden gap-3 sm:grid sm:grid-cols-2 xl:grid-cols-4">
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-4">
             <div className="text-sm text-gray-500">Offene Anträge</div>
-            <div className="text-3xl font-black mt-2">{pendingCount}</div>
+            <div className="mt-1 text-2xl font-black">{pendingCount}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-4">
             <div className="text-sm text-gray-500">Freigeschaltet</div>
-            <div className="text-3xl font-black mt-2 text-green-600">
+            <div className="mt-1 text-2xl font-black text-green-600">
               {approvedCount}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-4">
             <div className="text-sm text-gray-500">Verknüpft</div>
-            <div className="text-3xl font-black mt-2 text-blue-600">
+            <div className="mt-1 text-2xl font-black text-blue-600">
               {linkedCount}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-4">
             <div className="text-sm text-gray-500">Abgelehnt</div>
-            <div className="text-3xl font-black mt-2 text-red-600">
+            <div className="mt-1 text-2xl font-black text-red-600">
               {rejectedCount}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between gap-4 mb-6">
+      <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <CardContent className="p-4 sm:p-5">
+          <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-xl font-black">Gastanträge</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="text-base font-black text-gray-900 sm:text-lg">Gastanträge</h2>
+              <p className="mt-0.5 text-xs font-semibold text-gray-500 sm:text-sm">
                 Gäste können sofort freigeschaltet werden. Die Verknüpfung mit einem Spieler
                 aus der Spieldatenbank kann auch später erfolgen.
               </p>
@@ -571,15 +571,17 @@ export function GuestRequestsManagement() {
 
             <Button
               variant="outline"
+              size="sm"
               onClick={() => void loadAll()}
               disabled={loading}
+              className="shrink-0 rounded-xl"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
                 <RefreshCw className="w-4 h-4 mr-2" />
               )}
-              Neu laden
+              <span className="hidden sm:inline">Neu laden</span>
             </Button>
           </div>
 
@@ -609,16 +611,16 @@ export function GuestRequestsManagement() {
                   : { locked: false, reason: "" }
 
                 return (
-                  <div key={request.id} className="border rounded-2xl p-4 bg-white">
-                    <div className="flex flex-col gap-5">
-                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                        <div className="space-y-2 min-w-0">
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <div className="font-black text-lg">
+                  <div key={request.id} className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0 space-y-1.5">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="text-sm font-black text-gray-900 sm:text-base">
                               {request.full_name}
                             </div>
 
-                            <Badge className={getStatusClass(request.status)}>
+                            <Badge variant="outline" className={`rounded-full ${getStatusClass(request.status)}`}>
                               {getStatusLabel(request.status)}
                             </Badge>
 
@@ -642,44 +644,44 @@ export function GuestRequestsManagement() {
                           </div>
 
                           {request.player_name && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 sm:text-sm">
                               <Users className="w-4 h-4" />
                               Spielername: {request.player_name}
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 sm:text-sm">
                             <Mail className="w-4 h-4" />
                             {request.email}
                           </div>
 
                           {request.phone && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 sm:text-sm">
                               <Phone className="w-4 h-4" />
                               {request.phone}
                             </div>
                           )}
 
-                          <div className="text-xs text-gray-500">
+                          <div className="text-[11px] font-semibold text-gray-400">
                             Antrag vom{" "}
                             {new Date(request.created_at).toLocaleString("de-AT")}
                           </div>
                         </div>
 
                         {!isPending && linkedPlayer && (
-                          <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 min-w-[260px]">
-                            <div className="text-xs font-bold text-green-700 uppercase">
+                          <div className="min-w-0 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 lg:min-w-[240px]">
+                            <div className="text-[10px] font-black uppercase tracking-wide text-gray-500">
                               Verknüpfter Spieler
                             </div>
-                            <div className="font-black text-gray-900 mt-1">
+                            <div className="mt-1 text-sm font-black text-gray-900">
                               {linkedPlayer.name}
                             </div>
-                            <div className="text-xs text-gray-600 mt-1">
+                            <div className="mt-1 text-xs font-semibold text-gray-500">
                               {linkedPlayer.verein || "Kein Verein"} ·{" "}
                               {linkedPlayer.ligastatus || "Kein Ligastatus"}
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                            <div className="mt-3 flex flex-wrap gap-2">
                               <Button
                                 type="button"
                                 size="sm"
@@ -695,7 +697,7 @@ export function GuestRequestsManagement() {
                                     [request.id]: linkedPlayer.id,
                                   }))
                                 }}
-                                className="font-bold bg-white"
+                                className="h-9 rounded-xl bg-white text-xs font-bold"
                               >
                                 <LinkIcon className="w-4 h-4 mr-2" />
                                 Verknüpfung ändern
@@ -707,7 +709,7 @@ export function GuestRequestsManagement() {
                                 variant="destructive"
                                 disabled={isSaving}
                                 onClick={() => void handleUnlink(request)}
-                                className="font-bold"
+                                className="h-9 rounded-xl text-xs font-bold"
                               >
                                 {isSaving ? (
                                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -722,7 +724,7 @@ export function GuestRequestsManagement() {
                       </div>
 
                       {canLinkPlayer && (
-                        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                        <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
                           <div className="mb-3">
                             <div className="text-sm font-black text-gray-900">
                               {isPending
@@ -731,7 +733,7 @@ export function GuestRequestsManagement() {
                                   ? "Spieler-Verknüpfung ändern"
                                   : "Spieler nachträglich verknüpfen"}
                             </div>
-                            <div className="text-xs text-gray-600 mt-1">
+                            <div className="mt-1 text-xs font-semibold text-gray-500">
                               {isPending
                                 ? "Du kannst einen Spieler auswählen oder den Gast zuerst ohne Verknüpfung freischalten."
                                 : linkedPlayer
@@ -752,11 +754,11 @@ export function GuestRequestsManagement() {
                                 }))
                               }
                               placeholder="Spieler suchen..."
-                              className="pl-9 bg-white"
+                              className="h-10 rounded-xl bg-white pl-9 text-sm"
                             />
                           </div>
 
-                          <div className="max-h-72 overflow-y-auto rounded-xl border bg-white">
+                          <div className="max-h-52 overflow-y-auto rounded-xl border bg-white sm:max-h-64">
                             {filteredPlayers.length === 0 ? (
                               <div className="p-4 text-sm text-gray-500">
                                 Kein Spieler gefunden.
@@ -785,10 +787,10 @@ export function GuestRequestsManagement() {
                                       }}
                                       className={
                                         lockInfo.locked
-                                          ? "w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left cursor-not-allowed opacity-90"
+                                          ? "w-full cursor-not-allowed rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-left opacity-90"
                                           : active
-                                            ? "w-full rounded-xl border border-orange-300 bg-orange-50 px-4 py-3 text-left"
-                                            : "w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-left hover:border-orange-200"
+                                            ? "w-full rounded-xl border border-gray-300 bg-gray-100 px-3 py-2.5 text-left"
+                                            : "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-left hover:bg-gray-50"
                                       }
                                     >
                                       <div className="flex items-center justify-between gap-3">
@@ -807,7 +809,7 @@ export function GuestRequestsManagement() {
                                             {player.verein || "Kein Verein"} ·{" "}
                                             {player.ligastatus ||
                                               "Kein Ligastatus"}{" "}
-                                            · ID: {player.id}
+                                            <span className="hidden sm:inline">· ID: {player.id}</span>
                                           </div>
 
                                           {lockInfo.locked && (
@@ -819,7 +821,7 @@ export function GuestRequestsManagement() {
                                         </div>
 
                                         {active && !lockInfo.locked && (
-                                          <CheckCircle className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                                          <CheckCircle className="w-5 h-5 text-gray-700 flex-shrink-0" />
                                         )}
                                       </div>
                                     </button>
@@ -833,15 +835,15 @@ export function GuestRequestsManagement() {
                             <div
                               className={
                                 selectedLockInfo.locked
-                                  ? "mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
-                                  : "mt-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3"
+                                  ? "mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5"
+                                  : "mt-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5"
                               }
                             >
                               <div
                                 className={
                                   selectedLockInfo.locked
-                                    ? "text-xs font-bold text-red-700 uppercase"
-                                    : "text-xs font-bold text-green-700 uppercase"
+                                    ? "text-[10px] font-black uppercase tracking-wide text-red-700"
+                                    : "text-[10px] font-black uppercase tracking-wide text-gray-500"
                                 }
                               >
                                 {selectedLockInfo.locked
@@ -859,7 +861,7 @@ export function GuestRequestsManagement() {
                             </div>
                           )}
 
-                          <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                          <div className="mt-3 flex flex-wrap gap-2">
                             {isPending ? (
                               <>
                                 <Button
@@ -869,7 +871,7 @@ export function GuestRequestsManagement() {
                                     isSaving ||
                                     Boolean(selectedPlayerId && selectedLockInfo.locked)
                                   }
-                                  className="bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl"
+                                  className="h-9 rounded-xl bg-gray-950 text-xs font-black text-white hover:bg-gray-800"
                                 >
                                   {isSaving ? (
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -886,7 +888,7 @@ export function GuestRequestsManagement() {
                                   variant="destructive"
                                   onClick={() => void handleReject(request)}
                                   disabled={isSaving}
-                                  className="rounded-xl font-bold"
+                                  className="h-9 rounded-xl text-xs font-bold"
                                 >
                                   {isSaving ? (
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -906,7 +908,7 @@ export function GuestRequestsManagement() {
                                     !selectedPlayerId ||
                                     selectedLockInfo.locked
                                   }
-                                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
+                                  className="h-9 rounded-xl bg-gray-950 text-xs font-black text-white hover:bg-gray-800"
                                 >
                                   {isSaving ? (
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -935,7 +937,7 @@ export function GuestRequestsManagement() {
                                         return next
                                       })
                                     }}
-                                    className="rounded-xl font-bold bg-white"
+                                    className="h-9 rounded-xl bg-white text-xs font-bold"
                                   >
                                     Abbrechen
                                   </Button>

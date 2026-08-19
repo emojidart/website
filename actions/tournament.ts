@@ -179,6 +179,7 @@ export async function updatePlayerPaidStatus(playerId: string, paid: boolean): P
 export async function createKratzerTournament(
   settings: TournamentSettings,
   initialPlayers: KratzerPlayer[],
+  _requestedUserId?: string,
 ): Promise<ServerActionResponse & { data?: { tournamentId: string } }> {
   const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
@@ -188,6 +189,28 @@ export async function createKratzerTournament(
   }
 
   try {
+    // WICHTIG: Vor dem Erstellen prüfen, ob bereits ein laufendes
+    // Kratzer-Turnier für diesen Benutzer existiert.
+    // Damit kann nach Reload/Mehrfachklick kein zweites "running"-Turnier entstehen.
+    const { data: existingTournament, error: existingTournamentError } = await supabase
+      .from("kratzer_tournaments")
+      .select("id, created_at")
+      .eq("user_id", userId)
+      .eq("status", "running")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingTournamentError) throw existingTournamentError
+
+    if (existingTournament) {
+      return {
+        success: false,
+        message: "Es läuft bereits ein Kratzer-Turnier. Bitte stellen Sie dieses Turnier wieder her.",
+        data: { tournamentId: existingTournament.id },
+      }
+    }
+
     const { data: tournament, error: tournamentError } = await supabase
       .from("kratzer_tournaments")
       .insert({

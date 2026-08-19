@@ -57,6 +57,23 @@ interface SeasonSettings {
   division_date: string | null
 }
 
+
+interface DkoSeries {
+  id: string
+  name: string
+  slug: string
+  is_active: boolean
+  series_type: string
+  startgeld: number
+  qualification_requirement: number
+  total_tournament_days: number
+  halving_active: boolean
+  halving_date: string | null
+  division_active: boolean
+  division_date: string | null
+  created_at: string
+}
+
 interface NemesisData {
   player_name: string
   nemesis: string
@@ -108,8 +125,6 @@ interface MatchResult {
   match_number: number
   updated_at: string
 }
-
-const QUALIFICATION_REQUIREMENT = 20
 
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.95 },
@@ -174,8 +189,8 @@ function getPlacementIcon(placement: number) {
 }
 
 function QualificationProgress({ current, required }: { current: number; required: number }) {
-  const percentage = Math.min((current / required) * 100, 100)
-  const isQualified = current >= required
+  const percentage = required > 0 ? Math.min((current / required) * 100, 100) : 100
+  const isQualified = required <= 0 || current >= required
 
   return (
     <div className="flex items-center space-x-2">
@@ -187,7 +202,7 @@ function QualificationProgress({ current, required }: { current: number; require
       </div>
       <div className="flex items-center space-x-1">
         <span className={`text-xs font-bold ${isQualified ? "text-green-600" : "text-red-600"}`}>
-          {current}/{required}
+          {required > 0 ? `${current}/${required}` : "keine Mindestanzahl"}
         </span>
         {isQualified ? (
           <CheckCircle className="h-3 w-3 text-green-500" />
@@ -199,8 +214,14 @@ function QualificationProgress({ current, required }: { current: number; require
   )
 }
 
-function QualificationStatus({ tournamentsPlayed }: { tournamentsPlayed: number }) {
-  const isQualified = tournamentsPlayed >= QUALIFICATION_REQUIREMENT
+function QualificationStatus({
+  tournamentsPlayed,
+  required,
+}: {
+  tournamentsPlayed: number
+  required: number
+}) {
+  const isQualified = required <= 0 || tournamentsPlayed >= required
 
   if (isQualified) {
     return (
@@ -229,6 +250,7 @@ function MobilePlayerCard({
   nemesis,
   halvingActive = false,
   minimalView = false,
+  qualificationRequired = 0,
   onClick,
 }: {
   player: SeriesStanding
@@ -236,6 +258,7 @@ function MobilePlayerCard({
   nemesis?: NemesisData
   halvingActive?: boolean
   minimalView?: boolean
+  qualificationRequired?: number
   onClick?: () => void
 }) {
   const isTopThree = position <= 3
@@ -410,10 +433,10 @@ function MobilePlayerCard({
       <div className="space-y-2">
         <div>
           <div className="text-xs text-gray-600 mb-1">Qualifikations-Fortschritt</div>
-          <QualificationProgress current={player.tournaments_played} required={QUALIFICATION_REQUIREMENT} />
+          <QualificationProgress current={player.tournaments_played} required={qualificationRequired} />
         </div>
         <div className="pt-2 border-t border-gray-100">
-          <QualificationStatus tournamentsPlayed={player.tournaments_played} />
+          <QualificationStatus tournamentsPlayed={player.tournaments_played} required={qualificationRequired} />
         </div>
       </div>
     </motion.div>
@@ -537,6 +560,8 @@ const [onlyTop3, setOnlyTop3] = useState(false)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null)
   const [nemesisData, setNemesisData] = useState<Map<string, NemesisData>>(new Map())
+  const [seriesList, setSeriesList] = useState<DkoSeries[]>([])
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null)
   const [seasonSettings, setSeasonSettings] = useState<SeasonSettings>({
     halving_active: false,
     halving_date: null,
@@ -544,38 +569,64 @@ const [onlyTop3, setOnlyTop3] = useState(false)
     division_date: null,
   })
 
-  const fetchSeasonSettings = async () => {
+  const selectedSeries = seriesList.find((s) => s.id === selectedSeriesId) ?? null
+  const qualificationRequirement = selectedSeries?.qualification_requirement ?? 0
+  const totalTournamentDays = selectedSeries?.total_tournament_days ?? 0
+
+  const fetchSeries = async () => {
     try {
       const { data, error } = await supabase
-        .from("season_settings")
-        .select("halving_active, halving_date, division_active, division_date")
-        .single()
+        .from("dko_series")
+        .select(
+          "id,name,slug,is_active,series_type,startgeld,qualification_requirement,total_tournament_days,halving_active,halving_date,division_active,division_date,created_at",
+        )
+        .eq("series_type", "lion_cup")
+        .order("created_at", { ascending: false })
 
       if (error) throw error
 
-      if (data) {
-        setSeasonSettings({
-          halving_active: data.halving_active || false,
-          halving_date: data.halving_date || null,
-          division_active: data.division_active || false,
-          division_date: data.division_date || null,
-        })
+      const list = (data || []) as DkoSeries[]
+      setSeriesList(list)
+
+      if (list.length === 0) {
+        setLoading(false)
       }
+
+      setSelectedSeriesId((current) => {
+        if (current && list.some((s) => s.id === current)) return current
+        return list.find((s) => s.is_active)?.id ?? list[0]?.id ?? null
+      })
     } catch (error) {
-      console.error("Error fetching season settings:", error)
+      console.error("Error fetching Lion Cup series:", error)
     }
   }
 
   useEffect(() => {
-    fetchSeasonSettings()
+    fetchSeries()
   }, [])
 
-    useEffect(() => {
-    if (seasonSettings.halving_active !== undefined) {
-      fetchStandings()
-      fetchNemesisData()
+  useEffect(() => {
+    if (!selectedSeries) return
+
+    setSeasonSettings({
+      halving_active: selectedSeries.halving_active || false,
+      halving_date: selectedSeries.halving_date || null,
+      division_active: selectedSeries.division_active || false,
+      division_date: selectedSeries.division_date || null,
+    })
+  }, [selectedSeriesId, seriesList])
+
+  useEffect(() => {
+    if (!selectedSeriesId) {
+      setStandings([])
+      setTournaments([])
+      return
     }
-  }, [seasonSettings])
+
+    fetchStandings()
+    fetchNemesisData()
+    fetchTournaments()
+  }, [selectedSeriesId, seasonSettings])
   
   
   useEffect(() => {
@@ -586,26 +637,20 @@ const [onlyTop3, setOnlyTop3] = useState(false)
     })
   }
 }, [selectedPlayer])
-  
-  
-
-  useEffect(() => {
-  if (seasonSettings.halving_active === undefined) return
-  fetchTournaments()
-}, [seasonSettings])
 
   useEffect(() => {
     if (selectedPlayer) {
       fetchPlayerMatches(selectedPlayer)
       fetchPlayerFreilos(selectedPlayer)
     }
-  }, [selectedPlayer])
+  }, [selectedPlayer, selectedSeriesId])
 
   const fetchPlayerMatches = async (playerName: string) => {
     try {
       const { data: seriesTournaments, error: tournamentsError } = await supabase
         .from("tournament_series_standings")
         .select("tournament_id")
+        .eq("series_id", selectedSeriesId)
 
       if (tournamentsError) throw tournamentsError
 
@@ -639,6 +684,7 @@ const [onlyTop3, setOnlyTop3] = useState(false)
       const { data: seriesTournaments, error: tournamentsError } = await supabase
         .from("tournament_series_standings")
         .select("tournament_id")
+        .eq("series_id", selectedSeriesId)
 
       if (tournamentsError) throw tournamentsError
 
@@ -672,6 +718,7 @@ const [onlyTop3, setOnlyTop3] = useState(false)
       const { data: playerTournaments, error: tournamentsPlayedError } = await supabase
         .from("tournament_series_standings")
         .select("tournament_id")
+        .eq("series_id", selectedSeriesId)
         .eq("player_name", playerName)
 
       if (tournamentsPlayedError) throw tournamentsPlayedError
@@ -696,7 +743,26 @@ const [onlyTop3, setOnlyTop3] = useState(false)
 
   const fetchNemesisData = async () => {
     try {
-      const { data, error } = await supabase.from("dko_match_states").select("winner, loser").not("loser", "is", null)
+      if (!selectedSeriesId) return
+
+      const { data: seriesRows, error: seriesError } = await supabase
+        .from("tournament_series_standings")
+        .select("tournament_id")
+        .eq("series_id", selectedSeriesId)
+
+      if (seriesError) throw seriesError
+
+      const tournamentIds = [...new Set((seriesRows || []).map((r: any) => r.tournament_id))]
+      if (tournamentIds.length === 0) {
+        setNemesisData(new Map())
+        return
+      }
+
+      const { data, error } = await supabase
+        .from("dko_match_states")
+        .select("winner, loser")
+        .in("tournament_id", tournamentIds)
+        .not("loser", "is", null)
 
       if (error) throw error
 
@@ -744,7 +810,12 @@ const [onlyTop3, setOnlyTop3] = useState(false)
 
   const fetchStandings = async () => {
     try {
-      const { data: tournamentEntries, error: entriesError } = await supabase.from("tournament_series_standings").select("*")
+      if (!selectedSeriesId) return
+
+      const { data: tournamentEntries, error: entriesError } = await supabase
+        .from("tournament_series_standings")
+        .select("*")
+        .eq("series_id", selectedSeriesId)
       if (entriesError) throw entriesError
 
       const { data: profilePictures, error: profileError } = await supabase
@@ -755,7 +826,7 @@ const [onlyTop3, setOnlyTop3] = useState(false)
         console.error("Error fetching profile pictures:", profileError)
       }
 
-      const { data: divisionsData, error: divError } = await supabase.from("player_divisions").select("player_id, division")
+      const { data: divisionsData, error: divError } = await supabase.from("dko_series_player_divisions").select("player_id, division").eq("series_id", selectedSeriesId)
 
       if (divError) {
         console.error("Error fetching divisions:", divError)
@@ -873,6 +944,7 @@ const [onlyTop3, setOnlyTop3] = useState(false)
       const { data: uniqueTournaments, error: tournamentsError } = await supabase
         .from("tournament_series_standings")
         .select("tournament_id, tournament_name, tournament_date")
+        .eq("series_id", selectedSeriesId)
         .order("tournament_date", { ascending: false })
 
       if (tournamentsError) throw tournamentsError
@@ -889,6 +961,7 @@ const [onlyTop3, setOnlyTop3] = useState(false)
           const { data: entries, error: entriesError } = await supabase
             .from("tournament_series_standings")
             .select("*")
+            .eq("series_id", selectedSeriesId)
             .eq("tournament_id", tournament.tournament_id)
             .order("placement", { ascending: true })
 
@@ -944,8 +1017,8 @@ const [onlyTop3, setOnlyTop3] = useState(false)
     return type
   }
 
-  const qualifiedPlayers = standings.filter((s) => s.tournaments_played >= QUALIFICATION_REQUIREMENT)
-  const notQualifiedPlayers = standings.filter((s) => s.tournaments_played < QUALIFICATION_REQUIREMENT)
+  const qualifiedPlayers = standings.filter((s) => qualificationRequirement <= 0 || s.tournaments_played >= qualificationRequirement)
+  const notQualifiedPlayers = standings.filter((s) => qualificationRequirement > 0 && s.tournaments_played < qualificationRequirement)
 
   const getFilteredPlayers = () => {
     switch (activeTab) {
@@ -962,20 +1035,19 @@ const [onlyTop3, setOnlyTop3] = useState(false)
 
   const totalParticipants = standings.length
   const totalAppearances = standings.reduce((sum, player) => sum + player.tournaments_played, 0)
-  const prizePoolFromParticipants = totalParticipants * 5
+  const prizePoolFromParticipants = totalParticipants * (selectedSeries?.startgeld ?? 5)
   const prizePoolFromAppearances = totalAppearances * 4
   const totalPrizePool = prizePoolFromParticipants + prizePoolFromAppearances
 
-  const TOTAL_TOURNAMENT_DAYS = 34
   const completedTournaments = tournaments.length
-  const remainingTournaments = Math.max(0, TOTAL_TOURNAMENT_DAYS - completedTournaments)
+  const remainingTournaments = Math.max(0, totalTournamentDays - completedTournaments)
 
   const avgParticipationsPerTournament = completedTournaments > 0 ? totalAppearances / completedTournaments : 0
   const predictedFutureAppearances = Math.round(avgParticipationsPerTournament * remainingTournaments)
   const predictedTotalAppearances = totalAppearances + predictedFutureAppearances
 
   const predictedPrizePoolFromAppearances = predictedTotalAppearances * 4
-  const predictedPrizePoolFromParticipants = totalParticipants * 5
+  const predictedPrizePoolFromParticipants = totalParticipants * (selectedSeries?.startgeld ?? 5)
 
   let currentHostSponsoring = 0
   if (totalAppearances >= 501) currentHostSponsoring = 250
@@ -1132,9 +1204,9 @@ if (selectedPlayer) {
                 {/* ✅ Quali Bar */}
                 <div className="mt-4">
                   <div className="text-xs text-gray-600 mb-1">Qualifikations-Fortschritt</div>
-                  <QualificationProgress current={player.tournaments_played} required={QUALIFICATION_REQUIREMENT} />
+                  <QualificationProgress current={player.tournaments_played} required={qualificationRequirement} />
                   <div className="mt-2">
-                    <QualificationStatus tournamentsPlayed={player.tournaments_played} />
+                    <QualificationStatus tournamentsPlayed={player.tournaments_played} required={qualificationRequirement} />
                   </div>
                 </div>
               </div>
@@ -1480,11 +1552,11 @@ return (
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-base sm:text-lg font-black text-gray-900">EMD - LION CUP</h1>
+                    <h1 className="text-base sm:text-lg font-black text-gray-900">{selectedSeries?.name || "EMD - LION CUP"}</h1>
 
                     <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-black text-orange-700">
                       <Crown className="w-3.5 h-3.5" />
-                      2025
+                      {selectedSeries?.is_active ? "AKTUELL" : "ARCHIV"}
                     </span>
                   </div>
 
@@ -1492,6 +1564,25 @@ return (
                     <span className="font-semibold">Gesamtwertung</span>
                   </p>
                   <p className="text-xs text-gray-500 mt-1">Live-Wertung aller Teilnehmer</p>
+                  {seriesList.length > 1 && (
+                    <div className="mt-3">
+                      <label className="text-[11px] font-bold text-gray-500">Saison / Archiv</label>
+                      <select
+                        value={selectedSeriesId ?? ""}
+                        onChange={(e) => {
+                          setSelectedPlayer(null)
+                          setSelectedSeriesId(e.target.value)
+                        }}
+                        className="mt-1 w-full sm:w-auto rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-800 outline-none focus:border-orange-400"
+                      >
+                        {seriesList.map((series) => (
+                          <option key={series.id} value={series.id}>
+                            {series.name}{series.is_active ? " – aktuell" : " – Archiv"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1499,7 +1590,7 @@ return (
               <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 overflow-hidden">
                 <div className="px-4 py-3 border-b border-orange-200 text-center">
                   <h2 className="text-base sm:text-lg font-black text-gray-900">AKTUELLER POT</h2>
-                  <p className="text-xs sm:text-sm font-bold text-gray-600 mt-0.5">EMD - LION CUP II 2025</p>
+                  <p className="text-xs sm:text-sm font-bold text-gray-600 mt-0.5">{selectedSeries?.name || "Lion Cup"}</p>
                 </div>
 
                 <div className="px-4 py-4 text-center">
@@ -1523,7 +1614,7 @@ return (
                   <div className="mt-4 rounded-2xl border border-orange-200 bg-white p-4 text-left">
                     <p className="text-sm font-black text-gray-900">Preispool-Berechnung:</p>
                     <p className="text-xs sm:text-sm font-bold text-gray-600 mt-1 leading-relaxed">
-                      Jeder Teilnehmer zahlt einmalig 5€ Startgebühr und 4€ pro Antritt in die Turnierserie ein.
+                      Jeder Teilnehmer zahlt einmalig {selectedSeries?.startgeld ?? 5}€ Startgebühr. Die übrige Preisgeldlogik bleibt wie bisher hinterlegt.
                     </p>
                   </div>
                 </div>
@@ -1557,7 +1648,7 @@ return (
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-gray-600 mt-2 font-bold">
-                  Geschätzter Endstand nach {TOTAL_TOURNAMENT_DAYS} Turniertagen + Finale
+                  Geschätzter Endstand nach {totalTournamentDays} Turniertagen + Finale
                 </p>
               </div>
 
@@ -1569,7 +1660,7 @@ return (
                     <p className="text-xs font-black text-gray-700">Turniertage</p>
                   </div>
                   <p className="text-lg font-black text-indigo-700 mt-1">
-                    {completedTournaments} / {TOTAL_TOURNAMENT_DAYS}
+                    {completedTournaments} / {totalTournamentDays}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">Noch {remainingTournaments} verbleibend</p>
                 </div>
@@ -2114,7 +2205,7 @@ return (
                   <div className="flex items-center space-x-2 text-blue-800">
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="text-xs sm:text-sm font-medium">
-                      Jeder Teilnehmer benötigt {QUALIFICATION_REQUIREMENT} Antritte für die Qualifikation.
+                      Jeder Teilnehmer benötigt {qualificationRequirement} Antritte für die Qualifikation.
                     </span>
                   </div>
                 </div>
@@ -2142,6 +2233,7 @@ return (
                           position={index + 1}
                           nemesis={nemesisData.get(player.player_name)}
                           halvingActive={seasonSettings.halving_active}
+                          qualificationRequired={qualificationRequirement}
                           onClick={() => setSelectedPlayer(player.player_name)}
                         />
                       ))
@@ -2189,7 +2281,7 @@ return (
                   <div className="flex items-center space-x-2 text-blue-800">
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="text-xs sm:text-sm font-medium">
-                      Jeder Teilnehmer benötigt {QUALIFICATION_REQUIREMENT} Antritte für die Qualifikation.
+                      Jeder Teilnehmer benötigt {qualificationRequirement} Antritte für die Qualifikation.
                     </span>
                   </div>
                 </div>
@@ -2217,6 +2309,7 @@ return (
                           position={index + 1}
                           nemesis={nemesisData.get(player.player_name)}
                           halvingActive={seasonSettings.halving_active}
+                          qualificationRequired={qualificationRequirement}
                           onClick={() => setSelectedPlayer(player.player_name)}
                         />
                       ))
@@ -2285,7 +2378,7 @@ return (
                   <div className="flex items-center space-x-2 text-blue-800">
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="text-xs sm:text-sm font-medium">
-                      Jeder Teilnehmer benötigt {QUALIFICATION_REQUIREMENT} Antritte für die Qualifikation.
+                      Jeder Teilnehmer benötigt {qualificationRequirement} Antritte für die Qualifikation.
                     </span>
                   </div>
                 </div>
@@ -2311,6 +2404,7 @@ return (
         position={index + 1}
         nemesis={nemesisData.get(player.player_name)}
         halvingActive={seasonSettings.halving_active}
+                          qualificationRequired={qualificationRequirement}
         minimalView={activeTab === "nicht-qualifiziert" || activeTab === "qualifiziert"}
         onClick={() => setSelectedPlayer(player.player_name)}
       />

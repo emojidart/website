@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/hooks/use-auth"
+import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
@@ -48,6 +49,7 @@ interface TeamMembership {
     id: string
     name: string
     logo_url: string | null
+    dart_type: "edart" | "steeldart"
   } | null
 }
 
@@ -70,6 +72,14 @@ interface TeamMember {
 
 export default function MeineTeamsAppPage() {
   const { session, loading: authLoading } = useAuth()
+  const {
+    loading: membershipLoading,
+    hasModule,
+  } = useMembershipAccess()
+
+  const canSeeEDart = hasModule("edart_league")
+  const canSeeSteeldart = hasModule("steeldart_league")
+
   const router = useRouter()
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -96,11 +106,11 @@ export default function MeineTeamsAppPage() {
   }, [session, authLoading, router])
 
   useEffect(() => {
-    if (session?.user) {
+    if (session?.user && !membershipLoading) {
       fetchTeamData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, showFormerMembers])
+  }, [session, showFormerMembers, membershipLoading, canSeeEDart, canSeeSteeldart])
 
   const fetchTeamData = async () => {
     if (!session?.user) return
@@ -121,7 +131,7 @@ export default function MeineTeamsAppPage() {
       if (profileData?.player_id) {
         let membershipQuery = supabase
           .from("team_members")
-          .select(`id, team_id, role, joined_at, left_at, teams (id, name, logo_url)`)
+          .select(`id, team_id, role, joined_at, left_at, teams (id, name, logo_url, dart_type)`)
           .eq("player_id", profileData.player_id)
 
         if (!showFormerMembers) {
@@ -131,10 +141,19 @@ export default function MeineTeamsAppPage() {
         const { data: teamData, error: teamError } = await membershipQuery
         if (teamError) throw teamError
 
-        setTeamMemberships(teamData || [])
+        const visibleTeamData = (teamData || []).filter((membership: any) => {
+          const dartType = membership.teams?.dart_type
 
-        if (teamData && teamData.length > 0) {
-          const teamIds = teamData.map((team) => team.team_id)
+          if (dartType === "edart") return canSeeEDart
+          if (dartType === "steeldart") return canSeeSteeldart
+
+          return false
+        })
+
+        setTeamMemberships(visibleTeamData)
+
+        if (visibleTeamData.length > 0) {
+          const teamIds = visibleTeamData.map((team: any) => team.team_id)
 
           let membersQuery = supabase
             .from("team_members")
@@ -277,7 +296,7 @@ export default function MeineTeamsAppPage() {
     }
   }
 
-  if (authLoading || loading) {
+  if (authLoading || membershipLoading || loading) {
     return (
       <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <Header variant="app" title="Meine Teams" subtitle="Übersicht & Mitglieder" backHref="/member-profile-app" />
@@ -325,6 +344,47 @@ export default function MeineTeamsAppPage() {
     )
   }
 
+  if (!canSeeEDart && !canSeeSteeldart) {
+    return (
+      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <Header
+          variant="app"
+          title="Meine Teams"
+          subtitle="E-Dart & Steeldart"
+          backHref="/member-profile-app"
+        />
+
+        <div className="flex-1 flex items-center justify-center px-4 pb-20">
+          <Card className="w-full max-w-xl overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-xl">
+            <CardContent className="p-6 text-center sm:p-8">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
+                <ShieldCheck className="h-7 w-7 text-orange-600" />
+              </div>
+
+              <h1 className="mt-4 text-xl font-black text-gray-900">
+                Kein Liga-Paket gebucht
+              </h1>
+
+              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-gray-600">
+                Für deine Mannschaftsbereiche benötigst du mindestens das E-Dart- oder Steeldart-Liga-Paket.
+              </p>
+
+              <Button
+                type="button"
+                onClick={() => router.push("/member-membership")}
+                className="mt-5 rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700"
+              >
+                Paket buchen
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <MobileBottomNav />
+      </main>
+    )
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Header variant="app" title="Meine Teams" subtitle="Übersicht & Mitglieder" backHref="/member-profile-app" />
@@ -346,6 +406,44 @@ export default function MeineTeamsAppPage() {
                 <p className="text-sm sm:text-base text-gray-500">Übersicht deiner Teams und Teammitglieder</p>
               </div>
             </div>
+          </div>
+
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {canSeeEDart ? (
+              <Badge variant="outline" className="rounded-full border-orange-200 bg-orange-50 text-orange-700">
+                E-Dart freigeschaltet
+              </Badge>
+            ) : null}
+
+            {canSeeSteeldart ? (
+              <Badge variant="outline" className="rounded-full border-slate-300 bg-slate-100 text-slate-700">
+                Steeldart freigeschaltet
+              </Badge>
+            ) : null}
+
+            {canSeeEDart && !canSeeSteeldart ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/member-membership")}
+                className="rounded-full border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
+              >
+                Steeldart dazubuchen
+              </Button>
+            ) : null}
+
+            {canSeeSteeldart && !canSeeEDart ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/member-membership")}
+                className="rounded-full border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
+              >
+                E-Dart dazubuchen
+              </Button>
+            ) : null}
           </div>
 
           {/* Captain Player Management */}
@@ -406,6 +504,17 @@ export default function MeineTeamsAppPage() {
                                 {getRoleText(membership.role)}
                               </Badge>
                             </span>
+
+                            <Badge
+                              variant="outline"
+                              className={
+                                membership.teams?.dart_type === "steeldart"
+                                  ? "text-xs border-slate-300 bg-slate-100 text-slate-700"
+                                  : "text-xs border-orange-200 bg-orange-50 text-orange-700"
+                              }
+                            >
+                              {membership.teams?.dart_type === "steeldart" ? "Steeldart" : "E-Dart"}
+                            </Badge>
 
                             {membership.left_at && (
                               <Badge variant="outline" className="text-[10px] sm:text-xs border-gray-300 text-gray-600">

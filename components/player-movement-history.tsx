@@ -56,81 +56,125 @@ export function PlayerMovementHistory() {
   }
 
   return (
-    <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-      <CardHeader className="border-b border-gray-100 pb-6">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg">
-            <History className="h-5 w-5 text-white" />
+    <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <CardHeader className="border-b border-gray-100 px-4 py-4 sm:px-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+            <History className="h-4 w-4 text-gray-700" />
           </div>
           <div>
-            <CardTitle className="text-xl font-semibold text-gray-900">Spielerbewegungen</CardTitle>
-            <CardDescription className="text-sm text-gray-500 mt-1">
+            <CardTitle className="text-base font-black text-gray-900 sm:text-lg">Spielerbewegungen</CardTitle>
+            <CardDescription className="mt-0.5 text-xs font-semibold text-gray-500 sm:text-sm">
               Übersicht über alle Neuzugänge und Teamtransfers.
             </CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-6">
+      <CardContent className="p-4 sm:p-5">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
             <p className="ml-3 text-gray-600">Lade Spielerbewegungen...</p>
           </div>
         ) : error ? (
           <div className="flex items-center justify-center py-8 text-red-600">
-            <AlertCircle className="h-8 w-8 mr-2" />
+            <AlertCircle className="mr-2 h-5 w-5" />
             <p>{error}</p>
           </div>
         ) : movements.length === 0 ? (
           <p className="text-center text-gray-500 py-8">Keine Spielerbewegungen gefunden.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Spieler</TableHead>
-                  <TableHead>Bewegung</TableHead>
-                  <TableHead>Datum</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {movements.map((movement) => (
-                  <TableRow key={movement.id}>
-                    <TableCell className="font-medium">{movement.club_players?.name || "Unbekannt"}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {movement.movement_type === "new_addition" ? (
-                          <>
-                            <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                              Neuzugang
-                            </Badge>
+          <>
+            <div className="space-y-2 md:hidden">
+              {movements.map((movement) => (
+                <div key={movement.id} className="rounded-xl border border-gray-200 bg-white p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-black text-gray-900">
+                        {movement.club_players?.name || "Unbekannt"}
+                      </div>
+                      <div className="mt-1 text-xs font-semibold text-gray-500">
+                        {format(new Date(movement.movement_date), "dd.MM.yyyy HH:mm", { locale: de })} Uhr
+                      </div>
+                    </div>
+
+                    <Badge
+                      variant="outline"
+                      className={
+                        movement.movement_type === "new_addition"
+                          ? "shrink-0 rounded-full border-green-200 bg-green-50 text-green-700"
+                          : "shrink-0 rounded-full border-blue-200 bg-blue-50 text-blue-700"
+                      }
+                    >
+                      {movement.movement_type === "new_addition" ? "Neuzugang" : "Transfer"}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-3 text-sm font-semibold leading-5 text-gray-700">
+                    {movement.movement_type === "new_addition" ? (
+                      <>
+                        {movement.teams?.name ? `Beitritt zu ${movement.teams.name}` : "Beitritt zu einem Team"}
+                      </>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-1">
+                        <span>{movement.from_teams?.name || "Kein Team"}</span>
+                        <ArrowRight className="h-3.5 w-3.5 text-gray-400" />
+                        <span>{movement.teams?.name || "Unbekanntes Team"}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Spieler</TableHead>
+                    <TableHead>Bewegung</TableHead>
+                    <TableHead>Datum</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {movements.map((movement) => (
+                    <TableRow key={movement.id}>
+                      <TableCell className="font-semibold">{movement.club_players?.name || "Unbekannt"}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className={
+                              movement.movement_type === "new_addition"
+                                ? "rounded-full border-green-200 bg-green-50 text-green-700"
+                                : "rounded-full border-blue-200 bg-blue-50 text-blue-700"
+                            }
+                          >
+                            {movement.movement_type === "new_addition" ? "Neuzugang" : "Transfer"}
+                          </Badge>
+
+                          {movement.movement_type === "new_addition" ? (
                             <span className="text-gray-700">
-                              ist {movement.teams?.name ? `der Mannschaft ${movement.teams.name}` : "einem Team"}{" "}
-                              beigetreten.
+                              {movement.teams?.name ? `Beitritt zu ${movement.teams.name}` : "Beitritt zu einem Team"}
                             </span>
-                          </>
-                        ) : (
-                          <>
-                            <Badge variant="default" className="bg-blue-500 hover:bg-blue-600">
-                              Transfer
-                            </Badge>
-                            <span className="text-gray-700 flex items-center gap-1">
-                              von <span className="font-semibold">{movement.from_teams?.name || "Kein Team"}</span>{" "}
-                              <ArrowRight className="h-4 w-4 text-gray-500" /> nach{" "}
+                          ) : (
+                            <span className="flex items-center gap-1 text-gray-700">
+                              <span className="font-semibold">{movement.from_teams?.name || "Kein Team"}</span>
+                              <ArrowRight className="h-4 w-4 text-gray-400" />
                               <span className="font-semibold">{movement.teams?.name || "Unbekanntes Team"}</span>
                             </span>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(movement.movement_date), "dd.MM.yyyy HH:mm", { locale: de })} Uhr
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-gray-600">
+                        {format(new Date(movement.movement_date), "dd.MM.yyyy HH:mm", { locale: de })} Uhr
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

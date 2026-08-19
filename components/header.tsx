@@ -338,7 +338,7 @@ export function Header({
     {
       title: "Schnellzugriff",
       items: [
-        { href: "/tournament-series-app", label: "Lion Cup", icon: Trophy },
+        { href: "/lion-cup", label: "Lion Cup", icon: Trophy },
         { href: "/live-all-app", label: "Live", icon: Radio },
         { href: "/tournament-history", label: "History", icon: History },
         { href: user && isGuest ? "/chat-app?scope=community" : "/chat-app", label: "Chat", icon: MessageCircle, requiresLogin: true },

@@ -4,7 +4,7 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
-import type { Team } from "@/components/vereinsverwaltung/types"
+import type { DartType, Team } from "@/components/vereinsverwaltung/types"
 
 type MessageType = "success" | "error" | "info"
 
@@ -15,6 +15,7 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
   const [teamMessageType, setTeamMessageType] = useState<MessageType>("info")
 
   const [newTeamName, setNewTeamName] = useState("")
+  const [newTeamDartType, setNewTeamDartType] = useState<DartType | "">("")
   const [teamLogoFile, setTeamLogoFile] = useState<File | null>(null)
   const [teamLogoPreview, setTeamLogoPreview] = useState<string | null>(null)
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null)
@@ -49,6 +50,7 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
   const beginEditTeam = (team: Team) => {
     setEditingTeamId(team.id)
     setNewTeamName(team.name)
+    setNewTeamDartType(team.dart_type)
     setTeamLogoPreview(team.logo_url)
     setTeamLogoFile(null)
     setTeamMessage("")
@@ -58,6 +60,7 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
   const cancelTeamEdit = () => {
     setEditingTeamId(null)
     setNewTeamName("")
+    setNewTeamDartType("")
     setTeamLogoFile(null)
     setTeamLogoPreview(null)
     setTeamMessage("")
@@ -78,6 +81,13 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
     }
     if (!newTeamName) {
       setTeamMessage("Bitte Mannschaftsnamen eingeben.")
+      setTeamMessageType("error")
+      setTeamLoading(false)
+      return
+    }
+
+    if (!newTeamDartType) {
+      setTeamMessage("Bitte E-Dart oder Steeldart auswählen.")
       setTeamMessageType("error")
       setTeamLoading(false)
       return
@@ -113,7 +123,12 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
         // ✅ EDIT TEAM (wie vorher)
         const { error } = await supabase
           .from("teams")
-          .update({ name: newTeamName, logo_url: logoUrl, user_id: user.id })
+          .update({
+            name: newTeamName,
+            logo_url: logoUrl,
+            dart_type: newTeamDartType,
+            user_id: user.id,
+          })
           .eq("id", editingTeamId)
         if (error) throw error
 
@@ -215,6 +230,8 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
 
     newTeamName,
     setNewTeamName,
+    newTeamDartType,
+    setNewTeamDartType,
     teamLogoFile,
     teamLogoPreview,
     editingTeamId,

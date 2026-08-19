@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
+import { useMembershipAccess } from "@/hooks/use-membership-access"
+import { MembershipAccessGate } from "@/components/member/membership/membership-access-gate"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
@@ -32,6 +34,7 @@ interface TeamMembership {
     id: string
     name: string
     logo_url: string | null
+    dart_type?: "edart" | "steeldart" | null
   } | null
 }
 
@@ -61,6 +64,13 @@ interface Season {
 export default function MemberStatisticsPage() {
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
+  const {
+    loading: membershipLoading,
+    hasModule,
+  } = useMembershipAccess()
+
+  const canSeeEDart = hasModule("edart_league")
+  const canSeeSteeldart = hasModule("steeldart_league")
 
   const [legStatistics, setLegStatistics] = useState<any[]>([])
   const [matches, setMatches] = useState<any[]>([])
@@ -77,9 +87,9 @@ export default function MemberStatisticsPage() {
   }, [session, authLoading, router])
 
   useEffect(() => {
-    if (session?.user) void fetchUserProfile()
+    if (session?.user && !membershipLoading) void fetchUserProfile()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session])
+  }, [session, membershipLoading, canSeeEDart, canSeeSteeldart])
 
   useEffect(() => {
     if (profile?.player_id && teamMembers.length > 0) void fetchLegStatistics()
@@ -91,6 +101,19 @@ export default function MemberStatisticsPage() {
     else setMatches([])
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamMemberships, selectedSeasonId])
+
+  useEffect(() => {
+    if (membershipLoading) return
+
+    if (dartTypeFilter === "edart" && !canSeeEDart) {
+      setDartTypeFilter(canSeeSteeldart ? "steeldart" : "gesamt")
+      return
+    }
+
+    if (dartTypeFilter === "steeldart" && !canSeeSteeldart) {
+      setDartTypeFilter(canSeeEDart ? "edart" : "gesamt")
+    }
+  }, [membershipLoading, canSeeEDart, canSeeSteeldart, dartTypeFilter])
 
   const isLeadershipRole = () => teamMemberships.some((m) => m.role === "Captain" || m.role === "Co-Captain")
   const getLeadershipTeams = () => teamMemberships.filter((m) => m.role === "Captain" || m.role === "Co-Captain")
@@ -130,15 +153,25 @@ export default function MemberStatisticsPage() {
       if (profileData?.player_id) {
         const { data: teamData, error: teamError } = await supabase
           .from("team_members")
-          .select(`id, team_id, role, teams (id, name, logo_url)`)
+          .select(`id, team_id, role, teams (id, name, logo_url, dart_type)`)
           .eq("player_id", profileData.player_id)
           .is("left_at", null)
 
         if (teamError) throw teamError
-        setTeamMemberships(teamData || [])
 
-        if (teamData && teamData.length > 0) {
-          const teamIds = teamData.map((t) => t.team_id)
+        const allowedTeamData = ((teamData || []) as any[]).filter((membership: any) => {
+          const dartType = String(membership?.teams?.dart_type || "").toLowerCase()
+
+          if (dartType === "edart") return canSeeEDart
+          if (dartType === "steeldart") return canSeeSteeldart
+
+          return false
+        })
+
+        setTeamMemberships(allowedTeamData as any)
+
+        if (allowedTeamData.length > 0) {
+          const teamIds = allowedTeamData.map((t: any) => t.team_id)
 
           const { data: membersData, error: membersError } = await supabase
             .from("team_members")
@@ -301,7 +334,7 @@ export default function MemberStatisticsPage() {
       <Header variant="app" title="Statistiken" subtitle={headerSubtitle} backHref="/member-profile-app" />
 
       {/* LOADING */}
-      {authLoading ? (
+      {authLoading || membershipLoading ? (
         <div className="flex-1 flex items-center justify-center px-4 pt-24">
           <div className="animate-in fade-in zoom-in-95 duration-300 w-full max-w-sm">
             <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-orange-100">
@@ -319,6 +352,12 @@ export default function MemberStatisticsPage() {
       ) : (
         // MAIN (unchanged)
        <main className="pt-12 sm:pt-14">
+         <MembershipAccessGate
+           required={["edart_league", "steeldart_league"]}
+           requireAll={false}
+           title="Liga-Statistiken nicht freigeschaltet"
+           description="Für die Liga-Statistiken brauchst du das E-Dart- oder Steeldart-Ligapaket bzw. eine aktive Testfreischaltung."
+         >
   <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
           {/* TOP WHITE HERO CARD */}
           <div className="rounded-3xl bg-white shadow-xl border border-orange-100 overflow-hidden">
@@ -350,7 +389,7 @@ export default function MemberStatisticsPage() {
                     )}
                   </select>
 
-                  <div className="grid grid-cols-3 gap-2 w-full sm:w-[260px]">
+                  <div className="flex flex-wrap gap-2 w-full sm:w-[320px]">
                     <Button
                       variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
                       size="sm"
@@ -363,30 +402,35 @@ export default function MemberStatisticsPage() {
                     >
                       Gesamt
                     </Button>
-                    <Button
-                      variant={dartTypeFilter === "edart" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setDartTypeFilter("edart")}
-                      className={
-                        dartTypeFilter === "edart"
-                          ? "rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
-                          : "rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
-                      }
-                    >
-                      E-Dart
-                    </Button>
-                    <Button
-                      variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setDartTypeFilter("steeldart")}
-                      className={
-                        dartTypeFilter === "steeldart"
-                          ? "rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
-                          : "rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
-                      }
-                    >
-                      Steeldart
-                    </Button>
+                    {canSeeEDart ? (
+                      <Button
+                        variant={dartTypeFilter === "edart" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setDartTypeFilter("edart")}
+                        className={
+                          dartTypeFilter === "edart"
+                            ? "rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
+                            : "rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
+                        }
+                      >
+                        E-Dart
+                      </Button>
+                    ) : null}
+
+                    {canSeeSteeldart ? (
+                      <Button
+                        variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setDartTypeFilter("steeldart")}
+                        className={
+                          dartTypeFilter === "steeldart"
+                            ? "rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
+                            : "rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
+                        }
+                      >
+                        Steeldart
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -403,6 +447,7 @@ export default function MemberStatisticsPage() {
 			    </div>
             </div>
           </div>
+         </MembershipAccessGate>
         </main>
       )}
 

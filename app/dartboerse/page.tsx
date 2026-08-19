@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { createBrowserClient } from "@supabase/ssr"
-import { ArrowUpDown, Box, Images, MapPin, PackageCheck, Plus, Search, SlidersHorizontal, Tag, Truck } from "lucide-react"
+import { ArrowUpDown, Box, Images, MapPin, MessageCircle, PackageCheck, Plus, Search, SlidersHorizontal, Tag, Truck, UserRound } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -76,6 +76,27 @@ export default function DartboersePage() {
   const [shipping, setShipping] = useState("all")
   const [sort, setSort] = useState("newest")
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    let active = true
+
+    async function checkAuth() {
+      const { data } = await supabase.auth.getUser()
+      if (active) setIsLoggedIn(Boolean(data.user))
+    }
+
+    void checkAuth()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (active) setIsLoggedIn(Boolean(session?.user))
+    })
+
+    return () => {
+      active = false
+      authListener.subscription.unsubscribe()
+    }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -168,9 +189,40 @@ export default function DartboersePage() {
               <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Dartartikel kaufen und verkaufen</h1>
               <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">Darts, Barrels, Flights, Spitzen, Boards und Zubehör aus Österreich, Deutschland und der Schweiz.</p>
             </div>
-            <Button asChild className="h-12 rounded-2xl bg-orange-600 px-5 font-black hover:bg-orange-500">
-              <Link href="/dartboerse/neu"><Plus className="mr-2 h-5 w-5" /> Inserat erstellen</Link>
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+              {isLoggedIn ? (
+                <>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-12 rounded-2xl border-white/20 bg-white/10 px-5 font-black text-white backdrop-blur hover:bg-white/20 hover:text-white"
+                  >
+                    <Link href="/dartboerse/meine">
+                      <UserRound className="mr-2 h-5 w-5" />
+                      Meine Angebote
+                    </Link>
+                  </Button>
+
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-12 rounded-2xl border-white/20 bg-white/10 px-5 font-black text-white backdrop-blur hover:bg-white/20 hover:text-white"
+                  >
+                    <Link href="/dartboerse/nachrichten">
+                      <MessageCircle className="mr-2 h-5 w-5" />
+                      Nachrichten
+                    </Link>
+                  </Button>
+                </>
+              ) : null}
+
+              <Button asChild className="h-12 rounded-2xl bg-orange-600 px-5 font-black hover:bg-orange-500">
+                <Link href="/dartboerse/neu">
+                  <Plus className="mr-2 h-5 w-5" />
+                  Inserat erstellen
+                </Link>
+              </Button>
+            </div>
           </div>
         </section>
 

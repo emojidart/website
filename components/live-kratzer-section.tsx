@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import type { KratzerPlayer, Board, TournamentSettings } from "@/types/tournament"
 import { formatTime } from "@/utils/tournament-utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -212,18 +212,33 @@ export default function LiveKratzerSection() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Verhindert, dass viele Supabase-Realtime-Events gleichzeitig mehrere
+  // Daten-Ladevorgänge starten und ein älterer Request einen neueren überschreibt.
+  const latestRequestRef = useRef(0)
+  const realtimeRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const fetchData = useCallback(async () => {
+    const requestId = ++latestRequestRef.current
     setError(null)
+
     try {
+      // Es kann historisch mehrere fehlerhaft als "running" markierte Turniere geben.
+      // Für die Live-Anzeige wird immer nur das NEUESTE laufende Turnier verwendet.
       const { data: activeTournament, error: tournamentError } = await supabase
         .from("kratzer_tournaments")
         .select("*")
         .eq("status", "running")
-        .single()
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-      if (tournamentError && tournamentError.code !== "PGRST116") {
+      if (tournamentError) {
         throw new Error(`Tournament query error: ${tournamentError.message}`)
       }
+
+      // Falls während dieses Requests bereits ein neuerer Refresh gestartet wurde,
+      // darf dieser alte Request den aktuellen Stand nicht mehr überschreiben.
+      if (requestId !== latestRequestRef.current) return
 
       if (activeTournament) {
         const tournamentId = activeTournament.id
@@ -232,55 +247,32 @@ export default function LiveKratzerSection() {
         const winnerName = activeTournament.winner_name
         const totalRounds = activeTournament.total_rounds
 
-        const { data: playersData, error: playersError } = await supabase
-          .from("kratzer_tournament_players")
-          .select("*")
-          .eq("kratzer_tournament_id", tournamentId)
+        const [{ data: playersData, error: playersError }, { data: latestRound, error: roundError }] =
+          await Promise.all([
+            supabase
+              .from("kratzer_tournament_players")
+              .select("*")
+              .eq("kratzer_tournament_id", tournamentId),
+            supabase
+              .from("kratzer_tournament_rounds")
+              .select("*")
+              .eq("kratzer_tournament_id", tournamentId)
+              .order("round_number", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+          ])
 
         if (playersError) {
           throw new Error(`Players query error: ${playersError.message}`)
         }
 
-        const { data: latestRound, error: roundError } = await supabase
-          .from("kratzer_tournament_rounds")
-          .select("*")
-          .eq("kratzer_tournament_id", tournamentId)
-          .order("round_number", { ascending: false })
-          .limit(1)
-          .single()
-
-        let currentRound = 1
-        let boards: Board[] = []
-
-        if (!roundError && latestRound) {
-          currentRound = latestRound.round_number
-          if (latestRound.boards_data && Array.isArray(latestRound.boards_data)) {
-            boards = latestRound.boards_data
-              .map((boardData: any) => ({
-                id: boardData.id,
-                players: boardData.players || [],
-                startTime: boardData.startTime,
-                endTime: boardData.endTime || null,
-                status: boardData.status || (boardData.startTime ? "running" : "not_started"),
-                timer: null,
-              }))
-              .filter((board: Board) => board.status !== "finished")
-          }
-        } else if (status === "running") {
-          const boardCount = activeTournament.board_count || 3
-          for (let i = 1; i <= boardCount; i++) {
-            boards.push({
-              id: i,
-              players: [],
-              startTime: null,
-              endTime: null,
-              status: "not_started",
-              timer: null,
-            })
-          }
+        if (roundError) {
+          throw new Error(`Round query error: ${roundError.message}`)
         }
 
-        const players: KratzerPlayer[] = playersData.map((player) => ({
+        if (requestId !== latestRequestRef.current) return
+
+        const players: KratzerPlayer[] = (playersData || []).map((player) => ({
           id: player.player_id,
           name: player.player_name,
           ligastatus: player.ligastatus || "N/A",
@@ -289,6 +281,33 @@ export default function LiveKratzerSection() {
           eliminationRound: player.elimination_round,
           eliminationTime: player.elimination_time,
         }))
+
+        const playersById = new Map(players.map((player) => [player.id, player]))
+
+        let currentRound = 0
+        let boards: Board[] = []
+
+        if (latestRound) {
+          currentRound = latestRound.round_number
+
+          if (latestRound.boards_data && Array.isArray(latestRound.boards_data)) {
+            boards = latestRound.boards_data
+              .map((boardData: any) => ({
+                id: boardData.id,
+                // boards_data ist nur ein Snapshot der Runde.
+                // Leben/Eliminierungsstatus kommen IMMER aus kratzer_tournament_players,
+                // damit die Live-Seite keine alten Leben anzeigt.
+                players: (boardData.players || []).map(
+                  (boardPlayer: KratzerPlayer) => playersById.get(boardPlayer.id) || boardPlayer,
+                ),
+                startTime: boardData.startTime ?? null,
+                endTime: boardData.endTime ?? null,
+                status: boardData.status || (boardData.startTime ? "running" : "not_started"),
+                timer: null,
+              }))
+              .filter((board: Board) => board.status !== "finished")
+          }
+        }
 
         let winnerPlayer: KratzerPlayer | null = null
         if (status === "finished" && winnerId && winnerName) {
@@ -303,13 +322,15 @@ export default function LiveKratzerSection() {
           }
         }
 
+        if (requestId !== latestRequestRef.current) return
+
         setTournamentData({
-          tournamentId: tournamentId,
-          status: status,
-          currentRound: currentRound,
+          tournamentId,
+          status,
+          currentRound,
           winner: winnerPlayer,
-          players: players,
-          boards: boards,
+          players,
+          boards,
           settings: {
             boardCount: activeTournament.board_count,
             maxGroupSize: activeTournament.max_group_size,
@@ -336,12 +357,29 @@ export default function LiveKratzerSection() {
         })
       }
     } catch (err: any) {
+      if (requestId !== latestRequestRef.current) return
       console.error("Error fetching live tournament data:", err)
       setError("Fehler beim Laden der Turnierdaten: " + err.message)
     } finally {
-      setLoading(false)
+      if (requestId === latestRequestRef.current) {
+        setLoading(false)
+      }
     }
   }, [])
+
+  const scheduleRealtimeRefresh = useCallback(() => {
+    // updateKratzerTournamentPlayersData aktualisiert mehrere Spieler.
+    // Supabase Realtime sendet dafür mehrere Events fast gleichzeitig.
+    // Statt z.B. 20x neu zu laden, bündeln wir sie zu EINEM Refresh.
+    if (realtimeRefreshTimerRef.current) {
+      clearTimeout(realtimeRefreshTimerRef.current)
+    }
+
+    realtimeRefreshTimerRef.current = setTimeout(() => {
+      realtimeRefreshTimerRef.current = null
+      fetchData()
+    }, 250)
+  }, [fetchData])
 
   useEffect(() => {
     fetchData()
@@ -355,8 +393,8 @@ export default function LiveKratzerSection() {
           schema: "public",
           table: "kratzer_tournaments",
         },
-        (payload) => {
-          fetchData()
+        () => {
+          scheduleRealtimeRefresh()
         },
       )
       .on(
@@ -366,8 +404,8 @@ export default function LiveKratzerSection() {
           schema: "public",
           table: "kratzer_tournament_players",
         },
-        (payload) => {
-          fetchData()
+        () => {
+          scheduleRealtimeRefresh()
         },
       )
       .on(
@@ -377,16 +415,20 @@ export default function LiveKratzerSection() {
           schema: "public",
           table: "kratzer_tournament_rounds",
         },
-        (payload) => {
-          fetchData()
+        () => {
+          scheduleRealtimeRefresh()
         },
       )
       .subscribe()
 
     return () => {
+      if (realtimeRefreshTimerRef.current) {
+        clearTimeout(realtimeRefreshTimerRef.current)
+        realtimeRefreshTimerRef.current = null
+      }
       supabase.removeChannel(channel)
     }
-  }, [fetchData])
+  }, [fetchData, scheduleRealtimeRefresh])
 
   const isTournamentRunning = tournamentData.status === "running"
   const isTournamentFinished = tournamentData.status === "finished"

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
+import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useToast } from "@/hooks/use-toast"
 import { UserRoundPlus, Loader2, Crown, ShieldCheck, Info } from "lucide-react"
 import Image from "next/image"
@@ -18,6 +19,7 @@ interface Team {
   id: string
   name: string
   logo_url: string | null
+  dart_type: "edart" | "steeldart"
 }
 
 interface TeamMembership {
@@ -42,6 +44,13 @@ interface CaptainPlayerManagementProps {
 export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManagementProps) {
   const { session } = useAuth()
   const { toast } = useToast()
+  const {
+    loading: membershipLoading,
+    hasModule,
+  } = useMembershipAccess()
+
+  const canManageEDart = hasModule("edart_league")
+  const canManageSteeldart = hasModule("steeldart_league")
   const [allPlayers, setAllPlayers] = useState<Player[]>([])
   const [availablePlayers, setAvailablePlayers] = useState<Player[]>([])
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("")
@@ -51,35 +60,97 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
   const [loadingPlayers, setLoadingPlayers] = useState(false)
   const [managedTeams, setManagedTeams] = useState<TeamMembership[]>([])
   const [userPlayerId, setUserPlayerId] = useState<string | null>(null)
+  const [playerModuleCodes, setPlayerModuleCodes] = useState<Record<string, Set<string>>>({})
 
   useEffect(() => {
-    if (session?.user) {
+    if (session?.user && !membershipLoading) {
       fetchManagedTeams()
       fetchAllPlayers()
     }
-  }, [session])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, membershipLoading, canManageEDart, canManageSteeldart])
 
   useEffect(() => {
     if (selectedTeamId && allPlayers.length > 0) {
       filterAvailablePlayers(selectedTeamId)
+    } else {
+      setAvailablePlayers([])
     }
-  }, [selectedTeamId, allPlayers])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTeamId, allPlayers, playerModuleCodes, managedTeams])
 
   const fetchAllPlayers = async () => {
     setLoadingPlayers(true)
-    try {
-      const { data, error } = await supabase
-        .from("club_players")
-        .select("id, name, photo_url, throwing_hand, age, origin")
-        .order("name")
 
-      if (error) throw error
-      setAllPlayers(data || [])
+    try {
+      const today = new Date().toISOString().split("T")[0]
+
+      const [
+        { data: playersData, error: playersError },
+        { data: membershipData, error: membershipError },
+        { data: membershipModuleData, error: membershipModuleError },
+      ] = await Promise.all([
+        supabase
+          .from("club_players")
+          .select("id, name, photo_url, throwing_hand, age, origin")
+          .order("name"),
+        supabase
+          .from("member_memberships")
+          .select("id, player_id, status, starts_on, ends_on")
+          .eq("status", "active"),
+        supabase
+          .from("member_membership_modules")
+          .select(`
+            membership_id,
+            membership_modules (
+              code,
+              is_active
+            )
+          `),
+      ])
+
+      if (playersError) throw playersError
+      if (membershipError) throw membershipError
+      if (membershipModuleError) throw membershipModuleError
+
+      const validMembershipById = new Map<string, string>()
+
+      for (const membership of membershipData || []) {
+        const startsOn = String((membership as any).starts_on || "")
+        const endsOn = (membership as any).ends_on
+          ? String((membership as any).ends_on)
+          : null
+
+        if (startsOn && startsOn > today) continue
+        if (endsOn && endsOn < today) continue
+
+        validMembershipById.set(
+          String((membership as any).id),
+          String((membership as any).player_id),
+        )
+      }
+
+      const nextCodes: Record<string, Set<string>> = {}
+
+      for (const row of membershipModuleData || []) {
+        const membershipId = String((row as any).membership_id)
+        const playerId = validMembershipById.get(membershipId)
+        if (!playerId) continue
+
+        const moduleData = (row as any).membership_modules
+        if (!moduleData?.is_active || !moduleData?.code) continue
+
+        if (!nextCodes[playerId]) nextCodes[playerId] = new Set<string>()
+        nextCodes[playerId].add(String(moduleData.code))
+      }
+
+      setPlayerModuleCodes(nextCodes)
+      setAllPlayers((playersData || []) as Player[])
     } catch (err: any) {
       console.error("Error fetching players:", err)
       toast({
         title: "Fehler beim Laden der Spieler",
-        description: "Bitte versuche es später erneut.",
+        description: "Spieler und Liga-Pakete konnten nicht vollständig geladen werden.",
         variant: "destructive",
       })
     } finally {
@@ -89,16 +160,44 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
 
   const filterAvailablePlayers = async (teamId: string) => {
     try {
-      const { data: teamMembers, error } = await supabase.from("team_members").select("player_id").eq("team_id", teamId)
+      const selectedTeam = managedTeams.find((membership) => membership.team_id === teamId)
+
+      if (!selectedTeam?.teams?.dart_type) {
+        setAvailablePlayers([])
+        return
+      }
+
+      const requiredModule =
+        selectedTeam.teams.dart_type === "steeldart"
+          ? "steeldart_league"
+          : "edart_league"
+
+      const { data: teamMembers, error } = await supabase
+        .from("team_members")
+        .select("player_id")
+        .eq("team_id", teamId)
+        .is("left_at", null)
 
       if (error) throw error
 
       const teamPlayerIds = new Set(teamMembers?.map((tm) => tm.player_id) || [])
-      const filtered = allPlayers.filter((player) => !teamPlayerIds.has(player.id))
+
+      const filtered = allPlayers.filter((player) => {
+        if (teamPlayerIds.has(player.id)) return false
+        return playerModuleCodes[player.id]?.has(requiredModule) === true
+      })
+
       setAvailablePlayers(filtered)
+
+      if (
+        selectedPlayerId &&
+        !filtered.some((player) => player.id === selectedPlayerId)
+      ) {
+        setSelectedPlayerId("")
+      }
     } catch (err: any) {
       console.error("Error filtering players:", err)
-      setAvailablePlayers(allPlayers)
+      setAvailablePlayers([])
     }
   }
 
@@ -132,7 +231,8 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
           teams (
             id,
             name,
-            logo_url
+            logo_url,
+            dart_type
           )
         `)
         .eq("player_id", profileData.player_id)
@@ -140,12 +240,27 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
 
       if (teamError) throw teamError
 
-      setManagedTeams(teamData || [])
+      const visibleManagedTeams = ((teamData || []) as TeamMembership[]).filter((membership) => {
+        if (membership.teams?.dart_type === "edart") return canManageEDart
+        if (membership.teams?.dart_type === "steeldart") return canManageSteeldart
+        return false
+      })
 
-      if (!teamData || teamData.length === 0) {
+      setManagedTeams(visibleManagedTeams)
+
+      if (
+        selectedTeamId &&
+        !visibleManagedTeams.some((membership) => membership.team_id === selectedTeamId)
+      ) {
+        setSelectedTeamId("")
+        setSelectedPlayerId("")
+      }
+
+      if (visibleManagedTeams.length === 0) {
         toast({
-          title: "Keine Teams verwaltet",
-          description: "Du bist kein Kapitän oder Co-Kapitän eines Teams.",
+          title: "Keine Liga-Mannschaft verfügbar",
+          description:
+            "Du verwaltest derzeit keine Mannschaft, für deren Liga-Paket du freigeschaltet bist.",
           variant: "default",
         })
       }
@@ -191,6 +306,53 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
       toast({
         title: "Keine Berechtigung",
         description: "Du hast keine Berechtigung, Spieler zu diesem Team hinzuzufügen.",
+        variant: "destructive",
+      })
+      setLoading(false)
+      return
+    }
+
+    const selectedManagedTeam = managedTeams.find((team) => team.team_id === selectedTeamId)
+    const requiredModule =
+      selectedManagedTeam?.teams?.dart_type === "steeldart"
+        ? "steeldart_league"
+        : selectedManagedTeam?.teams?.dart_type === "edart"
+          ? "edart_league"
+          : null
+
+    if (!requiredModule) {
+      toast({
+        title: "Liga-Zuordnung fehlt",
+        description: "Bei dieser Mannschaft ist keine gültige Dartart hinterlegt.",
+        variant: "destructive",
+      })
+      setLoading(false)
+      return
+    }
+
+    const captainHasRequiredModule =
+      requiredModule === "steeldart_league" ? canManageSteeldart : canManageEDart
+
+    if (!captainHasRequiredModule) {
+      toast({
+        title: "Liga-Paket fehlt",
+        description:
+          requiredModule === "steeldart_league"
+            ? "Du hast kein Steeldart-Liga-Paket."
+            : "Du hast kein E-Dart-Liga-Paket.",
+        variant: "destructive",
+      })
+      setLoading(false)
+      return
+    }
+
+    if (playerModuleCodes[selectedPlayerId]?.has(requiredModule) !== true) {
+      toast({
+        title: "Spieler hat kein passendes Liga-Paket",
+        description:
+          requiredModule === "steeldart_league"
+            ? "Dieser Spieler kann ohne Steeldart-Paket keiner Steeldart-Mannschaft zugeordnet werden."
+            : "Dieser Spieler kann ohne E-Dart-Paket keiner E-Dart-Mannschaft zugeordnet werden.",
         variant: "destructive",
       })
       setLoading(false)
@@ -247,6 +409,10 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
     }
   }
 
+  if (membershipLoading) {
+    return null
+  }
+
   if (managedTeams.length === 0) {
     return (
       <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
@@ -292,6 +458,12 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
               • Du kannst Spieler nur mit der Rolle <strong>"Spieler"</strong> hinzufügen
             </p>
             <p>• Wenn ein Spieler bereits existiert, wähle ihn einfach aus der Liste aus</p>
+            <p>
+              • Für E-Dart werden nur Spieler mit <strong>E-Dart-Liga-Paket</strong> angezeigt
+            </p>
+            <p>
+              • Für Steeldart werden nur Spieler mit <strong>Steeldart-Liga-Paket</strong> angezeigt
+            </p>
           </AlertDescription>
         </Alert>
 
@@ -313,6 +485,9 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
                           <ShieldCheck className="h-4 w-4 text-blue-600" />
                         )}
                         <span>{membership.teams.name}</span>
+                        <span className="text-xs text-gray-500">
+                          ({membership.teams.dart_type === "steeldart" ? "Steeldart" : "E-Dart"})
+                        </span>
                       </div>
                     </SelectItem>
                   ))}
@@ -335,7 +510,7 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
                         : !selectedTeamId
                           ? "Zuerst Team auswählen"
                           : availablePlayers.length === 0
-                            ? "Alle Spieler bereits im Team"
+                            ? "Keine berechtigten Spieler verfügbar"
                             : "Spieler auswählen"
                     }
                   />

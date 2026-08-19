@@ -399,9 +399,13 @@ export default function MemberBonusAppPage() {
           animate="visible"
         >
           <motion.div variants={itemVariants}>
-            <Button variant="ghost" onClick={() => router.push("/")} className="font-black text-orange-700">
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/member-profile-app")}
+              className="font-black text-orange-700"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Zurück 
+              Zurück
             </Button>
           </motion.div>
 

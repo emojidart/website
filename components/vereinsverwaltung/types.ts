@@ -24,10 +24,13 @@ export interface ClubPlayer {
   club_left_at: string | null
 }
 
+export type DartType = "edart" | "steeldart"
+
 export interface Team {
   id: string
   name: string
   logo_url: string | null
+  dart_type: DartType
 }
 
 export interface TeamMember {
