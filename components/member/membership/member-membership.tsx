@@ -393,6 +393,14 @@ export function MemberMembership() {
     [modules, selectedModuleIds],
   )
 
+  const paymentTargetModules = useMemo(
+    () =>
+      pendingRequest
+        ? modules.filter((module) => pendingRequestModuleIds.includes(module.id))
+        : selectedModules,
+    [modules, pendingRequest, pendingRequestModuleIds, selectedModules],
+  )
+
   const monthlyTotal = useMemo(
     () => selectedModules.reduce((sum, module) => sum + Number(module.monthly_price || 0), 0),
     [selectedModules],
@@ -1265,6 +1273,53 @@ export function MemberMembership() {
                   </Button>
                 </div>
               </div>
+
+              <div className="rounded-xl border border-gray-200 bg-white p-3">
+                <div className="text-xs font-black uppercase tracking-wide text-gray-500">
+                  Gebuchtes Zielpaket
+                </div>
+
+                <div className="mt-2 space-y-2">
+                  {paymentTargetModules.map((module) => (
+                    <div
+                      key={module.id}
+                      className="flex items-center justify-between gap-3 text-sm"
+                    >
+                      <span className="font-bold text-gray-800">{module.name}</span>
+                      <span className="shrink-0 font-black text-gray-900">
+                        {billingCycle === "monthly"
+                          ? `${formatEUR(module.monthly_price)} / Monat`
+                          : `${formatEUR(module.annual_price)} / Jahr`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-3 border-t border-gray-200 pt-3 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-black text-gray-900">Paket gesamt</span>
+                    <span className="font-black text-gray-900">
+                      {billingCycle === "monthly"
+                        ? `${formatEUR(pendingRequest ? pendingRequest.monthly_total : monthlyTotal)} / Monat`
+                        : `${formatEUR(pendingRequest ? pendingRequest.annual_total : annualTotal)} / Jahr`}
+                    </span>
+                  </div>
+
+                  {membership ? (
+                    <div className="mt-1 flex items-center justify-between gap-3 text-orange-700">
+                      <span className="font-bold">Jetzt zusätzlich offen</span>
+                      <span className="font-black">{formatEUR(paymentDue)}</span>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              {!pendingRequest ? (
+                <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-800">
+                  Bitte zuerst unten auf „Paket verbindlich anfragen“ klicken. Dadurch wird die genaue Modulauswahl
+                  für die Vereinsleitung gespeichert. Danach kannst du die Überweisung durchführen.
+                </div>
+              ) : null}
 
               <p className="text-sm font-semibold text-gray-600">
                 {pendingRequest?.payment_status === "paid"

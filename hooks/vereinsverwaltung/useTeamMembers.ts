@@ -184,7 +184,28 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
       await fetchTeamMembers()
       onDataSaved()
     } catch (error: any) {
-      setAssignmentMessage(`Fehler bei der Zuweisung/dem Transfer: ${error.message}`)
+      console.error("Fehler bei der Mannschaftszuweisung:", error)
+
+      const rawMessage = String(error?.message || "")
+      const normalized = rawMessage.toLowerCase()
+
+      let friendlyMessage = rawMessage || "Die Mannschaftszuweisung konnte nicht gespeichert werden."
+
+      if (normalized.includes("kein aktives steeldart-liga-paket")) {
+        friendlyMessage =
+          "Der Spieler hat weder ein aktives Steeldart-Liga-Paket noch eine gültige Steeldart-Testfreischaltung."
+      } else if (normalized.includes("kein aktives e-dart-liga-paket") || normalized.includes("kein aktives edart-liga-paket")) {
+        friendlyMessage =
+          "Der Spieler hat weder ein aktives E-Dart-Liga-Paket noch eine gültige E-Dart-Testfreischaltung."
+      } else if (
+        normalized.includes("liga-paket") ||
+        normalized.includes("ligapaket") ||
+        normalized.includes("testfreischaltung")
+      ) {
+        friendlyMessage = rawMessage
+      }
+
+      setAssignmentMessage(`Zuweisung nicht möglich: ${friendlyMessage}`)
       setAssignmentMessageType("error")
     } finally {
       setAssignmentLoading(false)
