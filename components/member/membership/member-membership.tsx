@@ -487,6 +487,8 @@ export function MemberMembership() {
     paymentDue > 0 ||
     (!!pendingRequest && pendingRequest.payment_status === "paid")
 
+  const isPendingCancellation = pendingRequest?.request_type === "cancel"
+
   const handleBillingCycleChange = (value: BillingCycle) => {
     if (pendingRequest) return
     setBillingCycle(value)
@@ -881,7 +883,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {showPackageEditor ? (
+      {showPackageEditor && !isPendingCancellation ? (
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="grid grid-cols-3 gap-2">
             {[
@@ -928,7 +930,7 @@ export function MemberMembership() {
         </div>
       ) : null}
 
-      {showPackageEditor && pendingRequest && wizardStep === 3 ? (
+      {pendingRequest && (isPendingCancellation || (showPackageEditor && wizardStep === 3)) ? (
         <Card className="rounded-2xl border border-orange-200 bg-orange-50 shadow-sm">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -955,10 +957,12 @@ export function MemberMembership() {
               </div>
 
               <Badge className="w-fit bg-orange-600">
-                {pendingRequest.payment_method === "stripe" &&
-                pendingRequest.payment_status !== "paid"
-                  ? "Zahlung ausständig"
-                  : requestStatusLabel(pendingRequest.requested_status)}
+                {pendingRequest.request_type === "cancel"
+                  ? requestStatusLabel(pendingRequest.requested_status)
+                  : pendingRequest.payment_method === "stripe" &&
+                      pendingRequest.payment_status !== "paid"
+                    ? "Zahlung ausständig"
+                    : requestStatusLabel(pendingRequest.requested_status)}
               </Badge>
             </div>
           </CardHeader>
@@ -1049,9 +1053,11 @@ export function MemberMembership() {
               className="rounded-xl border-orange-300 bg-white"
             >
               {cancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {pendingRequest.payment_method === "stripe"
-                ? "Paketänderung abbrechen"
-                : "Anfrage stornieren"}
+              {pendingRequest.request_type === "cancel"
+                ? "Kündigungsanfrage stornieren"
+                : pendingRequest.payment_method === "stripe"
+                  ? "Paketänderung abbrechen"
+                  : "Anfrage stornieren"}
             </Button>
           </CardContent>
         </Card>
@@ -1095,7 +1101,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {showPackageEditor && wizardStep === 1 ? (
+      {showPackageEditor && !isPendingCancellation && wizardStep === 1 ? (
         <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardHeader>
             <CardTitle>1. Abrechnung & Zahlungsart</CardTitle>
@@ -1156,7 +1162,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {showPackageEditor && wizardStep === 2 ? (
+      {showPackageEditor && !isPendingCancellation && wizardStep === 2 ? (
         <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardHeader>
             <CardTitle>2. Dein Paket</CardTitle>
@@ -1294,7 +1300,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {showPackageEditor && wizardStep === 3 && membership && hasChanges && paymentDue === 0 && !pendingRequest ? (
+      {showPackageEditor && !isPendingCancellation && wizardStep === 3 && membership && hasChanges && paymentDue === 0 && !pendingRequest ? (
         <Card className="rounded-2xl border border-green-200 bg-green-50 shadow-sm">
           <CardContent className="p-4 sm:p-5">
             <div className="font-black text-green-900">Keine zusätzliche Zahlung erforderlich</div>
@@ -1307,7 +1313,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {showPackageEditor && wizardStep === 3 && showPaymentSection ? (
+      {showPackageEditor && !isPendingCancellation && wizardStep === 3 && showPaymentSection ? (
         <Card className="rounded-2xl border border-orange-200 bg-white shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -1627,7 +1633,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {showPackageEditor && wizardStep === 1 ? (
+      {showPackageEditor && !isPendingCancellation && wizardStep === 1 ? (
         <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -1664,7 +1670,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {showPackageEditor && wizardStep === 2 ? (
+      {showPackageEditor && !isPendingCancellation && wizardStep === 2 ? (
         <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardContent className="p-5 sm:p-6">
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
@@ -1708,7 +1714,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {showPackageEditor && wizardStep === 3 ? (
+      {showPackageEditor && !isPendingCancellation && wizardStep === 3 ? (
         <Card className="rounded-2xl border border-orange-200 bg-white shadow-sm">
           <CardContent className="p-5 sm:p-6">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
