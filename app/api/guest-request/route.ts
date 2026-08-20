@@ -102,6 +102,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: requestError.message }, { status: 500 })
     }
 
+    try {
+      const notificationUrl = new URL("/api/notify-new-request", request.url)
+
+      const notifyResponse = await fetch(notificationUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "guest_request",
+          fullName,
+          playerName,
+          email,
+          phone,
+        }),
+      })
+
+      if (!notifyResponse.ok) {
+        const notifyError = await notifyResponse.json().catch(() => null)
+        console.error("[guest-request] Info-Mail konnte nicht gesendet werden:", notifyError)
+      }
+    } catch (notifyError) {
+      console.error("[guest-request] Info-Mail Fehler:", notifyError)
+    }
+
     return NextResponse.json({
       ok: true,
       message: "Dein Gastantrag wurde erfolgreich übermittelt.",

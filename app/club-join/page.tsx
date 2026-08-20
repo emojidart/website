@@ -122,6 +122,29 @@ export default function ClubJoinPage() {
         .single()
 
       if (error) throw error
+
+      try {
+        const notifyResponse = await fetch("/api/notify-new-request", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            type: "club_join_request",
+            fullName: form.full_name.trim(),
+            email: form.email.trim(),
+            phone: form.phone.trim(),
+          }),
+        })
+
+        if (!notifyResponse.ok) {
+          const notifyError = await notifyResponse.json().catch(() => null)
+          console.error("[club-join] Info-Mail konnte nicht gesendet werden:", notifyError)
+        }
+      } catch (notifyError) {
+        console.error("[club-join] Info-Mail Fehler:", notifyError)
+      }
+
       setExisting(data as JoinRequestLite)
       setMessage({
         type: "success",
