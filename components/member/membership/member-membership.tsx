@@ -1366,8 +1366,9 @@ export function MemberMembership() {
           <CardContent className="p-4 sm:p-5">
             <div className="font-black text-green-900">Keine zusätzliche Zahlung erforderlich</div>
             <p className="mt-1 text-sm font-semibold text-green-800">
-              Du entfernst nur Leistungen oder wechselst auf ein gleich teures/günstigeres Paket.
-              Die Änderung kann vom Verein direkt bestätigt werden.
+              {paymentMethod === "stripe"
+                ? "Du entfernst nur Leistungen oder wechselst auf ein gleich teures/günstigeres Paket. Es ist keine zusätzliche Zahlung erforderlich. Dein bestehendes Stripe-Abo wird beim Abschluss direkt angepasst."
+                : "Du entfernst nur Leistungen oder wechselst auf ein gleich teures/günstigeres Paket. Es ist keine zusätzliche Zahlung erforderlich. Die Änderung kann vom Verein bestätigt werden."}
             </p>
           </CardContent>
         </Card>
