@@ -54,9 +54,6 @@ export async function POST(request: Request) {
       )
     }
 
-    const baseUrl = getBaseUrl()
-    const appUrl = `${baseUrl}/member-profile-app`
-
     const fromEmail =
       process.env.RESEND_FROM_EMAIL ||
       "EMD VereinsApp <noreply@emojisdartverein.com>"
@@ -102,17 +99,7 @@ export async function POST(request: Request) {
                   <strong>„Meine Mitgliedschaft“</strong> deine gewünschten Pakete und Module aus.
                 </div>
               </div>
-
-              <div style="text-align:center;margin:30px 0 24px;">
-                <a
-                  href="${appUrl}"
-                  style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;font-weight:900;font-size:16px;padding:15px 26px;border-radius:14px;box-shadow:0 12px 26px rgba(249,115,22,0.28);"
-                >
-                  EMD VereinsApp öffnen
-                </a>
-              </div>
-
-              <p style="margin:0;font-size:16px;line-height:1.6;color:#3f3f46;">
+<p style="margin:0;font-size:16px;line-height:1.6;color:#3f3f46;">
                 Wir freuen uns, dich im Verein dabei zu haben.<br /><br />
                 <strong style="color:#18181b;">Good Darts!</strong><br />
                 Emojis Dartverein
@@ -139,8 +126,6 @@ Dein Vereinszugang wurde freigeschaltet.
 
 Öffne jetzt die EMD VereinsApp und wähle dort unter „Meine Mitgliedschaft“ deine gewünschten Pakete und Module aus.
 
-EMD VereinsApp:
-${appUrl}
 
 Wir freuen uns, dich im Verein dabei zu haben.
 

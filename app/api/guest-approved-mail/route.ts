@@ -49,9 +49,6 @@ export async function POST(request: Request) {
       )
     }
 
-    const baseUrl = getBaseUrl()
-    const loginUrl = `${baseUrl}/guest-login`
-
     const fromEmail =
       process.env.RESEND_FROM_EMAIL ||
       "EMD VereinsApp <noreply@emojisdartverein.com>"
@@ -87,20 +84,7 @@ export async function POST(request: Request) {
               <p style="margin:0 0 22px 0;font-size:16px;line-height:1.6;">
                 Du kannst dich ab sofort mit deiner E-Mail-Adresse und deinem Passwort im Gastbereich anmelden.
               </p>
-
-              <div style="text-align:center;margin:30px 0;">
-                <a href="${loginUrl}" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;font-weight:900;font-size:16px;padding:15px 24px;border-radius:14px;box-shadow:0 12px 26px rgba(249,115,22,0.28);">
-                  Zum Gast-Login
-                </a>
-              </div>
-
-              <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:16px 18px;margin-top:22px;">
-                <p style="margin:0;color:#9a3412;font-size:14px;line-height:1.55;font-weight:700;">
-                  Hinweis: Falls der Button nicht funktioniert, öffne die EMD VereinsApp und gehe auf „Gast-Login“.
-                </p>
-              </div>
-
-              <p style="margin:24px 0 0 0;font-size:16px;line-height:1.6;">
+<p style="margin:24px 0 0 0;font-size:16px;line-height:1.6;">
                 Viel Spaß und Good Darts!<br />
                 <strong>Emoj’s Dartverein</strong>
               </p>
@@ -123,8 +107,6 @@ dein Gastzugang für die EMD VereinsApp wurde freigeschaltet.
 
 Du kannst dich ab sofort mit deiner E-Mail-Adresse und deinem Passwort anmelden.
 
-Gast-Login:
-${loginUrl}
 
 Viel Spaß und Good Darts!
 Emoj’s Dartverein
