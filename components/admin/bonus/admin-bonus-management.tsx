@@ -522,6 +522,11 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
         </div>
       </div>
 
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">
+        Das Bonus- und Prämienprogramm gilt für Mitglieder mit aktiver Grundmitgliedschaft.
+        Ein Premium-Modul ist dafür nicht erforderlich.
+      </div>
+
       {message ? (
         <div
           className={cn(

@@ -78,10 +78,51 @@ function getStatusInfo(status: string) {
   }
 }
 
+
+async function getActiveBaseMemberPlayerIds() {
+  const { data: baseModule, error: baseModuleError } = await supabase
+    .from("membership_modules")
+    .select("id")
+    .eq("code", "base_membership")
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (baseModuleError) throw baseModuleError
+  if (!baseModule?.id) return new Set<string>()
+
+  const { data: activeMemberships, error: membershipsError } = await supabase
+    .from("member_memberships")
+    .select("id,player_id")
+    .eq("status", "active")
+
+  if (membershipsError) throw membershipsError
+
+  const membershipIds = (activeMemberships || []).map((row: any) => String(row.id))
+  if (membershipIds.length === 0) return new Set<string>()
+
+  const { data: baseRows, error: baseRowsError } = await supabase
+    .from("member_membership_modules")
+    .select("membership_id")
+    .in("membership_id", membershipIds)
+    .eq("module_id", baseModule.id)
+
+  if (baseRowsError) throw baseRowsError
+
+  const membershipsWithBase = new Set((baseRows || []).map((row: any) => String(row.membership_id)))
+
+  return new Set(
+    (activeMemberships || [])
+      .filter((row: any) => membershipsWithBase.has(String(row.id)))
+      .map((row: any) => String(row.player_id))
+      .filter(Boolean),
+  )
+}
+
 export function AdminPraemienRedemptions({ user }: AdminPraemienRedemptionsProps) {
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [redemptions, setRedemptions] = useState<RedemptionRow[]>([])
+  const [eligiblePlayerIds, setEligiblePlayerIds] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "offen" | "abgeschlossen">("all")
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -97,14 +138,18 @@ export function AdminPraemienRedemptions({ user }: AdminPraemienRedemptionsProps
       setLoading(true)
       setMessage(null)
 
-      const { data, error } = await supabase
-        .from("praemien_redemptions")
-        .select("*")
-        .order("created_at", { ascending: false })
+      const [{ data, error }, activeBaseMemberIds] = await Promise.all([
+        supabase
+          .from("praemien_redemptions")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        getActiveBaseMemberPlayerIds(),
+      ])
 
       if (error) throw error
 
       setRedemptions((data || []) as RedemptionRow[])
+      setEligiblePlayerIds(activeBaseMemberIds)
     } catch (error: any) {
       console.error("praemien redemptions load error:", error)
       setMessage({
@@ -200,7 +245,7 @@ export function AdminPraemienRedemptions({ user }: AdminPraemienRedemptionsProps
             <div>
               <h2 className="text-lg font-black text-gray-900">Eingelöste Prämien</h2>
               <p className="mt-1 text-sm font-semibold text-gray-600">
-                Hier siehst du alle eingelösten Sachprämien und kannst sie nach Ausgabe abschließen.
+                Hier siehst du alle eingelösten Sachprämien. Das Bonus- und Prämienprogramm ist an eine aktive Grundmitgliedschaft gebunden.
               </p>
             </div>
           </div>
@@ -334,6 +379,7 @@ export function AdminPraemienRedemptions({ user }: AdminPraemienRedemptionsProps
                       String(item.status).toLowerCase() === "abgeschlossen" ||
                       String(item.status).toLowerCase() === "ausgegeben" ||
                       String(item.status).toLowerCase() === "done"
+                    const hasActiveBaseMembership = eligiblePlayerIds.has(String(item.player_id))
 
                     return (
                       <div
@@ -353,6 +399,19 @@ export function AdminPraemienRedemptions({ user }: AdminPraemienRedemptionsProps
 
                               <Badge variant="outline" className="rounded-full px-3 py-1">
                                 {item.product_points} Punkte
+                              </Badge>
+
+                              <Badge
+                                variant="outline"
+                                className={
+                                  hasActiveBaseMembership
+                                    ? "rounded-full border-green-200 bg-green-50 px-3 py-1 text-green-700"
+                                    : "rounded-full border-amber-200 bg-amber-50 px-3 py-1 text-amber-700"
+                                }
+                              >
+                                {hasActiveBaseMembership
+                                  ? "Grundmitgliedschaft aktiv"
+                                  : "Grundmitgliedschaft derzeit nicht aktiv"}
                               </Badge>
 
                               <Badge variant="outline" className="rounded-full px-3 py-1">

@@ -4,10 +4,14 @@ import { BonusSection } from "@/components/bonus-section"
 import { Header } from "@/components/header"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
+import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ShieldCheck } from "lucide-react"
 
 interface BonusConfig {
   under26: number
@@ -35,6 +39,13 @@ type Season = {
 export default function MemberBonusPage() {
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
+  const {
+    loading: membershipLoading,
+    hasModule,
+  } = useMembershipAccess()
+
+  const canSeeEDart = hasModule("edart_league")
+  const canSeeSteeldart = hasModule("steeldart_league")
 
   const [legStatistics, setLegStatistics] = useState<any[]>([])
   const [legStatsLoading, setLegStatsLoading] = useState(true)
@@ -66,11 +77,11 @@ export default function MemberBonusPage() {
   }, [session, authLoading, router])
 
   useEffect(() => {
-    if (session?.user) {
+    if (session?.user && !membershipLoading) {
       fetchUserData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session])
+  }, [session, membershipLoading, canSeeEDart, canSeeSteeldart])
 
   useEffect(() => {
     const savedConfig = localStorage.getItem("bonusConfig")
@@ -169,7 +180,8 @@ export default function MemberBonusPage() {
           teams (
             id,
             name,
-            logo_url
+            logo_url,
+            dart_type
           )
         `)
         .eq("player_id", profileData.player_id)
@@ -183,15 +195,24 @@ export default function MemberBonusPage() {
         return
       }
 
-      setTeamMemberships(teamData || [])
+      const visibleTeamData = (teamData || []).filter((membership: any) => {
+        const dartType = membership.teams?.dart_type
 
-      if (!teamData || teamData.length === 0) {
+        if (dartType === "edart") return canSeeEDart
+        if (dartType === "steeldart") return canSeeSteeldart
+
+        return false
+      })
+
+      setTeamMemberships(visibleTeamData)
+
+      if (visibleTeamData.length === 0) {
         setTeamMembers([])
         setLegStatistics([])
         return
       }
 
-      const teamIdsLocal = teamData.map((t: any) => t.team_id)
+      const teamIdsLocal = visibleTeamData.map((t: any) => t.team_id)
 
       const { data: rawMembers, error: membersError } = await supabase
         .from("team_members")
@@ -340,7 +361,7 @@ export default function MemberBonusPage() {
     })
   }
 
-  if (authLoading) {
+  if (authLoading || membershipLoading) {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
         <main className="flex-grow flex items-center justify-center">
@@ -348,6 +369,47 @@ export default function MemberBonusPage() {
         </main>
         <MobileBottomNav />
       </div>
+    )
+  }
+
+  if (!canSeeEDart && !canSeeSteeldart) {
+    return (
+      <main className="min-h-screen flex flex-col bg-gray-50 text-gray-900 pb-20">
+        <Header
+          variant="app"
+          title="Bonusgeld"
+          subtitle="Ihre Bonuspunkte und Belohnungen"
+          backHref="/member-profile-app"
+        />
+
+        <div className="flex-1 flex items-center justify-center px-4 pb-20">
+          <Card className="w-full max-w-xl overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-xl">
+            <CardContent className="p-6 text-center sm:p-8">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
+                <ShieldCheck className="h-7 w-7 text-orange-600" />
+              </div>
+
+              <h1 className="mt-4 text-xl font-black text-gray-900">
+                Kein Liga-Paket gebucht
+              </h1>
+
+              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-gray-600">
+                Für Bonusgeld aus Liga-Spielen benötigst du mindestens das E-Dart- oder Steeldart-Liga-Paket.
+              </p>
+
+              <Button
+                type="button"
+                onClick={() => router.push("/member-membership")}
+                className="mt-5 rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700"
+              >
+                Paket buchen
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <MobileBottomNav />
+      </main>
     )
   }
 
@@ -369,6 +431,20 @@ export default function MemberBonusPage() {
                   <div className="hidden sm:block">
                     <h1 className="text-2xl font-bold text-gray-900">Bonusgeld</h1>
                     <p className="text-sm text-gray-500 mt-1">Ihre Bonuspunkte und Belohnungen</p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {canSeeEDart ? (
+                      <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-black text-orange-700">
+                        E-Dart freigeschaltet
+                      </span>
+                    ) : null}
+
+                    {canSeeSteeldart ? (
+                      <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
+                        Steeldart freigeschaltet
+                      </span>
+                    ) : null}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -61,6 +61,45 @@ const categoryStyle: Record<string, string> = {
   Gold: "border-yellow-300 bg-yellow-50 text-yellow-700",
 }
 
+
+async function hasActiveBaseMembership(playerIds: string[]) {
+  const cleanPlayerIds = Array.from(new Set(playerIds.filter(Boolean)))
+  if (cleanPlayerIds.length === 0) return false
+
+  const { data: baseModule, error: baseModuleError } = await supabase
+    .from("membership_modules")
+    .select("id")
+    .eq("code", "base_membership")
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (baseModuleError) throw baseModuleError
+  if (!baseModule?.id) return false
+
+  const { data: memberships, error: membershipsError } = await supabase
+    .from("member_memberships")
+    .select("id")
+    .in("player_id", cleanPlayerIds)
+    .eq("status", "active")
+
+  if (membershipsError) throw membershipsError
+
+  const membershipIds = (memberships || []).map((row: any) => String(row.id))
+  if (membershipIds.length === 0) return false
+
+  const { data: membershipModule, error: membershipModuleError } = await supabase
+    .from("member_membership_modules")
+    .select("membership_id")
+    .in("membership_id", membershipIds)
+    .eq("module_id", baseModule.id)
+    .limit(1)
+    .maybeSingle()
+
+  if (membershipModuleError) throw membershipModuleError
+
+  return !!membershipModule
+}
+
 export default function PraemieDetailPage() {
   const router = useRouter()
   const params = useParams()
@@ -84,6 +123,7 @@ export default function PraemieDetailPage() {
   const [successOpen, setSuccessOpen] = useState(false)
   const [pointsAfterRedeem, setPointsAfterRedeem] = useState<number | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [hasBaseMembership, setHasBaseMembership] = useState(false)
   useEffect(() => {
     void loadData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -105,6 +145,7 @@ export default function PraemieDetailPage() {
       if (!session?.user) {
         setProfile(null)
         setTransactions([])
+        setHasBaseMembership(false)
         return
       }
 
@@ -126,6 +167,7 @@ export default function PraemieDetailPage() {
       if (!profileData) {
         setProfile(null)
         setTransactions([])
+        setHasBaseMembership(false)
         return
       }
 
@@ -142,6 +184,14 @@ export default function PraemieDetailPage() {
           ].filter(Boolean),
         ),
       )
+
+      const isBaseMember = await hasActiveBaseMembership(possiblePlayerIds)
+      setHasBaseMembership(isBaseMember)
+
+      if (!isBaseMember) {
+        setTransactions([])
+        return
+      }
 
       const foundTransactions: BonusTransaction[] = []
 
@@ -179,7 +229,13 @@ export default function PraemieDetailPage() {
   }, [transactions])
 
   const isRedeemed = Boolean(redemption)
-  const canRedeem = Boolean(session?.user && profile && totalPoints >= product.points && !isRedeemed)
+  const canRedeem = Boolean(
+    session?.user &&
+      profile &&
+      hasBaseMembership &&
+      totalPoints >= product.points &&
+      !isRedeemed,
+  )
   const missingPoints = Math.max(0, product.points - totalPoints)
 
   const handleRedeem = async () => {
@@ -195,6 +251,13 @@ export default function PraemieDetailPage() {
 
     if (isRedeemed) {
       setMessage("Diese Prämie wurde bereits eingelöst und ist nicht mehr verfügbar.")
+      return
+    }
+
+    if (!hasBaseMembership) {
+      setMessage(
+        "Das Bonus- und Prämienprogramm ist Teil der Grundmitgliedschaft. Zum Einlösen ist eine aktive Grundmitgliedschaft erforderlich.",
+      )
       return
     }
 
@@ -217,6 +280,18 @@ export default function PraemieDetailPage() {
         profile.player_id ||
         transactions[0]?.player_id ||
         null
+
+      const activeBaseMembershipStillValid = await hasActiveBaseMembership(
+        [profile.club_players?.id, profile.player_id].filter(Boolean) as string[],
+      )
+
+      if (!activeBaseMembershipStillValid) {
+        setHasBaseMembership(false)
+        setMessage(
+          "Deine Grundmitgliedschaft ist derzeit nicht aktiv. Die Prämie kann deshalb nicht eingelöst werden.",
+        )
+        return
+      }
 
       const newPointsAfterRedeem = totalPoints - product.points
 
@@ -517,6 +592,16 @@ export default function PraemieDetailPage() {
                     </p>
                   </div>
                 </div>
+              ) : session?.user && !hasBaseMembership ? (
+                <div className="flex items-center gap-3 text-blue-700">
+                  <Lock className="h-6 w-6 text-blue-600" />
+                  <div>
+                    <p className="font-black">Grundmitgliedschaft erforderlich</p>
+                    <p className="text-sm font-semibold">
+                      Das Bonus- und Prämienprogramm ist in der Grundmitgliedschaft enthalten.
+                    </p>
+                  </div>
+                </div>
               ) : canRedeem ? (
                 <div className="flex items-center gap-3 text-green-700">
                   <CheckCircle2 className="h-6 w-6 text-green-600" />
@@ -589,9 +674,11 @@ export default function PraemieDetailPage() {
                 )}
                 {isRedeemed
   ? "Nicht verfügbar"
-  : totalPoints < product.points
-    ? `Noch ${missingPoints} Punkte fehlen`
-    : "Prämie einlösen"}
+  : session?.user && !hasBaseMembership
+    ? "Grundmitgliedschaft erforderlich"
+    : totalPoints < product.points
+      ? `Noch ${missingPoints} Punkte fehlen`
+      : "Prämie einlösen"}
               </button>
 
               <Link

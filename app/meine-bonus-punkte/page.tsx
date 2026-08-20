@@ -215,6 +215,45 @@ function uniqueTransactions(rows: BonusTransaction[]) {
   })
 }
 
+
+async function hasActiveBaseMembership(playerIds: string[]) {
+  const cleanPlayerIds = Array.from(new Set(playerIds.filter(Boolean)))
+  if (cleanPlayerIds.length === 0) return false
+
+  const { data: baseModule, error: baseModuleError } = await supabase
+    .from("membership_modules")
+    .select("id")
+    .eq("code", "base_membership")
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (baseModuleError) throw baseModuleError
+  if (!baseModule?.id) return false
+
+  const { data: memberships, error: membershipsError } = await supabase
+    .from("member_memberships")
+    .select("id")
+    .in("player_id", cleanPlayerIds)
+    .eq("status", "active")
+
+  if (membershipsError) throw membershipsError
+
+  const membershipIds = (memberships || []).map((row: any) => String(row.id))
+  if (membershipIds.length === 0) return false
+
+  const { data: membershipModule, error: membershipModuleError } = await supabase
+    .from("member_membership_modules")
+    .select("membership_id")
+    .in("membership_id", membershipIds)
+    .eq("module_id", baseModule.id)
+    .limit(1)
+    .maybeSingle()
+
+  if (membershipModuleError) throw membershipModuleError
+
+  return !!membershipModule
+}
+
 export default function MemberBonusAppPage() {
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
@@ -282,6 +321,16 @@ export default function MemberBonusAppPage() {
           ].filter(Boolean),
         ),
       )
+
+      const isBaseMember = await hasActiveBaseMembership(possiblePlayerIds)
+
+      if (!isBaseMember) {
+        setTransactions([])
+        setError(
+          "Das Bonusprogramm ist Teil der Grundmitgliedschaft. Sobald deine Grundmitgliedschaft aktiv ist, kannst du Bonuspunkte sammeln und das Prämienprogramm nutzen.",
+        )
+        return
+      }
 
       const foundTransactions: BonusTransaction[] = []
 

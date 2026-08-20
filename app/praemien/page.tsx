@@ -85,6 +85,45 @@ function getNextLevel(points: number) {
   return null
 }
 
+
+async function hasActiveBaseMembership(playerIds: string[]) {
+  const cleanPlayerIds = Array.from(new Set(playerIds.filter(Boolean)))
+  if (cleanPlayerIds.length === 0) return false
+
+  const { data: baseModule, error: baseModuleError } = await supabase
+    .from("membership_modules")
+    .select("id")
+    .eq("code", "base_membership")
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (baseModuleError) throw baseModuleError
+  if (!baseModule?.id) return false
+
+  const { data: memberships, error: membershipsError } = await supabase
+    .from("member_memberships")
+    .select("id")
+    .in("player_id", cleanPlayerIds)
+    .eq("status", "active")
+
+  if (membershipsError) throw membershipsError
+
+  const membershipIds = (memberships || []).map((row: any) => String(row.id))
+  if (membershipIds.length === 0) return false
+
+  const { data: membershipModule, error: membershipModuleError } = await supabase
+    .from("member_membership_modules")
+    .select("membership_id")
+    .in("membership_id", membershipIds)
+    .eq("module_id", baseModule.id)
+    .limit(1)
+    .maybeSingle()
+
+  if (membershipModuleError) throw membershipModuleError
+
+  return !!membershipModule
+}
+
 export default function PraemienPage() {
   const { session } = useAuth()
 
@@ -92,6 +131,7 @@ export default function PraemienPage() {
   const [profile, setProfile] = useState<UserProfileRow | null>(null)
   const [transactions, setTransactions] = useState<BonusTransaction[]>([])
   const [redemptions, setRedemptions] = useState<RedemptionRow[]>([])
+  const [hasBaseMembership, setHasBaseMembership] = useState(false)
 
   useEffect(() => {
     void loadData()
@@ -111,6 +151,7 @@ export default function PraemienPage() {
       if (!session?.user) {
         setProfile(null)
         setTransactions([])
+        setHasBaseMembership(false)
         return
       }
 
@@ -132,6 +173,7 @@ export default function PraemienPage() {
       if (!profileData) {
         setProfile(null)
         setTransactions([])
+        setHasBaseMembership(false)
         return
       }
 
@@ -148,6 +190,14 @@ export default function PraemienPage() {
           ].filter(Boolean),
         ),
       )
+
+      const isBaseMember = await hasActiveBaseMembership(possiblePlayerIds)
+      setHasBaseMembership(isBaseMember)
+
+      if (!isBaseMember) {
+        setTransactions([])
+        return
+      }
 
       const foundTransactions: BonusTransaction[] = []
 
@@ -246,7 +296,11 @@ export default function PraemienPage() {
                       Deine Bonuspunkte
                     </p>
                     <p className="mt-1 text-3xl font-black text-slate-950">
-                      {session?.user ? totalPoints : "Login erforderlich"}
+                      {session?.user
+                        ? hasBaseMembership
+                          ? totalPoints
+                          : "Grundmitgliedschaft erforderlich"
+                        : "Login erforderlich"}
                     </p>
 
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
@@ -260,9 +314,11 @@ export default function PraemienPage() {
 
                     <p className="mt-2 text-xs font-semibold text-slate-500">
                       {session?.user
-                        ? nextLevel
-                          ? `Noch ${nextLevel.missing} Punkte bis ${nextLevel.title}`
-                          : "Gold erreicht – stark!"
+                        ? hasBaseMembership
+                          ? nextLevel
+                            ? `Noch ${nextLevel.missing} Punkte bis ${nextLevel.title}`
+                            : "Gold erreicht – stark!"
+                          : "Das Bonus- und Prämienprogramm ist in der Grundmitgliedschaft enthalten."
                         : "Melde dich an, um deine Punkte zu sehen."}
                     </p>
                   </div>
@@ -339,7 +395,11 @@ export default function PraemienPage() {
           {praemienProducts.map((product) => {
             const Icon = product.icon
             const isRedeemed = redeemedSlugs.has(product.slug)
-            const canRedeem = session?.user && totalPoints >= product.points && !isRedeemed
+            const canRedeem =
+              session?.user &&
+              hasBaseMembership &&
+              totalPoints >= product.points &&
+              !isRedeemed
             const missingPoints = Math.max(0, product.points - totalPoints)
 
             return (
@@ -404,6 +464,11 @@ export default function PraemienPage() {
                       <div className="inline-flex items-center gap-2 rounded-full bg-green-50 px-4 py-2 text-xs font-black uppercase text-green-700">
                         <CheckCircle2 className="h-4 w-4" />
                         Einlösbar
+                      </div>
+                    ) : session?.user && !hasBaseMembership ? (
+                      <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-black uppercase text-blue-700">
+                        <Lock className="h-4 w-4" />
+                        Grundmitgliedschaft erforderlich
                       </div>
                     ) : session?.user ? (
                       <div className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-4 py-2 text-xs font-black uppercase text-orange-700">

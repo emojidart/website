@@ -126,6 +126,46 @@ function formatDate(value: string) {
   }
 }
 
+
+async function getActiveBaseMemberPlayerIds() {
+  const { data: baseModule, error: baseModuleError } = await supabase
+    .from("membership_modules")
+    .select("id")
+    .eq("code", "base_membership")
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (baseModuleError) throw baseModuleError
+  if (!baseModule?.id) return new Set<string>()
+
+  const { data: activeMemberships, error: membershipsError } = await supabase
+    .from("member_memberships")
+    .select("id,player_id")
+    .eq("status", "active")
+
+  if (membershipsError) throw membershipsError
+
+  const membershipIds = (activeMemberships || []).map((row: any) => String(row.id))
+  if (membershipIds.length === 0) return new Set<string>()
+
+  const { data: baseRows, error: baseRowsError } = await supabase
+    .from("member_membership_modules")
+    .select("membership_id")
+    .in("membership_id", membershipIds)
+    .eq("module_id", baseModule.id)
+
+  if (baseRowsError) throw baseRowsError
+
+  const membershipsWithBase = new Set((baseRows || []).map((row: any) => String(row.membership_id)))
+
+  return new Set(
+    (activeMemberships || [])
+      .filter((row: any) => membershipsWithBase.has(String(row.id)))
+      .map((row: any) => String(row.player_id))
+      .filter(Boolean),
+  )
+}
+
 export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -189,7 +229,12 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
       if (rulesResult.error) throw rulesResult.error
       if (transactionsResult.error) throw transactionsResult.error
 
-      setPlayers((playersResult.data || []) as PlayerRow[])
+      const eligiblePlayerIds = await getActiveBaseMemberPlayerIds()
+      const eligiblePlayers = ((playersResult.data || []) as PlayerRow[]).filter((player) =>
+        eligiblePlayerIds.has(String(player.id)),
+      )
+
+      setPlayers(eligiblePlayers)
       setRules((rulesResult.data || []) as any)
       setTransactions((transactionsResult.data || []) as BonusTransaction[])
     } catch (error: any) {
@@ -275,6 +320,16 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
       setSaving(true)
       setMessage(null)
 
+      const eligiblePlayerIds = await getActiveBaseMemberPlayerIds()
+
+      if (!eligiblePlayerIds.has(String(selectedPlayer.id))) {
+        setMessage({
+          type: "error",
+          text: "Bonuspunkte können nur an Mitglieder mit aktiver Grundmitgliedschaft vergeben werden.",
+        })
+        return
+      }
+
       const payload = {
         player_id: String(selectedPlayer.id),
         player_name: selectedPlayer.name,
@@ -325,7 +380,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-black text-gray-900 sm:text-lg">Bonuspunkte vergeben</h2>
             <p className="mt-0.5 text-xs font-semibold text-gray-500 sm:text-sm">
-              Wähle Spieler, Bonusregel und Quelle. Jede Vergabe wird sauber in der Bonus-Historie gespeichert.
+              Es werden nur Mitglieder mit aktiver Grundmitgliedschaft angezeigt. Jede Vergabe wird sauber in der Bonus-Historie gespeichert.
             </p>
           </div>
 

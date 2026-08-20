@@ -4,7 +4,6 @@ export const dynamic = "force-dynamic"
 
 import type React from "react"
 import { Suspense, useEffect, useState } from "react"
-import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { Header } from "@/components/header"
@@ -292,15 +291,6 @@ function MemberLoginClient() {
                   {resetLoading ? "Sende Reset-Mail…" : "Passwort vergessen"}
                 </Button>
 
-                <div className="text-center text-sm text-gray-600">
-                  Noch keinen Zugang?{" "}
-                  <Link
-                    href="/member-account-request"
-                    className="font-bold text-orange-600"
-                  >
-                    Mit Code registrieren
-                  </Link>
-                </div>
               </form>
             </CardContent>
           </Card>
