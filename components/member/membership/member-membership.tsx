@@ -393,6 +393,23 @@ export function MemberMembership() {
     }
 
     next.delete(module.id)
+
+    // Wenn die letzte Liga (E-Dart oder Steeldart) deaktiviert wird,
+    // wird die dafür automatisch benötigte Premium App ebenfalls entfernt.
+    if (module.code === "edart_league" || module.code === "steeldart_league") {
+      const leagueCodes = new Set(["edart_league", "steeldart_league"])
+      const stillHasLeague = modules.some(
+        (item) => leagueCodes.has(item.code) && next.has(item.id),
+      )
+
+      if (!stillHasLeague) {
+        const premiumModule = modules.find((item) => item.code === "premium_app")
+        if (premiumModule) {
+          next.delete(premiumModule.id)
+        }
+      }
+    }
+
     setSelectedModuleIds(ensureDependencies(next))
   }
 
