@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -24,6 +25,8 @@ import {
   Landmark,
   Banknote,
   Gift,
+  Home,
+  UserRound,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -787,16 +790,32 @@ export function MemberMembership() {
             </div>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void loadData()}
-            disabled={loading}
-            className="rounded-xl"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Neu laden
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" className="rounded-xl">
+              <Link href="/member-dashboard-app">
+                <Home className="mr-2 h-4 w-4" />
+                Startseite
+              </Link>
+            </Button>
+
+            <Button asChild variant="outline" className="rounded-xl">
+              <Link href="/member-profile-app">
+                <UserRound className="mr-2 h-4 w-4" />
+                Mein Profil
+              </Link>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void loadData()}
+              disabled={loading}
+              className="rounded-xl"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Neu laden
+            </Button>
+          </div>
         </div>
       </div>
 
