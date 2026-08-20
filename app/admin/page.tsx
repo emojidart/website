@@ -55,7 +55,6 @@ import { RolePermissionsManager } from "@/components/role-permissions-manager"
 import { AdminMembersLevelManagement } from "@/components/admin/members-champion-cup/admin-members-level-management"
 import { BonusVergabeManagement } from "@/components/admin/bonus-vergabe/bonus-vergabe"
 import { AdminPraemienRedemptions } from "@/components/admin/bonus/admin-praemien-redemptions"
-import { GuestRequestsManagement } from "@/components/admin/guest-requests/guest-requests"
 import { AdminMembershipManagement } from "@/components/admin/membership/admin-membership-management"
 import { AdminApprovalsManagement } from "@/components/admin/admin-freigaben"
 import { PackageCheck } from "lucide-react"
@@ -115,7 +114,8 @@ export default function AdminPage() {
   useEffect(() => {
     try {
       const saved = window.sessionStorage.getItem("emd-admin-current-view")
-      if (saved) setCurrentView(saved as any)
+      if (saved === "guest-requests") setCurrentView("club")
+      else if (saved) setCurrentView(saved as any)
     } catch (error) {
       console.warn("Admin view restore failed:", error)
     } finally {
@@ -249,6 +249,95 @@ export default function AdminPage() {
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
   const [unreadCampusCount, setUnreadCampusCount] = useState(0)
   const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0)
+  const [pendingGuestRequestsCount, setPendingGuestRequestsCount] = useState(0)
+  const [pendingJoinRequestsCount, setPendingJoinRequestsCount] = useState(0)
+
+
+const fetchPendingGuestRequestsCount = useCallback(async () => {
+  if (!session) {
+    setPendingGuestRequestsCount(0)
+    return
+  }
+
+  const { count, error } = await supabase
+    .from("guest_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending")
+
+  if (error) {
+    console.error("Error fetching pending guest requests count:", error)
+    setPendingGuestRequestsCount(0)
+    return
+  }
+
+  setPendingGuestRequestsCount(count || 0)
+}, [session])
+
+useEffect(() => {
+  void fetchPendingGuestRequestsCount()
+
+  if (!session) return
+
+  const onGuestRequestsChanged = () => {
+    void fetchPendingGuestRequestsCount()
+  }
+
+  window.addEventListener("emd:guest-requests-changed", onGuestRequestsChanged)
+
+  const channel = supabase
+    .channel("admin_guest_requests_count")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "guest_requests" },
+      () => void fetchPendingGuestRequestsCount(),
+    )
+    .subscribe()
+
+  return () => {
+    window.removeEventListener("emd:guest-requests-changed", onGuestRequestsChanged)
+    void supabase.removeChannel(channel)
+  }
+}, [session, fetchPendingGuestRequestsCount])
+
+
+const fetchPendingJoinRequestsCount = useCallback(async () => {
+  if (!session || !stableIsAdmin) {
+    setPendingJoinRequestsCount(0)
+    return
+  }
+
+  const { count, error } = await supabase
+    .from("club_join_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending")
+
+  if (error) {
+    console.warn("Offene Beitrittsanfragen konnten nicht gezählt werden:", error)
+    setPendingJoinRequestsCount(0)
+    return
+  }
+
+  setPendingJoinRequestsCount(count || 0)
+}, [session, stableIsAdmin])
+
+useEffect(() => {
+  void fetchPendingJoinRequestsCount()
+
+  if (!session || !stableIsAdmin) return
+
+  const channel = supabase
+    .channel("admin_club_join_requests_count")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "club_join_requests" },
+      () => void fetchPendingJoinRequestsCount(),
+    )
+    .subscribe()
+
+  return () => {
+    void supabase.removeChannel(channel)
+  }
+}, [session, stableIsAdmin, fetchPendingJoinRequestsCount])
 
   const fetchPendingApprovalsCount = useCallback(async () => {
     if (!session || !stableIsAdmin) {
@@ -393,6 +482,11 @@ export default function AdminPage() {
   }
 
   const openAdminView = async (view: typeof currentView) => {
+    if (view === "guest-requests") {
+      setCurrentView("club")
+      return
+    }
+
     // Bei datenintensiven Bereichen zuerst sicherstellen, dass die
     // Supabase-Session im Browser wirklich bereit ist.
     if (view === "membership-management" || view === "approvals") {
@@ -454,14 +548,6 @@ export default function AdminPage() {
   view: "praemien-redemptions" as const,
   category: "verein" as const,
 },
-{
-  title: "Gastzugänge",
-  description: "Gastanträge prüfen und freischalten",
-  icon: Users,
-  color: "bg-cyan-600",
-  view: "guest-requests" as const,
-  category: "verein" as const,
-},
     {
       title: "Freigaben",
       description: "DACH-Turniere & Dartbörse prüfen",
@@ -489,11 +575,14 @@ export default function AdminPage() {
 },
     {
       title: "Vereinsverwaltung",
-      description: "Teams, Spieler & Vereinsdaten pflegen",
+      description: "Spieler, Gastzugänge, Beitritte & Vereinsdaten",
       icon: Users,
       color: "bg-teal-500",
       view: "club" as const,
       category: "verein" as const,
+    badge: pendingGuestRequestsCount + pendingJoinRequestsCount > 0
+      ? pendingGuestRequestsCount + pendingJoinRequestsCount
+      : undefined,
     },
     {
       title: "Support Tickets",
@@ -680,8 +769,7 @@ export default function AdminPage() {
 		{ key: "bonus-system", label: "Bonussystem", icon: Trophy },
 		{ key: "bonus-vergabe", label: "Bonusvergabe", icon: Trophy },
 		{ key: "praemien-redemptions", label: "Prämien-Ausgabe", icon: PackageCheck },
-		{ key: "guest-requests", label: "Gastzugänge", icon: Users },
-        { key: "club", label: "Vereinsverwaltung", icon: Users },
+        { key: "club", label: "Vereinsverwaltung", icon: Users, badge: pendingGuestRequestsCount + pendingJoinRequestsCount > 0 ? pendingGuestRequestsCount + pendingJoinRequestsCount : undefined },
         { key: "support-tickets", label: "Support Tickets", icon: HelpCircle },
         {
           key: "campus-registrations",
@@ -736,7 +824,6 @@ export default function AdminPage() {
     "bonus-system",
     "bonus-vergabe",
     "praemien-redemptions",
-    "guest-requests"
   ].includes(c.view)
 ),
 } as const
@@ -744,7 +831,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <main className="w-full p-4 md:p-8">
+        <main className="w-full min-w-0 max-w-full overflow-x-hidden p-4 md:p-8">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -841,7 +928,7 @@ if (!hasAnyPermission) {
             />
           </div>
         ) : (
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex min-w-0 max-w-full flex-col gap-6 overflow-hidden lg:flex-row">
             {/* Sidebar */}
             <aside className="hidden lg:block w-72 shrink-0">
               <div className="sticky top-6">
@@ -908,7 +995,7 @@ if (!hasAnyPermission) {
             </aside>
 
             {/* Main content */}
-            <section className="flex-1 space-y-6">
+            <section className="min-w-0 max-w-full flex-1 space-y-6 overflow-hidden">
               {/* Mobile: immer sichtbare, einfache Bereichsauswahl */}
               <div className="sticky top-12 z-40 -mx-4 border-y border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:top-14 lg:hidden">
                 <div className="flex items-center gap-3">
@@ -971,6 +1058,32 @@ if (!hasAnyPermission) {
 
                 {currentView === "dashboard" && (
                   <div className="space-y-6">
+                    {pendingGuestRequestsCount + pendingJoinRequestsCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => void openAdminView("club")}
+                        className="flex w-full items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-left shadow-sm transition hover:bg-orange-100"
+                      >
+                        <UserCheck className="mt-0.5 h-5 w-5 shrink-0 text-orange-700" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-black text-orange-900">
+                            {pendingGuestRequestsCount + pendingJoinRequestsCount} offene Vereinsanfragen
+                          </div>
+                          <div className="mt-1 text-sm font-semibold text-orange-800">
+                            {pendingGuestRequestsCount > 0
+                              ? `${pendingGuestRequestsCount} Gastzugang${pendingGuestRequestsCount === 1 ? "" : "e"}`
+                              : ""}
+                            {pendingGuestRequestsCount > 0 && pendingJoinRequestsCount > 0 ? " · " : ""}
+                            {pendingJoinRequestsCount > 0
+                              ? `${pendingJoinRequestsCount} Beitritt${pendingJoinRequestsCount === 1 ? "" : "e"}`
+                              : ""}
+                            {" "}warten auf deine Entscheidung.
+                          </div>
+                        </div>
+                        <span className="rounded-full bg-orange-600 px-2.5 py-1 text-xs font-black text-white">Prüfen</span>
+                      </button>
+                    ) : null}
+
                     <div className="hidden md:grid md:grid-cols-3 gap-4">
                       <Card className="border-0 shadow-md">
                         <CardContent className="p-4">
@@ -1283,22 +1396,6 @@ if (!hasAnyPermission) {
   </div>
 )}
 
-{currentView === "guest-requests" && (
-  <div className="space-y-6">
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Users className="h-5 w-5" />
-          <span>Gastzugänge</span>
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent>
-        <GuestRequestsManagement />
-      </CardContent>
-    </Card>
-  </div>
-)}
 
 {currentView === "membership-management" && (
   <div className="space-y-6">

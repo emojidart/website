@@ -37,10 +37,12 @@ export async function POST(request: Request) {
       )
     }
 
-    const resendApiKey = process.env.GUEST_RESEND_API_KEY
+    const resendApiKey =
+      process.env.RESEND_API_KEY ||
+      process.env.GUEST_RESEND_API_KEY
 
     if (!resendApiKey) {
-      console.error("[guest-approved-mail] RESEND_API_KEY fehlt.")
+      console.error("[guest-approved-mail] RESEND_API_KEY / GUEST_RESEND_API_KEY fehlt.")
       return NextResponse.json(
         { error: "Mail-Konfiguration fehlt." },
         { status: 500 },
@@ -147,13 +149,28 @@ Emoj’s Dartverein
 
     if (!resendResponse.ok) {
       console.error("[guest-approved-mail] Resend Fehler:", resendData)
+
+      const resendMessage =
+        resendData?.message ||
+        resendData?.error?.message ||
+        resendData?.error ||
+        "Unbekannter Resend-Fehler"
+
       return NextResponse.json(
-        { error: "Mail konnte nicht gesendet werden." },
-        { status: 500 },
+        {
+          error: `Mail konnte nicht gesendet werden: ${resendMessage}`,
+          resend: resendData,
+        },
+        { status: resendResponse.status || 500 },
       )
     }
 
-    return NextResponse.json({ ok: true })
+    console.log("[guest-approved-mail] Mail erfolgreich gesendet:", {
+      to: email,
+      id: resendData?.id || null,
+    })
+
+    return NextResponse.json({ ok: true, id: resendData?.id || null })
   } catch (error: any) {
     console.error("[guest-approved-mail] Fehler:", error)
     return NextResponse.json(

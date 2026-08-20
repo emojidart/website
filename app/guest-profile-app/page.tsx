@@ -39,6 +39,8 @@ import {
   MessageCircle,
   ShoppingBag,
   Store,
+  UserPlus,
+  Clock3,
 } from "lucide-react"
 
 type GuestRequest = {
@@ -51,6 +53,12 @@ type GuestRequest = {
   created_at: string
   auth_user_id?: string | null
   linked_spieldatenbank_id?: string | number | null
+}
+
+type ClubJoinRequest = {
+  id: string
+  status: "pending" | "approved" | "rejected" | "cancelled"
+  created_at: string
 }
 
 type SpieldatenbankPlayer = {
@@ -205,6 +213,7 @@ export default function GuestProfileAppPage() {
   const [statsLoading, setStatsLoading] = useState(false)
 
   const [guestRequest, setGuestRequest] = useState<GuestRequest | null>(null)
+  const [clubJoinRequest, setClubJoinRequest] = useState<ClubJoinRequest | null>(null)
   const [linkedPlayer, setLinkedPlayer] = useState<SpieldatenbankPlayer | null>(null)
 
   const [summerStanding, setSummerStanding] = useState<SummerStanding | null>(null)
@@ -267,13 +276,28 @@ export default function GuestProfileAppPage() {
         return
       }
 
-      const { data: requestData, error: requestError } = await supabase
-        .from("guest_requests")
-        .select("*")
-        .eq("auth_user_id", session.user.id)
-        .maybeSingle()
+      const [
+        { data: requestData, error: requestError },
+        { data: joinRequestData, error: joinRequestError },
+      ] = await Promise.all([
+        supabase
+          .from("guest_requests")
+          .select("*")
+          .eq("auth_user_id", session.user.id)
+          .maybeSingle(),
+
+        supabase
+          .from("club_join_requests")
+          .select("id,status,created_at")
+          .eq("user_id", session.user.id)
+          .in("status", ["pending", "approved"])
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ])
 
       if (requestError) throw requestError
+      if (joinRequestError) throw joinRequestError
 
       if (!requestData) {
         setMessage("Zu diesem Gastkonto wurde kein Antrag gefunden.")
@@ -281,6 +305,7 @@ export default function GuestProfileAppPage() {
       }
 
       setGuestRequest(requestData as GuestRequest)
+      setClubJoinRequest((joinRequestData as ClubJoinRequest | null) ?? null)
     } catch (err: any) {
       console.error("Guest profile error:", err)
       setMessage(err?.message || "Gastprofil konnte nicht geladen werden.")
@@ -572,6 +597,52 @@ export default function GuestProfileAppPage() {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border border-orange-200 bg-white shadow-sm overflow-hidden">
+            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+            <CardContent className="p-5 sm:p-6">
+              {clubJoinRequest?.status === "pending" ? (
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-50">
+                      <Clock3 className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <div className="font-black text-gray-900">Beitrittsanfrage wird geprüft</div>
+                      <p className="mt-1 text-sm font-semibold text-gray-600">
+                        Deine Anfrage ist beim Verein eingelangt. Bis zur Bestätigung bleibst du ganz normal Gast.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button asChild variant="outline" className="rounded-xl border-orange-200">
+                    <Link href="/club-join">Anfrage ansehen</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-50">
+                      <UserPlus className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <div className="font-black text-gray-900">Du möchtest Vereinsmitglied werden?</div>
+                      <p className="mt-1 text-sm font-semibold text-gray-600">
+                        Stelle direkt mit deinem bestehenden Gastkonto eine Beitrittsanfrage.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button asChild className="rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700">
+                    <Link href="/club-join">
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Verein beitreten
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 

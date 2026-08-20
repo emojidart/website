@@ -35,6 +35,7 @@ export const publicRoutes = [
 
 export const guestRoutes = [
   "/guest-profile-app",
+  "/club-join",
   "/guest-calendar",
   "/guest-events",
   "/guest-turniere",

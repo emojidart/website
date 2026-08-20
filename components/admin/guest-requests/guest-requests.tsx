@@ -82,6 +82,12 @@ async function sendGuestApprovedMail(request: GuestRequest) {
   return data
 }
 
+function notifyGuestRequestsChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("emd:guest-requests-changed"))
+  }
+}
+
 export function GuestRequestsManagement() {
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
@@ -347,6 +353,7 @@ export function GuestRequestsManagement() {
       })
 
       await loadAll()
+      notifyGuestRequestsChanged()
     } catch (err: any) {
       console.error(err)
       setMessage({
@@ -405,6 +412,7 @@ export function GuestRequestsManagement() {
       })
 
       await loadAll()
+      notifyGuestRequestsChanged()
     } catch (err: any) {
       console.error(err)
       setMessage({
@@ -449,6 +457,7 @@ export function GuestRequestsManagement() {
       })
 
       await loadAll()
+      notifyGuestRequestsChanged()
     } catch (err: any) {
       console.error(err)
       setMessage({
@@ -492,6 +501,7 @@ export function GuestRequestsManagement() {
       })
 
       await loadAll()
+      notifyGuestRequestsChanged()
     } catch (err: any) {
       console.error(err)
       setMessage({
