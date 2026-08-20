@@ -151,6 +151,7 @@ export function MemberMembership() {
   const [cancelNote, setCancelNote] = useState("")
   const [showCancelForm, setShowCancelForm] = useState(false)
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1)
+  const [showPackageEditor, setShowPackageEditor] = useState(false)
 
   const [message, setMessage] = useState<{
     type: "success" | "error" | "info"
@@ -260,6 +261,7 @@ export function MemberMembership() {
         null
 
       setMembership(activeMembership)
+      setShowPackageEditor(!activeMembership)
 
       let currentRows: MembershipModuleRow[] = []
 
@@ -286,6 +288,7 @@ export function MemberMembership() {
       setPendingRequest(currentPending)
       setActiveTrials((trialData || []) as MembershipTrial[])
       if (currentPending) {
+        setShowPackageEditor(true)
         setWizardStep(3)
       }
 
@@ -859,6 +862,91 @@ export function MemberMembership() {
         </div>
       ) : null}
 
+      {!showPackageEditor && membership ? (
+        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <CardHeader>
+            <CardTitle>Aktuelles Paket</CardTitle>
+            <CardDescription>
+              Hier siehst du deine aktiven Leistungen. Zusatzmodule kannst du jederzeit über „Paket ändern“ hinzufügen oder entfernen.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-5">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {modules
+                .filter((module) =>
+                  membershipRows.some((row) => row.module_id === module.id),
+                )
+                .map((module) => (
+                  <div
+                    key={module.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3"
+                  >
+                    <div>
+                      <div className="font-black text-green-900">{module.name}</div>
+                      {module.description ? (
+                        <div className="mt-1 text-sm font-semibold text-green-700">
+                          {module.description}
+                        </div>
+                      ) : null}
+                    </div>
+                    <Badge className="shrink-0 rounded-full bg-green-600 text-white">
+                      Aktiv
+                    </Badge>
+                  </div>
+                ))}
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <div className="text-xs font-black uppercase tracking-wide text-gray-500">
+                Aktueller Beitrag
+              </div>
+              <div className="mt-1 text-2xl font-black text-gray-900">
+                {membership.billing_cycle === "monthly"
+                  ? `${formatEUR(currentMonthlyTotal)} / Monat`
+                  : `${formatEUR(currentAnnualTotal)} / Jahr`}
+              </div>
+              <div className="mt-1 text-sm font-semibold text-gray-600">
+                {paymentLabel(membership.payment_method)}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Button
+                type="button"
+                onClick={() => {
+                  setWizardStep(1)
+                  setShowPackageEditor(true)
+                  setMessage(null)
+                }}
+                className="h-12 rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700"
+              >
+                <WalletCards className="mr-2 h-4 w-4" />
+                Paket ändern
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowCancelForm(true)
+                  setMessage(null)
+                }}
+                className="h-12 rounded-xl border-red-200 font-black text-red-700 hover:bg-red-50 hover:text-red-800"
+              >
+                <CalendarX className="mr-2 h-4 w-4" />
+                Komplette Mitgliedschaft kündigen
+              </Button>
+            </div>
+
+            <p className="text-sm font-semibold text-gray-500">
+              „Paket ändern“ ist auch der richtige Weg, wenn du nur ein Zusatzmodul wie E-Dart, Steeldart oder Premium abwählen möchtest.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {showPackageEditor ? (
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="grid grid-cols-3 gap-2">
           {[
@@ -903,8 +991,9 @@ export function MemberMembership() {
               : "Prüfen & abschließen"}
         </div>
       </div>
+      ) : null}
 
-      {pendingRequest && wizardStep === 3 ? (
+      {showPackageEditor && pendingRequest && wizardStep === 3 ? (
         <Card className="rounded-2xl border border-orange-200 bg-orange-50 shadow-sm">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -1073,7 +1162,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {wizardStep === 1 ? (
+      {showPackageEditor && wizardStep === 1 ? (
       <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle>1. Abrechnung & Zahlungsart</CardTitle>
@@ -1134,7 +1223,7 @@ export function MemberMembership() {
       </Card>
       ) : null}
 
-      {wizardStep === 2 ? (
+      {showPackageEditor && wizardStep === 2 ? (
       <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle>2. Dein Paket</CardTitle>
@@ -1272,7 +1361,7 @@ export function MemberMembership() {
       </Card>
       ) : null}
 
-      {wizardStep === 3 && membership && hasChanges && paymentDue === 0 && !pendingRequest ? (
+      {showPackageEditor && wizardStep === 3 && membership && hasChanges && paymentDue === 0 && !pendingRequest ? (
         <Card className="rounded-2xl border border-green-200 bg-green-50 shadow-sm">
           <CardContent className="p-4 sm:p-5">
             <div className="font-black text-green-900">Keine zusätzliche Zahlung erforderlich</div>
@@ -1284,7 +1373,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {wizardStep === 3 && showPaymentSection ? (
+      {showPackageEditor && wizardStep === 3 && showPaymentSection ? (
         <Card className="rounded-2xl border border-orange-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -1545,7 +1634,7 @@ export function MemberMembership() {
       </Card>
       ) : null}
 
-      {membership ? (
+      {membership && (!showPackageEditor || showCancelForm) ? (
         <Card className="rounded-2xl border border-red-200 bg-white shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-700">
@@ -1558,7 +1647,7 @@ export function MemberMembership() {
           </CardHeader>
 
           <CardContent className="space-y-4">
-            {!showCancelForm ? (
+            {!showCancelForm && showPackageEditor ? (
               <Button
                 type="button"
                 variant="outline"
@@ -1628,7 +1717,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {wizardStep === 1 ? (
+      {showPackageEditor && wizardStep === 1 ? (
         <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -1638,18 +1727,34 @@ export function MemberMembership() {
               </div>
             </div>
 
-            <Button
-              type="button"
-              onClick={() => setWizardStep(2)}
-              className="h-11 rounded-xl bg-orange-600 px-6 font-black text-white hover:bg-orange-700"
-            >
-              Weiter zum Paket
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {membership ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowPackageEditor(false)
+                    setMessage(null)
+                  }}
+                  className="h-11 rounded-xl"
+                >
+                  Zur Übersicht
+                </Button>
+              ) : null}
+
+              <Button
+                type="button"
+                onClick={() => setWizardStep(2)}
+                className="h-11 rounded-xl bg-orange-600 px-6 font-black text-white hover:bg-orange-700"
+              >
+                Weiter zum Paket
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : null}
 
-      {wizardStep === 2 ? (
+      {showPackageEditor && wizardStep === 2 ? (
         <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardContent className="p-5 sm:p-6">
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
@@ -1693,7 +1798,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {wizardStep === 3 ? (
+      {showPackageEditor && wizardStep === 3 ? (
         <Card className="rounded-2xl border border-orange-200 bg-white shadow-sm">
           <CardContent className="p-5 sm:p-6">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
