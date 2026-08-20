@@ -108,6 +108,7 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
         const pathIsSharedManagement =
           pathIsDachManagement || pathIsDartMarketplaceManagement
         const pathIsMemberProtected = isProtectedMemberPath(pathname)
+        const pathIsMembershipPayment = pathname === "/member-membership"
 
         if (!session?.user) {
           if (pathIsMemberProtected) {
@@ -185,8 +186,15 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
         }
 
         // Mitglieder dürfen ebenfalls alle Dartbörsen- und
-        // DACH-Veranstaltungsseiten verwenden.
-        if (!userProfile.is_guest && pathIsGuest && !pathIsSharedManagement) {
+        // DACH-Veranstaltungsseiten verwenden. /member-membership ist bewusst
+        // auch für bereits aufgenommene Gäste erreichbar und darf bei normalen
+        // Mitgliedern deshalb nicht auf die Startseite umgeleitet werden.
+        if (
+          !userProfile.is_guest &&
+          pathIsGuest &&
+          !pathIsSharedManagement &&
+          !pathIsMembershipPayment
+        ) {
           router.replace(MEMBER_HOME_ROUTE)
           return
         }

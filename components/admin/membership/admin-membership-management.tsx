@@ -660,6 +660,13 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
 
       if (insertError) throw insertError
 
+      if (status === "active") {
+        await unlockProfileWhenBaseIsActive(
+          selectedPlayerId,
+          selectedModules.map((module) => module.id),
+        )
+      }
+
       await loadData({ silent: true, keepMessage: true })
 
       setMessage({
@@ -802,6 +809,24 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
   }
 
 
+  const unlockProfileWhenBaseIsActive = async (playerId: string, moduleIds: string[]) => {
+    const baseModule = modules.find((module) => module.code === "base_membership" && module.is_active)
+    if (!baseModule || !moduleIds.includes(baseModule.id)) return
+
+    const { error } = await supabase
+      .from("user_profiles")
+      .update({
+        is_guest: false,
+        is_blocked: false,
+        blocked_reason: null,
+        blocked_at: null,
+      })
+      .eq("player_id", playerId)
+
+    if (error) throw error
+  }
+
+
   const approveChangeRequest = async (request: MembershipChangeRequest) => {
     if (!user) return
 
@@ -883,6 +908,11 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
         .insert(moduleRows)
 
       if (insertError) throw insertError
+
+      await unlockProfileWhenBaseIsActive(
+        request.player_id,
+        requestRows.map((row) => row.module_id),
+      )
 
       const { error: requestError } = await supabase
         .from("membership_change_requests")

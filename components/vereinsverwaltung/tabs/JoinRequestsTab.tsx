@@ -261,7 +261,9 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
         .from("user_profiles")
         .update({
           player_id: clubPlayerId,
-          is_guest: false,
+          // Der Beitritt ist angenommen, aber bis zur aktivierten Grundmitgliedschaft
+          // bleibt der Account im eingeschränkten Gastmodus. Stripe/Admin schaltet ihn danach frei.
+          is_guest: true,
           is_blocked: false,
           blocked_reason: null,
           blocked_at: null,
@@ -297,8 +299,8 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
       setMessage({
         type: mailSent ? "success" : "error",
         text: mailSent
-          ? `${row.full_name} wurde als Vereinsmitglied aufgenommen. Die Willkommensmail wurde gesendet.`
-          : `${row.full_name} wurde als Vereinsmitglied aufgenommen. Achtung: ${mailErrorText}`,
+          ? `${row.full_name} wurde aufgenommen. Bis zur aktiven Grundmitgliedschaft bleibt der Zugang eingeschränkt. Die Infomail wurde gesendet.`
+          : `${row.full_name} wurde aufgenommen. Bis zur aktiven Grundmitgliedschaft bleibt der Zugang eingeschränkt. Achtung: ${mailErrorText}`,
       })
 
       await load()
@@ -438,7 +440,7 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
                       </Badge>
                     ) : row.status === "approved" ? (
                       <Badge className="w-fit bg-green-600 text-white">
-                        <UserCheck className="mr-1 h-3 w-3" /> Vereinsmitglied
+                        <UserCheck className="mr-1 h-3 w-3" /> Aufgenommen · Grundmitgliedschaft prüfen
                       </Badge>
                     ) : null}
                   </div>

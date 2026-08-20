@@ -19,6 +19,36 @@ function stripeId(value: string | Stripe.Customer | Stripe.Subscription | null |
   return typeof value === "string" ? value : value.id
 }
 
+async function activateMemberProfileIfBaseIncluded(
+  supabase: ReturnType<typeof createClient>,
+  playerId: string,
+  moduleIds: string[],
+) {
+  if (!playerId || moduleIds.length === 0) return
+
+  const { data: baseModule, error: baseError } = await supabase
+    .from("membership_modules")
+    .select("id")
+    .eq("code", "base_membership")
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (baseError) throw baseError
+  if (!baseModule?.id || !moduleIds.includes(baseModule.id)) return
+
+  const { error: profileError } = await supabase
+    .from("user_profiles")
+    .update({
+      is_guest: false,
+      is_blocked: false,
+      blocked_reason: null,
+      blocked_at: null,
+    })
+    .eq("player_id", playerId)
+
+  if (profileError) throw profileError
+}
+
 export async function POST(request: Request) {
   if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !supabaseServiceRoleKey) {
     console.error("Stripe webhook: server environment is incomplete")
@@ -144,6 +174,14 @@ export async function POST(request: Request) {
         )
 
       if (insertError) throw insertError
+
+      // Erst eine bezahlte Grundmitgliedschaft macht aus einem aufgenommenen
+      // Gastprofil einen voll freigeschalteten Vereinsaccount.
+      await activateMemberProfileIfBaseIncluded(
+        supabase,
+        changeRequest.player_id,
+        requestRows.map((row) => row.module_id),
+      )
 
       const now = new Date().toISOString()
       const { error: approveError } = await supabase

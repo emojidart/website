@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       process.env.RESEND_FROM_EMAIL ||
       "EMD VereinsApp <noreply@emojisdartverein.com>"
 
-    const subject = "Willkommen im Emojis Dartverein 🎯"
+    const subject = "Deine Beitrittsanfrage wurde bestätigt 🎯"
     const safeName = escapeHtml(firstName(fullName))
 
     const html = `
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
 
               <p style="margin:0 0 18px;font-size:16px;line-height:1.65;color:#3f3f46;">
                 herzlich willkommen im <strong style="color:#18181b;">Emojis Dartverein</strong>!
-                Dein Vereinszugang wurde freigeschaltet.
+                Deine Aufnahme in den Verein wurde bestätigt. Der vollständige Vereinszugang wird nach Aktivierung deiner Grundmitgliedschaft freigeschaltet.
               </p>
 
               <div style="margin:24px 0;background:#fff7ed;border:1px solid #fed7aa;border-radius:18px;padding:18px;">
@@ -95,8 +95,9 @@ export async function POST(request: Request) {
                   Dein nächster Schritt
                 </div>
                 <div style="font-size:15px;line-height:1.6;color:#7c2d12;">
-                  Öffne die EMD VereinsApp und wähle dort unter
-                  <strong>„Meine Mitgliedschaft“</strong> deine gewünschten Pakete und Module aus.
+                  Öffne die EMD VereinsApp und schließe unter
+                  <strong>„Meine Mitgliedschaft“</strong> mindestens die verpflichtende Grundmitgliedschaft ab.
+                  Danach wird dein Vereinszugang freigeschaltet. Weitere Module kannst du optional dazuwählen.
                 </div>
               </div>
 <p style="margin:0;font-size:16px;line-height:1.6;color:#3f3f46;">
@@ -122,9 +123,10 @@ Hallo ${firstName(fullName)},
 deine Beitrittsanfrage wurde bestätigt.
 Herzlich willkommen im Emojis Dartverein!
 
-Dein Vereinszugang wurde freigeschaltet.
+Deine Aufnahme in den Verein wurde bestätigt. Der vollständige Vereinszugang wird nach Aktivierung deiner Grundmitgliedschaft freigeschaltet.
 
-Öffne jetzt die EMD VereinsApp und wähle dort unter „Meine Mitgliedschaft“ deine gewünschten Pakete und Module aus.
+Öffne jetzt die EMD VereinsApp und schließe unter „Meine Mitgliedschaft“ mindestens die verpflichtende Grundmitgliedschaft ab.
+Danach wird dein Vereinszugang freigeschaltet. Weitere Module kannst du optional dazuwählen.
 
 
 Wir freuen uns, dich im Verein dabei zu haben.
