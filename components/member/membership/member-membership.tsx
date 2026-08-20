@@ -914,7 +914,10 @@ export function MemberMembership() {
               </div>
 
               <Badge className="w-fit bg-orange-600">
-                {requestStatusLabel(pendingRequest.requested_status)}
+                {pendingRequest.payment_method === "stripe" &&
+                pendingRequest.payment_status !== "paid"
+                  ? "Zahlung ausständig"
+                  : requestStatusLabel(pendingRequest.requested_status)}
               </Badge>
             </div>
           </CardHeader>
@@ -1007,7 +1010,9 @@ export function MemberMembership() {
               {cancelling ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              Anfrage stornieren
+              {pendingRequest.payment_method === "stripe"
+                ? "Paketänderung abbrechen"
+                : "Anfrage stornieren"}
             </Button>
           </CardContent>
         </Card>
@@ -1474,7 +1479,9 @@ export function MemberMembership() {
             </div>
           ) : (
             <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-              <div className="font-black text-gray-900">Stripe-Zahlung</div>
+              <div className="font-black text-gray-900">
+                {membership ? "Stripe-Paketänderung" : "Stripe-Zahlung"}
+              </div>
               <p className="mt-2 text-sm font-semibold text-gray-600">
                 {membership
                   ? "Dein bestehendes Stripe-Abo wird direkt angepasst. Es wird kein zweites Abo erstellt."
@@ -1505,8 +1512,8 @@ export function MemberMembership() {
                       ? "Stripe-Abo wird angepasst..."
                       : "Stripe wird geöffnet..."
                     : membership
-                      ? "Paketänderung mit Stripe bezahlen"
-                      : "Jetzt mit Stripe bezahlen"}
+                      ? "Paketänderung mit Stripe abschließen"
+                      : "Mitgliedschaft mit Stripe abschließen"}
                 </Button>
               ) : (
                 <div className="mt-3 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-bold text-blue-800">
