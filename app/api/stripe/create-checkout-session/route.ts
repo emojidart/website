@@ -257,7 +257,7 @@ export async function POST(request: Request) {
       const updatedSubscription = await stripe.subscriptions.update(existingStripeSubscriptionId, {
         items,
         proration_behavior: "always_invoice",
-        payment_behavior: "error_if_incomplete",
+        payment_behavior: "pending_if_incomplete",
         metadata: {
           ...subscription.metadata,
           membership_request_id: requestId,
@@ -271,6 +271,23 @@ export async function POST(request: Request) {
           ? updatedSubscription.customer
           : updatedSubscription.customer?.id || existingStripeCustomerId
 
+      // pending_if_incomplete ist hier entscheidend:
+      // Wenn die sofortige Rechnung nicht bezahlt werden kann, wendet Stripe
+      // die Paketänderung NICHT an und liefert pending_update zurück.
+      if (updatedSubscription.pending_update) {
+        return NextResponse.json(
+          {
+            error:
+              "Die Stripe-Zahlung für die Paketänderung konnte nicht abgeschlossen werden. Dein bisheriges Paket bleibt unverändert. Bitte prüfe deine Zahlungsmethode und versuche es erneut.",
+            paymentPending: true,
+            subscriptionId: updatedSubscription.id,
+          },
+          { status: 402 },
+        )
+      }
+
+      // Kein pending_update = Änderung wurde von Stripe tatsächlich angewendet
+      // (z. B. Zahlung erfolgreich oder Änderung ohne zusätzlichen Zahlbetrag).
       await applyPaidRequest(supabase, {
         requestId,
         membershipId: existingMembershipId,

@@ -54,6 +54,10 @@ async function applyPendingStripeChangeFromSubscription(
   supabase: ReturnType<typeof createClient>,
   subscription: Stripe.Subscription,
 ) {
+  // Solange Stripe eine pending_update hat, ist die neue Paketänderung
+  // noch NICHT bezahlt/angewendet. Das bestehende Paket bleibt aktiv.
+  if (subscription.pending_update) return
+
   const requestId = subscription.metadata?.membership_request_id
   if (!requestId) return
 
@@ -318,6 +322,17 @@ export async function POST(request: Request) {
       }
     }
 
+    if (event.type === "customer.subscription.pending_update_applied") {
+      const subscription = event.data.object as Stripe.Subscription
+      await applyPendingStripeChangeFromSubscription(supabase, subscription)
+    }
+
+    if (event.type === "customer.subscription.pending_update_expired") {
+      // Keine Freischaltung. Das bisherige Paket bleibt unverändert.
+      const subscription = event.data.object as Stripe.Subscription
+      console.warn("Stripe pending membership update expired", subscription.id)
+    }
+
     if (event.type === "customer.subscription.deleted") {
       const subscription = event.data.object as Stripe.Subscription
 
@@ -344,16 +359,46 @@ export async function POST(request: Request) {
             null
 
       if (subscriptionId) {
-        const { error } = await supabase
+        const { data: membership, error: membershipLookupError } = await supabase
           .from("member_memberships")
-          .update({
-            status: "paused",
-            stripe_status: "payment_failed",
-            updated_at: new Date().toISOString(),
-          })
+          .select("id")
           .eq("stripe_subscription_id", subscriptionId)
+          .maybeSingle()
 
-        if (error) throw error
+        if (membershipLookupError) throw membershipLookupError
+
+        let isPendingPackageChange = false
+
+        if (membership?.id) {
+          const { data: pendingChange, error: pendingChangeError } = await supabase
+            .from("membership_change_requests")
+            .select("id")
+            .eq("current_membership_id", membership.id)
+            .eq("payment_method", "stripe")
+            .eq("requested_status", "pending")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+          if (pendingChangeError) throw pendingChangeError
+          isPendingPackageChange = !!pendingChange?.id
+        }
+
+        if (!isPendingPackageChange) {
+          // Nur eine echte fehlgeschlagene reguläre Abo-Rechnung pausiert
+          // die aktive Mitgliedschaft. Eine fehlgeschlagene Paket-Erweiterung
+          // darf das bereits bezahlte bisherige Paket nicht sperren.
+          const { error } = await supabase
+            .from("member_memberships")
+            .update({
+              status: "paused",
+              stripe_status: "payment_failed",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("stripe_subscription_id", subscriptionId)
+
+          if (error) throw error
+        }
       }
     }
 
