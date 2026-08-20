@@ -332,6 +332,10 @@ export async function POST(request: Request) {
         billing_cycle: String(changeRequest.billing_cycle),
       },
       subscription_data: {
+        // Für unsere Vereinsmitgliedschaft muss die erste Periode sofort bezahlt werden.
+        // Bei aktuellen Stripe-API-Versionen kann flexible Billing sonst dazu führen,
+        // dass das Abo aktiv ist, obwohl die erste Belastung erst zum Periodenende erfolgt.
+        billing_mode: { type: "classic" },
         metadata: {
           membership_request_id: requestId,
           player_id: String(profile.player_id),

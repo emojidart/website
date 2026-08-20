@@ -179,6 +179,17 @@ export async function POST(request: Request) {
         return NextResponse.json({ received: true })
       }
 
+      // Eine Mitgliedschaft darf erst nach tatsächlich erfolgreicher Erstzahlung
+      // freigeschaltet werden. "checkout.session.completed" allein reicht nicht.
+      if (session.payment_status !== "paid") {
+        console.warn(
+          "Stripe checkout completed but payment is not paid",
+          session.id,
+          session.payment_status,
+        )
+        return NextResponse.json({ received: true })
+      }
+
       const { data: changeRequest, error: requestError } = await supabase
         .from("membership_change_requests")
         .select("id,player_id,current_membership_id,billing_cycle,payment_method,requested_status,starts_on")
