@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       process.env.RESEND_API_KEY
 
     if (!resendApiKey) {
-      console.error("[club-join-approved-mail] Resend API-Key fehlt.")
+      console.error("[club-join-approved-mail] RESEND_API_KEY / GUEST_RESEND_API_KEY fehlt.")
       return NextResponse.json(
         { error: "Mail-Konfiguration fehlt." },
         { status: 500 },
@@ -167,13 +167,28 @@ Emojis Dartverein
 
     if (!resendResponse.ok) {
       console.error("[club-join-approved-mail] Resend Fehler:", resendData)
+
+      const resendMessage =
+        resendData?.message ||
+        resendData?.error?.message ||
+        resendData?.error ||
+        "Unbekannter Resend-Fehler"
+
       return NextResponse.json(
-        { error: "Mail konnte nicht gesendet werden." },
-        { status: 500 },
+        {
+          error: `Mail konnte nicht gesendet werden: ${resendMessage}`,
+          resend: resendData,
+        },
+        { status: resendResponse.status || 500 },
       )
     }
 
-    return NextResponse.json({ ok: true })
+    console.log("[club-join-approved-mail] Mail erfolgreich gesendet:", {
+      to: email,
+      id: resendData?.id || null,
+    })
+
+    return NextResponse.json({ ok: true, id: resendData?.id || null })
   } catch (error: any) {
     console.error("[club-join-approved-mail] Fehler:", error)
     return NextResponse.json(

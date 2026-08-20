@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Users,
   Mail,
+  MailCheck,
   Phone,
   CheckCircle,
   XCircle,
@@ -324,6 +325,7 @@ export function GuestRequestsManagement() {
         : null
 
       let mailWasSent = true
+      let mailErrorText = ""
 
       try {
         await sendGuestApprovedMail(request)
@@ -333,6 +335,9 @@ export function GuestRequestsManagement() {
           mailError,
         )
         mailWasSent = false
+        mailErrorText =
+          mailError?.message ||
+          "Bestätigungsmail konnte nicht gesendet werden."
       }
 
       const approvalText = linkedPlayer
@@ -343,7 +348,7 @@ export function GuestRequestsManagement() {
         type: mailWasSent ? "success" : "error",
         text: mailWasSent
           ? `${approvalText} Bestätigungsmail wurde gesendet.`
-          : `${approvalText} Achtung: Die Bestätigungsmail konnte nicht gesendet werden.`,
+          : `${approvalText} Achtung: ${mailErrorText}`,
       })
 
       setSelectedPlayerByRequestId((prev) => {
@@ -359,6 +364,34 @@ export function GuestRequestsManagement() {
       setMessage({
         type: "error",
         text: err?.message || "Gastzugang konnte nicht freigeschaltet werden.",
+      })
+    } finally {
+      setSavingId(null)
+    }
+  }
+
+  const handleResendApprovalMail = async (request: GuestRequest) => {
+    try {
+      setSavingId(request.id)
+      setMessage(null)
+
+      const result = await sendGuestApprovedMail(request)
+
+      setMessage({
+        type: "success",
+        text: `Bestätigungsmail an ${request.email} wurde erneut gesendet${result?.id ? ` (Resend-ID: ${result.id})` : ""}.`,
+      })
+    } catch (mailError: any) {
+      console.error(
+        "[GuestRequestsManagement] Bestätigungsmail erneut senden fehlgeschlagen:",
+        mailError,
+      )
+
+      setMessage({
+        type: "error",
+        text:
+          mailError?.message ||
+          "Bestätigungsmail konnte nicht erneut gesendet werden.",
       })
     } finally {
       setSavingId(null)
@@ -677,6 +710,26 @@ export function GuestRequestsManagement() {
                             {new Date(request.created_at).toLocaleString("de-AT")}
                           </div>
                         </div>
+
+                        {!isPending && request.status === "approved" && (
+                          <div className="flex shrink-0 flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={isSaving}
+                              onClick={() => void handleResendApprovalMail(request)}
+                              className="h-9 rounded-xl bg-white text-xs font-bold"
+                            >
+                              {isSaving ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <MailCheck className="mr-2 h-4 w-4" />
+                              )}
+                              Bestätigungsmail erneut senden
+                            </Button>
+                          </div>
+                        )}
 
                         {!isPending && linkedPlayer && (
                           <div className="min-w-0 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 lg:min-w-[240px]">

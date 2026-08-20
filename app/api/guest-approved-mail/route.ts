@@ -38,8 +38,8 @@ export async function POST(request: Request) {
     }
 
     const resendApiKey =
-      process.env.RESEND_API_KEY ||
-      process.env.GUEST_RESEND_API_KEY
+      process.env.GUEST_RESEND_API_KEY ||
+      process.env.RESEND_API_KEY
 
     if (!resendApiKey) {
       console.error("[guest-approved-mail] RESEND_API_KEY / GUEST_RESEND_API_KEY fehlt.")
