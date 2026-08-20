@@ -49,6 +49,95 @@ async function activateMemberProfileIfBaseIncluded(
   if (profileError) throw profileError
 }
 
+
+async function applyPendingStripeChangeFromSubscription(
+  supabase: ReturnType<typeof createClient>,
+  subscription: Stripe.Subscription,
+) {
+  const requestId = subscription.metadata?.membership_request_id
+  if (!requestId) return
+
+  const { data: changeRequest, error: requestError } = await supabase
+    .from("membership_change_requests")
+    .select("id,player_id,current_membership_id,billing_cycle,payment_method,requested_status,payment_status")
+    .eq("id", requestId)
+    .maybeSingle()
+
+  if (requestError) throw requestError
+  if (!changeRequest) return
+  if (changeRequest.requested_status !== "pending") return
+  if (changeRequest.payment_method !== "stripe") return
+  if (!changeRequest.current_membership_id) return
+
+  const { data: requestRows, error: rowsError } = await supabase
+    .from("membership_change_request_modules")
+    .select("module_id,monthly_price_snapshot,annual_price_snapshot")
+    .eq("request_id", requestId)
+
+  if (rowsError) throw rowsError
+  if (!requestRows || requestRows.length === 0) return
+
+  const now = new Date().toISOString()
+  const stripeStatus = subscription.status
+  const membershipStatus =
+    stripeStatus === "active" || stripeStatus === "trialing" ? "active" : "paused"
+
+  const { error: membershipError } = await supabase
+    .from("member_memberships")
+    .update({
+      billing_cycle: changeRequest.billing_cycle,
+      payment_method: "stripe",
+      status: membershipStatus,
+      stripe_customer_id: stripeId(subscription.customer as any),
+      stripe_subscription_id: subscription.id,
+      stripe_status: stripeStatus,
+      updated_at: now,
+    })
+    .eq("id", changeRequest.current_membership_id)
+
+  if (membershipError) throw membershipError
+
+  const { error: deleteError } = await supabase
+    .from("member_membership_modules")
+    .delete()
+    .eq("membership_id", changeRequest.current_membership_id)
+
+  if (deleteError) throw deleteError
+
+  const { error: insertError } = await supabase
+    .from("member_membership_modules")
+    .insert(
+      requestRows.map((row) => ({
+        membership_id: changeRequest.current_membership_id,
+        module_id: row.module_id,
+        monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+        annual_price_snapshot: Number(row.annual_price_snapshot || 0),
+      })),
+    )
+
+  if (insertError) throw insertError
+
+  await activateMemberProfileIfBaseIncluded(
+    supabase,
+    changeRequest.player_id,
+    requestRows.map((row) => row.module_id),
+  )
+
+  const { error: approveError } = await supabase
+    .from("membership_change_requests")
+    .update({
+      payment_status: "paid",
+      paid_at: now,
+      requested_status: "approved",
+      reviewed_at: now,
+      updated_at: now,
+    })
+    .eq("id", requestId)
+    .eq("requested_status", "pending")
+
+  if (approveError) throw approveError
+}
+
 export async function POST(request: Request) {
   if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !supabaseServiceRoleKey) {
     console.error("Stripe webhook: server environment is incomplete")
@@ -223,6 +312,10 @@ export async function POST(request: Request) {
         .eq("stripe_subscription_id", subscription.id)
 
       if (error) throw error
+
+      if (event.type === "customer.subscription.updated") {
+        await applyPendingStripeChangeFromSubscription(supabase, subscription)
+      }
     }
 
     if (event.type === "customer.subscription.deleted") {

@@ -150,6 +150,7 @@ export function MemberMembership() {
   const [cancelEndOn, setCancelEndOn] = useState("")
   const [cancelNote, setCancelNote] = useState("")
   const [showCancelForm, setShowCancelForm] = useState(false)
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1)
 
   const [message, setMessage] = useState<{
     type: "success" | "error" | "info"
@@ -284,6 +285,9 @@ export function MemberMembership() {
       const currentPending = ((requestData || [])[0] || null) as ChangeRequest | null
       setPendingRequest(currentPending)
       setActiveTrials((trialData || []) as MembershipTrial[])
+      if (currentPending) {
+        setWizardStep(3)
+      }
 
       let requestModuleIds: string[] = []
 
@@ -546,6 +550,12 @@ export function MemberMembership() {
 
       if (!response.ok) {
         throw new Error(payload?.error || "Stripe Checkout konnte nicht gestartet werden.")
+      }
+
+      if (payload?.updated) {
+        window.location.href =
+          payload?.redirectUrl || "/member-membership?stripe=updated"
+        return
       }
 
       if (!payload?.url) {
@@ -832,7 +842,52 @@ export function MemberMembership() {
         </div>
       ) : null}
 
-      {pendingRequest ? (
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { step: 1 as const, label: "Zahlung" },
+            { step: 2 as const, label: "Paket" },
+            { step: 3 as const, label: "Prüfen & abschließen" },
+          ].map((item) => {
+            const active = wizardStep === item.step
+            const done = wizardStep > item.step
+
+            return (
+              <div key={item.step} className="flex min-w-0 items-center gap-2">
+                <div
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-black",
+                    active && "border-orange-600 bg-orange-600 text-white",
+                    done && "border-green-600 bg-green-600 text-white",
+                    !active && !done && "border-gray-200 bg-gray-50 text-gray-500",
+                  )}
+                >
+                  {done ? "✓" : item.step}
+                </div>
+                <div
+                  className={cn(
+                    "hidden text-xs font-black sm:block",
+                    active ? "text-orange-700" : done ? "text-green-700" : "text-gray-500",
+                  )}
+                >
+                  {item.label}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="mt-3 text-sm font-semibold text-gray-600 sm:hidden">
+          Schritt {wizardStep} von 3 ·{" "}
+          {wizardStep === 1
+            ? "Zahlung"
+            : wizardStep === 2
+              ? "Paket"
+              : "Prüfen & abschließen"}
+        </div>
+      </div>
+
+      {pendingRequest && wizardStep === 3 ? (
         <Card className="rounded-2xl border border-orange-200 bg-orange-50 shadow-sm">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -841,7 +896,9 @@ export function MemberMembership() {
                   <AlertCircle className="h-5 w-5" />
                   {pendingRequest.request_type === "cancel"
                     ? "Offene Kündigungsanfrage"
-                    : "Offene Änderungsanfrage"}
+                    : pendingRequest.payment_method === "stripe"
+                      ? "Paketänderung bereit"
+                      : "Offene Änderungsanfrage"}
                 </CardTitle>
                 <CardDescription className="mt-1 font-semibold text-orange-800">
                   {pendingRequest.request_type === "cancel"
@@ -850,7 +907,9 @@ export function MemberMembership() {
                           ? new Date(`${pendingRequest.requested_end_on}T00:00:00`).toLocaleDateString("de-AT")
                           : "gewünschten Termin"
                       } beendet werden. Bis dahin bleibt dein Paket aktiv.`
-                    : "Das aktuelle Paket bleibt bis zur Bestätigung aktiv. Unten siehst du bereits, was aktiviert bzw. deaktiviert werden soll."}
+                    : pendingRequest.payment_method === "stripe"
+                      ? "Deine Auswahl ist gespeichert. Prüfe unten die Zusammenfassung und schließe anschließend die Stripe-Zahlung ab."
+                      : "Das aktuelle Paket bleibt bis zur Bestätigung aktiv. Unten siehst du bereits, was aktiviert bzw. deaktiviert werden soll."}
                 </CardDescription>
               </div>
 
@@ -992,9 +1051,10 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
+      {wizardStep === 1 ? (
       <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle>Abrechnung & Zahlungsart</CardTitle>
+          <CardTitle>1. Abrechnung & Zahlungsart</CardTitle>
           <CardDescription>
             Monatliche Zahlung ist ausschließlich über Stripe möglich.
           </CardDescription>
@@ -1050,10 +1110,12 @@ export function MemberMembership() {
           ) : null}
         </CardContent>
       </Card>
+      ) : null}
 
+      {wizardStep === 2 ? (
       <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle>{pendingRequest ? "Beantragtes Paket" : "Meine Module"}</CardTitle>
+          <CardTitle>2. Dein Paket</CardTitle>
           <CardDescription>
             {pendingRequest
               ? "Die Schalter zeigen den beantragten Zielstand. Dein bisheriges Paket bleibt bis zur Bestätigung gültig."
@@ -1186,8 +1248,9 @@ export function MemberMembership() {
           })}
         </CardContent>
       </Card>
+      ) : null}
 
-      {membership && hasChanges && paymentDue === 0 && !pendingRequest ? (
+      {wizardStep === 3 && membership && hasChanges && paymentDue === 0 && !pendingRequest ? (
         <Card className="rounded-2xl border border-green-200 bg-green-50 shadow-sm">
           <CardContent className="p-4 sm:p-5">
             <div className="font-black text-green-900">Keine zusätzliche Zahlung erforderlich</div>
@@ -1199,7 +1262,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {showPaymentSection ? (
+      {wizardStep === 3 && showPaymentSection ? (
         <Card className="rounded-2xl border border-orange-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -1413,8 +1476,9 @@ export function MemberMembership() {
             <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
               <div className="font-black text-gray-900">Stripe-Zahlung</div>
               <p className="mt-2 text-sm font-semibold text-gray-600">
-                Du wirst zur sicheren Stripe-Zahlungsseite weitergeleitet. Nach erfolgreicher Zahlung
-                wird deine Mitgliedschaft automatisch freigeschaltet.
+                {membership
+                  ? "Dein bestehendes Stripe-Abo wird direkt angepasst. Es wird kein zweites Abo erstellt."
+                  : "Beim Abschluss wird Stripe automatisch geöffnet. Nach erfolgreicher Zahlung wird deine Mitgliedschaft freigeschaltet."}
               </p>
 
               {pendingRequest?.payment_status === "paid" ? (
@@ -1436,11 +1500,19 @@ export function MemberMembership() {
                   ) : (
                     <CreditCard className="mr-2 h-4 w-4" />
                   )}
-                  {checkoutLoading ? "Stripe wird geöffnet..." : "Jetzt mit Stripe bezahlen"}
+                  {checkoutLoading
+                    ? membership
+                      ? "Stripe-Abo wird angepasst..."
+                      : "Stripe wird geöffnet..."
+                    : membership
+                      ? "Paketänderung mit Stripe bezahlen"
+                      : "Jetzt mit Stripe bezahlen"}
                 </Button>
               ) : (
                 <div className="mt-3 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-bold text-blue-800">
-                  Klicke unten auf „Paket verbindlich anfragen“. Danach öffnet sich Stripe automatisch.
+                  {membership
+                    ? "Klicke unten auf „Paketänderung mit Stripe bestätigen“. Die Änderung wird gespeichert und anschließend direkt über dein bestehendes Stripe-Abo verrechnet."
+                    : "Klicke unten auf „Mitgliedschaft mit Stripe abschließen“. Danach öffnet sich Stripe automatisch."}
                 </div>
               )}
             </div>
@@ -1457,7 +1529,7 @@ export function MemberMembership() {
               Mitgliedschaft kündigen
             </CardTitle>
             <CardDescription>
-              Damit wird die komplette Grundmitgliedschaft inklusive aller Zusatzmodule beendet. Einzelne Module entfernst du oben über „Paket verbindlich anfragen“.
+              Damit wird die komplette Grundmitgliedschaft inklusive aller Zusatzmodule beendet. Einzelne Module änderst du oben und bestätigst anschließend die Paketänderung.
             </CardDescription>
           </CardHeader>
 
@@ -1532,82 +1604,182 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <CardContent className="p-5 sm:p-6">
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
+      {wizardStep === 1 ? (
+        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                <Euro className="h-5 w-5 text-orange-600" />
-                <div className="text-sm font-black uppercase tracking-wide text-gray-500">
-                  Gewähltes Paket
-                </div>
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-end gap-x-6 gap-y-2">
-                <div>
-                  <div className="text-3xl font-black text-gray-900">
-                    {formatEUR(monthlyTotal)}
-                  </div>
-                  <div className="text-sm font-semibold text-gray-500">pro Monat</div>
-                </div>
-
-                <div>
-                  <div className="text-3xl font-black text-orange-600">
-                    {formatEUR(annualTotal)}
-                  </div>
-                  <div className="text-sm font-semibold text-gray-500">pro Jahr</div>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Badge variant="outline" className="rounded-full">
-                  {selectedModules.length} Module
-                </Badge>
-                <Badge variant="outline" className="rounded-full">
-                  {billingCycle === "monthly" ? "Monatliche Abrechnung" : "Jährliche Abrechnung"}
-                </Badge>
-                <Badge variant="outline" className="rounded-full">
-                  {paymentLabel(paymentMethod)}
-                </Badge>
+              <div className="font-black text-gray-900">Zahlungsweise</div>
+              <div className="mt-1 text-sm font-semibold text-gray-600">
+                {billingCycle === "monthly" ? "Monatlich" : "Jährlich"} · {paymentLabel(paymentMethod)}
               </div>
             </div>
 
             <Button
               type="button"
-              onClick={submitRequest}
-              disabled={submitting || !!pendingRequest || !hasChanges}
-              className={cn(
-                "h-12 rounded-xl px-6 font-black text-white",
-                !hasChanges && membership
-                  ? "bg-green-600 disabled:opacity-100"
-                  : "bg-orange-600 hover:bg-orange-700",
-              )}
+              onClick={() => setWizardStep(2)}
+              className="h-11 rounded-xl bg-orange-600 px-6 font-black text-white hover:bg-orange-700"
             >
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Wird gesendet...
-                </>
-              ) : !hasChanges && membership ? (
-                <>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Aktuelles Paket ✓
-                </>
-              ) : pendingRequest ? (
-                <>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Anfrage bereits offen
-                </>
-              ) : (
-                <>
-                  <Send className="mr-2 h-4 w-4" />
-                  Paket verbindlich anfragen
-                </>
-              )}
+              Weiter zum Paket
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {wizardStep === 2 ? (
+        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <CardContent className="p-5 sm:p-6">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <div className="text-sm font-black uppercase tracking-wide text-gray-500">
+                  Dein neues Paket
+                </div>
+                <div className="mt-2 text-3xl font-black text-gray-900">
+                  {billingCycle === "monthly"
+                    ? `${formatEUR(monthlyTotal)} / Monat`
+                    : `${formatEUR(annualTotal)} / Jahr`}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {selectedModules.map((module) => (
+                    <Badge key={module.id} variant="outline" className="rounded-full">
+                      {module.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setWizardStep(1)}
+                  className="h-11 rounded-xl"
+                >
+                  Zurück
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setWizardStep(3)}
+                  className="h-11 rounded-xl bg-orange-600 px-6 font-black text-white hover:bg-orange-700"
+                >
+                  Weiter zur Zusammenfassung
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {wizardStep === 3 ? (
+        <Card className="rounded-2xl border border-orange-200 bg-white shadow-sm">
+          <CardContent className="p-5 sm:p-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <div className="text-sm font-black uppercase tracking-wide text-orange-700">
+                  Zusammenfassung
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-xs font-black uppercase text-gray-500">Aktuell</div>
+                    <div className="mt-1 text-xl font-black text-gray-900">
+                      {membership
+                        ? billingCycle === "monthly"
+                          ? `${formatEUR(currentMonthlyTotal)} / Monat`
+                          : `${formatEUR(currentAnnualTotal)} / Jahr`
+                        : "Keine aktive Mitgliedschaft"}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-orange-200 bg-orange-50 p-3">
+                    <div className="text-xs font-black uppercase text-orange-700">Neu</div>
+                    <div className="mt-1 text-xl font-black text-gray-900">
+                      {billingCycle === "monthly"
+                        ? `${formatEUR(monthlyTotal)} / Monat`
+                        : `${formatEUR(annualTotal)} / Jahr`}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
+                    <div className="text-xs font-black uppercase text-blue-700">
+                      {membership ? "Zusätzlich" : "Zu zahlen"}
+                    </div>
+                    <div className="mt-1 text-xl font-black text-gray-900">
+                      {membership
+                        ? billingCycle === "monthly"
+                          ? `${formatEUR(paymentMonthlyDue)} / Monat`
+                          : `${formatEUR(paymentAnnualDue)} / Jahr`
+                        : billingCycle === "monthly"
+                          ? `${formatEUR(monthlyTotal)} / Monat`
+                          : `${formatEUR(annualTotal)} / Jahr`}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {selectedModules.map((module) => (
+                    <Badge key={module.id} className="rounded-full bg-green-600 text-white">
+                      ✓ {module.name}
+                    </Badge>
+                  ))}
+                </div>
+
+                {paymentMethod === "stripe" && membership ? (
+                  <p className="mt-4 text-sm font-semibold text-gray-600">
+                    Dein bestehendes Stripe-Abo wird angepasst. Es wird kein zweites Abo erstellt.
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {!pendingRequest ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setWizardStep(2)}
+                    className="h-12 rounded-xl"
+                  >
+                    Zurück
+                  </Button>
+                ) : null}
+
+                {!pendingRequest ? (
+                  <Button
+                    type="button"
+                    onClick={submitRequest}
+                    disabled={submitting || !hasChanges}
+                    className="h-12 rounded-xl bg-orange-600 px-6 font-black text-white hover:bg-orange-700"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Wird verarbeitet...
+                      </>
+                    ) : paymentMethod === "stripe" ? (
+                      <>
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        {membership
+                          ? "Paketänderung mit Stripe bestätigen"
+                          : "Mitgliedschaft mit Stripe abschließen"}
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Paket verbindlich anfragen
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-800">
+                    {paymentMethod === "stripe"
+                      ? "Die Änderung ist bereits vorbereitet. Schließe die Stripe-Zahlung oben ab."
+                      : "Die Anfrage wurde bereits gesendet."}
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   )
 }

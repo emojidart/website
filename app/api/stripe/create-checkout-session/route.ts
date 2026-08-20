@@ -15,6 +15,74 @@ function getBaseUrl(request: Request) {
   return new URL(request.url).origin
 }
 
+async function applyPaidRequest(
+  supabase: ReturnType<typeof createClient>,
+  args: {
+    requestId: string
+    membershipId: string
+    billingCycle: "monthly" | "annual"
+    playerId: string
+    stripeCustomerId: string | null
+    stripeSubscriptionId: string
+    stripeStatus: string
+    requestRows: Array<{
+      module_id: string
+      monthly_price_snapshot: number
+      annual_price_snapshot: number
+    }>
+  },
+) {
+  const now = new Date().toISOString()
+
+  const { error: membershipError } = await supabase
+    .from("member_memberships")
+    .update({
+      billing_cycle: args.billingCycle,
+      payment_method: "stripe",
+      status: args.stripeStatus === "active" || args.stripeStatus === "trialing" ? "active" : "paused",
+      stripe_customer_id: args.stripeCustomerId,
+      stripe_subscription_id: args.stripeSubscriptionId,
+      stripe_status: args.stripeStatus,
+      updated_at: now,
+    })
+    .eq("id", args.membershipId)
+
+  if (membershipError) throw membershipError
+
+  const { error: deleteError } = await supabase
+    .from("member_membership_modules")
+    .delete()
+    .eq("membership_id", args.membershipId)
+
+  if (deleteError) throw deleteError
+
+  const { error: insertError } = await supabase
+    .from("member_membership_modules")
+    .insert(
+      args.requestRows.map((row) => ({
+        membership_id: args.membershipId,
+        module_id: row.module_id,
+        monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+        annual_price_snapshot: Number(row.annual_price_snapshot || 0),
+      })),
+    )
+
+  if (insertError) throw insertError
+
+  const { error: approveError } = await supabase
+    .from("membership_change_requests")
+    .update({
+      payment_status: "paid",
+      paid_at: now,
+      requested_status: "approved",
+      reviewed_at: now,
+      updated_at: now,
+    })
+    .eq("id", args.requestId)
+
+  if (approveError) throw approveError
+}
+
 export async function POST(request: Request) {
   try {
     if (!stripeSecretKey) {
@@ -82,14 +150,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Diese Anfrage wurde bereits bezahlt." }, { status: 409 })
     }
 
-    const { data: requestModules, error: requestModulesError } = await supabase
+    const { data: requestRows, error: requestModulesError } = await supabase
       .from("membership_change_request_modules")
-      .select("module_id")
+      .select("module_id,monthly_price_snapshot,annual_price_snapshot")
       .eq("request_id", requestId)
 
     if (requestModulesError) throw requestModulesError
 
-    const moduleIds = (requestModules || []).map((row) => row.module_id)
+    const moduleIds = (requestRows || []).map((row) => row.module_id)
     if (moduleIds.length === 0) {
       return NextResponse.json({ error: "Für diese Anfrage wurden keine Module gefunden." }, { status: 400 })
     }
@@ -131,36 +199,105 @@ export async function POST(request: Request) {
       )
     }
 
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = lookupKeys.map((key) => ({
-      price: priceByLookupKey.get(key)!.id,
-      quantity: 1,
-    }))
+    const desiredPriceIds = lookupKeys.map((key) => priceByLookupKey.get(key)!.id)
 
     let existingStripeCustomerId: string | null = null
     let existingStripeSubscriptionId: string | null = null
+    let existingMembershipId: string | null = null
 
     if (changeRequest.current_membership_id) {
-      const { data: membership } = await supabase
+      const { data: membership, error: membershipError } = await supabase
         .from("member_memberships")
-        .select("stripe_customer_id,stripe_subscription_id")
+        .select("id,stripe_customer_id,stripe_subscription_id")
         .eq("id", changeRequest.current_membership_id)
         .maybeSingle()
 
+      if (membershipError) throw membershipError
+
+      existingMembershipId = membership?.id || null
       existingStripeCustomerId = membership?.stripe_customer_id || null
       existingStripeSubscriptionId = membership?.stripe_subscription_id || null
     }
 
-    // Bestehende Stripe-Abos werden später über einen eigenen Änderungsflow angepasst.
-    // Dadurch verhindern wir versehentlich ein zweites paralleles Abo.
-    if (existingStripeSubscriptionId) {
-      return NextResponse.json(
-        {
-          error:
-            "Für deine bestehende Stripe-Mitgliedschaft ist bereits ein Abo aktiv. Paketänderungen werden im nächsten Schritt direkt am bestehenden Abo umgesetzt.",
+    // Bestehendes Stripe-Abo direkt ändern – kein zweites Abo anlegen.
+    if (existingStripeSubscriptionId && existingMembershipId) {
+      const subscription = await stripe.subscriptions.retrieve(existingStripeSubscriptionId, {
+        expand: ["items.data.price", "customer"],
+      })
+
+      if (subscription.status === "canceled") {
+        return NextResponse.json(
+          { error: "Das bestehende Stripe-Abo ist bereits beendet. Bitte lade die Seite neu." },
+          { status: 409 },
+        )
+      }
+
+      const existingItems = subscription.items.data
+      const usedDesired = new Set<string>()
+      const items: Stripe.SubscriptionUpdateParams.Item[] = []
+
+      for (const item of existingItems) {
+        const currentPriceId =
+          typeof item.price === "string" ? item.price : item.price.id
+
+        if (desiredPriceIds.includes(currentPriceId) && !usedDesired.has(currentPriceId)) {
+          items.push({ id: item.id, price: currentPriceId, quantity: 1 })
+          usedDesired.add(currentPriceId)
+        } else {
+          items.push({ id: item.id, deleted: true })
+        }
+      }
+
+      for (const priceId of desiredPriceIds) {
+        if (!usedDesired.has(priceId)) {
+          items.push({ price: priceId, quantity: 1 })
+        }
+      }
+
+      const updatedSubscription = await stripe.subscriptions.update(existingStripeSubscriptionId, {
+        items,
+        proration_behavior: "always_invoice",
+        payment_behavior: "error_if_incomplete",
+        metadata: {
+          ...subscription.metadata,
+          membership_request_id: requestId,
+          player_id: String(profile.player_id),
+          billing_cycle: String(changeRequest.billing_cycle),
         },
-        { status: 409 },
-      )
+      })
+
+      const customerId =
+        typeof updatedSubscription.customer === "string"
+          ? updatedSubscription.customer
+          : updatedSubscription.customer?.id || existingStripeCustomerId
+
+      await applyPaidRequest(supabase, {
+        requestId,
+        membershipId: existingMembershipId,
+        billingCycle: changeRequest.billing_cycle,
+        playerId: String(profile.player_id),
+        stripeCustomerId: customerId || null,
+        stripeSubscriptionId: updatedSubscription.id,
+        stripeStatus: updatedSubscription.status,
+        requestRows: (requestRows || []).map((row) => ({
+          module_id: row.module_id,
+          monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+          annual_price_snapshot: Number(row.annual_price_snapshot || 0),
+        })),
+      })
+
+      return NextResponse.json({
+        updated: true,
+        subscriptionId: updatedSubscription.id,
+        redirectUrl: `${getBaseUrl(request)}/member-membership?stripe=updated`,
+      })
     }
+
+    // Erstabschluss: normales Stripe Checkout.
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = desiredPriceIds.map((priceId) => ({
+      price: priceId,
+      quantity: 1,
+    }))
 
     const baseUrl = getBaseUrl(request)
 
@@ -193,9 +330,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url })
   } catch (error: any) {
-    console.error("stripe create checkout error:", error)
+    console.error("stripe checkout/update error:", error)
     return NextResponse.json(
-      { error: error?.message || "Stripe Checkout konnte nicht gestartet werden." },
+      { error: error?.message || "Stripe-Zahlung konnte nicht gestartet oder angepasst werden." },
       { status: 500 },
     )
   }
