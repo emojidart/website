@@ -127,6 +127,7 @@ function buildMembershipPaymentReference(playerName: string) {
 export function MemberMembership() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [cancelling, setCancelling] = useState(false)
 
   const [playerId, setPlayerId] = useState("")
@@ -518,6 +519,49 @@ export function MemberMembership() {
     setMessage(null)
   }
 
+  const startStripeCheckout = async (requestId: string) => {
+    try {
+      setCheckoutLoading(true)
+      setMessage(null)
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
+
+      const accessToken = sessionData.session?.access_token
+      if (!accessToken) throw new Error("Deine Sitzung ist abgelaufen. Bitte melde dich neu an.")
+
+      const response = await fetch("/api/stripe/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ requestId }),
+      })
+
+      const payload = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Stripe Checkout konnte nicht gestartet werden.")
+      }
+
+      if (!payload?.url) {
+        throw new Error("Stripe hat keine Checkout-Adresse zurückgegeben.")
+      }
+
+      window.location.href = payload.url
+    } catch (error: any) {
+      console.error("stripe checkout error:", error)
+      setMessage({
+        type: "error",
+        text: error?.message || "Stripe Checkout konnte nicht gestartet werden.",
+      })
+    } finally {
+      setCheckoutLoading(false)
+    }
+  }
+
+
   const submitRequest = async () => {
     if (!playerId) return
 
@@ -564,7 +608,7 @@ export function MemberMembership() {
           starts_on: null,
           note:
             paymentMethod === "stripe"
-              ? "Änderungsanfrage über Mitgliederbereich – Stripe-Zahlung noch nicht umgesetzt"
+              ? "Änderungsanfrage über Mitgliederbereich – Stripe Checkout"
               : "Änderungsanfrage über Mitgliederbereich",
           payment_status: "pending",
         })
@@ -593,14 +637,16 @@ export function MemberMembership() {
         throw moduleError
       }
 
+      if (paymentMethod === "stripe") {
+        await startStripeCheckout(request.id)
+        return
+      }
+
       await loadData()
 
       setMessage({
         type: "success",
-        text:
-          paymentMethod === "stripe"
-            ? "Deine Anfrage wurde gespeichert. Die automatische Stripe-Zahlung bauen wir als nächsten Schritt ein."
-            : "Deine Änderungsanfrage wurde gesendet und wartet auf Bestätigung durch den Verein.",
+        text: "Deine Änderungsanfrage wurde gesendet und wartet auf Bestätigung durch den Verein.",
       })
     } catch (error: any) {
       console.error("membership request error:", error)
@@ -980,7 +1026,7 @@ export function MemberMembership() {
           {billingCycle === "monthly" ? (
             <div className="mt-4 flex gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm font-semibold text-blue-800">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
-              Monatliche Abrechnung läuft über Stripe. Die automatische Stripe-Zahlung wird im nächsten Schritt angebunden.
+              Monatliche Abrechnung läuft automatisch über Stripe. Nach erfolgreicher Zahlung wird dein Paket freigeschaltet.
             </div>
           ) : null}
         </CardContent>
@@ -1345,19 +1391,39 @@ export function MemberMembership() {
               </Badge>
             </div>
           ) : (
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
               <div className="font-black text-gray-900">Stripe-Zahlung</div>
               <p className="mt-2 text-sm font-semibold text-gray-600">
-                Die direkte Online-Zahlung wird später angebunden. Nach erfolgreicher
-                Zahlung kann das Paket automatisch freigeschaltet werden.
+                Du wirst zur sicheren Stripe-Zahlungsseite weitergeleitet. Nach erfolgreicher Zahlung
+                wird deine Mitgliedschaft automatisch freigeschaltet.
               </p>
 
-              <Badge
-                variant="outline"
-                className="mt-3 rounded-full border-gray-300 bg-white text-gray-700"
-              >
-                Online-Zahlung noch nicht aktiv
-              </Badge>
+              {pendingRequest?.payment_status === "paid" ? (
+                <Badge
+                  variant="outline"
+                  className="mt-3 rounded-full border-green-300 bg-green-50 text-green-800"
+                >
+                  Zahlung erfolgreich ✓
+                </Badge>
+              ) : pendingRequest ? (
+                <Button
+                  type="button"
+                  onClick={() => void startStripeCheckout(pendingRequest.id)}
+                  disabled={checkoutLoading}
+                  className="mt-4 h-11 rounded-xl bg-blue-600 px-5 font-black text-white hover:bg-blue-700"
+                >
+                  {checkoutLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <CreditCard className="mr-2 h-4 w-4" />
+                  )}
+                  {checkoutLoading ? "Stripe wird geöffnet..." : "Jetzt mit Stripe bezahlen"}
+                </Button>
+              ) : (
+                <div className="mt-3 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-bold text-blue-800">
+                  Klicke unten auf „Paket verbindlich anfragen“. Danach öffnet sich Stripe automatisch.
+                </div>
+              )}
             </div>
           )}
         </CardContent>
