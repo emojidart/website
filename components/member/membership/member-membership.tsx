@@ -119,8 +119,9 @@ function requestStatusLabel(status: ChangeRequest["requested_status"]) {
 }
 
 
-const CLUB_ACCOUNT_HOLDER = "Emojis Dartverein"
-const CLUB_IBAN = "AT12345679"
+const CLUB_ACCOUNT_HOLDER = "Emoj!`s Dart Verein"
+const CLUB_IBAN = "AT27 1500 0001 3110 5504"
+const CLUB_BIC = "OBKLAT2L"
 
 function buildMembershipPaymentReference(playerName: string) {
   const year = new Date().getFullYear()
@@ -444,6 +445,20 @@ export function MemberMembership() {
     () => membershipRows.reduce((sum, row) => sum + Number(row.annual_price_snapshot || 0), 0),
     [membershipRows],
   )
+
+  const membershipEndsOn = membership?.ends_on || null
+
+  const hasScheduledCancellation = useMemo(() => {
+    if (!membershipEndsOn || membership?.status !== "active") return false
+
+    const endOfDay = new Date(`${membershipEndsOn}T23:59:59`)
+    return endOfDay.getTime() >= Date.now()
+  }, [membershipEndsOn, membership?.status])
+
+  const membershipEndLabel = useMemo(() => {
+    if (!membershipEndsOn) return ""
+    return new Date(`${membershipEndsOn}T00:00:00`).toLocaleDateString("de-AT")
+  }, [membershipEndsOn])
 
   const paymentMonthlyDue = useMemo(() => {
     const requestedTotal = pendingRequest ? Number(pendingRequest.monthly_total || 0) : monthlyTotal
@@ -813,6 +828,29 @@ export function MemberMembership() {
           </CardHeader>
 
           <CardContent className="space-y-5">
+            {hasScheduledCancellation ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 font-black text-red-900">
+                      <CalendarX className="h-5 w-5" />
+                      Mitgliedschaft gekündigt
+                    </div>
+                    <p className="mt-1 text-sm font-semibold text-red-800">
+                      Deine Mitgliedschaft ist noch bis {membershipEndLabel} aktiv. Danach wird sie automatisch beendet.
+                    </p>
+                  </div>
+
+                  <Badge
+                    variant="outline"
+                    className="w-fit rounded-full border-red-300 bg-white text-red-700"
+                  >
+                    Gekündigt zum {membershipEndLabel}
+                  </Badge>
+                </div>
+              </div>
+            ) : null}
+
             <div className="grid gap-3 sm:grid-cols-2">
               {modules
                 .filter((module) => membershipRows.some((row) => row.module_id === module.id))
@@ -829,7 +867,9 @@ export function MemberMembership() {
                         </div>
                       ) : null}
                     </div>
-                    <Badge className="shrink-0 rounded-full bg-green-600 text-white">Aktiv</Badge>
+                    <Badge className="shrink-0 rounded-full bg-green-600 text-white">
+                      {hasScheduledCancellation ? `Aktiv bis ${membershipEndLabel}` : "Aktiv"}
+                    </Badge>
                   </div>
                 ))}
             </div>
@@ -848,37 +888,45 @@ export function MemberMembership() {
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Button
-                type="button"
-                onClick={() => {
-                  setWizardStep(1)
-                  setShowPackageEditor(true)
-                  setMessage(null)
-                }}
-                className="h-12 rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700"
-              >
-                <WalletCards className="mr-2 h-4 w-4" />
-                Paket ändern
-              </Button>
+            {hasScheduledCancellation ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
+                Deine Kündigung ist bereits bestätigt. Paketänderungen und eine weitere Kündigungsanfrage sind nicht mehr notwendig.
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setWizardStep(1)
+                      setShowPackageEditor(true)
+                      setMessage(null)
+                    }}
+                    className="h-12 rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700"
+                  >
+                    <WalletCards className="mr-2 h-4 w-4" />
+                    Paket ändern
+                  </Button>
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowCancelForm(true)
-                  setMessage(null)
-                }}
-                className="h-12 rounded-xl border-red-200 font-black text-red-700 hover:bg-red-50 hover:text-red-800"
-              >
-                <CalendarX className="mr-2 h-4 w-4" />
-                Komplette Mitgliedschaft kündigen
-              </Button>
-            </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowCancelForm(true)
+                      setMessage(null)
+                    }}
+                    className="h-12 rounded-xl border-red-200 font-black text-red-700 hover:bg-red-50 hover:text-red-800"
+                  >
+                    <CalendarX className="mr-2 h-4 w-4" />
+                    Komplette Mitgliedschaft kündigen
+                  </Button>
+                </div>
 
-            <p className="text-sm font-semibold text-gray-500">
-              „Paket ändern“ ist auch der richtige Weg, wenn du nur ein Zusatzmodul wie E-Dart, Steeldart oder Premium abwählen möchtest.
-            </p>
+                <p className="text-sm font-semibold text-gray-500">
+                  „Paket ändern“ ist auch der richtige Weg, wenn du nur ein Zusatzmodul wie E-Dart, Steeldart oder Premium abwählen möchtest.
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       ) : null}
@@ -1366,12 +1414,12 @@ export function MemberMembership() {
 
             {paymentMethod === "cash" ? (
               <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                <div className="font-black text-gray-900">Im Verein bezahlen</div>
+                <div className="font-black text-gray-900">Bar im Vereinslokal bezahlen</div>
                 <p className="mt-2 text-sm font-semibold text-gray-600">
                   {pendingRequest?.payment_status === "paid"
-                    ? "Deine Zahlung wurde bereits bestätigt. Es ist keine weitere Zahlung nötig – die Freigabe des Pakets ist noch ausständig."
+                    ? "Deine Barzahlung wurde bereits bestätigt. Es ist keine weitere Zahlung nötig – die Freigabe des Pakets ist noch ausständig."
                     : paymentDue > 0
-                      ? `Bitte bezahle nur den zusätzlich offenen Betrag von ${formatEUR(paymentDue)} direkt im Verein. Danach wird die Erweiterung freigeschaltet.`
+                      ? `Bitte bezahle den zusätzlich offenen Betrag von ${formatEUR(paymentDue)} direkt im Vereinslokal. Sobald die Barzahlung vom Verein bestätigt wurde, wird deine Mitgliedschaft bzw. Paketänderung freigeschaltet.`
                       : "Für diese Änderung ist keine zusätzliche Zahlung erforderlich."}
                 </p>
 
@@ -1394,7 +1442,7 @@ export function MemberMembership() {
               <div className="space-y-3 rounded-2xl border border-gray-200 bg-gray-50 p-4">
                 <div className="font-black text-gray-900">Per Überweisung bezahlen</div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <div>
                     <div className="text-xs font-bold uppercase tracking-wide text-gray-500">
                       Empfänger
@@ -1415,6 +1463,25 @@ export function MemberMembership() {
                         className="h-8 rounded-lg px-2"
                         onClick={() => navigator.clipboard?.writeText(CLUB_IBAN)}
                         title="IBAN kopieren"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-wide text-gray-500">
+                      BIC
+                    </div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="font-mono font-black text-gray-900">{CLUB_BIC}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 rounded-lg px-2"
+                        onClick={() => navigator.clipboard?.writeText(CLUB_BIC)}
+                        title="BIC kopieren"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -1496,7 +1563,7 @@ export function MemberMembership() {
                   {pendingRequest?.payment_status === "paid"
                     ? "Deine Überweisung wurde bereits bestätigt. Es ist keine weitere Zahlung nötig – die Freigabe des Pakets ist noch ausständig."
                     : paymentDue > 0
-                      ? `Bitte überweise nur den zusätzlich offenen Betrag von ${formatEUR(paymentDue)}. Nach Zahlungseingang wird die Erweiterung freigeschaltet.`
+                      ? `Bitte überweise nur den zusätzlich offenen Betrag von ${formatEUR(paymentDue)}. Sobald der Zahlungseingang beim Verein bestätigt wurde, wird deine Mitgliedschaft bzw. Paketänderung freigeschaltet.`
                       : "Für diese Änderung ist keine zusätzliche Zahlung erforderlich."}
                 </p>
 
@@ -1566,7 +1633,7 @@ export function MemberMembership() {
         </Card>
       ) : null}
 
-      {membership && showCancelForm ? (
+      {membership && showCancelForm && !hasScheduledCancellation ? (
         <Card className="rounded-2xl border border-red-200 bg-white shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-700">
