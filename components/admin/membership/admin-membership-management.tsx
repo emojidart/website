@@ -85,6 +85,8 @@ type MembershipChangeRequest = {
   billing_cycle: BillingCycle
   payment_method: PaymentMethod
   requested_status: "pending" | "approved" | "rejected" | "cancelled"
+  request_type: "change" | "cancel"
+  requested_end_on: string | null
   payment_status: "pending" | "paid"
   paid_at: string | null
   monthly_total: number
@@ -214,7 +216,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
 
         supabase
           .from("membership_change_requests")
-          .select("id,player_id,current_membership_id,billing_cycle,payment_method,requested_status,payment_status,paid_at,monthly_total,annual_total,starts_on,note,reviewed_by,reviewed_at,created_at")
+          .select("id,player_id,current_membership_id,billing_cycle,payment_method,requested_status,request_type,requested_end_on,payment_status,paid_at,monthly_total,annual_total,starts_on,note,reviewed_by,reviewed_at,created_at")
           .order("created_at", { ascending: false }),
 
         supabase
@@ -639,7 +641,11 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
   const approveChangeRequest = async (request: MembershipChangeRequest) => {
     if (!user) return
 
-    if (request.payment_method === "stripe" && request.payment_status !== "paid") {
+    if (
+      request.request_type !== "cancel" &&
+      request.payment_method === "stripe" &&
+      request.payment_status !== "paid"
+    ) {
       setMessage({
         type: "info",
         text: "Diese Stripe-Paketänderung wird automatisch verarbeitet. Bitte nicht manuell bestätigen, solange Stripe die Zahlung noch nicht abgeschlossen hat.",
@@ -738,6 +744,64 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
       setMessage({
         type: "error",
         text: error?.message || "Die Mitgliedschaftsanfrage konnte nicht bestätigt werden.",
+      })
+    } finally {
+      setReviewingRequestId("")
+    }
+  }
+
+  const approveCancellationRequest = async (request: MembershipChangeRequest) => {
+    if (!user) return
+
+    try {
+      setReviewingRequestId(request.id)
+      setMessage(null)
+
+      if (!request.current_membership_id) {
+        throw new Error("Zu dieser Kündigungsanfrage wurde keine aktive Mitgliedschaft gefunden.")
+      }
+
+      if (!request.requested_end_on) {
+        throw new Error("Bei dieser Kündigungsanfrage fehlt das Kündigungsdatum.")
+      }
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
+
+      const accessToken = sessionData.session?.access_token
+      if (!accessToken) {
+        throw new Error("Deine Sitzung ist abgelaufen. Bitte melde dich neu an.")
+      }
+
+      const response = await fetch("/api/stripe/cancel-membership", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ requestId: request.id }),
+      })
+
+      const payload = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Die Kündigung konnte nicht verarbeitet werden.")
+      }
+
+      await loadData()
+
+      const player = players.find((p) => p.id === request.player_id)
+      setMessage({
+        type: "success",
+        text: `Kündigung von ${player?.name || "dem Mitglied"} zum ${new Date(
+          `${request.requested_end_on}T00:00:00`,
+        ).toLocaleDateString("de-AT")} wurde bestätigt.`,
+      })
+    } catch (error: any) {
+      console.error("approve membership cancellation error:", error)
+      setMessage({
+        type: "error",
+        text: error?.message || "Die Kündigungsanfrage konnte nicht bestätigt werden.",
       })
     } finally {
       setReviewingRequestId("")
@@ -916,99 +980,127 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                         </div>
                         <Badge
                           variant="outline"
-                          className="rounded-full border-orange-200 bg-orange-50 text-orange-700"
+                          className={
+                            request.request_type === "cancel"
+                              ? "rounded-full border-red-200 bg-red-50 text-red-700"
+                              : "rounded-full border-orange-200 bg-orange-50 text-orange-700"
+                          }
                         >
-                          In Prüfung
+                          {request.request_type === "cancel" ? "KÜNDIGUNG" : "In Prüfung"}
                         </Badge>
                       </div>
 
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <Badge variant="outline" className="rounded-full">
-                          {request.billing_cycle === "monthly" ? "Monatlich" : "Jährlich"}
-                        </Badge>
-                        <Badge variant="outline" className="rounded-full">
-                          {paymentLabel(request.payment_method)}
-                        </Badge>
-                        <Badge variant="outline" className="rounded-full">
-                          {requestRows.length} Module
-                        </Badge>
-                        <Badge variant="outline" className="rounded-full font-black">
-                          {request.billing_cycle === "monthly"
-                            ? `${formatEUR(request.monthly_total)} / Monat`
-                            : `${formatEUR(request.annual_total)} / Jahr`}
-                        </Badge>
-                      </div>
-
-                      {(() => {
-                        const changes = getRequestChangeSummary(request)
-
-                        return (
-                          <div className="mt-4 space-y-3">
-                            <div className="text-xs font-black uppercase tracking-wide text-gray-500">
-                              Gewünschte Änderung
-                            </div>
-
-                            {changes.addedModules.length === 0 &&
-                            changes.removedModules.length === 0 &&
-                            !changes.billingChanged &&
-                            !changes.paymentChanged ? (
-                              <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-bold text-gray-600">
-                                Keine erkennbare Änderung zum aktuellen Paket
-                              </div>
-                            ) : null}
-
-                            {changes.addedModules.map((module) => (
-                              <div
-                                key={`add-${module.id}`}
-                                className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-black text-green-800"
-                              >
-                                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                                AKTIVIEREN: {module.name}
-                              </div>
-                            ))}
-
-                            {changes.removedModules.map((module) => (
-                              <div
-                                key={`remove-${module.id}`}
-                                className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-black text-red-800"
-                              >
-                                <XCircle className="h-4 w-4 shrink-0" />
-                                DEAKTIVIEREN: {module.name}
-                              </div>
-                            ))}
-
-                            {changes.billingChanged && changes.currentMembership ? (
-                              <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-800">
-                                Abrechnung:{" "}
-                                <span className="line-through opacity-70">
-                                  {changes.currentMembership.billing_cycle === "monthly"
-                                    ? "Monatlich"
-                                    : "Jährlich"}
-                                </span>{" "}
-                                →{" "}
-                                <span className="font-black">
-                                  {request.billing_cycle === "monthly"
-                                    ? "Monatlich"
-                                    : "Jährlich"}
-                                </span>
-                              </div>
-                            ) : null}
-
-                            {changes.paymentChanged && changes.currentMembership ? (
-                              <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-800">
-                                Zahlungsart:{" "}
-                                <span className="line-through opacity-70">
-                                  {paymentLabel(changes.currentMembership.payment_method)}
-                                </span>{" "}
-                                →{" "}
-                                <span className="font-black">
-                                  {paymentLabel(request.payment_method)}
-                                </span>
-                              </div>
-                            ) : null}
+                      {request.request_type === "cancel" ? (
+                        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+                          <div className="text-xs font-black uppercase tracking-wide text-red-700">
+                            Komplette Mitgliedschaft kündigen
                           </div>
-                        )
-                      })()}
+                          <div className="mt-2 text-lg font-black text-red-900">
+                            Kündigung zum{" "}
+                            {request.requested_end_on
+                              ? new Date(`${request.requested_end_on}T00:00:00`).toLocaleDateString("de-AT")
+                              : "—"}
+                          </div>
+                          {request.note ? (
+                            <div className="mt-2 text-sm font-semibold text-red-800">
+                              Grund / Notiz: {request.note}
+                            </div>
+                          ) : null}
+                          <div className="mt-2 text-xs font-semibold text-red-700">
+                            Bei Stripe wird das bestehende Abo auf dieses Kündigungsdatum beendet.
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Badge variant="outline" className="rounded-full">
+                              {request.billing_cycle === "monthly" ? "Monatlich" : "Jährlich"}
+                            </Badge>
+                            <Badge variant="outline" className="rounded-full">
+                              {paymentLabel(request.payment_method)}
+                            </Badge>
+                            <Badge variant="outline" className="rounded-full">
+                              {requestRows.length} Module
+                            </Badge>
+                            <Badge variant="outline" className="rounded-full font-black">
+                              {request.billing_cycle === "monthly"
+                                ? `${formatEUR(request.monthly_total)} / Monat`
+                                : `${formatEUR(request.annual_total)} / Jahr`}
+                            </Badge>
+                          </div>
+
+                          {(() => {
+                            const changes = getRequestChangeSummary(request)
+
+                            return (
+                              <div className="mt-4 space-y-3">
+                                <div className="text-xs font-black uppercase tracking-wide text-gray-500">
+                                  Gewünschte Änderung
+                                </div>
+
+                                {changes.addedModules.length === 0 &&
+                                changes.removedModules.length === 0 &&
+                                !changes.billingChanged &&
+                                !changes.paymentChanged ? (
+                                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-bold text-gray-600">
+                                    Keine erkennbare Änderung zum aktuellen Paket
+                                  </div>
+                                ) : null}
+
+                                {changes.addedModules.map((module) => (
+                                  <div
+                                    key={`add-${module.id}`}
+                                    className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-black text-green-800"
+                                  >
+                                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                                    AKTIVIEREN: {module.name}
+                                  </div>
+                                ))}
+
+                                {changes.removedModules.map((module) => (
+                                  <div
+                                    key={`remove-${module.id}`}
+                                    className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-black text-red-800"
+                                  >
+                                    <XCircle className="h-4 w-4 shrink-0" />
+                                    DEAKTIVIEREN: {module.name}
+                                  </div>
+                                ))}
+
+                                {changes.billingChanged && changes.currentMembership ? (
+                                  <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-800">
+                                    Abrechnung:{" "}
+                                    <span className="line-through opacity-70">
+                                      {changes.currentMembership.billing_cycle === "monthly"
+                                        ? "Monatlich"
+                                        : "Jährlich"}
+                                    </span>{" "}
+                                    →{" "}
+                                    <span className="font-black">
+                                      {request.billing_cycle === "monthly"
+                                        ? "Monatlich"
+                                        : "Jährlich"}
+                                    </span>
+                                  </div>
+                                ) : null}
+
+                                {changes.paymentChanged && changes.currentMembership ? (
+                                  <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-800">
+                                    Zahlungsart:{" "}
+                                    <span className="line-through opacity-70">
+                                      {paymentLabel(changes.currentMembership.payment_method)}
+                                    </span>{" "}
+                                    →{" "}
+                                    <span className="font-black">
+                                      {paymentLabel(request.payment_method)}
+                                    </span>
+                                  </div>
+                                ) : null}
+                              </div>
+                            )
+                          })()}
+                        </>
+                      )}
 
                       <div className="mt-3 text-xs font-semibold text-gray-400">
                         Anfrage vom{" "}
@@ -1021,7 +1113,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                     </div>
 
                     <div className="flex shrink-0 flex-col items-start gap-2">
-                      {request.payment_method === "stripe" ? (
+                      {request.request_type !== "cancel" && request.payment_method === "stripe" ? (
                         <div
                           className={cn(
                             "rounded-xl border px-3 py-2 text-xs font-black",
@@ -1037,42 +1129,53 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                       ) : null}
 
                       <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => void rejectChangeRequest(request)}
-                        disabled={
-                          !!reviewingRequestId ||
-                          (request.payment_method === "stripe" && request.payment_status !== "paid")
-                        }
-                        className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-                      >
-                        {isReviewing ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <XCircle className="mr-2 h-4 w-4" />
-                        )}
-                        Ablehnen
-                      </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => void rejectChangeRequest(request)}
+                          disabled={
+                            !!reviewingRequestId ||
+                            (request.request_type !== "cancel" &&
+                              request.payment_method === "stripe" &&
+                              request.payment_status !== "paid")
+                          }
+                          className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                        >
+                          {isReviewing ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <XCircle className="mr-2 h-4 w-4" />
+                          )}
+                          Ablehnen
+                        </Button>
 
-                      <Button
-                        type="button"
-                        onClick={() => void approveChangeRequest(request)}
-                        disabled={
-                          !!reviewingRequestId ||
-                          (request.payment_method === "stripe" && request.payment_status !== "paid")
-                        }
-                        className="rounded-xl bg-green-600 font-black text-white hover:bg-green-700"
-                      >
-                        {isReviewing ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                        )}
-                        {request.payment_method === "stripe" && request.payment_status !== "paid"
-                          ? "Wartet auf Stripe"
-                          : "Bestätigen"}
-                      </Button>
+                        <Button
+                          type="button"
+                          onClick={() =>
+                            request.request_type === "cancel"
+                              ? void approveCancellationRequest(request)
+                              : void approveChangeRequest(request)
+                          }
+                          disabled={
+                            !!reviewingRequestId ||
+                            (request.request_type !== "cancel" &&
+                              request.payment_method === "stripe" &&
+                              request.payment_status !== "paid")
+                          }
+                          className="rounded-xl bg-green-600 font-black text-white hover:bg-green-700"
+                        >
+                          {isReviewing ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                          )}
+                          {request.request_type === "cancel"
+                            ? "Kündigung bestätigen"
+                            : request.payment_method === "stripe" &&
+                                request.payment_status !== "paid"
+                              ? "Wartet auf Stripe"
+                              : "Bestätigen"}
+                        </Button>
                       </div>
                     </div>
                   </div>
