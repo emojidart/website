@@ -621,6 +621,27 @@ export default function GuestProfileAppPage() {
                     <Link href="/club-join">Anfrage ansehen</Link>
                   </Button>
                 </div>
+              ) : clubJoinRequest?.status === "approved" ? (
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-green-50">
+                      <ShieldCheck className="h-5 w-5 text-green-700" />
+                    </div>
+                    <div>
+                      <div className="font-black text-gray-900">Beitritt bestätigt</div>
+                      <p className="mt-1 text-sm font-semibold text-gray-600">
+                        Deine Aufnahme in den Verein wurde bestätigt. Schließe jetzt mindestens die Grundmitgliedschaft ab, damit dein Vereinszugang freigeschaltet wird.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button asChild className="rounded-xl bg-green-700 font-black text-white hover:bg-green-800">
+                    <Link href="/member-membership">
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      Mitgliedschaft abschließen
+                    </Link>
+                  </Button>
+                </div>
               ) : (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-3">
