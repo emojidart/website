@@ -862,7 +862,7 @@ export function MemberMembership() {
         </div>
       ) : null}
 
-      {!showPackageEditor && membership ? (
+      {!showPackageEditor && membership && !showCancelForm ? (
         <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardHeader>
             <CardTitle>Aktuelles Paket</CardTitle>
@@ -1635,7 +1635,7 @@ export function MemberMembership() {
       </Card>
       ) : null}
 
-      {membership && (!showPackageEditor || showCancelForm) ? (
+     {membership && showCancelForm ? (
         <Card className="rounded-2xl border border-red-200 bg-white shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-700">
@@ -1648,21 +1648,7 @@ export function MemberMembership() {
           </CardHeader>
 
           <CardContent className="space-y-4">
-            {!showCancelForm && showPackageEditor ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowCancelForm(true)
-                  setMessage(null)
-                }}
-                disabled={!!pendingRequest}
-                className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-              >
-                <CalendarX className="mr-2 h-4 w-4" />
-                Komplette Mitgliedschaft kündigen
-              </Button>
-            ) : (
+          
               <div className="space-y-4 rounded-2xl border border-red-200 bg-red-50 p-4">
                 <div className="space-y-2">
                   <Label>Gewünschtes Kündigungsdatum</Label>
