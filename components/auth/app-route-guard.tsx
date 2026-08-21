@@ -11,6 +11,7 @@ import {
   GUEST_LOGIN_ROUTE,
   MEMBER_HOME_ROUTE,
   MEMBER_LOGIN_ROUTE,
+  MEMBER_MEMBERSHIP_ROUTE,
   isForbiddenForGuestsPath,
   isGuestPath,
   isProtectedMemberPath,
@@ -18,7 +19,9 @@ import {
 } from "@/lib/access-control"
 
 type UserAccessProfile = {
+  player_id: string | null
   is_guest: boolean | null
+  is_admin: boolean | null
   is_blocked: boolean | null
   blocked_reason: string | null
 }
@@ -108,7 +111,7 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
         const pathIsSharedManagement =
           pathIsDachManagement || pathIsDartMarketplaceManagement
         const pathIsMemberProtected = isProtectedMemberPath(pathname)
-        const pathIsMembershipPayment = pathname === "/member-membership"
+        const pathIsMembershipPayment = pathname === MEMBER_MEMBERSHIP_ROUTE
 
         if (!session?.user) {
           if (pathIsMemberProtected) {
@@ -130,7 +133,7 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
 
         const { data: profile, error } = await supabase
           .from("user_profiles")
-          .select("is_guest,is_blocked,blocked_reason")
+          .select("player_id,is_guest,is_admin,is_blocked,blocked_reason")
           .eq("user_id", session.user.id)
           .maybeSingle()
 
@@ -183,6 +186,64 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
 
           setChecking(false)
           return
+        }
+
+        // Für normale Vereinsmitglieder ist eine aktive Grundmitgliedschaft
+        // Voraussetzung für den geschützten Mitgliederbereich. Admins bleiben
+        // aus Sicherheitsgründen von dieser Pflicht-Weiterleitung ausgenommen.
+        if (
+          !userProfile.is_guest &&
+          !userProfile.is_admin &&
+          pathIsMemberProtected &&
+          !pathIsMembershipPayment
+        ) {
+          const currentPlayerId = userProfile.player_id
+          let hasActiveBaseMembership = false
+
+          if (currentPlayerId) {
+            const [{ data: baseModules, error: baseModuleError }, { data: activeMemberships, error: membershipError }] =
+              await Promise.all([
+                supabase
+                  .from("membership_modules")
+                  .select("id")
+                  .eq("is_required_base", true)
+                  .eq("is_active", true),
+                supabase
+                  .from("member_memberships")
+                  .select("id")
+                  .eq("player_id", currentPlayerId)
+                  .eq("status", "active"),
+              ])
+
+            if (baseModuleError) {
+              console.error("[AppRouteGuard] Grundmodul konnte nicht geprüft werden:", baseModuleError)
+            } else if (membershipError) {
+              console.error("[AppRouteGuard] Mitgliedschaft konnte nicht geprüft werden:", membershipError)
+            } else {
+              const baseModuleIds = (baseModules || []).map((row: any) => String(row.id))
+              const membershipIds = (activeMemberships || []).map((row: any) => String(row.id))
+
+              if (baseModuleIds.length > 0 && membershipIds.length > 0) {
+                const { data: baseRows, error: baseRowsError } = await supabase
+                  .from("member_membership_modules")
+                  .select("membership_id,module_id")
+                  .in("membership_id", membershipIds)
+                  .in("module_id", baseModuleIds)
+                  .limit(1)
+
+                if (baseRowsError) {
+                  console.error("[AppRouteGuard] Grundmitgliedschaft konnte nicht geprüft werden:", baseRowsError)
+                } else {
+                  hasActiveBaseMembership = (baseRows || []).length > 0
+                }
+              }
+            }
+          }
+
+          if (!hasActiveBaseMembership) {
+            router.replace(`${MEMBER_MEMBERSHIP_ROUTE}?required=base`)
+            return
+          }
         }
 
         // Mitglieder dürfen ebenfalls alle Dartbörsen- und

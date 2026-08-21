@@ -2,6 +2,7 @@ export const MEMBER_LOGIN_ROUTE = "/member-login"
 export const GUEST_LOGIN_ROUTE = "/guest-login"
 export const GUEST_HOME_ROUTE = "/guest-profile-app"
 export const MEMBER_HOME_ROUTE = "/member-profile-app"
+export const MEMBER_MEMBERSHIP_ROUTE = "/member-membership"
 
 export const publicRoutes = [
   "/",

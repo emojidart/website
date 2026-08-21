@@ -159,6 +159,11 @@ export function MemberMembership() {
     text: string
   } | null>(null)
 
+  const [routeNotice, setRouteNotice] = useState<{
+    type: "success" | "info"
+    text: string
+  } | null>(null)
+
   const loadData = async () => {
     try {
       setLoading(true)
@@ -337,6 +342,45 @@ export function MemberMembership() {
 
   useEffect(() => {
     void loadData()
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const stripeState = params.get("stripe")
+    const requiredBase = params.get("required") === "base"
+
+    if (stripeState === "success") {
+      setRouteNotice({
+        type: "success",
+        text: "Zahlung erfolgreich 🎯 Deine Mitgliedschaft wurde aktiviert.",
+      })
+    } else if (stripeState === "updated") {
+      setRouteNotice({
+        type: "success",
+        text: "Paket erfolgreich geändert 🎯 Deine neuen Leistungen sind jetzt aktiv.",
+      })
+    } else if (requiredBase) {
+      setRouteNotice({
+        type: "info",
+        text: "Bevor du den Mitgliederbereich nutzen kannst, schließe bitte zuerst deine Grundmitgliedschaft ab.",
+      })
+    }
+
+    if (stripeState === "success" || stripeState === "updated") {
+      const refreshTimer = window.setTimeout(() => {
+        void loadData()
+      }, 1200)
+
+      const cleanUrl = `${window.location.pathname}${window.location.hash || ""}`
+      window.history.replaceState({}, "", cleanUrl)
+
+      return () => window.clearTimeout(refreshTimer)
+    }
+
+    if (requiredBase) {
+      const cleanUrl = `${window.location.pathname}${window.location.hash || ""}`
+      window.history.replaceState({}, "", cleanUrl)
+    }
   }, [])
 
   const ensureDependencies = (ids: Set<string>) => {
@@ -804,6 +848,23 @@ export function MemberMembership() {
           </div>
         </div>
       </div>
+
+      {routeNotice ? (
+        <div
+          className={cn(
+            "rounded-2xl border px-4 py-3 text-sm font-bold",
+            routeNotice.type === "success" && "border-green-200 bg-green-50 text-green-800",
+            routeNotice.type === "info" && "border-orange-200 bg-orange-50 text-orange-900",
+          )}
+        >
+          {routeNotice.type === "success" ? (
+            <CheckCircle2 className="mr-2 inline h-4 w-4 align-[-2px]" />
+          ) : (
+            <AlertCircle className="mr-2 inline h-4 w-4 align-[-2px]" />
+          )}
+          {routeNotice.text}
+        </div>
+      ) : null}
 
       {message ? (
         <div
