@@ -188,15 +188,16 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
           return
         }
 
-        // Für ALLE aufgenommenen Vereinsmitglieder ist eine aktive
-        // Grundmitgliedschaft Voraussetzung für den geschützten Mitgliederbereich.
-        // Das gilt bewusst auch für Admins/Obmann: Ohne Grundmitgliedschaft
-        // geht es zuerst zur Mitgliedschaftsseite.
-        if (
+        // Die Grundmitgliedschaft wird nur dann verpflichtend geprüft,
+        // wenn ein aufgenommenes Vereinsmitglied sein Mitgliederprofil öffnet.
+        // Andere geschützte Seiten werden durch diese Membership-Prüfung
+        // nicht automatisch auf /member-membership umgeleitet.
+        const shouldRequireBaseMembership =
           !userProfile.is_guest &&
-          pathIsMemberProtected &&
+          pathname === "/member-profile-app" &&
           !pathIsMembershipPayment
-        ) {
+
+        if (shouldRequireBaseMembership) {
           const currentPlayerId = userProfile.player_id
           let hasActiveBaseMembership = false
 
