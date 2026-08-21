@@ -181,6 +181,14 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
       setLoading(true)
       setMessage(null)
 
+      // Alte Mitgliedschaftsdaten sofort aus dem UI entfernen.
+      // So kann nach einem externen DB-Reset/Löschen kein alter "Aktiv"-Status
+      // aus dem vorherigen React-State sichtbar bleiben.
+      setMemberships([])
+      setMembershipModuleRows([])
+      setChangeRequests([])
+      setChangeRequestModules([])
+
       const [
         { data: playerData, error: playerError },
         { data: moduleData, error: moduleError },
@@ -249,17 +257,18 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
         sort_order: Number(m.sort_order || 0),
       })) as MembershipModule[]
 
+      const nextMemberships = (membershipData || []) as MemberMembership[]
+      const nextMembershipModuleRows = ((membershipModulesData || []) as any[]).map((row) => ({
+        ...row,
+        monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+        annual_price_snapshot: Number(row.annual_price_snapshot || 0),
+      })) as MembershipModuleRow[]
+
       setPlayers(nextPlayers)
       setModules(nextModules)
       setDependencies((dependencyData || []) as ModuleDependency[])
-      setMemberships((membershipData || []) as MemberMembership[])
-      setMembershipModuleRows(
-        ((membershipModulesData || []) as any[]).map((row) => ({
-          ...row,
-          monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
-          annual_price_snapshot: Number(row.annual_price_snapshot || 0),
-        })),
-      )
+      setMemberships(nextMemberships)
+      setMembershipModuleRows(nextMembershipModuleRows)
 
       setChangeRequests(
         ((changeRequestData || []) as any[]).map((row) => ({
@@ -279,6 +288,40 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
       if (!selectedPlayerId && nextPlayers.length > 0) {
         const active = nextPlayers.find((p) => p.is_active !== false && !p.club_left_at)
         setSelectedPlayerId(active?.id || nextPlayers[0].id)
+      } else if (selectedPlayerId) {
+        // Wichtig bei extern gelöschten/resetten Mitgliedschaften:
+        // Den Editor sofort aus den FRISCH geladenen DB-Daten synchronisieren.
+        const freshMembership =
+          nextMemberships.find(
+            (m) =>
+              m.player_id === selectedPlayerId &&
+              (m.status === "active" || m.status === "pending" || m.status === "paused"),
+          ) ||
+          nextMemberships.find((m) => m.player_id === selectedPlayerId) ||
+          null
+
+        const baseIds = nextModules.filter((m) => m.is_required_base).map((m) => m.id)
+
+        if (!freshMembership) {
+          setBillingCycle("annual")
+          setPaymentMethod("cash")
+          setStatus("active")
+          setStartsOn(todayISO())
+          setEndsOn("")
+          setSelectedModuleIds(new Set(baseIds))
+        } else {
+          setBillingCycle(freshMembership.billing_cycle)
+          setPaymentMethod(freshMembership.payment_method)
+          setStatus(freshMembership.status)
+          setStartsOn(freshMembership.starts_on || todayISO())
+          setEndsOn(freshMembership.ends_on || "")
+
+          const freshModuleIds = nextMembershipModuleRows
+            .filter((row) => row.membership_id === freshMembership.id)
+            .map((row) => row.module_id)
+
+          setSelectedModuleIds(new Set([...freshModuleIds, ...baseIds]))
+        }
       }
     } catch (error: any) {
       console.error("membership management load error:", error)
@@ -1235,6 +1278,17 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                           onClick={() => {
                             setSelectedPlayerId(player.id)
                             setMessage(null)
+
+                            // Beim Spielerwechsel keine Paketdaten des vorherigen
+                            // Mitglieds kurz weiter anzeigen.
+                            setBillingCycle("annual")
+                            setPaymentMethod("cash")
+                            setStatus("active")
+                            setStartsOn(todayISO())
+                            setEndsOn("")
+                            setSelectedModuleIds(
+                              new Set(modules.filter((m) => m.is_required_base).map((m) => m.id)),
+                            )
                           }}
                           className={cn(
                             "w-full rounded-2xl border p-3 text-left transition",
