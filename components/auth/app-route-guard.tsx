@@ -188,12 +188,12 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
           return
         }
 
-        // Für normale Vereinsmitglieder ist eine aktive Grundmitgliedschaft
-        // Voraussetzung für den geschützten Mitgliederbereich. Admins bleiben
-        // aus Sicherheitsgründen von dieser Pflicht-Weiterleitung ausgenommen.
+        // Für ALLE aufgenommenen Vereinsmitglieder ist eine aktive
+        // Grundmitgliedschaft Voraussetzung für den geschützten Mitgliederbereich.
+        // Das gilt bewusst auch für Admins/Obmann: Ohne Grundmitgliedschaft
+        // geht es zuerst zur Mitgliedschaftsseite.
         if (
           !userProfile.is_guest &&
-          !userProfile.is_admin &&
           pathIsMemberProtected &&
           !pathIsMembershipPayment
         ) {
