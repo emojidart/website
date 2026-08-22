@@ -25,6 +25,8 @@ import {
   UserRound,
   WalletCards,
   XCircle,
+  Gift,
+  CalendarDays,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -105,6 +107,18 @@ type MembershipChangeRequestModule = {
   annual_price_snapshot: number
 }
 
+type MembershipTrial = {
+  id: string
+  player_id: string
+  module_code: string
+  starts_on: string
+  ends_on: string
+  status: "active" | "cancelled" | "expired"
+  note: string | null
+  created_by: string | null
+  created_at: string
+}
+
 interface AdminMembershipManagementProps {
   user: User | null
 }
@@ -153,7 +167,14 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
   const [membershipModuleRows, setMembershipModuleRows] = useState<MembershipModuleRow[]>([])
   const [changeRequests, setChangeRequests] = useState<MembershipChangeRequest[]>([])
   const [changeRequestModules, setChangeRequestModules] = useState<MembershipChangeRequestModule[]>([])
+  const [trials, setTrials] = useState<MembershipTrial[]>([])
   const [reviewingRequestId, setReviewingRequestId] = useState<string>("")
+
+  const [trialPreset, setTrialPreset] = useState<"edart" | "steeldart" | "both" | "full">("edart")
+  const [trialStartsOn, setTrialStartsOn] = useState(todayISO())
+  const [trialEndsOn, setTrialEndsOn] = useState("")
+  const [trialNote, setTrialNote] = useState("")
+  const [savingTrial, setSavingTrial] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -188,6 +209,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
       setMembershipModuleRows([])
       setChangeRequests([])
       setChangeRequestModules([])
+      setTrials([])
 
       const [
         { data: playerData, error: playerError },
@@ -197,6 +219,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
         { data: membershipModulesData, error: membershipModulesError },
         { data: changeRequestData, error: changeRequestError },
         { data: changeRequestModuleData, error: changeRequestModuleError },
+        { data: trialData, error: trialError },
       ] = await Promise.all([
         supabase
           .from("club_players")
@@ -230,6 +253,11 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
         supabase
           .from("membership_change_request_modules")
           .select("request_id,module_id,monthly_price_snapshot,annual_price_snapshot"),
+
+        supabase
+          .from("membership_trials")
+          .select("id,player_id,module_code,starts_on,ends_on,status,note,created_by,created_at")
+          .order("ends_on", { ascending: true }),
       ])
 
       if (playerError) throw playerError
@@ -239,6 +267,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
       if (membershipModulesError) throw membershipModulesError
       if (changeRequestError) throw changeRequestError
       if (changeRequestModuleError) throw changeRequestModuleError
+      if (trialError) throw trialError
 
       const nextPlayers = ((playerData || []) as any[]).map((p) => ({
         id: p.id,
@@ -284,6 +313,8 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
           annual_price_snapshot: Number(row.annual_price_snapshot || 0),
         })) as MembershipChangeRequestModule[],
       )
+
+      setTrials((trialData || []) as MembershipTrial[])
 
       if (!selectedPlayerId && nextPlayers.length > 0) {
         const active = nextPlayers.find((p) => p.is_active !== false && !p.club_left_at)
@@ -888,6 +919,105 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
     }
   }
 
+  const activeTrialsForPlayer = (playerId: string) => {
+    const today = todayISO()
+
+    return trials.filter(
+      (trial) =>
+        trial.player_id === playerId &&
+        trial.status === "active" &&
+        trial.starts_on <= today &&
+        trial.ends_on >= today,
+    )
+  }
+
+  const trialPresetCodes = (preset: "edart" | "steeldart" | "both" | "full") => {
+    if (preset === "edart") return ["premium_app", "edart_league"]
+    if (preset === "steeldart") return ["premium_app", "steeldart_league"]
+    if (preset === "both") return ["premium_app", "edart_league", "steeldart_league"]
+
+    return modules
+      .filter((module) => module.is_active && !module.is_required_base)
+      .map((module) => module.code)
+  }
+
+  const createTrialPackage = async () => {
+    if (!selectedPlayerId) {
+      setMessage({ type: "error", text: "Bitte zuerst ein Mitglied auswählen." })
+      return
+    }
+
+    if (!trialEndsOn) {
+      setMessage({ type: "error", text: "Bitte ein Enddatum für die Testphase wählen." })
+      return
+    }
+
+    if (trialEndsOn < trialStartsOn) {
+      setMessage({ type: "error", text: "Das Enddatum darf nicht vor dem Startdatum liegen." })
+      return
+    }
+
+    try {
+      setSavingTrial(true)
+      setMessage(null)
+
+      const codes = Array.from(new Set(trialPresetCodes(trialPreset)))
+
+      const rows = codes.map((code) => ({
+        player_id: selectedPlayerId,
+        module_code: code,
+        starts_on: trialStartsOn,
+        ends_on: trialEndsOn,
+        status: "active",
+        note: trialNote.trim() || null,
+        created_by: user?.id || null,
+      }))
+
+      const { error } = await supabase.from("membership_trials").insert(rows)
+      if (error) throw error
+
+      await loadData()
+
+      setMessage({
+        type: "success",
+        text: `Testpaket für ${selectedPlayer?.name || "das Mitglied"} wurde bis ${new Date(`${trialEndsOn}T00:00:00`).toLocaleDateString("de-AT")} freigeschaltet.`,
+      })
+      setTrialNote("")
+    } catch (error: any) {
+      console.error("create trial package error:", error)
+      setMessage({
+        type: "error",
+        text: error?.message || "Das Testpaket konnte nicht angelegt werden.",
+      })
+    } finally {
+      setSavingTrial(false)
+    }
+  }
+
+  const cancelTrial = async (trialId: string) => {
+    try {
+      setSavingTrial(true)
+      setMessage(null)
+
+      const { error } = await supabase
+        .from("membership_trials")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", trialId)
+
+      if (error) throw error
+
+      await loadData()
+      setMessage({ type: "success", text: "Die Testfreischaltung wurde beendet." })
+    } catch (error: any) {
+      setMessage({
+        type: "error",
+        text: error?.message || "Die Testfreischaltung konnte nicht beendet werden.",
+      })
+    } finally {
+      setSavingTrial(false)
+    }
+  }
+
   const activeMembershipCount = memberships.filter((m) => m.status === "active").length
   const stripeMembershipCount = memberships.filter((m) => m.payment_method === "stripe").length
 
@@ -1225,6 +1355,159 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                 </div>
               )
             })}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {selectedPlayer ? (
+        <Card className="overflow-hidden rounded-2xl border border-purple-200 bg-white shadow-sm">
+          <CardHeader className="border-b border-purple-100 bg-purple-50/70">
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-purple-600" />
+              Testphase / Testpaket
+            </CardTitle>
+            <CardDescription>
+              Kostenloser Zugang für eine definierte Zeit. Testmodule werden nicht als bezahlte Mitgliedschaft verrechnet.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-5 p-5">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+              <div className="text-xs font-black uppercase tracking-wide text-gray-500">
+                Ausgewähltes Mitglied
+              </div>
+              <div className="mt-1 text-lg font-black text-gray-900">{selectedPlayer.name}</div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2 md:col-span-2">
+                <Label>Testpaket</Label>
+                <Select
+                  value={trialPreset}
+                  onValueChange={(value) =>
+                    setTrialPreset(value as "edart" | "steeldart" | "both" | "full")
+                  }
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="edart">E-Dart Liga testen</SelectItem>
+                    <SelectItem value="steeldart">Steeldart Liga testen</SelectItem>
+                    <SelectItem value="both">E-Dart + Steeldart testen</SelectItem>
+                    <SelectItem value="full">Komplettpaket testen</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Start</Label>
+                <Input
+                  type="date"
+                  value={trialStartsOn}
+                  onChange={(event) => setTrialStartsOn(event.target.value)}
+                  className="rounded-xl"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Ende</Label>
+                <Input
+                  type="date"
+                  value={trialEndsOn}
+                  onChange={(event) => setTrialEndsOn(event.target.value)}
+                  className="rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notiz (optional)</Label>
+              <Input
+                value={trialNote}
+                onChange={(event) => setTrialNote(event.target.value)}
+                placeholder="z. B. Testsaison 2026/27"
+                className="rounded-xl"
+              />
+            </div>
+
+            <div className="rounded-2xl border border-purple-200 bg-purple-50 p-4">
+              <div className="text-xs font-black uppercase tracking-wide text-purple-700">
+                Wird kostenlos freigeschaltet
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {trialPresetCodes(trialPreset).map((code) => {
+                  const module = modules.find((item) => item.code === code)
+
+                  return (
+                    <Badge
+                      key={code}
+                      variant="outline"
+                      className="rounded-full border-purple-200 bg-white text-purple-700"
+                    >
+                      {module?.name || code}
+                    </Badge>
+                  )
+                })}
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              onClick={() => void createTrialPackage()}
+              disabled={savingTrial || !trialEndsOn}
+              className="rounded-xl bg-purple-600 font-black text-white hover:bg-purple-700"
+            >
+              {savingTrial ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Gift className="mr-2 h-4 w-4" />
+              )}
+              Testpaket freischalten
+            </Button>
+
+            {activeTrialsForPlayer(selectedPlayer.id).length > 0 ? (
+              <div className="border-t border-gray-100 pt-4">
+                <div className="mb-3 flex items-center gap-2 font-black text-gray-900">
+                  <CalendarDays className="h-4 w-4 text-purple-600" />
+                  Aktive Testfreischaltungen
+                </div>
+
+                <div className="space-y-2">
+                  {activeTrialsForPlayer(selectedPlayer.id).map((trial) => {
+                    const module = modules.find((item) => item.code === trial.module_code)
+
+                    return (
+                      <div
+                        key={trial.id}
+                        className="flex flex-col gap-2 rounded-xl border border-purple-100 bg-purple-50/60 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div>
+                          <div className="font-black text-purple-900">
+                            {module?.name || trial.module_code}
+                          </div>
+                          <div className="text-xs font-semibold text-purple-700">
+                            {new Date(`${trial.starts_on}T00:00:00`).toLocaleDateString("de-AT")} –{" "}
+                            {new Date(`${trial.ends_on}T00:00:00`).toLocaleDateString("de-AT")}
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={savingTrial}
+                          onClick={() => void cancelTrial(trial.id)}
+                          className="rounded-xl border-red-200 text-red-700 hover:bg-red-50"
+                        >
+                          Beenden
+                        </Button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}
