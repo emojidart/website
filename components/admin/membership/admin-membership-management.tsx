@@ -15,14 +15,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   AlertTriangle,
   CheckCircle2,
-  CreditCard,
   Euro,
   Loader2,
   RefreshCw,
   Save,
   Search,
   ShieldCheck,
-  UserRound,
   WalletCards,
   XCircle,
   Gift,
@@ -33,6 +31,7 @@ import { cn } from "@/lib/utils"
 type BillingCycle = "monthly" | "annual"
 type PaymentMethod = "stripe" | "transfer" | "cash"
 type MembershipStatus = "pending" | "active" | "paused" | "cancelled" | "expired"
+type AdminMembershipView = "overview" | "paid" | "trials" | "manage"
 
 type ClubPlayer = {
   id: string
@@ -160,6 +159,7 @@ function statusLabel(status: MembershipStatus) {
 }
 
 export function AdminMembershipManagement({ user }: AdminMembershipManagementProps) {
+  const [activeView, setActiveView] = useState<AdminMembershipView>("overview")
   const [players, setPlayers] = useState<ClubPlayer[]>([])
   const [modules, setModules] = useState<MembershipModule[]>([])
   const [dependencies, setDependencies] = useState<ModuleDependency[]>([])
@@ -932,12 +932,18 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
   }
 
   const trialPresetCodes = (preset: "edart" | "steeldart" | "both" | "full") => {
-    if (preset === "edart") return ["premium_app", "edart_league"]
-    if (preset === "steeldart") return ["premium_app", "steeldart_league"]
-    if (preset === "both") return ["premium_app", "edart_league", "steeldart_league"]
+    const baseCodes = modules
+      .filter((module) => module.is_active && module.is_required_base)
+      .map((module) => module.code)
+
+    if (preset === "edart") return [...baseCodes, "premium_app", "edart_league"]
+    if (preset === "steeldart") return [...baseCodes, "premium_app", "steeldart_league"]
+    if (preset === "both") {
+      return [...baseCodes, "premium_app", "edart_league", "steeldart_league"]
+    }
 
     return modules
-      .filter((module) => module.is_active && !module.is_required_base)
+      .filter((module) => module.is_active)
       .map((module) => module.code)
   }
 
@@ -1018,9 +1024,292 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
     }
   }
 
-  const activeMembershipCount = memberships.filter((m) => m.status === "active").length
-  const stripeMembershipCount = memberships.filter((m) => m.payment_method === "stripe").length
+  // ECHTE Zahlungseingänge:
+  // Nur Vorgänge zählen, die tatsächlich als bezahlt markiert wurden und ein paid_at haben.
+  // Aktive Mitgliedschaften allein sind KEIN Zahlungsnachweis.
+  const paidPaymentTransactions = useMemo(
+    () =>
+      changeRequests
+        .filter(
+          (request) =>
+            request.request_type !== "cancel" &&
+            request.payment_status === "paid" &&
+            !!request.paid_at,
+        )
+        .map((request) => {
+          const player = players.find((item) => item.id === request.player_id) || null
+          const rows = changeRequestModules.filter((row) => row.request_id === request.id)
+          const transactionModules = rows
+            .map((row) => {
+              const module = modules.find((item) => item.id === row.module_id) || null
+              const paidAmount =
+                request.billing_cycle === "monthly"
+                  ? Number(row.monthly_price_snapshot || 0)
+                  : Number(row.annual_price_snapshot || 0)
 
+              return { row, module, paidAmount }
+            })
+            .filter((entry) => !!entry.module)
+
+          const paidAmount =
+            request.billing_cycle === "monthly"
+              ? Number(request.monthly_total || 0)
+              : Number(request.annual_total || 0)
+
+          return {
+            request,
+            player,
+            rows,
+            modules: transactionModules,
+            paidAmount,
+          }
+        })
+        .sort(
+          (a, b) =>
+            new Date(b.request.paid_at || b.request.created_at).getTime() -
+            new Date(a.request.paid_at || a.request.created_at).getTime(),
+        ),
+    [changeRequests, changeRequestModules, players, modules],
+  )
+
+  const paidPlayerCount = useMemo(
+    () => new Set(paidPaymentTransactions.map((item) => item.request.player_id)).size,
+    [paidPaymentTransactions],
+  )
+
+  const actuallyPaidMonthlyTotal = useMemo(
+    () =>
+      paidPaymentTransactions
+        .filter((item) => item.request.billing_cycle === "monthly")
+        .reduce((sum, item) => sum + item.paidAmount, 0),
+    [paidPaymentTransactions],
+  )
+
+  const actuallyPaidAnnualTotal = useMemo(
+    () =>
+      paidPaymentTransactions
+        .filter((item) => item.request.billing_cycle === "annual")
+        .reduce((sum, item) => sum + item.paidAmount, 0),
+    [paidPaymentTransactions],
+  )
+
+  const actuallyPaidTotal = actuallyPaidMonthlyTotal + actuallyPaidAnnualTotal
+
+  const paidModulePaymentSummary = useMemo(
+    () =>
+      modules
+        .map((module) => {
+          let paymentCount = 0
+          let paidTotal = 0
+
+          for (const transaction of paidPaymentTransactions) {
+            const entry = transaction.modules.find((item) => item.module?.id === module.id)
+            if (!entry) continue
+
+            paymentCount += 1
+            paidTotal += entry.paidAmount
+          }
+
+          return { module, paymentCount, paidTotal }
+        })
+        .filter((item) => item.paymentCount > 0),
+    [modules, paidPaymentTransactions],
+  )
+
+  const activePaidMemberships = useMemo(() => {
+    const today = todayISO()
+
+    return memberships.filter(
+      (membership) =>
+        membership.status === "active" &&
+        membership.starts_on <= today &&
+        (!membership.ends_on || membership.ends_on >= today),
+    )
+  }, [memberships])
+
+  const paidMembershipSummaries = useMemo(
+    () =>
+      activePaidMemberships
+        .map((membership) => {
+          const player = players.find((item) => item.id === membership.player_id) || null
+          const rows = membershipModuleRows.filter(
+            (row) => row.membership_id === membership.id,
+          )
+          const membershipModules = rows
+            .map((row) => modules.find((module) => module.id === row.module_id))
+            .filter((module): module is MembershipModule => !!module)
+          const monthlyAmount = rows.reduce(
+            (sum, row) => sum + Number(row.monthly_price_snapshot || 0),
+            0,
+          )
+          const annualAmount = rows.reduce(
+            (sum, row) => sum + Number(row.annual_price_snapshot || 0),
+            0,
+          )
+
+          return {
+            membership,
+            player,
+            rows,
+            modules: membershipModules,
+            monthlyAmount,
+            annualAmount,
+            billedAmount:
+              membership.billing_cycle === "monthly" ? monthlyAmount : annualAmount,
+          }
+        })
+        .filter((summary) => summary.rows.length > 0)
+        .sort((a, b) => (a.player?.name || "").localeCompare(b.player?.name || "", "de")),
+    [activePaidMemberships, players, membershipModuleRows, modules],
+  )
+
+  const activeTrialGroups = useMemo(() => {
+    const today = todayISO()
+    const grouped = new Map<string, MembershipTrial[]>()
+
+    for (const trial of trials) {
+      if (
+        trial.status !== "active" ||
+        trial.starts_on > today ||
+        trial.ends_on < today
+      ) {
+        continue
+      }
+
+      const current = grouped.get(trial.player_id) || []
+      current.push(trial)
+      grouped.set(trial.player_id, current)
+    }
+
+    return Array.from(grouped.entries())
+      .map(([playerId, playerTrials]) => ({
+        playerId,
+        player: players.find((item) => item.id === playerId) || null,
+        trials: playerTrials.sort((a, b) => a.module_code.localeCompare(b.module_code)),
+        startsOn: playerTrials.reduce(
+          (earliest, trial) => (!earliest || trial.starts_on < earliest ? trial.starts_on : earliest),
+          "",
+        ),
+        endsOn: playerTrials.reduce(
+          (latest, trial) => (!latest || trial.ends_on > latest ? trial.ends_on : latest),
+          "",
+        ),
+      }))
+      .sort((a, b) => (a.player?.name || "").localeCompare(b.player?.name || "", "de"))
+  }, [trials, players])
+
+  const paidModuleCodesByPlayer = useMemo(() => {
+    const result = new Map<string, Set<string>>()
+
+    for (const summary of paidMembershipSummaries) {
+      const paidCodes = result.get(summary.membership.player_id) || new Set<string>()
+      for (const module of summary.modules) paidCodes.add(module.code)
+      result.set(summary.membership.player_id, paidCodes)
+    }
+
+    return result
+  }, [paidMembershipSummaries])
+
+  const paidAccessSummaries = useMemo(
+    () =>
+      paidMembershipSummaries.map((summary) => {
+        const paidModuleCodes =
+          paidModuleCodesByPlayer.get(summary.membership.player_id) || new Set<string>()
+        const trialGroup = activeTrialGroups.find(
+          (group) => group.playerId === summary.membership.player_id,
+        )
+        const trialOnlyModules = (trialGroup?.trials || [])
+          .map((trial) => ({
+            trial,
+            module: modules.find((module) => module.code === trial.module_code) || null,
+          }))
+          .filter(({ trial }) => !paidModuleCodes.has(trial.module_code))
+
+        return {
+          ...summary,
+          trialOnlyModules,
+        }
+      }),
+    [paidMembershipSummaries, activeTrialGroups, modules, paidModuleCodesByPlayer],
+  )
+
+  const activeTrialOnlyGroups = useMemo(
+    () =>
+      activeTrialGroups
+        .map((group) => {
+          const paidModuleCodes = paidModuleCodesByPlayer.get(group.playerId) || new Set<string>()
+          const trialOnlyEntries = group.trials.filter(
+            (trial) => !paidModuleCodes.has(trial.module_code),
+          )
+
+          return {
+            ...group,
+            trials: trialOnlyEntries,
+            startsOn: trialOnlyEntries.reduce(
+              (earliest, trial) =>
+                !earliest || trial.starts_on < earliest ? trial.starts_on : earliest,
+              "",
+            ),
+            endsOn: trialOnlyEntries.reduce(
+              (latest, trial) => !latest || trial.ends_on > latest ? trial.ends_on : latest,
+              "",
+            ),
+          }
+        })
+        .filter((group) => group.trials.length > 0),
+    [activeTrialGroups, paidModuleCodesByPlayer],
+  )
+
+  const moduleBillingSummary = useMemo(
+    () =>
+      modules
+        .map((module) => {
+          let totalCount = 0
+          let monthlyCount = 0
+          let annualCount = 0
+          let monthlyRevenue = 0
+          let annualRevenue = 0
+
+          for (const summary of paidMembershipSummaries) {
+            const row = summary.rows.find((item) => item.module_id === module.id)
+            if (!row) continue
+
+            totalCount += 1
+            if (summary.membership.billing_cycle === "monthly") {
+              monthlyCount += 1
+              monthlyRevenue += Number(row.monthly_price_snapshot || 0)
+            } else {
+              annualCount += 1
+              annualRevenue += Number(row.annual_price_snapshot || 0)
+            }
+          }
+
+          return {
+            module,
+            totalCount,
+            monthlyCount,
+            annualCount,
+            monthlyRevenue,
+            annualRevenue,
+          }
+        })
+        .filter((item) => item.totalCount > 0),
+    [modules, paidMembershipSummaries],
+  )
+
+  const monthlyBillingTotal = paidMembershipSummaries
+    .filter((item) => item.membership.billing_cycle === "monthly")
+    .reduce((sum, item) => sum + item.monthlyAmount, 0)
+
+  const annualBillingTotal = paidMembershipSummaries
+    .filter((item) => item.membership.billing_cycle === "annual")
+    .reduce((sum, item) => sum + item.annualAmount, 0)
+
+  const projectedAnnualTotal = annualBillingTotal + monthlyBillingTotal * 12
+  const activeMembershipsWithoutPaidModules = activePaidMemberships.filter(
+    (membership) =>
+      !membershipModuleRows.some((row) => row.membership_id === membership.id),
+  )
   return (
     <div className="w-full space-y-6">
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -1070,56 +1359,290 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-gray-500">Mitgliedschaften</div>
-                <div className="mt-1 text-3xl font-black text-gray-900">{memberships.length}</div>
-              </div>
-              <UserRound className="h-7 w-7 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-gray-500">Aktiv</div>
-                <div className="mt-1 text-3xl font-black text-green-600">{activeMembershipCount}</div>
-              </div>
-              <CheckCircle2 className="h-7 w-7 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-gray-500">Stripe</div>
-                <div className="mt-1 text-3xl font-black text-blue-600">{stripeMembershipCount}</div>
-              </div>
-              <CreditCard className="h-7 w-7 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border border-orange-200 bg-orange-50 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-orange-700">Offene Anfragen</div>
-                <div className="mt-1 text-3xl font-black text-orange-600">{pendingChangeRequests.length}</div>
-              </div>
-              <AlertTriangle className="h-7 w-7 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-2 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm lg:grid-cols-4">
+        {([
+          ["overview", "Übersicht"],
+          ["paid", `Zahlungen (${paidPaymentTransactions.length})`],
+          ["trials", `Test (${activeTrialOnlyGroups.length})`],
+          ["manage", "Verwalten"],
+        ] as Array<[AdminMembershipView, string]>).map(([view, label]) => (
+          <button
+            key={view}
+            type="button"
+            onClick={() => setActiveView(view)}
+            className={cn(
+              "rounded-xl px-3 py-3 text-sm font-black transition",
+              activeView === view
+                ? "bg-orange-600 text-white shadow-sm"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+            )}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
+      {activeView === "overview" ? (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <Card className="rounded-2xl border border-green-200 bg-green-50 shadow-sm">
+              <CardContent className="p-5">
+                <div className="text-sm font-bold text-green-700">Mitglieder mit echter Zahlung</div>
+                <div className="mt-1 text-3xl font-black text-green-800">{paidPlayerCount}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-purple-200 bg-purple-50 shadow-sm">
+              <CardContent className="p-5">
+                <div className="text-sm font-bold text-purple-700">Testmitglieder</div>
+                <div className="mt-1 text-3xl font-black text-purple-800">
+                  {activeTrialOnlyGroups.length}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-blue-200 bg-blue-50 shadow-sm">
+              <CardContent className="p-5">
+                <div className="text-sm font-bold text-blue-700">Monatlich tatsächlich bezahlt</div>
+                <div className="mt-1 text-2xl font-black text-blue-800">
+                  {formatEUR(actuallyPaidMonthlyTotal)}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-orange-200 bg-orange-50 shadow-sm">
+              <CardContent className="p-5">
+                <div className="text-sm font-bold text-orange-700">Jährlich tatsächlich bezahlt</div>
+                <div className="mt-1 text-2xl font-black text-orange-800">
+                  {formatEUR(actuallyPaidAnnualTotal)}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-gray-300 bg-gray-900 text-white shadow-sm">
+              <CardContent className="p-5">
+                <div className="text-sm font-bold text-gray-300">Tatsächlich eingegangen</div>
+                <div className="mt-1 text-2xl font-black">{formatEUR(actuallyPaidTotal)}</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle>Tatsächlich bezahlte Module</CardTitle>
+              <CardDescription>
+                Ausschließlich bestätigte Zahlungseingänge mit Zahlungsdatum. Keine Hochrechnung und keine bloß aktiven Mitgliedschaften.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {paidModulePaymentSummary.length === 0 ? (
+                <div className="p-6 text-sm font-semibold text-gray-500">
+                  Noch keine bestätigten Zahlungseingänge vorhanden.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[700px] text-left text-sm">
+                    <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                      <tr>
+                        <th className="px-5 py-3">Modul</th>
+                        <th className="px-4 py-3 text-center">Bezahlvorgänge</th>
+                        <th className="px-5 py-3 text-right">Tatsächlich bezahlt</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {paidModulePaymentSummary.map((item) => (
+                        <tr key={item.module.id}>
+                          <td className="px-5 py-4 font-black text-gray-900">{item.module.name}</td>
+                          <td className="px-4 py-4 text-center">
+                            <Badge variant="outline" className="rounded-full font-black">
+                              {item.paymentCount}×
+                            </Badge>
+                          </td>
+                          <td className="px-5 py-4 text-right font-black text-gray-900">
+                            {formatEUR(item.paidTotal)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => setActiveView("paid")}
+              className="rounded-2xl border border-green-200 bg-green-50 p-5 text-left transition hover:border-green-300"
+            >
+              <div className="text-sm font-black text-green-800">Bezahlte Module öffnen</div>
+              <div className="mt-1 text-sm font-semibold text-green-700">
+                Exakt verrechnete Module, Preise und Zahlungsarten.
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView("trials")}
+              className="rounded-2xl border border-purple-200 bg-purple-50 p-5 text-left transition hover:border-purple-300"
+            >
+              <div className="text-sm font-black text-purple-800">Testzugänge öffnen</div>
+              <div className="mt-1 text-sm font-semibold text-purple-700">
+                Alle kostenlosen Freischaltungen und Laufzeiten.
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView("manage")}
+              className="rounded-2xl border border-orange-200 bg-orange-50 p-5 text-left transition hover:border-orange-300"
+            >
+              <div className="text-sm font-black text-orange-800">Mitgliedschaft verwalten</div>
+              <div className="mt-1 text-sm font-semibold text-orange-700">
+                Pakete ändern, Tests vergeben und Anfragen bearbeiten.
+              </div>
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {activeView === "paid" ? (
+        <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <CardHeader className="border-b border-gray-100">
+            <CardTitle>Echte Zahlungseingänge</CardTitle>
+            <CardDescription>
+              Nur bestätigte Zahlungen mit Zahlungsdatum. Jede Zeile ist ein tatsächlich als bezahlt verbuchter Vorgang.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 p-4 sm:p-5">
+            {paidPaymentTransactions.length === 0 ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm font-semibold text-gray-500">
+                Noch keine bestätigten Zahlungseingänge vorhanden.
+              </div>
+            ) : (
+              paidPaymentTransactions.map((transaction) => (
+                <div key={transaction.request.id} className="rounded-2xl border border-green-200 p-4">
+                  <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="text-base font-black text-gray-900">
+                          {transaction.player?.name || "Unbekanntes Mitglied"}
+                        </div>
+                        <Badge className="rounded-full bg-green-100 text-green-800 hover:bg-green-100">
+                          BEZAHLT
+                        </Badge>
+                        <Badge variant="outline" className="rounded-full">
+                          {transaction.request.billing_cycle === "monthly" ? "Monatlich" : "Jährlich"}
+                        </Badge>
+                        <Badge variant="outline" className="rounded-full">
+                          {paymentLabel(transaction.request.payment_method)}
+                        </Badge>
+                      </div>
+
+                      {transaction.player?.email ? (
+                        <div className="mt-1 text-xs font-semibold text-gray-500">
+                          {transaction.player.email}
+                        </div>
+                      ) : null}
+
+                      <div className="mt-3 text-sm font-bold text-gray-700">
+                        Bezahlt am{" "}
+                        {transaction.request.paid_at
+                          ? new Date(transaction.request.paid_at).toLocaleString("de-AT")
+                          : "–"}
+                      </div>
+
+                      <div className="mt-4">
+                        <div className="text-xs font-black uppercase tracking-wide text-green-700">
+                          Dafür tatsächlich bezahlt
+                        </div>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          {transaction.modules.map(({ row, module, paidAmount }) => (
+                            <div
+                              key={row.module_id}
+                              className="flex items-center justify-between gap-3 rounded-xl border border-green-100 bg-green-50 px-3 py-2"
+                            >
+                              <span className="font-bold text-green-900">{module?.name}</span>
+                              <span className="shrink-0 font-black text-green-900">
+                                {formatEUR(paidAmount)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 rounded-2xl bg-gray-900 px-5 py-4 text-white xl:text-right">
+                      <div className="text-xs font-bold uppercase tracking-wide text-gray-300">
+                        Zahlungseingang
+                      </div>
+                      <div className="mt-1 text-2xl font-black">{formatEUR(transaction.paidAmount)}</div>
+                      <div className="text-xs font-semibold text-gray-300">
+                        tatsächlich bezahlt
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {activeView === "trials" ? (
+        <Card className="overflow-hidden rounded-2xl border border-purple-200 bg-white shadow-sm">
+          <CardHeader className="border-b border-purple-100 bg-purple-50/70">
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-purple-600" />
+              Aktive Testfreischaltungen
+            </CardTitle>
+            <CardDescription>
+              Diese Zugänge sind kostenlos und werden in keiner Abrechnung berücksichtigt.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 p-4 sm:p-5">
+            {activeTrialOnlyGroups.length === 0 ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm font-semibold text-gray-500">
+                Keine aktiven Testfreischaltungen vorhanden.
+              </div>
+            ) : (
+              activeTrialOnlyGroups.map((group) => (
+                <div key={group.playerId} className="rounded-2xl border border-purple-100 p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-black text-gray-900">
+                          {group.player?.name || "Unbekanntes Mitglied"}
+                        </div>
+                        <Badge className="rounded-full bg-purple-100 text-purple-800 hover:bg-purple-100">
+                          TEST · KOSTENLOS
+                        </Badge>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {group.trials.map((trial) => {
+                          const module = modules.find((item) => item.code === trial.module_code)
+                          return (
+                            <Badge key={trial.id} variant="outline" className="rounded-full border-purple-200 bg-purple-50 text-purple-800">
+                              {module?.name || trial.module_code}
+                            </Badge>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-sm font-bold text-purple-800 lg:text-right">
+                      <div>{new Date(`${group.startsOn}T00:00:00`).toLocaleDateString("de-AT")}</div>
+                      <div>bis {new Date(`${group.endsOn}T00:00:00`).toLocaleDateString("de-AT")}</div>
+                      <div className="mt-1 text-xs font-semibold text-purple-600">{group.trials.length} Module</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {activeView === "manage" ? (
+        <>
       {pendingChangeRequests.length > 0 ? (
         <Card className="overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-sm">
           <CardHeader className="border-b border-orange-100 bg-orange-50/70">
@@ -1899,6 +2422,8 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
           ) : null}
         </div>
       </div>
+        </>
+      ) : null}
     </div>
   )
 }

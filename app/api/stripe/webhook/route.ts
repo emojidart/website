@@ -19,6 +19,81 @@ function stripeId(value: string | Stripe.Customer | Stripe.Subscription | null |
   return typeof value === "string" ? value : value.id
 }
 
+
+async function rewriteRequestToActuallyChargedDelta(
+  supabase: ReturnType<typeof createClient>,
+  requestId: string,
+  chargedAmountCents: number,
+) {
+  const { data: request, error: requestError } = await supabase
+    .from("membership_change_requests")
+    .select("id,current_membership_id,billing_cycle")
+    .eq("id", requestId)
+    .maybeSingle()
+
+  if (requestError) throw requestError
+  if (!request?.current_membership_id) return
+
+  const { data: currentRows, error: currentRowsError } = await supabase
+    .from("member_membership_modules")
+    .select("module_id")
+    .eq("membership_id", request.current_membership_id)
+
+  if (currentRowsError) throw currentRowsError
+
+  const { data: requestRows, error: requestRowsError } = await supabase
+    .from("membership_change_request_modules")
+    .select("id,module_id,monthly_price_snapshot,annual_price_snapshot")
+    .eq("request_id", requestId)
+
+  if (requestRowsError) throw requestRowsError
+  if (!requestRows || requestRows.length === 0) return
+
+  const currentModuleIds = new Set((currentRows || []).map((row) => row.module_id))
+  const addedRows = requestRows.filter((row) => !currentModuleIds.has(row.module_id))
+
+  const chargedAmount = Number(chargedAmountCents || 0) / 100
+
+  if (chargedAmount > 0 && addedRows.length > 0) {
+    const { error: deleteOldRowsError } = await supabase
+      .from("membership_change_request_modules")
+      .delete()
+      .eq("request_id", requestId)
+
+    if (deleteOldRowsError) throw deleteOldRowsError
+
+    const { error: insertDeltaRowsError } = await supabase
+      .from("membership_change_request_modules")
+      .insert(
+        addedRows.map((row) => ({
+          request_id: requestId,
+          module_id: row.module_id,
+          monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+          annual_price_snapshot: Number(row.annual_price_snapshot || 0),
+        })),
+      )
+
+    if (insertDeltaRowsError) throw insertDeltaRowsError
+  }
+
+  const monthlyTotal =
+    request.billing_cycle === "monthly" ? chargedAmount : Number((chargedAmount / 12).toFixed(2))
+  const annualTotal =
+    request.billing_cycle === "annual" ? chargedAmount : Number((chargedAmount * 12).toFixed(2))
+
+  const { error: totalUpdateError } = await supabase
+    .from("membership_change_requests")
+    .update({
+      monthly_total: monthlyTotal,
+      annual_total: annualTotal,
+      note: "Änderungsanfrage über Mitgliederbereich – Stripe Checkout · tatsächlicher Differenz-Zahlungseingang",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", requestId)
+
+  if (totalUpdateError) throw totalUpdateError
+}
+
 async function activateMemberProfileIfBaseIncluded(
   supabase: ReturnType<typeof createClient>,
   playerId: string,
@@ -80,6 +155,23 @@ async function applyPendingStripeChangeFromSubscription(
 
   if (rowsError) throw rowsError
   if (!requestRows || requestRows.length === 0) return
+
+  const latestInvoiceId =
+    typeof subscription.latest_invoice === "string"
+      ? subscription.latest_invoice
+      : subscription.latest_invoice?.id || null
+
+  let actuallyChargedCents = 0
+
+  if (latestInvoiceId) {
+    const stripe = new Stripe(stripeSecretKey!)
+    const invoice = await stripe.invoices.retrieve(latestInvoiceId)
+    actuallyChargedCents = Number(invoice.amount_paid || 0)
+  }
+
+  if (actuallyChargedCents > 0) {
+    await rewriteRequestToActuallyChargedDelta(supabase, requestId, actuallyChargedCents)
+  }
 
   const now = new Date().toISOString()
   const stripeStatus = subscription.status
@@ -203,6 +295,14 @@ export async function POST(request: Request) {
       // Bereits verarbeitet: Stripe kann dasselbe Event erneut zustellen.
       if (changeRequest.requested_status === "approved") {
         return NextResponse.json({ received: true })
+      }
+
+      if (changeRequest.current_membership_id && Number(session.amount_total || 0) > 0) {
+        await rewriteRequestToActuallyChargedDelta(
+          supabase,
+          requestId,
+          Number(session.amount_total || 0),
+        )
       }
 
       const { data: requestRows, error: requestRowsError } = await supabase

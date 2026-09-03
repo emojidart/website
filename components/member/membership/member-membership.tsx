@@ -263,11 +263,16 @@ export function MemberMembership() {
       const activeMembership =
         memberships.find((m) => m.status === "active") ||
         memberships.find((m) => m.status === "pending" || m.status === "paused") ||
-        memberships[0] ||
         null
 
+      const currentTrials = (trialData || []) as MembershipTrial[]
+
+      // Gekündigte/abgelaufene Alt-Mitgliedschaften dürfen niemals mehr als
+      // aktuelles aktives Paket dargestellt werden. Eine reine Testphase läuft
+      // ausschließlich über membership_trials und öffnet den Paket-Editor nicht
+      // automatisch.
       setMembership(activeMembership)
-      setShowPackageEditor(!activeMembership)
+      setShowPackageEditor(!activeMembership && currentTrials.length === 0)
 
       let currentRows: MembershipModuleRow[] = []
 
@@ -292,7 +297,7 @@ export function MemberMembership() {
 
       const currentPending = ((requestData || [])[0] || null) as ChangeRequest | null
       setPendingRequest(currentPending)
-      setActiveTrials((trialData || []) as MembershipTrial[])
+      setActiveTrials(currentTrials)
       if (currentPending) {
         setShowPackageEditor(true)
         setWizardStep(3)
@@ -849,7 +854,11 @@ export function MemberMembership() {
         </div>
       </div>
 
-      {routeNotice ? (
+      {routeNotice &&
+      !(
+        routeNotice.type === "info" &&
+        activeTrials.some((trial) => trial.module_code === "base_membership")
+      ) ? (
         <div
           className={cn(
             "rounded-2xl border px-4 py-3 text-sm font-bold",

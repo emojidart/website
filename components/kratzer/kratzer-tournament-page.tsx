@@ -12,7 +12,6 @@ import { PrizeMoneyModal } from "@/components/kratzer/modals/prize-money-modal"
 import { RecoveryBanner } from "@/components/kratzer/recovery-banner"
 import { TournamentControlsCard } from "@/components/kratzer/tournament-controls-card"
 import { TournamentStatsCard } from "@/components/kratzer/tournament-stats-card"
-import { TournamentPageHeader } from "@/components/kratzer/tournament-page-header"
 import { TournamentTabs } from "@/components/kratzer/tournament-tabs"
 import { SectionCard } from "@/components/kratzer/section-card"
 
@@ -41,6 +40,7 @@ import {
 } from "@/actions/tournament"
 
 import { Header } from "@/components/header"
+import { TournamentAdminNav } from "@/components/admin/tournaments/tournament-admin-nav"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 
@@ -838,15 +838,14 @@ export function KratzerTournamentPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900 font-sans">
+    <div className="min-h-screen bg-[#f7f7f8] text-gray-900">
       <Header />
+      <TournamentAdminNav
+        title="Kratzer"
+        description="Spieler registrieren, Turnier steuern und Runden verwalten."
+      />
 
-      <main className="mx-auto max-w-[1800px] p-6 pt-16 flex-grow w-full">
-        <TournamentPageHeader
-          title="Kratzer Turnier"
-          subtitle="Turnierverwaltung und Spielersteuerung"
-        />
-
+      <main className="mx-auto w-full max-w-[1600px] px-3 py-5 sm:px-5 lg:px-8">
         <TournamentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {activeTab === "register" ? (

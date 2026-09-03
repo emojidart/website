@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
+import { TournamentAdminNav } from "@/components/admin/tournaments/tournament-admin-nav"
 import {
   Search,
   UserPlus,
@@ -1932,8 +1933,12 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#f7f7f8]">
       <Header />
+      <TournamentAdminNav
+        title={isSeriesPrefilled ? tournamentName || "Serien-Spieltag" : "Einzelturnier"}
+        description="DKO und Round Robin – Teilnehmer, Zahlung und Turnierstart."
+      />
 
      
 
@@ -2405,20 +2410,9 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
         </div>
       )}
 
-      <div className="w-full px-8 py-6 mt-24">
+      <div className="mx-auto w-full max-w-[1600px] px-3 py-5 sm:px-5 lg:px-8">
 
-        <div className="mb-6">
-          <Button
-            onClick={() => router.push("/admin")}
-            variant="outline"
-            className="flex items-center gap-2 border-2 border-orange-500 text-orange-500 hover:bg-orange-50"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Zurück zur Admin-Seite
-          </Button>
-        </div>
-
-        <div className="mb-8 bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-white rounded-lg p-6 shadow-lg">
+        <div className="mb-5 overflow-hidden rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <div className="flex items-center gap-3 mb-4">

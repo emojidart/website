@@ -17,13 +17,13 @@ export function RecoveryBanner({
   if (!recoveryTournamentData) return null
 
   return (
-    <div className="bg-yellow-100 border-2 border-yellow-500 rounded-2xl p-5 mb-8 flex flex-col md:flex-row items-center gap-4">
-      <div className="p-3 bg-yellow-500 rounded-full text-white flex-shrink-0">
+    <div className="mb-5 flex flex-col items-center gap-4 rounded-3xl border border-orange-200 bg-orange-50 p-5 shadow-sm md:flex-row">
+      <div className="shrink-0 rounded-2xl bg-orange-600 p-3 text-white">
         <RefreshCcw className="h-6 w-6" />
       </div>
 
-      <div className="flex-1 text-yellow-800 text-center md:text-left">
-        <h3 className="font-bold text-lg mb-1">Laufendes Turnier gefunden!</h3>
+      <div className="flex-1 text-center text-gray-800 md:text-left">
+        <h3 className="mb-1 text-lg font-black text-gray-950">Laufendes Turnier gefunden!</h3>
         <p className="text-sm">
           Es wurde ein aktives Kratzer-Turnier gefunden (ID: {recoveryTournamentData.id}). Möchtest du es
           wiederherstellen?

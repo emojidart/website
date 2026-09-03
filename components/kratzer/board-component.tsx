@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface BoardComponentProps {
-  board: Board
+  board: Board | null | undefined
   suddenDeathEnabled: boolean
   suddenDeathTime: number
   speechEnabled: boolean
@@ -32,23 +32,28 @@ export function BoardComponent({
   const [selectedPlayerNames, setSelectedPlayerNames] = useState<string[]>([])
   const [isGameActive, setIsGameActive] = useState(false)
 
+  const boardStartTime = board?.startTime ?? null
+
   useEffect(() => {
-    setIsGameActive(board.startTime !== null)
-  }, [board.startTime])
+    setIsGameActive(boardStartTime !== null)
+  }, [boardStartTime])
 
   const handleStartGame = () => {
+    if (!board) return
     onStartGame(board.id)
     setIsGameActive(true)
     onMakeCall(`Spiel auf Board ${board.id} gestartet.`, speechEnabled)
   }
 
   const handleFinishGame = async () => {
+    if (!board) return
     await onFinishGame(board.id, selectedPlayerNames)
     setIsGameActive(false)
     onMakeCall(`Spiel auf Board ${board.id} beendet.`, speechEnabled)
   }
 
   const handleCancelGame = () => {
+    if (!board) return
     onCancelGame(board.id)
     setIsGameActive(false)
     onMakeCall(`Spiel auf Board ${board.id} abgebrochen.`, speechEnabled)
@@ -59,6 +64,8 @@ export function BoardComponent({
       prev.includes(playerName) ? prev.filter((name) => name !== playerName) : [...prev, playerName],
     )
   }
+
+  if (!board) return null
 
   return (
     <Card data-board-id={board.id} className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -96,7 +103,7 @@ export function BoardComponent({
           )}
         </div>
 
-        {board.startTime && isGameActive && (
+        {boardStartTime && isGameActive && (
           <div className="mb-4">
             <p className="text-sm text-gray-600">
               Spiel gestartet: <span className="board-timer font-semibold">Lädt...</span>

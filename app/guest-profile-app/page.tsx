@@ -225,7 +225,7 @@ export default function GuestProfileAppPage() {
 
   useEffect(() => {
     if (!authLoading && !session?.user) {
-      router.push("/guest-login")
+      router.replace("/guest-login")
     }
   }, [authLoading, session, router])
 
@@ -259,14 +259,15 @@ export default function GuestProfileAppPage() {
       if (profileError) throw profileError
 
       if (!profileData) {
-        await supabase.auth.signOut()
-        router.push("/guest-login")
+        setMessage("Für dieses Konto wurde kein Profil gefunden.")
         return
       }
 
       if (!profileData.is_guest) {
-        await supabase.auth.signOut()
-        router.push("/member-login")
+        // Normales Vereinsmitglied: niemals die globale Supabase-Session beenden.
+        // Falls diese Seite kurz während einer Navigation gemountet wird,
+        // einfach sauber in den Mitgliederbereich zurückleiten.
+        router.replace("/member-profile-app")
         return
       }
 

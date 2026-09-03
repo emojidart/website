@@ -227,28 +227,98 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
     })().catch((e) => console.error("initial load error:", e))
   }, [match.id, myTeamId])
 
+  const getConfirmedLineupPlayerIds = async (): Promise<string[]> => {
+    if (!myTeamId || !match.id) return []
+
+    // Nur eine wirklich bestätigte und unveränderte Aufstellung ist gültig.
+    const { data: header, error: headerError } = await supabase
+      .from("match_lineup_headers")
+      .select("status,current_version,confirmed_version,confirmed_at")
+      .eq("match_id", match.id)
+      .eq("team_id", myTeamId)
+      .eq("status", "confirmed")
+      .order("confirmed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (headerError) {
+      console.error("getConfirmedLineupPlayerIds headerError:", headerError)
+      return []
+    }
+
+    const isReallyConfirmed =
+      header?.status === "confirmed" &&
+      header?.confirmed_version != null &&
+      header?.current_version != null &&
+      header.confirmed_version === header.current_version
+
+    if (!isReallyConfirmed) return []
+
+    const { data: lineupRows, error: lineupError } = await supabase
+      .from("match_lineups")
+      .select("player_id,position,is_substitute")
+      .eq("match_id", match.id)
+      .eq("team_id", myTeamId)
+      .order("is_substitute", { ascending: true })
+      .order("position", { ascending: true })
+
+    if (lineupError) {
+      console.error("getConfirmedLineupPlayerIds lineupError:", lineupError)
+      return []
+    }
+
+    return Array.from(
+      new Set((lineupRows || []).map((row: any) => row?.player_id).filter(Boolean)),
+    ) as string[]
+  }
+
+  const getRequiredLeagueModuleCode = () => {
+    const dt = String(match.dart_type || "").toLowerCase()
+    if (dt === "edart") return "edart_league"
+    if (dt === "steeldart") return "steeldart_league"
+    return null
+  }
+
+  const getEligibleLeaguePlayerIds = async (): Promise<string[]> => {
+    if (!myTeamId) return []
+
+    const requiredModule = getRequiredLeagueModuleCode()
+    if (!requiredModule) {
+      console.error("Liga-Modul konnte aus match.dart_type nicht ermittelt werden:", match.dart_type)
+      return []
+    }
+
+    const { data, error } = await supabase.rpc("eligible_team_players_for_league", {
+      p_team_id: myTeamId,
+      p_required_module_code: requiredModule,
+    })
+
+    if (error) {
+      console.error("eligible_team_players_for_league error:", error)
+      return []
+    }
+
+    return Array.from(
+      new Set(((data as any[]) || []).map((row: any) => row?.player_id).filter(Boolean)),
+    ) as string[]
+  }
+
+  const getAllowedStatisticsPlayerIds = async (): Promise<string[]> => {
+    const [confirmedIds, eligibleIds] = await Promise.all([
+      getConfirmedLineupPlayerIds(),
+      getEligibleLeaguePlayerIds(),
+    ])
+
+    const eligible = new Set(eligibleIds)
+    return confirmedIds.filter((id) => eligible.has(id))
+  }
+
   const fetchPlayers = async () => {
     if (!myTeamId) return
 
-    // NOTE:
-    // We intentionally avoid embedding `club_players` from `team_members` because PostgREST can throw PGRST201
-    // if more than one relationship exists between these tables (e.g. after schema/relationship changes).
-    // Instead, we fetch member player ids first, then fetch players in a second query.
     try {
-      const { data: members, error: membersError } = await supabase
-        .from("team_members")
-        .select("player_id")
-        .eq("team_id", myTeamId)
-
-      if (membersError) {
-        console.error("fetchPlayers membersError:", membersError)
-        setPlayers([])
-        return
-      }
-
-      const ids = Array.from(
-        new Set((members || []).map((m: any) => m?.player_id).filter(Boolean))
-      ) as string[]
+      // Offizielle Liga-Statistik: Nur bestätigte Aufstellung UND aktuell liga-berechtigte Spieler.
+      const ids = await getAllowedStatisticsPlayerIds()
 
       if (ids.length === 0) {
         setPlayers([])
@@ -259,7 +329,6 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
         .from("club_players")
         .select("id, name, photo_url")
         .in("id", ids)
-        .order("name")
 
       if (playersError) {
         console.error("fetchPlayers playersError:", playersError)
@@ -267,7 +336,10 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
         return
       }
 
-      setPlayers(playersData || [])
+      const playerMap = new Map((playersData || []).map((p: any) => [p.id, p]))
+      const orderedPlayers = ids.map((id) => playerMap.get(id)).filter(Boolean) as Player[]
+
+      setPlayers(orderedPlayers)
     } catch (e) {
       console.error("fetchPlayers unexpected error:", e)
       setPlayers([])
@@ -394,6 +466,20 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
 
   const savePlayerStats = async () => {
     if (!selectedPlayerId || !currentStats.player_name) return
+
+    // Sicherheitsprüfung direkt vor dem Speichern:
+    // Auch bei manipulierter URL / verändertem Frontend dürfen nur Spieler der
+    // aktuell bestätigten Aufstellung Statistikdaten bekommen.
+    const allowedPlayerIds = await getAllowedStatisticsPlayerIds()
+    if (!allowedPlayerIds.includes(selectedPlayerId)) {
+      setValidationErrorMessage(
+        "Dieser Spieler steht nicht in der aktuell bestätigten Aufstellung oder hat für diese Liga kein aktives Paket bzw. keine gültige Testfreischaltung. Die Statistik kann nicht gespeichert werden.",
+      )
+      setValidationErrorOpen(true)
+      await fetchPlayers()
+      setSelectedPlayerId("")
+      return
+    }
 
     const validation = validateLegCounts()
     if (!validation.isValid) {
@@ -658,7 +744,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
               </SelectTrigger>
               <SelectContent>
                 {players.length === 0 && (
-                  <div className="px-2 py-3 text-sm text-muted-foreground">Keine Spieler gefunden.</div>
+                  <div className="px-2 py-3 text-sm text-muted-foreground">Keine bestätigte Aufstellung gefunden. Bitte zuerst die Aufstellung bestätigen.</div>
                 )}
                 {players.map((player) => (
                   <SelectItem key={player.id} value={player.id}>

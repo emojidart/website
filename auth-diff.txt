@@ -1,0 +1,450 @@
+diff --git a/app/guest-profile-app/page.tsx b/app/guest-profile-app/page.tsx
+index 758baf2..e9abf38 100644
+--- a/app/guest-profile-app/page.tsx
++++ b/app/guest-profile-app/page.tsx
+@@ -225,7 +225,7 @@ export default function GuestProfileAppPage() {
+ 
+   useEffect(() => {
+     if (!authLoading && !session?.user) {
+-      router.push("/guest-login")
++      router.replace("/guest-login")
+     }
+   }, [authLoading, session, router])
+ 
+@@ -259,14 +259,15 @@ export default function GuestProfileAppPage() {
+       if (profileError) throw profileError
+ 
+       if (!profileData) {
+-        await supabase.auth.signOut()
+-        router.push("/guest-login")
++        setMessage("Für dieses Konto wurde kein Profil gefunden.")
+         return
+       }
+ 
+       if (!profileData.is_guest) {
+-        await supabase.auth.signOut()
+-        router.push("/member-login")
++        // Normales Vereinsmitglied: niemals die globale Supabase-Session beenden.
++        // Falls diese Seite kurz während einer Navigation gemountet wird,
++        // einfach sauber in den Mitgliederbereich zurückleiten.
++        router.replace("/member-profile-app")
+         return
+       }
+ 
+diff --git a/app/member-login/page.tsx b/app/member-login/page.tsx
+index b797d33..2897276 100644
+--- a/app/member-login/page.tsx
++++ b/app/member-login/page.tsx
+@@ -69,13 +69,6 @@ function MemberLoginClient() {
+     return "Anmeldung fehlgeschlagen. Bitte überprüfe deine Eingaben."
+   }
+ 
+-  const getBlockedMessage = (reason?: string | null) => {
+-    if (reason && String(reason).trim().length > 0) {
+-      return `Dein Zugang wurde gesperrt.`
+-    }
+-    return "Dein Zugang wurde gesperrt. Bitte wende dich an den Verein."
+-  }
+-
+   useEffect(() => {
+     const code = searchParams.get("code")
+     if (!code) return
+@@ -83,31 +76,12 @@ function MemberLoginClient() {
+   }, [searchParams, router])
+ 
+   useEffect(() => {
+-    const checkBlockedAndRedirect = async () => {
+-      if (authLoading || !session?.user) return
+-
+-      const { data: profileData, error } = await supabase
+-        .from("user_profiles")
+-        .select("is_blocked, blocked_reason")
+-        .eq("user_id", session.user.id)
+-        .maybeSingle()
+-
+-      if (error) {
+-        setMessage("Fehler beim Prüfen des Benutzerstatus.")
+-        return
+-      }
+-
+-      if (profileData?.is_blocked) {
+-        await supabase.auth.signOut()
+-        setMessage(getBlockedMessage(profileData.blocked_reason))
+-        return
+-      }
+-
+-      router.push("/member-profile-app")
+-    }
++    if (authLoading || !session?.user) return
+ 
+-    checkBlockedAndRedirect()
+-  }, [session, authLoading, router])
++    // Bereits angemeldet: direkt in den Mitgliederbereich.
++    // Sperren und Zugriffsrechte prüft zentral der AppRouteGuard.
++    router.replace("/member-profile-app")
++  }, [session?.user?.id, authLoading, router])
+ 
+   const handleLogin = async (e: React.FormEvent) => {
+     e.preventDefault()
+@@ -127,30 +101,16 @@ function MemberLoginClient() {
+         return
+       }
+ 
+-      if (!data.user) {
++      if (!data.user || !data.session) {
+         setMessage("Anmeldung fehlgeschlagen.")
+         return
+       }
+ 
+-      const { data: profileData, error: profileError } = await supabase
+-        .from("user_profiles")
+-        .select("is_blocked, blocked_reason")
+-        .eq("user_id", data.user.id)
+-        .maybeSingle()
+-
+-      if (profileError) {
+-        await supabase.auth.signOut()
+-        setMessage("Fehler beim Prüfen des Benutzerstatus.")
+-        return
+-      }
+-
+-      if (profileData?.is_blocked) {
+-        await supabase.auth.signOut()
+-        setMessage(getBlockedMessage(profileData.blocked_reason))
+-        return
+-      }
+-
+-      router.push("/member-profile-app")
++      // signInWithPassword hat bereits eine gültige Session geliefert.
++      // Keine zweite Profilprüfung und kein vorschnelles signOut hier:
++      // Der zentrale AppRouteGuard prüft Sperre und Berechtigungen.
++      router.replace("/member-profile-app")
++      router.refresh()
+     } catch {
+       setMessage("Ein Fehler ist aufgetreten.")
+     } finally {
+diff --git a/components/auth/app-route-guard.tsx b/components/auth/app-route-guard.tsx
+index 89f2263..f15736a 100644
+--- a/components/auth/app-route-guard.tsx
++++ b/components/auth/app-route-guard.tsx
+@@ -113,8 +113,27 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
+         const pathIsMemberProtected = isProtectedMemberPath(pathname)
+         const pathIsMembershipPayment = pathname === MEMBER_MEMBERSHIP_ROUTE
+ 
+-        if (!session?.user) {
+-          if (pathIsMemberProtected) {
++        // useAuth kann direkt nach Login/Navigation für einen sehr kurzen Moment
++        // noch keine Session im React-State haben, obwohl Supabase sie bereits
++        // gespeichert hat. Deshalb vor einer Umleitung einmal die echte
++        // Browser-Session abfragen.
++        let effectiveUser = session?.user ?? null
++
++        if (!effectiveUser) {
++          const {
++            data: { session: freshSession },
++            error: freshSessionError,
++          } = await supabase.auth.getSession()
++
++          if (freshSessionError) {
++            console.warn("[AppRouteGuard] Session konnte nicht erneut gelesen werden:", freshSessionError)
++          }
++
++          effectiveUser = freshSession?.user ?? null
++        }
++
++        if (!effectiveUser) {
++          if (pathIsMemberProtected || pathIsMembershipPayment) {
+             router.replace(MEMBER_LOGIN_ROUTE)
+             return
+           }
+@@ -134,7 +153,7 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
+         const { data: profile, error } = await supabase
+           .from("user_profiles")
+           .select("player_id,is_guest,is_admin,is_blocked,blocked_reason")
+-          .eq("user_id", session.user.id)
++          .eq("user_id", effectiveUser.id)
+           .maybeSingle()
+ 
+         if (!mounted) return
+@@ -202,7 +221,13 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
+           let hasActiveBaseMembership = false
+ 
+           if (currentPlayerId) {
+-            const [{ data: baseModules, error: baseModuleError }, { data: activeMemberships, error: membershipError }] =
++            const today = new Date().toISOString().split("T")[0]
++
++            const [
++              { data: baseModules, error: baseModuleError },
++              { data: activeMemberships, error: membershipError },
++              { data: activeBaseTrials, error: baseTrialError },
++            ] =
+               await Promise.all([
+                 supabase
+                   .from("membership_modules")
+@@ -214,13 +239,28 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
+                   .select("id")
+                   .eq("player_id", currentPlayerId)
+                   .eq("status", "active"),
++                supabase
++                  .from("membership_trials")
++                  .select("id")
++                  .eq("player_id", currentPlayerId)
++                  .eq("module_code", "base_membership")
++                  .eq("status", "active")
++                  .lte("starts_on", today)
++                  .gte("ends_on", today)
++                  .limit(1),
+               ])
+ 
+-            if (baseModuleError) {
++            if (baseTrialError) {
++              console.error("[AppRouteGuard] Test-Grundmitgliedschaft konnte nicht geprüft werden:", baseTrialError)
++            } else {
++              hasActiveBaseMembership = (activeBaseTrials || []).length > 0
++            }
++
++            if (!hasActiveBaseMembership && baseModuleError) {
+               console.error("[AppRouteGuard] Grundmodul konnte nicht geprüft werden:", baseModuleError)
+-            } else if (membershipError) {
++            } else if (!hasActiveBaseMembership && membershipError) {
+               console.error("[AppRouteGuard] Mitgliedschaft konnte nicht geprüft werden:", membershipError)
+-            } else {
++            } else if (!hasActiveBaseMembership) {
+               const baseModuleIds = (baseModules || []).map((row: any) => String(row.id))
+               const membershipIds = (activeMemberships || []).map((row: any) => String(row.id))
+ 
+@@ -273,7 +313,7 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
+     return () => {
+       mounted = false
+     }
+-  }, [authLoading, session?.user, pathname, router])
++  }, [authLoading, session?.user?.id, pathname, router])
+ 
+   if (checking || authLoading) {
+     return <LoadingScreen />
+diff --git a/components/member/membership/member-membership.tsx b/components/member/membership/member-membership.tsx
+index b36c0f5..9682025 100644
+--- a/components/member/membership/member-membership.tsx
++++ b/components/member/membership/member-membership.tsx
+@@ -849,7 +849,11 @@ export function MemberMembership() {
+         </div>
+       </div>
+ 
+-      {routeNotice ? (
++      {routeNotice &&
++      !(
++        routeNotice.type === "info" &&
++        activeTrials.some((trial) => trial.module_code === "base_membership")
++      ) ? (
+         <div
+           className={cn(
+             "rounded-2xl border px-4 py-3 text-sm font-bold",
+diff --git a/hooks/use-auth.ts b/hooks/use-auth.ts
+index 52ba7de..5b0326c 100644
+--- a/hooks/use-auth.ts
++++ b/hooks/use-auth.ts
+@@ -81,39 +81,55 @@ export function useAuth(): AuthState {
+   }
+ 
+   useEffect(() => {
+-    const {
+-      data: { subscription },
+-    } = supabase.auth.onAuthStateChange((_event, session) => {
+-      setSession(session)
+-      setUser(session?.user || null)
++    let mounted = true
++    let authEventVersion = 0
++
++    const applySession = (nextSession: Session | null) => {
++      if (!mounted) return
++
++      setSession(nextSession)
++      setUser(nextSession?.user || null)
+       setLoading(false)
+ 
+-      // <CHANGE> Check admin status when user changes
+-      if (session?.user) {
+-        checkAdminStatus(session.user.id)
++      if (nextSession?.user) {
++        setAdminLoading(true)
++        void checkAdminStatus(nextSession.user.id)
+       } else {
+         setIsAdmin(false)
+         setClubRoles([])
+         setAdminLoading(false)
+       }
++    }
++
++    const {
++      data: { subscription },
++    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
++      authEventVersion += 1
++      applySession(nextSession)
+     })
+ 
+-    supabase.auth.getSession().then(({ data: { session } }) => {
+-      setSession(session)
+-      setUser(session?.user || null)
+-      setLoading(false)
++    const initialVersion = authEventVersion
+ 
+-      // <CHANGE> Check admin status on initial load
+-      if (session?.user) {
+-        checkAdminStatus(session.user.id)
+-      } else {
+-        setIsAdmin(false)
+-        setClubRoles([])
+-        setAdminLoading(false)
++    void supabase.auth.getSession().then(({ data: { session: initialSession }, error }) => {
++      if (!mounted) return
++
++      if (error) {
++        console.error("Error loading auth session:", error)
++        if (authEventVersion === initialVersion) {
++          applySession(null)
++        }
++        return
+       }
++
++      // Wenn inzwischen SIGNED_IN/SIGNED_OUT/TOKEN_REFRESHED ausgelöst wurde,
++      // darf das ältere getSession-Ergebnis den aktuellen Auth-State nicht überschreiben.
++      if (authEventVersion !== initialVersion) return
++
++      applySession(initialSession)
+     })
+ 
+     return () => {
++      mounted = false
+       subscription.unsubscribe()
+     }
+   }, [])
+diff --git a/hooks/use-membership-access.ts b/hooks/use-membership-access.ts
+index fe0e038..c1b9700 100644
+--- a/hooks/use-membership-access.ts
++++ b/hooks/use-membership-access.ts
+@@ -66,11 +66,15 @@ export function useMembershipAccess() {
+       setState((prev) => ({ ...prev, loading: true, error: null }))
+ 
+       const {
+-        data: { user },
+-        error: userError,
+-      } = await supabase.auth.getUser()
++        data: { session },
++        error: sessionError,
++      } = await supabase.auth.getSession()
+ 
+-      if (userError) throw userError
++      if (sessionError) {
++        console.warn("membership access session load warning:", sessionError)
++      }
++
++      const user = session?.user ?? null
+ 
+       if (!user) {
+         setState({
+@@ -201,6 +205,26 @@ export function useMembershipAccess() {
+         activeTrials,
+       })
+     } catch (error: any) {
++      const missingSession =
++        error?.name === "AuthSessionMissingError" ||
++        String(error?.message || "").toLowerCase().includes("auth session missing")
++
++      if (missingSession) {
++        setState({
++          loading: false,
++          error: null,
++          playerId: null,
++          membershipId: null,
++          membershipStatus: null,
++          endsOn: null,
++          moduleCodes: [],
++          paidModuleCodes: [],
++          trialModuleCodes: [],
++          activeTrials: [],
++        })
++        return
++      }
++
+       console.error("membership access load error:", error)
+ 
+       setState({
+@@ -273,8 +297,10 @@ export function useMembershipAccess() {
+   return {
+     ...state,
+ 
+-    // "hasMembership" bleibt bewusst nur die normale/bezahlte Mitgliedschaft.
+-    hasMembership: !!state.membershipId,
++    // Eine gültige Test-Grundmitgliedschaft öffnet dieselben geschützten
++    // Mitgliederbereiche wie eine bezahlte Grundmitgliedschaft.
++    hasMembership: moduleSet.has("base_membership"),
++    hasPaidMembership: !!state.membershipId,
+ 
+     hasModule,
+     hasPaidModule,
+diff --git a/lib/supabase.ts b/lib/supabase.ts
+index ecbb8d8..84b06b5 100644
+--- a/lib/supabase.ts
++++ b/lib/supabase.ts
+@@ -1,5 +1,6 @@
+ import { createBrowserClient, createServerClient } from "@supabase/ssr"
+ import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies"
++import { Capacitor } from "@capacitor/core"
+ import { Preferences } from "@capacitor/preferences"
+ 
+ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+@@ -28,15 +29,45 @@ const capacitorStorage = {
+  * Browser Client (Client Components)
+  * ============================
+  */
+-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+-  auth: {
+-    storage: capacitorStorage, // ✅ WICHTIGSTER FIX
+-    persistSession: true,
+-    autoRefreshToken: true,
+-    detectSessionInUrl: false,
+-      flowType: "pkce",
+-  },
+-})
++const isNativeCapacitor =
++  typeof window !== "undefined" && Capacitor.isNativePlatform()
++
++export const supabase = createBrowserClient(
++  supabaseUrl,
++  supabaseAnonKey,
++  isNativeCapacitor
++    ? {
++        auth: {
++          // Native App: Session weiterhin in Capacitor Preferences speichern.
++          storage: capacitorStorage,
++          persistSession: true,
++          autoRefreshToken: true,
++          detectSessionInUrl: false,
++          flowType: "pkce",
++        },
++      }
++    : {
++        // Web / localhost: createBrowserClient verwendet seine normale
++        // SSR-/Cookie-Sessionverwaltung. Kein Capacitor-Storage im Browser.
++        auth: {
++          flowType: "pkce",
++        },
++      },
++)
++
++if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
++  const originalSignOut = supabase.auth.signOut.bind(supabase.auth)
++
++  supabase.auth.signOut = async (...args) => {
++    console.error("[AUTH DEBUG] supabase.auth.signOut() wurde aufgerufen", args)
++    console.trace("[AUTH DEBUG] signOut-Aufrufer")
++    return originalSignOut(...args)
++  }
++
++  supabase.auth.onAuthStateChange((event, session) => {
++    console.log("[AUTH DEBUG] Auth-Event:", event, session?.user?.email ?? null)
++  })
++}
+ 
+ /**
+  * ============================

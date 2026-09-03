@@ -13,14 +13,14 @@ export function TournamentTabs({
   setActiveTab,
 }: TournamentTabsProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-2 shadow-sm overflow-x-auto mb-6">
-      <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+    <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
+      <div className="grid grid-cols-2 gap-2">
         <Button
           onClick={() => setActiveTab("register")}
-          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-xl font-bold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap  ${
             activeTab === "register"
-              ? "bg-primary text-white shadow-md"
-              : "bg-transparent text-gray-600 hover:bg-gray-100"
+              ? "bg-orange-600 text-white shadow-sm hover:bg-orange-700"
+              : "bg-transparent text-gray-600 hover:bg-orange-50 hover:text-orange-700"
           }`}
         >
           <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -29,10 +29,10 @@ export function TournamentTabs({
 
         <Button
           onClick={() => setActiveTab("tournament")}
-          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-xl font-bold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap  ${
             activeTab === "tournament"
-              ? "bg-primary text-white shadow-md"
-              : "bg-transparent text-gray-600 hover:bg-gray-100"
+              ? "bg-orange-600 text-white shadow-sm hover:bg-orange-700"
+              : "bg-transparent text-gray-600 hover:bg-orange-50 hover:text-orange-700"
           }`}
         >
           <Trophy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />

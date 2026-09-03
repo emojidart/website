@@ -351,7 +351,7 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
             <div className="font-black text-orange-900">Beitrittsanfragen</div>
             <p className="mt-1 text-sm font-semibold text-orange-800">
               Gäste bleiben Gäste, bis du den Beitritt bestätigst. Bei „Mitglied aufnehmen“
-              wird der bestehende Account mit dem Vereinsmitglied verbunden – kein neuer QR-Code nötig.
+              wird der bestehende Gast-Account direkt mit dem Vereinsmitglied verbunden.
             </p>
           </div>
         </div>

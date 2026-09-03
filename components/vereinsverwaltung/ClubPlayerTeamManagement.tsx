@@ -13,7 +13,6 @@ import {
   CalendarPlus,
   CreditCard,
   FolderOpen,
-  KeyRound,
   UserPlus,
   AlertCircle,
 } from "lucide-react"
@@ -36,7 +35,6 @@ import { DuesTab } from "@/components/vereinsverwaltung/tabs/DuesTab"
 import { DocumentsTab } from "@/components/vereinsverwaltung/tabs/DocumentsTab"
 import { InventoryTab } from "@/components/vereinsverwaltung/tabs/InventoryTab"
 import { OverviewTab } from "@/components/vereinsverwaltung/tabs/OverviewTab"
-import { QrCodesTab } from "@/components/vereinsverwaltung/tabs/QrCodesTab"
 import { JoinRequestsTab } from "@/components/vereinsverwaltung/tabs/JoinRequestsTab"
 import { GuestRequestsManagement } from "@/components/admin/guest-requests/guest-requests"
 
@@ -57,7 +55,6 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
     | "manage-players"
     | "manage-teams"
     | "assign-player"
-    | "qr-codes"
     | "membership"
     | "dues"
     | "documents"
@@ -269,20 +266,6 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
               >
                 <UserRoundCog className="h-4 w-4 mr-2" />
                 <span className="whitespace-nowrap text-sm">Zuweisen</span>
-              </Button>
-
-              <Button
-                variant={activeSection === "qr-codes" ? "default" : "outline"}
-                onClick={() => setActiveSection("qr-codes")}
-                className={cn(
-                  "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
-                  activeSection === "qr-codes"
-                    ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
-                )}
-              >
-                <KeyRound className="h-4 w-4 mr-2" />
-                <span className="whitespace-nowrap text-sm">QR-Codes</span>
               </Button>
 
               <Button
@@ -527,19 +510,6 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
               getPlayersInTeam={members.getPlayersInTeam}
               teamMembers={members.teamMembers}
               onRemoveMember={members.removeTeamMember}
-            />
-          )}
-
-          {activeSection === "qr-codes" && (
-            <QrCodesTab
-              clubPlayers={players.clubPlayers}
-              teams={teams.teams}
-              teamMembers={members.teamMembers}
-              loading={players.playerLoading}
-              onDataChanged={async () => {
-                await players.fetchClubPlayers()
-                await members.fetchTeamMembers()
-              }}
             />
           )}
 

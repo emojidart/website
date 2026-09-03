@@ -66,11 +66,15 @@ export function useMembershipAccess() {
       setState((prev) => ({ ...prev, loading: true, error: null }))
 
       const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
 
-      if (userError) throw userError
+      if (sessionError) {
+        console.warn("membership access session load warning:", sessionError)
+      }
+
+      const user = session?.user ?? null
 
       if (!user) {
         setState({
@@ -201,6 +205,26 @@ export function useMembershipAccess() {
         activeTrials,
       })
     } catch (error: any) {
+      const missingSession =
+        error?.name === "AuthSessionMissingError" ||
+        String(error?.message || "").toLowerCase().includes("auth session missing")
+
+      if (missingSession) {
+        setState({
+          loading: false,
+          error: null,
+          playerId: null,
+          membershipId: null,
+          membershipStatus: null,
+          endsOn: null,
+          moduleCodes: [],
+          paidModuleCodes: [],
+          trialModuleCodes: [],
+          activeTrials: [],
+        })
+        return
+      }
+
       console.error("membership access load error:", error)
 
       setState({
@@ -273,8 +297,10 @@ export function useMembershipAccess() {
   return {
     ...state,
 
-    // "hasMembership" bleibt bewusst nur die normale/bezahlte Mitgliedschaft.
-    hasMembership: !!state.membershipId,
+    // Eine gültige Test-Grundmitgliedschaft öffnet dieselben geschützten
+    // Mitgliederbereiche wie eine bezahlte Grundmitgliedschaft.
+    hasMembership: moduleSet.has("base_membership"),
+    hasPaidMembership: !!state.membershipId,
 
     hasModule,
     hasPaidModule,

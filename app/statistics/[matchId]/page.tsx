@@ -38,7 +38,6 @@ interface Team {
   name: string
 }
 
-// ✅ Wiederverwendbarer Spacer für fixed Header
 function HeaderSpacer() {
   return <div className="h-12 sm:h-14" aria-hidden="true" />
 }
@@ -165,7 +164,6 @@ export default function StatisticsPage() {
       <HeaderSpacer />
 
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Back Button */}
         <div className="mb-8">
           <Button onClick={() => router.push("/member-dashboard-app")} variant="outline" className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
@@ -173,7 +171,6 @@ export default function StatisticsPage() {
           </Button>
         </div>
 
-        {/* Page Header */}
         <div className="mb-8">
           <Card className="shadow-xl border-0 bg-white">
             <CardHeader>
@@ -198,8 +195,7 @@ export default function StatisticsPage() {
           </Card>
         </div>
 
-        {/* Statistics Component */}
-        <MatchStatisticsPage match={match} myTeamId={teamId} myTeam={myTeam} showHeader={false} />
+        <MatchStatisticsPage match={match} myTeamId={teamId!} myTeam={myTeam} showHeader={false} />
       </main>
     </div>
   )

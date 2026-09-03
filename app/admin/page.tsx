@@ -82,6 +82,7 @@ export default function AdminPage() {
     | "recruitment"
     | "club"
     | "tournaments"
+    | "tournament-center"
     | "users"
     | "user-management-internal"
     | "upcoming-tournaments"
@@ -190,8 +191,10 @@ export default function AdminPage() {
         return
       }
 
-      // Admins: alles sichtbar
-      if (isAdmin) {
+      // Admins: alles sofort sichtbar.
+      // stableIsAdmin berücksichtigt zusätzlich das Profil-Flag und verhindert,
+      // dass Admin-Kacheln beim ersten Laden fehlen und erst nach Reload erscheinen.
+      if (stableIsAdmin) {
         setAllowedViews(new Set(["*"]))
         return
       }
@@ -626,11 +629,11 @@ useEffect(() => {
       category: "sport" as const,
     },
     {
-      title: "Turniere starten",
-      description: "Turnier-Tools",
+      title: "Turnier-Zentrale",
+      description: "Turniere, Serien & Spieltage an einem Ort",
       icon: Trophy,
-      color: "bg-amber-500",
-      view: "tournaments" as const,
+      color: "bg-orange-600",
+      view: "tournament-center" as const,
       category: "sport" as const,
     },
 	{
@@ -641,14 +644,7 @@ useEffect(() => {
   view: "members-levels" as const,
   category: "sport" as const,
 },
-    {
-      title: "Turnier verwalten",
-      description: "Serien, Spieltage & Stammdaten zentral pflegen",
-      icon: Settings,
-      color: "bg-purple-600",
-      view: "tournament-management" as const,
-      category: "sport" as const,
-    },
+
     {
       title: "Lion Cup",
       description: "Ergebnisse, Historie & Verwaltung",
@@ -676,12 +672,10 @@ useEffect(() => {
   ]
 
   const visibleDashboardCards = dashboardCards.filter((card) => {
-    // Diese Bereiche sollen wie Bonusvergabe/Gastzugänge nicht kurz verschwinden,
-    // nur weil die Rechteabfrage beim ersten Render noch nicht fertig ist.
-    if (card.view === "membership-management") return stableIsAdmin || allowedViews?.has("membership-management") === true
-    if (card.view === "approvals") return stableIsAdmin
+    // Für echte Admins alle Kacheln sofort stabil anzeigen.
+    if (stableIsAdmin) return true
 
-    // Während Rechte laden: bekannte Navigation nicht flackern lassen.
+    // Während Rechte laden: bekannte Navigation nicht kurz leer rendern.
     if (allowedViews === null) return true
     if (allowedViews.has("*")) return true
     if (card.view === "role-permissions") return false
@@ -697,6 +691,7 @@ useEffect(() => {
 
  const canSeeView = (viewKey: string) => {
   if (viewKey === "dashboard") return true
+  if (stableIsAdmin) return true
   if (viewKey === "approvals") return stableIsAdmin
   if (viewKey === "membership-management") {
     return stableIsAdmin || allowedViews?.has("membership-management") === true || allowedViews?.has("*") === true
@@ -737,8 +732,7 @@ useEffect(() => {
     {
       label: "Turnierbetrieb",
       items: [
-        { key: "tournaments", label: "Turniere", icon: Trophy },
-        { key: "tournament-management", label: "Turnier verwalten", icon: Settings },
+        { key: "tournament-center", label: "Turnier-Zentrale", icon: Trophy },
         { key: "dart-competition", label: "Lion Cup", icon: Trophy },
         { key: "history", label: "Historie", icon: History },
         { key: "player-database", label: "Spielerdatenbank", icon: List },
@@ -800,8 +794,7 @@ useEffect(() => {
   ),
   "Turnierbetrieb": visibleDashboardCards.filter((c) =>
     [
-  "tournaments",
-  "tournament-management",
+  "tournament-center",
   "dart-competition",
   "history",
   "player-database",
@@ -1219,6 +1212,30 @@ if (!hasAnyPermission) {
                         </Card>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {currentView === "tournament-center" && (
+                  <div className="space-y-6">
+                    <Card className="border-0 shadow-md">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Trophy className="h-5 w-5 text-orange-600" />
+                          <span>Turnier-Zentrale</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="mb-4 text-gray-600">
+                          Einzelturniere, Turnierserien, Spieltage und Members Cup zentral öffnen.
+                        </p>
+                        <Link href="/admin/tournament-center">
+                          <Button className="w-full bg-orange-600 hover:bg-orange-700">
+                            <Trophy className="mr-2 h-4 w-4" />
+                            Turnier-Zentrale öffnen
+                          </Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
                   </div>
                 )}
 

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
+import { TournamentAdminNav } from "@/components/admin/tournaments/tournament-admin-nav"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
@@ -118,7 +119,7 @@ export default function TournamentDaysPrettyPage() {
         .order("created_at", { ascending: false })
 
       if (sErr) throw sErr
-      setSeriesList(((sData || []) as DkoSeries[]).filter(Boolean))
+      setSeriesList(((sData || []) as DkoSeries[]).filter((s) => Boolean(s) && s.is_active))
 
       const { data: eData, error: eErr } = await supabase
         .from("dko_series_events")
@@ -146,7 +147,7 @@ export default function TournamentDaysPrettyPage() {
         .order("start_at", { ascending: true })
 
       if (eErr) throw eErr
-      setEvents((eData || []) as DkoSeriesEvent[])
+      setEvents(((eData || []) as DkoSeriesEvent[]).filter((ev) => ev.dko_series?.is_active !== false))
     } catch (e: any) {
       console.error(e)
       setErrorMsg(e?.message ?? "Fehler beim Laden.")
@@ -285,6 +286,19 @@ const todaysRegistrations = useMemo(() => {
       .map(([seriesId, val]) => ({ seriesId, ...val }))
   }, [filteredEvents, seriesList])
 
+  const activeSeriesCount = useMemo(() => seriesList.filter((s) => s.is_active).length, [seriesList])
+
+  const nextUpcomingEvent = useMemo(() => {
+    const now = Date.now()
+    return filteredEvents
+      .map((ev) => {
+        const effectiveIso = ev.is_rescheduled && ev.rescheduled_at ? ev.rescheduled_at : ev.start_at
+        return { ev, effectiveIso, ts: new Date(effectiveIso).getTime() }
+      })
+      .filter((entry) => Number.isFinite(entry.ts) && entry.ts >= now)
+      .sort((a, b) => a.ts - b.ts)[0] ?? null
+  }, [filteredEvents])
+
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-100">
@@ -321,45 +335,63 @@ const todaysRegistrations = useMemo(() => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#f7f7f8]">
       <Header />
+      <TournamentAdminNav
+        title="Spieltage"
+        description="Nur aktive Turnierserien. Öffne den passenden Spieltag direkt."
+      />
 
-      <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white py-16 px-4 sm:px-6 lg:px-8">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
+      <main className="mx-auto w-full max-w-[1600px] px-3 py-5 sm:px-5 lg:px-8">
 
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
-            <Layers className="w-8 h-8" />
+        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Serien</div>
+            <div className="mt-1 text-2xl font-black text-gray-950">{seriesList.length}</div>
+            <div className="mt-0.5 text-xs text-gray-500">{activeSeriesCount} aktiv</div>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black mb-3 tracking-tight">SPIELTAGE — ALLE SERIEN</h1>
-          <p className="text-white/90 font-semibold">
-            Heute: <span className="font-black">{new Date().toLocaleDateString("de-DE")}</span>
-          </p>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Spieltage</div>
+            <div className="mt-1 text-2xl font-black text-gray-950">{filteredEvents.filter((e) => e.is_matchday).length}</div>
+            <div className="mt-0.5 text-xs text-gray-500">
+              {activeSeriesId === "ALL" ? "Alle Serien" : "Aktuelle Auswahl"}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Heute</div>
+            <div className="mt-1 text-2xl font-black text-gray-950">{todayMatchdays.length}</div>
+            <div className="mt-0.5 text-xs text-gray-500">
+              {todayMatchdays.length === 1 ? "Turniertag" : "Turniertage"}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Nächster Termin</div>
+            <div className="mt-1 truncate text-sm font-black text-gray-950">
+              {nextUpcomingEvent ? new Date(nextUpcomingEvent.effectiveIso).toLocaleDateString("de-DE") : "—"}
+            </div>
+            <div className="mt-0.5 text-xs text-gray-500">
+              {nextUpcomingEvent
+                ? `${new Date(nextUpcomingEvent.effectiveIso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr`
+                : "Kein weiterer Termin"}
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
-
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <Button
-            onClick={() => router.push("/admin")}
-            variant="outline"
-            className="flex items-center gap-2 border-2 border-orange-500 text-orange-500 hover:bg-orange-50"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Zurück
-          </Button>
-
-          <Button onClick={fetchAll} variant="outline" className="flex items-center gap-2 border-2 border-gray-200 hover:bg-gray-50">
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Aktualisieren
-          </Button>
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-black text-gray-950">Serien filtern</div>
+            <div className="text-xs text-gray-500">Wähle eine Serie oder zeige alle Spieltage.</div>
+          </div>
         </div>
 
-        <div className="mb-8 bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-white rounded-2xl p-4 sm:p-6 shadow-lg">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="mb-6 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="mb-4 flex items-center gap-3">
             <Trophy className="w-6 h-6 text-orange-600" />
             <div>
-              <div className="text-xl font-black text-gray-900">Serien</div>
+              <div className="text-base font-black text-gray-950">Turnierserien</div>
               <div className="text-sm text-gray-700 font-semibold">
                 „Turniertag starten“ ist nur aktiv, wenn heute ein Turniertag ist.
               </div>
@@ -371,10 +403,10 @@ const todaysRegistrations = useMemo(() => {
             <button
               type="button"
               onClick={() => setActiveSeriesId("ALL")}
-              className={`px-3 py-2 rounded-xl border-2 font-black text-sm transition-all ${
+              className={`rounded-xl border px-3 py-2 text-sm font-bold transition-all ${
                 activeSeriesId === "ALL"
-                  ? "bg-white border-orange-400 text-orange-700 shadow"
-                  : "bg-white/70 border-white text-gray-700 hover:bg-white"
+                  ? "border-orange-300 bg-orange-50 text-orange-700 shadow-sm"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-orange-200 hover:bg-orange-50/40"
               }`}
             >
               Alle
@@ -385,15 +417,15 @@ const todaysRegistrations = useMemo(() => {
                 key={s.id}
                 type="button"
                 onClick={() => setActiveSeriesId(s.id)}
-                className={`px-3 py-2 rounded-xl border-2 font-black text-sm transition-all ${
+                className={`rounded-xl border px-3 py-2 text-sm font-bold transition-all ${
                   activeSeriesId === s.id
-                    ? "bg-white border-orange-400 text-orange-700 shadow"
-                    : "bg-white/70 border-white text-gray-700 hover:bg-white"
+                    ? "border-orange-300 bg-orange-50 text-orange-700 shadow-sm"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-orange-200 hover:bg-orange-50/40"
                 }`}
                 title={`slug: ${s.slug}`}
               >
                 {s.name}
-                {!s.is_active && <span className="ml-2 text-xs font-black px-2 py-0.5 rounded bg-gray-200 text-gray-600">INAKTIV</span>}
+                {!s.is_active && <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-black text-gray-500">INAKTIV</span>}
               </button>
             ))}
           </div>
@@ -410,7 +442,7 @@ const todaysRegistrations = useMemo(() => {
 
 {/* INFOBOX: Heute ist Turniertag (datum-basierte Voranmeldungen) */}
 {todayMatchdays.length > 0 && (
-  <div className="mb-8 rounded-2xl border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-white p-4 sm:p-6 shadow-lg">
+  <div className="mb-6 rounded-3xl border border-orange-200 bg-white p-4 shadow-sm sm:p-5">
     <div className="flex items-start justify-between gap-4">
       <div className="flex items-start gap-3">
         <div className="mt-1 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-orange-100 border border-orange-200">
@@ -419,7 +451,7 @@ const todaysRegistrations = useMemo(() => {
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="text-xl font-black text-gray-900">Heute ist Turniertag! 🏆</div>
+            <div className="text-lg font-black text-gray-950 sm:text-xl">Heute ist Turniertag</div>
 
             {todaysRegistrations.total > 0 && (
               <span className="inline-flex items-center gap-2 rounded-full bg-white/80 border border-orange-200 px-3 py-1 text-xs font-black text-orange-800 shadow-sm">
@@ -490,7 +522,7 @@ const todaysRegistrations = useMemo(() => {
               `/dko_tournament_registration?seriesId=${encodeURIComponent(first.series_id)}&eventId=${encodeURIComponent(first.id)}`
             )
           }}
-          className="font-black rounded-xl px-4 py-6 shadow-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white flex items-center gap-2 justify-center"
+          className="flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-4 py-5 font-black text-white shadow-sm hover:bg-orange-700"
         >
           <Play className="w-5 h-5" />
           {todayMatchdays[0]?.ev?.dko_series?.name && isMembersChampionCupSeries(todayMatchdays[0].ev.dko_series.name)
@@ -509,25 +541,28 @@ const todaysRegistrations = useMemo(() => {
 )}
 
         {loading ? (
-          <Card className="border-2 border-white shadow-lg rounded-2xl">
+          <Card className="rounded-3xl border-gray-200 bg-white shadow-sm">
             <CardContent className="p-6 text-center text-gray-700 font-semibold">Lade Spieltage…</CardContent>
           </Card>
         ) : grouped.length === 0 ? (
-          <Card className="border-2 border-white shadow-lg rounded-2xl">
+          <Card className="rounded-3xl border-gray-200 bg-white shadow-sm">
             <CardContent className="p-6 text-center text-gray-700 font-semibold">Keine Spieltage vorhanden.</CardContent>
           </Card>
         ) : (
-          <div className="space-y-10">
+          <div className="space-y-8">
             {grouped.map(({ seriesId, series, items }) => {
               const seriesName = series?.name ?? "Unbekannte Serie"
 
               return (
                 <div key={seriesId}>
-                  <div className="flex items-end justify-between gap-4 mb-4">
-                    <div className="text-2xl font-black text-gray-900">{seriesName}</div>
+                  <div className="mb-3 flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-xl font-black text-gray-950 sm:text-2xl">{seriesName}</div>
+                      <div className="mt-0.5 text-xs font-medium text-gray-500">{items.length} Termin{items.length === 1 ? "" : "e"}</div>
+                    </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {items.map((ev) => {
                       const effectiveIso = ev.is_rescheduled && ev.rescheduled_at ? ev.rescheduled_at : ev.start_at
                       const dayKey = localDayKeyFromIso(effectiveIso)
@@ -543,13 +578,13 @@ const todaysRegistrations = useMemo(() => {
                       return (
                         <div
                           key={ev.id}
-                          className={`rounded-2xl shadow-lg border-2 transition-all ${
-                            canStart ? "border-orange-400 bg-white" : "border-white bg-white/80"
+                          className={`overflow-hidden rounded-3xl border bg-white shadow-sm transition-all ${
+                            canStart ? "border-orange-300 ring-2 ring-orange-100" : "border-gray-200"
                           }`}
                         >
                           <div
-                            className={`rounded-t-2xl p-4 ${
-                              canStart ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white" : "bg-gray-50 text-gray-900"
+                            className={`p-4 ${
+                              canStart ? "bg-orange-600 text-white" : "border-b border-gray-100 bg-gray-50/70 text-gray-900"
                             }`}
                           >
                             <div className="flex items-start justify-between gap-3">
@@ -558,7 +593,7 @@ const todaysRegistrations = useMemo(() => {
                                   <Calendar className="w-4 h-4" />
                                   {fmtDate(effectiveIso)}
                                 </div>
-                                <div className="text-2xl font-black mt-1 truncate">
+                                <div className="mt-1 truncate text-xl font-black">
                                   {ev.title?.trim() || (ev.is_matchday ? "Turniertag" : "Spielfrei")}
                                 </div>
                               </div>
@@ -589,8 +624,8 @@ const todaysRegistrations = useMemo(() => {
                             )}
                           </div>
 
-                          <div className="p-4 space-y-4">
-                            <div className="rounded-xl border-2 border-gray-100 bg-white p-3">
+                          <div className="space-y-4 p-4">
+                            <div className="rounded-2xl border border-gray-200 bg-gray-50/40 p-3">
                               <div className="flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-2 font-black text-gray-900">
                                   <Users className="w-4 h-4 text-orange-600" />
@@ -609,11 +644,11 @@ const todaysRegistrations = useMemo(() => {
                                     <div key={r.id} className="flex items-center justify-between gap-3 text-sm">
                                       <div className="font-semibold text-gray-900 truncate">{r.player_name ?? "Unbekannt"}</div>
                                       {r.paid ? (
-                                        <span className="inline-flex items-center gap-1 text-xs font-black px-2 py-1 rounded bg-green-50 text-green-700 border border-green-100">
+                                        <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-1 text-xs font-black text-green-700">
                                           <CheckCircle2 className="w-4 h-4" /> bezahlt
                                         </span>
                                       ) : (
-                                        <span className="inline-flex items-center gap-1 text-xs font-black px-2 py-1 rounded bg-gray-100 text-gray-600 border border-gray-200">
+                                        <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1 text-xs font-black text-gray-600">
                                           <XCircle className="w-4 h-4" /> offen
                                         </span>
                                       )}
@@ -638,10 +673,10 @@ const todaysRegistrations = useMemo(() => {
                                 )
                               }}
                               disabled={!canStart}
-                              className={`w-full font-black py-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg ${
+                              className={`flex w-full items-center justify-center gap-2 rounded-xl py-5 font-black transition-all ${
                                 canStart
-                                  ? "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-                                  : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                  ? "bg-orange-600 text-white shadow-sm hover:bg-orange-700"
+                                  : "cursor-not-allowed bg-gray-100 text-gray-400"
                               }`}
                               title={
                                 canStart
@@ -664,7 +699,7 @@ const todaysRegistrations = useMemo(() => {
             })}
           </div>
         )}
-      </div>
+      </main>
     </div>
   )
 }

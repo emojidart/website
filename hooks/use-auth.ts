@@ -81,39 +81,55 @@ export function useAuth(): AuthState {
   }
 
   useEffect(() => {
+    let mounted = true
+    let authEventVersion = 0
+
+    const applySession = (nextSession: Session | null) => {
+      if (!mounted) return
+
+      setSession(nextSession)
+      setUser(nextSession?.user || null)
+      setLoading(false)
+
+      if (nextSession?.user) {
+        setAdminLoading(true)
+        void checkAdminStatus(nextSession.user.id)
+      } else {
+        setIsAdmin(false)
+        setClubRoles([])
+        setAdminLoading(false)
+      }
+    }
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setUser(session?.user || null)
-      setLoading(false)
-
-      // <CHANGE> Check admin status when user changes
-      if (session?.user) {
-        checkAdminStatus(session.user.id)
-      } else {
-        setIsAdmin(false)
-        setClubRoles([])
-        setAdminLoading(false)
-      }
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      authEventVersion += 1
+      applySession(nextSession)
     })
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user || null)
-      setLoading(false)
+    const initialVersion = authEventVersion
 
-      // <CHANGE> Check admin status on initial load
-      if (session?.user) {
-        checkAdminStatus(session.user.id)
-      } else {
-        setIsAdmin(false)
-        setClubRoles([])
-        setAdminLoading(false)
+    void supabase.auth.getSession().then(({ data: { session: initialSession }, error }) => {
+      if (!mounted) return
+
+      if (error) {
+        console.error("Error loading auth session:", error)
+        if (authEventVersion === initialVersion) {
+          applySession(null)
+        }
+        return
       }
+
+      // Wenn inzwischen SIGNED_IN/SIGNED_OUT/TOKEN_REFRESHED ausgelöst wurde,
+      // darf das ältere getSession-Ergebnis den aktuellen Auth-State nicht überschreiben.
+      if (authEventVersion !== initialVersion) return
+
+      applySession(initialSession)
     })
 
     return () => {
+      mounted = false
       subscription.unsubscribe()
     }
   }, [])

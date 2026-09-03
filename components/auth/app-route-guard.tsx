@@ -113,8 +113,27 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
         const pathIsMemberProtected = isProtectedMemberPath(pathname)
         const pathIsMembershipPayment = pathname === MEMBER_MEMBERSHIP_ROUTE
 
-        if (!session?.user) {
-          if (pathIsMemberProtected) {
+        // useAuth kann direkt nach Login/Navigation für einen sehr kurzen Moment
+        // noch keine Session im React-State haben, obwohl Supabase sie bereits
+        // gespeichert hat. Deshalb vor einer Umleitung einmal die echte
+        // Browser-Session abfragen.
+        let effectiveUser = session?.user ?? null
+
+        if (!effectiveUser) {
+          const {
+            data: { session: freshSession },
+            error: freshSessionError,
+          } = await supabase.auth.getSession()
+
+          if (freshSessionError) {
+            console.warn("[AppRouteGuard] Session konnte nicht erneut gelesen werden:", freshSessionError)
+          }
+
+          effectiveUser = freshSession?.user ?? null
+        }
+
+        if (!effectiveUser) {
+          if (pathIsMemberProtected || pathIsMembershipPayment) {
             router.replace(MEMBER_LOGIN_ROUTE)
             return
           }
@@ -134,7 +153,7 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
         const { data: profile, error } = await supabase
           .from("user_profiles")
           .select("player_id,is_guest,is_admin,is_blocked,blocked_reason")
-          .eq("user_id", session.user.id)
+          .eq("user_id", effectiveUser.id)
           .maybeSingle()
 
         if (!mounted) return
@@ -202,7 +221,13 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
           let hasActiveBaseMembership = false
 
           if (currentPlayerId) {
-            const [{ data: baseModules, error: baseModuleError }, { data: activeMemberships, error: membershipError }] =
+            const today = new Date().toISOString().split("T")[0]
+
+            const [
+              { data: baseModules, error: baseModuleError },
+              { data: activeMemberships, error: membershipError },
+              { data: activeBaseTrials, error: baseTrialError },
+            ] =
               await Promise.all([
                 supabase
                   .from("membership_modules")
@@ -214,13 +239,28 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
                   .select("id")
                   .eq("player_id", currentPlayerId)
                   .eq("status", "active"),
+                supabase
+                  .from("membership_trials")
+                  .select("id")
+                  .eq("player_id", currentPlayerId)
+                  .eq("module_code", "base_membership")
+                  .eq("status", "active")
+                  .lte("starts_on", today)
+                  .gte("ends_on", today)
+                  .limit(1),
               ])
 
-            if (baseModuleError) {
-              console.error("[AppRouteGuard] Grundmodul konnte nicht geprüft werden:", baseModuleError)
-            } else if (membershipError) {
-              console.error("[AppRouteGuard] Mitgliedschaft konnte nicht geprüft werden:", membershipError)
+            if (baseTrialError) {
+              console.error("[AppRouteGuard] Test-Grundmitgliedschaft konnte nicht geprüft werden:", baseTrialError)
             } else {
+              hasActiveBaseMembership = (activeBaseTrials || []).length > 0
+            }
+
+            if (!hasActiveBaseMembership && baseModuleError) {
+              console.error("[AppRouteGuard] Grundmodul konnte nicht geprüft werden:", baseModuleError)
+            } else if (!hasActiveBaseMembership && membershipError) {
+              console.error("[AppRouteGuard] Mitgliedschaft konnte nicht geprüft werden:", membershipError)
+            } else if (!hasActiveBaseMembership) {
               const baseModuleIds = (baseModules || []).map((row: any) => String(row.id))
               const membershipIds = (activeMemberships || []).map((row: any) => String(row.id))
 
@@ -273,7 +313,7 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false
     }
-  }, [authLoading, session?.user, pathname, router])
+  }, [authLoading, session?.user?.id, pathname, router])
 
   if (checking || authLoading) {
     return <LoadingScreen />

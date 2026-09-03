@@ -11,15 +11,15 @@ interface SectionCardProps {
 
 export function SectionCard({ title, icon, children }: SectionCardProps) {
   return (
-    <Card className="mb-8 p-5 shadow-xl border-gray-200">
-      <CardHeader className="border-b pb-4 mb-6">
-        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900">
+    <Card className="mb-5 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+      <CardHeader className="mb-0 border-b border-gray-100 bg-gray-50/60 px-5 py-4">
+        <h2 className="flex items-center gap-2 text-lg font-black text-gray-950">
           {icon}
           {title}
         </h2>
       </CardHeader>
 
-      <CardContent>{children}</CardContent>
+      <CardContent className="p-5">{children}</CardContent>
     </Card>
   )
 }

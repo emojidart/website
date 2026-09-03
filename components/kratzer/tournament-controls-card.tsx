@@ -53,15 +53,15 @@ export function TournamentControlsCard({
   onCancelTournament,
 }: TournamentControlsCardProps) {
   return (
-    <Card className="mb-8 rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <CardHeader className="border-b border-gray-100 pb-4 mb-2">
-        <CardTitle className="text-xl font-semibold flex items-center gap-2 text-gray-900">
+    <Card className="mb-5 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+      <CardHeader className="mb-0 border-b border-gray-100 bg-gray-50/60 px-5 py-4">
+        <CardTitle className="flex items-center gap-2 text-lg font-black text-gray-950">
           <Settings className="h-6 w-6 text-orange-600" />
           Turnier-Steuerung
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-6 p-5">
+      <CardContent className="space-y-5 p-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <Label htmlFor="boardCount" className="text-gray-700">
@@ -145,7 +145,7 @@ export function TournamentControlsCard({
           <Button
             onClick={onStartTournament}
             disabled={isTournamentRunning || loading || registeredPlayersCount === 0}
-            className="bg-orange-600 hover:bg-orange-700"
+            className="rounded-xl bg-orange-600 font-bold hover:bg-orange-700"
           >
             <Play className="h-4 w-4 mr-2" />
             {isTournamentRunning ? "Turnier läuft" : "Turnier starten"}
@@ -154,7 +154,7 @@ export function TournamentControlsCard({
           <Button
             onClick={onStartNewRound}
             disabled={!isTournamentRunning || tournamentFinished || loading}
-            className="bg-orange-600 hover:bg-orange-700"
+            className="rounded-xl bg-orange-600 font-bold hover:bg-orange-700"
           >
             <RefreshCcw className="h-4 w-4 mr-2" />
             Neue Runde
@@ -193,7 +193,7 @@ export function TournamentControlsCard({
           <Button
             onClick={onFinishTournament}
             disabled={!isTournamentRunning || !tournamentFinished || loading}
-            className="bg-orange-600 hover:bg-orange-700"
+            className="rounded-xl bg-orange-600 font-bold hover:bg-orange-700"
           >
             <Flag className="h-4 w-4 mr-2" />
             Turnier abschließen

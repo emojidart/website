@@ -235,9 +235,11 @@ function PlayerSwitchOverlay({ open, name }: { open: boolean; name: string }) {
 export default function DartStatsClassicPage({
   initialPlayers = [],
   loadingPlayers = false,
+  teamId,
 }: {
   initialPlayers?: { id: string; name: string }[]
   loadingPlayers?: boolean
+  teamId: string
 }) {
   const params = useParams<{ matchId: string }>()
   const matchId = params?.matchId
@@ -263,6 +265,7 @@ export default function DartStatsClassicPage({
           .from("match_lineup_headers")
           .select("team_id,status,current_version,confirmed_version,confirmed_at")
           .eq("match_id", matchId)
+          .eq("team_id", teamId)
           .eq("status", "confirmed")
           .order("confirmed_at", { ascending: false })
 
@@ -312,9 +315,48 @@ export default function DartStatsClassicPage({
           orderedIds.push(pid)
         }
 
+        // Gleiche Paketlogik wie bei der Aufstellung: E-Dart/Steeldart + Testfreischaltungen.
+        const matchRes = await supabase.from("matches").select("dart_type").eq("id", matchId).single()
+        const currentDartType = String(matchRes.data?.dart_type || "").toLowerCase()
+        const requiredModule =
+          currentDartType === "edart"
+            ? "edart_league"
+            : currentDartType === "steeldart"
+              ? "steeldart_league"
+              : null
+
+        if (!requiredModule) {
+          setLineupPlayers(null)
+          setLoadingLineup(false)
+          return
+        }
+
+        const eligibleRes = await supabase.rpc("eligible_team_players_for_league", {
+          p_team_id: teamId,
+          p_required_module_code: requiredModule,
+        })
+
+        if (eligibleRes.error) {
+          console.error("eligible_team_players_for_league error:", eligibleRes.error)
+          setLineupPlayers(null)
+          setLoadingLineup(false)
+          return
+        }
+
+        const eligibleIds = new Set<string>(
+          ((eligibleRes.data as any[]) || []).map((row: any) => row?.player_id).filter(Boolean),
+        )
+        const allowedIds = orderedIds.filter((id) => eligibleIds.has(id))
+
+        if (allowedIds.length === 0) {
+          setLineupPlayers(null)
+          setLoadingLineup(false)
+          return
+        }
+
         // Resolve names: prefer initialPlayers, fetch missing from club_players
         const initMap = new Map((initialPlayers ?? []).map((p) => [p.id, p.name] as const))
-        const missing = orderedIds.filter((id) => !initMap.get(id))
+        const missing = allowedIds.filter((id) => !initMap.get(id))
 
         let fetchedMap = new Map<string, string>()
         if (missing.length > 0) {
@@ -324,7 +366,7 @@ export default function DartStatsClassicPage({
           }
         }
 
-        const resolved = orderedIds.map((id) => ({
+        const resolved = allowedIds.map((id) => ({
           id,
           name: initMap.get(id) ?? fetchedMap.get(id) ?? "Spieler",
         }))
@@ -340,7 +382,7 @@ export default function DartStatsClassicPage({
     return () => {
       cancelled = true
     }
-  }, [matchId, initialPlayers])
+  }, [matchId, teamId, initialPlayers])
 
   const effectiveLoadingPlayers = loadingPlayers || loadingLineup
 
@@ -451,9 +493,65 @@ export default function DartStatsClassicPage({
     }
   }, [matchId, legNumber, incomingSig, effectiveLoadingPlayers])
 
+  const isPlayerCurrentlyEligible = async (playerId: string) => {
+    if (!matchId || !teamId) return false
+
+    const matchRes = await supabase.from("matches").select("dart_type").eq("id", matchId).single()
+    if (matchRes.error) return false
+
+    const currentDartType = String(matchRes.data?.dart_type || "").toLowerCase()
+    const requiredModule =
+      currentDartType === "edart"
+        ? "edart_league"
+        : currentDartType === "steeldart"
+          ? "steeldart_league"
+          : null
+    if (!requiredModule) return false
+
+    const headerRes = await supabase
+      .from("match_lineup_headers")
+      .select("status,current_version,confirmed_version")
+      .eq("match_id", matchId)
+      .eq("team_id", teamId)
+      .maybeSingle()
+
+    const header = headerRes.data as any
+    const confirmed =
+      !headerRes.error &&
+      header?.status === "confirmed" &&
+      header?.confirmed_version != null &&
+      header?.current_version != null &&
+      header.confirmed_version === header.current_version
+    if (!confirmed) return false
+
+    const lineupRes = await supabase
+      .from("match_lineups")
+      .select("player_id")
+      .eq("match_id", matchId)
+      .eq("team_id", teamId)
+      .eq("player_id", playerId)
+      .maybeSingle()
+    if (lineupRes.error || !lineupRes.data) return false
+
+    const eligibleRes = await supabase.rpc("eligible_team_players_for_league", {
+      p_team_id: teamId,
+      p_required_module_code: requiredModule,
+    })
+    if (eligibleRes.error) return false
+
+    return ((eligibleRes.data as any[]) || []).some((row: any) => row?.player_id === playerId)
+  }
+
   // Ensure row (ONLY when saving)
   const ensureRow = async (playerId: string) => {
     if (!matchId) return false
+
+    // Vor jedem DB-Write erneut prüfen: bestätigte Aufstellung + aktives Liga-Paket/Testfreischaltung.
+    const eligible = await isPlayerCurrentlyEligible(playerId)
+    if (!eligible) {
+      setDbStatus("forbidden")
+      return false
+    }
 
     const chk = await supabase
       .from("leg_statistics")

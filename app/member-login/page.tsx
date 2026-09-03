@@ -69,13 +69,6 @@ function MemberLoginClient() {
     return "Anmeldung fehlgeschlagen. Bitte überprüfe deine Eingaben."
   }
 
-  const getBlockedMessage = (reason?: string | null) => {
-    if (reason && String(reason).trim().length > 0) {
-      return `Dein Zugang wurde gesperrt.`
-    }
-    return "Dein Zugang wurde gesperrt. Bitte wende dich an den Verein."
-  }
-
   useEffect(() => {
     const code = searchParams.get("code")
     if (!code) return
@@ -83,31 +76,12 @@ function MemberLoginClient() {
   }, [searchParams, router])
 
   useEffect(() => {
-    const checkBlockedAndRedirect = async () => {
-      if (authLoading || !session?.user) return
+    if (authLoading || !session?.user) return
 
-      const { data: profileData, error } = await supabase
-        .from("user_profiles")
-        .select("is_blocked, blocked_reason")
-        .eq("user_id", session.user.id)
-        .maybeSingle()
-
-      if (error) {
-        setMessage("Fehler beim Prüfen des Benutzerstatus.")
-        return
-      }
-
-      if (profileData?.is_blocked) {
-        await supabase.auth.signOut()
-        setMessage(getBlockedMessage(profileData.blocked_reason))
-        return
-      }
-
-      router.push("/member-profile-app")
-    }
-
-    checkBlockedAndRedirect()
-  }, [session, authLoading, router])
+    // Bereits angemeldet: direkt in den Mitgliederbereich.
+    // Sperren und Zugriffsrechte prüft zentral der AppRouteGuard.
+    router.replace("/member-profile-app")
+  }, [session?.user?.id, authLoading, router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -127,30 +101,16 @@ function MemberLoginClient() {
         return
       }
 
-      if (!data.user) {
+      if (!data.user || !data.session) {
         setMessage("Anmeldung fehlgeschlagen.")
         return
       }
 
-      const { data: profileData, error: profileError } = await supabase
-        .from("user_profiles")
-        .select("is_blocked, blocked_reason")
-        .eq("user_id", data.user.id)
-        .maybeSingle()
-
-      if (profileError) {
-        await supabase.auth.signOut()
-        setMessage("Fehler beim Prüfen des Benutzerstatus.")
-        return
-      }
-
-      if (profileData?.is_blocked) {
-        await supabase.auth.signOut()
-        setMessage(getBlockedMessage(profileData.blocked_reason))
-        return
-      }
-
-      router.push("/member-profile-app")
+      // signInWithPassword hat bereits eine gültige Session geliefert.
+      // Keine zweite Profilprüfung und kein vorschnelles signOut hier:
+      // Der zentrale AppRouteGuard prüft Sperre und Berechtigungen.
+      router.replace("/member-profile-app")
+      router.refresh()
     } catch {
       setMessage("Ein Fehler ist aufgetreten.")
     } finally {

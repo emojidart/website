@@ -10,13 +10,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { PlayerCodeDialog } from "@/components/vereinsverwaltung/PlayerCodeDialog"
 import {
   AlertCircle,
   CheckCircle,
   Edit,
   Eye,
-  KeyRound,
   Link2,
   Link2Off as LinkOff,
   Loader2,
@@ -81,8 +79,6 @@ function fmtText(v: unknown) {
 function getPlayerAccountState(player: ClubPlayer) {
   const isInactive = (player as any)?.is_active === false || !!player.club_left_at
   const hasAccount = !!(player as any)?.user_profiles?.user_id
-  const hasActiveCode = !!(player as any)?.active_code
-
   if (isInactive) {
     return {
       label: "Deaktiviert",
@@ -94,13 +90,6 @@ function getPlayerAccountState(player: ClubPlayer) {
     return {
       label: "Konto aktiv",
       className: "bg-green-100 text-green-800 border-green-200",
-    }
-  }
-
-  if (hasActiveCode) {
-    return {
-      label: "Code aktiv",
-      className: "bg-amber-100 text-amber-800 border-amber-200",
     }
   }
 
@@ -142,9 +131,6 @@ export function ManagePlayersTab(props: Props) {
 
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsPlayer, setDetailsPlayer] = useState<ClubPlayer | null>(null)
-
-  const [codeDialogOpen, setCodeDialogOpen] = useState(false)
-  const [codePlayer, setCodePlayer] = useState<ClubPlayer | null>(null)
 
   const [linkingDialogOpen, setLinkingDialogOpen] = useState(false)
   const [isLinking, setIsLinking] = useState(false)
@@ -201,11 +187,6 @@ export function ManagePlayersTab(props: Props) {
     setDeletePlayerName(player.name)
     setConfirmText("")
     setDeleteOpen(true)
-  }
-
-  function openCodeDialog(player: ClubPlayer) {
-    setCodePlayer(player)
-    setCodeDialogOpen(true)
   }
 
   function closeDelete() {
@@ -515,9 +496,7 @@ export function ManagePlayersTab(props: Props) {
               {visiblePlayers.map((player, idx) => {
                 const isInactive = (player as any)?.is_active === false || !!player.club_left_at
                 const hasAccount = !!(player as any)?.user_profiles?.user_id
-                const hasActiveCode = !!(player as any)?.active_code
-
-                return (
+                              return (
                   <tr
                     key={player.id}
                     className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}
@@ -566,18 +545,6 @@ export function ManagePlayersTab(props: Props) {
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Bearbeiten</span>
                         </Button>
-
-                        {!isInactive && !hasAccount && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openCodeDialog(player)}
-                            className="h-8 px-3 border-purple-200 text-purple-700 hover:bg-purple-50"
-                          >
-                            <KeyRound className="h-4 w-4 mr-2" />
-                            {hasActiveCode ? "Code" : "Code"}
-                          </Button>
-                        )}
 
                         {isInactive ? (
                           <Button
@@ -944,18 +911,6 @@ export function ManagePlayersTab(props: Props) {
           </div>
         </DialogContent>
       </Dialog>
-
-      <PlayerCodeDialog
-        open={codeDialogOpen}
-        onOpenChange={(open) => {
-          setCodeDialogOpen(open)
-          if (!open) setCodePlayer(null)
-        }}
-        player={codePlayer}
-        onCodeChanged={async () => {
-          await Promise.resolve(onDataChanged?.())
-        }}
-      />
 
       {deleteOpen && (
         <div className="fixed inset-0 z-50">
