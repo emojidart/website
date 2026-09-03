@@ -141,9 +141,9 @@ function buildISOFromLocal(dateStr: string, timeStr: string) {
 }
 
 function statusBadge(s: AvailabilityStatus | "none") {
-  if (s === "yes") return <Badge className="bg-green-600 text-white">Ja</Badge>
+  if (s === "yes") return <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-none">Ja</Badge>
   if (s === "maybe") return <Badge className="bg-yellow-600 text-white">Vielleicht</Badge>
-  if (s === "no") return <Badge className="bg-red-600 text-white">Nein</Badge>
+  if (s === "no") return <Badge className="border border-red-200 bg-red-50 text-red-700 shadow-none">Nein</Badge>
   return <Badge variant="outline">keine Antwort</Badge>
 }
 
@@ -165,14 +165,14 @@ function trainingTypeBadge(t: TrainingType) {
   }
   if (t === "double_training") {
     return (
-      <Badge className="bg-blue-600 text-white">
+      <Badge className="border border-sky-200 bg-sky-50 text-sky-700 shadow-none">
         <Globe className="h-3 w-3 mr-1" />
         Öffentlich
       </Badge>
     )
   }
   return (
-    <Badge className="bg-purple-600 text-white">
+    <Badge className="border border-violet-200 bg-violet-50 text-violet-700 shadow-none">
       <Trophy className="h-3 w-3 mr-1" />
       Turnier
     </Badge>
@@ -180,10 +180,10 @@ function trainingTypeBadge(t: TrainingType) {
 }
 
 function trainingStatusBadge(s: TrainingStatus) {
-  if (s === "canceled") return <Badge className="bg-red-600 text-white">Abgesagt</Badge>
+  if (s === "canceled") return <Badge className="border border-red-200 bg-red-50 text-red-700 shadow-none">Abgesagt</Badge>
   if (s === "completed") return <Badge variant="outline">Erledigt</Badge>
   if (s === "draft") return <Badge variant="outline">Entwurf</Badge>
-  return <Badge className="bg-green-600 text-white">Geplant</Badge>
+  return <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-none">Geplant</Badge>
 }
 
 function isTrainingLocked(item: TrainingItem) {
@@ -205,34 +205,34 @@ function willHappen(item: TrainingItem, counts: TrainingCounts | null) {
 
 function InfoCallout() {
   return (
-    <div className="rounded-2xl border bg-gradient-to-r from-orange-50 via-white to-indigo-50 p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 rounded-xl bg-white/70 p-2 ring-1 ring-black/5">
+    <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_16px_50px_-38px_rgba(15,23,42,0.45)] sm:rounded-[26px]">
+      <div className="flex items-start gap-3 p-4 sm:p-5">
+        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
           <ClipboardList className="h-5 w-5 text-orange-600" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm sm:text-base font-semibold text-gray-900">Kurz erklärt</h2>
+          <h2 className="text-lg font-black tracking-tight text-slate-950">Kurz erklärt</h2>
 
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 max-w-3xl text-sm font-medium leading-6 text-slate-600">
             Hier können Team-Trainings, öffentliche Trainings und Trainingsturniere geplant werden.
             Team-Trainings sind nur für Teammitglieder sichtbar. Öffentliche Trainings und Turniere sind für alle Spieler sichtbar.
           </p>
 
-          <div className="mt-3 grid gap-2 text-sm">
-            <div className="flex items-center gap-2">
+          <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3 text-sm">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
               <span>
                 <span className="font-medium">Ja</span> – sicher dabei
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3 text-sm">
               <HelpCircle className="h-4 w-4 text-yellow-600" />
               <span>
                 <span className="font-medium">Vielleicht</span>
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3 text-sm">
               <XCircle className="h-4 w-4 text-red-600" />
               <span>
                 <span className="font-medium">Nein</span> – nicht verfügbar
@@ -866,18 +866,18 @@ if (endISO) {
 
   if (authLoading || loading) {
     return (
-      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
         <Header variant="app" title="Trainings" subtitle="Übersicht" backHref="/member-profile-app" />
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
           <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-slate-200 bg-white px-8 py-9 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:px-10">
               <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+                <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl animate-pulse" />
+                <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
               </div>
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">Trainings werden geladen</p>
-                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+                <p className="text-lg font-bold text-slate-950">Trainings werden geladen</p>
+                <p className="text-sm text-slate-500 mt-1">Bitte kurz warten…</p>
               </div>
             </div>
           </div>
@@ -887,31 +887,56 @@ if (endISO) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans flex flex-col">
       <Header variant="app" title="Trainings" subtitle="Übersicht" backHref="/member-profile-app" />
 
-      <main className="pt-12 sm:pt-14">
-        <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl overflow-x-hidden">
-          <div className="mb-4">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <ClipboardList className="h-6 w-6 text-orange-600" />
-              Trainings
-            </h1>
-            <div className="mt-4">
-              <InfoCallout />
+      <main className="w-full pt-14 sm:pt-16">
+        <div className="w-full max-w-none overflow-x-hidden px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
+          <section className="relative mb-4 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+            <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+              <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                <div className="min-w-0">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                    Trainingsplanung
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                      <ClipboardList className="h-6 w-6 text-orange-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white/50">Training organisieren und Zusagen verwalten</p>
+                      <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Trainings</h1>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/member-profile-app")}
+                  className="h-11 w-full rounded-xl border-white/10 bg-white/10 px-4 font-black text-white shadow-none hover:bg-white/15 hover:text-white sm:w-auto"
+                >
+                  Zurück zum Profil
+                </Button>
+              </div>
             </div>
+          </section>
+
+          <div className="mb-4 sm:mb-5">
+            <InfoCallout />
           </div>
 
-          <Card className="shadow-xl border-0 bg-white">
-            <CardHeader className="space-y-3">
+          <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[30px]">
+            <CardHeader className="space-y-4 border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6">
               <div className="flex items-center justify-between gap-2">
-                <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                <CardTitle className="flex items-center gap-2 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
                   <Calendar className="h-6 w-6 text-orange-600" />
                   Team-Training / Öffentlich / Turnier
                 </CardTitle>
 
                 {profile?.player_id ? (
-                  <Button onClick={openCreateDialog} className="bg-orange-600 hover:bg-orange-700">
+                  <Button onClick={openCreateDialog} className="h-10 rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-600">
                     <Plus className="h-4 w-4 mr-2" />
                     Neu
                   </Button>
@@ -934,13 +959,13 @@ if (endISO) {
               ) : null}
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="px-3 py-4 sm:px-6 sm:py-6">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6 h-auto gap-1 p-1">
-                  <TabsTrigger value="upcoming" className="py-2">
+                <TabsList className="mb-5 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-slate-100/80 p-1.5 shadow-none">
+                  <TabsTrigger value="upcoming" className="h-10 rounded-xl py-2 text-xs font-black text-slate-500 data-[state=active]:bg-slate-950 data-[state=active]:text-white sm:text-sm">
                     Kommend ({upcomingItems.length})
                   </TabsTrigger>
-                  <TabsTrigger value="past" className="py-2">
+                  <TabsTrigger value="past" className="h-10 rounded-xl py-2 text-xs font-black text-slate-500 data-[state=active]:bg-slate-950 data-[state=active]:text-white sm:text-sm">
                     Vergangen ({pastItems.length})
                   </TabsTrigger>
                 </TabsList>
@@ -958,15 +983,15 @@ if (endISO) {
                         return (
                           <Card
                             key={item.id}
-                            className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl w-full overflow-hidden ${
+                            className={`w-full overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_14px_42px_-34px_rgba(15,23,42,0.55)] transition-all hover:border-slate-300 hover:shadow-[0_18px_54px_-34px_rgba(15,23,42,0.5)] sm:rounded-[24px] ${
                               locked ? "ring-1 ring-red-200 bg-red-50/20" : ""
                             }`}
                           >
-                            <CardContent className="p-4">
+                            <CardContent className="p-3.5 sm:p-5">
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
                                 <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
                                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                                    <div className="font-semibold text-base md:text-lg truncate">{item.title || trainingTypeLabel(item.type)}</div>
+                                    <div className="break-words text-base font-black leading-snug tracking-tight text-slate-950 md:text-lg">{item.title || trainingTypeLabel(item.type)}</div>
                                     {trainingTypeBadge(item.type)}
                                     {trainingStatusBadge(item.status)}
                                     <Badge variant="outline">{getScopeLabel(item)}</Badge>
@@ -980,7 +1005,7 @@ if (endISO) {
                                     </div>
                                   ) : null}
 
-                                  <div className="text-sm text-gray-600 mt-1 flex flex-wrap gap-x-3 gap-y-1 justify-center sm:justify-start">
+                                  <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:flex sm:flex-wrap sm:gap-x-3 sm:gap-y-2">
                                     <span className="inline-flex items-center gap-1">
                                       <Calendar className="h-4 w-4 text-orange-600" />
                                       {formatDateTime(item.start_at)}
@@ -988,7 +1013,7 @@ if (endISO) {
                                     </span>
                                   </div>
 
-                                  {item.notes ? <div className="mt-2 text-sm text-gray-700 break-words">{item.notes}</div> : null}
+                                  {item.notes ? <div className="mt-2 text-sm text-slate-700 break-words">{item.notes}</div> : null}
 
                                   <div className="mt-3 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                                     <Badge variant="outline" className="text-xs">
@@ -1002,9 +1027,9 @@ if (endISO) {
                                         </Badge>
 
                                         {item.status === "canceled" ? (
-                                          <Badge className="bg-red-600 text-white">Fällt aus</Badge>
+                                          <Badge className="border border-red-200 bg-red-50 text-red-700 shadow-none">Fällt aus</Badge>
                                         ) : ok === true ? (
-                                          <Badge className="bg-green-600 text-white">Findet statt</Badge>
+                                          <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-none">Findet statt</Badge>
                                         ) : ok === false ? (
                                           <Badge className="bg-yellow-600 text-white">Noch zu wenig Zusagen</Badge>
                                         ) : null}
@@ -1017,7 +1042,7 @@ if (endISO) {
                                   <Button
                                     size="sm"
                                     onClick={() => openTrainingDialog(item)}
-                                    className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto"
+                                    className="h-11 w-full rounded-xl bg-slate-950 font-black text-white shadow-none hover:bg-slate-800 sm:w-auto"
                                   >
                                     <Eye className="h-4 w-4 mr-2" />
                                     Öffnen
@@ -1041,20 +1066,20 @@ if (endISO) {
                         const c = countsByEvent.get(item.id) ?? null
                         return (
                           <Card key={item.id} className="border shadow-sm opacity-95 overflow-hidden rounded-2xl">
-                            <CardContent className="p-4">
+                            <CardContent className="p-3.5 sm:p-5">
                               <div className="flex flex-wrap items-center gap-2">
                                 <div className="font-semibold">{item.title || trainingTypeLabel(item.type)}</div>
                                 {trainingTypeBadge(item.type)}
                                 {trainingStatusBadge(item.status)}
                                 <Badge variant="outline">{getScopeLabel(item)}</Badge>
                               </div>
-                              <div className="text-sm text-gray-600 mt-1">
+                              <div className="text-sm text-slate-600 mt-1">
                                 {formatDateTime(item.start_at)}
                                 {item.end_at ? ` – ${formatTime(item.end_at)}` : ""}
                               </div>
-                              {item.notes ? <div className="mt-2 text-sm text-gray-700 break-words">{item.notes}</div> : null}
+                              {item.notes ? <div className="mt-2 text-sm text-slate-700 break-words">{item.notes}</div> : null}
                               {c ? (
-                                <div className="mt-2 text-xs text-gray-600">
+                                <div className="mt-2 text-xs text-slate-600">
                                   Ja: {c.yes_count ?? 0} • Vielleicht: {c.maybe_count ?? 0} • Nein: {c.no_count ?? 0}
                                 </div>
                               ) : null}
@@ -1116,7 +1141,7 @@ if (endISO) {
                         ) : null}
                       </div>
 
-                      <div className="text-sm text-gray-600 flex flex-col gap-1">
+                      <div className="text-sm text-slate-600 flex flex-col gap-1">
                         <div className="inline-flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-orange-600" />
                           <span>
@@ -1127,7 +1152,7 @@ if (endISO) {
                       </div>
 
                       {dialogItem.notes ? (
-                        <div className="rounded-xl border bg-gray-50 p-3 text-sm text-gray-800 whitespace-pre-wrap break-words">
+                        <div className="rounded-xl border bg-slate-50 p-3 text-sm text-slate-800 whitespace-pre-wrap break-words">
                           {dialogItem.notes}
                         </div>
                       ) : null}
@@ -1145,9 +1170,9 @@ if (endISO) {
                               Ja: {c.yes_count ?? 0} • Vielleicht: {c.maybe_count ?? 0} • Nein: {c.no_count ?? 0}
                             </Badge>
                             {dialogItem.status === "canceled" ? (
-                              <Badge className="bg-red-600 text-white">Fällt aus</Badge>
+                              <Badge className="border border-red-200 bg-red-50 text-red-700 shadow-none">Fällt aus</Badge>
                             ) : ok === true ? (
-                              <Badge className="bg-green-600 text-white">Findet statt</Badge>
+                              <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-none">Findet statt</Badge>
                             ) : ok === false ? (
                               <Badge className="bg-yellow-600 text-white">Noch zu wenig Zusagen</Badge>
                             ) : null}
@@ -1156,7 +1181,7 @@ if (endISO) {
                       })()}
                     </>
                   ) : (
-                    <div className="text-sm text-gray-600">Erstelle Team-Training, Öffentliches Training oder Trainingsturnier.</div>
+                    <div className="text-sm text-slate-600">Erstelle Team-Training, Öffentliches Training oder Trainingsturnier.</div>
                   )}
 
                   {canEditItem(dialogItem) ? (
@@ -1206,7 +1231,7 @@ if (endISO) {
 
                   <CardContent className="space-y-3">
                     <div className="grid gap-2">
-                      <div className="text-xs text-gray-500">Typ</div>
+                      <div className="text-xs text-slate-500">Typ</div>
                       <div className="flex flex-wrap gap-2">
                         {(["training", "double_training", "special"] as TrainingType[]).map((t) => (
                           <Button
@@ -1232,7 +1257,7 @@ if (endISO) {
                     </div>
 
                     {fType === "training" ? (
-                      <div className="rounded-xl border bg-gray-50 p-3 text-sm text-gray-700">
+                      <div className="rounded-xl border bg-slate-50 p-3 text-sm text-slate-700">
                         Gilt nur für Team: <span className="font-medium">{selectedMembership?.teams?.name ?? "Bitte Team wählen"}</span>
                       </div>
                     ) : (
@@ -1242,12 +1267,12 @@ if (endISO) {
                     )}
 
                     <div className="grid gap-2">
-                      <div className="text-xs text-gray-500">Titel</div>
+                      <div className="text-xs text-slate-500">Titel</div>
                       <Input value={fTitle} onChange={(e) => setFTitle(e.target.value)} placeholder="z. B. Team-Training" />
                     </div>
 
                     <div className="grid gap-2">
-                      <div className="text-xs text-gray-500">Beschreibung (optional)</div>
+                      <div className="text-xs text-slate-500">Beschreibung (optional)</div>
                       <Textarea
                         value={fDescription}
                         onChange={(e) => setFDescription(e.target.value)}
@@ -1256,7 +1281,7 @@ if (endISO) {
                     </div>
 
                     <div className="grid gap-2">
-                      <div className="text-xs text-gray-500">Mindestanzahl „Ja“</div>
+                      <div className="text-xs text-slate-500">Mindestanzahl „Ja“</div>
                       <Input
                         inputMode="numeric"
                         value={fMinYes}
@@ -1266,7 +1291,7 @@ if (endISO) {
                     </div>
 
                     <div className="grid gap-2">
-                      <div className="text-xs text-gray-500">Datum & Uhrzeit</div>
+                      <div className="text-xs text-slate-500">Datum & Uhrzeit</div>
                       <div className="grid gap-2 sm:grid-cols-3">
                         <Input type="date" value={fDate} onChange={(e) => setFDate(e.target.value)} />
                         <Input type="time" value={fStart} onChange={(e) => setFStart(e.target.value)} />
@@ -1342,7 +1367,7 @@ if (endISO) {
                     </div>
 
                     <div className="space-y-2">
-                      <div className="text-xs text-gray-500">Notiz (optional)</div>
+                      <div className="text-xs text-slate-500">Notiz (optional)</div>
                       <Textarea
                         value={myNote}
                         onChange={(e) => setMyNote(e.target.value)}
@@ -1373,7 +1398,7 @@ if (endISO) {
                           <div key={p.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border p-3 gap-3 min-w-0 overflow-hidden">
                             <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
                               <div className="font-medium truncate">{p.name}</div>
-                              {a?.note ? <div className="text-xs text-gray-500 truncate">{a.note}</div> : null}
+                              {a?.note ? <div className="text-xs text-slate-500 truncate">{a.note}</div> : null}
                             </div>
                             <div className="flex flex-wrap items-center gap-2 flex-shrink-0 justify-center sm:justify-end">
                               {statusBadge(s as any)}

@@ -393,9 +393,9 @@ export default function PlayerProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950">
         <Header showBackButton title="Spieler Profil" />
-        <div className="container mx-auto px-4 py-8 pb-24">
+        <div className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
           <div className="text-center">Lade Spielerdaten...</div>
         </div>
         <MobileBottomNav />
@@ -405,9 +405,9 @@ export default function PlayerProfilePage() {
 
   if (!player) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950">
         <Header showBackButton title="Spieler Profil" />
-        <div className="container mx-auto px-4 py-8 pb-24">
+        <div className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
           <div className="text-center">Spieler nicht gefunden</div>
         </div>
         <MobileBottomNav />
@@ -416,16 +416,16 @@ export default function PlayerProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950">
       <Header showBackButton title="Spieler Profil" />
 
-      <div className="container mx-auto px-4 py-8 pb-24">
+      <div className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
   {}
-  <div className="sticky top-[64px] z-40 -mx-4 px-4 py-2 bg-gray-50/90 backdrop-blur border-b border-gray-200 sm:static sm:top-auto sm:z-auto sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:border-0 mb-4 sm:mb-6">
+  <div className="mb-3 rounded-[16px] border border-slate-200 bg-white p-2 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.45)] sm:mb-5 sm:w-fit">
     <Button
       variant="outline"
       onClick={() => router.push("/liga-statistiken-app")}
-      className="w-full sm:w-auto justify-center"
+      className="h-10 w-full justify-center rounded-xl border-slate-200 bg-white font-bold hover:bg-slate-50 sm:w-auto"
     >
       <ArrowLeft className="h-4 w-4 mr-2 shrink-0" />
       <span className="truncate">Zurück zur Liga Statistik</span>
@@ -433,7 +433,7 @@ export default function PlayerProfilePage() {
   </div>
 
   {/* Profil Header */}
-  <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 mb-8">
+  <div className="relative mb-5 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 p-4 text-white shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] sm:p-6 lg:p-8 xl:rounded-[30px]">
     <div className="flex items-center gap-4">
       <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
         {player.photo_url ? (
@@ -458,10 +458,10 @@ export default function PlayerProfilePage() {
       </div>
 
       <div className="min-w-0 flex-1">
-        <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 leading-tight line-clamp-2">
+        <h1 className="line-clamp-2 text-2xl font-black tracking-[-0.03em] text-white sm:text-3xl">
           {player.name}
         </h1>
-        <div className="text-xs sm:text-sm text-gray-500 mt-1">Spielerprofil</div>
+        <div className="mt-1 text-xs font-medium text-white/50 sm:text-sm">Spielerprofil</div>
       </div>
     </div>
 
@@ -473,20 +473,20 @@ export default function PlayerProfilePage() {
       </div>
 
       <div className="rounded-xl border bg-white border-gray-200 p-2 sm:p-3 text-center">
-        <div className="text-lg sm:text-2xl font-extrabold text-gray-900">
+        <div className="text-lg sm:text-2xl font-extrabold text-slate-950">
           {player.win_percentage.toFixed(1)}%
         </div>
-        <div className="text-[11px] sm:text-xs text-gray-600">Siegquote</div>
+        <div className="text-[11px] sm:text-xs text-slate-600">Siegquote</div>
       </div>
 
-      <div className="rounded-xl border bg-gray-50 border-gray-200 p-2 sm:p-3 text-center">
-        <div className="text-lg sm:text-2xl font-extrabold text-gray-900">{player.total_legs}</div>
-        <div className="text-[11px] sm:text-xs text-gray-600">Legs</div>
+      <div className="rounded-xl border bg-slate-50 border-gray-200 p-2 sm:p-3 text-center">
+        <div className="text-lg sm:text-2xl font-extrabold text-slate-950">{player.total_legs}</div>
+        <div className="text-[11px] sm:text-xs text-slate-600">Legs</div>
       </div>
     </div>
   </div>
 
-        <Card className="mb-8">
+        <Card className="mb-5 rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5" />
@@ -498,15 +498,15 @@ export default function PlayerProfilePage() {
               {achievements.map((achievement) => (
                 <div
                   key={achievement.id}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    achievement.achieved ? "border-green-200 bg-green-50" : "border-gray-200 bg-gray-50 opacity-60"
+                  className={`p-4 rounded-[18px] border transition-all ${
+                    achievement.achieved ? "border-green-200 bg-green-50" : "border-gray-200 bg-slate-50 opacity-60"
                   }`}
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <div className={`p-2 rounded-full text-white ${achievement.color}`}>{achievement.icon}</div>
                     <div>
                       <h3 className="font-semibold">{achievement.title}</h3>
-                      <p className="text-sm text-gray-600">{achievement.description}</p>
+                      <p className="text-sm text-slate-600">{achievement.description}</p>
                     </div>
                   </div>
                   {achievement.progress !== undefined && achievement.target && (
@@ -592,27 +592,27 @@ export default function PlayerProfilePage() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_20}</div>
-                  <div className="text-sm text-gray-600">20er</div>
+                  <div className="text-sm text-slate-600">20er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_19}</div>
-                  <div className="text-sm text-gray-600">19er</div>
+                  <div className="text-sm text-slate-600">19er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_18}</div>
-                  <div className="text-sm text-gray-600">18er</div>
+                  <div className="text-sm text-slate-600">18er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_17}</div>
-                  <div className="text-sm text-gray-600">17er</div>
+                  <div className="text-sm text-slate-600">17er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_16}</div>
-                  <div className="text-sm text-gray-600">16er</div>
+                  <div className="text-sm text-slate-600">16er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-yellow-600">{player.throws_15}</div>
-                  <div className="text-sm text-gray-600">15er</div>
+                  <div className="text-sm text-slate-600">15er</div>
                 </div>
               </div>
             </CardContent>

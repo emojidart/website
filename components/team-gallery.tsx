@@ -50,41 +50,6 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
     })
   }
 
-  const translateThrowingHand = (hand: string | null) => {
-    if (!hand) return "-"
-
-    const normalized = hand.trim().toLowerCase()
-
-    if (normalized === "left") return "Links"
-    if (normalized === "right") return "Rechts"
-
-    return hand
-  }
-
-  const calculateAge = (birthdate: string | null) => {
-    if (!birthdate) return null
-
-    const birth = new Date(birthdate)
-    if (isNaN(birth.getTime())) return null
-
-    const today = new Date()
-    let age = today.getFullYear() - birth.getFullYear()
-
-    const monthDiff = today.getMonth() - birth.getMonth()
-    const dayDiff = today.getDate() - birth.getDate()
-
-    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-      age--
-    }
-
-    return age
-  }
-
-  const getAgeText = (birthdate: string | null) => {
-    const age = calculateAge(birthdate)
-    return age !== null ? String(age) : "-"
-  }
-
   const getOriginText = (origin: string | null) => {
     if (!origin || !origin.trim()) return "-"
     return origin
@@ -111,18 +76,18 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
         <Button
           variant="ghost"
           onClick={() => setSelectedTeam(null)}
-          className="mb-4 -ml-2 gap-2 text-sm font-semibold text-gray-700 hover:text-orange-700 hover:bg-orange-50 rounded-xl"
+          className="mb-4 -ml-1 h-10 gap-2 rounded-xl px-3 text-sm font-bold text-slate-600 hover:bg-white hover:text-slate-950"
           type="button"
         >
           <ChevronLeft className="h-4 w-4" />
           Alle Teams
         </Button>
 
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6">
-          <div className="flex items-start gap-4">
+        <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+          <div className="flex items-start gap-4 p-4 sm:p-5">
             <div className="shrink-0">
               {selectedTeam.logo_url ? (
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200">
+                <div className="relative h-16 w-16 overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50 sm:h-20 sm:w-20">
                   <Image
                     src={selectedTeam.logo_url || "/placeholder.svg"}
                     alt={selectedTeam.name}
@@ -131,39 +96,39 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
                   />
                 </div>
               ) : (
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-[20px] border border-slate-200 bg-slate-50 sm:h-20 sm:w-20">
                   <Users className="w-7 h-7 text-gray-400" />
                 </div>
               )}
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-100 inline-flex px-2.5 py-1 rounded-full">
+              <div className="inline-flex rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-orange-700">
                 Team
               </div>
-              <h2 className="mt-2 text-xl sm:text-2xl font-black leading-tight truncate">
+              <h2 className="mt-2 truncate text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
                 {selectedTeam.name}
               </h2>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="mt-1 text-sm font-medium text-slate-500">
                 {selectedTeam.players.length} Spieler
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 2xl:grid-cols-5">
           {sortedPlayers.map((player) => (
             <Card
               key={player.id}
-              className="group overflow-hidden bg-white border border-gray-200 hover:border-orange-300 transition-all duration-300 hover:shadow-md"
+              className="group overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_38px_-34px_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_20px_60px_-38px_rgba(15,23,42,0.5)]"
             >
-              <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+              <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
                 {player.photo_url ? (
                   <Image
                     src={player.photo_url || "/placeholder.svg"}
                     alt={player.name}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -171,41 +136,23 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
                   </div>
                 )}
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-70" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
 
-                <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-                  <h3 className="text-sm sm:text-base font-black leading-tight line-clamp-2">
+                <div className="absolute bottom-0 left-0 right-0 p-3.5 text-white">
+                  <h3 className="line-clamp-2 text-sm font-black leading-tight tracking-tight sm:text-base">
                     {player.name}
                   </h3>
-                  <p className="mt-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-orange-200">
+                  <p className="mt-1 inline-flex rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-orange-200">
                     {getRoleText(player.role)}
                   </p>
                 </div>
               </div>
 
-              <div className="p-3 space-y-2">
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <p className="text-gray-500">Alter</p>
-                    <p className="font-semibold text-gray-900">
-                      {getAgeText(player.birthdate)}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-500">Wurfhand</p>
-                    <p className="font-semibold text-gray-900">
-                      {translateThrowingHand(player.throwing_hand)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-xs">
-                  <p className="text-gray-500">Herkunft</p>
-                  <p className="font-semibold text-gray-900 line-clamp-1">
-                    {getOriginText(player.origin)}
-                  </p>
-                </div>
+              <div className="border-t border-slate-100 bg-white p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Herkunft</p>
+                <p className="mt-1 line-clamp-1 text-xs font-bold text-slate-700">
+                  {getOriginText(player.origin)}
+                </p>
               </div>
             </Card>
           ))}
@@ -227,63 +174,63 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
 
   return (
     <div className="w-full">
-      <div className="mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6">
+      <div className="mb-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px] sm:p-5">
         <div className="flex items-start gap-4">
-          <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3">
-            <Users className="w-6 h-6" />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50 text-orange-600">
+            <Users className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-100 inline-flex px-2.5 py-1 rounded-full">
+            <div className="inline-flex rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-orange-700">
               Unser Verein
             </div>
-            <h2 className="mt-2 text-xl sm:text-2xl font-black leading-tight">
+            <h2 className="mt-2 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
               Unsere Teams
             </h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm font-medium text-slate-500">
               Tippe auf ein Team, um alle Spieler zu sehen.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
         {teamsWithPlayers.map((team) => (
           <Card
             key={team.id}
-            className="group cursor-pointer overflow-hidden bg-white border border-gray-200 hover:border-orange-300 transition-all duration-300 hover:shadow-md"
+            className="group cursor-pointer overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_38px_-34px_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_20px_60px_-38px_rgba(15,23,42,0.5)]"
             onClick={() => setSelectedTeam(team)}
           >
-            <div className="relative h-28 bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
+            <div className="relative flex h-36 items-center justify-center overflow-hidden bg-slate-950 sm:h-40">
+              <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-orange-500/10 blur-2xl" />
+
               {team.logo_url ? (
-                <Image
-                  src={team.logo_url || "/placeholder.svg"}
-                  alt={team.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+                <div className="relative h-[78%] w-[72%] max-w-[220px]">
+                  <Image
+                    src={team.logo_url || "/placeholder.svg"}
+                    alt={team.name}
+                    fill
+                    className="object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                </div>
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Users className="w-16 h-16 text-gray-300" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06]">
+                  <Users className="h-7 w-7 text-white/35" />
                 </div>
               )}
+            </div>
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-70" />
-
-              <div className="absolute bottom-2 left-3 right-3 text-white">
-                <div className="text-sm font-black line-clamp-1">{team.name}</div>
-                <div className="text-[11px] text-white/90">
+            <div className="flex items-center justify-between gap-3 border-t border-slate-100 p-4">
+              <div className="min-w-0">
+                <div className="truncate text-base font-black tracking-tight text-slate-950">
+                  {team.name}
+                </div>
+                <div className="mt-0.5 text-xs font-medium text-slate-500">
                   {team.players.length} Spieler
                 </div>
               </div>
-            </div>
 
-            <div className="p-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-800 group-hover:text-orange-700 transition-colors">
-                Team ansehen
-              </span>
-
-              <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 group-hover:bg-orange-600 group-hover:border-orange-600 flex items-center justify-center transition-colors">
-                <ArrowRight className="w-4 h-4 text-orange-700 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50 transition-colors group-hover:border-orange-500 group-hover:bg-orange-500">
+                <ArrowRight className="h-4 w-4 text-orange-700 transition-all group-hover:translate-x-0.5 group-hover:text-white" />
               </div>
             </div>
           </Card>

@@ -161,10 +161,10 @@ export default function NachrichtenPage() {
   }, [prepared, query]);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-[#f5f6f8] pb-24">
       <Header />
 
-      <main className="mx-auto max-w-4xl px-4 pt-20">
+      <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
         <Button asChild variant="outline" className="mb-4 rounded-xl">
           <Link href="/dartboerse">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -172,7 +172,7 @@ export default function NachrichtenPage() {
           </Link>
         </Button>
 
-        <div className="rounded-[2rem] bg-gradient-to-br from-slate-950 to-slate-800 p-6 text-white shadow-xl">
+        <div className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 p-4 text-white shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] sm:p-6 lg:p-8 xl:rounded-[30px]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="text-xs font-black uppercase tracking-widest text-orange-300">
@@ -209,7 +209,7 @@ export default function NachrichtenPage() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Name, Angebot oder Nachricht suchen …"
-            className="h-12 rounded-2xl bg-white pl-11"
+            className="h-12 rounded-[18px] border-slate-200 bg-white pl-11 shadow-none"
           />
         </div>
 
@@ -224,7 +224,7 @@ export default function NachrichtenPage() {
             <Loader2 className="h-9 w-9 animate-spin text-orange-600" />
           </div>
         ) : filtered.length === 0 ? (
-          <Card className="mt-5 rounded-[2rem]">
+          <Card className="mt-5 rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
             <CardContent className="p-12 text-center">
               <Inbox className="mx-auto h-12 w-12 text-slate-300" />
               <h2 className="mt-4 text-xl font-black">
@@ -243,7 +243,7 @@ export default function NachrichtenPage() {
               <Link
                 key={item.id}
                 href={`/dartboerse/nachrichten/${item.id}`}
-                className={`block rounded-3xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                className={`block rounded-[24px] border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                   unread > 0
                     ? "border-orange-300 ring-2 ring-orange-100"
                     : "border-slate-200"
@@ -253,7 +253,7 @@ export default function NachrichtenPage() {
                   <div
                     className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl font-black ${
                       unread > 0
-                        ? "bg-orange-600 text-white"
+                        ? "bg-orange-500 text-white"
                         : "bg-slate-100 text-slate-500"
                     }`}
                   >
@@ -272,7 +272,7 @@ export default function NachrichtenPage() {
                       </div>
 
                       {unread > 0 ? (
-                        <span className="shrink-0 rounded-full bg-orange-600 px-2.5 py-1 text-xs font-black text-white">
+                        <span className="shrink-0 rounded-full bg-orange-500 px-2.5 py-1 text-xs font-black text-white">
                           {unread > 99 ? "99+" : unread} neu
                         </span>
                       ) : (

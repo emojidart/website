@@ -478,7 +478,7 @@ export default function MatchGaleriePage() {
   const matchesGrid = useMemo(() => {
     if (matches.length === 0) {
       return (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-slate-500">
           <Camera className="h-16 w-16 mx-auto mb-4 text-gray-300" />
           <p className="text-lg">Noch keine Match-Fotos verfügbar</p>
           <p className="text-sm mt-2">Fotos werden nach den Spielen hochgeladen</p>
@@ -487,7 +487,7 @@ export default function MatchGaleriePage() {
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {matches.map((match, index) => {
           const mid = String(match.id)
           const likes = likeCounts[mid] || 0
@@ -505,7 +505,7 @@ export default function MatchGaleriePage() {
               className="group cursor-pointer"
               onClick={() => openPhotoModal(match.team_photo_url, match)}
             >
-              <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+              <Card className="h-full overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_38px_-34px_rgba(15,23,42,0.42)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-orange-200 group-hover:shadow-[0_20px_60px_-38px_rgba(15,23,42,0.5)]">
                 <div className="relative aspect-square overflow-hidden">
                   <Image
                     src={match.team_photo_url || "/placeholder.svg"}
@@ -513,14 +513,14 @@ export default function MatchGaleriePage() {
                       match.away_team?.name || match.away_opponent_team?.name
                     }`}
                     fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
                   {!isMobile && (
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className="bg-white/90 backdrop-blur-sm rounded-full p-2">
-                        <Camera className="h-4 w-4 text-gray-700" />
+                        <Camera className="h-4 w-4 text-slate-700" />
                       </div>
                     </div>
                   )}
@@ -528,7 +528,7 @@ export default function MatchGaleriePage() {
 
                 <CardContent className="p-3 sm:p-4">
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-slate-500">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         <span>
@@ -552,16 +552,16 @@ export default function MatchGaleriePage() {
                               className="w-4 h-4 rounded-full object-cover flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-4 h-4 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Trophy className="h-2 w-2 text-gray-500" />
+                            <div className="w-4 h-4 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Trophy className="h-2 w-2 text-slate-500" />
                             </div>
                           )}
-                          <span className="font-medium text-gray-900 truncate">
+                          <span className="font-medium text-slate-950 truncate">
                             {match.home_team?.name || match.home_opponent_team?.name || "Team"}
                           </span>
                         </div>
                         {match.status === "completed" && (
-                          <span className="text-xs font-bold text-gray-600">{match.home_score || 0}</span>
+                          <span className="text-xs font-bold text-slate-600">{match.home_score || 0}</span>
                         )}
                       </div>
 
@@ -574,16 +574,16 @@ export default function MatchGaleriePage() {
                               className="w-4 h-4 rounded-full object-cover flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-4 h-4 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Trophy className="h-2 w-2 text-gray-500" />
+                            <div className="w-4 h-4 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Trophy className="h-2 w-2 text-slate-500" />
                             </div>
                           )}
-                          <span className="font-medium text-gray-900 truncate">
+                          <span className="font-medium text-slate-950 truncate">
                             {match.away_team?.name || match.away_opponent_team?.name || "Team"}
                           </span>
                         </div>
                         {match.status === "completed" && (
-                          <span className="text-xs font-bold text-gray-600">{match.away_score || 0}</span>
+                          <span className="text-xs font-bold text-slate-600">{match.away_score || 0}</span>
                         )}
                       </div>
                     </div>
@@ -601,7 +601,7 @@ export default function MatchGaleriePage() {
                         <button
                           type="button"
                           className={`inline-flex items-center gap-1 text-sm ${
-                            isLiked ? "text-red-600" : "text-gray-600"
+                            isLiked ? "text-red-600" : "text-slate-600"
                           } hover:text-red-600 transition-colors disabled:opacity-50`}
                           disabled={isLikeBusy}
                           onClick={(e) => {
@@ -616,7 +616,7 @@ export default function MatchGaleriePage() {
 
                         <button
                           type="button"
-                          className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-orange-700 transition-colors"
+                          className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-orange-700 transition-colors"
                           onClick={(e) => {
                             e.stopPropagation()
                             openPhotoModal(match.team_photo_url, match)
@@ -628,7 +628,7 @@ export default function MatchGaleriePage() {
                         </button>
                       </div>
 
-                      <span className="text-[11px] text-gray-400">Tippe für Details</span>
+                      <span className="text-[11px] text-slate-400">Tippe für Details</span>
                     </div>
                   </div>
                 </CardContent>
@@ -642,20 +642,20 @@ export default function MatchGaleriePage() {
 
   if (authLoading || loading) {
     return (
-      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <main className="min-h-screen flex flex-col bg-[#f5f6f8]">
         <Header variant="app" title="Match-Galerie" subtitle="Fotos & Momente" backHref="/member-profile-app" />
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
           <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-slate-200 bg-white px-8 py-9 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:px-10">
               <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+                <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl animate-pulse" />
+                <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
               </div>
 
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">Match-Galerie wird geladen</p>
-                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+                <p className="text-lg font-bold text-slate-950">Match-Galerie wird geladen</p>
+                <p className="text-sm text-slate-500 mt-1">Bitte kurz warten…</p>
               </div>
             </div>
           </div>
@@ -669,13 +669,13 @@ export default function MatchGaleriePage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-[#f5f6f8] text-slate-950 font-sans flex flex-col">
         <Header variant="app" title="Match-Galerie" subtitle="Anmeldung erforderlich" backHref="/member-profile-app" />
 
         <main className="flex-1 flex items-center justify-center px-4 pb-20">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Anmeldung erforderlich</h1>
-            <p className="text-gray-600 mb-6">Du musst angemeldet sein, um die Match-Galerie zu sehen.</p>
+            <h1 className="text-2xl font-bold text-slate-950 mb-4">Anmeldung erforderlich</h1>
+            <p className="text-slate-600 mb-6">Du musst angemeldet sein, um die Match-Galerie zu sehen.</p>
           </div>
         </main>
 
@@ -689,68 +689,76 @@ export default function MatchGaleriePage() {
   const currentLikedUsers = currentMatchId ? likedUsers[currentMatchId] || [] : []
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900 font-sans flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-[#f5f6f8] text-slate-950 font-sans flex flex-col overflow-x-hidden">
       <Header variant="app" title="Match-Galerie" subtitle={selectedSeasonLabel} backHref="/member-profile-app" />
 
-      <main className="pt-4 pb-20 flex-1">
+      <main className="w-full flex-1 pb-24 pt-14 sm:pt-16">
         <motion.div
-          className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8"
+          className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-12">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
-                <Camera className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
+          <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
+            <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
+              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+              <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
+              <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+                <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                        <Camera className="h-6 w-6 text-orange-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white/50">{selectedSeasonLabel}</p>
+                        <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
+                          MATCH-GALERIE
+                        </h1>
+                      </div>
+                    </div>
+                    <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-white/55 sm:text-base">
+                      Alle Teamfotos und Spielmomente
+                    </p>
+                  </div>
+
+                  <div className="grid w-full gap-2 sm:grid-cols-[auto_minmax(240px,360px)_auto] sm:items-center xl:w-auto">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-white/55">
+                      <Filter className="h-4 w-4 text-orange-400" />
+                      <span>Meisterschaft</span>
+                    </div>
+
+                    <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
+                      <SelectTrigger className="h-11 rounded-xl border-white/10 bg-white/[0.07] text-white shadow-none">
+                        <SelectValue placeholder="Meisterschaft auswählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {seasons.map((s) => {
+                          const year = s.year ? ` ${s.year}` : ""
+                          return (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                              {year}
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex items-center gap-2 text-sm font-semibold text-white/55">
+                      <Camera className="h-4 w-4 text-orange-400" />
+                      <span>{matches.length} Fotos</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-
-              <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
-                <span className="block text-white">MATCH-GALERIE</span>
-                <span className="block text-orange-200">{selectedSeasonLabel}</span>
-              </h1>
-
-              <p className="text-sm sm:text-lg md:text-xl font-bold uppercase text-orange-100 mb-3 sm:mb-4">
-                Alle Teamfotos und Spielmomente
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 text-orange-100">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  <span className="text-sm font-medium">Meisterschaft</span>
-                </div>
-
-                <div className="w-full sm:w-[360px]">
-                  <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                      <SelectValue placeholder="Meisterschaft auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {seasons.map((s) => {
-                        const year = s.year ? ` ${s.year}` : ""
-                        return (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.name}
-                            {year}
-                          </SelectItem>
-                        )
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  <span className="text-sm font-medium">{matches.length} Fotos</span>
-                </div>
-              </div>
-            </div>
+            </section>
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="overflow-hidden shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 sm:p-6">
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+              <CardHeader className="border-b border-slate-100 bg-white p-4 sm:p-5">
+                <CardTitle className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-950 sm:text-xl">
                   <Camera className="h-5 w-5 sm:h-6 sm:w-6" />
                   Match-Fotos ({matches.length})
                 </CardTitle>
@@ -777,7 +785,7 @@ export default function MatchGaleriePage() {
             }
           }}
         >
-          <DialogContent className="w-[98vw] max-w-5xl mx-auto max-h-[95vh] p-0 overflow-hidden">
+          <DialogContent className="mx-auto max-h-[96vh] w-[98vw] max-w-none overflow-hidden rounded-[24px] border border-slate-200 bg-white p-0 shadow-[0_30px_90px_-38px_rgba(15,23,42,0.55)]">
             <DialogHeader className="p-4 pb-3 border-b bg-white">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
@@ -789,7 +797,7 @@ export default function MatchGaleriePage() {
                       {selectedMatch && getMatchTitle(selectedMatch)}
                     </DialogTitle>
                     {selectedMatch && (
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-xs text-slate-500 mt-0.5">
                         {new Date(selectedMatch.match_date).toLocaleDateString("de-DE", {
                           day: "2-digit",
                           month: "2-digit",
@@ -803,11 +811,11 @@ export default function MatchGaleriePage() {
 
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center w-10 h-10 rounded-2xl border bg-white hover:bg-gray-50"
+                  className="inline-flex items-center justify-center w-10 h-10 rounded-2xl border bg-white hover:bg-slate-50"
                   onClick={() => setIsPhotoModalOpen(false)}
                   aria-label="Schließen"
                 >
-                  <X className="h-4 w-4 text-gray-700" />
+                  <X className="h-4 w-4 text-slate-700" />
                 </button>
               </div>
             </DialogHeader>
@@ -834,12 +842,12 @@ export default function MatchGaleriePage() {
                     <div className="p-4 border-b bg-gradient-to-r from-orange-50 to-white">
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="text-[11px] uppercase tracking-wide text-gray-500">Interaktion</div>
-                          <div className="text-sm font-semibold text-gray-900">Likes & Kommentare</div>
+                          <div className="text-[11px] uppercase tracking-wide text-slate-500">Interaktion</div>
+                          <div className="text-sm font-semibold text-slate-950">Likes & Kommentare</div>
 
                           <button
                             type="button"
-                            className="mt-1 inline-flex items-center gap-2 text-xs font-semibold text-gray-700 hover:text-orange-700"
+                            className="mt-1 inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-orange-700"
                             onClick={() => setLikedUsersOpen((v) => !v)}
                           >
                             <Users className="h-4 w-4" />
@@ -850,8 +858,8 @@ export default function MatchGaleriePage() {
                         <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
-                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50 transition-colors ${
-                              likedByMe[String(selectedMatch.id)] ? "text-red-600" : "text-gray-700"
+                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-2xl border bg-white hover:bg-slate-50 transition-colors ${
+                              likedByMe[String(selectedMatch.id)] ? "text-red-600" : "text-slate-700"
                             }`}
                             disabled={!!likeLoading[String(selectedMatch.id)]}
                             onClick={() => toggleLike(String(selectedMatch.id))}
@@ -862,7 +870,7 @@ export default function MatchGaleriePage() {
                             <span className="text-sm font-bold">{likeCounts[String(selectedMatch.id)] || 0}</span>
                           </button>
 
-                          <div className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border bg-white text-gray-700">
+                          <div className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border bg-white text-slate-700">
                             <MessageCircle className="h-4 w-4" />
                             <span className="text-sm font-bold">{commentCounts[String(selectedMatch.id)] || 0}</span>
                           </div>
@@ -872,13 +880,13 @@ export default function MatchGaleriePage() {
                       {likedUsersOpen && (
                         <div className="mt-3 rounded-2xl border bg-white p-3">
                           {currentLikedUsers.length === 0 ? (
-                            <div className="text-sm text-gray-500">Noch keine Likes.</div>
+                            <div className="text-sm text-slate-500">Noch keine Likes.</div>
                           ) : (
                             <div className="flex flex-wrap gap-2">
                               {currentLikedUsers.slice(0, 20).map((u) => (
                                 <div
                                   key={u.user_id}
-                                  className="flex items-center gap-2 rounded-2xl border bg-gray-50 px-2.5 py-1.5"
+                                  className="flex items-center gap-2 rounded-2xl border bg-slate-50 px-2.5 py-1.5"
                                 >
                                   {u.photo_url ? (
                                     <img
@@ -887,17 +895,17 @@ export default function MatchGaleriePage() {
                                       className="w-6 h-6 rounded-full object-cover border"
                                     />
                                   ) : (
-                                    <div className="w-6 h-6 rounded-full bg-white border flex items-center justify-center text-[11px] font-bold text-gray-600">
+                                    <div className="w-6 h-6 rounded-full bg-white border flex items-center justify-center text-[11px] font-bold text-slate-600">
                                       {u.name.slice(0, 1).toUpperCase()}
                                     </div>
                                   )}
-                                  <div className="text-xs font-semibold text-gray-800 max-w-[140px] truncate">
+                                  <div className="text-xs font-semibold text-slate-800 max-w-[140px] truncate">
                                     {u.name}
                                   </div>
                                 </div>
                               ))}
                               {currentLikedUsers.length > 20 && (
-                                <div className="text-xs text-gray-500 self-center">
+                                <div className="text-xs text-slate-500 self-center">
                                   +{currentLikedUsers.length - 20} weitere
                                 </div>
                               )}
@@ -908,8 +916,8 @@ export default function MatchGaleriePage() {
                     </div>
 
                     {/* Comments list */}
-                    <div className="flex-1 p-4 overflow-auto bg-gray-50">
-                      <div className="text-sm font-bold text-gray-900 mb-3">Kommentare</div>
+                    <div className="flex-1 p-4 overflow-auto bg-slate-50">
+                      <div className="text-sm font-bold text-slate-950 mb-3">Kommentare</div>
 
                       {commentError && (
                         <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-2xl p-3">
@@ -918,9 +926,9 @@ export default function MatchGaleriePage() {
                       )}
 
                       {commentsLoading ? (
-                        <div className="text-sm text-gray-500">Lade Kommentare…</div>
+                        <div className="text-sm text-slate-500">Lade Kommentare…</div>
                       ) : comments.length === 0 ? (
-                        <div className="text-sm text-gray-500 bg-white border rounded-2xl p-4">
+                        <div className="text-sm text-slate-500 bg-white border rounded-2xl p-4">
                           Noch keine Kommentare. Sei der Erste 🙂
                         </div>
                       ) : (
@@ -938,7 +946,7 @@ export default function MatchGaleriePage() {
                                         className="w-8 h-8 rounded-full object-cover border"
                                       />
                                     ) : (
-                                      <div className="w-8 h-8 rounded-full bg-white border flex items-center justify-center text-xs font-bold text-gray-600">
+                                      <div className="w-8 h-8 rounded-full bg-white border flex items-center justify-center text-xs font-bold text-slate-600">
                                         {String(c.display_name || "U")
                                           .slice(0, 1)
                                           .toUpperCase()}
@@ -949,17 +957,17 @@ export default function MatchGaleriePage() {
 
                                 <div className="max-w-[85%] rounded-2xl border px-3 py-2 bg-white">
                                   <div className="flex items-center justify-between gap-3">
-                                    <div className="text-xs font-semibold text-gray-900 truncate">
+                                    <div className="text-xs font-semibold text-slate-950 truncate">
                                       {c.display_name || "User"}
                                     </div>
-                                    <div className="text-[11px] text-gray-400">
+                                    <div className="text-[11px] text-slate-400">
                                       {new Date(c.created_at).toLocaleTimeString("de-DE", {
                                         hour: "2-digit",
                                         minute: "2-digit",
                                       })}
                                     </div>
                                   </div>
-                                  <div className="mt-1 text-sm text-gray-800 whitespace-pre-wrap break-words">
+                                  <div className="mt-1 text-sm text-slate-800 whitespace-pre-wrap break-words">
                                     {c.body}
                                   </div>
                                 </div>
@@ -979,7 +987,7 @@ export default function MatchGaleriePage() {
                           value={commentInput}
                           onChange={(e) => setCommentInput(e.target.value)}
                           placeholder="Kommentar schreiben…"
-                          className="flex-1 min-h-[44px] max-h-[120px] rounded-2xl border bg-gray-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-200"
+                          className="flex-1 min-h-[44px] max-h-[120px] rounded-2xl border bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-200"
                         />
 
                         <button
@@ -992,7 +1000,7 @@ export default function MatchGaleriePage() {
                           <Send className="h-4 w-4" />
                         </button>
                       </div>
-                      <div className="mt-2 text-[11px] text-gray-400">Tipp: kurz & freundlich 🙂</div>
+                      <div className="mt-2 text-[11px] text-slate-400">Tipp: kurz & freundlich 🙂</div>
                     </div>
                   </>
                 )}

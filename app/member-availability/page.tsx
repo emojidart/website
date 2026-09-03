@@ -193,46 +193,71 @@ function isMatchLocked(match: Match) {
 
 function InfoCallout() {
   return (
-    <div className="rounded-2xl border bg-gradient-to-r from-orange-50 via-white to-indigo-50 p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 rounded-xl bg-white/70 p-2 ring-1 ring-black/5">
-          <MessageCircle className="h-5 w-5 text-orange-600" />
+    <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_16px_50px_-38px_rgba(15,23,42,0.45)] sm:rounded-[26px]">
+      <div className="border-b border-slate-100 px-4 py-4 sm:px-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+            <MessageCircle className="h-5 w-5 text-orange-600" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-xs">
+              So funktioniert’s
+            </div>
+            <h2 className="mt-0.5 text-lg font-black tracking-tight text-slate-950 sm:text-xl">
+              Deine Verfügbarkeit
+            </h2>
+          </div>
         </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Kurz erklärt</h2>
+        <p className="mt-3 max-w-3xl text-sm font-medium leading-6 text-slate-600">
+          Gib pro Spiel kurz an, ob du dabei bist. Captain und Co-Captain sehen sofort, mit wem sie für die Aufstellung planen können.
+        </p>
+      </div>
+
+      <div className="grid gap-2.5 p-3.5 sm:grid-cols-3 sm:p-4">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3.5">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            </div>
+            <div className="text-sm font-black text-slate-950">Ja</div>
           </div>
+          <div className="mt-2 text-xs font-medium leading-5 text-slate-600">
+            Du bist sicher dabei.
+          </div>
+        </div>
 
-          <p className="mt-1 text-sm text-gray-600">
-            Bitte gib pro Spiel deine Verfügbarkeit an. So können der Captain und der Co-Captain die Aufstellung zuverlässig planen.
-          </p>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3.5">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white">
+              <HelpCircle className="h-4 w-4 text-amber-600" />
+            </div>
+            <div className="text-sm font-black text-slate-950">Nur wenn nötig</div>
+          </div>
+          <div className="mt-2 text-xs font-medium leading-5 text-slate-600">
+            Du kannst einspringen, wenn jemand gebraucht wird.
+          </div>
+        </div>
 
-          <div className="mt-3 grid gap-2 text-sm">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <span>
-                <span className="font-medium">Ja</span> – sicher dabei
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <HelpCircle className="h-4 w-4 text-yellow-600" />
-              <span>
-                <span className="font-medium">Nur wenn Not am Mann</span> – nur im Engpass einplanen
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
+        <div className="rounded-2xl border border-red-200 bg-red-50/70 p-3.5">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white">
               <XCircle className="h-4 w-4 text-red-600" />
-              <span>
-                <span className="font-medium">Nein</span> – nicht verfügbar
-              </span>
             </div>
+            <div className="text-sm font-black text-slate-950">Nein</div>
           </div>
+          <div className="mt-2 text-xs font-medium leading-5 text-slate-600">
+            Du bist für dieses Spiel nicht verfügbar.
+          </div>
+        </div>
+      </div>
 
-          <div className="mt-3 rounded-xl bg-white/70 p-3 ring-1 ring-black/5 text-sm text-gray-700">
-            <span className="font-medium">Captain/Co-Captain</span> stellt daraus die <span className="font-medium">Fix- und Ersatzspieler</span>{" "}
-            zusammen.
-          </div>
+      <div className="border-t border-slate-100 px-4 py-3.5 sm:px-5">
+        <div className="flex items-start gap-2.5 rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3">
+          <Users className="mt-0.5 h-4 w-4 shrink-0 text-orange-500" />
+          <p className="text-sm font-medium leading-5 text-slate-600">
+            Captain und Co-Captain erstellen daraus die Aufstellung mit Stamm- und Ersatzspielern.
+          </p>
         </div>
       </div>
     </div>
@@ -1255,7 +1280,7 @@ const lineupIsStale =
 
 if (authLoading || loading) {
   return (
-    <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
       <Header
         variant="app"
         title="Zusagen & Aufstellung"
@@ -1266,17 +1291,17 @@ if (authLoading || loading) {
       {/* Dieser Bereich füllt ALLES unter dem Header */}
       <div className="flex-1 flex items-center justify-center px-4 pb-20">
         <div className="animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+          <div className="flex flex-col items-center gap-5 rounded-[28px] border border-slate-200 bg-white px-8 py-9 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:px-10">
             {/* Spinner */}
             <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-              <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+              <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl animate-pulse" />
+              <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
             </div>
 
             {/* Text */}
             <div className="text-center">
-              <p className="text-lg font-bold text-gray-900">Aufstellung wird geladen</p>
-              <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+              <p className="text-lg font-bold text-slate-950">Aufstellung wird geladen</p>
+              <p className="text-sm text-slate-500 mt-1">Bitte kurz warten…</p>
             </div>
           </div>
         </div>
@@ -1286,7 +1311,7 @@ if (authLoading || loading) {
 }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-[#f5f6f8] text-slate-950 font-sans flex flex-col overflow-x-hidden">
       <Header
   variant="app"
   title="Zusagen & Aufstellung"
@@ -1294,40 +1319,96 @@ if (authLoading || loading) {
   backHref="/member-profile-app"
 />
 
-      <main className="pt-12 sm:pt-14">
+      <main className="w-full pt-14 sm:pt-16">
         <MembershipAccessGate
           required={["edart_league", "steeldart_league"]}
           requireAll={false}
           title="Zusagen & Aufstellung nicht freigeschaltet"
           description="Für diesen Bereich brauchst du ein aktives E-Dart- oder Steeldart-Ligapaket bzw. eine gültige Testfreischaltung."
         >
-  <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl overflow-x-hidden">
+  <div className="w-full max-w-none overflow-x-hidden px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
 
-        <div className="mb-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <ClipboardList className="h-6 w-6 text-orange-600" />
-            Zusagen & Aufstellung
-          </h1>
-          <div className="mt-4">
-            <InfoCallout />
+        <section className="relative mb-4 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
+
+          <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                  Mannschaft
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] text-orange-400 sm:h-14 sm:w-14">
+                    <ClipboardList className="h-6 w-6 sm:h-7 sm:w-7" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white/50">Planung für deine Ligaspiele</p>
+                    <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
+                      Zusagen & Aufstellung
+                    </h1>
+                  </div>
+                </div>
+
+                <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-white/55 sm:text-base">
+                  Verfügbarkeit melden, Aufstellung ansehen und alles rund um das Spiel gemeinsam abstimmen.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row xl:flex-col xl:items-end">
+                <div className="grid grid-cols-2 gap-2 sm:min-w-[300px]">
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-sm sm:p-4">
+                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[10px]">Kommende</div>
+                    <div className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">{upcomingMatches.length}</div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-sm sm:p-4">
+                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[10px]">Beendet</div>
+                    <div className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">{completedMatches.length}</div>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/member-profile-app")}
+                  className="h-11 w-full rounded-xl border-white/10 bg-white/10 px-4 font-black text-white shadow-none backdrop-blur-sm hover:bg-white/15 hover:text-white sm:w-auto"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Zurück zum Profil
+                </Button>
+              </div>
+            </div>
           </div>
+        </section>
+
+        <div className="mb-4 sm:mb-5">
+          <InfoCallout />
         </div>
 
-        <Card className="shadow-xl border-0 bg-white">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl font-bold">
-              <Calendar className="h-6 w-6 text-orange-600" />
+        <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[30px]">
+          <CardHeader className="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6 lg:px-7">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+                <Calendar className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-xs">Spielübersicht</div>
+                <CardTitle className="mt-0.5 flex items-center gap-2 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
               Spiele
-            </CardTitle>
+                </CardTitle>
+              </div>
+            </div>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="px-3 py-4 sm:px-6 sm:py-6 lg:px-7">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6 h-auto gap-1 p-1">
-                <TabsTrigger value="upcoming" className="py-2">
+              <TabsList className="mb-5 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-slate-100/80 p-1.5 shadow-none">
+                <TabsTrigger value="upcoming" className="h-10 rounded-xl py-2 text-xs font-black text-slate-500 shadow-none data-[state=active]:bg-slate-950 data-[state=active]:text-white data-[state=active]:shadow-sm sm:text-sm">
                   Kommende ({upcomingMatches.length})
                 </TabsTrigger>
-                <TabsTrigger value="completed" className="py-2">
+                <TabsTrigger value="completed" className="h-10 rounded-xl py-2 text-xs font-black text-slate-500 shadow-none data-[state=active]:bg-slate-950 data-[state=active]:text-white data-[state=active]:shadow-sm sm:text-sm">
                   Abgeschlossen ({completedMatches.length})
                 </TabsTrigger>
               </TabsList>
@@ -1344,14 +1425,14 @@ if (authLoading || loading) {
                       return (
                        <Card
   key={m.id}
-  className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl w-full overflow-hidden ${
+  className={`w-full overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_14px_42px_-34px_rgba(15,23,42,0.55)] transition-all hover:border-slate-300 hover:shadow-[0_18px_54px_-34px_rgba(15,23,42,0.5)] sm:rounded-[24px] ${
     locked ? "ring-1 ring-red-200 bg-red-50/20" : ""
   }`}
 >
-                          <CardContent className="p-4">
+                          <CardContent className="p-3.5 sm:p-5">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
-                              <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
-                                <div className="font-semibold text-base md:text-lg truncate">
+                              <div className="min-w-0 w-full text-left sm:w-auto">
+                                <div className="break-words text-base font-black leading-snug tracking-tight text-slate-950 md:text-lg">
                                   {getTeamDisplayName(m, true)} vs {getTeamDisplayName(m, false)}
                                 </div>
 
@@ -1363,12 +1444,12 @@ if (authLoading || loading) {
                                   </div>
                                 )}
 
-                                <div className="text-sm text-gray-600 mt-1 flex flex-wrap gap-x-3 gap-y-1 justify-center sm:justify-start">
-                                  <span className="inline-flex items-center gap-1">
+                                <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:flex sm:flex-wrap sm:gap-x-4 sm:gap-y-2">
+                                  <span className="inline-flex min-w-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                                     <Calendar className="h-4 w-4 text-orange-600" />
                                     {formatDate(m.match_date)} {m.match_time ? `• ${formatTime(m.match_time)}` : ""}
                                   </span>
-                                  <span className="inline-flex items-center gap-1">
+                                  <span className="inline-flex min-w-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                                     <MapPin className="h-4 w-4 text-orange-600" />
                                     {m.venue || "—"}
                                   </span>
@@ -1386,67 +1467,70 @@ if (authLoading || loading) {
                                   </div>
                                 )}
 
-                                {(() => {
-                                  const opp = getOpponentForMatch(m)
-                                  if (!opp) return null
+                                                                  {(() => {
+                                    const opp = getOpponentForMatch(m)
+                                    if (!opp) return null
 
-                                  const phone = opp.captain_phone
-                                  const tel = phone ? normalizePhoneForLinks(phone) : null
-                                  const wa = phone ? whatsappUrlFromPhone(phone) : null
+                                    const phone = opp.captain_phone
+                                    const tel = phone ? normalizePhoneForLinks(phone) : null
+                                    const wa = phone ? whatsappUrlFromPhone(phone) : null
 
-                                  const hasAny = !!(opp.venue_name || opp.venue || phone)
-                                  if (!hasAny) return null
+                                    const hasAny = !!(opp.venue_name || opp.venue || phone)
+                                    if (!hasAny) return null
 
-                                  return (
-                                    <div className="mt-3 space-y-2">
-                                      <div className="rounded-xl border bg-gray-50/80 p-3">
-                                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                                          <MapPin className="h-3.5 w-3.5" />
-                                          <span>Gegner-Lokal</span>
+                                    return (
+                                      <div className="mt-4 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_34px_-28px_rgba(15,23,42,0.45)]">
+                                        <div className="flex items-center gap-2.5 border-b border-slate-100 bg-slate-50/80 px-3.5 py-3 sm:px-4">
+                                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50">
+                                            <MapPin className="h-4 w-4 text-orange-600" />
+                                          </div>
+                                          <div>
+                                            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Auswärtsspiel</div>
+                                            <div className="text-sm font-black text-slate-950">Gegner – Lokal</div>
+                                          </div>
                                         </div>
 
-                                        <div className="grid gap-1 text-sm">
-                                          <div className="flex gap-3">
-                                            <span className="w-16 shrink-0 text-gray-500">Lokal</span>
-                                            <span className="font-medium">{opp.venue_name || "—"}</span>
+                                        <div className="grid gap-2.5 p-3.5 sm:grid-cols-2 sm:p-4">
+                                          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3">
+                                            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Lokal</div>
+                                            <div className="mt-1 break-words text-sm font-black text-slate-950">{opp.venue_name || "—"}</div>
                                           </div>
-                                          <div className="flex gap-3">
-                                            <span className="w-16 shrink-0 text-gray-500">Ort</span>
-                                            <span className="min-w-0 break-words">{opp.venue || "—"}</span>
+                                          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3">
+                                            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Adresse</div>
+                                            <div className="mt-1 break-words text-sm font-semibold text-slate-700">{opp.venue || "—"}</div>
                                           </div>
 
                                           {phone && (
-                                            <div className="flex gap-3 items-center pt-1">
-                                              <span className="w-16 shrink-0 text-gray-500">Kapitän</span>
-                                              <a href={`tel:${tel}`} className="font-medium underline underline-offset-4">
+                                            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3 sm:col-span-2">
+                                              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Kapitän</div>
+                                              <a href={`tel:${tel}`} className="mt-1 block break-all text-sm font-black text-slate-950 hover:text-orange-600">
                                                 {phone}
                                               </a>
                                             </div>
                                           )}
                                         </div>
-                                      </div>
 
-                                      {phone && wa && (
-                                        <div className="flex justify-center sm:justify-start">
-                                          <Button
-                                            asChild
-                                            size="sm"
-                                            className="w-full sm:w-auto rounded-xl bg-green-600 hover:bg-green-700 shadow-sm"
-                                          >
-                                            <a href={wa} target="_blank" rel="noreferrer">
-                                              Kapitän kontaktieren (Gegner)
-                                            </a>
-                                          </Button>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )
-                                })()}
+                                        {phone && wa && (
+                                          <div className="border-t border-slate-100 px-3.5 py-3 sm:px-4">
+                                            <Button
+                                              asChild
+                                              size="sm"
+                                              className="h-10 w-full rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-600 sm:w-auto"
+                                            >
+                                              <a href={wa} target="_blank" rel="noreferrer">
+                                                Kapitän kontaktieren
+                                              </a>
+                                            </Button>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  })()}
 
                                 {myTeams.length > 0 && (
-                                  <div className="mt-2 flex flex-wrap gap-2 justify-center sm:justify-start">
+                                  <div className="mt-3 flex flex-wrap gap-2">
                                     {myTeams.map((t) => (
-                                      <Badge key={t.team_id} variant="outline" className="flex items-center gap-1">
+                                      <Badge key={t.team_id} variant="outline" className="flex items-center gap-1 rounded-full border-slate-200 bg-slate-50 px-3 py-1 font-bold text-slate-700">
                                         <Users className="h-3 w-3" />
                                         {t.teams?.name ?? "Mein Team"} {leadershipIcon(t.role)}
                                       </Badge>
@@ -1456,7 +1540,7 @@ if (authLoading || loading) {
                               </div>
 
                               <div className="flex flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
-                                <Button size="sm" onClick={() => openMatchDialog(m)} className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto">
+                                <Button size="sm" onClick={() => openMatchDialog(m)} className="h-11 w-full rounded-xl bg-slate-950 font-black text-white shadow-none hover:bg-slate-800 sm:w-auto">
                                   <Eye className="h-4 w-4 mr-2" />
                                   Öffnen
                                 </Button>
@@ -1479,12 +1563,12 @@ if (authLoading || loading) {
                       .slice()
                       .sort((a, b) => +new Date(b.match_date) - +new Date(a.match_date))
                       .map((m) => (
-                        <Card key={m.id} className="border shadow-sm opacity-90 overflow-hidden">
-                          <CardContent className="p-4">
+                        <Card key={m.id} className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_38px_-32px_rgba(15,23,42,0.45)] sm:rounded-[24px]">
+                          <CardContent className="p-4 sm:p-5">
                             <div className="font-semibold">
                               {getTeamDisplayName(m, true)} vs {getTeamDisplayName(m, false)}
                             </div>
-                            <div className="text-sm text-gray-600 mt-1">
+                            <div className="mt-2 text-sm font-medium leading-5 text-slate-500">
                               {formatDate(m.match_date)} {m.match_time ? `• ${formatTime(m.match_time)}` : ""} • Ergebnis:{" "}
                               {m.home_score ?? "-"}:{m.away_score ?? "-"}
                             </div>
@@ -1501,25 +1585,34 @@ if (authLoading || loading) {
         <Dialog open={isDialogOpen} onOpenChange={(v) => setIsDialogOpen(v)}>
           <DialogContent
             className="
-              w-[96vw]
-              max-w-[96vw]
-              sm:max-w-[520px]
-              max-h-[75vh]
+              h-[calc(100dvh-12px)]
+              w-[calc(100vw-12px)]
+              max-w-none
               overflow-y-auto
               overflow-x-hidden
-              rounded-2xl
-              p-3
+              rounded-[24px]
+              border
+              border-slate-200
+              bg-[#f6f7f9]
+              p-0
+              shadow-[0_32px_100px_-38px_rgba(15,23,42,0.65)]
+              sm:h-auto
+              sm:max-h-[90vh]
+              sm:w-[94vw]
+              sm:max-w-[820px]
+              sm:rounded-[28px]
+              lg:max-w-[980px]
             "
           >
-            <DialogHeader className="sticky top-0 bg-white z-10 pb-2">
-              <DialogTitle>Spiel – Zusage & Aufstellung</DialogTitle>
+            <DialogHeader className="sticky top-0 z-20 border-b border-white/10 bg-slate-950 px-4 py-4 text-white shadow-[0_12px_32px_-24px_rgba(15,23,42,0.9)] sm:px-6 sm:py-5">
+              <DialogTitle className="pr-8 text-lg font-black tracking-tight text-white sm:text-xl">Spiel – Zusage & Aufstellung</DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-4 min-w-0">
+            <div className="min-w-0 space-y-3.5 p-2.5 pb-4 sm:space-y-4 sm:p-5 lg:p-6">
               {!dialogMatch ? null : (
                 <>
                   {dialogIsLocked && (
-                    <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800 flex items-start gap-2">
+                    <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/80 p-3.5 text-sm text-red-800 shadow-sm">
                       <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
                       <div className="min-w-0">
                         <div className="font-medium">Gesperrt (Spielzeit überschritten)</div>
@@ -1530,12 +1623,12 @@ if (authLoading || loading) {
                     </div>
                   )}
 
-                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden">
+                  <Card className="mx-auto w-full max-w-none overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_16px_48px_-38px_rgba(15,23,42,0.5)] sm:rounded-[26px]">
                     <CardContent className="p-4">
-                      <div className="font-semibold text-base">
+                      <div className="break-words text-lg font-black tracking-tight text-slate-950 sm:text-xl">
                         {getTeamDisplayName(dialogMatch, true)} vs {getTeamDisplayName(dialogMatch, false)}
                       </div>
-                      <div className="text-sm text-gray-600 mt-1">
+                      <div className="text-sm text-slate-600 mt-1">
                         {formatDate(dialogMatch.match_date)}{" "}
                         {dialogMatch.match_time ? `• ${formatTime(dialogMatch.match_time)}` : ""} • {dialogMatch.venue || "—"}
                       </div>
@@ -1549,26 +1642,26 @@ if (authLoading || loading) {
                         if (!hasAny) return null
 
                         return (
-                          <div className="mt-3 rounded-2xl border bg-gray-50/80 p-4">
-                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70 p-0">
+                            <div className="flex items-center gap-2.5 border-b border-slate-200 bg-white px-3.5 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
                               <MapPin className="h-3.5 w-3.5" />
                               <span>Gegner-Lokal</span>
                             </div>
 
-                            <div className="grid gap-1 text-sm">
-                              <div className="flex gap-3">
-                                <span className="w-16 shrink-0 text-gray-500">Lokal</span>
-                                <span className="font-medium">{opp.venue_name || "—"}</span>
+                            <div className="grid gap-2.5 p-3.5 text-sm sm:grid-cols-2">
+                              <div className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                                <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Lokal</span>
+                                <span className="mt-1 block break-words font-black text-slate-950">{opp.venue_name || "—"}</span>
                               </div>
-                              <div className="flex gap-3">
-                                <span className="w-16 shrink-0 text-gray-500">Ort</span>
-                                <span className="min-w-0 break-words">{opp.venue || "—"}</span>
+                              <div className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                                <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Ort</span>
+                                <span className="mt-1 block min-w-0 break-words font-semibold text-slate-700">{opp.venue || "—"}</span>
                               </div>
 
                               {phone && tel && (
-                                <div className="flex gap-3 items-center pt-1">
-                                  <span className="w-16 shrink-0 text-gray-500">Kapitän</span>
-                                  <a href={`tel:${tel}`} className="font-medium underline underline-offset-4">
+                                <div className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 sm:col-span-2">
+                                  <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Kapitän</span>
+                                  <a href={`tel:${tel}`} className="mt-1 block break-all font-black text-slate-950 underline-offset-4 hover:text-orange-600">
                                     {phone}
                                   </a>
                                 </div>
@@ -1579,9 +1672,9 @@ if (authLoading || loading) {
                       })()}
 
                       {myTeamsForMatch(dialogMatch).length > 1 && (
-                        <div className="mt-3">
-                          <div className="text-xs text-gray-500 mb-1">Team auswählen</div>
-                          <div className="flex flex-wrap gap-2">
+                        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5">
+                          <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Team auswählen</div>
+                          <div className="grid gap-2 sm:grid-cols-2">
                             {myTeamsForMatch(dialogMatch).map((t) => (
                               <Button
                                 key={t.team_id}
@@ -1601,9 +1694,9 @@ if (authLoading || loading) {
                     </CardContent>
                   </Card>
 
-                  <Card className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden ${dialogIsLocked ? "opacity-80" : ""}`}>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center justify-between gap-2">
+                  <Card className={`mx-auto w-full max-w-none overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_16px_48px_-38px_rgba(15,23,42,0.5)] sm:rounded-[26px] ${dialogIsLocked ? "opacity-80" : ""}`}>
+                    <CardHeader className="border-b border-slate-100 px-4 py-4 sm:px-5 sm:py-5">
+                      <CardTitle className="flex items-center justify-between gap-2 text-base font-black tracking-tight text-slate-950 sm:text-lg">
   <span className="inline-flex items-center gap-2">
     <MessageCircle className="h-4 w-4 text-orange-600" />
     Chat
@@ -1613,17 +1706,17 @@ if (authLoading || loading) {
 </CardTitle>
 
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-4 p-4 sm:p-5">
 					{lineupError ? (
   <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
     {lineupError}
   </div>
 ) : null}
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                         <Button
                           variant={myStatus === "yes" ? "default" : "outline"}
                           onClick={() => setAvailabilityStatus("yes")}
-                          className={myStatus === "yes" ? "bg-green-600 hover:bg-green-700" : ""}
+                          className={myStatus === "yes" ? "h-11 rounded-xl bg-emerald-600 font-black hover:bg-emerald-700" : "h-11 rounded-xl border-slate-200 bg-white font-black hover:bg-slate-50"}
                           disabled={dialogIsLocked}
                         >
                           <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -1633,7 +1726,7 @@ if (authLoading || loading) {
                         <Button
                           variant={myStatus === "maybe" ? "default" : "outline"}
                           onClick={() => setAvailabilityStatus("maybe")}
-                          className={myStatus === "maybe" ? "bg-yellow-600 hover:bg-yellow-700" : ""}
+                          className={myStatus === "maybe" ? "h-11 rounded-xl bg-amber-500 font-black hover:bg-amber-600" : "h-11 rounded-xl border-slate-200 bg-white font-black hover:bg-slate-50"}
                           disabled={dialogIsLocked}
                         >
                           <HelpCircle className="h-4 w-4 mr-2" />
@@ -1643,7 +1736,7 @@ if (authLoading || loading) {
                         <Button
                           variant={myStatus === "no" ? "default" : "outline"}
                           onClick={() => setAvailabilityStatus("no")}
-                          className={myStatus === "no" ? "bg-red-600 hover:bg-red-700" : ""}
+                          className={myStatus === "no" ? "h-11 rounded-xl bg-red-600 font-black hover:bg-red-700" : "h-11 rounded-xl border-slate-200 bg-white font-black hover:bg-slate-50"}
                           disabled={dialogIsLocked}
                         >
                           <XCircle className="h-4 w-4 mr-2" />
@@ -1652,8 +1745,8 @@ if (authLoading || loading) {
                       </div>
 					  
 					  {isCaptainOrCoForTeam && !dialogIsLocked ? (
-  <div className="mt-2 rounded-xl border bg-gray-50 p-3 flex flex-col gap-2">
-    <div className="text-xs text-gray-600">
+  <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5">
+    <div className="text-xs text-slate-600">
       Offene Rückmeldungen: <span className="font-medium">{noAnswerPlayerIds.length}</span>
     </div>
 
@@ -1674,14 +1767,14 @@ if (authLoading || loading) {
         )}
       </Button>
 
-      {remindAllResult ? <span className="text-xs text-gray-700">{remindAllResult}</span> : null}
+      {remindAllResult ? <span className="text-xs text-slate-700">{remindAllResult}</span> : null}
     </div>
   </div>
 ) : null}
 
                       <div className="space-y-2">
-                        <div className="text-xs text-gray-500">Notiz (optional)</div>
-                        <Textarea value={myNote} onChange={(e) => setMyNote(e.target.value)} placeholder="z.B. komme 5 min später" disabled={dialogIsLocked} />
+                        <div className="text-xs text-slate-500">Notiz (optional)</div>
+                        <Textarea value={myNote} onChange={(e) => setMyNote(e.target.value)} placeholder="z.B. komme 5 min später" disabled={dialogIsLocked} className="min-h-[90px] rounded-xl border-slate-200 bg-slate-50/70 shadow-none focus-visible:bg-white" />
                         <Button variant="secondary" onClick={saveNote} disabled={dialogIsLocked}>
                           Notiz speichern
                         </Button>
@@ -1689,11 +1782,11 @@ if (authLoading || loading) {
                     </CardContent>
                   </Card>
 
-                  <Card className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden ${dialogIsLocked ? "opacity-90" : ""}`}>
-                    <CardHeader>
+                  <Card className={`mx-auto w-full max-w-none overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_16px_48px_-38px_rgba(15,23,42,0.5)] sm:rounded-[26px] ${dialogIsLocked ? "opacity-90" : ""}`}>
+                    <CardHeader className="border-b border-slate-100 px-4 py-4 sm:px-5 sm:py-5">
                       <CardTitle className="text-base">Team-Zusagen</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2">
+                    <CardContent className="space-y-2.5 p-4 sm:p-5">
                       {displayPlayers.length === 0 ? (
                         <div className="text-sm text-muted-foreground">Aktuell keine Rückmeldungen (Zu- oder Absagen).</div>
                       ) : (
@@ -1705,10 +1798,10 @@ if (authLoading || loading) {
                           const inLineup = Boolean(entry)
 
                           return (
-                            <div key={p.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border p-3 gap-3 min-w-0 overflow-hidden">
+                            <div key={p.id} className="flex min-w-0 flex-col gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/60 p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4">
                               <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
-                                <div className="font-medium truncate">{p.name}</div>
-                                {a?.note ? <div className="text-xs text-gray-500 truncate">{a.note}</div> : null}
+                                <div className="break-words font-black text-slate-950">{p.name}</div>
+                                {a?.note ? <div className="mt-1 break-words text-xs font-medium text-slate-500">{a.note}</div> : null}
                               </div>
 
                               <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
@@ -1772,211 +1865,293 @@ if (authLoading || loading) {
                   </Card>
 
                   
-				  <Card className={`border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden ${dialogIsLocked ? "opacity-90" : ""}`}>
-  <CardHeader>
-    <div className="flex items-start justify-between gap-3">
+				  <Card className={`mx-auto w-full max-w-none overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_16px_48px_-38px_rgba(15,23,42,0.5)] sm:rounded-[26px] ${dialogIsLocked ? "opacity-90" : ""}`}>
+  <CardHeader className="relative overflow-hidden border-b border-slate-800 bg-slate-950 px-4 py-5 sm:px-6 sm:py-6">
+    <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-orange-500/20 blur-3xl" />
+
+    <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <CardTitle className="text-base flex items-center gap-2">
-          Aufstellung
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+            <ClipboardList className="h-5 w-5 text-orange-400" />
+          </div>
+
+          <div className="min-w-0">
+            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/40">
+              Mannschaft
+            </div>
+            <CardTitle className="mt-0.5 flex flex-wrap items-center gap-2 text-xl font-black tracking-tight text-white sm:text-2xl">
+              Aufstellung
+            </CardTitle>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           {lineupIsConfirmed ? (
-            <Badge className="bg-green-600 text-white">Bestätigt</Badge>
+            <Badge className="rounded-full border border-emerald-400/20 bg-emerald-400/15 px-2.5 text-emerald-200 shadow-none">
+              Bestätigt
+            </Badge>
           ) : lineupIsStale ? (
-            <Badge className="bg-yellow-600 text-white">Geändert (neu bestätigen)</Badge>
+            <Badge className="rounded-full border border-amber-400/20 bg-amber-400/15 px-2.5 text-amber-200 shadow-none">
+              Geändert · neu bestätigen
+            </Badge>
           ) : (
-            <Badge variant="outline">Entwurf</Badge>
+            <Badge className="rounded-full border border-white/10 bg-white/[0.07] px-2.5 text-white/70 shadow-none">
+              Entwurf
+            </Badge>
           )}
 
           {dialogIsLocked && (
-            <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
+            <Badge className="rounded-full border border-red-400/20 bg-red-400/15 px-2.5 text-red-200 shadow-none">
               Gesperrt
             </Badge>
           )}
-        </CardTitle>
+        </div>
 
-        {}
         {dialogMatch ? (
-          <div className="mt-2 space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="text-xs">
+          <div className="mt-4">
+            <div className="flex flex-wrap gap-2">
+              <div className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] px-2.5 py-1.5 text-xs font-bold text-white/70">
+                <Calendar className="h-3.5 w-3.5 text-orange-400" />
                 {formatDate(dialogMatch.match_date)}
-                {dialogMatch.match_time ? ` • ${formatTime(dialogMatch.match_time)} Uhr` : ""}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
+                {dialogMatch.match_time ? ` · ${formatTime(dialogMatch.match_time)} Uhr` : ""}
+              </div>
+
+              <div className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] px-2.5 py-1.5 text-xs font-bold text-white/70">
                 Spieltag {dialogMatch.week_number}
-              </Badge>
+              </div>
             </div>
 
-            <div className="text-sm text-gray-700 font-medium break-words">
-              {getTeamDisplayName(dialogMatch, true)} <span className="text-gray-400">vs</span> {getTeamDisplayName(dialogMatch, false)}
+            <div className="mt-3 break-words text-sm font-black leading-snug text-white sm:text-base">
+              {getTeamDisplayName(dialogMatch, true)}
+              <span className="mx-2 font-medium text-white/30">vs</span>
+              {getTeamDisplayName(dialogMatch, false)}
             </div>
           </div>
         ) : null}
       </div>
 
-      {/* ✅ Rechts oben: Bearbeiten/gesperrt */}
       {isCaptainOrCoForTeam && !dialogIsLocked && (lineupIsConfirmed || lineupIsStale) && !lineupEditMode ? (
-  <Button
-    size="sm"
-    variant="outline"
-    onClick={() => {
-      setLineupEditMode(true)
-      setLineupChangedNotified(false)
-      setDraftLineup(lineupPlayers)
-      setDraftDirty(false)
-      setLineupError(null)
-    }}
-    className="shrink-0"
-  >
-    Bearbeiten
-  </Button>
-) : null}
-
-
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            setLineupEditMode(true)
+            setLineupChangedNotified(false)
+            setDraftLineup(lineupPlayers)
+            setDraftDirty(false)
+            setLineupError(null)
+          }}
+          className="h-10 w-full rounded-xl border-white/10 bg-white/10 font-black text-white shadow-none hover:bg-white/15 hover:text-white sm:w-auto sm:shrink-0"
+        >
+          Bearbeiten
+        </Button>
+      ) : null}
     </div>
   </CardHeader>
 
-  <CardContent className="space-y-3">
-    {/* ✅ Stammspieler */}
-    <div>
-      <div className="text-xs text-gray-500 mb-2">Stamm</div>
-
-      {starters.length === 0 ? (
-        <div className="text-sm text-muted-foreground">Noch keine Stammspieler ausgewählt.</div>
-      ) : (
-        <div className="grid gap-2">
-          {starters.map((lp) => {
-            const p = displayPlayers.find((x) => x.id === lp.player_id)
-            return (
-              <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 min-w-0 overflow-hidden">
-                <div className="font-medium truncate">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
-                <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">Stamm</Badge>
-              </div>
-            )
-          })}
+  <CardContent className="space-y-4 p-3.5 sm:p-5">
+    <div className="grid gap-3 lg:grid-cols-2">
+      {/* Stammspieler */}
+      <section className="overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50/60">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-3.5 py-3">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Startaufstellung</div>
+            <div className="mt-0.5 text-sm font-black text-slate-950">Stammspieler</div>
+          </div>
+          <div className="flex h-8 min-w-8 items-center justify-center rounded-xl bg-slate-950 px-2 text-xs font-black text-white">
+            {starters.length}
+          </div>
         </div>
-      )}
+
+        <div className="p-3">
+          {starters.length === 0 ? (
+            <div className="flex min-h-[110px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-center">
+              <Users className="h-5 w-5 text-slate-300" />
+              <div className="mt-2 text-sm font-black text-slate-700">Noch niemand gesetzt</div>
+              <div className="mt-1 text-xs font-medium text-slate-400">Wähle unten einen Spieler als Fixspieler aus.</div>
+            </div>
+          ) : (
+            <div className="grid gap-2">
+              {starters.map((lp) => {
+                const p = displayPlayers.find((x) => x.id === lp.player_id)
+                return (
+                  <div key={lp.player_id} className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-black text-slate-950">
+                        {p?.name ?? lp.club_players?.name ?? lp.player_id}
+                      </div>
+                    </div>
+                    <Badge className="shrink-0 rounded-full border border-orange-200 bg-orange-50 px-2.5 text-[10px] font-black text-orange-700 shadow-none">
+                      Stamm
+                    </Badge>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Ersatzspieler */}
+      <section className="overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50/60">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-3.5 py-3">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Reserve</div>
+            <div className="mt-0.5 text-sm font-black text-slate-950">Ersatzspieler</div>
+          </div>
+          <div className="flex h-8 min-w-8 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 px-2 text-xs font-black text-slate-600">
+            {substitutes.length}
+          </div>
+        </div>
+
+        <div className="p-3">
+          {substitutes.length === 0 ? (
+            <div className="flex min-h-[110px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-center">
+              <Users className="h-5 w-5 text-slate-300" />
+              <div className="mt-2 text-sm font-black text-slate-700">Keine Ersatzspieler</div>
+              <div className="mt-1 text-xs font-medium text-slate-400">Bei Bedarf kannst du Spieler als Ersatz einplanen.</div>
+            </div>
+          ) : (
+            <div className="grid gap-2">
+              {substitutes.map((lp) => {
+                const p = displayPlayers.find((x) => x.id === lp.player_id)
+                return (
+                  <div key={lp.player_id} className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-black text-slate-950">
+                        {p?.name ?? lp.club_players?.name ?? lp.player_id}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="shrink-0 rounded-full border-slate-200 bg-slate-50 px-2.5 text-[10px] font-black text-slate-600">
+                      Ersatz
+                    </Badge>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
 
-    {/* ✅ Ersatzspieler */}
-    <div>
-      <div className="text-xs text-gray-500 mb-2">Ersatz</div>
-
-      {substitutes.length === 0 ? (
-        <div className="text-sm text-muted-foreground">Keine Ersatzspieler.</div>
-      ) : (
-        <div className="grid gap-2">
-          {substitutes.map((lp) => {
-            const p = displayPlayers.find((x) => x.id === lp.player_id)
-            return (
-              <div key={lp.player_id} className="flex items-center justify-between rounded-xl border p-3 opacity-90 min-w-0 overflow-hidden">
-                <div className="font-medium truncate">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
-                <Badge variant="outline" className="text-xs">Ersatz</Badge>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </div>
-
-    {/* ✅ Hinweise */}
     {!isCaptainOrCoForTeam ? (
-      <div className="text-xs text-gray-500">Nur Captain/Co-Captain kann die Aufstellung ändern.</div>
+      <div className="flex items-start gap-2.5 rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-orange-500" />
+        <div className="text-xs font-medium leading-5 text-slate-600">
+          Die Aufstellung kann nur vom Captain oder Co-Captain geändert werden.
+        </div>
+      </div>
     ) : null}
 
     {isCaptainOrCoForTeam && dialogIsLocked ? (
-      <div className="text-xs text-red-700">Aufstellung kann nach Spielbeginn nicht mehr geändert werden.</div>
-    ) : null}
-
-    {/* ✅ Bestätigen / Änderungen bestätigen */}
-    {isCaptainOrCoForTeam && !dialogIsLocked ? (
-      <>
-        {/* Wenn bestätigt & nicht im Editmode -> Info */}
-        {lineupIsConfirmed && !lineupEditMode ? (
-          <div className="text-xs text-gray-600">
-            Aufstellung ist bestätigt und gesperrt. Klicke auf <span className="font-medium">Bearbeiten</span>, um Änderungen zu machen.
-          </div>
-        ) : null}
-		
-		
-{isCaptainOrCoForTeam && !dialogIsLocked && lineupEditMode && (
-  <div className="space-y-3">
-    {/* ✅ Edit-Mode Hinweis: eigene Zeile, bricht sauber um */}
-    <div className="rounded-xl border bg-gray-50 p-3 text-xs text-gray-700 leading-relaxed">
-      Du bist im <span className="font-medium">Bearbeiten-Modus</span>.
-      <br />
-      <span className="font-medium">Abbrechen</span> = zurück ohne Speichern.
-      <br />
-      <span className="font-medium">Änderungen bestätigen</span> = speichert automatisch + bestätigt.
-    </div>
-
-    {/* 🔥 Hinweis nur wenn wirklich was geändert wurde */}
-    {draftDirty && (
-      <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900">
-        <div className="font-medium">Änderungen noch nicht bestätigt</div>
-        <div className="text-xs mt-1">
-          Tippe auf <span className="font-semibold">„Änderungen bestätigen“</span>, sonst bleibt die Aufstellung für alle unverändert.
+      <div className="flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-3">
+        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+        <div className="text-xs font-medium leading-5 text-red-700">
+          Nach Spielbeginn kann die Aufstellung nicht mehr geändert werden.
         </div>
       </div>
-    )}
+    ) : null}
 
-    {/* ✅ Buttons mobile-friendly: 2 oben, 1 unten */}
-    <div className="grid grid-cols-2 gap-2">
-      <Button
-        variant="outline"
-        onClick={() => {
-          // ✅ Edit-Mode verlassen + Draft zurücksetzen
-          setDraftLineup(lineupPlayers)
-          setDraftDirty(false)
-          setLineupError(null)
-          setLineupEditMode(false)
-        }}
-        className="w-full"
-      >
-        Abbrechen
-      </Button>
+    {isCaptainOrCoForTeam && !dialogIsLocked ? (
+      <>
+        {lineupIsConfirmed && !lineupEditMode ? (
+          <div className="flex items-start gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-3">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+            <div>
+              <div className="text-xs font-black text-emerald-800">Aufstellung bestätigt</div>
+              <div className="mt-0.5 text-xs font-medium leading-5 text-emerald-700">
+                Änderungen sind gesperrt. Über „Bearbeiten“ kannst du die Aufstellung wieder öffnen.
+              </div>
+            </div>
+          </div>
+        ) : null}
 
-      <Button
-        variant="outline"
-        onClick={() => {
-          // Draft zurück auf DB-Stand, aber im Edit-Mode bleiben
-          setDraftLineup(lineupPlayers)
-          setDraftDirty(false)
-          setLineupError(null)
-        }}
-        className="w-full"
-      >
-        Verwerfen
-      </Button>
+        {isCaptainOrCoForTeam && !dialogIsLocked && lineupEditMode && (
+          <div className="overflow-hidden rounded-[20px] border border-orange-200 bg-orange-50/50">
+            <div className="flex items-center gap-3 border-b border-orange-200 bg-orange-50 px-3.5 py-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-500">
+                <ClipboardList className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-500">Bearbeitung aktiv</div>
+                <div className="text-sm font-black text-slate-950">Aufstellung bearbeiten</div>
+              </div>
+            </div>
 
-      <Button
-        onClick={confirmLineup}
-        disabled={confirmingLineup || dialogIsLocked || startersCount === 0}
-        className="col-span-2 w-full bg-orange-600 hover:bg-orange-700"
-      >
-        {confirmingLineup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-        Änderungen bestätigen
-      </Button>
-    </div>
+            <div className="space-y-3 p-3.5">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-2xl border border-orange-100 bg-white px-3.5 py-3">
+                  <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Abbrechen</div>
+                  <div className="mt-1 text-xs font-medium leading-5 text-slate-600">Beendet die Bearbeitung ohne zu speichern.</div>
+                </div>
+                <div className="rounded-2xl border border-orange-100 bg-white px-3.5 py-3">
+                  <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Bestätigen</div>
+                  <div className="mt-1 text-xs font-medium leading-5 text-slate-600">Speichert deine Änderungen und bestätigt die Aufstellung.</div>
+                </div>
+              </div>
 
-    <div className="text-[11px] text-gray-500 leading-relaxed">
-      „Änderungen bestätigen“ speichert automatisch und setzt die Aufstellung auf <span className="font-medium">Bestätigt</span>.
-    </div>
-  </div>
-)}
+              {draftDirty && (
+                <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-3">
+                  <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                  <div>
+                    <div className="text-xs font-black text-amber-900">Änderungen noch offen</div>
+                    <div className="mt-0.5 text-xs font-medium leading-5 text-amber-800">
+                      Bestätige die Aufstellung, damit die Änderungen für alle übernommen werden.
+                    </div>
+                  </div>
+                </div>
+              )}
 
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDraftLineup(lineupPlayers)
+                    setDraftDirty(false)
+                    setLineupError(null)
+                    setLineupEditMode(false)
+                  }}
+                  className="h-11 w-full rounded-xl border-slate-200 bg-white font-black text-slate-700 shadow-none hover:bg-slate-50"
+                >
+                  Abbrechen
+                </Button>
 
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDraftLineup(lineupPlayers)
+                    setDraftDirty(false)
+                    setLineupError(null)
+                  }}
+                  className="h-11 w-full rounded-xl border-slate-200 bg-white font-black text-slate-700 shadow-none hover:bg-slate-50"
+                >
+                  Verwerfen
+                </Button>
 
-       {/*  */}
-{!lineupEditMode && !lineupIsConfirmed ? (
-  <Button
-    onClick={confirmLineup}
-    disabled={confirmingLineup || dialogIsLocked || startersCount === 0}
-    className="bg-orange-600 hover:bg-orange-700"
-  >
-    {confirmingLineup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-    Aufstellung bestätigen
-  </Button>
-) : null}
+                <Button
+                  onClick={confirmLineup}
+                  disabled={confirmingLineup || dialogIsLocked || startersCount === 0}
+                  className="col-span-2 h-12 w-full rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-600"
+                >
+                  {confirmingLineup ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                  Änderungen bestätigen
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!lineupEditMode && !lineupIsConfirmed ? (
+          <Button
+            onClick={confirmLineup}
+            disabled={confirmingLineup || dialogIsLocked || startersCount === 0}
+            className="h-12 w-full rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-600 sm:w-auto"
+          >
+            {confirmingLineup ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+            Aufstellung bestätigen
+          </Button>
+        ) : null}
       </>
     ) : null}
   </CardContent>
@@ -1996,15 +2171,15 @@ if (authLoading || loading) {
 				  
 				  
 
-                  <Card className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden">
-                    <CardHeader>
+                  <Card className="mx-auto w-full max-w-none overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_16px_48px_-38px_rgba(15,23,42,0.5)] sm:rounded-[26px]">
+                    <CardHeader className="border-b border-slate-100 px-4 py-4 sm:px-5 sm:py-5">
                       <CardTitle className="text-base flex items-center gap-2">
                         <MessageCircle className="h-4 w-4 text-orange-600" />
                         Spiel-Chat
                       </CardTitle>
                     </CardHeader>
 
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-4 p-4 sm:p-5">
                      {!activeRoomId ? (
   <div className="text-sm text-muted-foreground">
     Kein Chat verfügbar (Team wählen oder Spiel öffnen).
@@ -2012,8 +2187,8 @@ if (authLoading || loading) {
 ) : (
   <>
 
-                          <div className="rounded-xl border overflow-hidden">
-                            <ScrollArea className="h-64 sm:h-72 p-3">
+                          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/60">
+                            <ScrollArea className="h-[320px] p-3 sm:h-[380px] sm:p-4">
                               {chatLoading ? (
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                   <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
@@ -2065,7 +2240,7 @@ if (authLoading || loading) {
                               value={chatText}
                               onChange={(e) => setChatText(e.target.value)}
                               placeholder="Nachricht ans Team…"
-                              className="flex-1 min-w-0"
+                              className="h-11 min-w-0 flex-1 rounded-xl border-slate-200 bg-slate-50/70 shadow-none focus-visible:bg-white"
                               onKeyDown={(e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault()
@@ -2075,7 +2250,7 @@ if (authLoading || loading) {
 
                               disabled={chatSending}
                             />
-                            <Button onClick={sendChatMessage} disabled={!chatText.trim() || chatSending} className="bg-orange-600 hover:bg-orange-700 px-3 flex-shrink-0">
+                            <Button onClick={sendChatMessage} disabled={!chatText.trim() || chatSending} className="h-11 w-11 flex-shrink-0 rounded-xl bg-orange-500 p-0 text-white shadow-none hover:bg-orange-600">
                               {chatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                             </Button>
                           </div>
@@ -2087,8 +2262,8 @@ if (authLoading || loading) {
               )}
             </div>
 
-            <DialogFooter className="pt-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <DialogFooter className="sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 px-3 py-3 backdrop-blur sm:px-5">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="h-11 w-full rounded-xl border-slate-200 bg-white font-black text-slate-700 shadow-none hover:bg-slate-50 sm:w-auto">
                 Schließen
               </Button>
             </DialogFooter>
@@ -2104,7 +2279,7 @@ if (authLoading || loading) {
       </DialogTitle>
     </DialogHeader>
 
-    <div className="text-sm text-gray-600">
+    <div className="text-sm text-slate-600">
       Dieser Spieler wurde bereits erinnert.
       <br />
       <span className="font-medium">

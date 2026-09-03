@@ -573,7 +573,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   // ✅ LOADING VIEW 
   if (loading) {
   return (
-    <main className="min-h-screen flex flex-col bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+    <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] pb-24 text-slate-950">
       <Header />
 
       <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
@@ -585,8 +585,8 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
             </div>
 
             <div className="text-center">
-              <p className="text-lg font-bold text-gray-900">Statistiken werden geladen</p>
-              <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+              <p className="text-lg font-bold text-slate-950">Statistiken werden geladen</p>
+              <p className="text-sm text-slate-500 mt-1">Bitte kurz warten…</p>
             </div>
           </div>
         </div>
@@ -598,33 +598,34 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 }
 
  return (
-  <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+  <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-20 text-slate-950">
     <Header />
 
     {/* fixed header offset */}
-    <main className="pt-12 sm:pt-14">
+    <main className="pt-14 sm:pt-16">
       <motion.div
-        className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+        className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
         {/* App-Header Card (wie Kontakt) */}
-       <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-    <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-    <div className="p-4 sm:p-5 flex items-center gap-3">
-      <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-        <Users className="w-5 h-5 text-orange-600" />
-      </div>
-      <div className="min-w-0">
-        <h2 className="text-sm sm:text-base font-black text-gray-900">Teams & Kader</h2>
-        <p className="text-xs text-gray-500 mt-1">
-          {standings.length} Teams · Saison {selectedSeasonLabel}
-        </p>
+       <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
+  <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
+    <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+    <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+      <div className="flex items-center gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+          <Users className="h-6 w-6 text-orange-400" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-white/50">Saison {selectedSeasonLabel}</p>
+          <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Teams & Kader</h1>
+          <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">{standings.length} Teams</p>
+        </div>
       </div>
     </div>
-  </div>
+  </section>
 </motion.div>
 		
 		
@@ -633,15 +634,15 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 
           {/* ✅ Saison + DartType Filter (App-Card wie Kontakt) */}
 <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
     <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
     <div className="p-4 sm:p-5 space-y-4">
       {/* Row 1: Saison (Mobile: untereinander, ab sm: nebeneinander) */}
 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
   <div className="min-w-0">
-    <p className="text-xs text-gray-500 font-bold">Saison</p>
-    <p className="text-sm font-black text-gray-900 truncate">{selectedSeasonLabel}</p>
+    <p className="text-xs text-slate-500 font-bold">Saison</p>
+    <p className="text-sm font-black text-slate-950 truncate">{selectedSeasonLabel}</p>
   </div>
 
   <select
@@ -650,7 +651,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
       setSelectedSeasonId(e.target.value)
       setCurrentPage(1)
     }}
-    className="h-10 w-full sm:w-auto sm:max-w-[320px] rounded-2xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-900 shadow-sm"
+    className="h-10 w-full sm:w-auto sm:max-w-[320px] rounded-2xl border border-gray-200 bg-white px-3 text-sm font-medium text-slate-950 shadow-sm"
   >
     {seasons.map((s) => (
       <option key={s.id} value={s.id}>
@@ -662,7 +663,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 
       {/* Row 2: DartType */}
       <div>
-        <p className="text-xs text-gray-500 font-bold mb-2">Dart-Typ</p>
+        <p className="text-xs text-slate-500 font-bold mb-2">Dart-Typ</p>
 
         <div className="grid grid-cols-3 gap-2">
           <Button
@@ -672,7 +673,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
               "h-10 rounded-2xl font-semibold",
               dartTypeFilter === "gesamt"
                 ? "bg-orange-600 hover:bg-orange-700 text-white"
-                : "border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium",
+                : "border-gray-200 bg-white hover:bg-slate-50 text-gray-700 font-medium",
             ].join(" ")}
           >
             Gesamt
@@ -685,7 +686,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
               "h-10 rounded-2xl font-semibold",
               dartTypeFilter === "edart"
                 ? "bg-orange-600 hover:bg-orange-700 text-white"
-                : "border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium",
+                : "border-gray-200 bg-white hover:bg-slate-50 text-gray-700 font-medium",
             ].join(" ")}
           >
             E-Dart
@@ -698,7 +699,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
               "h-10 rounded-2xl font-semibold",
               dartTypeFilter === "steeldart"
                 ? "bg-orange-600 hover:bg-orange-700 text-white"
-                : "border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium",
+                : "border-gray-200 bg-white hover:bg-slate-50 text-gray-700 font-medium",
             ].join(" ")}
           >
             Steeldart
@@ -715,7 +716,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
             <Tabs defaultValue="standings" className="w-full">
              {/* Tabs (App-Style Container wie Kontakt) */}
 <div className="mt-2 mb-4">
-  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
     <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
     <div className="p-2 sm:p-3">
@@ -729,7 +730,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   "data-[state=active]:font-semibold",
   "flex items-center justify-center",
   "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-gray-600",
+  "data-[state=inactive]:text-slate-600",
 ].join(" ")}
         >
           <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
@@ -746,7 +747,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   "text-xs sm:text-sm font-medium",
   "flex items-center justify-center",
   "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-gray-600",
+  "data-[state=inactive]:text-slate-600",
 ].join(" ")}
         >
           <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
@@ -763,7 +764,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   "text-xs sm:text-sm font-medium",
   "flex items-center justify-center",
   "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-gray-600",
+  "data-[state=inactive]:text-slate-600",
 ].join(" ")}
         >
           <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
@@ -780,7 +781,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   "text-xs sm:text-sm font-medium",
   "flex items-center justify-center",
   "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-gray-600",
+  "data-[state=inactive]:text-slate-600",
 ].join(" ")}
         >
           <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
@@ -797,7 +798,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   "text-xs sm:text-sm font-medium",
   "flex items-center justify-center",
   "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-gray-600",
+  "data-[state=inactive]:text-slate-600",
 ].join(" ")}
         >
           <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
@@ -813,7 +814,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
               <TabsContent value="legstats">
                 
 
-                <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
                   <CardHeader className="p-0">
   <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
   <div className="p-4 sm:p-5 flex items-center justify-between gap-3">
@@ -822,10 +823,10 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
         <Target className="w-5 h-5 text-orange-600" />
       </div>
       <div className="min-w-0">
-        <CardTitle className="text-sm sm:text-base font-black text-gray-900 truncate">
+        <CardTitle className="text-sm sm:text-base font-black text-slate-950 truncate">
           Spieler-Statistiken
         </CardTitle>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-slate-500 mt-1">
           {playerLegStats.length} Spieler ·{" "}
           {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
         </p>
@@ -834,11 +835,11 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 
     {/* rechts: Zeige Dropdown */}
     <div className="flex items-center gap-2 flex-shrink-0">
-      <span className="text-xs text-gray-500 font-bold whitespace-nowrap">Zeige</span>
+      <span className="text-xs text-slate-500 font-bold whitespace-nowrap">Zeige</span>
       <select
         value={playersPerPage}
         onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-        className="h-10 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-black text-gray-900 shadow-sm"
+        className="h-10 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-black text-slate-950 shadow-sm"
       >
         <option value={10}>10</option>
         <option value={25}>25</option>
@@ -855,7 +856,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 
                   <CardContent className="p-3 sm:p-6">
                     {playerLegStats.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500">
+                      <div className="text-center py-12 text-slate-500">
                         <Target className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                         <p className="text-lg">Keine Statistiken verfügbar</p>
                       </div>
@@ -873,9 +874,9 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
                         </div>
 
                         {totalPages > 1 && (
-                          <div className="p-4 border-t bg-gray-50">
+                          <div className="p-4 border-t bg-slate-50">
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                              <div className="text-sm text-gray-600">
+                              <div className="text-sm text-slate-600">
                                 Zeige {startIndex + 1} bis {Math.min(endIndex, playerLegStats.length)} von{" "}
                                 {playerLegStats.length} Spielern
                               </div>
@@ -939,7 +940,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 	
 
               <TabsContent value="standings">
-                <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
   <CardHeader className="p-0">
   <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
   <div className="p-4 sm:p-5 flex items-center gap-3">
@@ -947,10 +948,10 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
       <Trophy className="w-5 h-5 text-orange-600" />
     </div>
     <div className="min-w-0">
-      <CardTitle className="text-sm sm:text-base font-black text-gray-900">
+      <CardTitle className="text-sm sm:text-base font-black text-slate-950">
         Liga-Tabelle
       </CardTitle>
-      <p className="text-xs text-gray-500 mt-1">
+      <p className="text-xs text-slate-500 mt-1">
         {standings.length} Teams · {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
       </p>
     </div>
@@ -968,7 +969,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
               </TabsContent>
 
               <TabsContent value="results">
-                <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
                   <CardHeader className="p-0">
   <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
   <div className="p-4 sm:p-5 flex items-center gap-3">
@@ -976,10 +977,10 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
       <Target className="w-5 h-5 text-orange-600" />
     </div>
     <div className="min-w-0">
-      <CardTitle className="text-sm sm:text-base font-black text-gray-900">
+      <CardTitle className="text-sm sm:text-base font-black text-slate-950">
         Ergebnisse
       </CardTitle>
-      <p className="text-xs text-gray-500 mt-1">
+      <p className="text-xs text-slate-500 mt-1">
         {completedMatches.length} Spiele ·{" "}
         {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
       </p>
@@ -988,7 +989,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 </CardHeader>
                   <CardContent className="p-3 sm:p-5">
                     {completedMatches.length === 0 ? (
-                      <p className="text-center text-gray-500 py-8">Noch keine Ergebnisse verfügbar</p>
+                      <p className="text-center text-slate-500 py-8">Noch keine Ergebnisse verfügbar</p>
                     ) : (
                       <div className="space-y-3 sm:space-y-4">
                         {completedMatches
@@ -1007,7 +1008,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
                             const isOurHomeTeam = match.home_team?.id
                             const isOurAwayTeam = match.away_team?.id
 
-                            let matchColor = "bg-gray-50 border-gray-200"
+                            let matchColor = "bg-slate-50 border-gray-200"
                             let resultText = "Unentschieden"
 
                             
@@ -1069,7 +1070,7 @@ if (isFutureDate) {
 
   {/* Heim */}
   <div className="flex flex-col items-center gap-1">
-    <span className="text-[11px] uppercase text-gray-500 tracking-wide">Heim</span>
+    <span className="text-[11px] uppercase text-slate-500 tracking-wide">Heim</span>
 
     <div className="flex items-center gap-2">
       {match.home_team?.logo_url ? (
@@ -1079,11 +1080,11 @@ if (isFutureDate) {
         />
       ) : (
         <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-          <Trophy className="h-4 w-4 text-gray-500" />
+          <Trophy className="h-4 w-4 text-slate-500" />
         </div>
       )}
 
-      <span className="font-semibold text-sm text-gray-900 max-w-[180px] truncate">
+      <span className="font-semibold text-sm text-slate-950 max-w-[180px] truncate">
         {match.home_team?.name || match.home_opponent_team?.name}
       </span>
     </div>
@@ -1095,19 +1096,19 @@ if (isFutureDate) {
       <div className="text-lg font-semibold text-orange-500">– : –</div>
     ) : (
       <div className="flex items-center justify-center gap-2">
-        <span className="text-2xl font-extrabold text-gray-900">{homeScore}</span>
+        <span className="text-2xl font-extrabold text-slate-950">{homeScore}</span>
         <span className="text-gray-400">:</span>
-        <span className="text-2xl font-extrabold text-gray-900">{awayScore}</span>
+        <span className="text-2xl font-extrabold text-slate-950">{awayScore}</span>
       </div>
     )}
   </div>
 
  {/* Gast */}
 <div className="flex flex-col items-center gap-1">
-  <span className="text-[11px] uppercase text-gray-500 tracking-wide">Gast</span>
+  <span className="text-[11px] uppercase text-slate-500 tracking-wide">Gast</span>
 
   <div className="flex items-center gap-2">
-    <span className="font-semibold text-sm text-gray-900 max-w-[180px] truncate text-right">
+    <span className="font-semibold text-sm text-slate-950 max-w-[180px] truncate text-right">
   {match.away_team?.name || match.away_opponent_team?.name}
 </span>
 
@@ -1125,7 +1126,7 @@ if (isFutureDate) {
       {/* Meta Right (Desktop) */}
       <div className="hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
         <div className="text-sm font-semibold text-gray-700">{formatDateDEShort(match.match_date)}</div>
-        {match.match_time && <div className="text-xs text-gray-600">{formatTimeDE(match.match_time)} Uhr</div>}
+        {match.match_time && <div className="text-xs text-slate-600">{formatTimeDE(match.match_time)} Uhr</div>}
         <Badge
           className={`
             ${
@@ -1172,7 +1173,7 @@ if (isFutureDate) {
 
     {/* Optional: Original Date */}
     {match.original_date && (
-      <div className="mt-2 text-[10px] text-gray-500">
+      <div className="mt-2 text-[10px] text-slate-500">
         Ursprünglich: {formatDateDE(match.original_date)} → Neu: {formatDateDE(match.match_date)}
       </div>
     )}
@@ -1216,7 +1217,7 @@ if (isFutureDate) {
 
     {/* ===================== HEUTE ===================== */}
     {todayMatches.length > 0 && (
-      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
         <CardHeader className="p-0">
   <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
   <div className="p-4 sm:p-5 flex items-center gap-3">
@@ -1224,10 +1225,10 @@ if (isFutureDate) {
       <Calendar className="w-5 h-5 text-orange-600" />
     </div>
     <div className="min-w-0">
-      <CardTitle className="text-sm sm:text-base font-black text-gray-900">
+      <CardTitle className="text-sm sm:text-base font-black text-slate-950">
         Heute
       </CardTitle>
-      <p className="text-xs text-gray-500 mt-1">
+      <p className="text-xs text-slate-500 mt-1">
         {todayMatches.length} Spiele
       </p>
     </div>
@@ -1249,7 +1250,7 @@ if (isFutureDate) {
                 >
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
 
-                    <div className="font-semibold text-gray-900 text-center sm:text-left">
+                    <div className="font-semibold text-slate-950 text-center sm:text-left">
                       {match.home_team?.name ||
                         match.home_opponent_team?.name ||
                         "Team nicht gefunden"}{" "}
@@ -1280,7 +1281,7 @@ if (isFutureDate) {
 
     {/* ===================== VERSCHOBENE SPIELE ===================== */}
     {postponedMatches.length > 0 && (
-      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
         <CardHeader className="p-0">
   <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
   <div className="p-4 sm:p-5 flex items-center gap-3">
@@ -1288,10 +1289,10 @@ if (isFutureDate) {
       <Calendar className="w-5 h-5 text-orange-600" />
     </div>
     <div className="min-w-0">
-      <CardTitle className="text-sm sm:text-base font-black text-gray-900">
+      <CardTitle className="text-sm sm:text-base font-black text-slate-950">
         Verschobene Spiele
       </CardTitle>
-      <p className="text-xs text-gray-500 mt-1">
+      <p className="text-xs text-slate-500 mt-1">
         {postponedMatches.length} Spiele
       </p>
     </div>
@@ -1312,7 +1313,7 @@ if (isFutureDate) {
                 >
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
 
-                    <div className="font-semibold text-gray-900 text-center sm:text-left">
+                    <div className="font-semibold text-slate-950 text-center sm:text-left">
                       {match.home_team?.name ||
                         match.home_opponent_team?.name ||
                         "Team nicht gefunden"}{" "}
@@ -1323,7 +1324,7 @@ if (isFutureDate) {
                     </div>
 
                     <div className="text-center sm:text-right">
-  <div className="text-sm font-semibold text-gray-900">
+  <div className="text-sm font-semibold text-slate-950">
     {formatDateDE(match.match_date)}
   </div>
 
@@ -1353,7 +1354,7 @@ if (isFutureDate) {
     )}
 
     {/* ===================== KOMMENDE SPIELE ===================== */}
-    <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
       <CardHeader className="p-0">
   <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
   <div className="p-4 sm:p-5 flex items-center gap-3">
@@ -1361,10 +1362,10 @@ if (isFutureDate) {
       <Calendar className="w-5 h-5 text-orange-600" />
     </div>
     <div className="min-w-0">
-      <CardTitle className="text-sm sm:text-base font-black text-gray-900">
+      <CardTitle className="text-sm sm:text-base font-black text-slate-950">
         Kommende Spiele
       </CardTitle>
-      <p className="text-xs text-gray-500 mt-1">
+      <p className="text-xs text-slate-500 mt-1">
         {upcomingMatches.length} Spiele
       </p>
     </div>
@@ -1373,7 +1374,7 @@ if (isFutureDate) {
 
       <CardContent className="p-3 sm:p-6">
         {upcomingMatches.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">
+          <p className="text-center text-slate-500 py-8">
             Keine kommenden Spiele geplant
           </p>
         ) : (
@@ -1401,7 +1402,7 @@ if (isFutureDate) {
                   >
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
 
-                      <div className="font-semibold text-gray-900 text-center sm:text-left">
+                      <div className="font-semibold text-slate-950 text-center sm:text-left">
                         {match.home_team?.name ||
                           match.home_opponent_team?.name ||
                           "Team nicht gefunden"}{" "}
@@ -1413,7 +1414,7 @@ if (isFutureDate) {
 
                       <div className="text-center sm:text-right">
 
-                        <div className="text-sm font-semibold text-gray-900">
+                        <div className="text-sm font-semibold text-slate-950">
                           {formatDateDE(match.match_date)}
                         </div>
 
@@ -1464,15 +1465,15 @@ if (isFutureDate) {
               <TabsContent value="teams">
                 <div className="space-y-4 sm:space-y-6">
                   <div className="mb-5 sm:mb-6">
-  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
     <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
     <div className="p-4 sm:p-5 flex items-center gap-3">
       <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
         <Users className="w-5 h-5 text-orange-600" />
       </div>
       <div className="min-w-0">
-        <h2 className="text-sm sm:text-base font-black text-gray-900">Teams & Kader</h2>
-        <p className="text-xs text-gray-500 mt-1">
+        <h2 className="text-sm sm:text-base font-black text-slate-950">Teams & Kader</h2>
+        <p className="text-xs text-slate-500 mt-1">
           {standings.length} Teams · {selectedSeasonLabel}
         </p>
       </div>
@@ -1491,7 +1492,7 @@ if (isFutureDate) {
                         const teamStats = standings.find((s) => s.team === team.name)
 
                         return (
-                          <Card key={team.id} className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                          <Card key={team.id} className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
 						
   <CardHeader className="p-0">
   <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
@@ -1513,11 +1514,11 @@ if (isFutureDate) {
         )}
 
         <div className="min-w-0">
-          <CardTitle className="text-sm sm:text-base font-black text-gray-900 truncate">
+          <CardTitle className="text-sm sm:text-base font-black text-slate-950 truncate">
             {team.name}
           </CardTitle>
 
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             {teamPlayers.length} Spieler
             {teamStats ? ` · ${teamStats.points} Punkte` : ""}
           </p>
@@ -1539,27 +1540,27 @@ if (isFutureDate) {
     {/* Saisonstatistik */}
     {teamStats && (
       <div>
-        <h4 className="text-sm font-black text-gray-900 mb-3">Saisonstatistik</h4>
+        <h4 className="text-sm font-black text-slate-950 mb-3">Saisonstatistik</h4>
 
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          <div className="bg-gray-50 rounded-2xl p-3 text-center border border-gray-200">
-            <div className="text-xl sm:text-2xl font-black text-gray-900">{teamStats.played}</div>
-            <div className="text-xs text-gray-600 font-bold">Spiele</div>
+          <div className="bg-slate-50 rounded-2xl p-3 text-center border border-gray-200">
+            <div className="text-xl sm:text-2xl font-black text-slate-950">{teamStats.played}</div>
+            <div className="text-xs text-slate-600 font-bold">Spiele</div>
           </div>
 
           <div className="bg-green-50 rounded-2xl p-3 text-center border border-green-200">
             <div className="text-xl sm:text-2xl font-black text-green-700">{teamStats.won}</div>
-            <div className="text-xs text-gray-600 font-bold">Siege</div>
+            <div className="text-xs text-slate-600 font-bold">Siege</div>
           </div>
 
           <div className="bg-yellow-50 rounded-2xl p-3 text-center border border-yellow-200">
             <div className="text-xl sm:text-2xl font-black text-yellow-700">{teamStats.drawn}</div>
-            <div className="text-xs text-gray-600 font-bold">Unentschieden</div>
+            <div className="text-xs text-slate-600 font-bold">Unentschieden</div>
           </div>
 
           <div className="bg-red-50 rounded-2xl p-3 text-center border border-red-200">
             <div className="text-xl sm:text-2xl font-black text-red-700">{teamStats.lost}</div>
-            <div className="text-xs text-gray-600 font-bold">Niederlagen</div>
+            <div className="text-xs text-slate-600 font-bold">Niederlagen</div>
           </div>
 
           <div className="bg-blue-50 rounded-2xl p-3 text-center border border-blue-200 col-span-2">
@@ -1567,7 +1568,7 @@ if (isFutureDate) {
               {teamStats.legsDifference > 0 ? "+" : ""}
               {teamStats.legsDifference}
             </div>
-            <div className="text-xs text-gray-600 font-bold">Legs-Differenz</div>
+            <div className="text-xs text-slate-600 font-bold">Legs-Differenz</div>
           </div>
         </div>
       </div>
@@ -1575,10 +1576,10 @@ if (isFutureDate) {
 
     {/* Spielerkader */}
     <div>
-      <h4 className="text-sm font-black text-gray-900 mb-3">Spielerkader</h4>
+      <h4 className="text-sm font-black text-slate-950 mb-3">Spielerkader</h4>
 
       {teamPlayers.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 border border-gray-200 rounded-2xl bg-gray-50">
+        <div className="text-center py-8 text-slate-500 border border-gray-200 rounded-2xl bg-slate-50">
           <Users className="h-10 w-10 mx-auto mb-2 text-gray-300" />
           <p className="text-sm font-bold">Keine Spieler zugeordnet</p>
         </div>
@@ -1594,7 +1595,7 @@ if (isFutureDate) {
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="font-mediumtext-gray-900 text-sm truncate">{player.name}</div>
+                <div className="font-mediumtext-slate-950 text-sm truncate">{player.name}</div>
               </div>
             </div>
           ))}

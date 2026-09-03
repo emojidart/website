@@ -337,10 +337,10 @@ export default function VeranstaltungenPage() {
     <div className="min-h-screen overflow-x-hidden bg-[#f6f7f9] pb-24 text-slate-950">
       <Header />
 
-      <main className="pt-14">
+      <main className="w-full pt-14 sm:pt-16">
         <section className="relative overflow-hidden bg-slate-950">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.28),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_35%)]" />
-          <div className="relative mx-auto w-full max-w-screen-xl px-4 pb-24 pt-10 sm:pb-28 sm:pt-14">
+          <div className="relative w-full max-w-none px-3 pb-24 pt-10 sm:px-4 sm:pb-28 sm:pt-14 lg:px-5 xl:px-6 2xl:px-8">
             <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold text-orange-200 backdrop-blur">
@@ -372,7 +372,7 @@ export default function VeranstaltungenPage() {
 
                 <Button
                   asChild
-                  className="h-12 rounded-2xl bg-orange-500 px-5 font-bold text-white shadow-lg shadow-orange-950/30 hover:bg-orange-600"
+                  className="h-12 rounded-2xl bg-orange-500 px-5 font-bold text-white shadow-[0_14px_42px_-34px_rgba(15,23,42,0.5)] shadow-orange-950/30 hover:bg-orange-600"
                 >
                   <Link href="/dach-veranstaltungen/neu">
                     <Plus className="mr-2 h-4 w-4" />
@@ -384,7 +384,7 @@ export default function VeranstaltungenPage() {
           </div>
         </section>
 
-        <div className="relative z-20 mx-auto -mt-14 w-full max-w-screen-xl px-4">
+        <div className="relative z-20 -mt-14 w-full max-w-none px-2 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
           <Card className="overflow-hidden rounded-[28px] border-0 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.14)]">
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -437,7 +437,7 @@ export default function VeranstaltungenPage() {
                     onClick={() => setQuickFilter(option.value as QuickFilter)}
                     className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition ${
                       quickFilter === option.value
-                        ? "bg-orange-500 text-white shadow-sm"
+                        ? "bg-orange-500 text-white shadow-none"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
@@ -538,7 +538,7 @@ export default function VeranstaltungenPage() {
           </Card>
         </div>
 
-        <div className="mx-auto w-full max-w-screen-xl px-4 py-8">
+        <div className="w-full max-w-none px-2 py-6 sm:px-4 sm:py-8 lg:px-5 xl:px-6 2xl:px-8">
           {!loading && !error && filtered.length > 0 ? (
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -551,7 +551,7 @@ export default function VeranstaltungenPage() {
           ) : null}
 
           {loading ? (
-            <div className="space-y-3">
+            <div className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-3">
               {[0, 1, 2, 3, 4, 5].map((item) => (
                 <div key={item} className="flex gap-4 rounded-[24px] border border-slate-200 bg-white p-4">
                   <div className="h-24 w-20 animate-pulse rounded-2xl bg-slate-200" />
@@ -568,7 +568,7 @@ export default function VeranstaltungenPage() {
               <CardContent className="py-14 text-center text-red-700">{error}</CardContent>
             </Card>
           ) : filtered.length === 0 ? (
-            <Card className="rounded-[28px] border-0 bg-white shadow-sm">
+            <Card className="rounded-[28px] border-0 bg-white shadow-none">
               <CardContent className="py-16 text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
                   <Filter className="h-6 w-6 text-slate-500" />
@@ -603,7 +603,7 @@ export default function VeranstaltungenPage() {
                     className="group block"
                   >
                     <article
-                      className={`relative overflow-hidden rounded-[24px] border bg-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-xl ${
+                      className={`relative h-full overflow-hidden rounded-[24px] border bg-white shadow-[0_12px_38px_-34px_rgba(15,23,42,0.42)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] ${
                         isCancelled
                           ? "border-red-300 ring-2 ring-red-50"
                           : "border-slate-200 hover:border-orange-200"

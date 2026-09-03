@@ -84,13 +84,24 @@ const formatCountdown = (target: Date) => {
   const days = Math.floor(totalSeconds / 86400)
   const hours = Math.floor((totalSeconds % 86400) / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
 
-  const hh = String(hours).padStart(2, "0")
-  const mm = String(minutes).padStart(2, "0")
-  const ss = String(seconds).padStart(2, "0")
+  if (days > 0) {
+    return `${days} ${days === 1 ? "Tag" : "Tage"} · ${hours} Std.`
+  }
 
-  return days > 0 ? `${days}T ${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss}`
+  if (hours > 0) {
+    return `${hours} Std. · ${minutes} Min.`
+  }
+
+  return `${Math.max(1, minutes)} Min.`
+}
+
+const formatCompactDate = (date: string | Date) => {
+  const d = new Date(date)
+  const weekday = d.toLocaleDateString("de-AT", { weekday: "short" }).replace(".", "")
+  const day = String(d.getDate()).padStart(2, "0")
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  return `${weekday}, ${day}.${month}.`
 }
 
 const formatCurrencyEUR = (value: number) => {
@@ -823,9 +834,7 @@ const fetchProfile = async () => {
       items: [
         { title: "Trainingstreff", description: "Gemeinsame Trainings & Treffen", icon: Calendar, href: "/training_event" },
         { title: "Mein Training", description: "Übungen & Trainingsplan", icon: Dumbbell, href: "/training-app" },
-        { title: "Lobby", description: "Gegen andere Spieler spielen", icon: Target, href: "/lobby-app" },
         { title: "Team Chat", description: "Mit deinem Team schreiben", icon: MessageCircle, href: "/chat-app" },
-        { title: "Feed", description: "Beiträge & Neuigkeiten", icon: MessageCircle, href: "/community-app" },
         { title: "Match Galerie", description: "Spielfotos ansehen", icon: Camera, href: "/match-galerie" },
       ],
     },
@@ -998,472 +1007,362 @@ if (error || !profile) {
   const hasMultipleTeams = teamMemberships.length > 1
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans">
       <Header />
 
-      <main className="flex-grow mx-auto w-full px-3 sm:px-4 pt-14 sm:pt-14 pb-24 md:pb-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
-       
+      <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 lg:pb-12">
+        {/* Hero */}
+        <section className="relative mt-2 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mt-4 sm:rounded-[28px] xl:rounded-[30px]">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
 
-   
-
- {/* Willkommen */}
-<div className="mt-2 sm:mt-4 mb-4 sm:mb-6">
-  <div className="flex items-center justify-between">
-    <div>
-      
-      <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 leading-tight">
-        Willkommen, {profile.club_players?.name || "Spieler"}
-      </h1>
-    </div>
-
-    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
-      <Users className="h-5 w-5 text-white" />
-    </div>
-  </div>
-</div>
-
-
- {/* Neue Hinweise für Mitgliedschaft & Testfreischaltungen */}
-  {!membershipAccessLoading && (showNormalMembershipExpiry || expiringTrials.length > 0) ? (
-    <div className="mb-6 sm:mb-8 space-y-3">
-      {showNormalMembershipExpiry && normalMembershipEndsOn ? (
-        <Card
-          className={
-            membershipExpiryDays !== null && membershipExpiryDays <= 7
-              ? "border-0 shadow-xl bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-500"
-              : "border-0 shadow-xl bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-l-amber-500"
-          }
-        >
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-start gap-3">
-              <div
-                className={
-                  membershipExpiryDays !== null && membershipExpiryDays <= 7
-                    ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white"
-                    : "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white"
-                }
-              >
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-black text-gray-900">Mitgliedschaft läuft bald aus</h3>
-                  <Badge
-                    className={
-                      membershipExpiryDays !== null && membershipExpiryDays <= 7
-                        ? "rounded-full bg-red-600 text-white"
-                        : "rounded-full bg-amber-500 text-white"
-                    }
-                  >
-                    {membershipExpiryDays === 0
-                      ? "Heute"
-                      : `Noch ${membershipExpiryDays} ${membershipExpiryDays === 1 ? "Tag" : "Tage"}`}
-                  </Badge>
+          <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="min-w-0">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                  Mitgliederbereich
                 </div>
 
-                <p className="mt-1 text-sm font-semibold text-gray-700">
-                  Dein aktuelles Paket ist bis <b>{formatShortDateAT(normalMembershipEndsOn)}</b> freigeschaltet.
-                </p>
-
-                <Button asChild size="sm" variant="outline" className="mt-3 rounded-xl bg-white">
-                  <Link href="/member-membership">Mitgliedschaft ansehen</Link>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {expiringTrials.map((trial: any) => (
-        <Card
-          key={trial.id}
-          className={
-            trial.daysLeft <= 7
-              ? "border-0 shadow-xl bg-gradient-to-r from-purple-50 to-red-50 border-l-4 border-l-purple-600"
-              : "border-0 shadow-xl bg-gradient-to-r from-purple-50 to-fuchsia-50 border-l-4 border-l-purple-500"
-          }
-        >
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white">
-                <Gift className="h-5 w-5" />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-black text-gray-900">Testfreischaltung läuft bald aus</h3>
-                  <Badge className="rounded-full bg-purple-600 text-white">
-                    {trial.daysLeft === 0
-                      ? "Heute"
-                      : `Noch ${trial.daysLeft} ${trial.daysLeft === 1 ? "Tag" : "Tage"}`}
-                  </Badge>
-                </div>
-
-                <p className="mt-1 text-sm font-semibold text-gray-700">
-                  <b>{trialModuleLabel(trial.module_code)}</b> ist noch bis{" "}
-                  <b>{formatShortDateAT(trial.ends_on)}</b> kostenlos freigeschaltet.
-                </p>
-
-                <Button asChild size="sm" variant="outline" className="mt-3 rounded-xl bg-white">
-                  <Link href="/member-membership">Details ansehen</Link>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  ) : null}
-
-
-  {totalUnread > 0 && (
-  <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-orange-50 to-amber-50 border-l-4 border-l-orange-500">
-    <CardContent className="p-4 sm:p-6">
-      <div className="flex items-start gap-3 sm:gap-4">
-        <div className="flex-shrink-0">
-          <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl shadow-lg">
-            <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-          </div>
-        </div>
-
-        <div className="flex-grow w-full">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-            <h3 className="text-base sm:text-lg font-bold text-gray-900">Neue Team-Chat Nachrichten</h3>
-            <Badge className="bg-orange-600 text-white w-fit">{totalUnread}</Badge>
-          </div>
-
-          <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
-            Du hast neue Nachrichten in deinen Team-Chats. Tippe auf ein Team, um den Chat zu öffnen.
-          </p>
-
-          <div className="space-y-2">
-            {chatRooms
-              .filter((r) => (unreadCounts[r.id] || 0) > 0)
-              .slice(0, 5)
-              .map((room) => (
-                <div
-                  key={room.id}
-                  className="flex items-center justify-between bg-white/70 rounded-lg p-3 border border-orange-200 cursor-pointer hover:bg-white transition-colors"
-                  onClick={() => router.push(`/chat-app?room_id=${room.id}&scope=${CHAT_SCOPE}`)}
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-900 truncate">{room.name}</div>
-                    <div className="text-xs text-gray-600">Tippen zum Öffnen</div>
+                <div className="flex items-center gap-4 sm:gap-5">
+                  <div className="relative shrink-0">
+                    <Avatar className="h-16 w-16 border border-white/15 shadow-2xl sm:h-20 sm:w-20">
+                      <AvatarImage
+                        src={profile.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=dart player avatar"}
+                        alt={profile.club_players?.name || "Spieler"}
+                      />
+                      <AvatarFallback className="bg-orange-500 text-xl font-black text-white sm:text-2xl">
+                        {(profile.club_players?.name || "U")
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <button
+                      type="button"
+                      onClick={() => setIsPhotoDialogOpen(true)}
+                      className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white text-slate-950 shadow-lg transition hover:scale-105"
+                      aria-label="Profilfoto ändern"
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                    </button>
                   </div>
 
-                 <Badge className="bg-orange-600 text-white">{unreadCounts[room.id] || 0}</Badge>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white/55">Willkommen zurück</p>
+                    <h1 className="mt-1 truncate text-2xl font-black tracking-[-0.03em] text-white sm:text-4xl">
+                      {profile.club_players?.name || "Vereinsmitglied"}
+                    </h1>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-white/60">
+                      {teamMemberships.length > 0 ? (
+                        teamMemberships.slice(0, 3).map((membership: any) => (
+                          <span
+                            key={membership.id}
+                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-xs font-semibold text-white/75"
+                          >
+                            <span className="truncate">{membership.teams?.name || "Team"}</span>
+                            <span className="text-white/30">·</span>
+                            <span className="shrink-0 text-orange-300">{getRoleLabel(membership.role)}</span>
+                          </span>
+                        ))
+                      ) : (
+                        <span>Emoj!´s Dartverein</span>
+                      )}
+                      {teamMemberships.length > 3 ? (
+                        <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-white/55">
+                          +{teamMemberships.length - 3} weitere
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-              ))}
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-)}
+              </div>
 
-        {/* Profil Card */}
-        <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
-          <CardContent className="p-0">
-  {/* Cover / Header */}
-  <div className="relative overflow-hidden rounded-t-xl">
-    <div className="h-24 sm:h-28 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500" />
-    <div className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_20%,white,transparent_40%),radial-gradient(circle_at_80%_10%,white,transparent_35%),radial-gradient(circle_at_70%_90%,white,transparent_40%)]" />
-  </div>
-
-  {/* Content */}
-  <div className="relative px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6">
-    {/* Avatar (overlapping) */}
-    <div className="-mt-10 sm:-mt-12 flex items-end justify-between gap-3">
-      <div className="relative">
-        <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white shadow-xl">
-          <AvatarImage
-            src={profile.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=dart player avatar"}
-            alt={profile.club_players?.name || "Spieler"}
-          />
-          <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xl sm:text-2xl font-bold">
-            {(profile.club_players?.name || "U")
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-
-        <Button
-          size="sm"
-          variant="outline"
-          className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 bg-white shadow-lg"
-          onClick={() => setIsPhotoDialogOpen(true)}
-        >
-          <Camera className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Abmelden  */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleLogout}
-        className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 bg-white/90 border-red-200 shadow-sm"
-      >
-        <LogOut className="h-4 w-4" />
-        Abmelden
-      </Button>
-    </div>
-
-    {/* Name + Meta */}
-    <div className="mt-3">
-      <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
-        {profile.club_players?.name || "Vereinsmitglied"}
-      </h2>
-	  
-	  <div className="mt-3 flex flex-wrap items-center gap-2">
-  <Button
-    asChild
-    variant="outline"
-    size="sm"
-    className="rounded-full bg-orange-600 text-white hover:bg-orange-700"
-  >
-    <Link href="/profil-daten-app">
-      <Pencil className="h-4 w-4 mr-2" />
-      Profil bearbeiten
-    </Link>
-  </Button>
-</div>
-
-      {(profile as any)?.last_seen_at && (
-        <div className="mt-1 text-sm text-gray-600">
-          Zuletzt online: {formatLastSeen((profile as any).last_seen_at)}
-        </div>
-      )}
-
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        
-
-
-        
-      </div>
-
-      {/* Willkommen */}
-      <div className="mt-4 rounded-xl border bg-white/70 backdrop-blur-sm p-3 text-sm text-gray-700">
-        Dein persönlicher Bereich – wichtige Infos zuerst, alles Weitere übersichtlich darunter.
-      </div>
-	  
-	  
-	  {teamMemberships.length > 1 && (
-  <div className="mt-5">
-    <div className="flex items-center justify-between mb-2">
-      <p className="text-sm font-semibold text-gray-900">Alle Teams</p>
-      <Badge variant="secondary" className="text-xs">
-        {teamMemberships.length}
-      </Badge>
-    </div>
-
-    <div className="flex flex-wrap gap-2">
-      {teamMemberships.map((membership: any) => (
-        <div
-          key={membership.id}
-          className="flex items-center gap-2 rounded-full border bg-white px-2.5 py-1 shadow-sm"
-        >
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100">
-            {membership.role === "Captain" ? (
-              <Crown className="h-3 w-3 text-orange-700" />
-            ) : membership.role === "Co-Captain" ? (
-              <ShieldCheck className="h-3.5 w-3.5 text-orange-700" />
-            ) : (
-              <Target className="h-3.5 w-3.5 text-orange-700" />
-            )}
-          </span>
-
-          <span className="text-[13px] font-semibold text-gray-900">
-            {membership.teams?.name || "Team"}
-          </span>
-
-          <span className="text-[11px] text-gray-600">
-            {getRoleLabel(membership.role)}
-          </span>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-
-      {/* */}
-    </div>
-  </div>
-</CardContent>
-        </Card>
-
-        {/* Kommendes Spiel */}
-<Card className="border shadow-sm bg-white mb-6 sm:mb-8 rounded-2xl overflow-hidden">
-  <CardContent className="p-0">
-    {/* Header */}
-    <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b bg-gradient-to-r from-gray-50 to-white">
-      <div className="min-w-0">
-        <div className="text-[11px] uppercase tracking-wide text-gray-500">Kommendes Spiel</div>
-        <div className="text-sm font-semibold text-gray-900">
-          {nextMatchSummary ? "Bitte prüfen & zusagen" : "Aktuell nichts geplant"}
-        </div>
-      </div>
-
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => nextMatchSummary && router.push(`/member-availability?matchId=${(nextMatchSummary.match as any).id}`)}
-        className="bg-white hover:bg-gray-50 border-gray-200 rounded-xl"
-        disabled={!nextMatchSummary}
-      >
-        Öffnen
-      </Button>
-    </div>
-
-    {/* Body */}
-    <div className="px-4 sm:px-5 py-4">
-      {!nextMatchSummary ? (
-        <div className="text-sm text-muted-foreground">Kein kommendes Spiel gefunden.</div>
-      ) : (
-        <>
-          {/* Title */}
-          <div className="font-extrabold text-lg sm:text-xl text-gray-900 leading-snug">
-            {getTeamDisplayName(nextMatchSummary.match, true)}{" "}
-            <span className="text-gray-400 font-semibold">vs</span>{" "}
-            {getTeamDisplayName(nextMatchSummary.match, false)}
-          </div>
-
-          {/* Meta  */}
-          <div className="mt-3 space-y-2 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-2">
-            <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 border border-gray-200">
-              <Calendar className="h-4 w-4 text-orange-600" />
-              <div className="text-sm text-gray-800">
-                {formatDate((nextMatchSummary.match as any).match_date)}
-                {(nextMatchSummary.match as any).match_time ? ` • ${formatTime((nextMatchSummary.match as any).match_time)}` : ""}
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:justify-end">
+                <Button asChild variant="outline" className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
+                  <Link href="/profil-daten-app">
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Profil
+                  </Link>
+                </Button>
+                <Button asChild className="h-10 rounded-xl bg-orange-500 text-white hover:bg-orange-600">
+                  <Link href="/member-membership">Mitgliedschaft</Link>
+                </Button>
+                <Button asChild variant="outline" className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
+                  <Link href="/chat-app">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Chat
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
+                  <Link href="/member-availability">
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Aufstellung
+                  </Link>
+                </Button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 border border-gray-200">
-              <MapPin className="h-4 w-4 text-orange-600" />
-              <div className="text-sm text-gray-800 truncate">
-                {(nextMatchSummary.match as any).venue || "—"}
+            <div className="mt-5 grid grid-cols-3 gap-2 sm:mt-6 sm:gap-3">
+              <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-sm sm:p-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">Teams</div>
+                <div className="mt-2 flex items-end justify-between gap-3">
+                  <div className="text-2xl font-black text-white">{teamMemberships.length}</div>
+                  <Users className="h-5 w-5 text-orange-400" />
+                </div>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 border border-gray-200">
-              <Clock className="h-4 w-4 text-orange-600" />
-              <div className="text-sm text-gray-800">
-                {countdown ? <span className="font-mono font-semibold">{countdown}</span> : "—"}
+              <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-sm sm:p-4">
+                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40 sm:text-[11px] sm:tracking-[0.16em]">
+                  Nächstes Spiel
+                </div>
+                <div className="mt-2 flex items-end justify-between gap-2">
+                  <div className="whitespace-nowrap text-[11px] font-black leading-none text-white sm:text-sm">
+                    {nextMatchSummary ? formatCompactDate((nextMatchSummary.match as any).match_date) : "Noch offen"}
+                  </div>
+                  <Calendar className="hidden h-5 w-5 shrink-0 text-orange-400 sm:block" />
+                </div>
+              </div>
+              <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-sm sm:p-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">Team-Chat</div>
+                <div className="mt-2 flex items-end justify-between gap-3">
+                  <div className="text-2xl font-black text-white">{totalUnread}</div>
+                  <MessageCircle className="h-5 w-5 text-orange-400" />
+                </div>
               </div>
             </div>
           </div>
+        </section>
 
-          {/* Team answers  */}
-          <div className="mt-4 grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-            <Badge className="bg-green-600 text-white justify-center rounded-full py-2 text-xs sm:text-sm">
-              Zusagen: {nextMatchSummary.counts.yes}
-            </Badge>
-            <Badge className="bg-yellow-600 text-white justify-center rounded-full py-2 text-xs sm:text-sm">
-              Vielleicht: {nextMatchSummary.counts.maybe}
-            </Badge>
-            <Badge className="bg-red-600 text-white justify-center rounded-full py-2 text-xs sm:text-sm">
-              Absagen: {nextMatchSummary.counts.no}
-            </Badge>
-            <Badge variant="outline" className="justify-center rounded-full py-2 text-xs sm:text-sm">
-              Offen: {nextMatchSummary.counts.none}
-            </Badge>
+        {/* Hinweise */}
+        {!membershipAccessLoading && (showNormalMembershipExpiry || expiringTrials.length > 0) ? (
+          <div className="mt-4 space-y-2.5">
+            {showNormalMembershipExpiry && normalMembershipEndsOn ? (
+              <div className="flex flex-col gap-3 rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                    <AlertTriangle className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <div className="font-black text-slate-950">Mitgliedschaft läuft bald aus</div>
+                    <div className="mt-0.5 text-sm text-slate-600">
+                      Freigeschaltet bis {formatShortDateAT(normalMembershipEndsOn)}.
+                    </div>
+                  </div>
+                </div>
+                <Button asChild size="sm" variant="outline" className="rounded-xl border-amber-200 bg-white">
+                  <Link href="/member-membership">Ansehen</Link>
+                </Button>
+              </div>
+            ) : null}
+
+            {expiringTrials.map((trial: any) => (
+              <div key={trial.id} className="flex flex-col gap-3 rounded-2xl border border-violet-200/80 bg-violet-50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
+                    <Gift className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <div className="font-black text-slate-950">Testphase: {trialModuleLabel(trial.module_code)}</div>
+                    <div className="mt-0.5 text-sm text-slate-600">Kostenlos bis {formatShortDateAT(trial.ends_on)}.</div>
+                  </div>
+                </div>
+                <div className="text-xs font-black text-violet-700">Noch {trial.daysLeft} Tage</div>
+              </div>
+            ))}
           </div>
+        ) : null}
 
-          {/* My status  */}
-          <div className="mt-4 rounded-2xl border bg-gray-50 p-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-gray-500 w-28">Meine Antwort:</div>
-                {statusBadge(nextMatchSummary.myStatus)}
+        {/* Hauptbereich */}
+        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
+          <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_14px_38px_-28px_rgba(15,23,42,0.28)]">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Nächstes Spiel</div>
+                <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 sm:text-xl">
+                  {nextMatchSummary ? "Dein nächster Termin" : "Aktuell kein Spiel geplant"}
+                </h2>
               </div>
-
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-gray-500 w-28">Aufstellung:</div>
-                {nextMatchSummary.myLineup === "starter" ? (
-                  <Badge className="bg-orange-600 text-white rounded-full">Stamm</Badge>
-                ) : nextMatchSummary.myLineup === "substitute" ? (
-                  <Badge variant="secondary" className="rounded-full">Ersatz</Badge>
-                ) : (
-                  <Badge variant="outline" className="rounded-full">Nicht gesetzt</Badge>
-                )}
-              </div>
+              <Button
+                size="sm"
+                disabled={!nextMatchSummary}
+                onClick={() => nextMatchSummary && router.push(`/member-availability?matchId=${(nextMatchSummary.match as any).id}`)}
+                className="rounded-xl bg-slate-950 px-3.5 text-white hover:bg-slate-800"
+              >
+                Öffnen
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Button>
             </div>
 
-            <div className="mt-3 flex items-start gap-2 text-sm text-gray-700">
-              {nextMatchSummary.myStatus === "yes" ? (
-                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
-              ) : nextMatchSummary.myStatus === "no" ? (
-                <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
-              ) : nextMatchSummary.myStatus === "maybe" ? (
-                <HelpCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
+            <div className="p-4 sm:p-5">
+              {!nextMatchSummary ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                  Sobald ein neues Ligaspiel feststeht, erscheint es hier.
+                </div>
               ) : (
-                <Bell className="h-4 w-4 text-gray-500 mt-0.5" />
+                <>
+                  <div className="rounded-2xl bg-slate-950 px-4 py-5 text-white sm:px-5">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">Begegnung</div>
+                        <div className="mt-2 text-xl font-black tracking-tight sm:text-2xl">
+                          {getTeamDisplayName(nextMatchSummary.match, true)}
+                          <span className="mx-2 font-medium text-white/30">vs</span>
+                          {getTeamDisplayName(nextMatchSummary.match, false)}
+                        </div>
+                      </div>
+                      <div className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                        <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">Start in</div>
+                        <div className="mt-0.5 whitespace-nowrap text-sm font-black text-orange-300">
+                          {countdown || "—"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+                        <Calendar className="h-4 w-4 text-orange-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Termin</div>
+                        <div className="text-sm font-bold leading-snug text-slate-800">
+                          {formatDate((nextMatchSummary.match as any).match_date)}
+                          {(nextMatchSummary.match as any).match_time ? ` · ${formatTime((nextMatchSummary.match as any).match_time)}` : ""}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+                        <MapPin className="h-4 w-4 text-orange-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Ort</div>
+                        <div className="truncate text-sm font-bold text-slate-800">{(nextMatchSummary.match as any).venue || "Noch offen"}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {[
+                      { label: "Zusagen", value: nextMatchSummary.counts.yes, dot: "bg-emerald-500" },
+                      { label: "Vielleicht", value: nextMatchSummary.counts.maybe, dot: "bg-amber-500" },
+                      { label: "Absagen", value: nextMatchSummary.counts.no, dot: "bg-rose-500" },
+                      { label: "Offen", value: nextMatchSummary.counts.none, dot: "bg-slate-300" },
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-2xl border border-slate-200 bg-white px-3 py-3.5">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                          <span className={`h-2 w-2 rounded-full ${item.dot}`} />
+                          {item.label}
+                        </div>
+                        <div className="mt-2 text-2xl font-black tracking-tight text-slate-950">{item.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Dein Status</div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                        {statusBadge(nextMatchSummary.myStatus)}
+                        {nextMatchSummary.myLineup === "starter" ? (
+                          <Badge className="rounded-full bg-orange-500 text-white">Stamm</Badge>
+                        ) : nextMatchSummary.myLineup === "substitute" ? (
+                          <Badge variant="secondary" className="rounded-full">Ersatz</Badge>
+                        ) : (
+                          <Badge variant="outline" className="rounded-full bg-white">Noch nicht aufgestellt</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <p className="max-w-md text-sm leading-relaxed text-slate-600">
+                      {getAvailabilityNudge(nextMatchSummary.myStatus, nextMatchSummary.myLineup)}
+                    </p>
+                  </div>
+                </>
               )}
-              <span className="leading-snug">
-                {getAvailabilityNudge(nextMatchSummary.myStatus, nextMatchSummary.myLineup)}
-              </span>
             </div>
-          </div>
-        </>
-      )}
-    </div>
-  </CardContent>
-</Card>
+          </section>
 
-        {hasClubRole && (
-  <Card
-    className="mb-6 border-0 cursor-pointer overflow-hidden rounded-2xl text-white shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500"
-    onClick={() => router.push("/admin")}
-  >
-    <CardContent className="p-5 sm:p-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <div className="text-xs uppercase tracking-wide text-white/80">Vereinsbereich</div>
-          <div className="text-xl sm:text-2xl font-extrabold leading-tight truncate">
-            Admin / Verwaltung
-          </div>
-          <div className="mt-1 text-sm text-white/85">
-            Verwaltung, Beiträge, Teams & Einstellungen
-          </div>
+          <aside className="space-y-4">
+            <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_-28px_rgba(15,23,42,0.28)] sm:p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Auf einen Blick</div>
+                  <h2 className="mt-1 text-lg font-black text-slate-950">Liga-Statistik</h2>
+                </div>
+                <BarChart3 className="h-5 w-5 text-orange-500" />
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {[
+                  { label: "Legs gewonnen", value: statistics.legsWon },
+                  { label: "Siegquote", value: `${statistics.winPercentage}%` },
+                  { label: "Leg-Bilanz", value: `${statistics.legsWon}:${statistics.legsLost}` },
+                  { label: "180er", value: statistics.total180s },
+                ].map((stat) => (
+                  <div key={stat.label} className="rounded-2xl bg-slate-50 px-3 py-3.5 ring-1 ring-slate-100">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{stat.label}</div>
+                    <div className="mt-1.5 text-xl font-black tracking-tight text-slate-950">{stat.value}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {totalUnread > 0 ? (
+              <button
+                type="button"
+                onClick={() => router.push('/chat-app')}
+                className="group w-full rounded-[24px] border border-orange-200 bg-orange-50 p-4 text-left transition hover:border-orange-300 hover:bg-orange-100/70 sm:p-5"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-orange-600">Team-Chat</div>
+                    <div className="mt-1 text-lg font-black text-slate-950">{totalUnread} neue Nachricht{totalUnread === 1 ? '' : 'en'}</div>
+                    <div className="mt-1 text-sm text-slate-600">Direkt zu deinen Team-Chats</div>
+                  </div>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm">
+                    <MessageCircle className="h-5 w-5" />
+                  </div>
+                </div>
+              </button>
+            ) : null}
+          </aside>
         </div>
 
-        <div className="shrink-0">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 border border-white/20 px-4 py-2 backdrop-blur-sm hover:bg-white/20 transition-colors">
-            <span className="text-sm font-semibold">Öffnen</span>
-            <ArrowRight className="h-4 w-4" />
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-)}
-        {/* Bereiche – bewusst gruppiert statt vieler einzelner Kacheln */}
-        <div className="space-y-4 sm:space-y-5 mb-6 sm:mb-8">
+        {hasClubRole ? (
+          <button
+            type="button"
+            onClick={() => router.push('/admin')}
+            className="group mt-4 flex w-full items-center justify-between gap-4 overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 px-4 py-4 text-left text-white shadow-[0_18px_42px_-30px_rgba(15,23,42,0.7)] transition hover:-translate-y-0.5 sm:px-5"
+          >
+            <div className="min-w-0">
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Vereinsbereich</div>
+              <div className="mt-1 text-lg font-black">Admin & Verwaltung</div>
+              <div className="mt-0.5 text-sm text-white/55">Beiträge, Teams und Organisation</div>
+            </div>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 transition group-hover:bg-orange-500">
+              <ArrowRight className="h-4 w-4" />
+            </div>
+          </button>
+        ) : null}
+
+        {/* Bereiche */}
+        <div className="mt-7 space-y-7 sm:mt-8">
           {navigationGroups.map((group) => {
-            const visibleItems = group.items.filter(
-              (item: any) => !item.requiresLeadership || isLeadershipRole(),
-            )
-
+            const visibleItems = group.items.filter((item: any) => !item.requiresLeadership || isLeadershipRole())
             if (visibleItems.length === 0) return null
 
             return (
-              <section
-                key={group.title}
-                className="rounded-2xl sm:rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden"
-              >
-                <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-gray-100 bg-gray-50/80">
-                  <h2 className="text-base sm:text-lg font-black text-gray-900">
-                    {group.title}
-                  </h2>
-                  <p className="mt-0.5 text-xs sm:text-sm text-gray-500 font-medium">
-                    {group.description}
-                  </p>
+              <section key={group.title}>
+                <div className="mb-3 flex items-end justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-black tracking-tight text-slate-950">{group.title}</h2>
+                    <p className="mt-0.5 text-sm text-slate-500">{group.description}</p>
+                  </div>
                 </div>
 
-                <div className="divide-y divide-gray-100">
+                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                   {visibleItems.map((item: any) => {
                     const Icon = item.icon
                     return (
@@ -1471,23 +1370,17 @@ if (error || !profile) {
                         key={item.href}
                         type="button"
                         onClick={() => router.push(item.href)}
-                        className="w-full flex items-center gap-3.5 px-4 sm:px-5 py-4 sm:py-3.5 text-left hover:bg-orange-50/60 active:bg-orange-50 transition-colors min-h-[72px]"
+                        className="group flex min-h-[104px] w-full items-center gap-3.5 rounded-[20px] border border-slate-200 bg-white p-3.5 text-left shadow-[0_12px_30px_-28px_rgba(15,23,42,0.35)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_38px_-28px_rgba(15,23,42,0.38)] sm:p-4"
                       >
-                        <div className="w-11 h-11 sm:w-10 sm:h-10 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
-                          <Icon className="h-5 w-5 text-orange-700" />
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-50 ring-1 ring-slate-100 transition group-hover:bg-orange-50 group-hover:ring-orange-100">
+                          <Icon className="h-5 w-5 text-slate-500 transition group-hover:text-orange-600" />
                         </div>
-
                         <div className="min-w-0 flex-1">
-                          <div className="text-[15px] sm:text-sm font-black text-gray-900 leading-snug">
-                            {item.title}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="truncate text-sm font-black text-slate-950">{item.title}</div>
+                            <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-600" />
                           </div>
-                          <div className="mt-0.5 text-[12px] sm:text-sm text-gray-500 leading-snug sm:leading-normal">
-                            {item.description}
-                          </div>
-                        </div>
-
-                        <div className="w-8 h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
-                          <ArrowRight className="h-4 w-4 text-gray-500" />
+                          <div className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500 sm:text-sm">{item.description}</div>
                         </div>
                       </button>
                     )
@@ -1498,157 +1391,104 @@ if (error || !profile) {
           })}
         </div>
 
-       {/* Stats */}
-<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-  <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm overflow-hidden">
-    <CardContent className="p-0">
-      <div className="p-3 sm:p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-xs sm:text-sm font-semibold text-gray-600">Legs W</div>
-          <div className="w-9 h-9 rounded-2xl bg-yellow-50 flex items-center justify-center">
-            <Trophy className="h-5 w-5 text-yellow-700" />
-          </div>
-        </div>
-        <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-          {statistics.legsWon}
-        </div>
-        <div className="mt-1 text-xs text-gray-500">Gesamt</div>
-      </div>
-      <div className="h-1.5 bg-gradient-to-r from-yellow-400 to-amber-500" />
-    </CardContent>
-  </Card>
-
-  <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm overflow-hidden">
-    <CardContent className="p-0">
-      <div className="p-3 sm:p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-xs sm:text-sm font-semibold text-gray-600">Siegquote</div>
-          <div className="w-9 h-9 rounded-2xl bg-orange-50 flex items-center justify-center">
-            <Target className="h-5 w-5 text-orange-700" />
-          </div>
-        </div>
-        <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-          {statistics.winPercentage}%
-        </div>
-        <div className="mt-1 text-xs text-gray-500">Quote</div>
-      </div>
-      <div className="h-1.5 bg-gradient-to-r from-orange-400 to-orange-600" />
-    </CardContent>
-  </Card>
-
-  <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm overflow-hidden">
-    <CardContent className="p-0">
-      <div className="p-3 sm:p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-xs sm:text-sm font-semibold text-gray-600">Legs</div>
-          <div className="w-9 h-9 rounded-2xl bg-blue-50 flex items-center justify-center">
-            <Users className="h-5 w-5 text-blue-700" />
-          </div>
-        </div>
-        <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-          {statistics.legsWon} : {statistics.legsLost}
-        </div>
-        <div className="mt-1 text-xs text-gray-500">Gespielt</div>
-      </div>
-      <div className="h-1.5 bg-gradient-to-r from-blue-400 to-indigo-500" />
-    </CardContent>
-  </Card>
-
-  <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm overflow-hidden">
-    <CardContent className="p-0">
-      <div className="p-3 sm:p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-xs sm:text-sm font-semibold text-gray-600">180er</div>
-          <div className="w-9 h-9 rounded-2xl bg-green-50 flex items-center justify-center">
-            <Calendar className="h-5 w-5 text-green-700" />
-          </div>
-        </div>
-        <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-          {statistics.total180s}
-        </div>
-        <div className="mt-1 text-xs text-gray-500">Gesamt</div>
-      </div>
-      <div className="h-1.5 bg-gradient-to-r from-green-400 to-emerald-500" />
-    </CardContent>
-  </Card>
-</div>
-		
-		        {/* Konto / Datenschutz */}
-        <Card className="mt-6 sm:mt-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-sm text-gray-600">Konto</div>
-                <div className="text-lg font-bold text-gray-900">Konto löschen</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Du kannst eine Löschanfrage stellen. Wir bearbeiten sie anschließend.
-                </div>
+        {/* Teams */}
+        {hasMultipleTeams ? (
+          <section className="mt-7 rounded-[24px] border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Deine Teams</div>
+                <div className="mt-1 text-lg font-black text-slate-950">{teamMemberships.length} aktive Teams</div>
               </div>
-
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto border-red-200 text-red-700 hover:bg-red-50"
-                onClick={() => router.push("/konto-loeschen")}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Konto löschen
-              </Button>
             </div>
-          </CardContent>
-        </Card>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {teamMemberships.map((membership: any) => (
+                <div key={membership.id} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                  {getRoleIcon(membership.role)}
+                  <span className="font-bold text-slate-800">{membership.teams?.name || 'Team'}</span>
+                  <span className="text-slate-400">·</span>
+                  <span className="text-slate-500">{getRoleLabel(membership.role)}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {/* Konto */}
+        <section className="mt-7 flex flex-col gap-3 rounded-[24px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Konto</div>
+            <div className="mt-1 text-base font-black text-slate-950">Kontoeinstellungen</div>
+            <div className="mt-0.5 text-sm text-slate-500">Profil verwalten oder eine Löschanfrage stellen.</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <Button asChild variant="outline" className="rounded-xl">
+              <Link href="/profil-daten-app">Profil bearbeiten</Link>
+            </Button>
+            <Button variant="outline" onClick={() => router.push('/konto-loeschen')} className="rounded-xl border-red-200 text-red-700 hover:bg-red-50">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Löschen
+            </Button>
+          </div>
+        </section>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mx-auto mt-6 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-400 transition hover:bg-white hover:text-red-600"
+        >
+          <LogOut className="h-4 w-4" />
+          Abmelden
+        </button>
       </main>
 
       {/* Foto Dialog */}
       {isPhotoDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4">Profilfoto hochladen</h3>
-
-            <div className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="w-full rounded-t-[28px] border border-slate-200 bg-white p-5 shadow-2xl sm:max-w-md sm:rounded-[28px] sm:p-6">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <input type="file" accept="image/*" onChange={handlePhotoFileChange} className="w-full p-2 border rounded" />
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Profil</div>
+                <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">Profilfoto ändern</h3>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPhotoDialogOpen(false)
+                  setPhotoFile(null)
+                  setPhotoPreview(null)
+                  setPhotoMessage("")
+                }}
+                className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-slate-600"
+              >
+                Schließen
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <label className="block cursor-pointer rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center transition hover:border-orange-300 hover:bg-orange-50/40">
+                <input type="file" accept="image/*" onChange={handlePhotoFileChange} className="hidden" />
+                <Upload className="mx-auto h-5 w-5 text-orange-600" />
+                <div className="mt-2 text-sm font-black text-slate-800">Foto auswählen</div>
+                <div className="mt-0.5 text-xs text-slate-500">JPG, PNG oder WEBP</div>
+              </label>
 
               {photoPreview && (
-                <div className="text-center">
-                  <img
-                    src={photoPreview || "/placeholder.svg"}
-                    alt="Vorschau"
-                    className="w-32 h-32 object-cover rounded-full mx-auto border-4 border-orange-200"
-                  />
+                <div className="rounded-2xl bg-slate-50 p-4 text-center">
+                  <img src={photoPreview || "/placeholder.svg"} alt="Vorschau" className="mx-auto h-28 w-28 rounded-full object-cover ring-4 ring-white shadow-lg" />
                 </div>
               )}
 
               {photoMessage && (
-                <p className={`text-sm ${photoMessage.includes("Fehler") ? "text-red-600" : "text-green-600"}`}>{photoMessage}</p>
+                <p className={`rounded-xl px-3 py-2 text-sm font-semibold ${photoMessage.includes("Fehler") ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>{photoMessage}</p>
               )}
 
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsPhotoDialogOpen(false)
-                    setPhotoFile(null)
-                    setPhotoPreview(null)
-                    setPhotoMessage("")
-                  }}
-                >
-                  Abbrechen
-                </Button>
-                <Button onClick={handlePhotoUpload} disabled={!photoFile || photoUploading} className="bg-orange-600 hover:bg-orange-700">
-                  {photoUploading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Hochladen...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Hochladen
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button onClick={handlePhotoUpload} disabled={!photoFile || photoUploading} className="h-11 w-full rounded-xl bg-slate-950 text-white hover:bg-slate-800">
+                {photoUploading ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Wird hochgeladen...</>
+                ) : (
+                  <><Upload className="mr-2 h-4 w-4" />Foto speichern</>
+                )}
+              </Button>
             </div>
           </div>
         </div>

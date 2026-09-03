@@ -188,7 +188,7 @@ function Chip({
             ? "bg-amber-50 text-amber-900 border-amber-200"
             : tone === "slate"
               ? "bg-slate-50 text-slate-800 border-slate-200"
-              : "bg-gray-50 text-gray-800 border-gray-200"
+              : "bg-slate-50 text-gray-800 border-gray-200"
 
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
@@ -296,28 +296,31 @@ export default function VeranstaltungenPage() {
   }, [events, timeFilter, typeFilter, sourceFilter, query])
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-20 text-slate-950">
       <Header />
 
-      <main className="pt-12 sm:pt-14">
-        <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+      <main className="pt-14 sm:pt-16">
+        <div className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8">
           {/* Page Header Card */}
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-            <div className="p-4 flex items-start gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-5 h-5 text-orange-600" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-base sm:text-lg font-black">Veranstaltungen</h1>
-                <p className="text-sm text-gray-600 mt-1">Turniere, Partys und mehr – alles auf einen Blick.</p>
+          <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+            <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                  <Calendar className="h-6 w-6 text-orange-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-white/50">Vereinsleben</p>
+                  <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Veranstaltungen</h1>
+                  <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">Turniere, Partys und mehr – alles auf einen Blick.</p>
+                </div>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Filters (sticky like app) */}
-          <div className="sticky top-[56px] z-20 mt-4">
-            <Card className="border border-gray-200 shadow-sm rounded-2xl">
+          <div className="sticky top-[60px] z-20 mt-4">
+            <Card className="rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
               <CardContent className="p-4">
                 <div className="flex flex-col gap-3">
                   {/* Segmented Buttons */}
@@ -355,14 +358,14 @@ export default function VeranstaltungenPage() {
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder="Suchen (Name, Ort, Details …)"
-                      className="pl-9 rounded-xl"
+                      className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-9"
                     />
                   </div>
 
                   {/* Selects */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-gray-500" />
+                      <Filter className="w-4 h-4 text-slate-500" />
                       <Select value={typeFilter} onValueChange={setTypeFilter}>
                         <SelectTrigger className="rounded-xl">
                           <SelectValue placeholder="Typ" />
@@ -379,7 +382,7 @@ export default function VeranstaltungenPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-gray-500" />
+                      <Filter className="w-4 h-4 text-slate-500" />
                       <Select value={sourceFilter} onValueChange={setSourceFilter}>
                         <SelectTrigger className="rounded-xl">
                           <SelectValue placeholder="Ort / Art" />
@@ -393,7 +396,7 @@ export default function VeranstaltungenPage() {
                     </div>
                   </div>
 
-                  <div className="text-xs text-gray-600">
+                  <div className="text-xs text-slate-600">
                     {loading ? "Lade…" : `${filtered.length} Ergebnis(se)`}
                   </div>
                 </div>
@@ -404,11 +407,11 @@ export default function VeranstaltungenPage() {
           {/* List */}
           <div className="mt-4">
             {loading ? (
-              <div className="text-center text-gray-600 py-12">Lade Veranstaltungen…</div>
+              <div className="text-center text-slate-600 py-12">Lade Veranstaltungen…</div>
             ) : error ? (
               <div className="text-center text-red-600 py-12">{error}</div>
             ) : filtered.length === 0 ? (
-              <div className="text-center text-gray-600 py-12">Keine passenden Veranstaltungen gefunden.</div>
+              <div className="text-center text-slate-600 py-12">Keine passenden Veranstaltungen gefunden.</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filtered.map((e) => {
@@ -424,7 +427,7 @@ const isPast = endDt.getTime() < Date.now()
                   const startgeldAmount = parseStartgeld(e.startgeld_details)
 
                   return (
-                    <Card key={e.id} className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
+                    <Card key={e.id} className="overflow-hidden rounded-[20px] border border-slate-200 shadow-sm">
                       {e.photo_url ? (
                         <div className="relative h-36 bg-gray-200">
                           <Image src={e.photo_url} alt={e.name} fill className="object-cover" />
@@ -461,17 +464,17 @@ const isPast = endDt.getTime() < Date.now()
                       <CardContent className="pt-0">
                         <div className="space-y-2 text-sm text-gray-700">
                           <div className="flex items-center gap-2">
-  <Calendar className="w-4 h-4 text-gray-500" />
+  <Calendar className="w-4 h-4 text-slate-500" />
   <span className="font-medium">{formatDateRangeDE(e.start_date, e.end_date, e.event_date)}</span>
 </div>
 
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-gray-500" />
+                            <Clock className="w-4 h-4 text-slate-500" />
                             <span>{formatTimeDE(e.event_time)} Uhr</span>
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-gray-500" />
+                            <MapPin className="w-4 h-4 text-slate-500" />
                             <span className="line-clamp-1">{e.location || "Wird bekannt gegeben"}</span>
                           </div>
 
@@ -503,7 +506,7 @@ const isPast = endDt.getTime() < Date.now()
                             </div>
                           ) : null}
 
-                          {e.details ? <div className="text-sm text-gray-600 line-clamp-3 pt-1">{e.details}</div> : null}
+                          {e.details ? <div className="text-sm text-slate-600 line-clamp-3 pt-1">{e.details}</div> : null}
                         </div>
 
                         <div className="mt-4">

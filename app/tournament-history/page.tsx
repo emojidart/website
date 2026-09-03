@@ -287,47 +287,47 @@ export default function TournamentHistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-20 text-slate-950">
       <Header />
 
       {/* fixed header offset */}
-      <main className="pt-12 sm:pt-14">
+      <main className="pt-14 sm:pt-16">
         <motion.div
-          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+          className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
           {/* App-Header Card (Kontakt-Style) */}
-          <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-              <div className="p-4 sm:p-5 flex items-start gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-                  <Trophy className="w-5 h-5 text-orange-600" />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-base sm:text-lg font-black">Turnier Historie</h1>
-                  <p className="text-sm text-gray-600 mt-1">Alle abgeschlossenen Turniere auf einen Blick</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {loading ? "Lade…" : `${filtered.length} Turnier(e) gefunden`}
-                  </p>
-                </div>
+          <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
+            <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
+              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+              <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                      <Trophy className="h-6 w-6 text-orange-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white/50">Turniere</p>
+                      <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Turnier Historie</h1>
+                      <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">Alle abgeschlossenen Turniere auf einen Blick</p>
+                    </div>
+                  </div>
 
-                <div className="ml-auto hidden sm:flex items-center gap-2">
-                  <Chip tone="emerald">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Completed
-                  </Chip>
-                  {typeFilter !== "all" ? <Chip tone="orange">{typeLabel(typeFilter)}</Chip> : <Chip>Alle Typen</Chip>}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/70">
+                      {loading ? "Lade…" : `${filtered.length} Turnier(e) gefunden`}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </section>
           </motion.div>
 
           {/* Filter Card (app look) */}
           <motion.div variants={itemVariants} className="mb-5">
-            <Card className="rounded-2xl border border-gray-200 shadow-sm">
+            <Card className="rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
               <CardContent className="p-4 sm:p-5">
                 <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
                   <div className="flex-1 flex flex-col sm:flex-row gap-3">
@@ -337,7 +337,7 @@ export default function TournamentHistoryPage() {
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
                         placeholder="Suche nach Name, Sieger, Typ…"
-                        className="pl-9 h-11 rounded-2xl"
+                        className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-9"
                       />
                       {q ? (
                         <button
@@ -357,7 +357,7 @@ export default function TournamentHistoryPage() {
                       </div>
 
                       <select
-                        className="h-11 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-200"
+                        className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-100"
                         value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value as any)}
                         title="Typ"
@@ -376,7 +376,7 @@ export default function TournamentHistoryPage() {
                     <Button
                       variant="outline"
                       onClick={resetFilters}
-                      className="h-11 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 font-black"
+                      className="h-11 rounded-xl border-slate-200 bg-white font-black hover:bg-slate-50"
                     >
                       Zurücksetzen
                     </Button>
@@ -402,11 +402,11 @@ export default function TournamentHistoryPage() {
               </div>
             </motion.div>
           ) : (
-            <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            <motion.div variants={itemVariants} className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
               {filtered.map((r) => (
                 <Card
                   key={`${r.tournament_id}_${r.tournament_type}`}
-                  className="rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition cursor-pointer overflow-hidden"
+                  className="cursor-pointer overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_38px_-34px_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_20px_60px_-38px_rgba(15,23,42,0.5)]"
                   onClick={() => openTournament(r)}
                 >
                   <CardHeader className="pb-2">
@@ -448,7 +448,7 @@ export default function TournamentHistoryPage() {
                     </div>
 
                     <Button
-                      className="w-full mt-4 h-11 rounded-2xl bg-orange-600 hover:bg-orange-700 font-black"
+                      className="mt-4 h-11 w-full rounded-xl bg-orange-500 font-black hover:bg-orange-600"
                       onClick={(e) => {
                         e.stopPropagation()
                         openTournament(r)

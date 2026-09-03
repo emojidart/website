@@ -225,12 +225,12 @@ export default function NeuesInseratPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32"><Header />
-      <main className="mx-auto max-w-4xl px-4 pt-20">
+    <div className="min-h-screen bg-[#f5f6f8] pb-32"><Header />
+      <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
         <Button variant="outline" onClick={() => router.push("/dartboerse")} className="mb-4 rounded-xl"><ArrowLeft className="mr-2 h-4 w-4" />Zur Dartbörse</Button>
-        <section className="rounded-[2rem] bg-gradient-to-br from-slate-950 to-orange-950 p-6 text-white shadow-2xl sm:p-8"><div className="text-sm font-black uppercase tracking-[0.18em] text-orange-300">Neues Angebot</div><h1 className="mt-2 text-3xl font-black sm:text-4xl">Dartartikel verkaufen</h1><p className="mt-2 text-slate-300">Mit guten Bildern und einer ehrlichen Beschreibung findest du schneller einen Käufer.</p></section>
+        <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 p-4 text-white shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] sm:p-6 lg:p-8 xl:rounded-[30px] xl:p-9"><div className="text-sm font-black uppercase tracking-[0.18em] text-orange-300">Neues Angebot</div><h1 className="mt-2 text-3xl font-black sm:text-4xl">Dartartikel verkaufen</h1><p className="mt-2 text-slate-300">Mit guten Bildern und einer ehrlichen Beschreibung findest du schneller einen Käufer.</p></section>
 
-        <form onSubmit={submit} className="mt-5 space-y-5">
+        <form onSubmit={submit} className="mt-4 grid items-start gap-4 xl:grid-cols-2 xl:gap-5">
           <Section title="Artikel" icon={<Package className="h-5 w-5" />}>
             <Field label="Titel *"><Input value={form.title} onChange={(e) => setField("title", e.target.value)} placeholder="z. B. Target Phil Taylor Gen 10, 24 g" required /></Field>
             <div className="grid gap-4 sm:grid-cols-2"><Field label="Kategorie *"><Select value={form.category} onValueChange={(value) => setField("category", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.entries(categories).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></Field><Field label="Zustand *"><Select value={form.condition} onValueChange={(value) => setField("condition", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="new">Neu</SelectItem><SelectItem value="like_new">Wie neu</SelectItem><SelectItem value="good">Gut</SelectItem><SelectItem value="used">Gebraucht</SelectItem><SelectItem value="defective">Defekt</SelectItem></SelectContent></Select></Field></div>
@@ -269,7 +269,7 @@ export default function NeuesInseratPage() {
                       />
 
                       {imageIndex === 0 ? (
-                        <span className="absolute left-2 top-2 rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-black text-white shadow">
+                        <span className="absolute left-2 top-2 rounded-full bg-orange-500 px-2.5 py-1 text-[10px] font-black text-white shadow">
                           TITELBILD
                         </span>
                       ) : null}
@@ -374,11 +374,11 @@ export default function NeuesInseratPage() {
           </Section>
 
           {message ? <div className={`rounded-2xl border p-4 text-sm font-bold ${success ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700"}`}>{success ? <CheckCircle2 className="mr-2 inline h-5 w-5" /> : <ShieldAlert className="mr-2 inline h-5 w-5" />}{message}</div> : null}
-          <Button disabled={saving} className="h-13 w-full rounded-2xl bg-orange-600 text-base font-black hover:bg-orange-700">{saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}{saving ? "Wird eingereicht …" : "Inserat zur Freigabe einreichen"}</Button>
+          <Button disabled={saving} className="h-13 w-full rounded-2xl bg-orange-500 text-base font-black hover:bg-orange-600">{saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}{saving ? "Wird eingereicht …" : "Inserat zur Freigabe einreichen"}</Button>
         </form>
       </main><MobileBottomNav /></div>
   )
 }
 
-function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) { return <Card className="rounded-3xl border-slate-200 shadow-sm"><CardContent className="space-y-4 p-5 sm:p-6"><div className="flex items-center gap-2 text-lg font-black"><span className="text-orange-600">{icon}</span>{title}</div>{children}</CardContent></Card> }
+function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) { return <Card className="rounded-[24px] border-slate-200 shadow-sm"><CardContent className="space-y-4 p-5 sm:p-6"><div className="flex items-center gap-2 text-lg font-black"><span className="text-orange-600">{icon}</span>{title}</div>{children}</CardContent></Card> }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-600">{label}</span>{children}</label> }

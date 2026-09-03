@@ -125,7 +125,7 @@ export default function TeamPrintSheetPage() {
 
   if (authLoading || loading) {
     return (
-      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <main className="min-h-screen flex flex-col bg-[#f5f6f8]">
         <Header variant="app" title="Spielerblatt" subtitle="Drucken" backHref="/member-profile-app" />
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
@@ -137,8 +137,8 @@ export default function TeamPrintSheetPage() {
               </div>
 
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">Seite wird geladen</p>
-                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+                <p className="text-lg font-bold text-slate-950">Seite wird geladen</p>
+                <p className="text-sm text-slate-500 mt-1">Bitte kurz warten…</p>
               </div>
             </div>
           </div>
@@ -150,7 +150,7 @@ export default function TeamPrintSheetPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col pb-20">
+    <div className="min-h-screen bg-[#f5f6f8] flex flex-col pb-20">
       {/* Nicht drucken */}
       <div className="no-print">
         <Header variant="app" title="Spielerblatt" subtitle="Drucken" backHref="/member-profile-app" />
@@ -177,28 +177,29 @@ export default function TeamPrintSheetPage() {
       `}</style>
 
       {/* ✅ UNDER HEADER: */}
-      <main className="pt-12 sm:pt-14">
-        <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+      <main className="w-full pt-14 sm:pt-16">
+        <div className="w-full max-w-none px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
           {/* TOP WHITE CONTAINER */}
-          <section className="no-print rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden mb-5 sm:mb-6">
-            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-            <div className="p-4 sm:p-5 flex items-start gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-                <Printer className="w-5 h-5 text-orange-600" />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <h1 className="text-base sm:text-lg font-black">Spielerblatt drucken</h1>
-                <p className="text-sm text-gray-600 mt-1">Spieler wählen → Drucken</p>
-                <p className="text-xs text-gray-500 mt-1">Nur Kapitän/Co-Kapitän kann drucken.</p>
+          <section className="no-print relative mb-4 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+            <div className="relative flex flex-col gap-5 p-4 sm:p-6 lg:flex-row lg:items-end lg:justify-between lg:p-8">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                  <Printer className="h-6 w-6 text-orange-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-white/50">Spieler auswählen und Blatt drucken</p>
+                  <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl">Spielerblatt drucken</h1>
+                  <p className="mt-2 text-sm font-medium text-white/55">Nur Kapitän/Co-Kapitän kann drucken.</p>
+                </div>
               </div>
             </div>
           </section>
 
           {/* CONTENT */}
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,420px)_1fr]">
             {/* Auswahl */}
-            <Card className="no-print rounded-2xl border border-gray-200 shadow-sm">
+            <Card className="no-print overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)]">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm sm:text-base font-black">
                   <Users className="h-5 w-5 text-orange-600" />
@@ -208,7 +209,7 @@ export default function TeamPrintSheetPage() {
 
               <CardContent className="space-y-4">
                 <div>
-                  <div className="text-xs font-bold text-gray-500 mb-2">Team</div>
+                  <div className="text-xs font-bold text-slate-500 mb-2">Team</div>
                   <Select
                     value={selectedTeamId}
                     onValueChange={(v) => {
@@ -216,7 +217,7 @@ export default function TeamPrintSheetPage() {
                       setSelectedPlayerIds(new Set())
                     }}
                   >
-                    <SelectTrigger className="h-11 rounded-2xl border-gray-200 bg-white">
+                    <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white">
                       <SelectValue placeholder="Team wählen" />
                     </SelectTrigger>
                     <SelectContent>
@@ -230,21 +231,21 @@ export default function TeamPrintSheetPage() {
                 </div>
 
                 <div>
-                  <div className="text-xs font-bold text-gray-500 mb-2">Spieler</div>
-                  <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3 max-h-[360px] overflow-auto space-y-2">
+                  <div className="text-xs font-bold text-slate-500 mb-2">Spieler</div>
+                  <div className="max-h-[420px] space-y-2 overflow-auto rounded-[18px] border border-slate-200 bg-slate-50/70 p-3">
                     {membersOfSelectedTeam.length === 0 ? (
-                      <div className="text-sm text-gray-500 py-6 text-center">Keine Spieler im Team.</div>
+                      <div className="text-sm text-slate-500 py-6 text-center">Keine Spieler im Team.</div>
                     ) : (
                       membersOfSelectedTeam.map((m) => (
                         <label
                           key={m.id}
-                          className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 p-3"
+                          className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-orange-200 hover:bg-orange-50/30"
                         >
                           <Checkbox
                             checked={selectedPlayerIds.has(m.player_id)}
                             onCheckedChange={(v) => togglePlayer(m.player_id, Boolean(v))}
                           />
-                          <span className="font-semibold text-gray-900">{m.club_players?.name}</span>
+                          <span className="font-semibold text-slate-950">{m.club_players?.name}</span>
                         </label>
                       ))
                     )}
@@ -252,7 +253,7 @@ export default function TeamPrintSheetPage() {
                 </div>
 
                 <Button
-                  className="w-full h-11 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm"
+                  className="w-full h-11 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-sm"
                   onClick={() => window.print()}
                   disabled={!canManage}
                 >
@@ -261,7 +262,7 @@ export default function TeamPrintSheetPage() {
                 </Button>
 
                 {!canManage ? (
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-slate-500">
                     Hinweis: Du brauchst Kapitän/Co-Kapitän Rechte für dieses Team.
                   </div>
                 ) : null}

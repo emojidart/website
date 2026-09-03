@@ -126,7 +126,7 @@ function InfoItem({
   value: React.ReactNode
 }) {
   return (
-    <div className="flex min-w-0 items-start gap-3 rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+    <div className="flex min-w-0 items-start gap-3 rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-none">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
         {icon}
       </span>
@@ -144,7 +144,7 @@ function InfoItem({
 
 function Skeleton() {
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-none">
       <div className="h-72 animate-pulse bg-slate-200" />
       <div className="space-y-5 p-6 sm:p-8">
         <div className="h-8 w-3/4 animate-pulse rounded-xl bg-slate-200" />
@@ -237,10 +237,10 @@ export default function DachVeranstaltungDetailPage() {
   const isCancelled = event?.event_status === "cancelled"
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-50 pb-28 text-slate-950">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-28 text-slate-950">
       <Header />
 
-      <main className="mx-auto w-full max-w-6xl px-4 pb-8 pt-20 sm:px-6">
+      <main className="w-full max-w-none px-2 pb-8 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
         <div className="mb-4 flex items-center justify-between gap-3">
           <Button
             asChild
@@ -271,7 +271,7 @@ export default function DachVeranstaltungDetailPage() {
         {loading ? <Skeleton /> : null}
 
         {error ? (
-          <Card className="rounded-[2rem] border-red-200 bg-white shadow-sm">
+          <Card className="rounded-[28px] border-red-200 bg-white shadow-none">
             <CardContent className="p-10 text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
                 <X className="h-7 w-7" />
@@ -283,7 +283,7 @@ export default function DachVeranstaltungDetailPage() {
         ) : null}
 
         {!loading && !error && !event ? (
-          <Card className="rounded-[2rem] border-slate-200 bg-white shadow-sm">
+          <Card className="rounded-[28px] border-slate-200 bg-white shadow-none">
             <CardContent className="p-10 text-center sm:p-14">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
                 <CalendarDays className="h-8 w-8" />
@@ -301,7 +301,7 @@ export default function DachVeranstaltungDetailPage() {
 
         {event ? (
           <article
-            className={`overflow-hidden rounded-[2rem] border bg-white shadow-[0_20px_70px_-35px_rgba(15,23,42,0.35)] ${
+            className={`overflow-hidden rounded-[28px] border bg-white shadow-[0_20px_70px_-35px_rgba(15,23,42,0.35)] ${
               isCancelled
                 ? "border-red-400 ring-2 ring-red-100"
                 : "border-slate-200"
@@ -483,7 +483,7 @@ export default function DachVeranstaltungDetailPage() {
               <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.8fr)]">
                 <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-5 sm:p-6">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-orange-600 shadow-sm ring-1 ring-slate-200">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-orange-600 shadow-none ring-1 ring-slate-200">
                       <FileText className="h-5 w-5" />
                     </span>
                     <div>
@@ -504,7 +504,7 @@ export default function DachVeranstaltungDetailPage() {
                 </section>
 
                 <aside className="space-y-4">
-                  <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-none">
                     <div className="flex items-center gap-3">
                       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
                         <UserRound className="h-5 w-5" />
@@ -542,7 +542,7 @@ export default function DachVeranstaltungDetailPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-3xl border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
+                  <div className="rounded-3xl border border-slate-200 bg-slate-950 p-5 text-white shadow-none">
                     <div className="flex items-center gap-3">
                       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-orange-400">
                         <Ticket className="h-5 w-5" />

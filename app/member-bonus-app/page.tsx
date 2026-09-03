@@ -363,7 +363,7 @@ export default function MemberBonusPage() {
 
   if (authLoading || membershipLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans flex flex-col pb-20">
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
         </main>
@@ -374,7 +374,7 @@ export default function MemberBonusPage() {
 
   if (!canSeeEDart && !canSeeSteeldart) {
     return (
-      <main className="min-h-screen flex flex-col bg-gray-50 text-gray-900 pb-20">
+      <main className="min-h-screen flex flex-col bg-slate-50 text-slate-950 pb-20">
         <Header
           variant="app"
           title="Bonusgeld"
@@ -385,15 +385,15 @@ export default function MemberBonusPage() {
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
           <Card className="w-full max-w-xl overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-xl">
             <CardContent className="p-6 text-center sm:p-8">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[20px] bg-orange-50">
                 <ShieldCheck className="h-7 w-7 text-orange-600" />
               </div>
 
-              <h1 className="mt-4 text-xl font-black text-gray-900">
+              <h1 className="mt-4 text-xl font-black text-slate-950">
                 Kein Liga-Paket gebucht
               </h1>
 
-              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-gray-600">
+              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-slate-600">
                 Für Bonusgeld aus Liga-Spielen benötigst du mindestens das E-Dart- oder Steeldart-Liga-Paket.
               </p>
 
@@ -414,7 +414,7 @@ export default function MemberBonusPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans flex flex-col pb-20">
       <Header
         variant="app"
         title="Bonusgeld"
@@ -422,16 +422,20 @@ export default function MemberBonusPage() {
         backHref="/member-profile-app"
       />
 
-      <main className="pt-12 sm:pt-14">
-        <div className="mx-auto w-full px-4 py-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
-          <div className="mb-4 sm:mb-6">
-            <div className="rounded-2xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5">
-              <div className="p-4 sm:p-6">
-                <div className="flex flex-col gap-4">
-                  <div className="hidden sm:block">
-                    <h1 className="text-2xl font-bold text-gray-900">Bonusgeld</h1>
-                    <p className="text-sm text-gray-500 mt-1">Ihre Bonuspunkte und Belohnungen</p>
+      <main className="w-full pt-14 sm:pt-16">
+        <div className="w-full max-w-none px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
+          <section className="relative mb-4 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+            <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+              <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                <div className="min-w-0">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                    Bonusgeld
                   </div>
+                  <h1 className="text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Bonusgeld</h1>
+                  <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">Ihre Bonuspunkte und Belohnungen</p>
+                </div>
 
                   <div className="flex flex-wrap gap-2">
                     {canSeeEDart ? (
@@ -455,7 +459,7 @@ export default function MemberBonusPage() {
                       <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
                         <SelectTrigger
                           id="season-filter"
-                          className="w-full rounded-xl border-gray-200/70 bg-white shadow-sm"
+                          className="w-full rounded-xl border-slate-200 bg-white shadow-sm"
                         >
                           <SelectValue placeholder="Saison auswählen" />
                         </SelectTrigger>
@@ -478,7 +482,7 @@ export default function MemberBonusPage() {
                         <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
                           <SelectTrigger
                             id="team-filter"
-                            className="w-full rounded-xl border-gray-200/70 bg-white shadow-sm"
+                            className="w-full rounded-xl border-slate-200 bg-white shadow-sm"
                           >
                             <SelectValue placeholder="Team auswählen" />
                           </SelectTrigger>
@@ -496,8 +500,7 @@ export default function MemberBonusPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+          </section>
 
           <BonusSection
             legStatistics={getFilteredStatisticsByTeam()}

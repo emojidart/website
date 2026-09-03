@@ -110,757 +110,292 @@ function SubCard({
 
 export default function RegelwerkAppPage() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24 md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-24 text-slate-950 font-sans md:pb-0">
       <Header />
 
-      <main className="pt-16 sm:pt-14">
+      <main className="pt-14 sm:pt-16">
         <motion.div
-            className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
-
+          className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-     
-
-          {/* HERO */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <div className="rounded-3xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 overflow-hidden">
-              <div className="p-5 sm:p-7">
+          <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
+            <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
+              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+              <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
                 <div className="flex items-start gap-4">
-                  <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
-                    <Crown className="w-6 h-6" />
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                    <Crown className="h-6 w-6 text-orange-400" />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="inline-flex items-center gap-2">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-700 border border-orange-100">
-                        EMD – LION CUP
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-orange-300">
+                        EMD – LION CUP Part 3
                       </span>
-                      <span className="text-xs text-gray-500">Stand Herbst 2025</span>
+                      <span className="text-xs font-medium text-white/45">Herbst 2026 · New Edition</span>
                     </div>
 
-                    <h1 className="mt-2 text-2xl sm:text-3xl font-black leading-tight">
-                      Regelwerk & Prämierungsliste
+                    <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
+                      Regelwerk & Prämierung
                     </h1>
 
-                    <p className="mt-1 text-sm sm:text-base text-gray-600">
-                      Prämierungsliste <span className="font-semibold text-gray-900">01.09.2025 – 01.06.2026</span>
+                    <p className="mt-3 max-w-3xl text-sm font-medium leading-6 text-white/55 sm:text-base">
+                      Qualifikationsserie vom 08.09.2026 bis 08.12.2026 mit 14 Qualifikationsturnieren und einem Mega-Finaltag.
                     </p>
-
-                    <div className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 p-4">
-                      <p className="text-xs sm:text-sm text-orange-900 leading-relaxed">
-                        Diese Prämierungsliste ist ein allgemeines Informationsdokument und gilt nur als Hinweis des
-                        Ablaufs. Änderungen vorbehalten!
-                      </p>
-                    </div>
                   </div>
                 </div>
               </div>
-
-              <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700" />
-            </div>
+            </section>
           </motion.div>
 
-          {/* CONTENT */}
           <div className="space-y-4">
-            {/*  */}
-            <SectionCard
-              icon={<FileText className="w-5 h-5" />}
-              title="Offizielle Zusatz-Ausschreibung (ab dem 24. Turniertag)"
-            >
-              <div className="space-y-3">
-                <SubCard tone="info" title="EMD LION CUP – Serie">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1 text-xs font-bold text-blue-900">
-                      <Split className="w-4 h-4" />
-                      Zusatz-Regelwerk ab dem 24. Turniertag
-                    </span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1 text-xs font-bold text-blue-900">
-                      <Trophy className="w-4 h-4" />
-                      Gruppenteilung & Finalqualifikation
-                    </span>
-                  </div>
+            <SectionCard icon={<Calendar className="h-5 w-5" />} title="Zeitraum, Termine & Austragungsort">
+              <div className="grid gap-3 lg:grid-cols-3">
+                <SubCard tone="info" title="Zeitraum">
+                  <strong>08.09.2026 – 08.12.2026</strong>
                 </SubCard>
 
-                <SubCard title="§1 Gültigkeit">
-                  <p>
-                    Dieses Zusatz-Regelwerk tritt ab dem <strong>24. Turniertag</strong> der laufenden EMD LION CUP Serie
-                    in Kraft und ergänzt die bestehende Hauptausschreibung.
-                  </p>
-                  <p className="mt-2">
-                    Alle Teilnehmer erkennen mit ihrer Teilnahme diese Bestimmungen als <strong>verbindlich</strong> an.
-                  </p>
+                <SubCard tone="info" title="Spieltag">
+                  Jeden <strong>Dienstag um 19:30 Uhr</strong>
                 </SubCard>
 
-                <SubCard title="§2 Gruppenteilung (Tabelle A & Tabelle B)">
-                  <p>
-                    Ab dem <strong>24. Turniertag</strong> erfolgt eine endgültige Teilung der Gesamttabelle in:
-                  </p>
-
-                  <div className="mt-3 grid sm:grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="font-black text-gray-900">Tabelle A</div>
-                      <div className="text-xs text-gray-600 mt-1">oberer Teil</div>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="font-black text-gray-900">Tabelle B</div>
-                      <div className="text-xs text-gray-600 mt-1">unterer Teil</div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 space-y-3">
-                    <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
-                      <div className="flex items-center gap-2 font-black text-yellow-900">
-                        <Ban className="w-4 h-4" />
-                        Kein Aufstieg mehr möglich
-                      </div>
-                      <p className="mt-2 text-sm text-gray-700">
-                        Ein Wechsel von <strong>Tabelle B</strong> in <strong>Tabelle A</strong> ist ausgeschlossen –
-                        auch dann nicht, wenn ein Teilnehmer in Tabelle B mehr Punkte erzielt als Teilnehmer in Tabelle A.
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="flex items-center gap-2 font-black text-gray-900">
-                        <BadgeCheck className="w-4 h-4" />
-                        Endgültige Zuteilung
-                      </div>
-                      <p className="mt-2 text-sm text-gray-700">
-                        Die Gruppenzuteilung ist <strong>fix</strong> und bleibt bis zum Finaltag <strong>unverändert</strong>.
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="flex items-center gap-2 font-black text-gray-900">
-                        <Users className="w-4 h-4" />
-                        Teilnehmeranzahl bei ungerader Gesamtzahl
-                      </div>
-                      <p className="mt-2 text-sm text-gray-700">
-                        Bei einer ungeraden Anzahl qualifizierter Teilnehmer wird:
-                      </p>
-                      <ul className="mt-2 text-sm text-gray-700 space-y-1">
-                        <li>• der größere Anteil <strong>Tabelle A</strong></li>
-                        <li>• der kleinere Anteil <strong>Tabelle B</strong></li>
-                      </ul>
-                      <p className="mt-2 text-sm text-gray-700">zugeordnet.</p>
-                    </div>
-                  </div>
-                </SubCard>
-
-                <SubCard title="§3 Teilnahmeberechtigung nach dem 24. Turniertag">
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-                      <div className="flex items-center gap-2 font-black text-emerald-900">
-                        <ListChecks className="w-4 h-4" />
-                        ✅ Teilnahmeberechtigt
-                      </div>
-                      <ul className="mt-2 text-sm text-gray-700 space-y-2">
-                        <li>
-                          • Spieler, die die Möglichkeit haben, bis zum Finaltag die vorgeschriebenen{" "}
-                          <strong>20 Antritte</strong> zu erreichen.
-                        </li>
-                        <li>
-                          • Teilnehmer, die bereits mindestens <strong>einen Antritt</strong> absolviert haben.
-                        </li>
-                        <li>• Diese Teilnehmer werden in der Tabelle gesondert gekennzeichnet.</li>
-                      </ul>
-                    </div>
-
-                    <div className="rounded-xl border border-red-100 bg-red-50 p-4">
-                      <div className="flex items-center gap-2 font-black text-red-900">
-                        <Ban className="w-4 h-4" />
-                        ❌ Nicht mehr möglich
-                      </div>
-                      <p className="mt-2 text-sm text-gray-700">
-                        <strong>Neuanmeldungen</strong> sind ab dem 24. Turniertag ausgeschlossen.
-                      </p>
-                    </div>
-                  </div>
-                </SubCard>
-
-                <SubCard title="§4 Mindestanzahl von Antritten für Preisgeldberechtigung">
-                  <div className="space-y-3">
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="font-black text-gray-900">Voraussetzungen</div>
-                      <ul className="mt-2 text-sm text-gray-700 space-y-2">
-                        <li>• Es müssen die vorgeschriebenen <strong>20 Antritte</strong> erreicht werden.</li>
-                        <li>
-                          • Wird diese Anzahl nicht erreicht, besteht <strong>kein Anspruch</strong> auf Preisgeld – selbst wenn
-                          eine Platzierung erreicht wurde.
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
-                      <div className="font-black text-yellow-900">Nachrückregelung</div>
-                      <p className="mt-2 text-sm text-gray-700">
-                        Erreicht ein Teilnehmer auf einem Preisgeldrang nicht die erforderliche Anzahl an Antritten,
-                        rückt automatisch der <strong>nächstplatzierte Teilnehmer</strong> nach.
-                      </p>
-                      <p className="mt-2 text-sm text-gray-700">
-                        Sollte kein weiterer qualifizierter Teilnehmer die Voraussetzungen erfüllen, wird das Preisgeld gemäß{" "}
-                        <strong>§5</strong> verteilt.
-                      </p>
-                    </div>
-                  </div>
-                </SubCard>
-
-                <SubCard title="§5 Preisgeldregelung – Tabelle B">
-                  <div className="space-y-3">
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="flex items-center gap-2 font-black text-gray-900">
-                        <Coins className="w-4 h-4" />
-                        Sonderregelung Tabelle B
-                      </div>
-                      <p className="mt-2 text-sm text-gray-700">
-                        Wird in Tabelle B die erforderliche Teilnehmeranzahl oder Mindestanzahl an Antritten für einzelne
-                        Preisgeld-Platzierungen nicht erreicht, wird das dafür vorgesehene Preisgeld auf die übrigen qualifizierten
-                        Preisgeld-Platzierungen innerhalb der Tabelle B aufgeteilt.
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="font-black text-gray-900">Falls niemand mehr qualifiziert ist</div>
-                      <p className="mt-2 text-sm text-gray-700">
-                        Sollte in Tabelle B kein qualifizierter Teilnehmer mehr für bestimmte Preisgeldränge vorhanden sein, wird das
-                        verbleibende Preisgeld auf die qualifizierten Preisgeld-Platzierungen der <strong>Tabelle A</strong> aufgeteilt.
-                      </p>
-                    </div>
-                  </div>
-                </SubCard>
-
-                <SubCard title="§6 Transparenz & Kennzeichnung">
-                  <ul className="text-sm text-gray-700 space-y-2">
-                    <li className="flex items-start gap-2">
-                      <Eye className="w-4 h-4 mt-0.5 text-gray-600" />
-                      <span>
-                        Alle Tabellenstände werden getrennt veröffentlicht: <strong>Tabelle A</strong> und <strong>Tabelle B</strong>.
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <BadgeCheck className="w-4 h-4 mt-0.5 text-gray-600" />
-                      <span>
-                        Teilnehmer mit noch nicht erfüllter Mindestanzahl an Antritten werden entsprechend <strong>markiert</strong>.
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <FileText className="w-4 h-4 mt-0.5 text-gray-600" />
-                      <span>
-                        Maßgeblich ist ausschließlich die vom Veranstalter veröffentlichte <strong>offizielle Wertung</strong>.
-                      </span>
-                    </li>
-                  </ul>
-                </SubCard>
-
-                <SubCard tone="warn" title="§7 Finaltag – Ablauf & Modus">
-                  <p>
-                    Der <strong>Finaltag</strong> findet am <strong>05.06.2026</strong> um <strong>19:30 Uhr</strong> statt.
-                  </p>
-                  <ul className="mt-2 text-sm text-gray-700 space-y-2">
-                    <li>• Gespielt wird am Finaltag im Modus <strong>Best of 5</strong>.</li>
-                    
-                  </ul>
-                  
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            {/**/}
-            <SectionCard icon={<Crown className="w-5 h-5" />} title="Bewerb – Eigenschaften wie ein Löwe!">
-              <div className="grid sm:grid-cols-2 gap-3">
-                <SubCard>
-                  <ul className="space-y-2">
-                    <li>• <strong>Innovativ – Kreativ – Attraktiv</strong></li>
-                    <li>• <strong>Kämpfen und hungrig wie ein Löwe</strong></li>
-                    <li>• Im Mittelpunkt der Dart Community, strahlen im Rampenlicht</li>
-                  </ul>
-                </SubCard>
-                <SubCard>
-                  <ul className="space-y-2">
-                    <li>• <strong>Loyal und sportlich fair, intensiv und aufrichtig</strong></li>
-                    <li>• Beeindrucken mit Charisma und gesundem Optimismus</li>
-                    <li>• <strong>Die Kombination aus Selbstsicherheit und Kreativität</strong></li>
-                  </ul>
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            <SectionCard icon={<MapPin className="w-5 h-5" />} title="Austragungsort & Termine">
-              <div className="grid sm:grid-cols-2 gap-3">
                 <SubCard tone="info" title="Austragungsort">
-                  <strong>Dart & Freizeit Vereinsheim „Pfeil-OK" e.V.</strong>
+                  <strong>Dart & Freizeit Vereinsheim „Pfeil-OK“</strong>
                   <br />
                   Linzer Bundesstraße 16
                   <br />
                   5020 Salzburg
                 </SubCard>
+              </div>
 
-                <div className="space-y-3">
-                  <SubCard tone="info" title="Periode des Bewerbes">
-                    <div className="inline-flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-blue-700" />
-                      <span className="font-semibold">01. September 2025 bis 01. Juni 2026</span>
-                    </div>
-                  </SubCard>
-
-                  <SubCard tone="info" title="Spielzeit & Prozess">
-                    <div className="space-y-2">
-                      <div className="inline-flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-blue-700" />
-                        <span>
-                          <strong>Jeden Montag</strong> – 19:30 Uhr
-                        </span>
-                      </div>
-                      <div className="inline-flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-blue-700" />
-                        <span className="font-semibold">34 Turniertage + 1 Mega-Finaltag</span>
-                      </div>
-                    </div>
-                  </SubCard>
+              <div className="mt-3 rounded-[18px] border border-orange-100 bg-orange-50 p-4">
+                <div className="flex items-center gap-2 font-black text-orange-900">
+                  <Trophy className="h-4 w-4" />
+                  14 Qualifikationsturniere + 1 Mega-Finaltag
                 </div>
               </div>
             </SectionCard>
 
-            <SectionCard icon={<AlertCircle className="w-5 h-5" />} title="Spielpausen">
-              <SubCard tone="warn" title="Keine Turniere an folgenden Terminen">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-2">
-                  {["27. Okt. 2025", "22. Dez. 2025", "29. Dez. 2025", "05. Jan. 2026", "11. Mai 2026"].map((d) => (
-                    <div
-                      key={d}
-                      className="rounded-xl bg-white border border-yellow-200 px-3 py-2 text-center text-xs font-bold text-yellow-800"
-                    >
-                      {d}
-                    </div>
-                  ))}
-                </div>
-              </SubCard>
-            </SectionCard>
-
-            <SectionCard icon={<Users className="w-5 h-5" />} title="Leveleinstufung">
-              <SubCard tone="success">
-                <p className="text-sm">
-                  <strong>Jeder kann teilnehmen</strong>, ausgenommen <strong>„A-Level Spieler"</strong>, um unterschiedliche
-                  Spielstärken zu fördern und zu motivieren.
-                </p>
-                <p className="text-xs text-emerald-800 mt-2">
-                  <strong>Ausnahmen:</strong> Entscheidung der Veranstalter und/oder Turnierleitung
-                </p>
-              </SubCard>
-            </SectionCard>
-
-            <SectionCard icon={<Euro className="w-5 h-5" />} title="Turnierstartgeld & Beiträge">
-              <div className="grid sm:grid-cols-2 gap-3">
-                <SubCard title="Reguläre Teilnahme">
+            <SectionCard icon={<Users className="h-5 w-5" />} title="Teilnahme">
+              <div className="grid gap-3 md:grid-cols-2">
+                <SubCard title="Teilnahmebedingungen">
                   <ul className="space-y-2">
-                    <li>• <strong>Turnierstartgeld pro Teilnahme:</strong> € 4,00</li>
-                    <li>• <strong>Teilnahmebeitrag (einmalig):</strong> € 5,00</li>
-                    <li className="text-xs text-gray-600">Berechtigung für 34 Turniertage</li>
+                    <li>• Teilnahme ab <strong>16 Jahren</strong></li>
+                    <li>• <strong>A-Level-Spieler</strong> grundsätzlich ausgeschlossen</li>
+                    <li>• Ausnahmen nur durch Entscheidung der Turnierleitung</li>
+                    <li>• Mindestens <strong>4 Teilnehmer</strong> pro Turnier</li>
+                    <li>• Persönliches Erscheinen vor Turnierbeginn ist erforderlich</li>
                   </ul>
                 </SubCard>
 
-                <div className="space-y-3">
-                  <SubCard title="Qualifizierte Teilnehmer">
-                    <ul className="space-y-2">
-                      <li>• <strong>Finaltag-Beitrag (einmalig):</strong> € 5,00</li>
-                      <li className="text-xs text-gray-600">Berechtigung für Finaltag</li>
-                    </ul>
-                  </SubCard>
-                  <SubCard title="Wirt-Sponsoring">
-                    <ul className="space-y-2">
-                      <li>• <strong>Bis 500 Teilnahmen:</strong> € 100,00 (einmalig)</li>
-                      <li>• <strong>Ab 501 Teilnahmen:</strong> € 250,00 (einmalig)</li>
-                    </ul>
-                  </SubCard>
-                </div>
+                <SubCard tone="success" title="Final-Qualifikation">
+                  <ul className="space-y-2">
+                    <li>• Für die Finalwertung sind mindestens <strong>3 Antritte</strong> erforderlich.</li>
+                    <li>• Es gibt nur <strong>eine Gesamttabelle</strong>.</li>
+                    <li>• Eine Aufteilung in Tabelle A und Tabelle B findet nicht mehr statt.</li>
+                  </ul>
+                </SubCard>
               </div>
             </SectionCard>
 
-            <SectionCard icon={<Target className="w-5 h-5" />} title="Starterfeld & Anmeldung">
-              <SubCard>
-                <p>
-                  Um ein <strong>EMD – LION CUP-Turnier</strong> zu organisieren, müssen mindestens{" "}
-                  <strong>4 Teilnehmer</strong> mitspielen.
-                </p>
-                <p className="mt-2">
-                  Die Spieler müssen sich mit <strong>vollem Namen anmelden</strong> und eingetragen werden.
-                </p>
-              </SubCard>
+            <SectionCard icon={<Euro className="h-5 w-5" />} title="Startgeld & Serienbeitrag">
+              <div className="grid gap-3 md:grid-cols-3">
+                <SubCard title="Serienanmeldung">
+                  <div className="text-2xl font-black text-slate-950">€ 10</div>
+                  <p className="mt-1 text-xs text-slate-500">einmalig für die Serie</p>
+                </SubCard>
+
+                <SubCard title="Je Spieltag">
+                  <div className="text-2xl font-black text-slate-950">€ 5</div>
+                  <p className="mt-1 text-xs text-slate-500">Startgeld pro Qualifikationsturnier</p>
+                </SubCard>
+
+                <SubCard title="Finaltag">
+                  <div className="text-2xl font-black text-slate-950">€ 10 + € 5</div>
+                  <p className="mt-1 text-xs text-slate-500">Finalbeitrag + Startgeld</p>
+                </SubCard>
+              </div>
             </SectionCard>
 
-            <SectionCard icon={<Trophy className="w-5 h-5" />} title="Punktewertung">
+            <SectionCard icon={<Target className="h-5 w-5" />} title="Spielmodus">
+              <div className="grid gap-3 md:grid-cols-2">
+                <SubCard title="Qualifikation">
+                  <ul className="space-y-2">
+                    <li>• Abwechselnd <strong>501 Double Out</strong> und <strong>501 Master Out</strong></li>
+                    <li>• Vor jedem Spiel wird <strong>ausgebullt</strong></li>
+                  </ul>
+                </SubCard>
+
+                <SubCard title="Finaltag">
+                  <ul className="space-y-2">
+                    <li>• Finaltag: <strong>Best of 5 · 501 Double Out</strong></li>
+                    <li>• Die am Finaltag erspielten Punkte fließen zusätzlich in die <strong>Turnierserien-Gesamtwertung</strong> ein.</li>
+                  </ul>
+                </SubCard>
+              </div>
+            </SectionCard>
+
+            <SectionCard icon={<Trophy className="h-5 w-5" />} title="Punktewertung">
               <div className="space-y-3">
                 <SubCard title="Grundwertung">
                   <ul className="space-y-2">
-                    <li>• <strong>Letzter Platz:</strong> 10 Punkte</li>
-                    <li>• <strong>Jede bessere Platzierung:</strong> +2 Punkte zusätzlich</li>
-                    <li>• <strong>Ergebnis-Punkte:</strong> Zusätzlich zu den Platzierungspunkten</li>
+                    <li>• Letzter Platz: <strong>10 Punkte</strong></li>
+                    <li>• Jede bessere Platzierung: <strong>+2 Punkte</strong></li>
+                    <li>• Ergebnis-Punkte kommen zusätzlich dazu</li>
+                    <li>• Sieger der Gewinnerseite: <strong>+5 Bonuspunkte</strong></li>
                   </ul>
-                  <div className="mt-3 rounded-xl bg-white border border-gray-200 p-3 text-xs text-gray-700">
-                    <strong>Beispiel:</strong> 1:2 + 1:2 = 2 Punkte + Platzierungspunkte 10 = 12 Gesamtpunkte
-                  </div>
                 </SubCard>
 
-                <SubCard title="Bonus">
-                  <strong>1. Platzierter von Gewinner-Seite:</strong> +5 Bonuspunkte zusätzlich
+                <SubCard tone="warn" title="Einmalige Punkteteilung">
+                  Nach dem <strong>7. Spieltag</strong> werden die bis dahin erspielten Gesamtpunkte aller Teilnehmer
+                  <strong> einmalig halbiert</strong>. Danach läuft dieselbe Gesamttabelle ohne weitere Teilung weiter.
                 </SubCard>
               </div>
             </SectionCard>
 
-            <SectionCard icon={<Calendar className="w-5 h-5" />} title="Antritte für Finaltag">
-              <SubCard>
-                Jeder <strong>EMD – LION CUP-Teilnehmer</strong>, der am Finaltag teilnehmen möchte, benötigt{" "}
-                <strong>20 Antritte</strong>.
-              </SubCard>
+            <SectionCard icon={<ListChecks className="h-5 w-5" />} title="Gesamttabelle & Serienwertung">
+              <div className="grid gap-3 md:grid-cols-2">
+                <SubCard title="Eine Gesamttabelle">
+                  <ul className="space-y-2">
+                    <li>• Es gibt während der gesamten Serie nur <strong>eine Tabelle</strong>.</li>
+                    <li>• Es gibt keine Aufteilung in obere und untere Tabelle.</li>
+                    <li>• Die Finalpunkte werden in die Serienwertung übernommen.</li>
+                  </ul>
+                </SubCard>
+
+                <SubCard tone="success" title="Preisgeldberechtigte Gesamtwertung">
+                  Für die LION-CUP-Serienauszahlung nach dem Finaltag werden die <strong>ersten 8 Plätze der Gesamttabelle</strong> berücksichtigt.
+                </SubCard>
+              </div>
             </SectionCard>
 
-            <SectionCard icon={<Trophy className="w-5 h-5" />} title="Wertung & Tabellensystem">
+            <SectionCard icon={<Flag className="h-5 w-5" />} title="Finaltag & Anwesenheitspflicht">
               <div className="space-y-3">
-                <SubCard title="Tabellenverlauf">
-                  <p>
-                    Eine Tabelle bis zur Vollendung der <strong>34 Turniertage + 1 Finaltag</strong>
-                  </p>
-                  <div className="mt-3 grid sm:grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-white border border-gray-200 p-4">
-                      <div className="font-black text-orange-700">Nach 17 Turniertagen</div>
-                      <div className="text-sm text-gray-700 mt-1">
-                        Punkte werden bei allen Teilnehmern <strong>geteilt</strong>
-                      </div>
-                    </div>
-                    <div className="rounded-xl bg-white border border-gray-200 p-4">
-                      <div className="font-black text-orange-700">Nach 24 Turniertagen</div>
-                      <div className="text-sm text-gray-700 mt-1">
-                        Tabelle wird <strong>halbiert</strong>. Ab dann <strong>keine neuen Teilnehmer</strong> mehr möglich.
-                      </div>
-                    </div>
-                  </div>
+                <SubCard tone="warn" title="Finaltag ist verpflichtend">
+                  Für qualifizierte Spieler ist die Teilnahme am Finaltag grundsätzlich <strong>verpflichtend</strong>.
+                  Bei nachweisbaren gesundheitlichen Gründen kann die Turnierleitung eine Ausnahme akzeptieren.
                 </SubCard>
 
-                <SubCard title="Qualifikation (1.–5. Plätze je Tabelle)">
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-white border border-gray-200 p-4">
-                      <div className="font-black text-orange-700">Tabelle 1 (Obere Tabelle)</div>
-                      <div className="text-sm mt-1">Erspielte Platzierungen der 24 Turniertage</div>
-                    </div>
-                    <div className="rounded-xl bg-white border border-gray-200 p-4">
-                      <div className="font-black text-orange-700">Tabelle 2 (Untere Tabelle)</div>
-                      <div className="text-sm mt-1">
-                        Erste fünf der geteilten Tabelle des unteren Feldes
-                        <div className="text-xs text-orange-700 mt-1">
-                          Beispiel: 20 Teilnehmer / 2 → Platz 11–15 werden zu Platz 1–5
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </SubCard>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <SubCard title="Platz 1 bis 4">
+                    Wer ohne anerkannten gesundheitlichen Grund nicht zum Finaltag erscheint, erhält einen Abzug von
+                    <strong> 20 % der Gesamtpunkte</strong>.
+                  </SubCard>
 
-                <SubCard tone="warn">
-                  <strong>Hinweis:</strong> Sollten in Gruppe 1 und Gruppe 2 die ersten 5 Plätze mit den Antrittstagen nicht erreicht werden,
-                  wird bis zum Finaltag entschieden.
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            <SectionCard icon={<Target className="w-5 h-5" />} title="Spielmodus & Spielregeln">
-              <div className="space-y-3">
-                <SubCard title="Spielmodus">
-                  <p>
-                    Der Spielmodus ist <strong>abwechselnd</strong> beginnend mit:
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-white border border-gray-200 p-3 text-center">
-                      <div className="font-black text-orange-700">1. Turniertag</div>
-                      <div className="text-sm text-gray-700">501 Master Out</div>
-                    </div>
-                    <div className="rounded-xl bg-white border border-gray-200 p-3 text-center">
-                      <div className="font-black text-orange-700">2. Turniertag</div>
-                      <div className="text-sm text-gray-700">501 Double Out</div>
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-600 mt-2">usw. (abwechselnd)</div>
-                </SubCard>
-
-                <SubCard title="Ausbullen & Spielbeginn">
-                  <ul className="space-y-2">
-                    <li>• Vor Beginn des Spieles wird <strong>ausgebullt</strong></li>
-                    <li>• Sieger ist derjenige, dessen Pfeil näher im Bull ist oder steckt</li>
-                    <li>• Bei beiden Pfeilen im Innenbull oder Außenbull muss wiederholt werden</li>
-                    <li>• Sieger entscheidet, wer das <strong>1. Leg</strong> beginnt</li>
-                    <li>• Ein etwaiges <strong>3. Leg</strong> beginnt derjenige, der das 1. Leg begonnen hat</li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Übungswürfe">
-                  <ul className="space-y-2">
-                    <li>• Jeder Teilnehmer kann sich vor Turnierbeginn <strong>einwerfen</strong></li>
-                    <li>• Vor dem Ausbullen: maximal <strong>9 Übungspfeile</strong> pro Teilnehmer</li>
-                  </ul>
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            <SectionCard icon={<Users className="w-5 h-5" />} title="Teilnahmebedingungen">
-              <div className="space-y-3">
-                <SubCard title="Allgemeine Bedingungen">
-                  <ul className="space-y-2">
-                    <li>• Teilnehmen darf jeder Spieler, der das <strong>16. Lebensjahr vollendet</strong> hat</li>
-                    <li>• Gesamtpunkteanzahl kommt in die Wertung</li>
-                    <li>• Jeder Spieler darf pro Turnier nur <strong>einmal genannt</strong> werden</li>
-                    <li>• Persönliches Erscheinen vor Turnierbeginn ist <strong>Pflicht</strong></li>
-                    <li>• Mindestens <strong>gegen zwei Gegner</strong> gespielt haben für Wertung</li>
-                    <li>• <strong>Freilos</strong> gilt nicht als Gegner</li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Regelakzeptanz & Veröffentlichung">
-                  <ul className="space-y-2">
-                    <li>• Mit der Anmeldung werden die aktuellen <strong>EMD – LION Cup Regeln</strong> akzeptiert</li>
-                    <li>• Verstoß kann zu einem <strong>Ausschluss</strong> führen</li>
-                    <li>• Zustimmung zur <strong>Namensveröffentlichung</strong> in sämtlichen Publikationen</li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Wurfregeln">
-                  Die Pfeile müssen mit <strong>einer Hand</strong>, auf den <strong>Füßen stehend</strong> und{" "}
-                  <strong>ohne Hilfsmittel</strong> eigenständig geworfen werden. Die <strong>Abwurflinie darf nicht übertreten</strong> werden.
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            <SectionCard icon={<Gavel className="w-5 h-5" />} title="Turnierregeln">
-              <div className="space-y-3">
-                <SubCard title="Auslosung & Paarungen">
-                  <ul className="space-y-2">
-                    <li>• Vor Turnierbeginn wird <strong>EINE</strong> angekündigte öffentliche Auslosung vorgenommen</li>
-                    <li>• Es gibt <strong>keine gesetzten Spieler</strong></li>
-                    <li>• Paarungen werden von der Turnierleitung eingetragen</li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Spielaufgabe & Weiterschreibung">
-                  <ul className="space-y-2">
-                    <li>• Aufgabe muss auf Turnierplan eingetragen werden (mit Zeitpunkt)</li>
-                    <li>• Verlierer darf <strong>nicht als gewonnen</strong> weitergeschrieben werden</li>
-                    <li>• Gegner ohne zu spielen weiterschreiben = <strong>Aufgabe für das Turnier</strong></li>
-                    <li>• Aufgabe gegen die ersten zwei Gegner = Turnier <strong>nicht gewertet</strong></li>
-                    <li>• <strong>Freilos</strong> gilt nicht als Gegner</li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Ergebnisse & Veröffentlichung">
-                  Ergebnisse und Ranglisten werden <strong>fortlaufend</strong> geführt und <strong>einmal wöchentlich</strong> auf der Homepage veröffentlicht.
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            <SectionCard icon={<Clock className="w-5 h-5" />} title="Spielablauf">
-              <div className="space-y-3">
-                <SubCard title="Pünktlichkeit & Spielbeginn">
-                  <ul className="space-y-2">
-                    <li>• Rechtzeitig vor Spielbeginn am Board einfinden</li>
-                    <li>• Nichterscheinen innerhalb von <strong>5 Minuten</strong> = Match verloren</li>
-                    <li>• Nicht zu Ende gespieltes Match = Match verloren</li>
-                    <li>• Vorzeitiger Abbruch: <strong>Verlust aller Ansprüche</strong></li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Spielbereich & Verhalten">
-                  <ul className="space-y-2">
-                    <li>• Im Spielbereich: nur Spieler, Turnierleitung oder Schiedsrichter</li>
-                    <li>• Gegenspieler in angemessenem Abstand hinter dem Werfer</li>
-                    <li>• Störung des Werfers ist nicht erlaubt</li>
-                    <li>• Max. <strong>20 Sekunden</strong> Zeit für 3 Pfeile</li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Pausen & Unterbrechungen">
-                  <ul className="space-y-2">
-                    <li>• Bei Pfeilschäden: max. <strong>5-minütige Pause</strong> (mit Zustimmung)</li>
-                    <li>• Gleiches gilt für andere Gründe zum kurzfristigen Verlassen</li>
-                  </ul>
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            <SectionCard icon={<Shield className="w-5 h-5" />} title="Verhaltensregeln">
-              <div className="space-y-3">
-                <SubCard title="Allgemeine Verhaltensregeln">
-                  <ul className="space-y-2">
-                    <li>• Unsportliches Verhalten jeglicher Art ist strikt untersagt</li>
-                    <li>• Selbst verantwortlich, sich informiert zu halten</li>
-                    <li>• Absprachen / Preisgeldaufteilungen strikt untersagt</li>
-                    <li>• Jegliche Wetten im EMD-LION Cup untersagt</li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Spielbereich-Regeln">
-                  <ul className="space-y-2">
-                    <li>• Während des Matches auf der Linie: Alkohol-, Ess- und Rauchverbot</li>
-                    <li>• Spielbetrieb darf nicht negativ beeinflusst werden</li>
-                    <li>• Hausordnung des Austragungslokals einhalten</li>
-                  </ul>
-                </SubCard>
-
-                <SubCard tone="warn" title="Schwerwiegende Verstöße">
-                  <ul className="space-y-2">
-                    <li>• Androhung und Anwendung von Gewalt → strafrechtliche Verfolgung</li>
-                    <li>• Diskriminierendes Verhalten untersagt</li>
-                    <li>• Kann zu Ausschluss vom EMD – LION CUP führen</li>
-                  </ul>
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            <SectionCard icon={<Trophy className="w-5 h-5" />} title="Punktegleichstand">
-              <SubCard tone="warn">
-                Sollten die <strong>1.–5. Platzierten nach dem Finaltag punktegleich</strong> sein, werden diese zu einem{" "}
-                <strong>Entscheidungsmatch</strong> eingeladen.
-                <div className="mt-3 rounded-xl border border-yellow-200 bg-white p-3 text-sm text-yellow-900 font-semibold">
-                  Spielmodus: 2 gewonnene Legs 501 Master Out
+                  <SubCard title="Alle weiteren qualifizierten Spieler">
+                    Wer ohne anerkannten gesundheitlichen Grund nicht zum Finaltag erscheint, erhält einen Abzug von
+                    <strong> 10 % der Gesamtpunkte</strong>.
+                  </SubCard>
                 </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard icon={<Coins className="h-5 w-5" />} title="Preisgeld am Finaltag">
+              <div className="space-y-3">
+                <SubCard tone="info" title="Finaltag – Teilnahme & Startgeld">
+                  Am Finaltag kann <strong>jeder Spieler teilnehmen</strong>. Pro Teilnehmer werden am Finaltag
+                  <strong> € 10 Finalbeitrag + € 5 Startgeld</strong> bezahlt.
+                </SubCard>
+
+                <SubCard tone="success" title="Tagespreisgeld aus den Startgeldern">
+                  Die am Finaltag eingenommenen <strong>€ 5 Startgelder</strong> bilden den Tages-Preispool.
+                  Dieser wird noch am Finaltag zu <strong>100 %</strong> an die ersten drei Plätze ausgeschüttet:
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {[
+                      ["1. Platz", "50 %"],
+                      ["2. Platz", "30 %"],
+                      ["3. Platz", "20 %"],
+                    ].map(([place, share]) => (
+                      <div key={place} className="rounded-[16px] border border-emerald-100 bg-white p-3 text-center">
+                        <div className="text-xs font-bold text-slate-500">{place}</div>
+                        <div className="mt-1 text-xl font-black text-emerald-700">{share}</div>
+                      </div>
+                    ))}
+                  </div>
+                </SubCard>
+
+                <SubCard title="Zusätzliche Vereinsprämie – Platz 4 bis 12">
+                  Zusätzlich stellt der Verein einen Prämienbetrag von <strong>bis zu € 250</strong> bereit.
+                  Für die Finalplatzierungen <strong>4 bis 12</strong> sind jeweils <strong>€ 25 pro Spieler</strong> vorgesehen.
+                </SubCard>
+
+                <SubCard tone="warn" title="Wichtig: Finaltag und Serienauszahlung sind getrennt">
+                  Das Tagespreisgeld des Finaltags und die Vereinsprämien sind <strong>nicht</strong> die Auszahlung der
+                  LION-CUP-Gesamtserie. Die Serienauszahlung und Siegerehrung erfolgen <strong>im Anschluss an den Finaltag</strong>.
+                </SubCard>
+              </div>
+            </SectionCard>
+
+            <SectionCard icon={<Crown className="h-5 w-5" />} title="LION CUP – Serienauszahlung & Siegerehrung">
+              <div className="space-y-3">
+                <SubCard tone="success" title="Top 8 der Gesamttabelle">
+                  Nach Abschluss des Finaltags werden die <strong>ersten 8 Plätze der Gesamttabelle</strong> ausgezeichnet
+                  und aus dem für die Turnierserie vorgesehenen Gesamt-Preispool ausbezahlt.
+                </SubCard>
+
+                <SubCard title="Faire Verteilung des Serien-Preispools">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {[
+                      ["1. Platz", "22 %"],
+                      ["2. Platz", "18 %"],
+                      ["3. Platz", "15 %"],
+                      ["4. Platz", "13 %"],
+                      ["5. Platz", "11 %"],
+                      ["6. Platz", "9 %"],
+                      ["7. Platz", "7 %"],
+                      ["8. Platz", "5 %"],
+                    ].map(([place, share]) => (
+                      <div key={place} className="rounded-[16px] border border-slate-200 bg-white p-3 text-center">
+                        <div className="text-xs font-bold text-slate-500">{place}</div>
+                        <div className="mt-1 text-lg font-black text-slate-950">{share}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="mt-3 text-xs text-slate-500">
+                    Die Prozentwerte beziehen sich auf den tatsächlich vorhandenen Serien-Preispool und ergeben zusammen 100 %.
+                  </p>
+                </SubCard>
+              </div>
+            </SectionCard>
+
+            <SectionCard icon={<Gavel className="h-5 w-5" />} title="Turnier- & Verhaltensregeln">
+              <div className="grid gap-3 lg:grid-cols-2">
+                <SubCard title="Spielbetrieb">
+                  <ul className="space-y-2">
+                    <li>• Vor Turnierbeginn gibt es eine öffentliche Auslosung.</li>
+                    <li>• Es gibt keine gesetzten Spieler.</li>
+                    <li>• Freilose gelten nicht als gespielter Gegner.</li>
+                    <li>• Ergebnisse und Ranglisten werden fortlaufend geführt.</li>
+                  </ul>
+                </SubCard>
+
+                <SubCard title="Fair Play">
+                  <ul className="space-y-2">
+                    <li>• Unsportliches Verhalten ist untersagt.</li>
+                    <li>• Absprachen und Preisgeldaufteilungen sind nicht erlaubt.</li>
+                    <li>• Entscheidungen der Turnierleitung sind bindend.</li>
+                    <li>• Die Hausordnung des Austragungslokals ist einzuhalten.</li>
+                  </ul>
+                </SubCard>
+              </div>
+            </SectionCard>
+
+            <SectionCard icon={<Camera className="h-5 w-5" />} title="Presse & Medien">
+              <SubCard>
+                Im Rahmen der Turnierserie können Fotos und Videos erstellt und für Vereins- und Veranstaltungszwecke
+                veröffentlicht werden. Bestehende Widerrufs- und Persönlichkeitsrechte bleiben unberührt.
               </SubCard>
             </SectionCard>
 
-            <SectionCard icon={<Target className="w-5 h-5" />} title="Spielspezifische Regelung">
-              <div className="space-y-3">
-                <SubCard title="Dartspfeil-Spezifikationen">
-                  <ul className="space-y-2">
-                    <li>• Maximale Länge: <strong>20 cm</strong></li>
-                    <li>• Maximales Gewicht: <strong>19 Gramm</strong></li>
-                    <li>• Bestandteile: Plastikspitze, Barrel, Schaft und Flight</li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Automatenwertung">
-                  <ul className="space-y-2">
-                    <li>• Jeder Wurf, der vom Automaten gewertet wird, zählt</li>
-                    <li>• Im Zweifelsfall hat der Automat Recht</li>
-                    <li>• Ausnahme: Check-Darts, wenn Pfeil steckt, Automat nicht erkennt</li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Weitere Spielregeln">
-                  <ul className="space-y-2">
-                    <li>• Nach Ablauf der 20. Runde muss ausgebullt werden</li>
-                    <li>• Gegenspieler darf weder werfen noch Wurfstellung einnehmen, solange Werfer im Bereich ist</li>
-                  </ul>
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            <SectionCard icon={<Camera className="w-5 h-5" />} title="Presse & Medienrechte">
-              <div className="space-y-3">
-                <SubCard title="Aufzeichnung & Veröffentlichung">
-                  Einzelne Ranglisten- und Qualifikationsturniere sowie die <strong>Finalturniere</strong> werden via Video aufgezeichnet und veröffentlicht.
-                  Dieses Material dient zur Auswertung des Events.
-                </SubCard>
-
-                <SubCard title="Einverständniserklärung">
-                  Der Teilnehmer willigt ein, dass der Veranstalter (bis auf Widerruf) gemäß §78 KunstUrhG Fotos und Videos veröffentlicht.
-                  <div className="mt-3 rounded-xl border border-gray-200 bg-white p-3">
-                    <div className="font-black text-gray-900 mb-2">Rechte umfassen:</div>
-                    <ul className="text-sm text-gray-700 space-y-1">
-                      <li>• Sendung, Vortrag, Dokumentation</li>
-                      <li>• Vor-/Aufführung & öffentliche Zugänglichkeit</li>
-                      <li>• Vervielfältigung, Verbreitung, Wiedergabe</li>
-                      <li>• Wiedergabe von Funksendungen</li>
-                    </ul>
-                  </div>
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            <SectionCard icon={<Gavel className="w-5 h-5" />} title="Turnierleitung / Veranstalter">
-              <div className="space-y-3">
-                <SubCard title="Befugnisse & Verantwortlichkeiten">
-                  <ul className="space-y-2">
-                    <li>• Turnierleitung agiert selbstständig und fungiert auch als Schiedsrichter</li>
-                    <li>• Entscheidungen sind bindend</li>
-                    <li>• Rechtzeitig vor Ort anmelden</li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Turnierstart & Proteste">
-                  <ul className="space-y-2">
-                    <li>• Pünktlicher Start</li>
-                    <li>• Proteste prompt melden, sonst ungültig</li>
-                  </ul>
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            <SectionCard icon={<Euro className="w-5 h-5" />} title="Wertung und Auszahlung">
-              <div className="space-y-3">
-                <SubCard title="Preispool-Zusammensetzung">
-                  <ul className="space-y-2">
-                    <li>• Pro Turnier/Teilnehmer gesammelte <strong>€ 4,00</strong></li>
-                    <li>• Teilnahmebeitrag einmalig <strong>€ 5,00</strong></li>
-                    <li>• Qualifizierte Teilnehmer einmalig <strong>€ 5,00</strong></li>
-                    <li>• Wirt-Sponsoring bis 500 Teilnahmen: <strong>€ 100,00</strong></li>
-                    <li>• Wirt-Sponsoring ab 501 Teilnahmen: <strong>€ 250,00</strong></li>
-                  </ul>
-                </SubCard>
-
-                <SubCard title="Auszahlungsübersicht">
-                  <div className="rounded-xl bg-white border border-gray-200 p-4">
-                    <div className="font-black text-gray-900">100% Auszahlung nach Final-Spieltag</div>
-                    <div className="text-sm text-gray-700 mt-1">1.–5. Platz obere & untere Tabelle</div>
-                  </div>
-
-                  <div className="mt-3 grid sm:grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-white border border-gray-200 p-4">
-                      <div className="font-black text-gray-900 mb-2">Obere Tabelle (70%)</div>
-                      <div className="space-y-1 text-sm text-gray-700">
-                        {[
-                          ["1. Platz", "30%"],
-                          ["2. Platz", "25%"],
-                          ["3. Platz", "20%"],
-                          ["4. Platz", "15%"],
-                          ["5. Platz", "10%"],
-                        ].map(([l, r]) => (
-                          <div key={l} className="flex justify-between">
-                            <span>{l}:</span>
-                            <span className="font-black">{r}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl bg-white border border-gray-200 p-4">
-                      <div className="font-black text-gray-900 mb-2">Untere Tabelle (30%)</div>
-                      <div className="space-y-1 text-sm text-gray-700">
-                        {[
-                          ["1. Platz", "30%"],
-                          ["2. Platz", "25%"],
-                          ["3. Platz", "20%"],
-                          ["4. Platz", "15%"],
-                          ["5. Platz", "10%"],
-                        ].map(([l, r]) => (
-                          <div key={l} className="flex justify-between">
-                            <span>{l}:</span>
-                            <span className="font-black">{r}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </SubCard>
-
-                <SubCard tone="warn" title="Entscheidung bei Punktegleichheit">
-                  <div className="text-sm">
-                    <strong>Reihenfolge:</strong> 1. Tabellenpunkte → 2. Check-Punkte → 3. Antritte (zuletzt)
-                  </div>
-                </SubCard>
-              </div>
-            </SectionCard>
-
-            {/* Footer Hinweis */}
             <motion.div variants={itemVariants} className="pb-6">
-              <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm ring-1 ring-black/5 p-5 text-center">
-                <p className="text-gray-600 text-xs sm:text-sm">
-                  <strong>Druck- und Satzfehler vorbehalten!</strong>
+              <div className="rounded-[22px] border border-slate-200 bg-white p-5 text-center shadow-[0_14px_42px_-36px_rgba(15,23,42,0.45)]">
+                <p className="text-xs text-slate-500 sm:text-sm">
+                  <strong>Druck- und Satzfehler vorbehalten.</strong>
                   <br />
-                  Stand: Herbst 2025
+                  Stand: Herbst 2026
                 </p>
               </div>
             </motion.div>

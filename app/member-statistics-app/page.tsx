@@ -329,7 +329,7 @@ export default function MemberStatisticsPage() {
   const headerSubtitle = "Team Statistiken"
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900 font-sans flex flex-col pb-20">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans flex flex-col pb-20">
       {/* ✅ NUR HEADER geändert: jetzt dein richtiger Header-Component */}
       <Header variant="app" title="Statistiken" subtitle={headerSubtitle} backHref="/member-profile-app" />
 
@@ -337,10 +337,10 @@ export default function MemberStatisticsPage() {
       {authLoading || membershipLoading ? (
         <div className="flex-1 flex items-center justify-center px-4 pt-24">
           <div className="animate-in fade-in zoom-in-95 duration-300 w-full max-w-sm">
-            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-orange-100">
+            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-slate-200 bg-white px-8 py-9 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:px-10">
               <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+                <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl animate-pulse" />
+                <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
               </div>
               <div className="text-center">
                 <p className="text-lg font-extrabold text-gray-900">Statistiken werden geladen</p>
@@ -351,102 +351,121 @@ export default function MemberStatisticsPage() {
         </div>
       ) : (
         // MAIN (unchanged)
-       <main className="pt-12 sm:pt-14">
+       <main className="w-full pt-14 sm:pt-16">
          <MembershipAccessGate
            required={["edart_league", "steeldart_league"]}
            requireAll={false}
            title="Liga-Statistiken nicht freigeschaltet"
            description="Für die Liga-Statistiken brauchst du das E-Dart- oder Steeldart-Ligapaket bzw. eine aktive Testfreischaltung."
          >
-  <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
-          {/* TOP WHITE HERO CARD */}
-          <div className="rounded-3xl bg-white shadow-xl border border-orange-100 overflow-hidden">
-            {/* orange strip */}
-            <div className="h-1.5 bg-gradient-to-r from-orange-600 to-orange-500" />
+  <div className="w-full max-w-none px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
+          <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
 
-            <div className="p-4 sm:p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+              <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
                 <div className="min-w-0">
-                  <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">Team Statistiken</h1>
-                  <p className="text-sm md:text-base text-gray-600 mt-1">Detaillierte Analyse der Team-Leistung</p>
-                </div>
-
-                {/* Filters container */}
-                <div className="flex flex-col gap-2 sm:items-end">
-                  <select
-                    value={selectedSeasonId}
-                    onChange={(e) => setSelectedSeasonId(e.target.value)}
-                    className="h-10 w-full sm:w-[260px] rounded-xl border border-orange-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-200"
-                  >
-                    {seasons.length === 0 ? (
-                      <option value="">Saison…</option>
-                    ) : (
-                      seasons.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
-                        </option>
-                      ))
-                    )}
-                  </select>
-
-                  <div className="flex flex-wrap gap-2 w-full sm:w-[320px]">
-                    <Button
-                      variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setDartTypeFilter("gesamt")}
-                      className={
-                        dartTypeFilter === "gesamt"
-                          ? "rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
-                          : "rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
-                      }
-                    >
-                      Gesamt
-                    </Button>
-                    {canSeeEDart ? (
-                      <Button
-                        variant={dartTypeFilter === "edart" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setDartTypeFilter("edart")}
-                        className={
-                          dartTypeFilter === "edart"
-                            ? "rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
-                            : "rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
-                        }
-                      >
-                        E-Dart
-                      </Button>
-                    ) : null}
-
-                    {canSeeSteeldart ? (
-                      <Button
-                        variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setDartTypeFilter("steeldart")}
-                        className={
-                          dartTypeFilter === "steeldart"
-                            ? "rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
-                            : "rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
-                        }
-                      >
-                        Steeldart
-                      </Button>
-                    ) : null}
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                    Statistiken
                   </div>
-                </div>
-              </div>
 
-              {/* content section spacing */}
-              <div className="mt-5">
-                <StatisticsSection
-                  legStatistics={legStatistics}
-                  legStatsLoading={legStatsLoading}
-                  matches={matches}
-                  getTeamDisplayName={getTeamDisplayName}
-                />
+                  <p className="text-sm font-medium text-white/50">{headerSubtitle}</p>
+                  <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
+                    Team Statistiken
+                  </h1>
+                  <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-white/55 sm:text-base">
+                    Detaillierte Analyse der Team-Leistung
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/member-profile-app")}
+                  className="h-11 w-full rounded-xl border-white/10 bg-white/10 px-4 font-black text-white shadow-none hover:bg-white/15 hover:text-white sm:w-auto"
+                >
+                  Zurück zum Profil
+                </Button>
               </div>
-			    </div>
             </div>
+          </section>
+
+          <section className="mt-4 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_16px_50px_-38px_rgba(15,23,42,0.45)] sm:mt-5 sm:rounded-[26px]">
+            <div className="grid gap-3 p-3.5 sm:p-4 lg:grid-cols-[minmax(0,320px)_1fr] lg:items-center">
+              <select
+                value={selectedSeasonId}
+                onChange={(e) => setSelectedSeasonId(e.target.value)}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 text-sm font-bold text-slate-800 shadow-none outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
+              >
+                {seasons.length === 0 ? (
+                  <option value="">Saison…</option>
+                ) : (
+                  seasons.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {(s.name || s.type || "Saison") + (s.year ? ` ${s.year}` : "")}
+                    </option>
+                  ))
+                )}
+              </select>
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <Button
+                  variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDartTypeFilter("gesamt")}
+                  className={
+                    dartTypeFilter === "gesamt"
+                      ? "h-10 rounded-xl bg-slate-950 font-black text-white shadow-none hover:bg-slate-800"
+                      : "h-10 rounded-xl border-slate-200 bg-white font-black text-slate-600 shadow-none hover:bg-slate-50"
+                  }
+                >
+                  Gesamt
+                </Button>
+
+                {canSeeEDart ? (
+                  <Button
+                    variant={dartTypeFilter === "edart" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setDartTypeFilter("edart")}
+                    className={
+                      dartTypeFilter === "edart"
+                        ? "h-10 rounded-xl bg-slate-950 font-black text-white shadow-none hover:bg-slate-800"
+                        : "h-10 rounded-xl border-slate-200 bg-white font-black text-slate-600 shadow-none hover:bg-slate-50"
+                    }
+                  >
+                    E-Dart
+                  </Button>
+                ) : null}
+
+                {canSeeSteeldart ? (
+                  <Button
+                    variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setDartTypeFilter("steeldart")}
+                    className={
+                      dartTypeFilter === "steeldart"
+                        ? "h-10 rounded-xl bg-slate-950 font-black text-white shadow-none hover:bg-slate-800"
+                        : "h-10 rounded-xl border-slate-200 bg-white font-black text-slate-600 shadow-none hover:bg-slate-50"
+                    }
+                  >
+                    Steeldart
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          </section>
+
+          <div className="mt-4 sm:mt-5">
+            <StatisticsSection
+              legStatistics={legStatistics}
+              legStatsLoading={legStatsLoading}
+              matches={matches}
+              getTeamDisplayName={getTeamDisplayName}
+            />
           </div>
+        </div>
          </MembershipAccessGate>
         </main>
       )}

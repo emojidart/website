@@ -177,17 +177,17 @@ export default function DartboersePage() {
   const activeFilters = [category, condition, country, region, shipping].filter((value) => value !== "all").length
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 text-slate-950">
+    <div className="min-h-screen bg-[#f5f6f8] pb-24 text-slate-950">
       <Header />
-      <main className="mx-auto max-w-screen-xl px-4 pt-20">
-        <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 p-6 text-white shadow-2xl sm:p-8">
+      <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
+        <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 p-4 text-white shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] sm:p-6 lg:p-8 xl:rounded-[30px] xl:p-9">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-orange-200">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-orange-300">
                 <Tag className="h-3.5 w-3.5" /> Dartbörse DACH
               </div>
-              <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Dartartikel kaufen und verkaufen</h1>
-              <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">Darts, Barrels, Flights, Spitzen, Boards und Zubehör aus Österreich, Deutschland und der Schweiz.</p>
+              <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] sm:text-4xl lg:text-5xl">Dartartikel kaufen und verkaufen</h1>
+              <p className="mt-3 max-w-3xl text-sm font-medium leading-6 text-white/55 sm:text-base">Darts, Barrels, Flights, Spitzen, Boards und Zubehör aus Österreich, Deutschland und der Schweiz.</p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
               {isLoggedIn ? (
@@ -195,7 +195,7 @@ export default function DartboersePage() {
                   <Button
                     asChild
                     variant="outline"
-                    className="h-12 rounded-2xl border-white/20 bg-white/10 px-5 font-black text-white backdrop-blur hover:bg-white/20 hover:text-white"
+                    className="h-12 rounded-[18px] border-white/20 bg-white/10 px-5 font-black text-white backdrop-blur hover:bg-white/20 hover:text-white"
                   >
                     <Link href="/dartboerse/meine">
                       <UserRound className="mr-2 h-5 w-5" />
@@ -206,7 +206,7 @@ export default function DartboersePage() {
                   <Button
                     asChild
                     variant="outline"
-                    className="h-12 rounded-2xl border-white/20 bg-white/10 px-5 font-black text-white backdrop-blur hover:bg-white/20 hover:text-white"
+                    className="h-12 rounded-[18px] border-white/20 bg-white/10 px-5 font-black text-white backdrop-blur hover:bg-white/20 hover:text-white"
                   >
                     <Link href="/dartboerse/nachrichten">
                       <MessageCircle className="mr-2 h-5 w-5" />
@@ -216,7 +216,7 @@ export default function DartboersePage() {
                 </>
               ) : null}
 
-              <Button asChild className="h-12 rounded-2xl bg-orange-600 px-5 font-black hover:bg-orange-500">
+              <Button asChild className="h-12 rounded-2xl bg-orange-500 px-5 font-black hover:bg-orange-500">
                 <Link href="/dartboerse/neu">
                   <Plus className="mr-2 h-5 w-5" />
                   Inserat erstellen
@@ -226,11 +226,11 @@ export default function DartboersePage() {
           </div>
         </section>
 
-        <section className="sticky top-14 z-20 mt-5 rounded-[1.75rem] border border-slate-200 bg-white/95 p-3 shadow-xl shadow-slate-200/50 backdrop-blur sm:p-4">
+        <section className="sticky top-14 z-20 mt-5 rounded-[1.75rem] border border-slate-200 bg-white/95 p-3 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] shadow-slate-200/50 backdrop-blur sm:p-4">
           <div className="flex flex-col gap-3 lg:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nach Darts, Ort, Bundesland oder Zubehör suchen …" className="h-12 rounded-2xl border-slate-200 bg-slate-50 pl-12 text-base" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nach Darts, Ort, Bundesland oder Zubehör suchen …" className="h-12 rounded-[18px] border-slate-200 bg-[#f5f6f8] pl-12 text-base" />
             </div>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => setFiltersOpen((old) => !old)} className="h-12 flex-1 rounded-2xl lg:flex-none">
@@ -291,14 +291,14 @@ export default function DartboersePage() {
         <div className="mt-5 flex items-center justify-between text-sm text-slate-500"><span>{loading ? "Dartbörse wird geladen …" : `${filtered.length} Angebot${filtered.length === 1 ? "" : "e"}`}</span><Link href="/dartboerse/meine" className="font-black text-orange-700 hover:text-orange-800">Meine Angebote</Link></div>
 
         {loading ? (
-          <div className="mt-5 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 8 }).map((_, index) => <div key={index} className="h-[430px] animate-pulse rounded-[2rem] bg-white shadow-sm" />)}</div>
+          <div className="mt-5 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 8 }).map((_, index) => <div key={index} className="h-[430px] animate-pulse rounded-[28px] bg-white shadow-sm" />)}</div>
         ) : filtered.length === 0 ? (
-          <Card className="mt-4 rounded-3xl"><CardContent className="p-12 text-center"><Box className="mx-auto h-12 w-12 text-slate-300" /><h2 className="mt-4 text-xl font-black">Keine passenden Angebote</h2><p className="mt-2 text-sm text-slate-500">Ändere die Suche oder erstelle selbst das erste Inserat.</p></CardContent></Card>
+          <Card className="mt-4 rounded-[24px]"><CardContent className="p-12 text-center"><Box className="mx-auto h-12 w-12 text-slate-300" /><h2 className="mt-4 text-xl font-black">Keine passenden Angebote</h2><p className="mt-2 text-sm text-slate-500">Ändere die Suche oder erstelle selbst das erste Inserat.</p></CardContent></Card>
         ) : (
           <div className="mt-5 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((item) => (
               <Link key={item.id} href={`/dartboerse/${item.id}`} className="group">
-                <Card className="h-full overflow-hidden rounded-[2rem] border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-slate-900/10">
+                <Card className="h-full overflow-hidden rounded-[28px] border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_24px_80px_-42px_rgba(15,23,42,0.55)] hover:shadow-slate-900/10">
                   <div className="relative aspect-[16/11] overflow-hidden bg-slate-100">
                     {item.image_url ? (
                       <Image

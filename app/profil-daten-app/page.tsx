@@ -24,7 +24,6 @@ import {
   CalendarDays,
   Hash,
   Target,
-  Home,
   Building,
   Shirt,
 } from "lucide-react"
@@ -103,19 +102,19 @@ function TileInput(props: {
 }) {
   const { label, placeholder, value, onChange, type = "text", icon } = props
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-3">
-      <div className="flex items-center gap-2">
+    <div className="group min-w-0 rounded-2xl border border-slate-200 bg-white px-3.5 py-3.5 transition-all duration-200 hover:border-slate-300 hover:shadow-sm sm:px-4 sm:py-4">
+      <div className="flex items-center gap-2.5">
         {icon ? (
-          <div className="w-8 h-8 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50 text-orange-600">
             {icon}
           </div>
         ) : null}
-        <p className="text-[11px] uppercase tracking-wide text-gray-500 font-black">{label}</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-[11px]">{label}</p>
       </div>
 
       <Input
         type={type}
-        className="mt-2 rounded-2xl border-gray-200 bg-white font-semibold"
+        className="mt-3 h-11 rounded-xl border-slate-200 bg-slate-50/70 px-3.5 font-semibold text-slate-900 shadow-none outline-none transition-colors placeholder:text-slate-400 focus-visible:border-orange-300 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-orange-100"
         placeholder={placeholder}
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
@@ -127,16 +126,16 @@ function TileInput(props: {
 function ThrowingHandSelect(props: { value: string; onChange: (v: string) => void }) {
   const { value, onChange } = props
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-3">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
-          <Target className="w-4 h-4 text-orange-600" />
+    <div className="group min-w-0 rounded-2xl border border-slate-200 bg-white px-3.5 py-3.5 transition-all duration-200 hover:border-slate-300 hover:shadow-sm sm:px-4 sm:py-4">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50">
+          <Target className="h-4 w-4 text-orange-600" />
         </div>
-        <p className="text-[11px] uppercase tracking-wide text-gray-500 font-black">Wurfhand</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-[11px]">Wurfhand</p>
       </div>
 
       <select
-        className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold"
+        className="mt-3 h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 text-sm font-semibold text-slate-900 outline-none transition-colors focus:border-orange-300 focus:bg-white focus:ring-2 focus:ring-orange-100"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -350,14 +349,19 @@ export default function ProfilDatenAppPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex flex-col bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+      <main className="min-h-screen overflow-x-hidden bg-[#f3f5f8] text-slate-950">
         <Header />
-        <div className="flex-1 flex items-center justify-center px-4 pt-12 sm:pt-14">
-          <div className="flex flex-col items-center gap-4 rounded-3xl bg-white shadow-xl px-10 py-10 border border-gray-200">
-            <Loader2 className="h-10 w-10 animate-spin text-orange-600" />
-            <div className="text-center">
-              <div className="text-lg font-black">Daten werden geladen…</div>
-              <div className="text-sm text-gray-500 mt-1">Bitte kurz warten</div>
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 pb-24 pt-16 sm:pt-20">
+          <div className="w-full max-w-sm overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)]">
+            <div className="h-1.5 bg-orange-500" />
+            <div className="flex flex-col items-center gap-5 px-6 py-9 sm:px-8">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+                <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-black tracking-tight text-slate-950">Deine Daten werden geladen</div>
+                <div className="mt-1 text-sm font-medium text-slate-500">Einen Moment bitte.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -367,224 +371,285 @@ export default function ProfilDatenAppPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f3f5f8] text-slate-950">
       <Header />
 
-      <main className="pt-12 sm:pt-14">
+      <main className="w-full pt-14 sm:pt-16">
         <motion.div
-        className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+          className="w-full px-3 py-3 pb-24 sm:px-6 sm:py-6 sm:pb-10 lg:px-8 xl:px-10 2xl:px-12"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          {/* App Header Card */}
-          <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-              <div className="p-4 sm:p-5 flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
-                    <User className="w-5 h-5 text-orange-600" />
+          {/* Premium Header */}
+          <motion.section
+            variants={itemVariants}
+            className="relative overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 shadow-[0_28px_90px_-48px_rgba(15,23,42,0.75)] sm:rounded-[30px]"
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(249,115,22,0.22),transparent_30%),radial-gradient(circle_at_90%_0%,rgba(255,255,255,0.08),transparent_28%)]" />
+
+            <div className="relative px-4 py-5 sm:px-7 sm:py-7 lg:px-8 lg:py-8">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-orange-400 backdrop-blur-sm sm:h-12 sm:w-12">
+                      <User className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-400 sm:text-xs">
+                        Mein Profil
+                      </div>
+                      <h1 className="mt-1 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl lg:text-4xl">
+                        Meine Mitgliedsdaten
+                      </h1>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h1 className="text-base sm:text-lg font-black">Meine Mitgliedsdaten</h1>
-                    <p className="text-sm text-gray-600 mt-1">Hier kannst du deine Daten aktualisieren.</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Mitglied seit: <span className="font-black text-gray-800">{clubJoinedLabel}</span>
-                    </p>
+
+                  <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-slate-400 sm:text-base">
+                    Halte deine persönlichen Daten, Adresse und Kontaktdaten aktuell.
+                  </p>
+
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-slate-300">
+                    <CalendarDays className="h-3.5 w-3.5 text-orange-400" />
+                    Mitglied seit {clubJoinedLabel}
                   </div>
                 </div>
 
                 <Button
                   variant="outline"
-                  className="h-10 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 font-black flex-shrink-0"
-                  onClick={() => router.back()}
+                  className="h-11 w-full rounded-xl border-white/10 bg-white/10 px-4 font-bold text-white shadow-none backdrop-blur-sm hover:bg-white/15 hover:text-white sm:w-auto"
+                  onClick={() => router.push("/member-profile-app")}
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Zurück
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Zurück zum Profil
                 </Button>
               </div>
             </div>
-          </motion.div>
+          </motion.section>
 
-          {/* Status Badges */}
+          {/* Rückmeldungen */}
           {(error || success) && (
-            <motion.div variants={itemVariants} className="mb-4">
-              <div className="flex flex-wrap gap-2">
-                {error && <Badge className="bg-red-600 text-white rounded-full px-3 py-1">{error}</Badge>}
-                {success && <Badge className="bg-green-600 text-white rounded-full px-3 py-1">{success}</Badge>}
-              </div>
+            <motion.div variants={itemVariants} className="mt-4">
+              {error ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3.5 text-sm font-bold text-red-800 shadow-sm">
+                  {error}
+                </div>
+              ) : null}
+              {success ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm font-bold text-emerald-800 shadow-sm">
+                  {success}
+                </div>
+              ) : null}
             </motion.div>
           )}
 
-          {/* Persönliche Daten */}
-          <motion.div variants={itemVariants} className="mt-5">
-            <Card className="rounded-2xl border border-gray-200 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm sm:text-base font-black">
-                  <User className="w-5 h-5 text-orange-600" />
-                  Persönliche Daten
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <TileInput
-                    label="Name"
-                    icon={<User className="w-4 h-4 text-orange-600" />}
-                    value={form.name}
-                    onChange={(v) => setField("name", v)}
-                    placeholder="Vor- und Nachname"
-                  />
+          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)] xl:items-start">
+            <div className="min-w-0 space-y-4">
+              {/* Persönliche Daten */}
+              <motion.section variants={itemVariants}>
+                <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-42px_rgba(15,23,42,0.48)] sm:rounded-[28px]">
+                  <CardHeader className="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+                        <User className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-xs">Persönlich</div>
+                        <CardTitle className="mt-0.5 text-lg font-black tracking-tight text-slate-950 sm:text-xl">
+                          Persönliche Daten
+                        </CardTitle>
+                      </div>
+                    </div>
+                  </CardHeader>
 
-                  <ThrowingHandSelect value={form.throwing_hand} onChange={(v) => setField("throwing_hand", v)} />
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-2">
+                      <TileInput
+                        label="Name"
+                        icon={<User className="h-4 w-4 text-orange-600" />}
+                        value={form.name}
+                        onChange={(v) => setField("name", v)}
+                        placeholder="Vor- und Nachname"
+                      />
 
-                  <TileInput
-                    label="Geburtsdatum"
-                    icon={<CalendarDays className="w-4 h-4 text-orange-600" />}
-                    type="date"
-                    value={form.birthdate}
-                    onChange={(v) => setField("birthdate", v)}
-                  />
+                      <ThrowingHandSelect
+                        value={form.throwing_hand}
+                        onChange={(v) => setField("throwing_hand", v)}
+                      />
 
-                  <TileInput
-                    label="Spielernummer"
-                    icon={<Hash className="w-4 h-4 text-orange-600" />}
-                    type="number"
-                    value={form.player_number}
-                    onChange={(v) => setField("player_number", v)}
-                    placeholder="z.B. 258"
-                  />
+                      <TileInput
+                        label="Geburtsdatum"
+                        icon={<CalendarDays className="h-4 w-4 text-orange-600" />}
+                        type="date"
+                        value={form.birthdate}
+                        onChange={(v) => setField("birthdate", v)}
+                      />
 
-                  <div className="sm:col-span-2">
+                      <TileInput
+                        label="Spielernummer"
+                        icon={<Hash className="h-4 w-4 text-orange-600" />}
+                        type="number"
+                        value={form.player_number}
+                        onChange={(v) => setField("player_number", v)}
+                        placeholder="z. B. 258"
+                      />
+
+                      <TileInput
+                        label="Trikotgröße"
+                        icon={<Shirt className="h-4 w-4 text-orange-600" />}
+                        value={form.jersey_size}
+                        onChange={(v) => setField("jersey_size", v)}
+                        placeholder="S / M / L / XL"
+                      />
+
+                      <TileInput
+                        label="Herkunft"
+                        icon={<MapPin className="h-4 w-4 text-orange-600" />}
+                        value={form.origin}
+                        onChange={(v) => setField("origin", v)}
+                        placeholder="z. B. Salzburg"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.section>
+
+              {/* Adresse */}
+              <motion.section variants={itemVariants}>
+                <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-42px_rgba(15,23,42,0.48)] sm:rounded-[28px]">
+                  <CardHeader className="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+                        <MapPin className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-xs">Wohnadresse</div>
+                        <CardTitle className="mt-0.5 text-lg font-black tracking-tight text-slate-950 sm:text-xl">
+                          Adresse
+                        </CardTitle>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <div className="md:col-span-2">
+                        <TileInput
+                          label="Straße"
+                          icon={<MapPin className="h-4 w-4 text-orange-600" />}
+                          value={form.street}
+                          onChange={(v) => setField("street", v)}
+                          placeholder="Musterstraße"
+                        />
+                      </div>
+
+                      <TileInput
+                        label="Hausnummer"
+                        icon={<Building className="h-4 w-4 text-orange-600" />}
+                        value={form.house_number}
+                        onChange={(v) => setField("house_number", v)}
+                        placeholder="12A"
+                      />
+
+                      <TileInput
+                        label="PLZ"
+                        icon={<Hash className="h-4 w-4 text-orange-600" />}
+                        value={form.postal_code}
+                        onChange={(v) => setField("postal_code", v)}
+                        placeholder="5020"
+                      />
+
+                      <div className="md:col-span-2">
+                        <TileInput
+                          label="Ort"
+                          icon={<Building className="h-4 w-4 text-orange-600" />}
+                          value={form.city}
+                          onChange={(v) => setField("city", v)}
+                          placeholder="Salzburg"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.section>
+            </div>
+
+            <div className="min-w-0 space-y-4 xl:sticky xl:top-20">
+              {/* Kontakt */}
+              <motion.section variants={itemVariants}>
+                <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-42px_rgba(15,23,42,0.48)] sm:rounded-[28px]">
+                  <CardHeader className="border-b border-slate-100 px-4 py-5 sm:px-6">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+                        <Mail className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-xs">Erreichbarkeit</div>
+                        <CardTitle className="mt-0.5 text-lg font-black tracking-tight text-slate-950 sm:text-xl">
+                          Kontakt
+                        </CardTitle>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-3 p-4 sm:p-6">
                     <TileInput
-                      label="Trikotgröße"
-                      icon={<Shirt className="w-4 h-4 text-orange-600" />}
-                      value={form.jersey_size}
-                      onChange={(v) => setField("jersey_size", v)}
-                      placeholder="S / M / L / XL"
+                      label="E-Mail"
+                      icon={<Mail className="h-4 w-4 text-orange-600" />}
+                      value={form.email}
+                      onChange={(v) => setField("email", v)}
+                      placeholder="name@mail.at"
                     />
-                  </div>
 
-                  <div className="sm:col-span-2">
                     <TileInput
-                      label="Herkunft"
-                      icon={<MapPin className="w-4 h-4 text-orange-600" />}
-                      value={form.origin}
-                      onChange={(v) => setField("origin", v)}
-                      placeholder="z.B. Salzburg"
+                      label="Telefon"
+                      icon={<Phone className="h-4 w-4 text-orange-600" />}
+                      value={form.phone}
+                      onChange={(v) => setField("phone", v)}
+                      placeholder="+43 …"
                     />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                  </CardContent>
+                </Card>
+              </motion.section>
 
-          {/* Adresse */}
-          <motion.div variants={itemVariants} className="mt-5">
-            <Card className="rounded-2xl border border-gray-200 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm sm:text-base font-black">
-                  <MapPin className="w-5 h-5 text-orange-600" />
-                  Adresse
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="sm:col-span-2">
-                    <TileInput
-                      label="Straße"
-                      icon={<MapPin className="w-4 h-4 text-orange-600" />}
-                      value={form.street}
-                      onChange={(v) => setField("street", v)}
-                      placeholder="Musterstraße"
-                    />
-                  </div>
+              {/* Speichern */}
+              <motion.section variants={itemVariants}>
+                <Card className="relative overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 shadow-[0_22px_70px_-44px_rgba(15,23,42,0.75)] sm:rounded-[28px]">
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_0%,rgba(249,115,22,0.18),transparent_38%)]" />
+                  <CardContent className="relative p-4 sm:p-6">
+                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-400 sm:text-xs">
+                      Änderungen übernehmen
+                    </div>
+                    <h2 className="mt-1 text-xl font-black tracking-tight text-white">
+                      Daten speichern
+                    </h2>
+                    <p className="mt-2 text-sm font-medium leading-6 text-slate-400">
+                      Prüfe deine Angaben kurz und speichere anschließend deine Änderungen.
+                    </p>
 
-                  <TileInput
-                    label="Hausnummer"
-                    icon={<Home className="w-4 h-4 text-orange-600" />}
-                    value={form.house_number}
-                    onChange={(v) => setField("house_number", v)}
-                    placeholder="12A"
-                  />
-
-                  <TileInput
-                    label="PLZ"
-                    icon={<Hash className="w-4 h-4 text-orange-600" />}
-                    value={form.postal_code}
-                    onChange={(v) => setField("postal_code", v)}
-                    placeholder="5020"
-                  />
-
-                  <div className="sm:col-span-2">
-                    <TileInput
-                      label="Ort"
-                      icon={<Building className="w-4 h-4 text-orange-600" />}
-                      value={form.city}
-                      onChange={(v) => setField("city", v)}
-                      placeholder="Salzburg"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Kontakt */}
-          <motion.div variants={itemVariants} className="mt-5">
-            <Card className="rounded-2xl border border-gray-200 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm sm:text-base font-black">
-                  <Mail className="w-5 h-5 text-orange-600" />
-                  Kontakt
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-1 gap-3">
-                  <TileInput
-                    label="E-Mail"
-                    icon={<Mail className="w-4 h-4 text-orange-600" />}
-                    value={form.email}
-                    onChange={(v) => setField("email", v)}
-                    placeholder="name@mail.at"
-                  />
-                  <TileInput
-                    label="Telefon"
-                    icon={<Phone className="w-4 h-4 text-orange-600" />}
-                    value={form.phone}
-                    onChange={(v) => setField("phone", v)}
-                    placeholder="+43 …"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Action: Speichern */}
-          <motion.div variants={itemVariants} className="mt-5">
-            <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-              <CardContent className="p-4">
-                <Button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="w-full h-11 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Speichern…
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      Speichern
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
+                    <Button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="mt-5 h-12 w-full rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-600"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Wird gespeichert…
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          Änderungen speichern
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.section>
+            </div>
+          </div>
         </motion.div>
       </main>
 

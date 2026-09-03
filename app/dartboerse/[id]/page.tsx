@@ -194,9 +194,9 @@ export default function DartboerseDetailPage() {
         ? "Preis auf Anfrage"
         : `${item.price.toLocaleString("de-AT", { style: "currency", currency: "EUR" })}${item.price_type === "negotiable" ? " VB" : ""}`;
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-[#f5f6f8] pb-24">
       <Header />
-      <main className="mx-auto max-w-6xl px-4 pt-20">
+      <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
         <Button asChild variant="outline" className="mb-4 rounded-xl">
           <Link href="/dartboerse">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -210,7 +210,7 @@ export default function DartboerseDetailPage() {
         ) : error ? (
           <div className="py-24 text-center text-red-600">{error}</div>
         ) : !item ? (
-          <Card className="rounded-3xl">
+          <Card className="rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
             <CardContent className="p-12 text-center">
               <Box className="mx-auto h-12 w-12 text-slate-300" />
               <h1 className="mt-4 text-xl font-black">
@@ -219,9 +219,9 @@ export default function DartboerseDetailPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-5 lg:grid-cols-[1.25fr_.75fr]">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,.55fr)] xl:gap-5">
             <div className="space-y-5">
-              <Card className="overflow-hidden rounded-[2rem] border-slate-200 bg-white shadow-sm">
+              <Card className="overflow-hidden rounded-[28px] border-slate-200 bg-white shadow-sm">
                 <div className="relative overflow-hidden bg-slate-100">
                   <button
                     type="button"
@@ -267,7 +267,7 @@ export default function DartboerseDetailPage() {
                             (current - 1 + images.length) % images.length,
                           )
                         }
-                        className="absolute left-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/95 text-slate-900 shadow-xl transition hover:scale-105 hover:bg-white"
+                        className="absolute left-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/95 text-slate-900 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] transition hover:scale-105 hover:bg-white"
                         aria-label="Vorheriges Bild"
                       >
                         <ChevronLeft className="h-6 w-6" />
@@ -278,7 +278,7 @@ export default function DartboerseDetailPage() {
                         onClick={() =>
                           setIndex((current) => (current + 1) % images.length)
                         }
-                        className="absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/95 text-slate-900 shadow-xl transition hover:scale-105 hover:bg-white"
+                        className="absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/95 text-slate-900 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] transition hover:scale-105 hover:bg-white"
                         aria-label="Nächstes Bild"
                       >
                         <ChevronRight className="h-6 w-6" />
@@ -329,7 +329,7 @@ export default function DartboerseDetailPage() {
                   </div>
                 ) : null}
               </Card>
-              <Card className="rounded-[2rem]">
+              <Card className="rounded-[28px]">
                 <CardContent className="p-6 sm:p-8">
                   <div className="flex flex-wrap gap-2">
                     <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-800">
@@ -359,7 +359,7 @@ export default function DartboerseDetailPage() {
               </Card>
             </div>
             <div className="space-y-5">
-              <Card className="rounded-[2rem] border-orange-200 bg-gradient-to-br from-white to-orange-50">
+              <Card className="rounded-[28px] border-orange-200 bg-gradient-to-br from-white to-orange-50">
                 <CardContent className="p-6">
                   <div className="text-sm font-black uppercase tracking-wide text-orange-700">
                     Preis
@@ -381,7 +381,7 @@ export default function DartboerseDetailPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-[2rem]">
+              <Card className="rounded-[28px]">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 text-lg font-black">
                     <ShieldCheck className="h-5 w-5 text-green-600" />
@@ -395,7 +395,7 @@ export default function DartboerseDetailPage() {
                           type="button"
                           onClick={() => void startConversation(true)}
                           disabled={startingChat || item.status === "sold"}
-                          className="rounded-xl bg-orange-600 hover:bg-orange-700"
+                          className="rounded-xl bg-orange-500 hover:bg-orange-600"
                         >
                           {startingChat ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -467,7 +467,7 @@ export default function DartboerseDetailPage() {
               onClick={() => setGalleryOpen(false)}
             >
               <div
-                className="relative flex h-[96vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl sm:rounded-3xl"
+                className="relative flex h-[96vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.55)] sm:rounded-[24px]"
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 text-white sm:px-5">
@@ -508,7 +508,7 @@ export default function DartboerseDetailPage() {
                             (current - 1 + images.length) % images.length,
                           )
                         }
-                        className="absolute left-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-xl transition hover:scale-105 sm:left-5"
+                        className="absolute left-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] transition hover:scale-105 sm:left-5"
                         aria-label="Vorheriges Bild"
                       >
                         <ChevronLeft className="h-6 w-6" />
@@ -519,7 +519,7 @@ export default function DartboerseDetailPage() {
                         onClick={() =>
                           setIndex((current) => (current + 1) % images.length)
                         }
-                        className="absolute right-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-xl transition hover:scale-105 sm:right-5"
+                        className="absolute right-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] transition hover:scale-105 sm:right-5"
                         aria-label="Nächstes Bild"
                       >
                         <ChevronRight className="h-6 w-6" />

@@ -280,11 +280,11 @@ export default function BearbeitenPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[#f5f6f8]">
         <Header />
         <main className="flex min-h-[70vh] items-center justify-center px-4 pt-20">
           <div className="flex flex-col items-center gap-3 text-slate-500">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-100 bg-white shadow-sm">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-100 bg-white shadow-none">
               <Loader2 className="h-7 w-7 animate-spin text-orange-600" />
             </div>
             <p className="text-sm font-semibold">
@@ -302,7 +302,7 @@ export default function BearbeitenPage() {
       <div className="min-h-screen bg-slate-50">
         <Header />
         <main className="px-4 pb-28 pt-24">
-          <Card className="mx-auto max-w-lg overflow-hidden rounded-[2rem] border-slate-200 shadow-xl shadow-slate-200/60">
+          <Card className="mx-auto max-w-lg overflow-hidden rounded-[28px] border-slate-200 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] shadow-slate-200/60">
             <div className="h-1.5 bg-gradient-to-r from-orange-500 to-amber-400" />
             <CardContent className="p-8 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50">
@@ -330,7 +330,7 @@ export default function BearbeitenPage() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.08),_transparent_30%),linear-gradient(to_bottom,_#f8fafc,_#ffffff)] pb-32 text-slate-950">
       <Header />
 
-      <main className="mx-auto max-w-5xl px-4 pt-20 sm:px-6">
+      <main className="w-full max-w-none px-2 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
         <Button
           variant="ghost"
           onClick={() => router.push("/dach-veranstaltungen/meine")}
@@ -340,7 +340,7 @@ export default function BearbeitenPage() {
           Meine Veranstaltungen
         </Button>
 
-        <section className="relative mb-6 overflow-hidden rounded-[2rem] bg-slate-950 px-6 py-7 text-white shadow-2xl shadow-slate-300/60 sm:px-8 sm:py-9">
+        <section className="relative mb-6 overflow-hidden rounded-[28px] bg-slate-950 px-6 py-7 text-white shadow-2xl shadow-slate-300/60 sm:px-8 sm:py-9">
           <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-orange-500/20 blur-3xl" />
           <div className="absolute -bottom-24 left-1/3 h-44 w-44 rounded-full bg-amber-300/10 blur-3xl" />
           <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -706,7 +706,7 @@ function ModernSection({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="overflow-hidden rounded-[2rem] border-slate-200 bg-white/95 shadow-lg shadow-slate-200/50">
+    <Card className="overflow-hidden rounded-[28px] border-slate-200 bg-white/95 shadow-lg shadow-slate-200/50">
       <CardContent className="p-0">
         <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-5 sm:px-7">
           <div className="flex items-start gap-3">

@@ -152,10 +152,10 @@ function getPlacementLabel(placement?: number | null) {
 }
 
 function getPlacementBadgeClass(placement?: number | null) {
-  if (placement === 1) return "bg-yellow-500 text-white"
-  if (placement === 2) return "bg-gray-500 text-white"
-  if (placement === 3) return "bg-amber-600 text-white"
-  return "bg-orange-600 text-white"
+  if (placement === 1) return "border border-amber-200 bg-amber-50 text-amber-700"
+  if (placement === 2) return "border border-slate-200 bg-slate-100 text-slate-700"
+  if (placement === 3) return "border border-orange-200 bg-orange-50 text-orange-700"
+  return "border border-slate-200 bg-white text-slate-700"
 }
 
 function getTypeLabel(type?: string | null) {
@@ -182,27 +182,19 @@ function StatBox({
   tone?: "orange" | "green" | "blue" | "purple" | "gray" | "yellow"
 }) {
   const styles =
-    tone === "green"
-      ? "bg-green-50 border-green-200 text-green-800"
-      : tone === "blue"
-        ? "bg-blue-50 border-blue-200 text-blue-800"
-        : tone === "purple"
-          ? "bg-purple-50 border-purple-200 text-purple-800"
-          : tone === "gray"
-            ? "bg-gray-50 border-gray-200 text-gray-800"
-            : tone === "yellow"
-              ? "bg-yellow-50 border-yellow-200 text-yellow-800"
-              : "bg-orange-50 border-orange-200 text-orange-800"
+    tone === "orange"
+      ? "border-orange-100 bg-orange-50/50"
+      : "border-slate-200 bg-slate-50/70"
 
   return (
-    <div className={`rounded-2xl border p-4 ${styles}`}>
+    <div className={`rounded-[18px] border p-3.5 sm:p-4 ${styles}`}>
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <div className="text-xs font-black uppercase opacity-80">{label}</div>
-          <div className="text-2xl font-black mt-1">{value}</div>
+        <div className="min-w-0">
+          <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{label}</div>
+          <div className="mt-1.5 text-2xl font-black tracking-tight text-slate-950">{value}</div>
         </div>
 
-        <div className="w-11 h-11 rounded-2xl bg-white/70 flex items-center justify-center">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-orange-500">
           {icon}
         </div>
       </div>
@@ -218,11 +210,11 @@ function MiniInfo({
   value: string | number
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-      <div className="text-[11px] font-black uppercase text-gray-500">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+      <div className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
         {label}
       </div>
-      <div className="mt-1 text-sm font-black text-gray-900">{value}</div>
+      <div className="mt-1.5 text-sm font-black text-slate-950">{value}</div>
     </div>
   )
 }
@@ -474,15 +466,15 @@ export default function MemberTournamentStatisticsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
+      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 flex flex-col">
         <Header />
 
         <main className="flex-grow flex items-center justify-center px-4 pb-24 pt-20">
-          <div className="flex flex-col items-center gap-4 rounded-3xl bg-white border border-gray-200 shadow-xl px-8 py-8">
-            <Loader2 className="w-10 h-10 animate-spin text-orange-600" />
+          <div className="flex flex-col items-center gap-4 rounded-[28px] border border-slate-200 bg-white px-8 py-8 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)]">
+            <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
             <div className="text-center">
-              <div className="font-black text-gray-900">Turnierstatistiken werden geladen</div>
-              <div className="text-sm text-gray-500 mt-1">Bitte kurz warten…</div>
+              <div className="break-words font-black leading-snug text-slate-950">Turnierstatistiken werden geladen</div>
+              <div className="text-sm text-slate-500 mt-1">Bitte kurz warten…</div>
             </div>
           </div>
         </main>
@@ -494,21 +486,21 @@ export default function MemberTournamentStatisticsPage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
+      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 flex flex-col">
         <Header />
 
         <main className="flex-grow flex items-center justify-center px-4 pb-24 pt-20">
-          <Card className="w-full max-w-md rounded-3xl shadow-xl border border-gray-200">
+          <Card className="w-full max-w-md overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)]">
             <CardContent className="p-6 text-center">
               <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center">
                 <AlertTriangle className="w-7 h-7 text-red-600" />
               </div>
 
-              <h1 className="text-2xl font-black text-gray-900 mb-2">
+              <h1 className="text-2xl font-black text-slate-950 mb-2">
                 Statistik nicht verfügbar
               </h1>
 
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-slate-600 mb-6">
                 {error || "Deine Turnierstatistiken konnten nicht geladen werden."}
               </p>
 
@@ -525,54 +517,57 @@ export default function MemberTournamentStatisticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-900 flex flex-col">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 flex flex-col">
       <Header />
 
-      <main className="flex-grow px-4 pt-20 pb-28">
-        <div className="mx-auto w-full max-w-5xl space-y-6">
-          <Card className="rounded-3xl border border-gray-200 bg-white shadow-xl overflow-hidden">
-            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+      <main className="w-full flex-grow px-2 pb-28 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6">
+        <div className="w-full max-w-none space-y-4 sm:space-y-5">
+          <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
 
-            <CardContent className="p-5 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="w-20 h-20 rounded-3xl bg-orange-50 border border-orange-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {photoUrl ? (
-                    <img
-                      src={photoUrl}
-                      alt={playerName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <UserRound className="w-10 h-10 text-orange-600" />
-                  )}
-                </div>
+            <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+              <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07]">
+                      {photoUrl ? (
+                        <img
+                          src={photoUrl}
+                          alt={playerName}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <UserRound className="h-7 w-7 text-orange-400" />
+                      )}
+                    </div>
 
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-black uppercase text-orange-600">
-                    EMD VereinsApp
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/40">
+                        EMD VereinsApp
+                      </div>
+                      <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
+                        Meine Turnierstatistiken
+                      </h1>
+                    </div>
                   </div>
 
-                  <h1 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight">
-                    Meine Turnierstatistiken
-                  </h1>
-
-                  <p className="text-gray-600 mt-1">
-                    Persönliche Übersicht für{" "}
-                    <span className="font-black text-gray-900">{playerName}</span>
+                  <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-white/55 sm:text-base">
+                    Persönliche Übersicht für <span className="font-black text-white">{playerName}</span>
                   </p>
 
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <Badge className="bg-orange-600 text-white">
-                      <Activity className="w-3 h-3 mr-1" />
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Badge className="rounded-full border border-white/10 bg-white/[0.07] px-2.5 text-white shadow-none">
+                      <Activity className="mr-1 h-3 w-3 text-orange-400" />
                       Live Daten
                     </Badge>
 
-                    <Badge variant="outline">
+                    <Badge className="rounded-full border border-white/10 bg-white/[0.07] px-2.5 text-white/75 shadow-none">
                       {totalTournamentCount} Turnier(e)
                     </Badge>
 
                     {summerStanding ? (
-                      <Badge variant="outline">
+                      <Badge className="rounded-full border border-white/10 bg-white/[0.07] px-2.5 text-white/75 shadow-none">
                         Summer Special aktiv
                       </Badge>
                     ) : null}
@@ -581,23 +576,23 @@ export default function MemberTournamentStatisticsPage() {
 
                 <Button
                   variant="outline"
-                  className="rounded-2xl"
+                  className="h-11 w-full rounded-xl border-white/10 bg-white/10 px-4 font-black text-white shadow-none hover:bg-white/15 hover:text-white sm:w-auto"
                   onClick={() => router.push("/member-profile-app")}
                 >
-                  Zum Profil
+                  Zurück zum Profil
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
           {summerStanding && (
-            <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-yellow-500" />
+            <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[28px]">
+              
 
-              <CardContent className="p-5 sm:p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Trophy className="w-5 h-5 text-orange-600" />
-                  <h2 className="text-xl sm:text-2xl font-black text-gray-900">
+              <CardContent className="p-4 sm:p-6">
+                <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50"><Trophy className="h-5 w-5 text-orange-600" /></div>
+                  <h2 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
                     Summer Special Gesamtwertung
                   </h2>
                 </div>
@@ -647,11 +642,11 @@ export default function MemberTournamentStatisticsPage() {
           )}
 
           {summerEntries.length > 0 && (
-            <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm">
-              <CardContent className="p-5 sm:p-6">
-                <div className="flex items-center gap-2 mb-4">
+            <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+              <CardContent className="p-4 sm:p-6">
+                <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
                   <Medal className="w-5 h-5 text-orange-600" />
-                  <h2 className="text-xl sm:text-2xl font-black text-gray-900">
+                  <h2 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
                     Meine Summer-Special Turniere
                   </h2>
                 </div>
@@ -663,7 +658,7 @@ export default function MemberTournamentStatisticsPage() {
                     return (
                       <div
                         key={entry.id || `${entry.player_name}-${entry.tournament_date}-${index}`}
-                        className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                        className="rounded-[20px] border border-slate-200 bg-slate-50/40 p-3.5 shadow-none transition-colors hover:bg-white sm:p-4"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                           <div className="min-w-0">
@@ -680,11 +675,11 @@ export default function MemberTournamentStatisticsPage() {
                               ) : null}
                             </div>
 
-                            <div className="font-black text-gray-900">
+                            <div className="break-words font-black leading-snug text-slate-950">
                               {entry.tournament_name || "Summer Special Turnier"}
                             </div>
 
-                            <div className="text-sm text-gray-600 mt-1">
+                            <div className="mt-1 text-sm font-medium text-slate-500">
                               {formatDate(entry.tournament_date)}
                             </div>
                           </div>
@@ -714,11 +709,11 @@ export default function MemberTournamentStatisticsPage() {
           )}
 
           {dkoRankings.length > 0 && (
-            <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm">
-              <CardContent className="p-5 sm:p-6">
-                <div className="flex items-center gap-2 mb-4">
+            <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+              <CardContent className="p-4 sm:p-6">
+                <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
                   <Swords className="w-5 h-5 text-orange-600" />
-                  <h2 className="text-xl sm:text-2xl font-black text-gray-900">
+                  <h2 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
                     Meine DKO Turniere
                   </h2>
                 </div>
@@ -727,7 +722,7 @@ export default function MemberTournamentStatisticsPage() {
                   {dkoRankings.map((ranking, index) => (
                     <div
                       key={`${ranking.tournament_id}-${ranking.tournament_type}-${index}`}
-                      className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                      className="rounded-[20px] border border-slate-200 bg-slate-50/40 p-3.5 shadow-none transition-colors hover:bg-white sm:p-4"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="min-w-0">
@@ -741,18 +736,18 @@ export default function MemberTournamentStatisticsPage() {
                             </Badge>
                           </div>
 
-                          <div className="font-black text-gray-900">
+                          <div className="break-words font-black leading-snug text-slate-950">
                             {ranking.tournament_name || "DKO Turnier"}
                           </div>
 
-                          <div className="text-sm text-gray-600 mt-1">
+                          <div className="mt-1 text-sm font-medium text-slate-500">
                             {formatDate(ranking.eliminated_at)}
                           </div>
                         </div>
 
                         <Button
                           variant="outline"
-                          className="rounded-2xl w-full sm:w-auto"
+                          className="h-10 w-full rounded-xl border-slate-200 bg-white font-black text-slate-700 shadow-none hover:bg-slate-50 sm:w-auto"
                           onClick={() =>
                             router.push(
                               `/tournament-history/${encodeURIComponent(ranking.tournament_id)}?type=${encodeURIComponent(
@@ -772,11 +767,11 @@ export default function MemberTournamentStatisticsPage() {
           )}
 
           {kratzerResults.length > 0 && (
-            <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm">
-              <CardContent className="p-5 sm:p-6">
-                <div className="flex items-center gap-2 mb-4">
+            <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+              <CardContent className="p-4 sm:p-6">
+                <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
                   <Target className="w-5 h-5 text-orange-600" />
-                  <h2 className="text-xl sm:text-2xl font-black text-gray-900">
+                  <h2 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
                     Meine Kratzer-Turniere
                   </h2>
                 </div>
@@ -785,7 +780,7 @@ export default function MemberTournamentStatisticsPage() {
                   {kratzerResults.map((k) => (
                     <div
                       key={k.tournament_id}
-                      className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                      className="rounded-[20px] border border-slate-200 bg-slate-50/40 p-3.5 shadow-none transition-colors hover:bg-white sm:p-4"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="min-w-0">
@@ -793,11 +788,11 @@ export default function MemberTournamentStatisticsPage() {
                             <Badge variant="outline">Kratzer</Badge>
 
                             {k.winner_name === playerName ? (
-  <Badge className="bg-yellow-500 text-white">Sieger</Badge>
+  <Badge className="border border-amber-200 bg-amber-50 text-amber-700 shadow-none">Sieger</Badge>
 ) : k.is_eliminated === true ? (
-  <Badge className="bg-gray-600 text-white">Eliminiert</Badge>
+  <Badge className="border border-slate-200 bg-slate-100 text-slate-700 shadow-none">Eliminiert</Badge>
 ) : k.is_eliminated === false ? (
-  <Badge className="bg-green-600 text-white">Bis zum Ende dabei</Badge>
+  <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-none">Bis zum Ende dabei</Badge>
 ) : null}
 
                             {k.ligastatus && k.ligastatus !== "N/A" ? (
@@ -807,11 +802,11 @@ export default function MemberTournamentStatisticsPage() {
 ) : null}
                           </div>
 
-                          <div className="font-black text-gray-900">
+                          <div className="break-words font-black leading-snug text-slate-950">
                             {k.tournament_name}
                           </div>
 
-                          <div className="text-sm text-gray-600 mt-1">
+                          <div className="mt-1 text-sm font-medium text-slate-500">
                             {formatDate(k.date)}
                           </div>
                         </div>
@@ -833,15 +828,15 @@ export default function MemberTournamentStatisticsPage() {
             summerEntries.length === 0 &&
             dkoRankings.length === 0 &&
             kratzerResults.length === 0 && (
-              <Card className="rounded-3xl border border-gray-200 bg-white shadow-sm">
+              <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <Trophy className="w-6 h-6 text-orange-600 mt-0.5 flex-shrink-0" />
                     <div>
-                      <div className="font-black text-gray-900">
+                      <div className="break-words font-black leading-snug text-slate-950">
                         Noch keine Turnierdaten gefunden
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="mt-1 text-sm font-medium text-slate-500">
                         Sobald für dich Ergebnisse gespeichert wurden, erscheinen deine Turnierstatistiken hier automatisch.
                       </p>
                     </div>

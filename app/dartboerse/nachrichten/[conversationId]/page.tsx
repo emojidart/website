@@ -308,7 +308,7 @@ export default function UnterhaltungPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-[#f5f6f8] pb-24">
       <Header />
       <main className="mx-auto max-w-3xl px-4 pt-20">
         <Button asChild variant="outline" className="mb-4 rounded-xl">
@@ -318,7 +318,7 @@ export default function UnterhaltungPage() {
           </Link>
         </Button>
 
-        <div className="overflow-hidden rounded-[2rem] border bg-white shadow-sm">
+        <div className="overflow-hidden rounded-[28px] border border border-slate-200 bg-white shadow-none">
           <div className="border-b bg-slate-950 p-5 text-white">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -349,7 +349,7 @@ export default function UnterhaltungPage() {
                 <Button
                   type="button"
                   onClick={() => openOffer()}
-                  className="shrink-0 rounded-xl bg-orange-600 hover:bg-orange-700"
+                  className="shrink-0 rounded-xl bg-orange-500 hover:bg-orange-600"
                 >
                   <HandCoins className="mr-2 h-4 w-4" />
                   Preis anbieten
@@ -364,7 +364,7 @@ export default function UnterhaltungPage() {
             </div>
           ) : (
             <>
-              <div className="h-[55vh] space-y-3 overflow-y-auto bg-slate-50 p-4 sm:p-6">
+              <div className="h-[55vh] space-y-3 overflow-y-auto bg-[#f5f6f8] p-4 sm:p-6">
                 {feed.length === 0 ? (
                   <div className="py-16 text-center text-sm text-slate-500">
                     Schreibe eine Nachricht oder gib direkt ein Preisangebot ab.
@@ -378,9 +378,9 @@ export default function UnterhaltungPage() {
                     return (
                       <div key={`m-${message.id}`} className={`flex ${own ? "justify-end" : "justify-start"}`}>
                         <div
-                          className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                          className={`max-w-[85%] rounded-[18px] px-4 py-3 text-sm shadow-sm ${
                             own
-                              ? "rounded-br-md bg-orange-600 text-white"
+                              ? "rounded-br-md bg-orange-500 text-white"
                               : "rounded-bl-md border bg-white text-slate-800"
                           }`}
                         >
@@ -408,7 +408,7 @@ export default function UnterhaltungPage() {
 
                   return (
                     <div key={`o-${offer.id}`} className={`flex ${own ? "justify-end" : "justify-start"}`}>
-                      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-sm">
+                      <div className="w-full max-w-md overflow-hidden rounded-[18px] border border-orange-200 border border-slate-200 bg-white shadow-none">
                         <div className="flex items-center justify-between gap-3 bg-orange-50 px-4 py-3">
                           <div className="flex items-center gap-2 font-black text-orange-900">
                             <BadgeEuro className="h-5 w-5" />
@@ -485,7 +485,7 @@ export default function UnterhaltungPage() {
 
               <div className="border-t p-4">
                 {offerOpen ? (
-                  <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                  <div className="mb-4 rounded-[18px] border border-orange-200 bg-orange-50 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <div className="font-black text-slate-900">
@@ -519,7 +519,7 @@ export default function UnterhaltungPage() {
                         type="button"
                         onClick={() => void submitOffer()}
                         disabled={savingOffer || !offerAmount.trim()}
-                        className="rounded-xl bg-orange-600 hover:bg-orange-700"
+                        className="rounded-xl bg-orange-500 hover:bg-orange-600"
                       >
                         {savingOffer ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <HandCoins className="mr-2 h-4 w-4" />}
                         Senden
@@ -533,7 +533,7 @@ export default function UnterhaltungPage() {
                   onChange={(e) => setText(e.target.value)}
                   maxLength={2000}
                   placeholder="Nachricht schreiben …"
-                  className="min-h-[90px] rounded-2xl"
+                  className="min-h-[90px] rounded-[18px]"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault()
@@ -561,7 +561,7 @@ export default function UnterhaltungPage() {
                     <Button
                       onClick={() => void send()}
                       disabled={sending || !text.trim()}
-                      className="rounded-xl bg-orange-600 hover:bg-orange-700"
+                      className="rounded-xl bg-orange-500 hover:bg-orange-600"
                     >
                       {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                       Senden

@@ -11,7 +11,7 @@ import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { Crown, ShieldCheck, Users, Target, Hand, Trash2, Loader2 } from "lucide-react"
+import { Crown, ShieldCheck, Users, Target, Trash2, Loader2 } from "lucide-react"
 import { CaptainPlayerManagement } from "@/components/captain-player-management"
 
 import {
@@ -189,7 +189,7 @@ export default function MeineTeamsAppPage() {
       case "Co-Captain":
         return <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
       default:
-        return <Target className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+        return null
     }
   }
 
@@ -298,19 +298,19 @@ export default function MeineTeamsAppPage() {
 
   if (authLoading || membershipLoading || loading) {
     return (
-      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
         <Header variant="app" title="Meine Teams" subtitle="Übersicht & Mitglieder" backHref="/member-profile-app" />
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
           <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-slate-200 bg-white px-8 py-9 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:px-10">
               <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+                <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl animate-pulse" />
+                <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
               </div>
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">Teams werden geladen</p>
-                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+                <p className="text-lg font-bold text-slate-950">Teams werden geladen</p>
+                <p className="text-sm text-slate-500 mt-1">Bitte kurz warten…</p>
               </div>
             </div>
           </div>
@@ -323,16 +323,16 @@ export default function MeineTeamsAppPage() {
 
   if (error || !profile) {
     return (
-      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
         <Header variant="app" title="Meine Teams" subtitle="Übersicht & Mitglieder" backHref="/member-profile-app" />
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-gray-200/70 p-6 text-center">
+          <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200/70 p-6 text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 shadow-md">
               <Users className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-lg font-extrabold text-gray-900 mb-1">{error || "Profil nicht gefunden"}</h1>
-            <p className="text-sm text-gray-500 mb-4">Bitte versuche es erneut oder gehe zurück.</p>
+            <h1 className="text-lg font-extrabold text-slate-950 mb-1">{error || "Profil nicht gefunden"}</h1>
+            <p className="text-sm text-slate-500 mb-4">Bitte versuche es erneut oder gehe zurück.</p>
             <Button className="rounded-xl bg-orange-600 hover:bg-orange-700" onClick={() => router.push("/member-profile-app")}>
               Zurück zum Profil
             </Button>
@@ -346,7 +346,7 @@ export default function MeineTeamsAppPage() {
 
   if (!canSeeEDart && !canSeeSteeldart) {
     return (
-      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
         <Header
           variant="app"
           title="Meine Teams"
@@ -361,11 +361,11 @@ export default function MeineTeamsAppPage() {
                 <ShieldCheck className="h-7 w-7 text-orange-600" />
               </div>
 
-              <h1 className="mt-4 text-xl font-black text-gray-900">
+              <h1 className="mt-4 text-xl font-black text-slate-950">
                 Kein Liga-Paket gebucht
               </h1>
 
-              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-gray-600">
+              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-slate-600">
                 Für deine Mannschaftsbereiche benötigst du mindestens das E-Dart- oder Steeldart-Liga-Paket.
               </p>
 
@@ -386,235 +386,310 @@ export default function MeineTeamsAppPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
       <Header variant="app" title="Meine Teams" subtitle="Übersicht & Mitglieder" backHref="/member-profile-app" />
 
       {/*  */}
       {/*  */}
-      <main className="pt-12 sm:pt-14">
-  <div className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+      <main className="w-full pt-14 sm:pt-16">
+  <div className="w-full max-w-none px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
         {/* */}
        
           {/* Page Header */}
-          <div className="mb-4 rounded-3xl border border-gray-200/70 bg-white shadow-xl ring-1 ring-black/5 p-5 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-gradient-to-br from-orange-500 to-orange-700 shadow-md">
-                <Users className="h-7 w-7 text-white" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900">Meine Teams</h1>
-                <p className="text-sm sm:text-base text-gray-500">Übersicht deiner Teams und Teammitglieder</p>
+          <section className="relative mb-4 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+            <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+              <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                <div className="min-w-0">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                    Mannschaften
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] text-orange-400 sm:h-14 sm:w-14">
+                      <Users className="h-6 w-6 sm:h-7 sm:w-7" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white/50">Deine Teams auf einen Blick</p>
+                      <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Meine Teams</h1>
+                    </div>
+                  </div>
+                  <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-white/55 sm:text-base">
+                    Teams, Rollen und Mitglieder übersichtlich an einem Ort.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row xl:flex-col xl:items-end">
+                  <div className="grid grid-cols-2 gap-2 sm:min-w-[300px]">
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-3 sm:p-4">
+                      <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[10px]">Teams</div>
+                      <div className="mt-2 text-2xl font-black text-white sm:text-3xl">{teamMemberships.length}</div>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-3 sm:p-4">
+                      <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[10px]">Mitglieder</div>
+                      <div className="mt-2 text-2xl font-black text-white sm:text-3xl">{teamMembers.length}</div>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push("/member-profile-app")}
+                    className="h-11 w-full rounded-xl border-white/10 bg-white/10 px-4 font-black text-white shadow-none hover:bg-white/15 hover:text-white sm:w-auto"
+                  >
+                    Zurück zum Profil
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            {canSeeEDart ? (
-              <Badge variant="outline" className="rounded-full border-orange-200 bg-orange-50 text-orange-700">
-                E-Dart freigeschaltet
-              </Badge>
-            ) : null}
+          <section className="mb-4 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_14px_44px_-34px_rgba(15,23,42,0.5)] sm:mb-5 sm:rounded-[26px]">
+            <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Liga-Zugriff</div>
+                <div className="mt-1 text-sm font-black text-slate-950">Freigeschaltete Bereiche</div>
+              </div>
 
-            {canSeeSteeldart ? (
-              <Badge variant="outline" className="rounded-full border-slate-300 bg-slate-100 text-slate-700">
-                Steeldart freigeschaltet
-              </Badge>
-            ) : null}
+              <div className="flex flex-wrap items-center gap-2">
+                {canSeeEDart ? (
+                  <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 font-bold text-slate-700">
+                    E-Dart freigeschaltet
+                  </Badge>
+                ) : null}
 
-            {canSeeEDart && !canSeeSteeldart ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/member-membership")}
-                className="rounded-full border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
-              >
-                Steeldart dazubuchen
-              </Button>
-            ) : null}
+                {canSeeSteeldart ? (
+                  <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 font-bold text-slate-700">
+                    Steeldart freigeschaltet
+                  </Badge>
+                ) : null}
 
-            {canSeeSteeldart && !canSeeEDart ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/member-membership")}
-                className="rounded-full border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
-              >
-                E-Dart dazubuchen
-              </Button>
-            ) : null}
-          </div>
+                {canSeeEDart && !canSeeSteeldart ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push("/member-membership")}
+                    className="h-9 rounded-full border-orange-200 bg-orange-50 px-3 font-bold text-orange-700 hover:bg-orange-100"
+                  >
+                    Steeldart dazubuchen
+                  </Button>
+                ) : null}
+
+                {canSeeSteeldart && !canSeeEDart ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push("/member-membership")}
+                    className="h-9 rounded-full border-orange-200 bg-orange-50 px-3 font-bold text-orange-700 hover:bg-orange-100"
+                  >
+                    E-Dart dazubuchen
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          </section>
 
           {/* Captain Player Management */}
           {profile?.player_id && (
-            <div className="mb-4">
+            <div className="mb-4 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-42px_rgba(15,23,42,0.5)] sm:mb-5 sm:rounded-[28px]">
               <CaptainPlayerManagement onPlayerAdded={fetchTeamData} />
             </div>
           )}
 
           {/* Team Memberships */}
-          <Card className="shadow-xl border-0 bg-white mb-4">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-extrabold">
-                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
-                Meine Teams
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <section className="mb-4 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:mb-5 sm:rounded-[30px]">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+                  <Users className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-xs">Deine Mannschaften</div>
+                  <h2 className="mt-0.5 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Meine Teams</h2>
+                </div>
+              </div>
+
+              <div className="flex h-10 min-w-10 items-center justify-center rounded-2xl bg-slate-950 px-3 text-sm font-black text-white">
+                {teamMemberships.length}
+              </div>
+            </div>
+
+            <div className="p-3 sm:p-5 lg:p-6">
               {teamMemberships.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-sm sm:text-base">Du bist noch keinem Team zugeordnet.</p>
-                  <p className="text-xs sm:text-sm mt-2">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[22px] border border-dashed border-slate-200 bg-slate-50/70 px-6 py-10 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white">
+                    <Users className="h-5 w-5 text-slate-300" />
+                  </div>
+                  <p className="mt-4 text-sm font-black text-slate-700 sm:text-base">Du bist noch keinem Team zugeordnet.</p>
+                  <p className="mt-1 text-xs font-medium text-slate-400 sm:text-sm">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {teamMemberships.map((membership) => (
-                    <div
+                    <article
                       key={membership.id}
                       className={[
-                        "rounded-2xl border bg-white ring-1 ring-black/5 shadow-sm p-4",
-                        membership.left_at ? "opacity-60 bg-gray-50 border-gray-200" : "border-gray-200 hover:border-orange-300",
-                        "transition-colors",
+                        "group relative overflow-hidden rounded-[22px] border bg-white shadow-[0_14px_42px_-34px_rgba(15,23,42,0.55)] transition-all",
+                        membership.left_at
+                          ? "border-slate-200 bg-slate-50/70 opacity-65"
+                          : "border-slate-200 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_20px_54px_-34px_rgba(15,23,42,0.5)]",
                       ].join(" ")}
                     >
-                      <div className="flex items-center gap-3">
-                        {membership.teams?.logo_url ? (
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
-                            <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-lg">
-                              {membership.teams.name?.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                        ) : (
-                          <div className="h-12 w-12 bg-orange-100 rounded-2xl flex items-center justify-center">
-                            <Target className="h-6 w-6 text-orange-600" />
-                          </div>
-                        )}
+                      <div className="h-1 w-full bg-slate-950" />
 
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-extrabold text-sm sm:text-base text-gray-900 truncate">
-                            {membership.teams?.name || "Unbekanntes Team"}
-                          </h3>
-                          <div className="mt-1 flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1">
-                              {getRoleIcon(membership.role)}
-                              <Badge className={`text-xs border ${getRoleBadgeColor(membership.role)}`}>
-                                {getRoleText(membership.role)}
-                              </Badge>
-                            </span>
+                      <div className="p-4 sm:p-5">
+                        <div className="flex items-start gap-3.5">
+                          {membership.teams?.logo_url ? (
+                            <Avatar className="h-14 w-14 shrink-0 ring-1 ring-slate-200">
+                              <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
+                              <AvatarFallback className="bg-orange-50 text-lg font-black text-orange-700">
+                                {membership.teams.name?.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                          ) : (
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+                              <Target className="h-6 w-6 text-orange-600" />
+                            </div>
+                          )}
 
-                            <Badge
-                              variant="outline"
-                              className={
-                                membership.teams?.dart_type === "steeldart"
-                                  ? "text-xs border-slate-300 bg-slate-100 text-slate-700"
-                                  : "text-xs border-orange-200 bg-orange-50 text-orange-700"
-                              }
-                            >
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
                               {membership.teams?.dart_type === "steeldart" ? "Steeldart" : "E-Dart"}
-                            </Badge>
-
-                            {membership.left_at && (
-                              <Badge variant="outline" className="text-[10px] sm:text-xs border-gray-300 text-gray-600">
-                                Ehemalig seit{" "}
-                                {membership.left_at ? new Date(membership.left_at).toLocaleDateString("de-DE") : ""}
-                              </Badge>
-                            )}
+                            </div>
+                            <h3 className="mt-1 break-words text-lg font-black leading-tight tracking-tight text-slate-950">
+                              {membership.teams?.name || "Unbekanntes Team"}
+                            </h3>
                           </div>
                         </div>
+
+                        <div className="mt-5 grid grid-cols-2 gap-2">
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Rolle</div>
+                            <div className="mt-2 flex items-center gap-2">
+                              {getRoleIcon(membership.role)}
+                              <span className="text-sm font-black text-slate-800">{getRoleText(membership.role)}</span>
+                            </div>
+                          </div>
+
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Dartart</div>
+                            <div className="mt-2 text-sm font-black text-slate-800">
+                              {membership.teams?.dart_type === "steeldart" ? "Steeldart" : "E-Dart"}
+                            </div>
+                          </div>
+                        </div>
+
+                        {membership.left_at && (
+                          <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs font-bold text-slate-500">
+                            Ehemalig seit {new Date(membership.left_at).toLocaleDateString("de-DE")}
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    </article>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
           {/* Team Members */}
-          <Card className="shadow-xl border-0 bg-white">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-extrabold">
-                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
-                Meine Teammitglieder
-              </CardTitle>
+          <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[30px]">
+            <div className="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+                    <Users className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-xs">Kader</div>
+                    <h2 className="mt-0.5 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Meine Teammitglieder</h2>
+                  </div>
+                </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant={showFormerMembers ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowFormerMembers((v) => !v)}
-                  className={[
-                    "rounded-xl",
-                    showFormerMembers ? "bg-orange-600 hover:bg-orange-700" : "border-gray-200 bg-white",
-                  ].join(" ")}
-                >
-                  {showFormerMembers ? "Ehemalige: AN" : "Ehemalige: AUS"}
-                </Button>
-                <span className="text-xs text-gray-500">
-                  {showFormerMembers ? "Zeigt aktive + entfernte Spieler (Historie)" : "Zeigt nur aktive Spieler"}
-                </span>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Button
+                    type="button"
+                    variant={showFormerMembers ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowFormerMembers((v) => !v)}
+                    className={[
+                      "h-10 rounded-xl px-4 font-black shadow-none",
+                      showFormerMembers
+                        ? "bg-slate-950 text-white hover:bg-slate-800"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                    ].join(" ")}
+                  >
+                    {showFormerMembers ? "Ehemalige: AN" : "Ehemalige: AUS"}
+                  </Button>
+                  <span className="text-xs font-medium text-slate-400">
+                    {showFormerMembers ? "Zeigt aktive + entfernte Spieler (Historie)" : "Zeigt nur aktive Spieler"}
+                  </span>
+                </div>
               </div>
-            </CardHeader>
+            </div>
 
-            <CardContent>
+            <div className="p-3 sm:p-5 lg:p-6">
               {teamMembers.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-sm sm:text-base">Keine Teammitglieder gefunden.</p>
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[22px] border border-dashed border-slate-200 bg-slate-50/70 px-6 py-10 text-center">
+                  <Users className="h-6 w-6 text-slate-300" />
+                  <p className="mt-3 text-sm font-black text-slate-700 sm:text-base">Keine Teammitglieder gefunden.</p>
                 </div>
               ) : (
-                <div className="space-y-5 sm:space-y-6">
+                <div className="space-y-4 sm:space-y-5">
                   {teamMemberships.map((membership) => {
                     const teamMembersForThisTeam = teamMembers.filter((member) => member.team_id === membership.team_id)
                     const canManage = canManageTeam(membership.team_id)
 
                     return (
-                      <div key={membership.id} className="rounded-2xl border border-gray-200 bg-gray-50/50 p-4">
-                        <div className="mb-3 flex items-center gap-3">
+                      <section key={membership.id} className="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50/50">
+                        <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-3.5 py-3.5 sm:px-4">
                           {membership.teams?.logo_url ? (
-                            <Avatar className="h-10 w-10">
+                            <Avatar className="h-11 w-11 shrink-0 ring-1 ring-slate-200">
                               <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
-                              <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-sm">
+                              <AvatarFallback className="bg-orange-50 text-sm font-black text-orange-700">
                                 {membership.teams.name?.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
                           ) : (
-                            <div className="h-10 w-10 bg-orange-100 rounded-2xl flex items-center justify-center">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
                               <Target className="h-5 w-5 text-orange-600" />
                             </div>
                           )}
 
-                          <h3 className="flex-1 min-w-0 truncate font-extrabold text-base sm:text-lg text-gray-900">
-                            {membership.teams?.name || "Unbekanntes Team"}
-                          </h3>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                              {membership.teams?.dart_type === "steeldart" ? "Steeldart-Team" : "E-Dart-Team"}
+                            </div>
+                            <h3 className="mt-0.5 break-words text-base font-black leading-tight text-slate-950 sm:text-lg">
+                              {membership.teams?.name || "Unbekanntes Team"}
+                            </h3>
+                          </div>
 
-                          <Badge variant="outline" className="text-xs border-gray-300 bg-white">
+                          <div className="flex h-9 min-w-9 items-center justify-center rounded-xl bg-slate-950 px-2.5 text-xs font-black text-white">
                             {teamMembersForThisTeam.length}
-                          </Badge>
+                          </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                        <div className="grid gap-2.5 p-3 sm:grid-cols-2 sm:p-4 xl:grid-cols-3">
                           {teamMembersForThisTeam.map((member) => {
                             const isMe = member.player_id === profile?.player_id
                             const showRemove = canManage && !isMe
 
                             return (
-                              <div
+                              <article
                                 key={member.id}
                                 className={[
-                                  "rounded-2xl border ring-1 ring-black/5 bg-white p-3",
+                                  "group relative overflow-hidden rounded-[18px] border bg-white p-3.5 shadow-[0_10px_30px_-26px_rgba(15,23,42,0.45)]",
                                   member.left_at
-                                    ? "border-gray-200 opacity-60"
+                                    ? "border-slate-200 opacity-60"
                                     : isMe
-                                      ? "border-orange-300 bg-orange-50"
-                                      : "border-gray-200",
+                                      ? "border-orange-200 ring-1 ring-orange-100"
+                                      : "border-slate-200 hover:border-slate-300",
                                 ].join(" ")}
                               >
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Avatar className="h-8 w-8">
+                                <div className="flex items-start gap-3">
+                                  <Avatar className="h-11 w-11 shrink-0 ring-1 ring-slate-200">
                                     <AvatarImage
                                       src={
                                         member.club_players?.photo_url ||
@@ -622,25 +697,28 @@ export default function MeineTeamsAppPage() {
                                         "/placeholder.svg"
                                       }
                                     />
-                                    <AvatarFallback className="text-xs bg-orange-100 text-orange-700">
+                                    <AvatarFallback className="bg-orange-50 text-sm font-black text-orange-700">
                                       {member.club_players?.name?.charAt(0) || "?"}
                                     </AvatarFallback>
                                   </Avatar>
 
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-semibold text-xs sm:text-sm text-gray-900 truncate">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="break-words text-sm font-black leading-snug text-slate-950">
                                       {member.club_players?.name || "Unbekannt"}
-                                      {isMe && <span className="text-orange-600 ml-1">(Du)</span>}
+                                      {isMe && <span className="ml-1 text-orange-600">(Du)</span>}
+                                    </div>
+
+                                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                      <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-black text-slate-600 shadow-none">
+                                        {getRoleIcon(member.role)}
+                                        {getRoleText(member.role)}
+                                      </span>
+
                                       {member.left_at && (
-                                        <span className="ml-2 inline-flex items-center rounded-full bg-gray-100 border border-gray-300 px-2 py-0.5 text-[11px] font-bold text-gray-700">
+                                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-500">
                                           Ehemalig seit {new Date(member.left_at).toLocaleDateString("de-DE")}
                                         </span>
                                       )}
-                                    </div>
-
-                                    <div className="flex items-center gap-1">
-                                      {getRoleIcon(member.role)}
-                                      <span className="text-[10px] sm:text-xs text-gray-600">{getRoleText(member.role)}</span>
                                     </div>
                                   </div>
 
@@ -648,7 +726,7 @@ export default function MeineTeamsAppPage() {
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      className="h-8 px-2 rounded-xl border-gray-200 bg-white"
+                                      className="h-9 w-9 shrink-0 rounded-xl border-slate-200 bg-white p-0 shadow-none hover:border-red-200 hover:bg-red-50"
                                       disabled={!!removingMemberId}
                                       onClick={() =>
                                         openRemoveDialog({
@@ -661,28 +739,23 @@ export default function MeineTeamsAppPage() {
                                       }
                                       title="Aus Team entfernen"
                                     >
-                                      <Trash2 className="h-4 w-4 text-orange-600" />
+                                      <Trash2 className="h-4 w-4 text-red-500" />
                                     </Button>
                                   )}
                                 </div>
 
-                                {member.club_players?.throwing_hand && (
-                                  <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
-                                    <Hand className="h-3 w-3" />
-                                    {member.club_players.throwing_hand}
-                                  </div>
-                                )}
-                              </div>
+
+                              </article>
                             )
                           })}
                         </div>
-                      </div>
+                      </section>
                     )
                   })}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
           <AlertDialog
             open={removeDialogOpen}
@@ -692,8 +765,8 @@ export default function MeineTeamsAppPage() {
               if (!open) setRemoveTarget(null)
             }}
           >
-            <AlertDialogContent className="sm:max-w-[450px] rounded-2xl">
-              <AlertDialogHeader>
+            <AlertDialogContent className="w-[94vw] max-w-md overflow-hidden rounded-[24px] border border-slate-200 bg-white p-0 shadow-[0_30px_90px_-38px_rgba(15,23,42,0.55)] sm:max-w-[450px]">
+              <AlertDialogHeader className="border-b border-slate-100 px-5 py-5">
                 <AlertDialogTitle>Spieler wirklich aus der Mannschaft entfernen?</AlertDialogTitle>
                 <AlertDialogDescription>
                   {removeTarget ? (
@@ -707,8 +780,8 @@ export default function MeineTeamsAppPage() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
 
-              <AlertDialogFooter className="gap-2 sm:gap-0">
-                <AlertDialogCancel disabled={!!removingMemberId}>Abbrechen</AlertDialogCancel>
+              <AlertDialogFooter className="gap-2 px-5 pb-5 pt-4 sm:gap-2">
+                <AlertDialogCancel disabled={!!removingMemberId} className="h-10 rounded-xl border-slate-200 font-bold">Abbrechen</AlertDialogCancel>
 
                 <AlertDialogAction
                   disabled={!removeTarget || !!removingMemberId}

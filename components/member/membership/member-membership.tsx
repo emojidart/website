@@ -25,7 +25,7 @@ import {
   Landmark,
   Banknote,
   Gift,
-  Home,
+  ArrowLeft,
   UserRound,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -809,50 +809,60 @@ export function MemberMembership() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50">
-              <WalletCards className="h-6 w-6 text-orange-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-gray-900">Meine Mitgliedschaft</h1>
-              <p className="mt-1 text-sm font-semibold text-gray-600">
+    <div className="w-full min-w-0 space-y-4 overflow-x-hidden px-3 py-3 pb-24 sm:space-y-5 sm:px-6 sm:py-6 sm:pb-10 lg:px-8 xl:px-10 2xl:px-12">
+      <section className="relative min-w-0 overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 shadow-[0_24px_80px_-36px_rgba(15,23,42,0.7)] sm:rounded-[30px]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(249,115,22,0.20),transparent_28%),radial-gradient(circle_at_85%_0%,rgba(255,255,255,0.08),transparent_28%)]" />
+        <div className="relative px-4 py-5 sm:px-7 sm:py-7 lg:px-8 lg:py-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-orange-400 backdrop-blur-sm sm:h-12 sm:w-12">
+                  <WalletCards className="h-5 w-5 sm:h-6 sm:w-6" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-400 sm:text-xs">
+                    Mitgliedschaft
+                  </div>
+                  <h1 className="mt-1 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl lg:text-4xl">
+                    Meine Mitgliedschaft
+                  </h1>
+                </div>
+              </div>
+
+              <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-slate-400 sm:text-base">
                 {playerName
-                  ? `${playerName} · Paket, Module und Zahlungsweise verwalten`
-                  : "Paket, Module und Zahlungsweise verwalten"}
+                  ? `${playerName} · Leistungen, Laufzeit und Zahlung auf einen Blick`
+                  : "Leistungen, Laufzeit und Zahlung auf einen Blick"}
               </p>
             </div>
-          </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" className="rounded-xl">
-              <Link href="/member-dashboard-app">
-                <Home className="mr-2 h-4 w-4" />
-                Startseite
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="rounded-xl">
-              <Link href="/member-profile-app">
-                <UserRound className="mr-2 h-4 w-4" />
-                Mein Profil
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void loadData()}
-              disabled={loading}
-              className="rounded-xl"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Neu laden
-            </Button>
+            <div className="grid grid-cols-[1fr_auto] gap-2 sm:flex sm:w-auto sm:items-center">
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 rounded-xl border-white/10 bg-white/10 px-4 font-bold text-white shadow-none backdrop-blur-sm hover:bg-white/15 hover:text-white"
+              >
+                <Link href="/member-profile-app">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Zurück zum Profil
+                </Link>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void loadData()}
+                disabled={loading}
+                className="h-11 w-11 rounded-xl border-white/10 bg-white/10 p-0 text-white shadow-none backdrop-blur-sm hover:bg-white/15 hover:text-white"
+                title="Neu laden"
+              >
+                <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                <span className="sr-only">Neu laden</span>
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {routeNotice &&
       !(
@@ -861,7 +871,7 @@ export function MemberMembership() {
       ) ? (
         <div
           className={cn(
-            "rounded-2xl border px-4 py-3 text-sm font-bold",
+            "rounded-2xl border px-4 py-3.5 text-sm font-bold shadow-sm",
             routeNotice.type === "success" && "border-green-200 bg-green-50 text-green-800",
             routeNotice.type === "info" && "border-orange-200 bg-orange-50 text-orange-900",
           )}
@@ -878,7 +888,7 @@ export function MemberMembership() {
       {message ? (
         <div
           className={cn(
-            "rounded-2xl border px-4 py-3 text-sm font-bold",
+            "rounded-2xl border px-4 py-3.5 text-sm font-bold shadow-sm",
             message.type === "success" && "border-green-200 bg-green-50 text-green-800",
             message.type === "error" && "border-red-200 bg-red-50 text-red-800",
             message.type === "info" && "border-blue-200 bg-blue-50 text-blue-800",
@@ -889,12 +899,20 @@ export function MemberMembership() {
       ) : null}
 
       {!showPackageEditor && membership && !showCancelForm ? (
-        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <CardHeader>
-            <CardTitle>Aktuelles Paket</CardTitle>
-            <CardDescription>
-              Hier siehst du deine aktiven Leistungen. Zusatzmodule kannst du jederzeit über „Paket ändern“ hinzufügen oder entfernen.
-            </CardDescription>
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
+          <CardHeader className="border-b border-slate-100 px-4 py-5 sm:px-7 sm:py-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-600 sm:text-xs">Dein Paket</div>
+                <CardTitle className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Aktuelle Leistungen</CardTitle>
+                <CardDescription className="mt-1.5 max-w-2xl text-sm font-medium leading-6 text-slate-500">
+                  Alles, was derzeit für dich freigeschaltet ist.
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="w-fit rounded-full border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                Aktiv
+              </Badge>
+            </div>
           </CardHeader>
 
           <CardContent className="space-y-5">
@@ -927,33 +945,34 @@ export function MemberMembership() {
                 .map((module) => (
                   <div
                     key={module.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3"
+                    className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3.5 transition-colors hover:bg-white hover:shadow-sm"
                   >
                     <div>
-                      <div className="font-black text-green-900">{module.name}</div>
+                      <div className="font-black text-slate-900">{module.name}</div>
                       {module.description ? (
-                        <div className="mt-1 text-sm font-semibold text-green-700">
+                        <div className="mt-1 text-sm font-medium leading-5 text-slate-500">
                           {module.description}
                         </div>
                       ) : null}
                     </div>
-                    <Badge className="shrink-0 rounded-full bg-green-600 text-white">
+                    <Badge className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-none hover:bg-emerald-50">
                       {hasScheduledCancellation ? `Aktiv bis ${membershipEndLabel}` : "Aktiv"}
                     </Badge>
                   </div>
                 ))}
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <div className="text-xs font-black uppercase tracking-wide text-gray-500">
+            <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-4 sm:p-5">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_0%,rgba(249,115,22,0.16),transparent_35%)]" />
+              <div className="relative text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 sm:text-xs">
                 Aktueller Beitrag
               </div>
-              <div className="mt-1 text-2xl font-black text-gray-900">
+              <div className="relative mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">
                 {membership.billing_cycle === "monthly"
                   ? `${formatEUR(currentMonthlyTotal)} / Monat`
                   : `${formatEUR(currentAnnualTotal)} / Jahr`}
               </div>
-              <div className="mt-1 text-sm font-semibold text-gray-600">
+              <div className="relative mt-1 text-sm font-semibold text-slate-400">
                 {paymentLabel(membership.payment_method)}
               </div>
             </div>
@@ -972,7 +991,7 @@ export function MemberMembership() {
                       setShowPackageEditor(true)
                       setMessage(null)
                     }}
-                    className="h-12 rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700"
+                    className="h-12 rounded-xl bg-slate-950 font-black text-white shadow-sm hover:bg-slate-800"
                   >
                     <WalletCards className="mr-2 h-4 w-4" />
                     Paket ändern
@@ -985,7 +1004,7 @@ export function MemberMembership() {
                       setShowCancelForm(true)
                       setMessage(null)
                     }}
-                    className="h-12 rounded-xl border-red-200 font-black text-red-700 hover:bg-red-50 hover:text-red-800"
+                    className="h-12 rounded-xl border-slate-200 bg-white font-black text-slate-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700"
                   >
                     <CalendarX className="mr-2 h-4 w-4" />
                     Komplette Mitgliedschaft kündigen
@@ -1002,7 +1021,7 @@ export function MemberMembership() {
       ) : null}
 
       {showPackageEditor && !isPendingCancellation ? (
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.5)] sm:rounded-[28px] sm:p-6">
           <div className="grid grid-cols-3 gap-2">
             {[
               { step: 1 as const, label: "Zahlung" },
@@ -1182,45 +1201,58 @@ export function MemberMembership() {
       ) : null}
 
       {activeTrials.length > 0 ? (
-        <Card className="rounded-2xl border border-purple-200 bg-purple-50 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-purple-900">
-              <Gift className="h-5 w-5 text-purple-600" />
-              Aktive Testfreischaltung
-            </CardTitle>
-            <CardDescription className="font-semibold text-purple-800">
-              Diese Bereiche sind für dich vorübergehend kostenlos freigeschaltet und werden nicht verrechnet.
-            </CardDescription>
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
+          <CardHeader className="border-b border-slate-100 px-4 py-5 sm:px-7 sm:py-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex min-w-0 items-center gap-2 text-lg font-black tracking-tight text-slate-950 sm:text-xl">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50 text-orange-600">
+                    <Gift className="h-4 w-4" />
+                  </span>
+                  Deine Testphase
+                </CardTitle>
+                <CardDescription className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-500">
+                  Während deiner Testphase kannst du die unten aufgeführten Bereiche ohne zusätzliche Kosten nutzen.
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="w-fit rounded-full border-orange-200 bg-orange-50 px-3 py-1 text-xs font-black text-orange-700">
+                Testzugang aktiv
+              </Badge>
+            </div>
           </CardHeader>
 
-          <CardContent className="space-y-2">
-            {activeTrials.map((trial) => {
-              const module = modules.find((item) => item.code === trial.module_code)
+          <CardContent className="px-4 py-4 sm:px-7 sm:py-5">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {activeTrials.map((trial) => {
+                const module = modules.find((item) => item.code === trial.module_code)
 
-              return (
-                <div
-                  key={trial.id}
-                  className="flex flex-col gap-1 rounded-xl border border-purple-200 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="font-black text-purple-900">
-                    {module?.name || trial.module_code}
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="w-fit rounded-full border-purple-200 bg-purple-50 text-purple-700"
+                return (
+                  <div
+                    key={trial.id}
+                    className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-3.5 sm:min-h-[76px] sm:px-4"
                   >
-                    TEST bis{" "}
-                    {new Date(`${trial.ends_on}T00:00:00`).toLocaleDateString("de-AT")}
-                  </Badge>
-                </div>
-              )
-            })}
+                    <div className="min-w-0">
+                      <div className="truncate text-[13px] font-black text-slate-900 sm:text-sm">
+                        {module?.name || trial.module_code}
+                      </div>
+                      <div className="mt-1 text-[11px] font-semibold text-slate-500 sm:text-xs">Kostenlos freigeschaltet</div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">bis</div>
+                      <div className="mt-0.5 whitespace-nowrap text-xs font-black text-slate-700 sm:text-sm">
+                        {new Date(`${trial.ends_on}T00:00:00`).toLocaleDateString("de-AT")}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </CardContent>
         </Card>
       ) : null}
 
       {showPackageEditor && !isPendingCancellation && wizardStep === 1 ? (
-        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
           <CardHeader>
             <CardTitle>1. Abrechnung & Zahlungsart</CardTitle>
             <CardDescription>
@@ -1237,7 +1269,7 @@ export function MemberMembership() {
                   onValueChange={(value) => handleBillingCycleChange(value as BillingCycle)}
                   disabled={!!pendingRequest}
                 >
-                  <SelectTrigger className="rounded-xl">
+                  <SelectTrigger className="rounded-xl border-slate-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1254,7 +1286,7 @@ export function MemberMembership() {
                   onValueChange={(value) => handlePaymentMethodChange(value as PaymentMethod)}
                   disabled={!!pendingRequest}
                 >
-                  <SelectTrigger className="rounded-xl">
+                  <SelectTrigger className="rounded-xl border-slate-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1281,7 +1313,7 @@ export function MemberMembership() {
       ) : null}
 
       {showPackageEditor && !isPendingCancellation && wizardStep === 2 ? (
-        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
           <CardHeader>
             <CardTitle>2. Dein Paket</CardTitle>
             <CardDescription>
@@ -1746,7 +1778,7 @@ export function MemberMembership() {
                     setCancelEndOn("")
                     setCancelNote("")
                   }}
-                  className="rounded-xl"
+                  className="rounded-xl border-slate-200"
                 >
                   Abbrechen
                 </Button>
@@ -1771,7 +1803,7 @@ export function MemberMembership() {
       ) : null}
 
       {showPackageEditor && !isPendingCancellation && wizardStep === 1 ? (
-        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
           <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="font-black text-gray-900">Zahlungsweise</div>
@@ -1808,7 +1840,7 @@ export function MemberMembership() {
       ) : null}
 
       {showPackageEditor && !isPendingCancellation && wizardStep === 2 ? (
-        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
           <CardContent className="p-5 sm:p-6">
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>

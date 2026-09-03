@@ -433,25 +433,25 @@ export default function TournamentHistoryDetailPage() {
   }, [matches])
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-20 text-slate-950">
       <Header />
 
       {/* fixed header offset */}
-      <main className="pt-12 sm:pt-14">
+      <main className="pt-14 sm:pt-16">
         <motion.div
-          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+          className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
           {/* Top back bar (Kontakt-Style sticky feel) */}
           <motion.div variants={itemVariants} className="mb-4">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm px-3 py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 rounded-[18px] border border-slate-200 bg-white px-3 py-2 shadow-[0_12px_36px_-32px_rgba(15,23,42,0.4)]">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => router.push("/tournament-history")}
-                className="gap-2 rounded-xl"
+                className="h-10 gap-2 rounded-xl border-slate-200 bg-white font-bold hover:bg-slate-50"
                 type="button"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -466,38 +466,41 @@ export default function TournamentHistoryDetailPage() {
           </motion.div>
 
           {/* App-Header Card (Kontakt look) */}
-          <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-              <div className="p-4 sm:p-5 flex items-start gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-                  <Trophy className="w-5 h-5 text-orange-600" />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-base sm:text-lg font-black line-clamp-2">{tournamentName}</h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Sieger: <span className="font-black text-gray-900">{winner ?? "—"}</span>
-                    {isKratzer && kratzerTotalRounds != null ? (
-                      <>
-                        {" "}
-                        • Runden: <span className="font-black text-gray-900">{kratzerTotalRounds}</span>
-                      </>
-                    ) : null}
-                  </p>
+          <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
+            <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
+              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+              <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                    <Trophy className="h-6 w-6 text-orange-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-white/50">{typeLabel(tournamentType)}</p>
+                    <h1 className="mt-1 line-clamp-2 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">{tournamentName}</h1>
+                    <p className="mt-3 text-sm font-medium text-white/60 sm:text-base">
+                      Sieger: <span className="font-black text-white">{winner ?? "—"}</span>
+                      {isKratzer && kratzerTotalRounds != null ? (
+                        <>
+                          {" "}
+                          • Runden: <span className="font-black text-white">{kratzerTotalRounds}</span>
+                        </>
+                      ) : null}
+                    </p>
 
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <Chip tone="blue">
-                      <Users className="w-3.5 h-3.5" />
-                      {participants} Teilnehmer
-                    </Chip>
-                    <Chip tone="slate">
-                      <Clock className="w-3.5 h-3.5" />
-                      Update: {formatDateTime(lastUpdate)}
-                    </Chip>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/70">
+                        <Users className="h-3.5 w-3.5 text-orange-300" />
+                        {participants} Teilnehmer
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/70">
+                        <Clock className="h-3.5 w-3.5 text-orange-300" />
+                        Update: {formatDateTime(lastUpdate)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
           </motion.div>
 
           {loading ? (
@@ -511,9 +514,9 @@ export default function TournamentHistoryDetailPage() {
               </Card>
             </motion.div>
           ) : (
-            <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+            <motion.div variants={itemVariants} className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,.85fr)_minmax(0,1.65fr)] xl:gap-5">
               {/* Resultate/Rangliste */}
-              <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white lg:col-span-1 overflow-hidden">
+              <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm sm:text-base font-black">
                     {isKratzer ? "Resultate" : "Rangliste"}
@@ -531,7 +534,7 @@ export default function TournamentHistoryDetailPage() {
                         .map((r) => (
                           <div
                             key={`${r.player_name}-${r.placement}`}
-                            className="rounded-2xl border border-gray-200 bg-white p-3"
+                            className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.35)]"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
@@ -576,7 +579,7 @@ export default function TournamentHistoryDetailPage() {
               </Card>
 
               {/* Matches / Info */}
-              <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white lg:col-span-2 overflow-hidden">
+              <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm sm:text-base font-black">{isKratzer ? "Info" : "Matches"}</CardTitle>
                 </CardHeader>
@@ -668,7 +671,7 @@ export default function TournamentHistoryDetailPage() {
                         return (
                           <div
                             key={m.match_id}
-                            className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-4"
+                            className="rounded-[18px] border border-slate-200 bg-white p-3 sm:p-4 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.35)]"
                           >
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                               <div className="min-w-0">

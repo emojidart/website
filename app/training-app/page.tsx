@@ -542,7 +542,7 @@ export default function TrainingPage() {
       case "Profi":
         return "bg-red-100 text-red-700 border-red-300"
       default:
-        return "bg-gray-100 text-gray-700 border-gray-300"
+        return "bg-gray-100 text-slate-700 border-gray-300"
     }
   }
 
@@ -556,20 +556,20 @@ export default function TrainingPage() {
   // ✅ NEU: schönes Loading + App-Header
   if (authLoading) {
     return (
-      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
         <Header variant="app" title="Dart Training" subtitle="Training & Fortschritt" backHref="/member-profile-app" />
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
           <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-slate-200 bg-white px-8 py-9 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:px-10">
               <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+                <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl animate-pulse" />
+                <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
               </div>
 
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">Daten werden geladen</p>
-                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+                <p className="text-lg font-bold text-slate-950">Daten werden geladen</p>
+                <p className="text-sm text-slate-500 mt-1">Bitte kurz warten…</p>
               </div>
             </div>
           </div>
@@ -583,66 +583,88 @@ export default function TrainingPage() {
   if (!session) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900 font-sans flex flex-col overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans flex flex-col">
       {/* ✅ NEU: App-Header (ersetzt Zurück-Button komplett) */}
       <Header variant="app" title="Dart Training" subtitle="Training & Fortschritt" backHref="/member-profile-app" />
 
-      <main className="pt-12 sm:pt-14">
-  <div className="mx-auto w-full px-4 py-4 pb-24 md:pb-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
-        <div className="text-center mb-4">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl mb-3 shadow-xl">
-            <Dumbbell className="h-7 w-7 text-white" />
+      <main className="w-full pt-14 sm:pt-16">
+  <div className="w-full max-w-none px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
+        <section className="relative mb-4 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+          <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                    <Dumbbell className="h-6 w-6 text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white/50">Training & Fortschritt</p>
+                    <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Dart Training</h1>
+                  </div>
+                </div>
+                <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-white/55 sm:text-base">
+                  Verbessere deine Fähigkeiten mit gezielten Trainingsübungen
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/member-profile-app")}
+                className="h-11 w-full rounded-xl border-white/10 bg-white/10 px-4 font-black text-white shadow-none hover:bg-white/15 hover:text-white sm:w-auto"
+              >
+                Zurück zum Profil
+              </Button>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Dart Training</h1>
-          <p className="text-base text-gray-600">Verbessere deine Fähigkeiten mit gezielten Trainingsübungen</p>
-        </div>
+        </section>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-600 flex items-center gap-1">
+          <Card className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_14px_42px_-34px_rgba(15,23,42,0.45)]">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-xs font-medium text-slate-600 flex items-center gap-1">
                 <BarChart3 className="h-3 w-3 text-orange-600" />
                 Gesamt Sessions
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{getTotalSessions()}</div>
+              <div className="text-2xl font-black tracking-tight text-slate-950">{getTotalSessions()}</div>
             </CardContent>
           </Card>
 
-          <Card className="border-red-200 bg-gradient-to-br from-red-50 to-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-600 flex items-center gap-1">
+          <Card className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_14px_42px_-34px_rgba(15,23,42,0.45)]">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-xs font-medium text-slate-600 flex items-center gap-1">
                 <Trophy className="h-3 w-3 text-red-600" />
                 Trainingsarten
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{trainingTypes.length}</div>
+              <div className="text-2xl font-black tracking-tight text-slate-950">{trainingTypes.length}</div>
             </CardContent>
           </Card>
 
-          <Card className="border-green-200 bg-gradient-to-br from-green-50 to-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-600 flex items-center gap-1">
+          <Card className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_14px_42px_-34px_rgba(15,23,42,0.45)]">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-xs font-medium text-slate-600 flex items-center gap-1">
                 <CheckCircle2 className="h-3 w-3 text-green-600" />
                 Abgeschlossen
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{sessions.filter((s) => s.completed).length}</div>
+              <div className="text-2xl font-black tracking-tight text-slate-950">{sessions.filter((s) => s.completed).length}</div>
             </CardContent>
           </Card>
 
-          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-600 flex items-center gap-1">
+          <Card className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_14px_42px_-34px_rgba(15,23,42,0.45)]">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-xs font-medium text-slate-600 flex items-center gap-1">
                 <Flame className="h-3 w-3 text-blue-600" />
                 Diese Woche
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-black tracking-tight text-slate-950">
                 {
                   sessions.filter((s) => {
                     const sessionDate = new Date(s.date)
@@ -657,14 +679,14 @@ export default function TrainingPage() {
         </div>
 
         <Tabs defaultValue="training" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 h-auto">
-            <TabsTrigger value="training" className="text-xs px-2 py-2">
+          <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-2xl border border-slate-200 bg-slate-100/80 p-1.5 shadow-none">
+            <TabsTrigger value="training" className="h-10 rounded-xl px-2 py-2 text-xs font-black text-slate-500 data-[state=active]:bg-slate-950 data-[state=active]:text-white">
               Training
             </TabsTrigger>
-            <TabsTrigger value="progress" className="text-xs px-2 py-2">
+            <TabsTrigger value="progress" className="h-10 rounded-xl px-2 py-2 text-xs font-black text-slate-500 data-[state=active]:bg-slate-950 data-[state=active]:text-white">
               Fortschritt
             </TabsTrigger>
-            <TabsTrigger value="tips" className="text-xs px-2 py-2">
+            <TabsTrigger value="tips" className="h-10 rounded-xl px-2 py-2 text-xs font-black text-slate-500 data-[state=active]:bg-slate-950 data-[state=active]:text-white">
               Tipps
             </TabsTrigger>
           </TabsList>
@@ -672,8 +694,8 @@ export default function TrainingPage() {
           <TabsContent value="training" className="space-y-4">
             {isRecording && selectedTraining ? (
               <div className="space-y-3">
-                <Card className="border-2 border-orange-500 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 pb-3">
+                <Card className="overflow-hidden rounded-[24px] border border-orange-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)]">
+                  <CardHeader className="border-b border-slate-100 bg-slate-50/70 pb-3">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex-1 min-w-0">
                         <CardTitle className="text-lg flex items-center gap-2">
@@ -690,48 +712,48 @@ export default function TrainingPage() {
                 </Card>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <Card className="border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-white">
+                  <Card className="rounded-[20px] border border-slate-200 bg-white shadow-none">
                     <CardContent className="pt-4">
                       <div className="text-center">
                         <Clock className="h-6 w-6 mx-auto mb-1 text-orange-600" />
                         <div className="text-2xl font-bold text-orange-600">{formatTime(sessionTime)}</div>
-                        <div className="text-xs text-gray-600 mt-1">Zeit</div>
+                        <div className="text-xs text-slate-600 mt-1">Zeit</div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white">
+                  <Card className="rounded-[20px] border border-slate-200 bg-white shadow-none">
                     <CardContent className="pt-4">
                       <div className="text-center">
                         <CheckCircle2 className="h-6 w-6 mx-auto mb-1 text-green-600" />
                         <div className="text-2xl font-bold text-green-600">{currentScore}</div>
-                        <div className="text-xs text-gray-600 mt-1">Score</div>
+                        <div className="text-xs text-slate-600 mt-1">Score</div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+                  <Card className="rounded-[20px] border border-slate-200 bg-white shadow-none">
                     <CardContent className="pt-4">
                       <div className="text-center">
                         <Target className="h-6 w-6 mx-auto mb-1 text-blue-600" />
                         <div className="text-2xl font-bold text-blue-600">{dartsThrown}</div>
-                        <div className="text-xs text-gray-600 mt-1">Würfe</div>
+                        <div className="text-xs text-slate-600 mt-1">Würfe</div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white">
+                  <Card className="rounded-[20px] border border-slate-200 bg-white shadow-none">
                     <CardContent className="pt-4">
                       <div className="text-center">
                         <TrendingUp className="h-6 w-6 mx-auto mb-1 text-purple-600" />
                         <div className="text-2xl font-bold text-purple-600">{getAccuracy()}%</div>
-                        <div className="text-xs text-gray-600 mt-1">Genauigkeit</div>
+                        <div className="text-xs text-slate-600 mt-1">Genauigkeit</div>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
-                <Card className="border-2 border-gray-200">
+                <Card className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_16px_48px_-38px_rgba(15,23,42,0.45)]">
                   <CardHeader>
                     <CardTitle className="text-base">Live Training Session</CardTitle>
                   </CardHeader>
@@ -740,10 +762,10 @@ export default function TrainingPage() {
                       selectedTraining.id === "doubles-training" ||
                       selectedTraining.id === "triples-training") && (
                       <div className="text-center p-4 bg-gradient-to-br from-orange-100 to-red-100 rounded-xl border-2 border-orange-300">
-                        <div className="text-xs text-gray-600 mb-1">Aktuelles Ziel</div>
+                        <div className="text-xs text-slate-600 mb-1">Aktuelles Ziel</div>
                         <div className="text-5xl font-bold text-orange-600 mb-2">{currentTarget}</div>
                         <Progress value={(currentTarget / 20) * 100} className="h-2 max-w-md mx-auto" />
-                        <div className="text-xs text-gray-600 mt-1">{currentTarget} von 20</div>
+                        <div className="text-xs text-slate-600 mt-1">{currentTarget} von 20</div>
                       </div>
                     )}
 
@@ -777,7 +799,7 @@ export default function TrainingPage() {
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-center gap-3 p-3 bg-gray-50 rounded-lg border">
+                    <div className="flex items-center justify-center gap-3 p-3 bg-slate-50 rounded-lg border">
                       <Button
                         onClick={() => setCurrentScore(Math.max(0, currentScore - 1))}
                         variant="outline"
@@ -788,8 +810,8 @@ export default function TrainingPage() {
                         <Minus className="h-5 w-5" />
                       </Button>
                       <div className="text-center">
-                        <div className="text-xs text-gray-600">Manueller Score</div>
-                        <div className="text-2xl font-bold text-gray-900">{currentScore}</div>
+                        <div className="text-xs text-slate-600">Manueller Score</div>
+                        <div className="text-2xl font-bold text-slate-950">{currentScore}</div>
                       </div>
                       <Button
                         onClick={() => setCurrentScore(Math.min(selectedTraining.maxScore, currentScore + 1))}
@@ -835,7 +857,7 @@ export default function TrainingPage() {
 
                     {throwHistory.length > 0 && !isTrainingCompleted() && (
                       <div className="space-y-2">
-                        <h4 className="font-semibold text-xs text-gray-600">Letzte Würfe</h4>
+                        <h4 className="font-semibold text-xs text-slate-600">Letzte Würfe</h4>
                         <div className="flex flex-wrap gap-1">
                           {throwHistory
                             .slice(-10)
@@ -911,7 +933,7 @@ export default function TrainingPage() {
                           <>
                             <div className="space-y-2">
                               <div className="flex justify-between text-xs">
-                                <span className="text-gray-600">Bester Score:</span>
+                                <span className="text-slate-600">Bester Score:</span>
                                 <span className="font-bold text-green-600">
                                   {bestScore} / {training.maxScore}
                                 </span>
@@ -919,16 +941,16 @@ export default function TrainingPage() {
                               <Progress value={(bestScore / training.maxScore) * 100} className="h-2" />
                             </div>
                             <div className="flex justify-between text-xs pt-2 border-t">
-                              <span className="text-gray-600">Durchschnitt:</span>
+                              <span className="text-slate-600">Durchschnitt:</span>
                               <span className="font-semibold">{avgScore}</span>
                             </div>
                             <div className="flex justify-between text-xs">
-                              <span className="text-gray-600">Sessions:</span>
+                              <span className="text-slate-600">Sessions:</span>
                               <span className="font-semibold">{sessionCount}</span>
                             </div>
                           </>
                         ) : (
-                          <div className="text-center py-3 text-gray-500 text-xs">
+                          <div className="text-center py-3 text-slate-500 text-xs">
                             Noch keine Sessions aufgezeichnet
                           </div>
                         )}
@@ -999,7 +1021,7 @@ export default function TrainingPage() {
                       return (
                         <div
                           key={training.id}
-                          className="border rounded-lg p-4 space-y-3 hover:bg-gray-50 transition-colors"
+                          className="border rounded-lg p-4 space-y-3 hover:bg-slate-50 transition-colors"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -1008,7 +1030,7 @@ export default function TrainingPage() {
                               </div>
                               <div>
                                 <h3 className="font-bold text-base">{training.name}</h3>
-                                <p className="text-xs text-gray-600">{sessionCount} Sessions absolviert</p>
+                                <p className="text-xs text-slate-600">{sessionCount} Sessions absolviert</p>
                               </div>
                             </div>
                             <Badge className={getDifficultyColor(training.difficulty)}>{training.difficulty}</Badge>
@@ -1018,7 +1040,7 @@ export default function TrainingPage() {
                             <div className="space-y-2">
                               <div>
                                 <div className="flex justify-between text-xs mb-1">
-                                  <span className="text-gray-600">Fortschritt</span>
+                                  <span className="text-slate-600">Fortschritt</span>
                                   <span className="font-bold">{completionRate}%</span>
                                 </div>
                                 <Progress value={completionRate} className="h-2" />
@@ -1027,20 +1049,20 @@ export default function TrainingPage() {
                               <div className="grid grid-cols-3 gap-2 pt-2">
                                 <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
                                   <div className="text-xl font-bold text-green-600">{bestScore}</div>
-                                  <div className="text-xs text-gray-600 mt-1">Bester Score</div>
+                                  <div className="text-xs text-slate-600 mt-1">Bester Score</div>
                                 </div>
                                 <div className="text-center p-2 bg-blue-50 rounded-lg border border-blue-200">
                                   <div className="text-xl font-bold text-blue-600">{avgScore}</div>
-                                  <div className="text-xs text-gray-600 mt-1">Durchschnitt</div>
+                                  <div className="text-xs text-slate-600 mt-1">Durchschnitt</div>
                                 </div>
                                 <div className="text-center p-2 bg-orange-50 rounded-lg border border-orange-200">
                                   <div className="text-xl font-bold text-orange-600">{sessionCount}</div>
-                                  <div className="text-xs text-gray-600 mt-1">Sessions</div>
+                                  <div className="text-xs text-slate-600 mt-1">Sessions</div>
                                 </div>
                               </div>
                             </div>
                           ) : (
-                            <div className="text-center py-4 text-gray-500">
+                            <div className="text-center py-4 text-slate-500">
                               <Circle className="h-10 w-10 mx-auto mb-2 text-gray-300" />
                               <p className="text-xs">Noch keine Daten vorhanden</p>
                               <p className="text-xs text-gray-400 mt-1">Starte dein erstes Training!</p>
@@ -1070,7 +1092,7 @@ export default function TrainingPage() {
                             return (
                               <div
                                 key={session.id}
-                                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                                className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 transition-colors"
                               >
                                 <div className="flex items-center gap-3">
                                   <div className={`p-2 rounded-lg bg-${training.color}-100`}>
@@ -1078,7 +1100,7 @@ export default function TrainingPage() {
                                   </div>
                                   <div>
                                     <div className="font-semibold text-sm">{training.name}</div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-slate-500">
                                       {new Date(session.date).toLocaleDateString("de-DE", {
                                         day: "2-digit",
                                         month: "2-digit",
@@ -1092,7 +1114,7 @@ export default function TrainingPage() {
                                 <div className="flex items-center gap-3">
                                   <div className="text-right">
                                     <div className="text-xl font-bold text-orange-600">{session.score}</div>
-                                    <div className="text-xs text-gray-500">von {session.maxScore}</div>
+                                    <div className="text-xs text-slate-500">von {session.maxScore}</div>
                                   </div>
                                   <Button
                                     variant="ghost"
@@ -1130,7 +1152,7 @@ export default function TrainingPage() {
                     {loadingTeamStats ? (
                       <div className="space-y-3">
                         {[1, 2, 3].map((i) => (
-                          <div key={i} className="p-4 border-2 rounded-lg bg-gray-50 animate-pulse">
+                          <div key={i} className="p-4 border-2 rounded-lg bg-slate-50 animate-pulse">
                             <div className="flex items-center gap-3 mb-3">
                               <div className="w-8 h-8 rounded-full bg-gray-300" />
                               <div className="flex-1 space-y-2">
@@ -1147,7 +1169,7 @@ export default function TrainingPage() {
                         ))}
                       </div>
                     ) : teamStats.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
+                      <div className="text-center py-8 text-slate-500">
                         <Users className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                         <p className="text-sm">Noch keine Team-Daten verfügbar</p>
                       </div>
@@ -1167,7 +1189,7 @@ export default function TrainingPage() {
                               className={`p-4 border-2 rounded-lg transition-all ${
                                 member.user_id === session?.user?.id
                                   ? "border-orange-400 bg-orange-50"
-                                  : "border-gray-200 bg-white"
+                                  : "border-slate-200 bg-white"
                               }`}
                             >
                               <div className="flex items-center justify-between mb-3">
@@ -1177,10 +1199,10 @@ export default function TrainingPage() {
                                       index === 0
                                         ? "bg-yellow-400 text-yellow-900"
                                         : index === 1
-                                          ? "bg-gray-300 text-gray-700"
+                                          ? "bg-gray-300 text-slate-700"
                                           : index === 2
                                             ? "bg-orange-400 text-orange-900"
-                                            : "bg-gray-100 text-gray-600"
+                                            : "bg-gray-100 text-slate-600"
                                     }`}
                                   >
                                     {index + 1}
@@ -1192,7 +1214,7 @@ export default function TrainingPage() {
                                         <Badge className="bg-orange-600 text-white text-xs">Du</Badge>
                                       )}
                                     </h3>
-                                    <p className="text-xs text-gray-600">{member.total_sessions} Sessions</p>
+                                    <p className="text-xs text-slate-600">{member.total_sessions} Sessions</p>
                                   </div>
                                 </div>
                                 <Trophy className="h-6 w-6 text-orange-600" />
@@ -1208,39 +1230,39 @@ export default function TrainingPage() {
                                   const avgDuration = member.avg_duration[training.id] || 0
 
                                   return (
-                                    <div key={training.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                      <div className="font-semibold text-xs text-gray-700 mb-2 flex items-center gap-2">
+                                    <div key={training.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                      <div className="font-semibold text-xs text-slate-700 mb-2 flex items-center gap-2">
                                         <training.icon className="h-3 w-3" />
                                         {training.name}
                                       </div>
                                       <div className="grid grid-cols-3 gap-2">
                                         <div className="text-center p-2 bg-white rounded border border-green-200">
-                                          <div className="text-xs text-gray-600">Punkte</div>
+                                          <div className="text-xs text-slate-600">Punkte</div>
                                           <div className="text-base font-bold text-green-600">{bestScore}</div>
-                                          <div className="text-xs text-gray-500">Ø {avgScore}</div>
+                                          <div className="text-xs text-slate-500">Ø {avgScore}</div>
                                         </div>
                                         <div className="text-center p-2 bg-white rounded border border-blue-200">
-                                          <div className="text-xs text-gray-600">Treffer</div>
+                                          <div className="text-xs text-slate-600">Treffer</div>
                                           <div className="text-base font-bold text-blue-600">{totalHits}</div>
                                         </div>
                                         <div className="text-center p-2 bg-white rounded border border-red-200">
-                                          <div className="text-xs text-gray-600">Fehlwürfe</div>
+                                          <div className="text-xs text-slate-600">Fehlwürfe</div>
                                           <div className="text-base font-bold text-red-600">{totalMisses}</div>
                                         </div>
                                         <div className="text-center p-2 bg-white rounded border border-purple-200">
-                                          <div className="text-xs text-gray-600">Genauigkeit</div>
+                                          <div className="text-xs text-slate-600">Genauigkeit</div>
                                           <div className="text-base font-bold text-purple-600">{avgAccuracy}%</div>
                                         </div>
                                         <div className="text-center p-2 bg-white rounded border border-orange-200">
-                                          <div className="text-xs text-gray-600">Zeit</div>
+                                          <div className="text-xs text-slate-600">Zeit</div>
                                           <div className="text-base font-bold text-orange-600">
                                             {Math.floor(avgDuration / 60)}:
                                             {(avgDuration % 60).toString().padStart(2, "0")}
                                           </div>
                                         </div>
-                                        <div className="text-center p-2 bg-white rounded border border-gray-200">
-                                          <div className="text-xs text-gray-600">Maximum</div>
-                                          <div className="text-base font-bold text-gray-600">{training.maxScore}</div>
+                                        <div className="text-center p-2 bg-white rounded border border-slate-200">
+                                          <div className="text-xs text-slate-600">Maximum</div>
+                                          <div className="text-base font-bold text-slate-600">{training.maxScore}</div>
                                         </div>
                                       </div>
                                     </div>
@@ -1286,8 +1308,8 @@ export default function TrainingPage() {
                         <div className="flex items-start gap-2">
                           <div className="text-2xl flex-shrink-0">{tip.icon}</div>
                           <div className="space-y-1">
-                            <h4 className="font-bold text-sm text-gray-900">{tip.title}</h4>
-                            <p className="text-gray-700 leading-relaxed text-xs">{tip.description}</p>
+                            <h4 className="font-bold text-sm text-slate-950">{tip.title}</h4>
+                            <p className="text-slate-700 leading-relaxed text-xs">{tip.description}</p>
                           </div>
                         </div>
                       </div>
@@ -1297,7 +1319,7 @@ export default function TrainingPage() {
               </Card>
             ))}
 
-            <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white">
+            <Card className="rounded-[20px] border border-slate-200 bg-white shadow-none">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-green-600" />
@@ -1308,7 +1330,7 @@ export default function TrainingPage() {
                 <div className="space-y-3">
                   <div className="p-4 border-l-4 border-l-green-500 bg-green-50 rounded-r-lg">
                     <h4 className="font-bold text-sm mb-2 text-green-900">Anfänger (0-3 Monate)</h4>
-                    <ul className="space-y-1 text-gray-700">
+                    <ul className="space-y-1 text-slate-700">
                       <li className="flex items-start gap-2 text-xs">
                         <span className="text-green-600 font-bold">•</span>
                         <span>
@@ -1332,7 +1354,7 @@ export default function TrainingPage() {
 
                   <div className="p-4 border-l-4 border-l-orange-500 bg-orange-50 rounded-r-lg">
                     <h4 className="font-bold text-sm mb-2 text-orange-900">Fortgeschritten (3-12 Monate)</h4>
-                    <ul className="space-y-1 text-gray-700">
+                    <ul className="space-y-1 text-slate-700">
                       <li className="flex items-start gap-2 text-xs">
                         <span className="text-orange-600 font-bold">•</span>
                         <span>
@@ -1362,7 +1384,7 @@ export default function TrainingPage() {
 
                   <div className="p-4 border-l-4 border-l-red-500 bg-red-50 rounded-r-lg">
                     <h4 className="font-bold text-sm mb-2 text-red-900">Profi (12+ Monate)</h4>
-                    <ul className="space-y-1 text-gray-700">
+                    <ul className="space-y-1 text-slate-700">
                       <li className="flex items-start gap-2 text-xs">
                         <span className="text-red-600 font-bold">•</span>
                         <span>
@@ -1396,7 +1418,7 @@ export default function TrainingPage() {
                     <Flame className="h-4 w-4" />
                     Pro-Tipp: Die 80/20 Regel
                   </h4>
-                  <p className="text-gray-700 leading-relaxed text-xs">
+                  <p className="text-slate-700 leading-relaxed text-xs">
                     Verbringe 80% deiner Trainingszeit mit gezielten Übungen (Doubles, Triples, Checkouts) und nur 20%
                     mit Spielen. Spiele sind wichtig für die Anwendung, aber gezielte Übungen bringen die größte
                     Verbesserung!
@@ -1413,33 +1435,33 @@ export default function TrainingPage() {
                 <div className="space-y-2">
                   <div className="p-3 border-l-4 border-l-red-500 bg-white rounded-r-lg">
                     <h4 className="font-bold text-red-900 mb-1 text-sm">Zu fester Griff</h4>
-                    <p className="text-gray-700 text-xs">
+                    <p className="text-slate-700 text-xs">
                       Ein zu fester Griff führt zu Verkrampfung. Der Dart sollte kontrolliert aber locker gehalten
                       werden.
                     </p>
                   </div>
                   <div className="p-3 border-l-4 border-l-red-500 bg-white rounded-r-lg">
                     <h4 className="font-bold text-red-900 mb-1 text-sm">Beweglicher Ellbogen</h4>
-                    <p className="text-gray-700 text-xs">
+                    <p className="text-slate-700 text-xs">
                       Der Ellbogen sollte als Fixpunkt dienen. Bewegung sollte nur aus dem Unterarm und Handgelenk
                       kommen.
                     </p>
                   </div>
                   <div className="p-3 border-l-4 border-l-red-500 bg-white rounded-r-lg">
                     <h4 className="font-bold text-red-900 mb-1 text-sm">Kein Follow-Through</h4>
-                    <p className="text-gray-700 text-xs">
+                    <p className="text-slate-700 text-xs">
                       Stoppe nicht abrupt nach dem Release. Lass deine Hand natürlich zum Ziel zeigen.
                     </p>
                   </div>
                   <div className="p-3 border-l-4 border-l-red-500 bg-white rounded-r-lg">
                     <h4 className="font-bold text-red-900 mb-1 text-sm">Unregelmäßiges Training</h4>
-                    <p className="text-gray-700 text-xs">
+                    <p className="text-slate-700 text-xs">
                       Sporadisches Training bringt keine Verbesserung. Lieber kurz aber regelmäßig trainieren.
                     </p>
                   </div>
                   <div className="p-3 border-l-4 border-l-red-500 bg-white rounded-r-lg">
                     <h4 className="font-bold text-red-900 mb-1 text-sm">Nur Spiele spielen</h4>
-                    <p className="text-gray-700 text-xs">
+                    <p className="text-slate-700 text-xs">
                       Spiele sind wichtig, aber gezielte Übungen bringen mehr Fortschritt. Nutze die Trainingsmodi!
                     </p>
                   </div>
@@ -1454,7 +1476,7 @@ export default function TrainingPage() {
       <MobileBottomNav />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[94vw] max-w-md rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_90px_-38px_rgba(15,23,42,0.55)]">
           <AlertDialogHeader>
             <AlertDialogTitle>Session löschen?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -1465,7 +1487,7 @@ export default function TrainingPage() {
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => sessionToDelete && deleteSession(sessionToDelete)}
-              className="bg-red-600 hover:bg-red-700"
+              className="h-10 rounded-xl bg-red-600 font-black text-white hover:bg-red-700"
             >
               Löschen
             </AlertDialogAction>
@@ -1474,7 +1496,7 @@ export default function TrainingPage() {
       </AlertDialog>
 
       <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[94vw] max-w-md rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_90px_-38px_rgba(15,23,42,0.55)]">
           <AlertDialogHeader>
             <AlertDialogTitle>Alle Sessions löschen?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -1484,7 +1506,7 @@ export default function TrainingPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteAllSessions} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction onClick={deleteAllSessions} className="h-10 rounded-xl bg-red-600 font-black text-white hover:bg-red-700">
               Alle löschen
             </AlertDialogAction>
           </AlertDialogFooter>

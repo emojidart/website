@@ -4,7 +4,7 @@ import { MemberMembership } from "@/components/member/membership/member-membersh
 
 export default function MemberMembershipPage() {
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6">
+    <main className="min-h-screen overflow-x-hidden bg-[#f3f5f8]">
       <MemberMembership />
     </main>
   )

@@ -225,10 +225,10 @@ export default function MeineDachVeranstaltungenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.08),_transparent_30%),linear-gradient(to_bottom,_#f8fafc,_#ffffff)] pb-28 text-slate-950">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-28 text-slate-950">
       <Header />
 
-      <main className="mx-auto max-w-6xl space-y-5 px-4 pt-20 sm:px-6">
+      <main className="w-full max-w-none space-y-5 px-2 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
         <div>
           <Button
             asChild
@@ -242,7 +242,7 @@ export default function MeineDachVeranstaltungenPage() {
           </Button>
         </div>
 
-        <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 px-6 py-7 text-white shadow-2xl shadow-slate-300/60 sm:px-8 sm:py-9">
+        <section className="relative overflow-hidden rounded-[28px] bg-slate-950 px-6 py-7 text-white shadow-2xl shadow-slate-300/60 sm:px-8 sm:py-9">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl" />
           <div className="absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-amber-300/10 blur-3xl" />
           <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -286,7 +286,7 @@ export default function MeineDachVeranstaltungenPage() {
                 className={`group rounded-2xl border p-4 text-left transition-all ${
                   active
                     ? "border-orange-300 bg-orange-50 shadow-lg shadow-orange-100"
-                    : "border-slate-200 bg-white shadow-sm hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                    : "border-slate-200 bg-white shadow-none hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -361,12 +361,12 @@ export default function MeineDachVeranstaltungenPage() {
             {[0, 1, 2, 3].map((item) => (
               <div
                 key={item}
-                className="h-56 animate-pulse rounded-[2rem] border border-slate-200 bg-white shadow-sm"
+                className="h-56 animate-pulse rounded-[28px] border border-slate-200 bg-white shadow-none"
               />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <Card className="overflow-hidden rounded-[2rem] border-slate-200 shadow-lg shadow-slate-200/40">
+          <Card className="overflow-hidden rounded-[28px] border-slate-200 shadow-lg shadow-slate-200/40">
             <CardContent className="p-10 text-center sm:p-14">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
                 <Search className="h-8 w-8 text-slate-400" />
@@ -411,7 +411,7 @@ export default function MeineDachVeranstaltungenPage() {
               return (
                 <Card
                   key={event.id}
-                  className="group overflow-hidden rounded-[2rem] border-slate-200 bg-white shadow-lg shadow-slate-200/40 transition-all hover:-translate-y-0.5 hover:shadow-xl"
+                  className="group overflow-hidden rounded-[28px] border-slate-200 bg-white shadow-lg shadow-slate-200/40 transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)]"
                 >
                   <CardContent className="p-0">
                     <div className="relative">
@@ -589,7 +589,7 @@ export default function MeineDachVeranstaltungenPage() {
           }
         }}
       >
-        <AlertDialogContent className="overflow-hidden rounded-[2rem] border-slate-200 p-0">
+        <AlertDialogContent className="overflow-hidden rounded-[28px] border-slate-200 p-0">
           <div className="bg-slate-950 px-6 py-5 text-white">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/15">
               <XCircle className="h-7 w-7 text-red-300" />
@@ -657,7 +657,7 @@ export default function MeineDachVeranstaltungenPage() {
           if (!open && !savingId) setDeleteEvent(null);
         }}
       >
-        <AlertDialogContent className="rounded-[2rem] border-slate-200">
+        <AlertDialogContent className="rounded-[28px] border-slate-200">
           <AlertDialogHeader>
             <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
               <Trash2 className="h-8 w-8 text-red-600" />
