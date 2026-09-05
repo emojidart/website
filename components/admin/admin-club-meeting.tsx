@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { CalendarClock, Check, Clipboard, ExternalLink, Loader2, MessageCircle, Play, Square, Video } from "lucide-react"
+import { AlertTriangle, CalendarClock, Check, Clipboard, ExternalLink, Loader2, MessageCircle, Play, Square, Video } from "lucide-react"
 
 import { supabase } from "@/lib/supabase"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +9,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const TABLE = "club_meetings"
 
@@ -38,6 +48,7 @@ export function AdminClubMeeting() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState("")
   const [copied, setCopied] = useState(false)
+  const [endDialogOpen, setEndDialogOpen] = useState(false)
 
   const publicLink = useMemo(() => {
     if (!meeting?.id || typeof window === "undefined") return ""
@@ -185,7 +196,6 @@ export function AdminClubMeeting() {
 
   async function endMeeting() {
     if (!meeting) return
-    if (!window.confirm("Vereinssitzung wirklich beenden? Der LIVE-Hinweis wird danach entfernt.")) return
 
     setSaving(true)
     setMessage("")
@@ -196,6 +206,7 @@ export function AdminClubMeeting() {
 
     if (error) setMessage(error.message)
     else {
+      setEndDialogOpen(false)
       setMeeting(null)
       setTitle("Vereinssitzung")
       setScheduledAt("")
@@ -317,14 +328,94 @@ export function AdminClubMeeting() {
                 <Button variant="outline" className="h-12 rounded-xl" onClick={shareWhatsApp}>
                   <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
                 </Button>
-                <Button variant="outline" className="h-12 rounded-xl border-red-200 text-red-700 hover:bg-red-50" disabled={saving} onClick={() => void endMeeting()}>
+                <Button variant="outline" className="h-12 rounded-xl border-red-200 text-red-700 hover:bg-red-50" disabled={saving} onClick={() => setEndDialogOpen(true)}>
                   <Square className="mr-2 h-4 w-4" /> Sitzung beenden
                 </Button>
+              </div>
+
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 sm:p-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-lg text-white">↗</div>
+                  <div className="min-w-0">
+                    <div className="font-black text-blue-950">Bildschirm für alle Teilnehmer teilen</div>
+                    <p className="mt-1 text-sm font-semibold text-blue-900">
+                      So kannst du während der Sitzung z. B. Unterlagen, eine Präsentation oder ein Programm für alle sichtbar zeigen.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-blue-100">
+                    <div className="text-xs font-black uppercase tracking-wide text-blue-600">1. Freigabe starten</div>
+                    <div className="mt-1 text-sm font-semibold text-gray-700">
+                      Im Meeting unten auf das Bildschirm-/Pfeil-Symbol klicken und <strong>„Start screen sharing“</strong> bzw. <strong>„Bildschirm freigeben“</strong> wählen.
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-blue-100">
+                    <div className="text-xs font-black uppercase tracking-wide text-blue-600">2. Ansicht auswählen</div>
+                    <div className="mt-1 text-sm font-semibold text-gray-700">
+                      Danach <strong>ein einzelnes Fenster</strong>, einen <strong>Browser-Tab</strong> oder den <strong>gesamten Bildschirm</strong> auswählen.
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-blue-100">
+                    <div className="text-xs font-black uppercase tracking-wide text-blue-600">3. Teilen</div>
+                    <div className="mt-1 text-sm font-semibold text-gray-700">
+                      Mit <strong>„Teilen“</strong> bestätigen. Der ausgewählte Inhalt ist anschließend für alle Teilnehmer der Vereinssitzung sichtbar.
+                    </div>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs font-semibold text-blue-800">
+                  Zum Beenden der Freigabe einfach erneut das Bildschirm-Symbol anklicken oder im Browser auf „Freigabe beenden“ drücken.
+                </p>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={endDialogOpen} onOpenChange={(open) => { if (!saving) setEndDialogOpen(open) }}>
+        <AlertDialogContent className="max-w-md rounded-3xl border-0 p-0 shadow-2xl">
+          <div className="overflow-hidden rounded-3xl bg-white">
+            <div className="h-1.5 bg-red-600" />
+            <div className="p-6 sm:p-7">
+              <AlertDialogHeader className="text-left">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <AlertDialogTitle className="text-2xl font-black text-gray-950">
+                  Vereinssitzung beenden?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="pt-1 text-sm font-medium leading-relaxed text-gray-600">
+                  Die laufende Sitzung <strong className="text-gray-900">{meeting?.title || "Vereinssitzung"}</strong> wird beendet.
+                  Der LIVE-Hinweis verschwindet danach und der Teilnehmer-Link führt nicht mehr in die laufende Sitzung.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-800">
+                Beende die Sitzung erst, wenn wirklich alle Teilnehmer fertig sind.
+              </div>
+
+              <AlertDialogFooter className="mt-6 gap-2 sm:gap-2">
+                <AlertDialogCancel disabled={saving} className="h-11 rounded-xl border-gray-200 font-bold">
+                  Abbrechen
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={saving}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    void endMeeting()
+                  }}
+                  className="h-11 rounded-xl bg-red-600 font-black text-white hover:bg-red-700"
+                >
+                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Square className="mr-2 h-4 w-4" />}
+                  Sitzung beenden
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </div>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
