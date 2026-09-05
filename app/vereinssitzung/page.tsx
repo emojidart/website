@@ -120,7 +120,20 @@ export default function ClubMeetingPage() {
           body: JSON.stringify({ roomName: meeting.room_name }),
         })
 
-        const result = (await response.json()) as JaaSTokenResponse
+        const rawResponse = await response.text()
+        let result: JaaSTokenResponse
+
+        if (!rawResponse.trim()) {
+          throw new Error(`Meeting-Server antwortet leer (HTTP ${response.status}). Bitte Netlify-Deploy/Function prüfen.`)
+        }
+
+        try {
+          result = JSON.parse(rawResponse) as JaaSTokenResponse
+        } catch {
+          console.error("Unexpected JaaS response:", rawResponse)
+          throw new Error(`Ungültige Antwort vom Meeting-Server (HTTP ${response.status}).`)
+        }
+
         if (!response.ok || result.error) throw new Error(result.error || "Meeting konnte nicht geöffnet werden.")
 
         await loadJitsiScript(result.appId)
