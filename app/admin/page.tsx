@@ -28,6 +28,7 @@ import {
   UserCheck,
   Activity,
   CreditCard,
+  Video,
 } from "lucide-react"
 
 import { AuthSection } from "@/components/auth-section"
@@ -57,6 +58,7 @@ import { BonusVergabeManagement } from "@/components/admin/bonus-vergabe/bonus-v
 import { AdminPraemienRedemptions } from "@/components/admin/bonus/admin-praemien-redemptions"
 import { AdminMembershipManagement } from "@/components/admin/membership/admin-membership-management"
 import { AdminApprovalsManagement } from "@/components/admin/admin-freigaben"
+import { AdminClubMeeting } from "@/components/admin/admin-club-meeting"
 import { PackageCheck } from "lucide-react"
 
 export default function AdminPage() {
@@ -108,6 +110,7 @@ export default function AdminPage() {
 | "praemien-redemptions"
 | "guest-requests"
 | "approvals"
+| "club-meeting"
   >("dashboard")
 
   // Admin-Ansicht merken: selbst wenn eine Unterkomponente/Browser die Seite neu lädt,
@@ -241,7 +244,7 @@ export default function AdminPage() {
 
     run()
     
-  }, [user?.id, isAdmin])
+  }, [user?.id, stableIsAdmin])
   
   
   
@@ -568,6 +571,14 @@ useEffect(() => {
       view: "events" as const,
       category: "verein" as const,
     },
+    {
+      title: "Vereinssitzung",
+      description: "Sitzung vorbereiten, starten & teilen",
+      icon: Video,
+      color: "bg-red-600",
+      view: "club-meeting" as const,
+      category: "verein" as const,
+    },
 	{
   title: "Push Nachrichten",
   description: "Push an alle oder ausgewählte Spieler senden",
@@ -759,6 +770,7 @@ useEffect(() => {
           badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
         },
         { key: "events", label: "Veranstaltungen", icon: PartyPopper },
+        { key: "club-meeting", label: "Vereinssitzung", icon: Video },
 		{ key: "admin-push", label: "Push Nachrichten", icon: BellRing },
 		{ key: "bonus-system", label: "Bonussystem", icon: Trophy },
 		{ key: "bonus-vergabe", label: "Bonusvergabe", icon: Trophy },
@@ -808,6 +820,7 @@ useEffect(() => {
     "recruitment",
     "approvals",
     "events",
+    "club-meeting",
     "club",
     "support-tickets",
     "campus-registrations",
@@ -1308,6 +1321,13 @@ if (!hasAnyPermission) {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+
+                {currentView === "club-meeting" && (
+                  <div className="space-y-6">
+                    <AdminClubMeeting />
                   </div>
                 )}
 
