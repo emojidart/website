@@ -10,15 +10,34 @@ function env(name: string) {
 }
 
 function getPrivateKey() {
+  const base64Value = (process.env.JAAS_PRIVATE_KEY_BASE64 || "").trim()
+  if (base64Value) {
+    try {
+      return Buffer.from(base64Value.replace(/\s+/g, ""), "base64").toString("utf8").trim()
+    } catch (error) {
+      console.error("JAAS_PRIVATE_KEY_BASE64 decode failed:", error)
+    }
+  }
+
   let value = process.env.JAAS_PRIVATE_KEY || ""
-  // Netlify values may be stored either as real multiline text or with literal \\n.
   value = value.replace(/\\n/g, "\n").trim()
-  // Also tolerate a value accidentally pasted with surrounding quotes.
   if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
     value = value.slice(1, -1).replace(/\\n/g, "\n").trim()
   }
+
+  // Netlify can occasionally flatten a PEM into one line. Rebuild it if possible.
+  const oneLine = value.replace(/\r?\n/g, " ").replace(/\s+/g, " ").trim()
+  const match = oneLine.match(/^-----BEGIN (RSA )?PRIVATE KEY-----\s+(.+?)\s+-----END (RSA )?PRIVATE KEY-----$/)
+  if (match) {
+    const label = match[1] ? "RSA PRIVATE KEY" : "PRIVATE KEY"
+    const body = match[2].replace(/\s+/g, "")
+    const lines = body.match(/.{1,64}/g) || []
+    value = `-----BEGIN ${label}-----\n${lines.join("\n")}\n-----END ${label}-----`
+  }
+
   return value
 }
+
 
 function base64url(value: string | Buffer) {
   const buffer = Buffer.isBuffer(value) ? value : Buffer.from(value)
@@ -91,7 +110,7 @@ export async function POST(request: NextRequest) {
 
     if (!appId || !keyId || !privateKey) {
       return NextResponse.json(
-        { error: "JaaS ist noch nicht vollständig konfiguriert. Bitte JAAS_APP_ID, JAAS_API_KEY_ID und JAAS_PRIVATE_KEY in Netlify prüfen." },
+        { error: "JaaS ist noch nicht vollständig konfiguriert. Bitte JAAS_APP_ID, JAAS_API_KEY_ID und JAAS_PRIVATE_KEY_BASE64 (empfohlen) bzw. JAAS_PRIVATE_KEY in Netlify prüfen." },
         { status: 500 },
       )
     }
@@ -162,7 +181,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error("JaaS JWT signing failed:", error)
       return NextResponse.json(
-        { error: "Der JaaS Private Key konnte nicht gelesen werden. Bitte JAAS_PRIVATE_KEY in Netlify prüfen und danach neu deployen." },
+        { error: "Der JaaS Private Key konnte nicht gelesen werden. Bitte JAAS_PRIVATE_KEY_BASE64 bzw. JAAS_PRIVATE_KEY in Netlify prüfen und danach neu deployen." },
         { status: 500 },
       )
     }
