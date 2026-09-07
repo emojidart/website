@@ -22,7 +22,7 @@ import { useKratzerRecovery } from "@/hooks/kratzer/use-kratzer-recovery"
 import { useState, useEffect, useCallback, useRef } from "react"
 
 import { supabase } from "@/lib/supabase"
-import type { KratzerPlayer, Board, TournamentSettings, TournamentState } from "@/types/tournament"
+import type { KratzerPlayer, Board, TournamentSettings, TournamentState, GameMode } from "@/types/tournament"
 import {
   formatTime,
   shuffleArray,
@@ -46,6 +46,7 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card"
 
 import { useToast } from "@/hooks/use-toast"
 import { Trophy, Monitor, Play, Loader2 } from "lucide-react"
+import { publishKratzerBeamerEvent, publishKratzerBeamerSnapshot } from "@/components/kratzer/beamer/beamer-sync"
 
 const defaultTournamentSettings: TournamentSettings = {
   boardCount: 5,
@@ -53,6 +54,7 @@ const defaultTournamentSettings: TournamentSettings = {
   suddenDeathEnabled: false,
   suddenDeathTime: 15,
   speechEnabled: false,
+  diceModeEnabled: false,
 }
 
 interface PrizeMoneySettings {
@@ -113,6 +115,26 @@ export function KratzerTournamentPage() {
     },
     [toast],
   )
+
+  useEffect(() => {
+    publishKratzerBeamerSnapshot(tournamentState, isTournamentRunning)
+  }, [tournamentState, isTournamentRunning])
+
+  const openBeamerWindow = useCallback(() => {
+    const beamerWindow = window.open(
+      "/kratzer-tournament/beamer",
+      "emd-kratzer-beamer",
+      "popup=yes,width=1600,height=900,resizable=yes,scrollbars=no",
+    )
+
+    if (!beamerWindow) {
+      showToast("warning", "Beamerfenster konnte nicht geöffnet werden. Bitte Pop-ups für diese Seite erlauben.")
+      return
+    }
+
+    beamerWindow.focus()
+    window.setTimeout(() => publishKratzerBeamerSnapshot(tournamentState, isTournamentRunning), 250)
+  }, [showToast, tournamentState, isTournamentRunning])
 
   const {
     registeredPlayers,
@@ -661,7 +683,7 @@ export function KratzerTournamentPage() {
     setLoading,
   ])
 
-  const executeNewRound = useCallback(async () => {
+  const executeNewRound = useCallback(async (gameMode?: GameMode) => {
     setIsNewRoundModalOpen(false)
     setLoading(true)
 
@@ -671,7 +693,9 @@ export function KratzerTournamentPage() {
 
     const newBoards: Board[] = []
     for (let i = 1; i <= boardCount; i++) {
-      newBoards.push(createBoard(i))
+      const board = createBoard(i)
+      board.gameMode = gameMode ?? null
+      newBoards.push(board)
     }
 
     let playerIndex = 0
@@ -704,11 +728,16 @@ export function KratzerTournamentPage() {
         boards: boardsToSave,
       }))
 
-      showToast("success", `Runde ${nextRoundNumber} gestartet!`)
+      showToast(
+        "success",
+        gameMode
+          ? `Runde ${nextRoundNumber} gestartet – Modus: ${gameMode}`
+          : `Runde ${nextRoundNumber} gestartet!`,
+      )
 
       if (speechEnabled) {
         speakText(
-          `Runde ${nextRoundNumber} wurde gestartet. ${activePlayers.length} Spieler verbleibend.`,
+          `Runde ${nextRoundNumber} wurde gestartet.${gameMode ? ` Gespielt wird ${gameMode}.` : ""} ${activePlayers.length} Spieler verbleibend.`,
           speechEnabled,
         )
       }
@@ -768,9 +797,15 @@ export function KratzerTournamentPage() {
     (minutes: number) => {
       setIsPauseModalOpen(false)
       showToast("info", `Pause für ${minutes} Minuten gestartet.`)
+      publishKratzerBeamerEvent({
+        type: "pause-start",
+        minutes,
+        until: Date.now() + minutes * 60 * 1000,
+      })
 
       setTimeout(() => {
         showToast("info", "Pause beendet!")
+        publishKratzerBeamerEvent({ type: "pause-end" })
       }, minutes * 60 * 1000)
     },
     [showToast],
@@ -838,14 +873,14 @@ export function KratzerTournamentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f8] text-gray-900">
+    <div className="min-h-screen bg-[#f4f6f8] text-slate-950">
       <Header />
       <TournamentAdminNav
         title="Kratzer"
         description="Spieler registrieren, Turnier steuern und Runden verwalten."
       />
 
-      <main className="mx-auto w-full max-w-[1600px] px-3 py-5 sm:px-5 lg:px-8">
+      <main className="mx-auto w-full max-w-[1920px] px-3 py-5 sm:px-5 lg:px-8 xl:px-10 2xl:px-12">
         <TournamentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {activeTab === "register" ? (
@@ -893,6 +928,7 @@ export function KratzerTournamentPage() {
                 )
               }
               onCancelTournament={confirmCancelTournament}
+              onOpenBeamer={openBeamerWindow}
             />
 
             <TournamentStatsCard
@@ -903,20 +939,24 @@ export function KratzerTournamentPage() {
             />
 
             <SectionCard
-              title="Aktuelle Runde"
-              icon={<Monitor className="h-6 w-6 text-gray-600" />}
+              title={
+                tournamentState.boards[0]?.gameMode
+                  ? `Aktuelle Runde · ${tournamentState.boards[0].gameMode}`
+                  : "Aktuelle Runde"
+              }
+              icon={<Monitor className="h-6 w-6 text-orange-600" />}
             >
               {tournamentState.boards.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-600 text-lg">Keine aktive Runde.</p>
-                  <p className="text-gray-500 text-sm mt-2">Starte eine neue Runde, um Spiele zu beginnen.</p>
-                  <Button onClick={startNewRound} className="mt-6 bg-primary hover:bg-primary-dark">
+                <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50/70 px-6 py-14 text-center">
+                  <p className="text-lg font-black text-slate-900">Noch keine aktive Runde</p>
+                  <p className="mt-2 text-sm font-medium text-slate-500">Starte die nächste Runde, sobald alle Einstellungen passen.</p>
+                  <Button onClick={startNewRound} className="mt-6 h-11 rounded-xl bg-orange-600 px-5 font-black text-white hover:bg-orange-700">
                     <Play className="h-4 w-4 mr-2" />
                     Neue Runde starten
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {tournamentState.boards.map((board) => (
                     <BoardComponent
                       key={board.id}
@@ -937,7 +977,7 @@ export function KratzerTournamentPage() {
 
             <SectionCard
               title="Rangliste"
-              icon={<Trophy className="h-6 w-6 text-gray-600" />}
+              icon={<Trophy className="h-6 w-6 text-orange-600" />}
             >
               <RankingsTable
                 players={tournamentState.players}

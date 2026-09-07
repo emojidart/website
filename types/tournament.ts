@@ -18,11 +18,24 @@ export interface KratzerPlayer {
   manuallyToggled?: boolean // Added optional field to track manual elimination toggles
 }
 
+export const DICE_GAME_MODES = {
+  1: "701 SO",
+  2: "501 DO",
+  3: "501 MO",
+  4: "CRICKET",
+  5: "SPLIT SCORE",
+  6: "RANDOM CRICKET",
+} as const
+
+export type DiceFace = keyof typeof DICE_GAME_MODES
+export type GameMode = (typeof DICE_GAME_MODES)[DiceFace]
+
 export interface Board {
   id: number
   players: KratzerPlayer[]
   startTime: number | null // Timestamp
   timer: NodeJS.Timeout | null // Reference to setInterval timer
+  gameMode?: GameMode | null // Gewürfelter Modus dieser Runde
 }
 
 export interface TournamentSettings {
@@ -31,6 +44,7 @@ export interface TournamentSettings {
   suddenDeathEnabled: boolean
   suddenDeathTime: number // in minutes
   speechEnabled: boolean
+  diceModeEnabled: boolean // Würfelmodus vor jeder neuen Runde
 }
 
 export interface TournamentState {

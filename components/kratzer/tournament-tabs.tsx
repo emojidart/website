@@ -8,34 +8,16 @@ interface TournamentTabsProps {
   setActiveTab: (tab: "register" | "tournament") => void
 }
 
-export function TournamentTabs({
-  activeTab,
-  setActiveTab,
-}: TournamentTabsProps) {
+export function TournamentTabs({ activeTab, setActiveTab }: TournamentTabsProps) {
   return (
-    <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          onClick={() => setActiveTab("register")}
-          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-xl font-bold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap  ${
-            activeTab === "register"
-              ? "bg-orange-600 text-white shadow-sm hover:bg-orange-700"
-              : "bg-transparent text-gray-600 hover:bg-orange-50 hover:text-orange-700"
-          }`}
-        >
-          <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+    <div className="mb-5 rounded-[22px] border border-slate-200 bg-white p-1.5 shadow-[0_14px_40px_-32px_rgba(15,23,42,.55)]">
+      <div className="grid grid-cols-2 gap-1.5">
+        <Button onClick={() => setActiveTab("register")} className={`h-12 rounded-[16px] border-0 text-sm font-black shadow-none transition-all ${activeTab === "register" ? "bg-slate-950 text-white hover:bg-slate-900" : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900"}`}>
+          <Users className={`mr-2 h-4 w-4 ${activeTab === "register" ? "text-orange-400" : "text-slate-400"}`} />
           Spieler Registrierung
         </Button>
-
-        <Button
-          onClick={() => setActiveTab("tournament")}
-          className={`px-3 sm:px-4 py-2 sm:py-3 rounded-xl font-bold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap  ${
-            activeTab === "tournament"
-              ? "bg-orange-600 text-white shadow-sm hover:bg-orange-700"
-              : "bg-transparent text-gray-600 hover:bg-orange-50 hover:text-orange-700"
-          }`}
-        >
-          <Trophy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+        <Button onClick={() => setActiveTab("tournament")} className={`h-12 rounded-[16px] border-0 text-sm font-black shadow-none transition-all ${activeTab === "tournament" ? "bg-orange-600 text-white hover:bg-orange-700" : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900"}`}>
+          <Trophy className="mr-2 h-4 w-4" />
           Turnier Verlauf
         </Button>
       </div>

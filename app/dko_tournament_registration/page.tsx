@@ -330,6 +330,11 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
   const [showSuccessModal, setShowSuccessModal] = useState<{ open: boolean; playerCount?: number }>({ open: false })
   const [showErrorModal, setShowErrorModal] = useState<{ open: boolean }>({ open: false })
 
+  const registrationBusyRef = useRef(false)
+  const [isRegisteringPlayers, setIsRegisteringPlayers] = useState(false)
+  const [registrationProgress, setRegistrationProgress] = useState<{ done: number; total: number } | null>(null)
+  const [markingAllPaid, setMarkingAllPaid] = useState(false)
+
   const [showCreditConfirmModal, setShowCreditConfirmModal] = useState<{
     open: boolean
     players?: Array<{ id: number; name: string; currentBalance: number; newBalance: number; clubPlayerId: string }>
@@ -716,12 +721,18 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
   }
 
   const handleRegisterPlayers = async () => {
+    if (registrationBusyRef.current) return
+
     if (!tournamentFormCompleted) {
       alert("Bitte Turniername, Turnierart und Startgeld vollständig festlegen!")
       return
     }
 
     if (selectedPlayers.size === 0) return
+
+    registrationBusyRef.current = true
+    setIsRegisteringPlayers(true)
+    setRegistrationProgress({ done: 0, total: selectedPlayers.size })
 
     try {
       const eligible = await ensurePlayersEligible(Array.from(selectedPlayers))
@@ -795,14 +806,23 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     } catch (error) {
       console.error("[v0] Error in handleRegisterPlayers:", error)
       setShowErrorModal({ open: true })
+    } finally {
+      registrationBusyRef.current = false
+      setIsRegisteringPlayers(false)
+      setRegistrationProgress(null)
     }
   }
 
   const registerPlayersDirectly = async (playerIds: number[], entryFee: number) => {
     try {
       const successfullyRegistered: number[] = []
+      let processed = 0
+      setRegistrationProgress({ done: 0, total: playerIds.length })
 
       for (const playerId of playerIds) {
+        processed += 1
+        setRegistrationProgress({ done: processed, total: playerIds.length })
+
         const player = availablePlayers.find((p) => p.id === playerId)
         if (!player) continue
 
@@ -869,6 +889,11 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
   }
 
   const registerPlayersWithoutCreditDeduction = async () => {
+    if (registrationBusyRef.current) return
+
+    registrationBusyRef.current = true
+    setIsRegisteringPlayers(true)
+
     try {
       const entryFee = showCreditConfirmModal.entryFee || 0
       const playersWithCredit = showCreditConfirmModal.players || []
@@ -882,10 +907,19 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     } catch (error) {
       console.error("[v0] Error in registerPlayersWithoutCreditDeduction:", error)
       setShowErrorModal({ open: true })
+    } finally {
+      registrationBusyRef.current = false
+      setIsRegisteringPlayers(false)
+      setRegistrationProgress(null)
     }
   }
 
   const registerPlayersWithCreditDeduction = async () => {
+    if (registrationBusyRef.current) return
+
+    registrationBusyRef.current = true
+    setIsRegisteringPlayers(true)
+
     try {
       const entryFee = showCreditConfirmModal.entryFee || 0
       const playersWithCredit = showCreditConfirmModal.players || []
@@ -893,7 +927,13 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
 
       setShowCreditConfirmModal({ open: false })
 
+      const totalToRegister = playersWithCredit.length + playersWithoutCredit.length
+      let processedRegistrations = 0
+      setRegistrationProgress({ done: 0, total: totalToRegister })
+
       for (const playerWithCredit of playersWithCredit) {
+        processedRegistrations += 1
+        setRegistrationProgress({ done: processedRegistrations, total: totalToRegister })
         const player = availablePlayers.find((p) => p.id === playerWithCredit.id)
         if (!player) continue
 
@@ -956,6 +996,9 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
       }
 
       for (const playerId of playersWithoutCredit) {
+        processedRegistrations += 1
+        setRegistrationProgress({ done: processedRegistrations, total: totalToRegister })
+
         const player = availablePlayers.find((p) => p.id === playerId)
         if (!player) continue
 
@@ -1004,6 +1047,10 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     } catch (error) {
       console.error("[v0] Error in registerPlayersWithCreditDeduction:", error)
       setShowErrorModal({ open: true })
+    } finally {
+      registrationBusyRef.current = false
+      setIsRegisteringPlayers(false)
+      setRegistrationProgress(null)
     }
   }
 
@@ -1239,6 +1286,12 @@ const registerDoubleTeam = async () => {
     return
   }
 
+  if (registrationBusyRef.current) return
+
+  registrationBusyRef.current = true
+  setIsRegisteringPlayers(true)
+  setRegistrationProgress({ done: 0, total: 1 })
+
   try {
     const player1 = availablePlayers.find((p) => String(p.id) === doublePlayer1Id)
     const player2 = availablePlayers.find((p) => String(p.id) === doublePlayer2Id)
@@ -1306,6 +1359,10 @@ const registerDoubleTeam = async () => {
   } catch (error) {
     console.error("Fehler beim Registrieren des Doppelteams:", error)
     setShowErrorModal({ open: true })
+  } finally {
+    registrationBusyRef.current = false
+    setIsRegisteringPlayers(false)
+    setRegistrationProgress(null)
   }
 }
 
@@ -1480,6 +1537,37 @@ const { data: clubPlayer, error: clubPlayerError } = await supabase
       )
     } catch (error) {
       console.error("Fehler beim Aktualisieren des Bezahlstatus:", error)
+    }
+  }
+
+
+  const markAllPlayersPaid = async () => {
+    if (markingAllPaid) return
+
+    const unpaidIds = registeredPlayers.filter((player) => !player.paid).map((player) => player.id)
+    if (unpaidIds.length === 0) return
+
+    setMarkingAllPaid(true)
+
+    try {
+      const { error } = await supabase
+        .from("dko_tournament_registration")
+        .update({ paid: true })
+        .in("id", unpaidIds)
+
+      if (error) throw error
+
+      const unpaidIdSet = new Set(unpaidIds)
+      setRegisteredPlayers((prevPlayers) =>
+        prevPlayers.map((player) => (unpaidIdSet.has(player.id) ? { ...player, paid: true } : player)),
+      )
+
+      await fetchRegisteredPlayers()
+    } catch (error) {
+      console.error("Fehler beim Markieren aller Spieler als bezahlt:", error)
+      setShowErrorModal({ open: true })
+    } finally {
+      setMarkingAllPaid(false)
     }
   }
 
@@ -1933,7 +2021,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f8]">
+    <div className="min-h-screen bg-slate-50">
       <Header />
       <TournamentAdminNav
         title={isSeriesPrefilled ? tournamentName || "Serien-Spieltag" : "Einzelturnier"}
@@ -1992,21 +2080,32 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
       )}
 
       {showSuccessModal.open && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
-            <div className="flex items-center justify-center w-14 h-14 bg-green-100 rounded-full mb-4 mx-auto animate-bounce">
-              <Star className="w-7 h-7 text-green-600 fill-green-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_100px_-35px_rgba(15,23,42,.65)]">
+            <div className="p-6">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50">
+                <CheckCircle className="h-6 w-6 text-emerald-600" />
+              </div>
+
+              <div className="mt-4 text-center">
+                <h3 className="text-xl font-black tracking-tight text-slate-950">Registrierung abgeschlossen</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {showSuccessModal.playerCount === 1
+                    ? "1 Spieler wurde zum Turnier hinzugefügt."
+                    : `${showSuccessModal.playerCount || 0} Spieler wurden zum Turnier hinzugefügt.`}
+                </p>
+                <p className="mt-1 text-xs font-medium text-slate-400">
+                  Die Teilnehmerliste wurde aktualisiert.
+                </p>
+              </div>
+
+              <Button
+                onClick={() => setShowSuccessModal({ open: false })}
+                className="mt-5 h-11 w-full rounded-xl bg-slate-950 font-bold text-white hover:bg-slate-800"
+              >
+                Schließen
+              </Button>
             </div>
-            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Erfolg!</h3>
-            <p className="text-center text-gray-600 mb-6">
-              {showSuccessModal.playerCount} Spieler wurden erfolgreich registriert.
-            </p>
-            <Button
-              onClick={() => setShowSuccessModal({ open: false })}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg"
-            >
-              Fertig
-            </Button>
           </div>
         </div>
       )}
@@ -2096,13 +2195,18 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
             <div className="flex gap-3">
               <Button
                 onClick={registerPlayersWithoutCreditDeduction}
+                disabled={isRegisteringPlayers}
                 variant="outline"
                 className="flex-1 border-2 bg-transparent"
               >
                 Nein, ohne Abzug
               </Button>
-              <Button onClick={registerPlayersWithCreditDeduction} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                Ja, abziehen
+              <Button
+                onClick={registerPlayersWithCreditDeduction}
+                disabled={isRegisteringPlayers}
+                className="flex-1 bg-slate-950 hover:bg-slate-800"
+              >
+                {isRegisteringPlayers ? "Wird verarbeitet…" : "Ja, abziehen"}
               </Button>
             </div>
           </div>
@@ -2377,8 +2481,8 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
       )}
 
       {activeTournament && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="mb-8 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-500 rounded-lg p-6 shadow-lg">
+        <div className="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6 xl:px-10 2xl:px-12">
+          <div className="mb-6 overflow-hidden rounded-[26px] border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-5 shadow-[0_18px_50px_-38px_rgba(15,23,42,.45)] sm:p-6">
             <div className="flex items-start gap-4">
               <div className="flex items-center justify-center w-12 h-12 bg-blue-500 rounded-full flex-shrink-0">
                 <AlertCircle className="w-6 h-6 text-white" />
@@ -2410,10 +2514,23 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-[1600px] px-3 py-5 sm:px-5 lg:px-8">
+      <div className="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6 xl:px-10 2xl:px-12">
 
-        <div className="mb-5 overflow-hidden rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="grid md:grid-cols-2 gap-6">
+        <div className="mb-5 flex flex-col gap-3 rounded-[24px] border border-slate-200/80 bg-slate-950 px-5 py-4 text-white shadow-[0_18px_55px_-42px_rgba(15,23,42,.9)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div>
+            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-300">Turnier Setup</div>
+            <div className="mt-1 text-xl font-black sm:text-2xl">Teilnehmer & Turnierstart</div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs font-bold sm:text-sm">
+            <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5">{registeredPlayers.length} registriert</span>
+            <span className={`rounded-full border px-3 py-1.5 ${tournamentFormCompleted ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-orange-400/30 bg-orange-400/10 text-orange-200"}`}>
+              {tournamentFormCompleted ? "Setup bereit" : "Setup offen"}
+            </span>
+          </div>
+        </div>
+
+        <div className="mb-6 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_55px_-42px_rgba(15,23,42,.45)] sm:p-6 lg:p-7">
+          <div className="grid gap-5 xl:grid-cols-2 xl:gap-6">
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <Trophy className="w-6 h-6 text-orange-600" />
@@ -2427,7 +2544,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
                 onChange={(e) => setTournamentName(e.target.value)}
                 disabled={isSeriesPrefilled}
                 title={isSeriesPrefilled ? "Wird automatisch aus der Turnierserie geladen" : ""}
-                className="w-full px-4 py-3 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none text-lg font-medium bg-white shadow-md"
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 text-base font-semibold text-slate-900 shadow-none outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                 maxLength={100}
               />
               <p className="text-sm text-gray-600 mt-2">Pflichtfeld!</p>
@@ -2449,7 +2566,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
                   onChange={(e) => setTournamentEntryFee(e.target.value)}
                   disabled={isSeriesPrefilled}
                   title={isSeriesPrefilled ? "Wird automatisch aus der Turnierserie geladen" : ""}
-                  className="flex-grow px-4 py-3 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none text-lg font-medium bg-white shadow-md"
+                  className="h-12 flex-grow rounded-2xl border border-slate-200 bg-slate-50/70 px-4 text-base font-semibold text-slate-900 shadow-none outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                 />
                 <span className="text-lg font-bold text-gray-600">€</span>
               </div>
@@ -2490,10 +2607,10 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
                     type="button"
                     disabled={isSeriesPrefilled}
                     onClick={() => setTournamentAccessType(option.value)}
-                    className={`rounded-xl border-2 p-3 text-left transition ${
+                    className={`rounded-2xl border p-4 text-left transition-all duration-200 ${
                       active
-                        ? "border-orange-500 bg-orange-50"
-                        : "border-gray-200 bg-white hover:border-orange-300"
+                        ? "border-orange-300 bg-orange-50 shadow-[0_10px_30px_-24px_rgba(234,88,12,.65)]"
+                        : "border-slate-200 bg-slate-50/50 hover:border-orange-200 hover:bg-orange-50/40"
                     } ${isSeriesPrefilled ? "cursor-not-allowed opacity-70" : ""}`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -2513,7 +2630,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
             ) : null}
           </div>
 
-          <div className="mt-6 p-4 bg-white rounded-lg border-2 border-orange-200">
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3.5">
             {tournamentFormCompleted ? (
               <p className="text-green-600 font-semibold flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-600 rounded-full"></span>✓ Formular vollständig - Du kannst jetzt
@@ -2527,7 +2644,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
             )}
           </div>
 
-          <div className="mt-4 flex items-center gap-3 rounded-xl border border-orange-200 bg-white px-4 py-3">
+          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3.5">
   <input
     id="allow-double-entry"
     type="checkbox"
@@ -2540,7 +2657,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
   </label>
 </div>
 
-<div className="mt-2 flex items-center gap-3 rounded-xl border border-orange-200 bg-white px-4 py-3">
+<div className="mt-3 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3.5">
   <input
     id="double-mode"
     type="checkbox"
@@ -2564,7 +2681,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
 
         {registeredPlayers.length > 0 && (
-          <div className="mb-8 bg-orange-50 border-2 border-white rounded-lg p-6 shadow-lg">
+          <div className="mb-6 overflow-hidden rounded-[28px] border border-orange-200/80 bg-gradient-to-br from-orange-50 via-white to-amber-50/50 p-5 shadow-[0_18px_55px_-42px_rgba(15,23,42,.45)] sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Turnier bereit zum Starten</h3>
@@ -2616,11 +2733,22 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 				
 				
 				
-                <div className="flex items-center gap-2 mt-2">
-                  <Euro className="w-5 h-5 text-orange-600" />
-                  <span className={`font-semibold ${allPlayersPaid ? "text-green-600" : "text-orange-600"}`}>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Euro className="h-5 w-5 text-slate-500" />
+                  <span className={`font-semibold ${allPlayersPaid ? "text-emerald-600" : "text-amber-600"}`}>
                     {paidCount} von {registeredPlayers.length} bezahlt
                   </span>
+
+                  {!allPlayersPaid && registeredPlayers.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={markAllPlayersPaid}
+                      disabled={markingAllPaid}
+                      className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {markingAllPaid ? "Aktualisiere…" : "Alle bezahlt"}
+                    </button>
+                  )}
                 </div>
               </div>
               <button
@@ -2642,7 +2770,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
         )}
 
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="bg-white border-2 border-white rounded-lg p-6 shadow-lg">
+          <div className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_55px_-42px_rgba(15,23,42,.45)] sm:p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Spieler hinzufügen</h2>
               <div className="flex items-center gap-2">
@@ -2653,7 +2781,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
                   type="button"
                   onClick={openAddPlayerModal}
                   variant="outline"
-                  className="border-orange-200 hover:bg-orange-50"
+                  className="rounded-xl border-slate-200 bg-white hover:border-orange-200 hover:bg-orange-50"
                 >
                   <PlusCircle className="w-4 h-4 mr-2 text-orange-600" />
                   Neuer Spieler
@@ -2706,7 +2834,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
                   placeholder="Spieler suchen..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none bg-white shadow-md"
+                  className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/70 pl-10 pr-4 font-medium text-slate-900 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
                 />
               </div>
             )}
@@ -2799,14 +2927,25 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
             {!doubleMode ? (
   <button
     onClick={handleRegisterPlayers}
-    disabled={selectedPlayers.size === 0 || !tournamentFormCompleted || eligibilityLoading}
-    className={`w-full font-bold py-3 px-6 rounded-lg transition-colors ${
-      selectedPlayers.size > 0 && tournamentFormCompleted && !eligibilityLoading
-        ? "bg-orange-500 hover:bg-orange-600 text-white"
-        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+    disabled={selectedPlayers.size === 0 || !tournamentFormCompleted || eligibilityLoading || isRegisteringPlayers}
+    className={`w-full rounded-xl px-6 py-3 font-bold transition-all ${
+      selectedPlayers.size > 0 && tournamentFormCompleted && !eligibilityLoading && !isRegisteringPlayers
+        ? "bg-slate-950 text-white shadow-sm hover:bg-slate-800"
+        : "cursor-not-allowed bg-slate-200 text-slate-500"
     }`}
   >
-    {selectedPlayers.size > 0 ? `${selectedPlayers.size} Spieler registrieren` : "Spieler auswählen"}
+    {isRegisteringPlayers ? (
+      <span className="flex items-center justify-center gap-2">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+        {registrationProgress?.total
+          ? `Registriere… ${registrationProgress.done}/${registrationProgress.total}`
+          : "Registrierung läuft…"}
+      </span>
+    ) : selectedPlayers.size > 0 ? (
+      `${selectedPlayers.size} Spieler registrieren`
+    ) : (
+      "Spieler auswählen"
+    )}
   </button>
 ) : (
   <div className="space-y-4">
@@ -2816,7 +2955,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
         <select
           value={doublePlayer1Id}
           onChange={(e) => setDoublePlayer1Id(e.target.value)}
-          className="w-full px-4 py-3 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none bg-white shadow-md"
+          className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 font-medium text-slate-900 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
         >
           <option value="">Bitte wählen</option>
           {availablePlayers.map((player) => {
@@ -2835,7 +2974,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
         <select
           value={doublePlayer2Id}
           onChange={(e) => setDoublePlayer2Id(e.target.value)}
-          className="w-full px-4 py-3 border-2 border-white rounded-lg focus:border-orange-500 focus:outline-none bg-white shadow-md"
+          className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 font-medium text-slate-900 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
         >
           <option value="">Bitte wählen</option>
           {availablePlayers
@@ -2853,7 +2992,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
     </div>
 
     {doublePlayer1Id && doublePlayer2Id && (
-      <div className="rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700">
+      <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-700">
         Teamname:{" "}
         {(() => {
           const p1 = availablePlayers.find((p) => String(p.id) === doublePlayer1Id)
@@ -2867,36 +3006,66 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
     <button
       onClick={registerDoubleTeam}
-      disabled={!doublePlayer1Id || !doublePlayer2Id || !tournamentFormCompleted || eligibilityLoading}
+      disabled={!doublePlayer1Id || !doublePlayer2Id || !tournamentFormCompleted || eligibilityLoading || isRegisteringPlayers}
       className={`w-full font-bold py-3 px-6 rounded-lg transition-colors ${
-        doublePlayer1Id && doublePlayer2Id && tournamentFormCompleted && !eligibilityLoading
-          ? "bg-orange-500 hover:bg-orange-600 text-white"
+        doublePlayer1Id && doublePlayer2Id && tournamentFormCompleted && !eligibilityLoading && !isRegisteringPlayers
+          ? "bg-slate-950 hover:bg-slate-800 text-white"
           : "bg-gray-300 text-gray-500 cursor-not-allowed"
       }`}
     >
-      Doppelteam registrieren
+      {isRegisteringPlayers ? "Registrierung läuft…" : "Doppelteam registrieren"}
     </button>
   </div>
 )}
           </div>
 
-          <div className="bg-white border-2 border-white rounded-lg p-6 shadow-lg">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Registrierte Spieler</h2>
-              <span className="text-sm font-bold text-orange-500">
-                {registeredPlayers.length} / {tournamentSize}
-              </span>
+          <div className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_55px_-42px_rgba(15,23,42,.45)] sm:p-6">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Registrierte Spieler</h2>
+                <div className="mt-1 text-sm font-semibold text-slate-500">
+                  {paidCount} von {registeredPlayers.length} bezahlt
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {registeredPlayers.length > 0 && !allPlayersPaid && (
+                  <Button
+                    type="button"
+                    onClick={markAllPlayersPaid}
+                    disabled={markingAllPaid}
+                    variant="outline"
+                    className="h-9 rounded-xl border-emerald-200 bg-emerald-50 px-3 text-sm font-bold text-emerald-700 hover:bg-emerald-100"
+                  >
+                    {markingAllPaid ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-emerald-300 border-t-emerald-700" />
+                        Wird aktualisiert…
+                      </span>
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-1.5 h-4 w-4" />
+                        Alle als bezahlt markieren
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-bold text-slate-600">
+                  {registeredPlayers.length} / {tournamentSize}
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+            <div className="space-y-2.5 max-h-[620px] overflow-y-auto pr-1">
               {registeredPlayers.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">Noch keine Spieler registriert</p>
               ) : (
                 registeredPlayers.map((player, index) => (
                   <div
                     key={player.id}
-                    className={`flex items-center justify-between p-3 border-2 rounded-lg shadow-sm transition-colors ${
-                      player.paid ? "bg-green-50 border-green-200" : "bg-orange-50 border-orange-200"
+                    className={`flex items-center justify-between rounded-2xl border p-3.5 transition-all ${
+                      player.paid ? "border-emerald-200 bg-emerald-50/70" : "border-amber-200 bg-amber-50/70"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -2934,7 +3103,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
                       </label>
                       <button
                         onClick={() => handleUnregisterPlayer(player.id)}
-                        className="p-2 text-orange-500 hover:bg-orange-100 rounded-lg transition-colors"
+                        className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                         title={
                           player.deducted_from_credit === true || player.deducted_from_credit === "true"
                             ? "Guthaben wird rückerstattet"

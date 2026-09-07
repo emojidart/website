@@ -5,6 +5,7 @@ import type { Board } from "@/types/tournament"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Dices } from "lucide-react"
 
 interface BoardComponentProps {
   board: Board | null | undefined
@@ -42,7 +43,10 @@ export function BoardComponent({
     if (!board) return
     onStartGame(board.id)
     setIsGameActive(true)
-    onMakeCall(`Spiel auf Board ${board.id} gestartet.`, speechEnabled)
+    onMakeCall(
+      `Spiel auf Board ${board.id} gestartet.${board.gameMode ? ` Gespielt wird ${board.gameMode}.` : ""}`,
+      speechEnabled,
+    )
   }
 
   const handleFinishGame = async () => {
@@ -68,15 +72,30 @@ export function BoardComponent({
   if (!board) return null
 
   return (
-    <Card data-board-id={board.id} className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <CardHeader className="border-b border-gray-100 pb-4">
-        <CardTitle className="text-lg font-semibold flex items-center justify-between">
+    <Card data-board-id={board.id} className="rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-36px_rgba(15,23,42,.55)] overflow-hidden">
+      <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-4 py-4">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-lg font-semibold">
           <span>Board {board.id}</span>
-          {isGameActive && <span className="ml-2 text-sm text-green-600">Läuft</span>}
+          <div className="flex items-center gap-2">
+            {board.gameMode && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 px-3 py-1 text-xs font-black tracking-wide text-white">
+                <Dices className="h-3.5 w-3.5 text-orange-400" />
+                {board.gameMode}
+              </span>
+            )}
+            {isGameActive && <span className="text-sm font-bold text-emerald-700">Läuft</span>}
+          </div>
         </CardTitle>
       </CardHeader>
 
       <CardContent className="p-4">
+        {board.gameMode && (
+          <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 p-3 text-center">
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-600">Runde {currentRound}</div>
+            <div className="mt-0.5 text-lg font-black text-slate-950">{board.gameMode}</div>
+          </div>
+        )}
+
         <div className="mb-4">
           {board.players.length === 0 ? (
             <p className="text-gray-500">Keine Spieler auf diesem Board.</p>
@@ -85,11 +104,9 @@ export function BoardComponent({
               {board.players.map((player) => (
                 <li
                   key={player.id}
-                  className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
+                  className="flex items-center justify-between p-3 rounded-[16px] border border-slate-200 bg-white hover:bg-slate-50 transition-colors duration-200"
                 >
-                  <span className="font-medium text-gray-800">
-                    {player.name} ({player.lives})
-                  </span>
+                  <span className="font-bold text-slate-800">{player.name} ({player.lives})</span>
 
                   {isGameActive && (
                     <Checkbox
@@ -105,7 +122,7 @@ export function BoardComponent({
 
         {boardStartTime && isGameActive && (
           <div className="mb-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm font-medium text-slate-500">
               Spiel gestartet: <span className="board-timer font-semibold">Lädt...</span>
             </p>
           </div>
@@ -113,19 +130,14 @@ export function BoardComponent({
 
         <div className="flex justify-between gap-3">
           {!isGameActive ? (
-            <Button onClick={handleStartGame} className="w-1/2 bg-green-600 hover:bg-green-700">
-              Start
-            </Button>
+            <Button onClick={handleStartGame} className="w-1/2 rounded-xl bg-slate-950 font-black hover:bg-slate-900">Start</Button>
           ) : (
             <>
-              <Button onClick={handleFinishGame} className="w-1/2 bg-orange-600 hover:bg-orange-700">
-                Beenden
-              </Button>
-
+              <Button onClick={handleFinishGame} className="w-1/2 rounded-xl bg-orange-600 font-black hover:bg-orange-700">Beenden</Button>
               <Button
                 onClick={handleCancelGame}
                 variant="outline"
-                className="w-1/2 text-gray-700 border-gray-300 hover:bg-gray-100 bg-transparent"
+                className="w-1/2 rounded-xl text-slate-700 border-slate-300 hover:bg-slate-50 bg-white"
               >
                 Abbrechen
               </Button>

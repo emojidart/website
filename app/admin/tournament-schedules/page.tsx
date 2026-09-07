@@ -496,10 +496,10 @@ export default function AdminTournamentSchedulesPage() {
 
   if (authLoading || adminLoading) {
     return (
-      <div className="min-h-screen bg-[#f7f7f8]">
+      <div className="min-h-screen bg-slate-100/70">
         <Header />
         <main className="container mx-auto p-4">
-          <Card className="max-w-md mx-auto mt-10">
+          <Card className="mx-auto mt-10 max-w-md rounded-[22px] border-slate-200 shadow-[0_18px_50px_-38px_rgba(15,23,42,.55)]">
             <CardContent className="p-6 text-center">Lade…</CardContent>
           </Card>
         </main>
@@ -510,37 +510,37 @@ export default function AdminTournamentSchedulesPage() {
   if (!user || !isAdmin) return null
 
   return (
-    <div className="min-h-screen bg-[#f7f7f8]">
+    <div className="min-h-screen bg-slate-100/70">
       <Header />
       <TournamentAdminNav
-        title="Serien verwalten"
-        description="Turnierserien und deren Spieltage anlegen, bearbeiten und verschieben."
+        title="Serien & Spieltage"
+        description="Turnierserien und Spieltage anlegen, bearbeiten und verwalten."
       />
 
-      <main className="mx-auto w-full max-w-[1600px] px-3 py-5 sm:px-5 lg:px-8">
-        <section className="mb-6 overflow-hidden rounded-3xl border border-orange-100 bg-white shadow-sm">
-          <div className="h-1.5 bg-gradient-to-r from-orange-500 via-orange-600 to-orange-500" />
+      <main className="mx-auto w-full max-w-[1920px] px-3 py-5 sm:px-5 lg:px-8">
+        <section className="mb-5 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_44px_-34px_rgba(15,23,42,.55)]">
+          <div className="h-1 bg-slate-950" />
           <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700">
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-600">
                 <Trophy className="h-3.5 w-3.5" />
-                Turnierverwaltung
+                Serienverwaltung
               </div>
-              <h1 className="text-2xl font-black tracking-tight text-gray-950 sm:text-3xl">Turnierserien & Spieltage</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
-                Serien, Termine und Spieltage an einem Ort verwalten.
+              <h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Turnierserien & Spieltage</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                Serien erstellen, Termine pflegen und Spieltage zentral verwalten.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => fetchSeries()} className="h-11 rounded-xl border-gray-200 bg-white">
+              <Button variant="outline" onClick={() => fetchSeries()} className="h-11 rounded-xl border-slate-200 bg-white">
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Aktualisieren
               </Button>
 
               <Dialog open={seriesDialogOpen} onOpenChange={setSeriesDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="h-11 rounded-xl bg-orange-600 px-5 font-bold text-white hover:bg-orange-700">
+                  <Button className="h-11 rounded-xl bg-slate-950 px-5 font-bold text-white hover:bg-slate-800">
                     <Plus className="mr-2 h-4 w-4" />
                     Neue Serie
                   </Button>
@@ -564,7 +564,7 @@ export default function AdminTournamentSchedulesPage() {
                       onChange={(e) => setNewSeriesSlug(e.target.value)}
                       placeholder="z.B. lion-cup-2026-27 (wenn leer -> automatisch)"
                     />
-                    <div className="text-xs text-gray-500">Wenn leer, wird automatisch aus dem Namen erzeugt.</div>
+                    <div className="text-xs text-slate-500">Wenn leer, wird automatisch aus dem Namen erzeugt.</div>
                   </div>
 
                   <div className="grid gap-2">
@@ -607,7 +607,7 @@ export default function AdminTournamentSchedulesPage() {
                         onChange={(e) => setNewSeriesQualification(Number(e.target.value))}
                         placeholder="z.B. 8"
                       />
-                      <div className="text-xs text-gray-500">0 = keine Mindestanzahl</div>
+                      <div className="text-xs text-slate-500">0 = keine Mindestanzahl</div>
                     </div>
                     <div className="grid gap-2">
                       <Label>Qualifikationstage gesamt</Label>
@@ -644,23 +644,23 @@ export default function AdminTournamentSchedulesPage() {
         </section>
 
         <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Serien</div>
-                <div className="mt-1 text-2xl font-black text-gray-950">{series.length}</div>
+                <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Serien</div>
+                <div className="mt-1 text-2xl font-black text-slate-950">{series.length}</div>
               </div>
-              <div className="rounded-xl bg-orange-50 p-2.5 text-orange-600">
+              <div className="rounded-xl bg-slate-50 p-2.5 text-slate-600">
                 <Layers3 className="h-5 w-5" />
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Aktiv</div>
-                <div className="mt-1 text-2xl font-black text-gray-950">{activeSeriesCount}</div>
+                <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Aktiv</div>
+                <div className="mt-1 text-2xl font-black text-slate-950">{activeSeriesCount}</div>
               </div>
               <div className="rounded-xl bg-green-50 p-2.5 text-green-600">
                 <CheckCircle2 className="h-5 w-5" />
@@ -668,12 +668,12 @@ export default function AdminTournamentSchedulesPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Spieltage</div>
-                <div className="mt-1 text-2xl font-black text-gray-950">{matchdayCount}</div>
-                <div className="mt-0.5 text-[11px] font-medium text-gray-500">
+                <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Spieltage</div>
+                <div className="mt-1 text-2xl font-black text-slate-950">{matchdayCount}</div>
+                <div className="mt-0.5 text-[11px] font-medium text-slate-500">
                   {activeSeries ? activeSeries.name : "Serie auswählen"}
                 </div>
               </div>
@@ -683,14 +683,14 @@ export default function AdminTournamentSchedulesPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Nächster Termin</div>
-                <div className="mt-1 truncate text-sm font-black text-gray-950">
+                <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Nächster Termin</div>
+                <div className="mt-1 truncate text-sm font-black text-slate-950">
                   {nextEvent ? new Date(nextEvent.effectiveIso).toLocaleDateString("de-DE") : "—"}
                 </div>
-                <div className="mt-0.5 text-[11px] font-medium text-gray-500">
+                <div className="mt-0.5 text-[11px] font-medium text-slate-500">
                   {nextEvent ? new Date(nextEvent.effectiveIso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr" : "Kein weiterer Termin"}
                 </div>
               </div>
@@ -703,39 +703,39 @@ export default function AdminTournamentSchedulesPage() {
 
         <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
           {/* Series list */}
-          <Card className="overflow-hidden rounded-3xl border-gray-200 bg-white shadow-sm">
-            <CardHeader className="border-b border-gray-100 bg-gray-50/60 p-5">
-              <CardTitle className="flex items-center gap-2 text-lg font-black text-gray-950">
-                <Layers3 className="h-5 w-5 text-orange-600" />
+          <Card className="overflow-hidden rounded-3xl border-slate-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-gray-100 bg-slate-50/60 p-5">
+              <CardTitle className="flex items-center gap-2 text-lg font-black text-slate-950">
+                <Layers3 className="h-5 w-5 text-slate-600" />
                 Serien
               </CardTitle>
-              <p className="text-sm text-gray-500">Serie auswählen, bearbeiten oder neue Spieltage anlegen.</p>
+              <p className="text-sm text-slate-500">Serie auswählen, bearbeiten oder neue Spieltage anlegen.</p>
             </CardHeader>
             <CardContent className="space-y-2">
               {loading ? (
-                <div className="text-sm text-gray-600">Lade Serien…</div>
+                <div className="text-sm text-slate-600">Lade Serien…</div>
               ) : series.length === 0 ? (
-                <div className="text-sm text-gray-600">Keine Serien vorhanden.</div>
+                <div className="text-sm text-slate-600">Keine Serien vorhanden.</div>
               ) : (
                 series.map((s) => (
                   <div
                     key={s.id}
                     className={`group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border p-3.5 transition-all ${
                       s.id === activeSeriesId
-                        ? "border-orange-300 bg-orange-50/70 shadow-sm"
-                        : "border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/30"
+                        ? "border-slate-300 bg-slate-50/70 shadow-sm"
+                        : "border-slate-200 bg-white hover:border-slate-200 hover:bg-slate-50/30"
                     }`}
                     onClick={() => setActiveSeriesId(s.id)}
                   >
                     <div className="min-w-0">
                       <div className="font-semibold truncate">{s.name}</div>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
-                        <span className={`rounded-full px-2 py-0.5 font-bold ${s.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                        <span className={`rounded-full px-2 py-0.5 font-bold ${s.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
                           {s.is_active ? "Aktiv" : "Inaktiv"}
                         </span>
-                        <span className="text-gray-500">{s.total_tournament_days || 0} Spieltage</span>
+                        <span className="text-slate-500">{s.total_tournament_days || 0} Spieltage</span>
                         <span className="text-gray-300">•</span>
-                        <span className="text-gray-500">{Number(s.startgeld || 0).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}</span>
+                        <span className="text-slate-500">{Number(s.startgeld || 0).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}</span>
                       </div>
                     </div>
 
@@ -769,8 +769,8 @@ export default function AdminTournamentSchedulesPage() {
               )}
 
               {editSeries && (
-                <div className="mt-4 space-y-3 rounded-2xl border border-orange-200 bg-orange-50/40 p-4">
-                  <div className="flex items-center gap-2 font-black text-gray-950"><Settings2 className="h-4 w-4 text-orange-600" />Serie bearbeiten</div>
+                <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="flex items-center gap-2 font-black text-slate-950"><Settings2 className="h-4 w-4 text-slate-600" />Serie bearbeiten</div>
 
                   <div className="grid gap-2">
                     <Label>Name</Label>
@@ -862,11 +862,11 @@ export default function AdminTournamentSchedulesPage() {
           </Card>
 
           {/* Events */}
-          <Card className="min-w-0 overflow-hidden rounded-3xl border-gray-200 bg-white shadow-sm">
-            <CardHeader className="flex flex-col gap-4 border-b border-gray-100 bg-gray-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <Card className="min-w-0 overflow-hidden rounded-3xl border-slate-200 bg-white shadow-sm">
+            <CardHeader className="flex flex-col gap-4 border-b border-gray-100 bg-slate-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2 text-lg font-black text-gray-950"><Calendar className="h-5 w-5 text-orange-600" />Spieltage & Termine</CardTitle>
-                <div className="text-xs text-gray-600">
+                <CardTitle className="flex items-center gap-2 text-lg font-black text-slate-950"><Calendar className="h-5 w-5 text-slate-600" />Spieltage & Termine</CardTitle>
+                <div className="text-xs text-slate-600">
                   {activeSeries ? (
                     <>
                       Serie: <span className="font-bold text-gray-800">{activeSeries.name}</span>
@@ -878,11 +878,11 @@ export default function AdminTournamentSchedulesPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" disabled={!activeSeriesId} onClick={() => activeSeriesId && fetchEvents(activeSeriesId)} className="h-10 rounded-xl border-gray-200">
+                <Button variant="outline" disabled={!activeSeriesId} onClick={() => activeSeriesId && fetchEvents(activeSeriesId)} className="h-10 rounded-xl border-slate-200">
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Termine laden
                 </Button>
-                <Button disabled={!activeSeriesId} onClick={openCreateEvent} className="h-10 rounded-xl bg-orange-600 font-bold text-white hover:bg-orange-700">
+                <Button disabled={!activeSeriesId} onClick={openCreateEvent} className="h-10 rounded-xl bg-slate-950 font-bold text-white hover:bg-slate-800">
                   <Plus className="h-4 w-4 mr-2" />
                   Neuer Termin
                 </Button>
@@ -891,19 +891,19 @@ export default function AdminTournamentSchedulesPage() {
 
             <CardContent>
               {!activeSeriesId ? (
-                <div className="text-sm text-gray-600">Wähle links eine Serie.</div>
+                <div className="text-sm text-slate-600">Wähle links eine Serie.</div>
               ) : eventsLoading ? (
-                <div className="flex items-center gap-2 text-gray-700">
+                <div className="flex items-center gap-2 text-slate-700">
                   <RefreshCw className="h-4 w-4 animate-spin" />
                   Lade Termine…
                 </div>
               ) : events.length === 0 ? (
-                <div className="text-sm text-gray-600">Noch keine Termine.</div>
+                <div className="text-sm text-slate-600">Noch keine Termine.</div>
               ) : (
-                <div className="overflow-x-auto rounded-2xl border border-gray-200">
+                <div className="overflow-x-auto rounded-2xl border border-slate-200">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
+                      <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
                         <TableHead>Datum</TableHead>
                         <TableHead>Uhrzeit</TableHead>
                         <TableHead>Titel</TableHead>
@@ -928,20 +928,20 @@ export default function AdminTournamentSchedulesPage() {
                           <TableRow key={ev.id}>
                             <TableCell className="font-semibold">
                               <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-gray-600" />
+                                <Calendar className="h-4 w-4 text-slate-600" />
                                 <div className="flex flex-col">
                                   <span>{dateStr}</span>
-                                  {ev.is_rescheduled && ev.rescheduled_at && <span className="text-xs text-gray-500 line-through">{origDateStr}</span>}
+                                  {ev.is_rescheduled && ev.rescheduled_at && <span className="text-xs text-slate-500 line-through">{origDateStr}</span>}
                                 </div>
                               </div>
                             </TableCell>
 
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-gray-600" />
+                                <Clock className="h-4 w-4 text-slate-600" />
                                 <div className="flex flex-col">
                                   <span>{timeStr}</span>
-                                  {ev.is_rescheduled && ev.rescheduled_at && <span className="text-xs text-gray-500 line-through">{origTimeStr}</span>}
+                                  {ev.is_rescheduled && ev.rescheduled_at && <span className="text-xs text-slate-500 line-through">{origTimeStr}</span>}
                                 </div>
                               </div>
                             </TableCell>
@@ -957,7 +957,7 @@ export default function AdminTournamentSchedulesPage() {
                                 )}
 
                                 {ev.is_rescheduled && ev.rescheduled_at && (
-                                  <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-bold text-orange-700">Verschoben</span>
+                                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">Verschoben</span>
                                 )}
                               </div>
                             </TableCell>

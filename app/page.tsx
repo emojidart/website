@@ -224,22 +224,22 @@ function CountdownTimer({ targetDate }: { targetDate: Date }) {
   return (
     <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 text-center">
       <div>
-        <div className="text-2xl sm:text-3xl lg:text-5xl font-black">{timeLeft.days}</div>
+        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.days}</div>
         <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Tage</div>
       </div>
       <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
       <div>
-        <div className="text-2xl sm:text-3xl lg:text-5xl font-black">{timeLeft.hours}</div>
+        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.hours}</div>
         <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Std</div>
       </div>
       <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
       <div>
-        <div className="text-2xl sm:text-3xl lg:text-5xl font-black">{timeLeft.minutes}</div>
+        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.minutes}</div>
         <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Min</div>
       </div>
       <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
       <div>
-        <div className="text-2xl sm:text-3xl lg:text-5xl font-black">{timeLeft.seconds}</div>
+        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.seconds}</div>
         <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Sek</div>
       </div>
     </div>
@@ -1730,7 +1730,7 @@ useEffect(() => {
   return (
     <Dialog key={item.id}>
       <DialogTrigger asChild>
-        <div className="min-w-[300px] sm:min-w-0 rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer active:scale-[0.99]">
+        <div className="min-w-[300px] sm:min-w-0 rounded-[22px] border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer active:scale-[0.99]">
           {/* Image / Header */}
           <div className="relative h-40 bg-gray-100">
             {item.photo_url ? (
@@ -1755,7 +1755,7 @@ useEffect(() => {
           </div>
 
           {/* Content */}
-          <div className="p-4">
+          <div className="p-4 sm:p-5">
            <p className="text-[11px] text-gray-500 font-bold mb-1">
   {formatGermanDateRange(item.start_date, item.end_date, item.date)}
   {item.time ? ` • ${item.time.slice(0,5)} Uhr` : ""}
@@ -1888,7 +1888,7 @@ useEffect(() => {
         />
       </div>
     ) : (
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 flex items-center gap-3">
+      <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-5 flex items-center gap-3">
         <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
           <EventIcon className="w-5 h-5 text-orange-700" />
         </div>
@@ -1901,14 +1901,14 @@ useEffect(() => {
 
     {/* Info Cards */}
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+      <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-4">
         <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Ort</p>
         <p className="mt-1 text-sm font-bold text-gray-900 line-clamp-2">
           {item.location || "Wird bekannt gegeben"}
         </p>
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+      <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-4">
         <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Typ</p>
         <p className="mt-1 text-sm font-bold text-gray-900">
           {item.type === "tournament" ? "Turnier" : getEventTypeLabel(item.eventType || "")}
@@ -1916,7 +1916,7 @@ useEffect(() => {
       </div>
 
       {item.type === "tournament" ? (
-  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+  <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-4">
     <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Infos</p>
 
     <p className="mt-1 text-sm font-bold text-gray-900">
@@ -1940,7 +1940,7 @@ useEffect(() => {
 
     {/* Details */}
     {item.details ? (
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+      <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-4">
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4 text-orange-600" />
           <p className="text-sm font-black text-gray-900">Beschreibung</p>
@@ -1965,7 +1965,7 @@ useEffect(() => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f5f6f8] text-slate-950">
       <Header />
 
       {/* Abstand für fixed Header */}
@@ -1975,15 +1975,76 @@ useEffect(() => {
 
       <PushNotificationDialog />
 
+      {/* ================= ULTRA MODERN DASHBOARD HERO ================= */}
+      <section className="mx-auto w-full max-w-[1800px] px-3 pt-4 sm:px-5 sm:pt-5 lg:px-8 xl:px-10">
+        <div className="relative overflow-hidden rounded-[30px] border border-slate-800/10 bg-slate-950 text-white shadow-[0_30px_90px_-50px_rgba(15,23,42,0.75)]">
+          <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-0 left-1/3 h-48 w-96 rounded-full bg-white/[0.04] blur-3xl" />
+
+          <div className="relative grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_560px] lg:items-end lg:p-9">
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-orange-300">
+                <Sparkles className="h-3.5 w-3.5" />
+                EMD VereinsApp
+              </div>
+
+              <h1 className="mt-4 max-w-4xl text-3xl font-black tracking-[-0.045em] text-white sm:text-4xl lg:text-5xl">
+                Dein Dart-Tag auf einen Blick.
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/55 sm:text-base">
+                Spiele, Termine, Turniere und Vereinsleben – alles Wichtige direkt auf deiner Startseite.
+              </p>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  className="h-11 rounded-xl bg-orange-500 px-4 font-black text-white shadow-none hover:bg-orange-600"
+                  onClick={() => (window.location.href = "/member-availability")}
+                >
+                  Meine Spiele
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 rounded-xl border-white/15 bg-white/[0.06] px-4 font-black text-white hover:bg-white/10 hover:text-white"
+                  onClick={() => (window.location.href = "/turniere")}
+                >
+                  Turniere entdecken
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3.5 backdrop-blur">
+                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/40">Ligaspiele</div>
+                <div className="mt-1 text-2xl font-black text-white">{myLeagueMatches.length}</div>
+                <div className="mt-1 text-[11px] font-semibold text-white/45">für dich geplant</div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3.5 backdrop-blur">
+                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/40">Heute</div>
+                <div className="mt-1 text-2xl font-black text-white">{todaysEvents.length}</div>
+                <div className="mt-1 text-[11px] font-semibold text-white/45">Vereinstermine</div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3.5 backdrop-blur">
+                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/40">Turniere</div>
+                <div className="mt-1 text-2xl font-black text-orange-300">{combinedEvents.filter((item) => item.type === "tournament").length}</div>
+                <div className="mt-1 text-[11px] font-semibold text-white/45">im Überblick</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* WICHTIG: persönliche Ligaspiele ganz oben auf der Startseite */}
-      <div className="container mx-auto px-4 pt-4 sm:pt-5">
+      <div className="mx-auto w-full max-w-[1800px] px-3 pt-5 sm:px-5 sm:pt-6 lg:px-8 xl:px-10">
         <div className="space-y-4">
           {/* ================= DEINE LIGASPIELE ================= */}
     {authUserId && hasLeaguePackage ? (
-      <section className="mb-8">
+      <section className="mb-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
               <Swords className="h-5 w-5 text-orange-600" />
             </div>
             <div>
@@ -2033,9 +2094,9 @@ useEffect(() => {
               return (
                 <div
                   key={match.id}
-                  className="overflow-hidden rounded-3xl border border-gray-200/80 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)]"
+                  className="group overflow-hidden rounded-[26px] border border-slate-200/90 bg-white shadow-[0_18px_55px_-45px_rgba(15,23,42,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_65px_-45px_rgba(15,23,42,0.62)]"
                 >
-                  <div className="flex items-center justify-between gap-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-white px-4 py-3.5">
                     <Badge
                       variant="outline"
                       className={
@@ -2065,17 +2126,17 @@ useEffect(() => {
                       {getTeamName(match, false)}
                     </div>
 
-                    <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50/80 px-3.5 py-3">
+                    <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3">
                       <div className="text-xs font-bold uppercase tracking-wide text-gray-500">
                         Deine Antwort
                       </div>
                       <div className="mt-1">
                         {match.my_status === "yes" ? (
-                          <Badge className="rounded-full bg-green-600 text-white">Zugesagt ✓</Badge>
+                          <Badge variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-700">Zugesagt ✓</Badge>
                         ) : match.my_status === "maybe" ? (
-                          <Badge className="rounded-full bg-yellow-600 text-white">Vielleicht</Badge>
+                          <Badge variant="outline" className="rounded-full border-amber-200 bg-amber-50 text-amber-700">Vielleicht</Badge>
                         ) : match.my_status === "no" ? (
-                          <Badge className="rounded-full bg-red-600 text-white">Abgesagt</Badge>
+                          <Badge variant="outline" className="rounded-full border-rose-200 bg-rose-50 text-rose-700">Abgesagt</Badge>
                         ) : (
                           <Badge
                             variant="outline"
@@ -2100,7 +2161,7 @@ useEffect(() => {
                         size="sm"
                         disabled={!!myLeagueSaving}
                         onClick={() => void setHomeLeagueAvailability(match, "yes")}
-                        className="rounded-2xl bg-green-600 px-2 font-bold text-white hover:bg-green-700"
+                        className="rounded-xl border border-emerald-200 bg-white px-2 font-black text-slate-800 shadow-none hover:bg-emerald-50 hover:text-emerald-800"
                       >
                         {myLeagueSaving === `${match.id}-yes` ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -2114,7 +2175,7 @@ useEffect(() => {
                         size="sm"
                         disabled={!!myLeagueSaving}
                         onClick={() => void setHomeLeagueAvailability(match, "maybe")}
-                        className="rounded-2xl bg-yellow-600 px-2 font-bold text-white hover:bg-yellow-700"
+                        className="rounded-xl border border-amber-200 bg-white px-2 font-black text-slate-800 shadow-none hover:bg-amber-50 hover:text-amber-800"
                       >
                         {myLeagueSaving === `${match.id}-maybe` ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -2128,7 +2189,7 @@ useEffect(() => {
                         size="sm"
                         disabled={!!myLeagueSaving}
                         onClick={() => void setHomeLeagueAvailability(match, "no")}
-                        className="rounded-2xl bg-red-600 px-2 font-bold text-white hover:bg-red-700"
+                        className="rounded-xl border border-rose-200 bg-white px-2 font-black text-slate-800 shadow-none hover:bg-rose-50 hover:text-rose-800"
                       >
                         {myLeagueSaving === `${match.id}-no` ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -2141,7 +2202,7 @@ useEffect(() => {
                     <Button
                       type="button"
                       variant="outline"
-                      className="mt-3 w-full rounded-2xl font-bold"
+                      className="mt-3 w-full rounded-xl border-slate-200 bg-slate-950 font-black text-white hover:bg-slate-800 hover:text-white"
                       onClick={() =>
                         (window.location.href = `/member-availability?match_id=${match.id}&team_id=${match.my_team_id}`)
                       }
@@ -2163,19 +2224,19 @@ useEffect(() => {
 	  
 	  
 	  {todaysEvents.length > 0 && (
-  <div className="mx-4 sm:mx-6 mt-3">
-    <div className="rounded-2xl border border-blue-200 bg-white shadow-lg overflow-hidden">
-      <div className="h-1.5 bg-gradient-to-r from-blue-500 via-sky-400 to-cyan-500" />
+  <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+      <div className="h-1.5 bg-gradient-to-r from-slate-900 via-orange-500 to-slate-900" />
 
       <div className="p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center shrink-0">
-              <Calendar className="w-6 h-6 text-blue-700" />
+            <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-slate-200 flex items-center justify-center shrink-0">
+              <Calendar className="w-6 h-6 text-orange-700" />
             </div>
 
             <div>
-              <div className="text-xs font-black uppercase tracking-wider text-blue-700">
+              <div className="text-xs font-black uppercase tracking-wider text-orange-700">
                 Heute im Verein
               </div>
 
@@ -2189,7 +2250,7 @@ useEffect(() => {
                 {todaysEvents.map((event) => (
                   <div
                     key={`${event.type}-${event.id}`}
-                    className="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2"
+                    className="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5"
                   >
                     <div className="text-sm font-black text-gray-900">
                       {event.name}
@@ -2197,12 +2258,12 @@ useEffect(() => {
 
                     <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-semibold text-gray-600">
                       <span className="inline-flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-blue-700" />
+                        <Clock className="w-3.5 h-3.5 text-orange-700" />
                         {ensureUhr(event.time)}
                       </span>
 
                       <span className="inline-flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-blue-700" />
+                        <MapPin className="w-3.5 h-3.5 text-orange-700" />
                         {event.location}
                       </span>
 
@@ -2213,7 +2274,7 @@ useEffect(() => {
                       )}
 
                       {event.type === "event" && event.eventType && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-white border border-blue-200 px-2 py-0.5 text-blue-800 font-black">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white border border-slate-200 px-2 py-0.5 text-slate-800 font-black">
                           {getEventTypeLabel(event.eventType)}
                         </span>
                       )}
@@ -2226,7 +2287,7 @@ useEffect(() => {
 
           <Button
   type="button"
-  className="w-full sm:w-auto rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-sm"
+  className="w-full sm:w-auto rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-black shadow-sm"
   onClick={() => {
     if (todaysEvents.length === 1) {
       window.location.href = todaysEvents[0].sourceKind === "dach" ? `/dach-veranstaltungen/${todaysEvents[0].id}` : `/veranstaltungen/${todaysEvents[0].internalEventId || todaysEvents[0].id}`
@@ -2247,19 +2308,19 @@ useEffect(() => {
 	  
 	  
 	  {!birthdayLoading && birthdayPlayers.length > 0 && (
-  <div className="mx-4 sm:mx-6 mt-3">
-    <div className="rounded-2xl border border-pink-200 bg-white shadow-lg overflow-hidden">
-      <div className="h-1.5 bg-gradient-to-r from-pink-500 via-rose-400 to-orange-500" />
+  <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
+    <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
+      <div className="h-1 bg-orange-500" />
 
       <div className="p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-pink-50 border border-pink-200 flex items-center justify-center shrink-0">
-              <PartyPopper className="w-6 h-6 text-pink-700" />
+            <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
+              <PartyPopper className="w-6 h-6 text-orange-700" />
             </div>
 
             <div>
-              <div className="text-xs font-black uppercase tracking-wider text-pink-700">
+              <div className="text-xs font-black uppercase tracking-wider text-orange-700">
                 Geburtstag im Verein
               </div>
 
@@ -2296,7 +2357,7 @@ useEffect(() => {
                 {birthdayPlayers.map((player) => (
                   <span
                     key={player.id}
-                    className="inline-flex items-center gap-1 rounded-full bg-pink-50 border border-pink-200 px-3 py-1 text-xs font-black text-pink-800"
+                    className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-black text-orange-800"
                   >
                     🎂 {player.name}
                     {player.age ? ` • ${player.age}` : ""}
@@ -2319,10 +2380,18 @@ useEffect(() => {
 	  
 
 
+<section className="mx-auto mt-7 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
+  <div className="mb-4 flex items-end justify-between gap-3">
+    <div>
+      <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">Schnellzugriff</div>
+      <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Entdecken & loslegen</h2>
+    </div>
+  </div>
+  <div className="grid gap-4 lg:grid-cols-3">
 {/* GASTZUGANG KOMPAKT */}
-<div className="mx-4 sm:mx-6 mt-3">
-  <div className="rounded-2xl border border-orange-200 bg-white shadow-md overflow-hidden">
-    <div className="h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
+<div>
+  <div className="group h-full overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_55px_-45px_rgba(15,23,42,0.5)] transition-all hover:-translate-y-0.5 hover:border-orange-200">
+    <div className="h-1 bg-orange-500" />
 
     <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div className="flex items-center gap-3 min-w-0">
@@ -2344,7 +2413,7 @@ useEffect(() => {
       </div>
 
       <Button
-        className="w-full sm:w-auto rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm"
+        className="w-full rounded-xl bg-slate-950 font-black text-white shadow-none hover:bg-slate-800 sm:w-auto"
         onClick={() => (window.location.href = "/gastzugang-info")}
       >
         Mehr erfahren
@@ -2355,9 +2424,9 @@ useEffect(() => {
 </div>
 
 {/* DARTBÖRSE KOMPAKT */}
-<div className="mx-4 sm:mx-6 mt-3">
-  <div className="rounded-2xl border border-slate-200 bg-white shadow-md overflow-hidden">
-    <div className="h-1.5 bg-gradient-to-r from-slate-800 via-orange-500 to-slate-900" />
+<div>
+  <div className="group h-full overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_55px_-45px_rgba(15,23,42,0.5)] transition-all hover:-translate-y-0.5 hover:border-orange-200">
+    <div className="h-1 bg-orange-500" />
 
     <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div className="flex items-center gap-3 min-w-0">
@@ -2390,9 +2459,9 @@ useEffect(() => {
 </div>
 
 {/* DACH TURNIERE KOMPAKT */}
-<div className="mx-4 sm:mx-6 mt-3">
-  <div className="rounded-2xl border border-orange-200 bg-white shadow-md overflow-hidden">
-    <div className="h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
+<div>
+  <div className="group h-full overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_55px_-45px_rgba(15,23,42,0.5)] transition-all hover:-translate-y-0.5 hover:border-orange-200">
+    <div className="h-1 bg-orange-500" />
 
     <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div className="flex items-center gap-3 min-w-0">
@@ -2414,7 +2483,7 @@ useEffect(() => {
       </div>
 
       <Button
-        className="w-full sm:w-auto rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm"
+        className="w-full rounded-xl bg-slate-950 font-black text-white shadow-none hover:bg-slate-800 sm:w-auto"
         onClick={() => (window.location.href = "/turniere")}
       >
         Zu den Turnieren
@@ -2424,9 +2493,12 @@ useEffect(() => {
   </div>
 </div>
 
+  </div>
+</section>
+
 {activeTournament && (
   <div className="sticky top-12 sm:top-14 z-40">
-    <div className="mx-4 sm:mx-6 mt-3">
+    <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
       <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
         
 
@@ -2435,7 +2507,7 @@ useEffect(() => {
 
 
 {/* Top accent bar */}
-        <div className="h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
+        <div className="h-1 bg-orange-500" />
 
         <div className="p-3 sm:p-4">
           <div className="flex items-center justify-between gap-3">
@@ -2493,7 +2565,7 @@ useEffect(() => {
 	  
 	 {liveSelfRegEvent && (
   <div className="sticky top-12 sm:top-14 z-40">
-    <div className="mx-4 sm:mx-6 mt-3">
+    <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
       <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
         {/* Accent bar */}
         <div
@@ -2631,7 +2703,7 @@ useEffect(() => {
 	  
 	{liveMembersSelfRegEvent && (
   <div className="sticky top-12 sm:top-14 z-40">
-    <div className="mx-4 sm:mx-6 mt-3">
+    <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
       <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
         <div
           className={`h-1.5 ${
@@ -2784,8 +2856,8 @@ useEffect(() => {
 	  
 	  
 	  {liveSummerSelfRegEvent && (
-  <div className="sticky top-12 sm:top-14 z-40">
-    <div className="mx-4 sm:mx-6 mt-3">
+  <div className="hidden">
+    <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
       <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
         <div
           className={`h-1.5 ${
@@ -2909,8 +2981,8 @@ useEffect(() => {
 	  
 	  
 
-      <section className="container mx-auto px-4 py-8 lg:py-12 overflow-x-hidden">
-        <div className="grid lg:grid-cols-2 gap-6">
+      <section className="mx-auto w-full max-w-[1800px] overflow-x-hidden px-3 py-7 sm:px-5 lg:px-8 lg:py-9 xl:px-10">
+        <div className="grid gap-5 xl:grid-cols-2">
 		
 		
 		
@@ -2920,12 +2992,12 @@ useEffect(() => {
 
 
 		
-{/* SUMMER SPECIAL CARD */}
-<div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
-  <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
+{/* SUMMER SPECIAL CARD – beendet, aktuell ausgeblendet */}
+<div className="hidden">
+  <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] text-white">
     <div className="absolute inset-0 opacity-10" />
 
-    <div className="relative p-4 sm:p-6 lg:p-10">
+    <div className="relative p-5 sm:p-6 lg:p-7">
       <div className="w-full mx-auto flex flex-col">
         <div className="flex items-center justify-center mb-5 sm:mb-7">
           <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center">
@@ -2939,7 +3011,7 @@ useEffect(() => {
             <span>STEELDART SERIE 2026</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">EMD Summer Special</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2">EMD Summer Special</h1>
           <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">Steeldart Tournament Competition Cup K26</p>
 
           <div className="min-h-[40px] flex items-center justify-center mb-2">
@@ -3052,20 +3124,26 @@ useEffect(() => {
 		
 		
 		
+<div className="mb-5 mt-2 xl:col-span-2">
+  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">Serien & Wettbewerbe</div>
+  <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Deine Cups</h2>
+  <p className="mt-1 text-sm font-medium text-slate-500">Aktuelle Serien, Termine und Wertungen auf einen Blick.</p>
+</div>
+
 {/* MEMBERS CHAMPIONS CUP CARD */}
-<div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
-  <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
+<div className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+  <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] text-white">
     <div className="absolute inset-0 opacity-10" />
 
-    <div className="relative p-4 sm:p-6 lg:p-10">
+    <div className="relative p-5 sm:p-6 lg:p-7">
       <div className="w-full mx-auto flex flex-col">
         <div className="flex items-center justify-center mb-5 sm:mb-7">
-          <div className="w-32 h-32 sm:w-44 sm:h-44 lg:w-56 lg:h-56 flex items-center justify-center">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 flex items-center justify-center">
             <Image
               src="/images/logo5.png"
               alt="EMD Members Champions Cup"
-              width={280}
-              height={280}
+              width={160}
+              height={160}
               className="object-contain"
             />
           </div>
@@ -3077,7 +3155,7 @@ useEffect(() => {
             <span>MEMBERS CHAMPIONS CUP 2026/27</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2">
             EMD Members Champions Cup
           </h1>
 
@@ -3156,8 +3234,8 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-3 text-center">
-              <div className="text-xl sm:text-2xl font-black text-yellow-700">€ 5,00</div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
+              <div className="text-xl sm:text-2xl font-black text-slate-900">€ 5,00</div>
               <div className="mt-1 text-[11px] sm:text-xs font-bold text-gray-600">
                 werden am jeweiligen Turniertag ausgeschüttet
               </div>
@@ -3227,12 +3305,12 @@ useEffect(() => {
 		
 		
 		
-	<div className="overflow-hidden rounded-2xl shadow-2xl lg:col-span-2 border border-gray-200 bg-white">
+	<div className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
     {/* TOP HERO (ORANGE) */}
-    <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
+    <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] text-white">
      <div className="absolute inset-0 opacity-10" />
 
-      <div className="relative p-4 sm:p-6 lg:p-10">
+      <div className="relative p-5 sm:p-6 lg:p-7">
         <div className="w-full mx-auto flex flex-col">
           {/* Logo */}
           <div className="flex items-center justify-center mb-5 sm:mb-7">
@@ -3254,9 +3332,13 @@ useEffect(() => {
               <span>LION CUP PART 3 • HERBST 2026</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2">
               EMD - LION CUP
             </h1>
+
+            <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
+              Offizielle Vereinsserie 2026
+            </p>
 
             {/* Spieltag / Spielfrei */}
             <div className="min-h-[40px] flex items-center justify-center mb-2">
@@ -3271,7 +3353,7 @@ useEffect(() => {
                 </div>
               ) : null}
 
-              {isNextEventSpielfrei && nextEvent ? (
+              {false && isNextEventSpielfrei && nextEvent ? (
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
                   <div className="flex items-center gap-2 text-xs">
                     <Calendar className="w-3.5 h-3.5 text-yellow-300" />
@@ -3323,7 +3405,7 @@ useEffect(() => {
                 Aktuelles Preisgeld
               </span>
             </div>
-            <div className="flex items-center gap-1 text-green-700">
+            <div className="flex items-center gap-1 text-slate-500">
               <TrendingUp className="w-3.5 h-3.5" />
               <span className="text-[10px] sm:text-xs font-bold">
                 +€4 pro Teilnahme
@@ -3381,7 +3463,7 @@ useEffect(() => {
  
  
 
-      <div className="container mx-auto px-4 py-6 sm:py-10">
+      <div className="mx-auto w-full max-w-[1800px] px-3 py-6 sm:px-5 sm:py-8 lg:px-8 xl:px-10">
   <div className="space-y-8">
     {/* ================= NÄCHSTE SPIELE ================= */}
     <section>
@@ -3402,7 +3484,7 @@ useEffect(() => {
 
       {/* Mobile: horizontal scroll / Desktop: grid */}
       {matches.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8 text-center">
+        <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-8 text-center">
           <p className="text-gray-600 font-semibold">Keine anstehenden Spiele</p>
         </div>
       ) : (
@@ -3411,7 +3493,7 @@ useEffect(() => {
             {matches.slice(0, 4).map((match) => (
               <div
                 key={match.id}
-                className="min-w-[280px] sm:min-w-0 rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
+                className="min-w-[280px] sm:min-w-0 rounded-[22px] border border-slate-200 bg-white shadow-[0_14px_38px_-34px_rgba(15,23,42,0.55)] hover:shadow-md transition-shadow"
               >
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3">
@@ -3519,7 +3601,7 @@ useEffect(() => {
       </div>
 
       {emdUpcomingEvents.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8 text-center">
+        <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-8 text-center">
           <Info className="h-10 w-10 mx-auto mb-3 text-gray-300" />
           <p className="text-gray-600 font-semibold">Derzeit sind keine EMD-Veranstaltungen geplant.</p>
         </div>
@@ -3555,7 +3637,7 @@ useEffect(() => {
       </div>
 
       {discoverTournaments.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8 text-center">
+        <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-8 text-center">
           <Trophy className="h-10 w-10 mx-auto mb-3 text-gray-300" />
           <p className="text-gray-600 font-semibold">Derzeit sind keine weiteren DACH-Turniere verfügbar.</p>
         </div>
@@ -3607,7 +3689,7 @@ useEffect(() => {
     </div>
 
     {/* Hauptsponsor */}
-    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <span className="inline-flex h-7 items-center rounded-full bg-orange-50 text-orange-700 border border-orange-200 px-3 text-xs font-black">
@@ -3643,7 +3725,7 @@ useEffect(() => {
           {[2, 3, 4].map((num) => (
             <div
               key={num}
-              className="min-w-[170px] rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex items-center justify-center"
+              className="min-w-[170px] rounded-[22px] border border-slate-200 bg-white shadow-sm p-4 flex items-center justify-center"
             >
               <Image
   src={`/images/sponsoren/sponsor${num}.png`}
@@ -3670,7 +3752,7 @@ useEffect(() => {
         {[5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
           <div
             key={num}
-            className="rounded-2xl border border-gray-200 bg-white shadow-sm p-3 flex items-center justify-center"
+            className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-3 flex items-center justify-center"
           >
             <Image
   src={`/images/sponsoren/sponsor${num}.png`}

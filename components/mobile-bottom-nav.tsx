@@ -13,11 +13,9 @@ import {
   HelpCircle,
   LogOut,
   MessageCircle,
-  Images,
   LayoutDashboard,
   History,
   Radio,
-  CreditCard,
   X,
   Building2,
   CalendarDays,
@@ -128,8 +126,8 @@ function NavLink({
       href={item.href!}
       onClick={onAfter}
       className={cn(
-        "flex items-center gap-3 rounded-xl p-3 border border-transparent",
-        "hover:bg-gray-50 text-gray-900",
+        "flex items-center gap-3 rounded-2xl p-3 border border-transparent transition-all",
+        "hover:bg-white text-slate-900",
         className,
       )}
     >
@@ -267,22 +265,6 @@ export function MobileBottomNav() {
         adminOnly: true,
       },
       {
-        key: "card",
-        name: "Mitgliedskarte",
-        href: "/member-card",
-        icon: CreditCard,
-        requiresLogin: true,
-        memberOnly: true,
-      },
-      {
-        key: "gallery",
-        name: "Match Galerie",
-        href: "/match-galerie",
-        icon: Images,
-        requiresLogin: true,
-        memberOnly: true,
-      },
-      {
         key: "logout",
         name: "Abmelden",
         icon: LogOut,
@@ -328,28 +310,28 @@ export function MobileBottomNav() {
 
           {/* Sheet sitzt über Nav + Offset */}
           <div className="absolute left-0 right-0 bottom-0" style={{ paddingBottom: SPACER_H }}>
-            <div className="mx-3 overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b bg-white p-4">
-                <h3 className="text-lg font-bold text-gray-900">
+            <div className="mx-3 overflow-hidden rounded-t-[28px] border border-slate-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 bg-slate-950 p-4 text-white">
+                <h3 className="text-lg font-black text-white">
                   Mehr Optionen
                 </h3>
 
                 <button
                   onClick={closeMore}
-                  className="rounded-lg p-2 hover:bg-gray-100"
+                  className="rounded-xl p-2 text-slate-300 hover:bg-white/10"
                   aria-label="Schließen"
                 >
-                  <X className="h-5 w-5 text-gray-700" />
+                  <X className="h-5 w-5 text-slate-300" />
                 </button>
               </div>
 
-              <div className="max-h-[60vh] overflow-y-auto p-4 space-y-5">
+              <div className="max-h-[64vh] overflow-y-auto bg-slate-50 p-4 space-y-5">
                 {sections.map((sec) => {
                   if (sec.items.length === 0) return null
 
                   return (
                     <section key={sec.title}>
-                      <div className="mb-2 text-xs font-bold uppercase text-gray-500">
+                      <div className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                         {sec.title}
                       </div>
 
@@ -360,7 +342,7 @@ export function MobileBottomNav() {
                               key={item.key}
                               item={item}
                               onAfter={closeMore}
-                              className="bg-white border border-gray-200 hover:bg-gray-50"
+                              className="min-h-[72px] rounded-2xl bg-white border border-slate-200 hover:border-orange-200 hover:bg-orange-50/40 hover:shadow-sm"
                             />
                           ))}
                         </div>
@@ -386,7 +368,7 @@ export function MobileBottomNav() {
 
       {/* BOTTOM NAV */}
       <nav
-        className="fixed left-0 right-0 bottom-0 z-50 md:hidden border-t border-gray-200 bg-white shadow-2xl"
+        className="fixed left-0 right-0 bottom-0 z-50 md:hidden border-t border-slate-200/80 bg-white/95 shadow-[0_-8px_30px_rgba(15,23,42,0.10)] backdrop-blur-xl"
         style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
       >
         <div className="grid h-16 grid-cols-5">

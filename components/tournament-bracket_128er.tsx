@@ -5,9 +5,8 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { VsIntroOverlay } from "@/components/vs-intro-overlay"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { RotateCcw, Check, Radio, Activity, Clock3, Trophy } from "lucide-react"
+import { RotateCcw, Check, Radio, Activity, Clock3, Trophy, MonitorUp } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSpeechAnnouncer } from "@/components/speech-announcer"
@@ -837,14 +836,7 @@ const markTournamentAsCancelled = async (tournamentId: string) => {
 
 export default function TournamentBracket({ bracketSize = 128, tournamentType = "128er_dko" }: TournamentBracketProps) {
   const initializingRef = useRef(false)
-  const [vsIntro, setVsIntro] = useState<{ open: boolean; player1: string; player2: string; machineNumber?: number }>(() => ({
-    open: false,
-    player1: "",
-    player2: "",
-    machineNumber: undefined,
-  }))
-
-  const isRemoteUpdateRef = useRef(false)
+const isRemoteUpdateRef = useRef(false)
   const autoResolveRanRef = useRef(false)
 
   const [tournamentId, setTournamentId] = useState<string>("")
@@ -1677,15 +1669,7 @@ const assignMachine = async (machineNumber: number) => {
     if (announcementsEnabled) {
       announce(match.player1, match.player2, machineNumber, 1)
     }
-
-    setVsIntro({
-      open: true,
-      player1: match.player1,
-      player2: match.player2,
-      machineNumber,
-    })
-
-    setMachineDialogOpen(false)
+setMachineDialogOpen(false)
     setSelectedMatchId(null)
   } catch (err) {
     console.error("[v0] Fehler beim direkten Starten des Spiels:", err)
@@ -2292,53 +2276,100 @@ const liveCompletion = Math.round((completedCount / totalMatchCount) * 100)
 const winnerName =
   matches[255].winner || (matches[254].winner === matches[254].player1 ? matches[254].winner : undefined)
 
+
+const openBeamer = () => {
+  if (!tournamentId) return
+
+  const params = new URLSearchParams({
+    tournamentId,
+    tournamentName,
+    tournamentType,
+  })
+
+  window.open(
+    `/128erdko/beamer?${params.toString()}`,
+    "dko-beamer-128",
+    "popup=yes,width=1600,height=900",
+  )
+}
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-4 md:p-8 flex items-center justify-center">
-        <p className="text-lg text-muted-foreground">Lade Spieler...</p>
+      <div className="min-h-screen bg-slate-100/70 flex items-center justify-center px-4">
+        <div className="rounded-[22px] border border-slate-200 bg-white px-7 py-6 text-center shadow-[0_18px_50px_-38px_rgba(15,23,42,.55)]">
+          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-[3px] border-slate-200 border-t-slate-900" />
+          <p className="mt-4 text-sm font-bold text-slate-600">Turnier wird geladen…</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="w-full mx-auto space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-              {bracketSize}er DKO - {tournamentName}
-            </h1>
+    <div className="min-h-screen bg-slate-100/70">
+      <div className="mx-auto w-full max-w-[1920px] space-y-5 px-3 pb-8 pt-3 sm:px-5 lg:px-7 xl:px-8">
+        <div className="flex flex-col gap-3 rounded-[22px] border border-slate-200 bg-white px-4 py-3 shadow-[0_14px_40px_-32px_rgba(15,23,42,.55)] sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+              <Trophy className="h-3.5 w-3.5 text-slate-500" />
+              Double Knockout
+            </div>
+            <div className="mt-0.5 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+              <h1 className="truncate text-xl font-black tracking-tight text-slate-950 sm:text-2xl">{tournamentName}</h1>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{bracketSize}er DKO</span>
+            </div>
           </div>
-          <div className="flex gap-2 items-center">
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
+
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <label className="flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700">
               <input
                 type="checkbox"
                 checked={announcementsEnabled}
                 onChange={(e) => setAnnouncementsEnabled(e.target.checked)}
-                className="w-4 h-4 cursor-pointer"
+                className="h-4 w-4 cursor-pointer"
               />
-              <span>Ansage aktivieren</span>
+              <span>Ansage</span>
             </label>
-            <Button onClick={fetchRankings} variant="outline" disabled={loadingRankings || !tournamentId}>
+
+            <Button
+              onClick={openBeamer}
+              variant="outline"
+              disabled={!tournamentId}
+              className="h-9 rounded-xl border-slate-900 bg-slate-950 px-3 text-sm font-bold text-white hover:bg-slate-800 hover:text-white"
+            >
+              <MonitorUp className="mr-1.5 h-4 w-4" />
+              Beamer
+            </Button>
+
+            <Button
+              onClick={fetchRankings}
+              variant="outline"
+              disabled={loadingRankings || !tournamentId}
+              className="h-9 rounded-xl border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+            >
               {loadingRankings ? "Lädt..." : "Rangliste"}
             </Button>
-            <Button onClick={handleCancelClick} variant="outline">
+
+            <Button
+              onClick={handleCancelClick}
+              variant="outline"
+              className="h-9 rounded-xl border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+            >
               Abbrechen
             </Button>
           </div>
         </div>
 
 
-        <Card className="overflow-hidden border-0 shadow-xl bg-white text-slate-900 border border-slate-200">
+        <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white text-slate-900 shadow-[0_16px_44px_-34px_rgba(15,23,42,.55)]">
           <div className="p-5 md:p-6 space-y-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-600">
+                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
                   <Radio className="h-3.5 w-3.5" />
-                  LIVE Center
+                  Match Center
                 </div>
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-bold">Alles Wichtige auf einen Blick</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold">Turniersteuerung auf einen Blick</h2>
                   <p className="text-sm md:text-base text-slate-600">
                     Laufende Spiele, freie Automaten und die nächsten Matches sofort sichtbar.
                   </p>
@@ -2352,7 +2383,7 @@ const winnerName =
                 </div>
                 <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
                   <div
-                    className="h-full rounded-full bg-orange-500 transition-all duration-500"
+                    className="h-full rounded-full bg-slate-900 transition-all duration-500"
                     style={{ width: `${liveCompletion}%` }}
                   />
                 </div>
@@ -2384,7 +2415,7 @@ const winnerName =
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Bereit</span>
-                  <Clock3 className="h-4 w-4 text-orange-500" />
+                  <Clock3 className="h-4 w-4 text-slate-500" />
                 </div>
                 <div className="mt-2 text-3xl font-bold">{readyMatches.length}</div>
                 <p className="mt-1 text-xs text-slate-500">Sofort startbare Matches</p>
@@ -2410,10 +2441,10 @@ const winnerName =
             </div>
 
             <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-              <div className="rounded-2xl border border-red-200 bg-white p-4 shadow-sm">
+              <div className="rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="font-semibold text-lg">Gerade LIVE</h3>
-                  <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                     {liveMachineNumbers.length > 0 ? `Automaten ${liveMachineNumbers.join(", ")}` : "Noch kein Spiel gestartet"}
                   </span>
                 </div>
@@ -2431,7 +2462,7 @@ const winnerName =
                       return (
                         <div
                           key={match.id}
-                          className="rounded-2xl border border-red-200 bg-red-50/40 px-4 py-4 shadow-sm"
+                          className="rounded-2xl border border-emerald-200 bg-emerald-50/40 px-4 py-4 shadow-sm"
                         >
 						
 						
@@ -2442,7 +2473,7 @@ const winnerName =
   <div>
     <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-500">
       <span>Match {match.id}</span>
-      <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-white">
+      <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-white">
         LIVE
       </span>
     </div>
@@ -2450,7 +2481,7 @@ const winnerName =
       {match.player1} <span className="text-slate-400">vs.</span> {match.player2}
     </div>
     <div className="mt-2">
-      <span className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600">
+      <span className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-700">
         Automat {match.machineNumber}
       </span>
     </div>
@@ -2507,7 +2538,7 @@ const winnerName =
     size="sm"
     onClick={() => confirmMatch(match.id)}
     disabled={!canConfirmLive}
-    className="bg-red-500 text-white hover:bg-red-600 disabled:bg-slate-200 disabled:text-slate-500"
+    className="bg-slate-950 text-white hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-500"
   >
     <Check className="mr-1 h-4 w-4" />
     Ergebnis bestätigen
@@ -2558,7 +2589,7 @@ const winnerName =
                             <Button
                               size="sm"
                               onClick={() => startMatch(match.id)}
-                              className="bg-orange-500 text-white hover:bg-orange-600"
+                              className="bg-slate-950 text-white hover:bg-slate-800"
                             >
                               {hasFreilos ? "Auto starten" : "Spiel starten"}
                             </Button>
@@ -3103,10 +3134,10 @@ function MatchCard({
   return (
     <Card
       className={cn(
-        "p-3 space-y-2 transition-all",
-        isGrandFinal && "border-2 border-primary shadow-lg",
-        isLoser && "border-l-4 border-l-destructive",
-        isRunning && "border-2 border-orange-500 shadow-lg shadow-orange-500/20 bg-orange-50/50",
+        "space-y-3 rounded-[20px] border border-slate-200 bg-white p-3.5 shadow-[0_12px_34px_-28px_rgba(15,23,42,.55)] transition-all",
+        isGrandFinal && "border-2 border-slate-900 shadow-[0_18px_45px_-30px_rgba(15,23,42,.8)]",
+        isLoser && "border-l-4 border-l-rose-500",
+        isRunning && "border-2 border-emerald-400 bg-emerald-50/50 shadow-[0_18px_45px_-28px_rgba(16,185,129,.55)]",
         hasFreilos && !match.winner && "border-l-4 border-l-yellow-500 bg-yellow-50/30",
       )}
     >
@@ -3114,7 +3145,7 @@ function MatchCard({
         <span className="text-xs font-bold text-muted-foreground">Match {match.id}</span>
         <div className="flex items-center gap-2">
           {match.machineNumber && !match.winner && (
-            <span className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-1 rounded animate-pulse">
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
               🎯 Automat {match.machineNumber}
             </span>
           )}
@@ -3142,7 +3173,7 @@ function MatchCard({
             <Button
               size="sm"
               onClick={() => onConfirm(match.id)}
-              className="h-7 text-xs bg-orange-600 hover:bg-orange-700 text-white"
+              className="h-7 rounded-lg bg-slate-950 text-xs font-bold text-white hover:bg-slate-800"
             >
               <Check className="h-3 w-3 mr-1" />
               Bestätigen

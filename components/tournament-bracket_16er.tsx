@@ -5,9 +5,8 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { VsIntroOverlay } from "@/components/vs-intro-overlay"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { RotateCcw, Check, Volume2, Activity, Clock3, Radio, Trophy } from "lucide-react"
+import { RotateCcw, Check, Volume2, Activity, Clock3, Radio, Trophy, MonitorUp } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSpeechAnnouncer } from "@/components/speech-announcer"
@@ -679,13 +678,6 @@ const markTournamentAsCancelled = async (tournamentId: string) => {
 
 export default function TournamentBracket({ bracketSize = 16, tournamentType = "16er_dko" }: TournamentBracketProps) {
   const initializingRef = useRef(false)
-  const [vsIntro, setVsIntro] = useState<{ open: boolean; player1: string; player2: string; machineNumber?: number }>(() => ({
-    open: false,
-    player1: "",
-    player2: "",
-    machineNumber: undefined,
-  }))
-
   const isRemoteUpdateRef = useRef(false)
 
   const [tournamentId, setTournamentId] = useState<string>("")
@@ -1475,13 +1467,7 @@ const { data: rankings, error: rankingsError } = await supabase
     }
 
     setMachineDialogOpen(false)
-    setVsIntro({
-      open: true,
-      player1: match.player1 ?? "",
-      player2: match.player2 ?? "",
-      machineNumber,
-    })
-    setSelectedMatchId(null)
+setSelectedMatchId(null)
   } catch (error) {
     console.error("Fehler beim Starten des Spiels:", error)
     alert("Spiel konnte nicht gestartet werden. Bitte erneut versuchen.")
@@ -2174,64 +2160,92 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
   const liveCompletion = Math.round((completedCount / totalMatchCount) * 100)
   const winnerName = matches[31]?.winner || (matches[30]?.winner === matches[30]?.player1 ? matches[30]?.winner : undefined)
 
+  const openBeamer = () => {
+    if (!tournamentId) return
+
+    const params = new URLSearchParams({
+      tournamentId,
+      tournamentName,
+      tournamentType,
+    })
+
+    window.open(
+      `/16erdko/beamer?${params.toString()}`,
+      "dko-beamer-16",
+      "popup=yes,width=1600,height=900",
+    )
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-4 md:p-8 flex items-center justify-center">
-        <p className="text-lg text-muted-foreground">Lade Spieler...</p>
+      <div className="min-h-screen bg-slate-100/70 flex items-center justify-center">
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-5 text-sm font-semibold text-slate-600 shadow-sm">Lade Spieler...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="w-full mx-auto space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-              {bracketSize}er DKO - {tournamentName}
-            </h1>
+    <div className="min-h-screen bg-slate-100/70">
+      <div className="mx-auto w-full max-w-[1920px] space-y-5 px-3 pb-8 pt-3 sm:px-5 lg:px-7 xl:px-8">
+        <div className="flex flex-col gap-3 rounded-[22px] border border-slate-200 bg-white px-4 py-3 shadow-[0_14px_40px_-32px_rgba(15,23,42,.55)] sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+              <Trophy className="h-3.5 w-3.5 text-slate-500" />
+              Double Knockout
+            </div>
+            <div className="mt-0.5 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+              <h1 className="truncate text-xl font-black tracking-tight text-slate-950 sm:text-2xl">{tournamentName}</h1>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{bracketSize}er DKO</span>
+            </div>
           </div>
-          <div className="flex gap-2 items-center">
-            <div className="flex items-center gap-2 mr-4">
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <div className="flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3">
               <Checkbox
                 id="announcements"
                 checked={announcementsEnabled}
                 onCheckedChange={(checked) => setAnnouncementsEnabled(checked === true)}
               />
-              <Label htmlFor="announcements" className="flex items-center gap-1 cursor-pointer">
+              <Label htmlFor="announcements" className="flex cursor-pointer items-center gap-1.5 text-sm font-bold text-slate-700">
                 <Volume2 className="h-4 w-4" />
                 Ansage
               </Label>
             </div>
-            <Button onClick={fetchRankings} variant="outline" disabled={loadingRankings || !tournamentId}>
+            <Button
+              onClick={openBeamer}
+              variant="outline"
+              disabled={!tournamentId}
+              className="h-9 rounded-xl border-slate-900 bg-slate-950 px-3 text-sm font-bold text-white hover:bg-slate-800 hover:text-white"
+            >
+              <MonitorUp className="mr-1.5 h-4 w-4" />
+              Beamer
+            </Button>
+            <Button onClick={fetchRankings} variant="outline" disabled={loadingRankings || !tournamentId} className="h-9 rounded-xl border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
               {loadingRankings ? "Lädt..." : "Rangliste"}
             </Button>
-            <Button onClick={handleCancelClick} variant="outline">
+            <Button onClick={handleCancelClick} variant="outline" className="h-9 rounded-xl border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700">
               Abbrechen
             </Button>
           </div>
         </div>
 
-                <div className="space-y-8">
-          <Card className="border-2 border-red-100 bg-gradient-to-br from-white via-red-50/40 to-orange-50 shadow-lg">
-            <div className="space-y-6 p-5 md:p-6">
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="space-y-5">
+          <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white text-slate-900 shadow-[0_18px_55px_-40px_rgba(15,23,42,.55)]">
+            <div className="space-y-5 p-4 sm:p-5 lg:p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-white">
-                      LIVE Center
+                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-600">
+                      <Radio className="h-3.5 w-3.5" /> LIVE Center
                     </span>
-                    <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
-                      Alles Wichtige auf einen Blick
-                    </span>
+
                   </div>
-                  <h2 className="mt-3 text-2xl font-bold text-slate-900">Turnierstatus & aktuelle Spiele</h2>
+                  <h2 className="mt-3 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Turnierübersicht</h2>
                   <p className="mt-1 text-sm text-slate-600">
-                    Hier siehst du sofort, welche Matches gerade laufen, welche direkt gestartet werden können und wie weit das Turnier bereits fortgeschritten ist.
+                    Live-Spiele, freie Automaten und die nächsten Matches auf einen Blick.
                   </p>
                 </div>
 
-                <div className="w-full xl:max-w-sm">
+                <div className="w-full lg:max-w-sm">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="flex items-center justify-between text-sm text-slate-600">
                       <span>Turnier-Fortschritt</span>
@@ -2272,7 +2286,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Bereit</span>
-                    <Clock3 className="h-4 w-4 text-orange-500" />
+                    <Clock3 className="h-4 w-4 text-sky-600" />
                   </div>
                   <div className="mt-2 text-3xl font-bold">{readyMatches.length}</div>
                   <p className="mt-1 text-xs text-slate-500">Sofort startbare Matches</p>
@@ -2298,10 +2312,10 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
               </div>
 
               <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-                <div className="rounded-2xl border border-red-200 bg-white p-4 shadow-sm">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/40 p-4 shadow-sm">
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="font-semibold text-lg">Gerade LIVE</h3>
-                    <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                    <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">
                       {liveMachineNumbers.length > 0 ? `Automaten ${liveMachineNumbers.join(", ")}` : "Noch kein Spiel gestartet"}
                     </span>
                   </div>
@@ -2319,7 +2333,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                         return (
                           <div
                             key={match.id}
-                            className="rounded-2xl border border-red-200 bg-red-50/40 px-4 py-4 shadow-sm"
+                            className="rounded-2xl border border-emerald-200 bg-emerald-50/45 px-4 py-4 shadow-sm ring-1 ring-emerald-100"
                           >
                             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                               <div>
@@ -2424,7 +2438,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
 
                             <Button
                               onClick={() => startMatch(match.id)}
-                              className="bg-orange-500 text-white hover:bg-orange-600"
+                              className="bg-slate-950 text-white hover:bg-slate-800"
                             >
                               Starten
                             </Button>
@@ -2438,8 +2452,9 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
             </div>
           </Card>
 
+        <div className="grid gap-5 xl:grid-cols-2">
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-orange-600 border-b-2 border-orange-600 pb-2">Runde 1</h2>
+            <h2 className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-base font-black text-slate-900 shadow-sm">Runde 1</h2>
             {[...Array(bracketSize / 2)].map((_, i) => (
               <MatchCard
                 key={i + 1}
@@ -2455,7 +2470,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 1</h2>
+            <h2 className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-base font-black text-rose-800 shadow-sm">Verlierer-Runde 1</h2>
             {[...Array(bracketSize / 4)].map((_, i) => (
               <MatchCard
                 key={i + 9}
@@ -2472,7 +2487,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Runde 2</h2>
+            <h2 className="flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-base font-black text-sky-900 shadow-sm">Runde 2</h2>
             {[...Array(bracketSize / 4)].map((_, i) => (
               <MatchCard
                 key={i + 13}
@@ -2488,7 +2503,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 2</h2>
+            <h2 className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-base font-black text-rose-800 shadow-sm">Verlierer-Runde 2</h2>
             {[...Array(bracketSize / 4)].map((_, i) => (
               <MatchCard
                 key={i + 17}
@@ -2505,7 +2520,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Runde 3</h2>
+            <h2 className="flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-base font-black text-sky-900 shadow-sm">Runde 3</h2>
             {[...Array(bracketSize / 8)].map((_, i) => (
               <MatchCard
                 key={i + 23}
@@ -2521,7 +2536,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 3</h2>
+            <h2 className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-base font-black text-rose-800 shadow-sm">Verlierer-Runde 3</h2>
             {[...Array(bracketSize / 8)].map((_, i) => (
               <MatchCard
                 key={i + 21}
@@ -2538,7 +2553,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 4</h2>
+            <h2 className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-base font-black text-rose-800 shadow-sm">Verlierer-Runde 4</h2>
             {[...Array(bracketSize / 8)].map((_, i) => (
               <MatchCard
                 key={i + 25}
@@ -2555,7 +2570,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Halbfinale</h2>
+            <h2 className="flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-base font-black text-sky-900 shadow-sm">Halbfinale</h2>
             <MatchCard
               match={matches[28]}
               onScoreUpdate={updateScore}
@@ -2568,7 +2583,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 5</h2>
+            <h2 className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-base font-black text-rose-800 shadow-sm">Verlierer-Runde 5</h2>
             <MatchCard
               match={matches[27]}
               onScoreUpdate={updateScore}
@@ -2582,7 +2597,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-destructive border-b-2 border-destructive pb-2">Verlierer-Runde 6</h2>
+            <h2 className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-base font-black text-rose-800 shadow-sm">Verlierer-Runde 6</h2>
             <MatchCard
               match={matches[29]}
               onScoreUpdate={updateScore}
@@ -2596,7 +2611,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-bold text-blue-600 border-b-2 border-blue-600 pb-2">Großes Finale</h2>
+            <h2 className="flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-base font-black text-sky-900 shadow-sm">Großes Finale</h2>
             <p className="text-sm text-muted-foreground">Sieger Gewinnerseite vs. Sieger Verliererseite</p>
             <MatchCard
               match={matches[30]}
@@ -2615,7 +2630,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
             (matches[30].winner === matches[30].player2 && matches[30].winner)) &&
             !matches[31].winner && (
               <div className="space-y-3">
-                <h2 className="text-xl font-bold text-purple-600 border-b-2 border-purple-600 pb-2">Bracket Reset</h2>
+                <h2 className="flex items-center justify-between rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-3 text-base font-black text-violet-900 shadow-sm">Bracket Reset</h2>
                 <p className="text-sm text-muted-foreground">
                   Der Spieler von der Verliererseite hat gewonnen! Beide Spieler haben jetzt je 1 Niederlage.
                 </p>
@@ -2633,7 +2648,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
             )}
 
           {(matches[31].winner || (matches[30].winner === matches[30].player1 && matches[30].player1)) && (
-            <Card className="p-6 bg-primary text-primary-foreground">
+            <Card className="xl:col-span-2 overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 p-6 text-white shadow-[0_22px_60px_-35px_rgba(15,23,42,.9)]">
               <h3 className="text-2xl font-bold text-center">🏆 Turniersieger</h3>
               <p className="text-3xl font-bold text-center mt-4">{matches[31].winner || matches[30].winner}</p>
 
@@ -2686,18 +2701,8 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
         </div>
       </div>
 
-      <VsIntroOverlay
-        open={vsIntro.open}
-        player1={vsIntro.player1}
-        player2={vsIntro.player2}
-        machineNumber={vsIntro.machineNumber}
-        durationMs={3000}
-        onDone={() => setVsIntro((p) => ({ ...p, open: false }))}
-      />
-
-
-
-      <Dialog open={machineDialogOpen} onOpenChange={setMachineDialogOpen}>
+        </div>
+<Dialog open={machineDialogOpen} onOpenChange={setMachineDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Automat auswählen</DialogTitle>
@@ -2828,10 +2833,10 @@ function MatchCard({
   return (
     <Card
       className={cn(
-        "p-3 space-y-2 transition-all",
-        isGrandFinal && "border-2 border-primary shadow-lg",
-        isLoser && "border-l-4 border-l-destructive",
-        isRunning && "border-2 border-orange-500 shadow-lg shadow-orange-500/20 bg-orange-50/50",
+        "space-y-3 rounded-[20px] border border-slate-200 bg-white p-3.5 shadow-[0_12px_34px_-28px_rgba(15,23,42,.55)] transition-all",
+        isGrandFinal && "border-2 border-slate-900 shadow-[0_18px_45px_-30px_rgba(15,23,42,.8)]",
+        isLoser && "border-l-4 border-l-rose-500",
+        isRunning && "border-2 border-emerald-400 bg-emerald-50/50 shadow-[0_18px_45px_-28px_rgba(16,185,129,.55)]",
         hasFreilos && !match.winner && "border-l-4 border-l-yellow-500 bg-yellow-50/30",
       )}
     >
@@ -2839,7 +2844,7 @@ function MatchCard({
         <span className="text-xs font-bold text-muted-foreground">Match {match.id}</span>
         <div className="flex items-center gap-2">
           {match.machineNumber && !match.winner && (
-            <span className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-1 rounded animate-pulse">
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
               🎯 Automat {match.machineNumber}
             </span>
           )}
@@ -2869,7 +2874,7 @@ function MatchCard({
             <Button
               size="sm"
               onClick={() => onConfirm(match.id)}
-              className="h-7 text-xs bg-orange-600 hover:bg-orange-700 text-white"
+              className="h-7 rounded-lg bg-slate-950 text-xs font-bold text-white hover:bg-slate-800"
             >
               <Check className="h-3 w-3 mr-1" />
               Bestätigen
@@ -2896,8 +2901,8 @@ function MatchCard({
 
       <div
         className={cn(
-          "flex items-center gap-2 p-2 rounded-md transition-colors",
-          isPlayer1Winner && "bg-orange-100 border-2 border-orange-500",
+          "flex items-center gap-2 rounded-xl p-2.5 transition-colors",
+          isPlayer1Winner && "bg-emerald-50 border border-emerald-300 ring-1 ring-emerald-100",
           isPlayer1Loser && "bg-red-100 border border-red-300",
           !isPlayer1Winner && !isPlayer1Loser && "bg-muted",
           isFreilos(match.player1) && "bg-yellow-100 border border-yellow-400",
@@ -2908,14 +2913,14 @@ function MatchCard({
             className={cn(
               "text-sm truncate",
               !match.player1 && "text-muted-foreground italic",
-              isPlayer1Winner && "font-semibold text-orange-700",
+              isPlayer1Winner && "font-bold text-emerald-800",
               isPlayer1Loser && "text-red-600",
               isFreilos(match.player1) && "text-yellow-700 italic font-medium",
             )}
           >
             {match.player1 || "Warte auf Spieler..."}
           </p>
-          {isPlayer1Winner && <span className="text-orange-600 font-bold">✓</span>}
+          {isPlayer1Winner && <span className="font-bold text-emerald-600">✓</span>}
         </div>
         <Input
           type="number"
@@ -2923,15 +2928,15 @@ function MatchCard({
           max="10"
           value={match.score1}
           onChange={(e) => onScoreUpdate(match.id, 1, Number(e.target.value))}
-          className="w-16 h-8 text-center"
+          className="h-9 w-16 rounded-lg border-slate-200 bg-white text-center font-bold"
           disabled={!match.player1 || !match.player2 || !match.machineNumber}
         />
       </div>
 
       <div
         className={cn(
-          "flex items-center gap-2 p-2 rounded-md transition-colors",
-          isPlayer2Winner && "bg-orange-100 border-2 border-orange-500",
+          "flex items-center gap-2 rounded-xl p-2.5 transition-colors",
+          isPlayer2Winner && "bg-emerald-50 border border-emerald-300 ring-1 ring-emerald-100",
           isPlayer2Loser && "bg-red-100 border border-red-300",
           !isPlayer2Winner && !isPlayer2Loser && "bg-muted",
           isFreilos(match.player2) && "bg-yellow-100 border border-yellow-400",
@@ -2942,14 +2947,14 @@ function MatchCard({
             className={cn(
               "text-sm truncate",
               !match.player2 && "text-muted-foreground italic",
-              isPlayer2Winner && "font-semibold text-orange-700",
+              isPlayer2Winner && "font-bold text-emerald-800",
               isPlayer2Loser && "text-red-600",
               isFreilos(match.player2) && "text-yellow-700 italic font-medium",
             )}
           >
             {match.player2 || "Warte auf Spieler..."}
           </p>
-          {isPlayer2Winner && <span className="text-orange-600 font-bold">✓</span>}
+          {isPlayer2Winner && <span className="font-bold text-emerald-600">✓</span>}
         </div>
         <Input
           type="number"
@@ -2957,7 +2962,7 @@ function MatchCard({
           max="10"
           value={match.score2}
           onChange={(e) => onScoreUpdate(match.id, 2, Number(e.target.value))}
-          className="w-16 h-8 text-center"
+          className="h-9 w-16 rounded-lg border-slate-200 bg-white text-center font-bold"
           disabled={!match.player1 || !match.player2 || !match.machineNumber}
         />
       </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CalendarDays, ListChecks, Settings2, Target, Trophy } from "lucide-react"
+import { CalendarDays, Flame, ListChecks, Target, Trophy } from "lucide-react"
 
 type TournamentAdminNavProps = {
   title: string
@@ -10,11 +10,11 @@ type TournamentAdminNavProps = {
 }
 
 const items = [
-  { href: "/admin/tournament-center", label: "Übersicht", icon: Trophy },
+  { href: "/admin/turnier_spieltage_starten", label: "Übersicht", icon: Trophy },
   { href: "/dko_tournament_registration", label: "Einzelturniere", icon: Target },
   { href: "/kratzer-tournament", label: "Kratzer", icon: ListChecks },
-  { href: "/admin/turnier_spieltage_starten", label: "Serien-Spieltage", icon: CalendarDays },
-  { href: "/admin/tournament-schedules", label: "Serien anlegen", icon: Settings2 },
+  { href: "/admin/survival-roulette", label: "Survival Roulette", icon: Flame },
+  { href: "/admin/tournament-schedules", label: "Serien Spieltag anlegen / bearbeiten", icon: CalendarDays },
 ] as const
 
 export function TournamentAdminNav({ title, description }: TournamentAdminNavProps) {
@@ -22,7 +22,6 @@ export function TournamentAdminNav({ title, description }: TournamentAdminNavPro
 
   return (
     <>
-      {/* Der globale Header ist fixed. Dieser Abstand verhindert Überlagerungen. */}
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
       <div className="border-b border-orange-100 bg-white">
@@ -41,7 +40,9 @@ export function TournamentAdminNav({ title, description }: TournamentAdminNavPro
               {items.map((item) => {
                 const active =
                   pathname === item.href ||
-                  (item.href === "/dko_tournament_registration" && pathname?.startsWith("/dko_tournament_registration"))
+                  (item.href === "/admin/turnier_spieltage_starten" && pathname === "/admin/tournament-center") ||
+                  (item.href === "/dko_tournament_registration" && pathname?.startsWith("/dko_tournament_registration")) ||
+                  (item.href === "/admin/survival-roulette" && pathname?.startsWith("/admin/survival-roulette"))
 
                 return (
                   <Link

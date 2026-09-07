@@ -20,15 +20,15 @@ export function ConfirmationModal({
 }: ConfirmationModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] p-6 rounded-2xl shadow-sm text-center">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-900">{title}</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-[460px] rounded-[26px] shadow-2xl text-center">
+        <div className="bg-slate-950 px-6 py-6 text-white"><DialogHeader>
+          <DialogTitle className="text-xl font-black text-white">{title}</DialogTitle>
+        </DialogHeader></div>
 
-        <DialogDescription className="text-gray-600 my-4">{message}</DialogDescription>
+        <DialogDescription className="mx-6 my-6 text-slate-600">{message}</DialogDescription>
 
-        <DialogFooter className="flex justify-center gap-4 mt-6">
-          <Button onClick={() => onOpenChange(false)} variant="outline">
+        <DialogFooter className="flex justify-center gap-3 border-t border-slate-100 px-6 py-5">
+          <Button onClick={() => onOpenChange(false)} variant="outline" className="h-11 rounded-xl border-slate-200">
             Abbrechen
           </Button>
 
@@ -37,7 +37,7 @@ export function ConfirmationModal({
               onConfirm()
               onOpenChange(false)
             }}
-            variant="destructive"
+            variant="destructive" className="h-11 rounded-xl font-black"
           >
             Bestätigen
           </Button>

@@ -23,8 +23,6 @@ import {
   MessageCircle,
   HelpCircle,
   UserCircle,
-  CreditCard,
-  Images,
   GraduationCap,
   ClipboardList,
   ChevronRight,
@@ -364,8 +362,6 @@ export function Header({
           icon: user ? UserCircle : LogIn,
         },
         { href: "/admin", label: "Admin", icon: LayoutDashboard, adminOnly: true },
-        { href: "/member-card", label: "Mitgliedskarte", icon: CreditCard, requiresLogin: true, memberOnly: true },
-        { href: "/match-galerie", label: "Match Galerie", icon: Images, requiresLogin: true, memberOnly: true },
       ],
     },
   ]
@@ -396,7 +392,7 @@ export function Header({
     }
 
     return (
-      <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm pt-[env(safe-area-inset-top)]">
+      <header className="fixed left-0 right-0 top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur-xl pt-[env(safe-area-inset-top)]">
         <div className="bg-white">
           <div className="mx-auto w-full max-w-7xl px-4">
             <div className="flex h-14 items-center gap-3">
@@ -438,8 +434,8 @@ export function Header({
         <div className="fixed inset-0 z-[60]">
           <button aria-label="Schließen" className="absolute inset-0 bg-black/40" onClick={closeDrawer} />
 
-          <aside className="absolute bottom-0 left-0 top-0 w-[320px] border-r border-gray-200 bg-white shadow-2xl lg:w-[380px]">
-            <div className="border-b p-4 pt-[max(env(safe-area-inset-top),16px)]">
+          <aside className="absolute bottom-0 left-0 top-0 w-[330px] overflow-hidden border-r border-slate-800 bg-slate-950 text-white shadow-2xl lg:w-[390px]">
+            <div className="border-b border-white/10 bg-slate-950 p-4 pt-[max(env(safe-area-inset-top),16px)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex items-center gap-2">
                   <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-orange-600 shadow-sm">
@@ -454,24 +450,24 @@ export function Header({
                     />
                   </span>
                   <div className="min-w-0">
-                    <div className="truncate font-extrabold text-gray-900">{title}</div>
+                    <div className="truncate font-extrabold text-white">{title}</div>
                     {user ? (
-                      <div className="truncate text-xs text-gray-500">
+                      <div className="truncate text-xs text-slate-400">
                         {isGuest ? "Gastzugang" : user.email}
                       </div>
                     ) : (
-                      <div className="text-xs text-gray-500">Willkommen bei EMD</div>
+                      <div className="text-xs text-slate-400">Willkommen bei EMD</div>
                     )}
                   </div>
                 </div>
 
-                <button onClick={closeDrawer} className="rounded-xl p-2 hover:bg-gray-100" aria-label="Schließen">
-                  <X className="h-5 w-5 text-gray-700" />
+                <button onClick={closeDrawer} className="rounded-xl p-2 text-slate-300 hover:bg-white/10" aria-label="Schließen">
+                  <X className="h-5 w-5 text-slate-300" />
                 </button>
               </div>
             </div>
 
-            <div className="h-full overflow-y-auto p-3 pb-[env(safe-area-inset-bottom)]">
+            <div className="h-full overflow-y-auto bg-slate-50 p-3 pb-[env(safe-area-inset-bottom)] text-slate-900">
               {!user ? (
                 <Button
                   onClick={() => {
@@ -505,7 +501,7 @@ export function Header({
 
                   return (
                     <section key={sec.title}>
-                      <div className="mb-2 px-2 text-xs font-bold uppercase tracking-wide text-gray-500">
+                      <div className="mb-2 px-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                         {sec.title}
                       </div>
 
@@ -521,16 +517,16 @@ export function Header({
                               key={it.href + it.label}
                               href={it.href}
                               className={cn(
-                                "flex items-center gap-3 rounded-xl px-3 py-2.5 transition",
+                                "flex items-center gap-3 rounded-2xl px-3.5 py-3 transition-all",
                                 active
-                                  ? "bg-orange-50 text-orange-800 ring-1 ring-orange-200"
-                                  : "text-gray-800 hover:bg-gray-50",
+                                  ? "bg-white text-slate-950 shadow-sm ring-1 ring-orange-200"
+                                  : "text-slate-700 hover:bg-white hover:shadow-sm",
                               )}
                               onClick={closeDrawer}
                             >
-                              <Icon className={cn("h-5 w-5 shrink-0", active ? "text-orange-700" : "text-orange-600")} />
+                              <Icon className={cn("h-5 w-5 shrink-0", active ? "text-orange-600" : "text-slate-500")} />
                               <span className="font-semibold">{it.label}</span>
-                              {chatBadge || <ChevronRight className="ml-auto h-4 w-4 text-gray-400" />}
+                              {chatBadge || <ChevronRight className="ml-auto h-4 w-4 text-slate-300" />}
                             </Link>
                           )
                         })}
@@ -570,119 +566,117 @@ export function Header({
         </div>
       )}
 
-      <header className="fixed left-0 right-0 top-0 z-50 w-full bg-white border-b border-orange-100 shadow-sm pt-[env(safe-area-inset-top)]">
-        <div className="bg-white">
-          <div className="mx-auto w-full max-w-2xl px-4 lg:max-w-screen-xl 2xl:max-w-screen-2xl">
-            <div className="flex h-14 items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <button
-                  onClick={toggleDrawer}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl hover:bg-gray-100"
-                  aria-label="Menü öffnen"
-                >
-                  <Menu className="h-5 w-5 text-gray-800" />
-                </button>
+      <header className="fixed left-0 right-0 top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur-xl pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-5 lg:px-6">
+          <div className="flex h-14 items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <button
+                onClick={toggleDrawer}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 hover:text-slate-950"
+                aria-label="Menü öffnen"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
 
-                <Link href="/" className="flex min-w-0 items-center gap-2">
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-orange-600 shadow-sm">
-                    <Image
-                      src="/images/brutal-darts-bg---.png"
-                      alt="EMD Logo"
-                      width={26}
-                      height={26}
-                      className="object-contain"
-                      priority
-                    />
-                  </span>
-                  <span className="truncate text-sm font-extrabold tracking-wide text-gray-900 sm:text-base">
-                    {title}
-                  </span>
-                </Link>
-              </div>
+              <Link href="/" className="flex min-w-0 items-center gap-2.5">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-orange-600 shadow-sm ring-1 ring-orange-100">
+                  <Image
+                    src="/images/brutal-darts-bg---.png"
+                    alt="EMD Logo"
+                    width={26}
+                    height={26}
+                    className="object-contain"
+                    priority
+                  />
+                </span>
+                <span className="truncate text-sm font-extrabold tracking-wide text-slate-950 sm:text-base">
+                  {title}
+                </span>
+              </Link>
+            </div>
 
-              <div className="hidden items-center gap-2 lg:flex">
-                {user ? (
-                  <Button
-                    onClick={handleChatClick}
-                    variant="outline"
-                    className="relative h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 hover:bg-orange-50"
-                  >
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    <span>Chat</span>
-                    {chatUnreadCount > 0 ? (
-                      <span className="ml-2 inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
-                        {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
-                      </span>
-                    ) : null}
-                  </Button>
-                ) : null}
-
+            <div className="hidden items-center gap-2 lg:flex">
+              {user ? (
                 <Button
-                  onClick={handleCampusClick}
+                  onClick={handleChatClick}
                   variant="outline"
-                  className="h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 hover:bg-orange-50"
+                  className="relative h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 shadow-none hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800"
                 >
-                  <GraduationCap className="mr-2 h-4 w-4" />
-                  EMD Campus
+                  <MessageCircle className="mr-2 h-4 w-4 text-orange-600" />
+                  <span>Chat</span>
+                  {chatUnreadCount > 0 ? (
+                    <span className="ml-2 inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
+                      {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
+                    </span>
+                  ) : null}
                 </Button>
+              ) : null}
 
-                {!user ? (
+              <Button
+                onClick={handleCampusClick}
+                variant="outline"
+                className="h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 shadow-none hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800"
+              >
+                <GraduationCap className="mr-2 h-4 w-4 text-orange-600" />
+                EMD Campus
+              </Button>
+
+              {!user ? (
+                <Button
+                  onClick={handleApplyClick}
+                  className="h-10 rounded-xl bg-orange-600 px-4 font-semibold text-white hover:bg-orange-500"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Jetzt bewerben
+                </Button>
+              ) : null}
+
+              {authReady ? (
+                user && isAdmin && !isGuest ? (
                   <Button
-                    onClick={handleApplyClick}
-                    className="h-10 rounded-xl bg-orange-600 px-4 font-semibold text-white hover:bg-orange-700"
+                    onClick={handleAdminClick}
+                    variant="outline"
+                    className="h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 shadow-none hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800"
                   >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Jetzt bewerben
+                    <LayoutDashboard className="mr-2 h-4 w-4 text-orange-600" />
+                    ADMIN
                   </Button>
-                ) : null}
+                ) : null
+              ) : (
+                <div className="h-10 w-[110px] rounded-xl border border-slate-200 bg-slate-50" />
+              )}
 
-                {authReady ? (
-                  user && isAdmin && !isGuest ? (
-                    <Button
-                      onClick={handleAdminClick}
-                      variant="outline"
-                      className="h-10 rounded-xl border-orange-200 bg-white px-4 text-orange-700 hover:bg-orange-50"
-                    >
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      ADMIN
-                    </Button>
-                  ) : null
-                ) : (
-                  <div className="h-10 w-[110px] rounded-xl border border-orange-200 bg-white/60" />
-                )}
-
-                {authReady ? (
-                  user ? (
-                    <button
-                      onClick={handleAuthClick}
-                      className="group flex h-10 max-w-[220px] items-center gap-2 rounded-xl border border-orange-200 bg-white pl-2 pr-3 text-left text-orange-700 transition hover:bg-orange-50"
-                    >
-                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-700">
-                        <UserCircle className="h-5 w-5" />
+              {authReady ? (
+                user ? (
+                  <button
+                    onClick={handleAuthClick}
+                    className="group flex h-10 min-w-[190px] items-center gap-2.5 rounded-xl border border-orange-200 bg-white pl-2.5 pr-3.5 text-left transition hover:border-orange-300 hover:bg-orange-50"
+                  >
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-orange-600 ring-1 ring-orange-400/20">
+                      <UserCircle className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1 text-right">
+                      <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-orange-600">
+                        {isGuest ? "Gast" : "Profil"}
                       </span>
-                      <span className="min-w-0">
-                        <span className="block text-[11px] font-medium uppercase tracking-wide text-orange-500">
-                          {isGuest ? "Gast" : "Profil"}
-                        </span>
-                        <span className="block truncate text-sm font-semibold text-gray-900">
-                          {isGuest ? "Gastzugang" : getUserLabel(user)}
-                        </span>
+                      <span className="block truncate text-sm font-semibold text-slate-950">
+                        {isGuest ? "Gastzugang" : getUserLabel(user)}
                       </span>
-                    </button>
-                  ) : (
-                    <Button
-                      onClick={handleAuthClick}
-                      variant="outline"
-                      className="h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 hover:bg-orange-50"
-                    >
-                      <LogIn className="mr-2 h-4 w-4" />
-                      Login
-                    </Button>
-                  )
+                    </span>
+                  </button>
                 ) : (
-                  <div className="h-10 w-[148px] rounded-xl border border-orange-200 bg-white/60" />
-                )}
-              </div>
+                  <Button
+                    onClick={handleAuthClick}
+                    variant="outline"
+                    className="h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 shadow-none hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800"
+                  >
+                    <LogIn className="mr-2 h-4 w-4 text-orange-600" />
+                    Login
+                  </Button>
+                )
+              ) : (
+                <div className="h-10 w-[190px] rounded-xl border border-slate-200 bg-slate-50" />
+              )}
             </div>
           </div>
         </div>
