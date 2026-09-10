@@ -654,35 +654,35 @@ export default function LionCupRegistrationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24 md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans pb-24 md:pb-0">
       <Header />
 
       <main className="pt-16 sm:pt-14">
-        <div className="mx-auto w-full max-w-7xl px-4 pt-4">
+        <div className="mx-auto w-full max-w-[1800px] px-2 pt-3 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
           <a href="/" className="text-sm font-black text-orange-700 hover:text-orange-800">
             ← Zur Startseite
           </a>
         </div>
         <motion.div
-          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-7xl"
+          className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
           <motion.div variants={itemVariants} className="mb-5">
-            <div className="rounded-3xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 overflow-hidden">
-              <div className="p-5 sm:p-7">
+            <div className="rounded-[26px] border border-slate-200 bg-white shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)] overflow-hidden">
+              <div className="bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] p-4 text-white sm:p-5 lg:p-6">
                 <div className="flex items-start gap-4">
-                  <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
+                  <div className="shrink-0 rounded-2xl border border-white/20 bg-white/10 p-3 text-orange-300">
                     <Sparkles className="h-6 w-6" />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-700 border border-orange-100">
+                    <div className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-black text-orange-950">
                       EMD LION CUP
                     </div>
 
-                    <h1 className="mt-2 text-2xl sm:text-3xl font-black leading-tight">
+                    <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-white">
                       Lion Cup Anmeldung
                     </h1>
 
@@ -747,7 +747,7 @@ export default function LionCupRegistrationPage() {
 
               <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,520px)_minmax(0,1fr)] gap-5">
                 <motion.div variants={itemVariants}>
-                  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                  <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
                     <div className="p-5 border-b border-gray-100">
                       <div className="flex items-center gap-2">
                         <UserPlus className="h-5 w-5 text-orange-600" />
@@ -1011,7 +1011,7 @@ export default function LionCupRegistrationPage() {
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
-                  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                  <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
                     <div className="p-5 border-b border-gray-100">
                       <div className="flex items-center justify-between gap-3">
                         <div>

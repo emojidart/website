@@ -227,7 +227,7 @@ function QualificationStatus({
     return (
       <div className="flex items-center space-x-1 text-green-600">
         <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-        <span className="text-xs font-bold">QUALIFIZIERT</span>
+        <span className="text-xs font-bold">IN DER WERTUNG</span>
       </div>
     )
   }
@@ -235,7 +235,7 @@ function QualificationStatus({
   return (
     <div className="flex items-center space-x-1 text-red-600">
       <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-      <span className="text-xs font-bold">NICHT QUALIFIZIERT</span>
+      <span className="text-xs font-bold">NOCH NICHT IN DER WERTUNG</span>
     </div>
   )
 }
@@ -432,7 +432,7 @@ function MobilePlayerCard({
 
       <div className="space-y-2">
         <div>
-          <div className="text-xs text-gray-600 mb-1">Qualifikations-Fortschritt</div>
+          <div className="text-xs text-gray-600 mb-1">Fortschritt zur Serienwertung</div>
           <QualificationProgress current={player.tournaments_played} required={qualificationRequired} />
         </div>
         <div className="pt-2 border-t border-gray-100">
@@ -570,7 +570,9 @@ const [onlyTop3, setOnlyTop3] = useState(false)
   })
 
   const selectedSeries = seriesList.find((s) => s.id === selectedSeriesId) ?? null
-  const qualificationRequirement = selectedSeries?.qualification_requirement ?? 0
+  // LION CUP: Mindestens 3 Antritte für die Serien-Gesamtwertung.
+  // Der Finaltag selbst ist unabhängig davon für ALLE Spieler offen.
+  const qualificationRequirement = 3
   const totalTournamentDays = selectedSeries?.total_tournament_days ?? 0
 
   const fetchSeries = async () => {
@@ -1035,8 +1037,12 @@ const [onlyTop3, setOnlyTop3] = useState(false)
 
   const totalParticipants = standings.length
   const totalAppearances = standings.reduce((sum, player) => sum + player.tournaments_played, 0)
-  const prizePoolFromParticipants = totalParticipants * (selectedSeries?.startgeld ?? 5)
-  const prizePoolFromAppearances = totalAppearances * 4
+
+  // LION CUP:
+  // € 10,00 Seriengebühr einmalig pro Spieler
+  // + € 5,00 pro Spieler und gespieltem Turniertag.
+  const prizePoolFromParticipants = totalParticipants * 10
+  const prizePoolFromAppearances = totalAppearances * 5
   const totalPrizePool = prizePoolFromParticipants + prizePoolFromAppearances
 
   const completedTournaments = tournaments.length
@@ -1046,8 +1052,8 @@ const [onlyTop3, setOnlyTop3] = useState(false)
   const predictedFutureAppearances = Math.round(avgParticipationsPerTournament * remainingTournaments)
   const predictedTotalAppearances = totalAppearances + predictedFutureAppearances
 
-  const predictedPrizePoolFromAppearances = predictedTotalAppearances * 4
-  const predictedPrizePoolFromParticipants = totalParticipants * (selectedSeries?.startgeld ?? 5)
+  const predictedPrizePoolFromAppearances = predictedTotalAppearances * 5
+  const predictedPrizePoolFromParticipants = totalParticipants * 10
 
   let currentHostSponsoring = 0
   if (totalAppearances >= 501) currentHostSponsoring = 250
@@ -1095,12 +1101,12 @@ if (selectedPlayer) {
   const hasHalving = seasonSettings.halving_active && originalTotalPoints !== calculatedTotalPoints
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
       <Header />
 
       <main className="pt-12 sm:pt-14">
         <motion.div
-          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl space-y-6 sm:space-y-8"
+          className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8 space-y-4 sm:space-y-5"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -1119,7 +1125,7 @@ if (selectedPlayer) {
 
           {/* ✅ PLAYER HEADER CARD  */}
           <motion.div variants={itemVariants}>
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
               <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
               <div className="p-4 sm:p-5">
@@ -1203,7 +1209,7 @@ if (selectedPlayer) {
 
                 {/* ✅ Quali Bar */}
                 <div className="mt-4">
-                  <div className="text-xs text-gray-600 mb-1">Qualifikations-Fortschritt</div>
+                  <div className="text-xs text-gray-600 mb-1">Fortschritt zur Serienwertung</div>
                   <QualificationProgress current={player.tournaments_played} required={qualificationRequirement} />
                   <div className="mt-2">
                     <QualificationStatus tournamentsPlayed={player.tournaments_played} required={qualificationRequirement} />
@@ -1215,7 +1221,7 @@ if (selectedPlayer) {
 
           {/* ✅ 3er Stats  */}
           <motion.div variants={itemVariants}>
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
               <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
               <div className="p-4 sm:p-5 border-b border-gray-200">
@@ -1265,7 +1271,7 @@ if (selectedPlayer) {
           {/* ✅ Freilos */}
           {playerFreilos && (
             <motion.div variants={itemVariants}>
-              <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
                 <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
                 <div className="p-4 sm:p-5 border-b border-gray-200">
@@ -1302,7 +1308,7 @@ if (selectedPlayer) {
 
           {/* ✅ Letzte 20 Spiele */}
           <motion.div variants={itemVariants}>
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
               <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
               <div className="p-4 sm:p-5 border-b border-gray-200">
@@ -1378,7 +1384,7 @@ if (selectedPlayer) {
 
           {/* ✅ Turnier Historie (für den Spieler) */}
           <motion.div variants={itemVariants}>
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
               <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
               <div className="p-4 sm:p-5 border-b border-gray-200">
@@ -1529,51 +1535,56 @@ if (selectedPlayer) {
 
 // ✅ MAIN VIEW 
 return (
-  <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+  <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
     <Header />
 
     <main className="pt-12 sm:pt-14">
       <motion.div
-        className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl space-y-6 sm:space-y-8"
+        className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8 space-y-4 sm:space-y-5"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* ✅ LION CUP HEADER  */}
+        {/* LION CUP HEADER – wie aktuelle Startseite, bewusst kompakt */}
         <motion.div variants={itemVariants}>
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+          <div className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+            <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] text-white">
+              <div className="relative p-4 sm:p-5 lg:p-6">
+                <div className="flex flex-col items-center text-center">
+                  <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
+                    <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-orange-300" />
+                  </div>
 
-            <div className="p-4 sm:p-5">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-                  <Trophy className="w-5 h-5 text-orange-600" />
-                </div>
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-black text-orange-950">
+                    <Trophy className="h-3.5 w-3.5" />
+                    <span>LION CUP PART 3 • HERBST 2026</span>
+                  </div>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-base sm:text-lg font-black text-gray-900">{selectedSeries?.name || "EMD - LION CUP"}</h1>
-
-                    <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-black text-orange-700">
-                      <Crown className="w-3.5 h-3.5" />
+                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                    <h1 className="text-2xl font-black sm:text-3xl lg:text-4xl">
+                      {selectedSeries?.name || "EMD - LION CUP"}
+                    </h1>
+                    <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-black">
                       {selectedSeries?.is_active ? "AKTUELL" : "ARCHIV"}
                     </span>
                   </div>
 
-                  <p className="text-sm text-gray-600 mt-1">
-                    <span className="font-semibold">Gesamtwertung</span>
+                  <p className="mt-1 text-sm font-semibold text-orange-100 sm:text-base">
+                    Gesamtwertung · Serienwertung ab 3 Antritten · Finaltag für alle offen
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">Live-Wertung aller Teilnehmer</p>
+
                   {seriesList.length > 1 && (
-                    <div className="mt-3">
-                      <label className="text-[11px] font-bold text-gray-500">Saison / Archiv</label>
+                    <div className="mt-4 w-full max-w-sm">
+                      <label className="text-[11px] font-black uppercase tracking-wider text-white/60">
+                        Saison / Archiv
+                      </label>
                       <select
                         value={selectedSeriesId ?? ""}
                         onChange={(e) => {
                           setSelectedPlayer(null)
                           setSelectedSeriesId(e.target.value)
                         }}
-                        className="mt-1 w-full sm:w-auto rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-800 outline-none focus:border-orange-400"
+                        className="mt-1 w-full rounded-xl border border-white/20 bg-white px-3 py-2 text-sm font-black text-slate-900 outline-none"
                       >
                         {seriesList.map((series) => (
                           <option key={series.id} value={series.id}>
@@ -1585,37 +1596,49 @@ return (
                   )}
                 </div>
               </div>
+            </div>
 
-              {/* POT */}
-              <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 overflow-hidden">
-                <div className="px-4 py-3 border-b border-orange-200 text-center">
-                  <h2 className="text-base sm:text-lg font-black text-gray-900">AKTUELLER POT</h2>
-                  <p className="text-xs sm:text-sm font-bold text-gray-600 mt-0.5">{selectedSeries?.name || "Lion Cup"}</p>
+            <div className="p-4 sm:p-5 lg:p-6">
+              <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-orange-600" />
+                  <span className="text-xs font-black uppercase tracking-wider text-gray-900 sm:text-sm">
+                    Finalpreisfonds
+                  </span>
                 </div>
 
-                <div className="px-4 py-4 text-center">
-                  <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-2xl sm:text-3xl text-gray-600 font-bold">€</span>
-                    <span className="text-5xl sm:text-6xl font-black text-orange-700">
-                      {totalPrizePool.toFixed(2)}
-                    </span>
+                <div className="mt-3 rounded-2xl border border-orange-200 bg-white p-4 sm:p-5">
+                  <div className="text-center">
+                    <div className="text-3xl font-black text-gray-900 sm:text-4xl lg:text-5xl">
+                      €{totalPrizePool.toFixed(2)}
+                    </div>
+                    <div className="mt-1 text-xs font-semibold text-gray-600 sm:text-sm">
+                      Aktueller Finalpreisfonds
+                    </div>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-700 font-bold flex-wrap">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                    <span>Steigt mit jedem Antritt um €4,00!</span>
-
-                    <span className="inline-flex items-center gap-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-black shadow-sm">
-                      <Sparkles className="h-3 w-3" />
-                      Extra Preisgeld
-                    </span>
-                  </div>
-
-                  <div className="mt-4 rounded-2xl border border-orange-200 bg-white p-4 text-left">
-                    <p className="text-sm font-black text-gray-900">Preispool-Berechnung:</p>
-                    <p className="text-xs sm:text-sm font-bold text-gray-600 mt-1 leading-relaxed">
-                      Jeder Teilnehmer zahlt einmalig {selectedSeries?.startgeld ?? 5}€ Startgebühr. Die übrige Preisgeldlogik bleibt wie bisher hinterlegt.
+                  <div className="mt-4 border-t border-orange-100 pt-4">
+                    <p className="text-center text-sm font-bold text-gray-700">
+                      Seriengebühr: <span className="font-black text-orange-700">€ 10,00</span> einmalig pro Spieler
                     </p>
+                    <p className="mt-1 text-center text-sm font-bold text-gray-700">
+                      Startgeld: <span className="font-black text-orange-700">€ 5,00</span> pro Spieler und Turniertag
+                    </p>
+
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-center">
+                        <div className="text-xl font-black text-orange-700 sm:text-2xl">€ 10,00</div>
+                        <div className="mt-1 text-[11px] font-bold text-gray-600 sm:text-xs">
+                          einmalige Seriengebühr pro Spieler
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-center">
+                        <div className="text-xl font-black text-orange-700 sm:text-2xl">€ 5,00</div>
+                        <div className="mt-1 text-[11px] font-bold text-gray-600 sm:text-xs">
+                          pro Turnier und Spieler
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1625,7 +1648,7 @@ return (
 
         {/* ✅ PREISGELD PREDICTION  */}
         <motion.div variants={itemVariants}>
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
             <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-600" />
 
             <div className="p-4 sm:p-5">
@@ -1793,7 +1816,7 @@ return (
       </div>
     </div>
 
-    {/* Qualifiziert */}
+    {/* In der Serienwertung */}
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-3">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
@@ -1818,7 +1841,7 @@ return (
 
          {/* ✅ TAB NAV  */}
 <motion.div variants={itemVariants}>
-  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+  <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
     {/* orange bar  */}
     <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
@@ -1846,7 +1869,7 @@ return (
           </span>
         </Button>
 
-        {/* Qualifiziert */}
+        {/* In der Serienwertung */}
         <Button
           onClick={() => setActiveTab("qualifiziert")}
           className={`h-9 rounded-xl font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 px-3 ${
@@ -1859,8 +1882,8 @@ return (
           <CheckCircle
             className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 ${activeTab === "qualifiziert" ? "text-white" : "text-orange-600"}`}
           />
-          <span className="hidden sm:inline">Qualifizierte Spieler</span>
-          <span className="sm:hidden">Quali</span>
+          <span className="hidden sm:inline">In der Wertung</span>
+          <span className="sm:hidden">Wertung</span>
           <span
             className={`ml-2 rounded-full px-2 py-1 text-xs font-black ${
               activeTab === "qualifiziert"
@@ -1872,7 +1895,7 @@ return (
           </span>
         </Button>
 
-        {/* Nicht qualifiziert */}
+        {/* Noch nicht in der Serienwertung */}
         <Button
           onClick={() => setActiveTab("nicht-qualifiziert")}
           className={`h-9 rounded-xl font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 px-3 ${
@@ -1885,8 +1908,8 @@ return (
           <AlertCircle
             className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 ${activeTab === "nicht-qualifiziert" ? "text-white" : "text-orange-600"}`}
           />
-          <span className="hidden sm:inline">Nicht qualifizierte Spieler</span>
-          <span className="sm:hidden">Nicht Quali</span>
+          <span className="hidden sm:inline">Noch nicht in der Wertung</span>
+          <span className="sm:hidden">Noch offen</span>
           <span
             className={`ml-2 rounded-full px-2 py-1 text-xs font-black ${
               activeTab === "nicht-qualifiziert"
@@ -1938,7 +1961,7 @@ return (
 <motion.div variants={itemVariants}>
   <a
     href="/lion_cup_results"
-    className="block rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 group"
+    className="block rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden hover:shadow-md transition-all duration-300 group"
   >
     {/* Orange Balken oben */}
     <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
@@ -1972,7 +1995,7 @@ return (
           
 		  {activeTab === "turnier-historie" ? (
   <motion.div variants={itemVariants}>
-    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
+    <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden hover:shadow-md transition-shadow duration-300">
       <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
 
       <div className="p-4 sm:p-5 border-b border-gray-200">
@@ -2205,7 +2228,7 @@ return (
                   <div className="flex items-center space-x-2 text-blue-800">
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="text-xs sm:text-sm font-medium">
-                      Jeder Teilnehmer benötigt {qualificationRequirement} Antritte für die Qualifikation.
+                      Für die Serien-Gesamtwertung sind mindestens {qualificationRequirement} Antritte erforderlich. Der Finaltag ist für alle Spieler offen – unabhängig von der Anzahl der bisherigen Antritte.
                     </span>
                   </div>
                 </div>
@@ -2281,7 +2304,7 @@ return (
                   <div className="flex items-center space-x-2 text-blue-800">
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="text-xs sm:text-sm font-medium">
-                      Jeder Teilnehmer benötigt {qualificationRequirement} Antritte für die Qualifikation.
+                      Für die Serien-Gesamtwertung sind mindestens {qualificationRequirement} Antritte erforderlich. Der Finaltag ist für alle Spieler offen – unabhängig von der Anzahl der bisherigen Antritte.
                     </span>
                   </div>
                 </div>
@@ -2351,8 +2374,8 @@ return (
           {activeTab === "alle"
             ? "Alle Spieler"
             : activeTab === "qualifiziert"
-              ? "Qualifizierte Spieler"
-              : "Nicht qualifizierte Spieler"}
+              ? "In der Wertung"
+              : "Noch nicht in der Wertung"}
         </h2>
         <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Turnierserie Gesamtwertung</p>
       </div>
@@ -2378,7 +2401,7 @@ return (
                   <div className="flex items-center space-x-2 text-blue-800">
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="text-xs sm:text-sm font-medium">
-                      Jeder Teilnehmer benötigt {qualificationRequirement} Antritte für die Qualifikation.
+                      Für die Serien-Gesamtwertung sind mindestens {qualificationRequirement} Antritte erforderlich. Der Finaltag ist für alle Spieler offen – unabhängig von der Anzahl der bisherigen Antritte.
                     </span>
                   </div>
                 </div>

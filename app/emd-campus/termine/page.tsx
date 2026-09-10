@@ -115,13 +115,13 @@ function Chip({
 
 export default function CampusTerminePage() {
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
       <Header />
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
-      <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8 lg:max-w-screen-xl 2xl:max-w-screen-2xl">
-        <section className="overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-xl">
-          <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 p-5 text-white sm:p-8">
+      <main className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8">
+        <section className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+          <div className="bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] p-4 text-white sm:p-5 lg:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-black uppercase tracking-wider">

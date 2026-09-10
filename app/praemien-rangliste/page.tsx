@@ -219,16 +219,16 @@ export default function PraemienRanglistePage() {
   const redeemedTotal = redemptions.length
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-950">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 flex flex-col">
       <Header />
 
       <div className="h-12 sm:h-14" />
 
-      <main className="mx-auto w-full max-w-7xl px-3 py-5 pb-28 sm:px-6 sm:py-8 lg:px-8">
+      <main className="w-full flex-grow px-2 pb-28 pt-4 sm:px-4 sm:pt-6 lg:px-5 xl:px-6">
         <div className="mb-5 flex items-center justify-between gap-3">
           <Link
             href="/praemien"
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-black uppercase tracking-wide text-red-600 shadow-sm ring-1 ring-slate-200"
+            className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-black uppercase tracking-wide text-orange-600 shadow-sm ring-1 ring-slate-200"
           >
             <ArrowLeft className="h-4 w-4" />
             Zurück
@@ -244,59 +244,59 @@ export default function PraemienRanglistePage() {
           </button>
         </div>
 
-        <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-8">
-          <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-red-100 blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-yellow-100 blur-3xl" />
+        <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 p-4 text-white shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] sm:p-6 lg:p-8 xl:rounded-[30px] xl:p-9">
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl" />
+          <div className="absolute -bottom-20 left-1/3 h-56 w-72 rounded-full bg-white/5 blur-3xl" />
 
           <div className="relative">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-red-600 sm:text-xs">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-orange-400 sm:text-xs">
               <Trophy className="h-3.5 w-3.5" />
               EMD Bonusprogramm
             </div>
 
-            <h1 className="text-3xl font-black uppercase leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+            <h1 className="text-3xl font-black uppercase leading-tight tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl">
               Prämien-
-              <span className="text-red-600">Rangliste</span>
+              <span className="text-orange-400">Rangliste</span>
             </h1>
 
-            <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600 sm:text-base">
+            <p className="mt-4 max-w-2xl text-sm font-medium leading-7 text-white/55 sm:text-base">
               Aktuelle Bonuspunkte aller Mitglieder. Zusätzlich siehst du, wer bereits eine Prämie eingelöst hat.
             </p>
 
             <div className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
-              <div className="rounded-2xl border border-orange-200 bg-orange-50 p-3 sm:p-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.07] p-3 sm:p-4">
                 <p className="text-[10px] font-black uppercase text-orange-700 sm:text-xs">Bronze</p>
-                <p className="mt-1 text-lg font-black text-slate-950 sm:text-2xl">1.000</p>
+                <p className="mt-1 text-lg font-black text-white sm:text-2xl">1.000</p>
               </div>
 
-              <div className="rounded-2xl border border-slate-300 bg-slate-100 p-3 sm:p-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.07] p-3 sm:p-4">
                 <p className="text-[10px] font-black uppercase text-slate-700 sm:text-xs">Silber</p>
-                <p className="mt-1 text-lg font-black text-slate-950 sm:text-2xl">1.500</p>
+                <p className="mt-1 text-lg font-black text-white sm:text-2xl">1.500</p>
               </div>
 
-              <div className="rounded-2xl border border-yellow-300 bg-yellow-50 p-3 sm:p-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.07] p-3 sm:p-4">
                 <p className="text-[10px] font-black uppercase text-yellow-700 sm:text-xs">Gold</p>
-                <p className="mt-1 text-lg font-black text-slate-950 sm:text-2xl">2.000</p>
+                <p className="mt-1 text-lg font-black text-white sm:text-2xl">2.000</p>
               </div>
             </div>
           </div>
         </section>
 
         {loading ? (
-          <section className="mt-5 rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg shadow-slate-200/60">
-            <Loader2 className="mx-auto h-10 w-10 animate-spin text-red-600" />
+          <section className="mt-5 rounded-[24px] border border-slate-200 bg-white p-8 text-center shadow-[0_18px_60px_-48px_rgba(15,23,42,0.45)]">
+            <Loader2 className="mx-auto h-10 w-10 animate-spin text-orange-600" />
             <p className="mt-4 text-sm font-black text-slate-900">Rangliste wird geladen...</p>
           </section>
         ) : error ? (
-          <section className="mt-5 rounded-3xl border border-red-200 bg-red-50 p-5 text-center shadow-lg shadow-slate-200/60">
-            <p className="text-sm font-black text-red-700">{error}</p>
+          <section className="mt-5 rounded-[24px] border border-orange-200 bg-orange-50 p-5 text-center shadow-[0_18px_60px_-48px_rgba(15,23,42,0.45)]">
+            <p className="text-sm font-black text-orange-700">{error}</p>
           </section>
         ) : (
           <>
             <section className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-lg shadow-slate-200/60">
+              <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_18px_60px_-48px_rgba(15,23,42,0.45)]">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
                     <Trophy className="h-5 w-5" />
                   </div>
                   <div>
@@ -306,7 +306,7 @@ export default function PraemienRanglistePage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-lg shadow-slate-200/60">
+              <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_18px_60px_-48px_rgba(15,23,42,0.45)]">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
                     <Gift className="h-5 w-5" />
@@ -320,7 +320,7 @@ export default function PraemienRanglistePage() {
 
               <Link
                 href="/praemien"
-                className="rounded-3xl border border-red-200 bg-gradient-to-br from-red-500 to-orange-500 p-4 text-white shadow-lg shadow-red-200/70 transition hover:-translate-y-0.5"
+                className="rounded-[24px] border border-orange-200 bg-gradient-to-br from-orange-500 to-orange-500 p-4 text-white shadow-lg shadow-orange-200/70 transition hover:-translate-y-0.5"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -332,7 +332,7 @@ export default function PraemienRanglistePage() {
               </Link>
             </section>
 
-            <section className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
+            <section className="mt-5 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)]">
               <div className="border-b border-slate-200 p-4 sm:p-5">
                 <h2 className="text-xl font-black uppercase text-slate-950 sm:text-2xl">Gesamtwertung</h2>
                 <p className="mt-1 text-xs font-semibold text-slate-500 sm:text-sm">
@@ -355,13 +355,13 @@ export default function PraemienRanglistePage() {
 
                     return (
                       <div key={player.playerName} className="p-4 transition hover:bg-slate-50 sm:p-5">
-                        <div className="flex flex-col gap-4 sm:grid sm:grid-cols-[70px_1fr_140px_130px] sm:items-center lg:grid-cols-[80px_1fr_170px_170px]">
+                        <div className="flex flex-col gap-4 md:grid md:grid-cols-[72px_minmax(0,1fr)_150px_140px] md:items-center xl:grid-cols-[80px_minmax(0,1fr)_180px_170px]">
                           <div className="flex items-center justify-between gap-3 sm:block">
                             <span className="text-3xl font-black leading-none text-slate-950 sm:text-2xl">
                               {getPlaceIcon(index)}
                             </span>
 
-                            <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wide sm:hidden ${player.rankColor}`}>
+                            <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wide md:hidden ${player.rankColor}`}>
                               <RankIcon className="h-3.5 w-3.5" />
                               {player.rankTitle}
                             </div>
@@ -389,14 +389,14 @@ export default function PraemienRanglistePage() {
                             ) : null}
                           </div>
 
-                          <div className="flex items-end gap-2 sm:justify-end">
-                            <p className="text-4xl font-black leading-none text-red-600 sm:text-3xl">
+                          <div className="flex items-end gap-2 md:justify-end">
+                            <p className="text-4xl font-black leading-none text-orange-600 sm:text-3xl">
                               {player.totalPoints}
                             </p>
                             <p className="pb-1 text-[10px] font-black uppercase text-slate-500">Punkte</p>
                           </div>
 
-                          <div className="hidden justify-end sm:flex">
+                          <div className="hidden justify-end md:flex">
                             <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wide ${player.rankColor}`}>
                               <RankIcon className="h-4 w-4" />
                               {player.rankTitle}
@@ -410,10 +410,10 @@ export default function PraemienRanglistePage() {
               )}
             </section>
 
-            <section className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
+            <section className="mt-5 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)]">
               <div className="border-b border-slate-200 p-4 sm:p-5">
                 <h2 className="flex items-center gap-2 text-xl font-black uppercase text-slate-950 sm:text-2xl">
-                  <Gift className="h-5 w-5 text-red-600" />
+                  <Gift className="h-5 w-5 text-orange-600" />
                   Eingelöste Prämien
                 </h2>
                 <p className="mt-1 text-xs font-semibold text-slate-500 sm:text-sm">
@@ -455,9 +455,9 @@ export default function PraemienRanglistePage() {
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 sm:min-w-[130px] sm:justify-end">
-                            <span className="text-xs font-black uppercase text-red-700">Abgezogen</span>
-                            <span className="text-2xl font-black text-red-600">
+                          <div className="flex items-center justify-between gap-3 rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 sm:min-w-[130px] md:justify-end">
+                            <span className="text-xs font-black uppercase text-orange-700">Abgezogen</span>
+                            <span className="text-2xl font-black text-orange-600">
                               {spent > 0 ? `-${spent}` : "—"}
                             </span>
                           </div>

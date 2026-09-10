@@ -142,29 +142,26 @@ export default function ProFAQChat() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
       <Header />
 
       <main className="pt-12 sm:pt-14">
         <motion.div
-          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+          className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-              <div className="p-4 sm:p-5 flex items-start gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-5 h-5 text-orange-600" />
+          <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
+            <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)]">
+              <div className="h-1.5 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="flex items-start gap-3 p-4 sm:p-5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50">
+                  <Sparkles className="h-5 w-5 text-orange-600" />
                 </div>
-
                 <div className="min-w-0">
-                  <h1 className="text-base sm:text-lg font-black">FAQ Assistent</h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Stelle mir deine Fragen – ich helfe dir gerne weiter!
-                  </p>
+                  <h1 className="text-lg font-black text-slate-950 sm:text-xl">FAQ Assistent</h1>
+                  <p className="mt-1 text-sm font-medium text-slate-600">Stelle mir deine Fragen – ich helfe dir gerne weiter!</p>
                 </div>
               </div>
             </div>
@@ -172,7 +169,7 @@ export default function ProFAQChat() {
 
           <motion.div
             variants={itemVariants}
-            className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+            className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden"
           >
             <div className="px-4 sm:px-5 py-3 border-b border-gray-200 flex items-center gap-2">
               <div className="w-9 h-9 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">

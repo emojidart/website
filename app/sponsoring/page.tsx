@@ -25,36 +25,34 @@ const itemVariants = {
 
 export default function SponsoringPage() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
       <Header />
 
       <main className="pt-12 sm:pt-14">
         <motion.div
-          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+          className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
           {/* App Header Card */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-              <div className="p-4 flex items-start gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-                  <Trophy className="w-5 h-5 text-orange-600" />
+          <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
+            <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)]">
+              <div className="h-1.5 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="flex items-start gap-3 p-4 sm:p-5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50">
+                  <Trophy className="h-5 w-5 text-orange-600" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-base sm:text-lg font-black">Sponsoring</h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Partnerschaften, Reichweite und Sichtbarkeit – gemeinsam für den Dartsport.
-                  </p>
+                  <h1 className="text-lg font-black text-slate-950 sm:text-xl">Sponsoring</h1>
+                  <p className="mt-1 text-sm font-medium text-slate-600">Partnerschaften, Reichweite und Sichtbarkeit – gemeinsam für den Dartsport.</p>
                 </div>
               </div>
             </div>
           </motion.div>
 
           {/* Stats */}
-          <motion.section variants={itemVariants} className="mb-6">
+          <motion.section variants={itemVariants} className="mb-4 sm:mb-5">
             <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5">
               <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-3">Auf einen Blick</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -74,7 +72,7 @@ export default function SponsoringPage() {
           </motion.section>
 
           {/* Benefits */}
-          <motion.section variants={itemVariants} className="mb-6">
+          <motion.section variants={itemVariants} className="mb-4 sm:mb-5">
             <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5">
               <div className="mb-4">
                 <p className="text-xs font-black uppercase tracking-wider text-orange-600">Ihre Vorteile</p>
@@ -86,7 +84,7 @@ export default function SponsoringPage() {
               </div>
 
               <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Card className="rounded-2xl border border-gray-200 shadow-sm p-4">
+                <Card className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] p-4">
                   <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
                     <Target className="h-5 w-5 text-orange-600" />
                   </div>
@@ -96,7 +94,7 @@ export default function SponsoringPage() {
                   </p>
                 </Card>
 
-                <Card className="rounded-2xl border border-gray-200 shadow-sm p-4">
+                <Card className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] p-4">
                   <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
                     <Users className="h-5 w-5 text-orange-600" />
                   </div>
@@ -106,7 +104,7 @@ export default function SponsoringPage() {
                   </p>
                 </Card>
 
-                <Card className="rounded-2xl border border-gray-200 shadow-sm p-4">
+                <Card className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] p-4">
                   <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
                     <Trophy className="h-5 w-5 text-orange-600" />
                   </div>
@@ -116,7 +114,7 @@ export default function SponsoringPage() {
                   </p>
                 </Card>
 
-                <Card className="rounded-2xl border border-gray-200 shadow-sm p-4">
+                <Card className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] p-4">
                   <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
                     <TrendingUp className="h-5 w-5 text-orange-600" />
                   </div>

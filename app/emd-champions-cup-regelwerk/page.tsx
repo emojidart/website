@@ -119,12 +119,12 @@ function SubCard({
 
 export default function MembersChampionCupRegelwerkPage() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24 md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans pb-24 md:pb-0">
       <Header />
 
       <main className="pt-16 sm:pt-14">
         <motion.div
-          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+          className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -147,62 +147,37 @@ export default function MembersChampionCupRegelwerkPage() {
 		  
 
 
-  {/* HERO */}
-<motion.div variants={itemVariants} className="mb-6">
-  <div className="relative rounded-3xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 overflow-hidden">
-    
-{/* LOGO */}
-<div className="flex justify-center pt-6 pb-2">
-  <Image
-    src="/images/logo5.png"
-    alt="EMD Logo"
-    width={170}
-    height={170}
-    className="object-contain drop-shadow-xl"
-    priority
-  />
-</div>
-
-    <div className="p-5 sm:p-7 pt-2">
-      <div className="flex items-start gap-4">
-        <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
-          <Crown className="w-6 h-6" />
+  {/* KOMPAKTER HEADER – orientiert an aktueller Startseite */}
+<motion.div variants={itemVariants} className="mb-5">
+  <div className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+    <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] p-4 text-white sm:p-5 lg:p-6">
+      <div className="flex flex-col items-center text-center sm:flex-row sm:text-left sm:gap-4">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
+          <Crown className="h-8 w-8 text-orange-300" />
         </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="inline-flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-700 border border-orange-100">
-              EMD – MEMBERS CHAMPION CUP
-            </span>
-            <span className="text-xs text-gray-500">Saison 2026/27</span>
+        <div className="mt-3 min-w-0 flex-1 sm:mt-0">
+          <div className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-black text-orange-950">
+            MEMBERS CHAMPIONS CUP 2026/27
           </div>
-
-          <h1 className="mt-2 text-2xl sm:text-3xl font-black leading-tight">
+          <h1 className="mt-2 text-2xl font-black sm:text-3xl lg:text-4xl">
             Offizielles Turnier- & Jahresreglement
           </h1>
-
-          <p className="mt-1 text-sm sm:text-base text-gray-600">
-            Vereinsinterne Turnierserie{" "}
-            <span className="font-semibold text-gray-900">Juli 2026 – Juni 2027</span>
+          <p className="mt-1 text-sm font-semibold text-orange-100 sm:text-base">
+            Vereinsinterne Turnierserie · Juli 2026 – Juni 2027
           </p>
-
-          <div className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 p-4">
-            <p className="text-xs sm:text-sm text-orange-900 leading-relaxed">
-              Der EMD Members Champion Cup ist eine ganzjährige, strukturierte Vereinsserie mit
-              Steeldart, E-Dart, Partner-Zulosung, Einzelwertung und Finaltag.
-            </p>
-          </div>
         </div>
       </div>
     </div>
 
-    <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700" />
+    <div className="p-4 sm:p-5">
+      <p className="text-sm font-semibold leading-relaxed text-slate-600">
+        Der EMD Members Champion Cup ist eine ganzjährige, strukturierte Vereinsserie mit
+        Steeldart, E-Dart, Partner-Zulosung, Einzelwertung und Finaltag.
+      </p>
+    </div>
   </div>
 </motion.div>
-		  
-		  
-		  
-		  
 
           <div className="space-y-4">
             <SectionCard icon={<FileText className="w-5 h-5" />} title="Allgemeines">

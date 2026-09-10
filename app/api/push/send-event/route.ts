@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Event not found" }, { status: 400 })
     }
 
-    // Tokens holen: Mitglieder + Besucher
+    // Tokens holen: Mitglieder + öffentliche Besucher
     const { data: privateRows, error: privateErr } = await supabase
       .from("fcm_tokens")
       .select("token")
@@ -69,12 +69,12 @@ export async function POST(request: NextRequest) {
         [
           ...((privateRows as any[]) || []).map((r) => r.token),
           ...((publicRows as any[]) || []).map((r) => r.token),
-        ].filter(Boolean)
-      )
+        ].filter(Boolean),
+      ),
     )
 
     if (tokens.length === 0) {
-      return NextResponse.json({ success: true, sent: 0 })
+      return NextResponse.json({ success: true, sent: 0, failed: 0 })
     }
 
     // Push Text bauen

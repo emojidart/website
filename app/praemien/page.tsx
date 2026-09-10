@@ -90,6 +90,8 @@ async function hasActiveBaseMembership(playerIds: string[]) {
   const cleanPlayerIds = Array.from(new Set(playerIds.filter(Boolean)))
   if (cleanPlayerIds.length === 0) return false
 
+  const today = new Date().toISOString().slice(0, 10)
+
   const { data: baseModule, error: baseModuleError } = await supabase
     .from("membership_modules")
     .select("id")
@@ -98,30 +100,48 @@ async function hasActiveBaseMembership(playerIds: string[]) {
     .maybeSingle()
 
   if (baseModuleError) throw baseModuleError
-  if (!baseModule?.id) return false
 
-  const { data: memberships, error: membershipsError } = await supabase
-    .from("member_memberships")
+  if (baseModule?.id) {
+    const { data: memberships, error: membershipsError } = await supabase
+      .from("member_memberships")
+      .select("id")
+      .in("player_id", cleanPlayerIds)
+      .eq("status", "active")
+      .lte("starts_on", today)
+      .or(`ends_on.is.null,ends_on.gte.${today}`)
+
+    if (membershipsError) throw membershipsError
+
+    const membershipIds = (memberships || []).map((row: any) => String(row.id))
+
+    if (membershipIds.length > 0) {
+      const { data: membershipModule, error: membershipModuleError } = await supabase
+        .from("member_membership_modules")
+        .select("membership_id")
+        .in("membership_id", membershipIds)
+        .eq("module_id", baseModule.id)
+        .limit(1)
+        .maybeSingle()
+
+      if (membershipModuleError) throw membershipModuleError
+      if (membershipModule) return true
+    }
+  }
+
+  const { data: trial, error: trialError } = await supabase
+    .from("membership_trials")
     .select("id")
     .in("player_id", cleanPlayerIds)
+    .eq("module_code", "base_membership")
     .eq("status", "active")
-
-  if (membershipsError) throw membershipsError
-
-  const membershipIds = (memberships || []).map((row: any) => String(row.id))
-  if (membershipIds.length === 0) return false
-
-  const { data: membershipModule, error: membershipModuleError } = await supabase
-    .from("member_membership_modules")
-    .select("membership_id")
-    .in("membership_id", membershipIds)
-    .eq("module_id", baseModule.id)
+    .lte("starts_on", today)
+    .gte("ends_on", today)
     .limit(1)
     .maybeSingle()
 
-  if (membershipModuleError) throw membershipModuleError
+  if (trialError) throw trialError
 
-  return !!membershipModule
+  return !!trial
 }
 
 export default function PraemienPage() {
@@ -180,16 +200,7 @@ export default function PraemienPage() {
       const nextProfile = profileData as any as UserProfileRow
       setProfile(nextProfile)
 
-      const playerName = String(nextProfile.club_players?.name || "").trim()
-
-      const possiblePlayerIds = Array.from(
-        new Set(
-          [
-            nextProfile.club_players?.id ? String(nextProfile.club_players.id) : "",
-            nextProfile.player_id ? String(nextProfile.player_id) : "",
-          ].filter(Boolean),
-        ),
-      )
+      const possiblePlayerIds = nextProfile.player_id ? [String(nextProfile.player_id)] : []
 
       const isBaseMember = await hasActiveBaseMembership(possiblePlayerIds)
       setHasBaseMembership(isBaseMember)
@@ -206,15 +217,6 @@ export default function PraemienPage() {
           .from("bonus_transactions")
           .select("*")
           .in("player_id", possiblePlayerIds)
-
-        foundTransactions.push(...((data || []) as BonusTransaction[]))
-      }
-
-      if (playerName) {
-        const { data } = await supabase
-          .from("bonus_transactions")
-          .select("*")
-          .ilike("player_name", playerName)
 
         foundTransactions.push(...((data || []) as BonusTransaction[]))
       }
@@ -242,98 +244,98 @@ export default function PraemienPage() {
   }, [redemptions])
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 flex flex-col">
       <Header />
 
       <div className="h-12 sm:h-14" />
 
-      <section className="relative overflow-hidden border-b border-slate-200 bg-white">
+      <section className="relative mx-2 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mx-4 sm:rounded-[28px] lg:mx-5 xl:mx-6 xl:rounded-[30px]">
         <div className="absolute inset-0">
           <Image
             src="/images/praemien/hero.jpg"
             alt="EMD Prämien"
             fill
             priority
-            className="object-cover opacity-30"
+            className="object-cover opacity-[0.16]"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/55" />
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/95 to-slate-950/55" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-          <div className="max-w-3xl">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.25em] text-red-600 shadow-sm">
+        <div className="relative w-full px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12 xl:px-9">
+          <div className="max-w-4xl">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-orange-400 shadow-none sm:text-xs">
               <Sparkles className="h-4 w-4" />
               EMD Bonusprogramm
             </div>
 
-            <h1 className="text-5xl font-black uppercase leading-none tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
+            <h1 className="text-4xl font-black uppercase leading-none tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl xl:text-7xl">
               Punkte sammeln.
-              <span className="mt-2 block text-red-600">Prämien sichern.</span>
+              <span className="mt-2 block text-orange-400">Prämien sichern.</span>
             </h1>
 
-            <p className="mt-6 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
+            <p className="mt-5 max-w-2xl text-sm font-medium leading-7 text-white/60 sm:text-base lg:text-lg">
               Sammle Bonuspunkte bei Turnieren, Training und Vereinsaktivitäten
               und löse sie gegen exklusive EMD Sachpreise ein.
             </p>
           </div>
 
-          <div className="mt-12 rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-200/70 lg:p-6">
+          <div className="mt-8 rounded-[22px] border border-white/10 bg-white/[0.07] p-4 text-white backdrop-blur-sm sm:p-5 lg:p-6">
             {loading ? (
               <div className="flex items-center gap-3">
-                <Loader2 className="h-6 w-6 animate-spin text-red-600" />
-                <p className="font-bold text-slate-700">Punkte werden geladen...</p>
+                <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+                <p className="font-bold text-white/70">Punkte werden geladen...</p>
               </div>
             ) : (
               <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr_1fr] lg:items-center">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-red-200 bg-red-50">
-                    <Trophy className="h-9 w-9 text-red-600" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.08]">
+                    <Trophy className="h-7 w-7 text-orange-400" />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/40 sm:text-xs">
                       Deine Bonuspunkte
                     </p>
-                    <p className="mt-1 text-3xl font-black text-slate-950">
+                    <p className="mt-1 text-3xl font-black text-white">
                       {session?.user
                         ? hasBaseMembership
                           ? totalPoints
-                          : "Grundmitgliedschaft erforderlich"
+                          : "Mitgliedschaft erforderlich"
                         : "Login erforderlich"}
                     </p>
 
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
                       <div
-                        className="h-full rounded-full bg-red-600"
+                        className="h-full rounded-full bg-orange-600"
                         style={{
                           width: `${Math.min(100, Math.round((totalPoints / 2000) * 100))}%`,
                         }}
                       />
                     </div>
 
-                    <p className="mt-2 text-xs font-semibold text-slate-500">
+                    <p className="mt-2 text-xs font-semibold text-white/50">
                       {session?.user
                         ? hasBaseMembership
                           ? nextLevel
                             ? `Noch ${nextLevel.missing} Punkte bis ${nextLevel.title}`
                             : "Gold erreicht – stark!"
-                          : "Das Bonus- und Prämienprogramm ist in der Grundmitgliedschaft enthalten."
+                          : "Das Bonus- und Prämienprogramm ist mit aktiver Grund- oder Testmitgliedschaft verfügbar."
                         : "Melde dich an, um deine Punkte zu sehen."}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 border-slate-200 lg:border-l lg:pl-8">
-                  <Target className="h-7 w-7 text-slate-800" />
-                  <span className="text-sm font-semibold text-slate-800">
+                <div className="flex items-center gap-3 border-white/10 lg:border-l lg:pl-8">
+                  <Target className="h-7 w-7 text-orange-400" />
+                  <span className="text-sm font-semibold text-white/80">
                     Status: {currentLevel}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 border-slate-200 lg:border-l lg:pl-8">
-                  <Gift className="h-7 w-7 text-slate-800" />
-                  <span className="text-sm font-semibold text-slate-800">
+                <div className="flex items-center gap-3 border-white/10 lg:border-l lg:pl-8">
+                  <Gift className="h-7 w-7 text-orange-400" />
+                  <span className="text-sm font-semibold text-white/80">
                     Prämien auswählen
                   </span>
                 </div>
@@ -343,9 +345,9 @@ export default function PraemienPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <section className="w-full px-2 py-8 sm:px-4 sm:py-10 lg:px-5 xl:px-6">
         <div className="mb-10 text-center">
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-red-600">
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-orange-600">
             Prämienlevel
           </p>
           <h2 className="mt-3 text-3xl font-black uppercase tracking-wide text-slate-950 sm:text-4xl">
@@ -357,7 +359,7 @@ export default function PraemienPage() {
           {praemienCategories.map((category) => (
             <div
               key={category.title}
-              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60"
+              className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_18px_60px_-48px_rgba(15,23,42,0.45)]"
             >
               <div
                 className={`mb-5 inline-flex rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.2em] ${
@@ -379,10 +381,10 @@ export default function PraemienPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <section className="w-full px-2 py-6 sm:px-4 lg:px-5 xl:px-6">
         <div className="mb-8 flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-red-600">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-orange-600">
               Sachpreise
             </p>
             <h2 className="mt-2 text-3xl font-black uppercase tracking-wide text-slate-950">
@@ -406,7 +408,7 @@ export default function PraemienPage() {
               <Link
                 key={product.slug}
                 href={`/praemien/${product.slug}`}
-                className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/70 transition hover:-translate-y-1 hover:border-red-300"
+                className="group overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] transition hover:-translate-y-1 hover:border-orange-300"
               >
                 <div className="relative h-72 overflow-hidden bg-slate-100">
                   <Image
@@ -427,7 +429,7 @@ export default function PraemienPage() {
                       {product.category}
                     </span>
 
-                    <span className="rounded-full border border-red-200 bg-red-600 px-3 py-1 text-xs font-black uppercase tracking-wide text-white shadow-sm">
+                    <span className="rounded-full border border-orange-200 bg-orange-600 px-3 py-1 text-xs font-black uppercase tracking-wide text-white shadow-sm">
                       {product.points} Punkte
                     </span>
                   </div>
@@ -442,8 +444,8 @@ export default function PraemienPage() {
                 </div>
 
                 <div className="p-5">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
-                    <Icon className="h-7 w-7 text-red-600" />
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50">
+                    <Icon className="h-7 w-7 text-orange-600" />
                   </div>
 
                   <h3 className="text-xl font-black uppercase tracking-wide text-slate-950">
@@ -468,7 +470,7 @@ export default function PraemienPage() {
                     ) : session?.user && !hasBaseMembership ? (
                       <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-black uppercase text-blue-700">
                         <Lock className="h-4 w-4" />
-                        Grundmitgliedschaft erforderlich
+                        Mitgliedschaft erforderlich
                       </div>
                     ) : session?.user ? (
                       <div className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-4 py-2 text-xs font-black uppercase text-orange-700">
@@ -482,7 +484,7 @@ export default function PraemienPage() {
                     )}
                   </div>
 
-                  <div className="mt-5 inline-flex items-center gap-2 text-sm font-black uppercase tracking-wide text-red-600">
+                  <div className="mt-5 inline-flex items-center gap-2 text-sm font-black uppercase tracking-wide text-orange-600">
                     Produkt ansehen
                     <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                   </div>
@@ -493,7 +495,7 @@ export default function PraemienPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-32 pt-8 sm:px-6 lg:px-8">
+      <section className="w-full px-2 pb-32 pt-6 sm:px-4 lg:px-5 xl:px-6">
         <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl shadow-slate-200/70">
           <div className="relative overflow-hidden bg-white px-5 py-10 text-slate-950 sm:px-8 lg:px-10">
             <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_15%_20%,#ef4444,transparent_30%),radial-gradient(circle_at_85%_15%,#f97316,transparent_30%),radial-gradient(circle_at_50%_100%,#ffffff,transparent_22%)]" />
@@ -535,7 +537,7 @@ export default function PraemienPage() {
                   }`}
                 >
                   <div className="mb-6 flex items-center justify-between gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
                       <Icon className="h-7 w-7" />
                     </div>
 

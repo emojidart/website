@@ -294,11 +294,11 @@ function DetailView({ player, tournaments, onClose }: { player: PlayerStanding; 
     .filter((item) => item.playerEntry)
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
       <Header />
       <main className="pt-12 sm:pt-14">
         <motion.div
-          className="mx-auto w-full max-w-2xl lg:max-w-screen-xl space-y-6 px-4 py-6"
+          className="mx-auto w-full max-w-[1800px] space-y-4 sm:space-y-5 px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -546,66 +546,57 @@ export default function MembersChampionCupGesamtwertungPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
       <Header />
 
       <main className="pt-12 sm:pt-14">
         <motion.div
-          className="mx-auto w-full max-w-2xl lg:max-w-screen-xl space-y-6 px-4 py-6"
+          className="mx-auto w-full max-w-[1800px] space-y-4 sm:space-y-5 px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          <motion.div variants={itemVariants} className="overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-sm">
-            <div className="h-2 bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-600" />
-            <div className="relative overflow-hidden p-5 sm:p-7">
-              <div className="absolute -right-16 -top-20 h-48 w-48 rounded-full bg-orange-100 blur-2xl" />
-              <div className="absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-yellow-100 blur-2xl" />
-
-              <div className="relative flex items-start justify-between gap-4 flex-wrap">
-                <div className="flex items-start gap-4 min-w-0">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 shrink-0">
-                    <Crown className="h-7 w-7 text-orange-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-gray-900">EMD MEMBERS CHAMPION CUP</h1>
-                      <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-black text-orange-700">
-                        <Sparkles className="h-3.5 w-3.5" /> 2026/27
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm sm:text-base font-bold text-gray-600">
-                      Offizielle Gesamtwertung · Doppel wird gespielt · Einzelwertung zählt
-                    </p>
-                  </div>
+          <motion.div variants={itemVariants} className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+            <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] p-4 text-white sm:p-5 lg:p-6">
+              <div className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left sm:gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
+                  <Crown className="h-7 w-7 text-orange-300" />
                 </div>
-
+                <div className="mt-3 min-w-0 flex-1 sm:mt-0">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-black text-orange-950">
+                    <Sparkles className="h-3.5 w-3.5" /> MEMBERS CHAMPIONS CUP 2026/27
+                  </div>
+                  <h1 className="mt-2 text-2xl font-black sm:text-3xl lg:text-4xl">EMD MEMBERS CHAMPION CUP</h1>
+                  <p className="mt-1 text-sm font-semibold text-orange-100 sm:text-base">
+                    Offizielle Gesamtwertung · Doppel wird gespielt · Einzelwertung zählt
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={fetchAll}
-                  className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-black text-orange-700 hover:bg-orange-100"
+                  className="mt-4 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15 sm:mt-0"
                 >
                   Aktualisieren
                 </button>
               </div>
+            </div>
 
-              <div className="relative mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <div className="rounded-2xl border border-gray-200 bg-white/80 p-4 shadow-sm">
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-600"><Users className="h-4 w-4 text-orange-600" /> Spieler</div>
-                  <div className="mt-1 text-3xl font-black text-gray-900">{totalPlayers}</div>
-                </div>
-                <div className="rounded-2xl border border-gray-200 bg-white/80 p-4 shadow-sm">
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-600"><Calendar className="h-4 w-4 text-blue-600" /> Spieltage</div>
-                  <div className="mt-1 text-3xl font-black text-gray-900">{completedTournaments}</div>
-                </div>
-                <div className="rounded-2xl border border-gray-200 bg-white/80 p-4 shadow-sm">
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-600"><Activity className="h-4 w-4 text-green-600" /> Antritte</div>
-                  <div className="mt-1 text-3xl font-black text-gray-900">{totalAppearances}</div>
-                </div>
-                <div className="rounded-2xl border border-gray-200 bg-white/80 p-4 shadow-sm">
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-600"><Target className="h-4 w-4 text-purple-600" /> Punkte</div>
-                  <div className="mt-1 text-3xl font-black text-gray-900">{totalPoints}</div>
-                </div>
+            <div className="grid grid-cols-2 gap-3 p-4 sm:p-5 lg:grid-cols-4 lg:p-6">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-bold text-slate-500">Spieler</div>
+                <div className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">{totalPlayers}</div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-bold text-slate-500">Spieltage</div>
+                <div className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">{completedTournaments}</div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-bold text-slate-500">Antritte</div>
+                <div className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">{totalAppearances}</div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-bold text-slate-500">Punkte</div>
+                <div className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">{totalPoints}</div>
               </div>
             </div>
           </motion.div>

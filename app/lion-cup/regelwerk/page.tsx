@@ -190,9 +190,10 @@ export default function RegelwerkAppPage() {
                   </ul>
                 </SubCard>
 
-                <SubCard tone="success" title="Final-Qualifikation">
+                <SubCard tone="success" title="Mindestantritte für die Serienwertung">
                   <ul className="space-y-2">
-                    <li>• Für die Finalwertung sind mindestens <strong>3 Antritte</strong> erforderlich.</li>
+                    <li>• Für die <strong>LION-CUP-Gesamtwertung und Serienauszahlung</strong> sind mindestens <strong>3 Antritte</strong> erforderlich.</li>
+                    <li>• Der <strong>Finaltag ist für alle Spieler offen</strong> – auch mit weniger als 3 bisherigen Antritten.</li>
                     <li>• Es gibt nur <strong>eine Gesamttabelle</strong>.</li>
                     <li>• Eine Aufteilung in Tabelle A und Tabelle B findet nicht mehr statt.</li>
                   </ul>
@@ -266,15 +267,15 @@ export default function RegelwerkAppPage() {
                 </SubCard>
 
                 <SubCard tone="success" title="Preisgeldberechtigte Gesamtwertung">
-                  Für die LION-CUP-Serienauszahlung nach dem Finaltag werden die <strong>ersten 8 Plätze der Gesamttabelle</strong> berücksichtigt.
+                  Für die LION-CUP-Serienauszahlung nach dem Finaltag werden die <strong>ersten 8 wertungsberechtigten Plätze der Gesamttabelle</strong> berücksichtigt. Wertungsberechtigt ist, wer mindestens <strong>3 Antritte</strong> erreicht hat.
                 </SubCard>
               </div>
             </SectionCard>
 
             <SectionCard icon={<Flag className="h-5 w-5" />} title="Finaltag & Anwesenheitspflicht">
               <div className="space-y-3">
-                <SubCard tone="warn" title="Finaltag ist verpflichtend">
-                  Für qualifizierte Spieler ist die Teilnahme am Finaltag grundsätzlich <strong>verpflichtend</strong>.
+                <SubCard tone="warn" title="Anwesenheit für die Serienwertung">
+                  Für <strong>wertungsberechtigte Spieler</strong> (mindestens 3 Antritte) ist die Teilnahme am Finaltag grundsätzlich <strong>verpflichtend</strong>.
                   Bei nachweisbaren gesundheitlichen Gründen kann die Turnierleitung eine Ausnahme akzeptieren.
                 </SubCard>
 
@@ -284,7 +285,7 @@ export default function RegelwerkAppPage() {
                     <strong> 20 % der Gesamtpunkte</strong>.
                   </SubCard>
 
-                  <SubCard title="Alle weiteren qualifizierten Spieler">
+                  <SubCard title="Alle weiteren wertungsberechtigten Spieler">
                     Wer ohne anerkannten gesundheitlichen Grund nicht zum Finaltag erscheint, erhält einen Abzug von
                     <strong> 10 % der Gesamtpunkte</strong>.
                   </SubCard>
@@ -295,7 +296,7 @@ export default function RegelwerkAppPage() {
             <SectionCard icon={<Coins className="h-5 w-5" />} title="Preisgeld am Finaltag">
               <div className="space-y-3">
                 <SubCard tone="info" title="Finaltag – Teilnahme & Startgeld">
-                  Am Finaltag kann <strong>jeder Spieler teilnehmen</strong>. Pro Teilnehmer werden am Finaltag
+                  Am Finaltag kann <strong>jeder Spieler teilnehmen – unabhängig davon, wie viele Antritte zuvor absolviert wurden</strong>. Pro Teilnehmer werden am Finaltag
                   <strong> € 10 Finalbeitrag + € 5 Startgeld</strong> bezahlt.
                 </SubCard>
 
@@ -331,7 +332,7 @@ export default function RegelwerkAppPage() {
             <SectionCard icon={<Crown className="h-5 w-5" />} title="LION CUP – Serienauszahlung & Siegerehrung">
               <div className="space-y-3">
                 <SubCard tone="success" title="Top 8 der Gesamttabelle">
-                  Nach Abschluss des Finaltags werden die <strong>ersten 8 Plätze der Gesamttabelle</strong> ausgezeichnet
+                  Nach Abschluss des Finaltags werden die <strong>ersten 8 wertungsberechtigten Plätze der Gesamttabelle</strong> ausgezeichnet
                   und aus dem für die Turnierserie vorgesehenen Gesamt-Preispool ausbezahlt.
                 </SubCard>
 

@@ -66,6 +66,8 @@ async function hasActiveBaseMembership(playerIds: string[]) {
   const cleanPlayerIds = Array.from(new Set(playerIds.filter(Boolean)))
   if (cleanPlayerIds.length === 0) return false
 
+  const today = new Date().toISOString().slice(0, 10)
+
   const { data: baseModule, error: baseModuleError } = await supabase
     .from("membership_modules")
     .select("id")
@@ -74,30 +76,48 @@ async function hasActiveBaseMembership(playerIds: string[]) {
     .maybeSingle()
 
   if (baseModuleError) throw baseModuleError
-  if (!baseModule?.id) return false
 
-  const { data: memberships, error: membershipsError } = await supabase
-    .from("member_memberships")
+  if (baseModule?.id) {
+    const { data: memberships, error: membershipsError } = await supabase
+      .from("member_memberships")
+      .select("id")
+      .in("player_id", cleanPlayerIds)
+      .eq("status", "active")
+      .lte("starts_on", today)
+      .or(`ends_on.is.null,ends_on.gte.${today}`)
+
+    if (membershipsError) throw membershipsError
+
+    const membershipIds = (memberships || []).map((row: any) => String(row.id))
+
+    if (membershipIds.length > 0) {
+      const { data: membershipModule, error: membershipModuleError } = await supabase
+        .from("member_membership_modules")
+        .select("membership_id")
+        .in("membership_id", membershipIds)
+        .eq("module_id", baseModule.id)
+        .limit(1)
+        .maybeSingle()
+
+      if (membershipModuleError) throw membershipModuleError
+      if (membershipModule) return true
+    }
+  }
+
+  const { data: trial, error: trialError } = await supabase
+    .from("membership_trials")
     .select("id")
     .in("player_id", cleanPlayerIds)
+    .eq("module_code", "base_membership")
     .eq("status", "active")
-
-  if (membershipsError) throw membershipsError
-
-  const membershipIds = (memberships || []).map((row: any) => String(row.id))
-  if (membershipIds.length === 0) return false
-
-  const { data: membershipModule, error: membershipModuleError } = await supabase
-    .from("member_membership_modules")
-    .select("membership_id")
-    .in("membership_id", membershipIds)
-    .eq("module_id", baseModule.id)
+    .lte("starts_on", today)
+    .gte("ends_on", today)
     .limit(1)
     .maybeSingle()
 
-  if (membershipModuleError) throw membershipModuleError
+  if (trialError) throw trialError
 
-  return !!membershipModule
+  return !!trial
 }
 
 export default function PraemieDetailPage() {
@@ -174,16 +194,7 @@ export default function PraemieDetailPage() {
       const nextProfile = profileData as any as UserProfileRow
       setProfile(nextProfile)
 
-      const playerName = String(nextProfile.club_players?.name || "").trim()
-
-      const possiblePlayerIds = Array.from(
-        new Set(
-          [
-            nextProfile.club_players?.id ? String(nextProfile.club_players.id) : "",
-            nextProfile.player_id ? String(nextProfile.player_id) : "",
-          ].filter(Boolean),
-        ),
-      )
+      const possiblePlayerIds = nextProfile.player_id ? [String(nextProfile.player_id)] : []
 
       const isBaseMember = await hasActiveBaseMembership(possiblePlayerIds)
       setHasBaseMembership(isBaseMember)
@@ -200,15 +211,6 @@ export default function PraemieDetailPage() {
           .from("bonus_transactions")
           .select("*")
           .in("player_id", possiblePlayerIds)
-
-        foundTransactions.push(...((data || []) as BonusTransaction[]))
-      }
-
-      if (playerName) {
-        const { data } = await supabase
-          .from("bonus_transactions")
-          .select("*")
-          .ilike("player_name", playerName)
 
         foundTransactions.push(...((data || []) as BonusTransaction[]))
       }
@@ -256,7 +258,7 @@ export default function PraemieDetailPage() {
 
     if (!hasBaseMembership) {
       setMessage(
-        "Das Bonus- und Prämienprogramm ist Teil der Grundmitgliedschaft. Zum Einlösen ist eine aktive Grundmitgliedschaft erforderlich.",
+        "Das Bonus- und Prämienprogramm ist Teil der Mitgliedschaft. Zum Einlösen ist eine aktive Grund- oder Testmitgliedschaft erforderlich.",
       )
       return
     }
@@ -275,20 +277,16 @@ export default function PraemieDetailPage() {
         transactions[0]?.player_name ||
         "Vereinsmitglied"
 
-      const playerId =
-        profile.club_players?.id ||
-        profile.player_id ||
-        transactions[0]?.player_id ||
-        null
+      const playerId = profile.player_id || null
 
       const activeBaseMembershipStillValid = await hasActiveBaseMembership(
-        [profile.club_players?.id, profile.player_id].filter(Boolean) as string[],
+        profile.player_id ? [String(profile.player_id)] : [],
       )
 
       if (!activeBaseMembershipStillValid) {
         setHasBaseMembership(false)
         setMessage(
-          "Deine Grundmitgliedschaft ist derzeit nicht aktiv. Die Prämie kann deshalb nicht eingelöst werden.",
+          "Deine Grund- oder Testmitgliedschaft ist derzeit nicht aktiv. Die Prämie kann deshalb nicht eingelöst werden.",
         )
         return
       }
@@ -343,16 +341,16 @@ export default function PraemieDetailPage() {
     .slice(0, 3)
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 flex flex-col">
       <Header />
 
       <div className="h-12 sm:h-14" />
 	  
 	  {confirmOpen ? (
   <div className="fixed inset-0 z-[998] flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
-    <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50">
-        <Gift className="h-9 w-9 text-red-600" />
+    <div className="w-full max-w-md rounded-[24px] bg-white p-6 shadow-2xl">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] bg-orange-50">
+        <Gift className="h-9 w-9 text-orange-600" />
       </div>
 
       <h2 className="mt-5 text-center text-2xl font-black uppercase text-slate-950">
@@ -367,12 +365,12 @@ export default function PraemieDetailPage() {
         {product.title}
       </p>
 
-      <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-        <p className="text-xs font-black uppercase text-red-600">
+      <div className="mt-5 rounded-2xl border border-orange-100 bg-orange-50 p-4 text-center">
+        <p className="text-xs font-black uppercase text-orange-600">
           Punkte werden abgezogen
         </p>
 
-        <p className="mt-1 text-3xl font-black text-red-700">
+        <p className="mt-1 text-3xl font-black text-orange-700">
           -{product.points}
         </p>
 
@@ -400,7 +398,7 @@ export default function PraemieDetailPage() {
             setConfirmOpen(false)
             handleRedeem()
           }}
-          className="flex-1 rounded-xl bg-red-600 px-4 py-3 font-black uppercase text-white"
+          className="flex-1 rounded-xl bg-orange-600 px-4 py-3 font-black uppercase text-white"
         >
           Ja, einlösen
         </button>
@@ -411,7 +409,7 @@ export default function PraemieDetailPage() {
 
       {successOpen ? (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-[24px] bg-white shadow-2xl">
             <div className="absolute right-4 top-4 z-10">
               <button
                 type="button"
@@ -422,11 +420,11 @@ export default function PraemieDetailPage() {
               </button>
             </div>
 
-            <div className="relative bg-gradient-to-br from-red-600 via-orange-500 to-yellow-400 p-8 text-white">
+            <div className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 p-8 text-white">
               <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,white,transparent_30%),radial-gradient(circle_at_80%_10%,white,transparent_25%),radial-gradient(circle_at_50%_90%,white,transparent_35%)]" />
 
               <div className="relative">
-                <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/20 shadow-xl backdrop-blur">
+                <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-[24px] bg-white/20 shadow-xl backdrop-blur">
                   <PartyPopper className="h-11 w-11 text-white" />
                 </div>
 
@@ -445,7 +443,7 @@ export default function PraemieDetailPage() {
             </div>
 
             <div className="p-6">
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center gap-4">
                   <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-white">
                     <Image
@@ -457,7 +455,7 @@ export default function PraemieDetailPage() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-red-600">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-orange-600">
                       Eingelöste Prämie
                     </p>
                     <h3 className="mt-1 text-lg font-black uppercase leading-tight text-slate-950">
@@ -468,11 +466,11 @@ export default function PraemieDetailPage() {
               </div>
 
               <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-                  <p className="text-xs font-black uppercase text-red-600">
+                <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4 text-center">
+                  <p className="text-xs font-black uppercase text-orange-600">
                     Abgezogen
                   </p>
-                  <p className="mt-1 text-3xl font-black text-red-700">
+                  <p className="mt-1 text-3xl font-black text-orange-700">
                     -{product.points}
                   </p>
                   <p className="text-xs font-bold text-slate-500">Punkte</p>
@@ -496,7 +494,7 @@ export default function PraemieDetailPage() {
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/praemien"
-                  className="inline-flex flex-1 items-center justify-center rounded-xl bg-red-600 px-5 py-4 text-sm font-black uppercase tracking-wide text-white shadow-lg shadow-red-200 transition hover:bg-red-500"
+                  className="inline-flex flex-1 items-center justify-center rounded-xl bg-orange-600 px-5 py-4 text-sm font-black uppercase tracking-wide text-white shadow-lg shadow-orange-200 transition hover:bg-orange-500"
                 >
                   Zurück zu Prämien
                 </Link>
@@ -504,7 +502,7 @@ export default function PraemieDetailPage() {
                 <button
                   type="button"
                   onClick={() => setSuccessOpen(false)}
-                  className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-4 text-sm font-black uppercase tracking-wide text-slate-900 transition hover:border-red-300 hover:text-red-600"
+                  className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-4 text-sm font-black uppercase tracking-wide text-slate-900 transition hover:border-orange-300 hover:text-orange-600"
                 >
                   Auf Seite bleiben
                 </button>
@@ -514,18 +512,18 @@ export default function PraemieDetailPage() {
         </div>
       ) : null}
 
-      <main className="mx-auto max-w-7xl px-4 py-10 pb-28 sm:px-6 lg:px-8">
+      <main className="w-full flex-grow px-2 pb-28 pt-5 sm:px-4 sm:pt-7 lg:px-5 xl:px-6">
         <Link
           href="/praemien"
-          className="mb-8 inline-flex items-center gap-2 text-sm font-black uppercase tracking-wide text-red-600 hover:text-red-500"
+          className="mb-4 inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black uppercase tracking-wide text-orange-600 shadow-sm transition hover:bg-orange-50 sm:mb-5"
         >
           <ArrowLeft className="h-4 w-4" />
           Zurück zu allen Prämien
         </Link>
 
-        <section className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/70">
-            <div className="relative h-[420px] bg-slate-100 sm:h-[540px]">
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)] xl:items-start xl:gap-5">
+          <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)]">
+            <div className="relative h-[340px] bg-slate-100 sm:h-[480px] lg:h-[560px] xl:h-[calc(100vh-160px)] xl:min-h-[560px] xl:max-h-[760px]">
               <Image
                 src={product.image}
                 alt={product.title}
@@ -543,7 +541,7 @@ export default function PraemieDetailPage() {
                   {product.category}
                 </span>
 
-                <span className="rounded-full border border-red-200 bg-red-600 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-white shadow-sm">
+                <span className="rounded-full border border-orange-200 bg-orange-600 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-white shadow-sm">
                   {product.points} Punkte
                 </span>
               </div>
@@ -558,12 +556,12 @@ export default function PraemieDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-200/70 sm:p-8">
-            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
-              <Icon className="h-9 w-9 text-red-600" />
+          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:p-8">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50">
+              <Icon className="h-9 w-9 text-orange-600" />
             </div>
 
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-red-600">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-orange-600">
               <Sparkles className="h-4 w-4" />
               Bonusprogramm-Prämie
             </div>
@@ -572,14 +570,14 @@ export default function PraemieDetailPage() {
               {product.title}
             </h1>
 
-            <p className="mt-4 text-xl font-black text-red-600">
+            <p className="mt-4 text-xl font-black text-orange-600">
               {product.points} Bonuspunkte
             </p>
 
-            <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+            <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50 p-5">
               {loading ? (
                 <div className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-red-600" />
+                  <Loader2 className="h-5 w-5 animate-spin text-orange-600" />
                   <p className="font-bold text-slate-700">Status wird geladen...</p>
                 </div>
               ) : isRedeemed ? (
@@ -596,7 +594,7 @@ export default function PraemieDetailPage() {
                 <div className="flex items-center gap-3 text-blue-700">
                   <Lock className="h-6 w-6 text-blue-600" />
                   <div>
-                    <p className="font-black">Grundmitgliedschaft erforderlich</p>
+                    <p className="font-black">Mitgliedschaft erforderlich</p>
                     <p className="text-sm font-semibold">
                       Das Bonus- und Prämienprogramm ist in der Grundmitgliedschaft enthalten.
                     </p>
@@ -643,9 +641,9 @@ export default function PraemieDetailPage() {
               {product.description}
             </p>
 
-            <div className="mt-8 rounded-3xl border border-red-100 bg-red-50 p-5">
+            <div className="mt-8 rounded-[24px] border border-orange-100 bg-orange-50 p-5">
               <div className="flex items-start gap-3">
-                <Gift className="mt-1 h-6 w-6 shrink-0 text-red-600" />
+                <Gift className="mt-1 h-6 w-6 shrink-0 text-orange-600" />
                 <p className="text-sm font-semibold leading-7 text-slate-700">
                   {product.bonusText}
                 </p>
@@ -663,7 +661,7 @@ export default function PraemieDetailPage() {
                 type="button"
                onClick={() => setConfirmOpen(true)}
                 disabled={redeeming || loading || isRedeemed || !canRedeem}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-4 text-sm font-black uppercase tracking-wide text-white shadow-lg shadow-red-200 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-4 text-sm font-black uppercase tracking-wide text-white shadow-lg shadow-orange-200 transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
               >
                 {redeeming ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -675,7 +673,7 @@ export default function PraemieDetailPage() {
                 {isRedeemed
   ? "Nicht verfügbar"
   : session?.user && !hasBaseMembership
-    ? "Grundmitgliedschaft erforderlich"
+    ? "Mitgliedschaft erforderlich"
     : totalPoints < product.points
       ? `Noch ${missingPoints} Punkte fehlen`
       : "Prämie einlösen"}
@@ -683,7 +681,7 @@ export default function PraemieDetailPage() {
 
               <Link
                 href="/praemien-rangliste"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-4 text-sm font-black uppercase tracking-wide text-slate-900 shadow-sm transition hover:border-red-300 hover:text-red-600"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-4 text-sm font-black uppercase tracking-wide text-slate-900 shadow-sm transition hover:border-orange-300 hover:text-orange-600"
               >
                 Rangliste ansehen
               </Link>
@@ -692,7 +690,7 @@ export default function PraemieDetailPage() {
         </section>
 
         <section className="mt-10 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60">
             <h2 className="text-2xl font-black uppercase text-slate-950">
               Highlights
             </h2>
@@ -700,7 +698,7 @@ export default function PraemieDetailPage() {
             <div className="mt-6 grid gap-3">
               {product.highlights.map((highlight) => (
                 <div key={highlight} className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-orange-600" />
                   <p className="text-sm font-semibold leading-6 text-slate-700">
                     {highlight}
                   </p>
@@ -709,7 +707,7 @@ export default function PraemieDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60">
             <h2 className="text-2xl font-black uppercase text-slate-950">
               Perfekt geeignet für
             </h2>
@@ -720,7 +718,7 @@ export default function PraemieDetailPage() {
                   key={item}
                   className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-700"
                 >
-                  <Star className="h-4 w-4 text-red-600" />
+                  <Star className="h-4 w-4 text-orange-600" />
                   {item}
                 </span>
               ))}
@@ -731,7 +729,7 @@ export default function PraemieDetailPage() {
         {relatedProducts.length > 0 && (
           <section className="mt-12">
             <div className="mb-6">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-red-600">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-orange-600">
                 Weitere Prämien
               </p>
               <h2 className="mt-2 text-3xl font-black uppercase text-slate-950">
@@ -744,7 +742,7 @@ export default function PraemieDetailPage() {
                 <Link
                   key={item.slug}
                   href={`/praemien/${item.slug}`}
-                  className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg shadow-slate-200/60 transition hover:-translate-y-1 hover:border-red-300"
+                  className="group overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-lg shadow-slate-200/60 transition hover:-translate-y-1 hover:border-orange-300"
                 >
                   <div className="relative h-56 bg-slate-100">
                     <Image
@@ -756,7 +754,7 @@ export default function PraemieDetailPage() {
                   </div>
 
                   <div className="p-5">
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-red-600">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-orange-600">
                       {item.points} Punkte
                     </p>
                     <h3 className="mt-2 text-lg font-black uppercase text-slate-950">

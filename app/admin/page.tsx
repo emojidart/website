@@ -59,6 +59,7 @@ import { AdminPraemienRedemptions } from "@/components/admin/bonus/admin-praemie
 import { AdminMembershipManagement } from "@/components/admin/membership/admin-membership-management"
 import { AdminApprovalsManagement } from "@/components/admin/admin-freigaben"
 import { AdminClubMeeting } from "@/components/admin/admin-club-meeting"
+import { AdminClubhouseManagement } from "@/components/admin/admin-clubhouse-management"
 import { PackageCheck } from "lucide-react"
 
 export default function AdminPage() {
@@ -111,6 +112,7 @@ export default function AdminPage() {
 | "guest-requests"
 | "approvals"
 | "club-meeting"
+| "clubhouse"
   >("dashboard")
 
   // Admin-Ansicht merken: selbst wenn eine Unterkomponente/Browser die Seite neu lädt,
@@ -572,6 +574,14 @@ useEffect(() => {
       category: "verein" as const,
     },
     {
+      title: "Vereinsheim",
+      description: "Öffnungszeiten & Berechtigungen verwalten",
+      icon: Home,
+      color: "bg-emerald-600",
+      view: "clubhouse" as const,
+      category: "verein" as const,
+    },
+    {
       title: "Vereinssitzung",
       description: "Sitzung vorbereiten, starten & teilen",
       icon: Video,
@@ -770,6 +780,7 @@ useEffect(() => {
           badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
         },
         { key: "events", label: "Veranstaltungen", icon: PartyPopper },
+        { key: "clubhouse", label: "Vereinsheim", icon: Home },
         { key: "club-meeting", label: "Vereinssitzung", icon: Video },
 		{ key: "admin-push", label: "Push Nachrichten", icon: BellRing },
 		{ key: "bonus-system", label: "Bonussystem", icon: Trophy },
@@ -820,6 +831,7 @@ useEffect(() => {
     "recruitment",
     "approvals",
     "events",
+    "clubhouse",
     "club-meeting",
     "club",
     "support-tickets",
@@ -1324,6 +1336,12 @@ if (!hasAnyPermission) {
                   </div>
                 )}
 
+
+                {currentView === "clubhouse" && (
+                  <div className="space-y-6">
+                    <AdminClubhouseManagement />
+                  </div>
+                )}
 
                 {currentView === "club-meeting" && (
                   <div className="space-y-6">

@@ -20,36 +20,34 @@ const itemVariants = {
 
 export default function DatenschutzPage() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
       <Header />
 
      <main className="pt-12 sm:pt-14">
   <motion.div
-    className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+    className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
     variants={containerVariants}
     initial="hidden"
     animate="visible"
   >
           {/* App Header Card */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-              <div className="p-4 flex items-start gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-5 h-5 text-orange-600" />
+          <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
+            <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)]">
+              <div className="h-1.5 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="flex items-start gap-3 p-4 sm:p-5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50">
+                  <Shield className="h-5 w-5 text-orange-600" />
                 </div>
-                <div>
-                  <h1 className="text-base sm:text-lg font-black">Datenschutzerklärung</h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Informationen zur Verarbeitung personenbezogener Daten in der EMD Vereinsapp.
-                  </p>
+                <div className="min-w-0">
+                  <h1 className="text-lg font-black text-slate-950 sm:text-xl">Datenschutzerklärung</h1>
+                  <p className="mt-1 text-sm font-medium text-slate-600">Informationen zur Verarbeitung personenbezogener Daten in der EMD Vereinsapp.</p>
                 </div>
               </div>
             </div>
           </motion.div>
 
           {/* Content */}
-          <div className="space-y-6 text-sm leading-relaxed text-gray-700">
+          <div className="space-y-4 text-sm leading-relaxed text-slate-700">
             <Section title="1. Datenschutz auf einen Blick">
               Diese Datenschutzerklärung informiert darüber, welche personenbezogenen Daten in der App
               <strong> „Emojis Dartverein“ </strong> verarbeitet werden und welche Rechte Nutzerinnen und Nutzer haben.

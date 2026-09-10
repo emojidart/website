@@ -38,6 +38,7 @@ import {
 import Image from "next/image"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { ClubhouseStatusCard } from "@/components/clubhouse-status-card"
 import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { DKOSelfRegistrationModal } from "@/components/dko-self-registration-modal"
 import { PushNotificationDialog } from "@/components/push-notification-dialog"
@@ -785,14 +786,16 @@ useEffect(() => {
         const totalParticipants = participants.size
         const totalAppearances = appearances.size
 
-        const prizePoolFromParticipants = totalParticipants * 5
-        const prizePoolFromAppearances = totalAppearances * 4
+        // € 10,00 Seriengebühr einmalig pro Spieler
+        // + € 5,00 pro Spieler und gespieltem Turniertag.
+        const seriesFees = totalParticipants * 10
+        const tournamentFees = totalAppearances * 5
 
         let hostSponsoring = 0
         if (totalAppearances >= 501) hostSponsoring = 250
         else if (totalAppearances >= 500) hostSponsoring = 100
 
-        setCupPrizePool(prizePoolFromParticipants + prizePoolFromAppearances + hostSponsoring)
+        setCupPrizePool(seriesFees + tournamentFees + hostSponsoring)
       } catch (error) {
         console.error("Error fetching cup data:", error)
         setCupPrizePool(0)
@@ -1971,6 +1974,8 @@ useEffect(() => {
       {/* Abstand für fixed Header */}
 <div className="h-12 sm:h-14" aria-hidden="true" />
 
+<ClubhouseStatusCard />
+
 <PushEnableBanner />
 
       <PushNotificationDialog />
@@ -2307,6 +2312,7 @@ useEffect(() => {
 )}
 	  
 	  
+
 	  {!birthdayLoading && birthdayPlayers.length > 0 && (
   <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
     <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
@@ -3396,30 +3402,48 @@ useEffect(() => {
     {/* BOTTOM CONTENT (WHITE) */}
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="grid grid-cols-1 gap-4 lg:gap-6">
-        {/* PRIZE POOL */}
+        {/* FINALPREISFONDS */}
         <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-orange-600" />
-              <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
-                Aktuelles Preisgeld
-              </span>
-            </div>
-            <div className="flex items-center gap-1 text-slate-500">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span className="text-[10px] sm:text-xs font-bold">
-                +€4 pro Teilnahme
-              </span>
-            </div>
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-orange-600" />
+            <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
+              Finalpreisfonds
+            </span>
           </div>
 
-          <div className="text-center rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
-            <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-1">
-              €{cupPrizePool.toFixed(2)}
+          <div className="rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900">
+                €{cupPrizePool.toFixed(2)}
+              </div>
+              <p className="mt-1 text-xs sm:text-sm font-semibold text-gray-600">
+                Aktueller Finalpreisfonds
+              </p>
             </div>
-            <p className="text-gray-600 text-xs sm:text-sm">
-              Wächst mit jedem Teilnehmer und jeder Teilnahme
-            </p>
+
+            <div className="mt-5 border-t border-orange-100 pt-4">
+              <p className="text-center text-sm font-bold text-gray-700">
+                Seriengebühr: <span className="font-black text-orange-700">€ 10,00</span> einmalig pro Spieler
+              </p>
+              <p className="mt-1 text-center text-sm font-bold text-gray-700">
+                Startgeld: <span className="font-black text-orange-700">€ 5,00</span> pro Spieler und Turniertag
+              </p>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-center">
+                  <div className="text-xl sm:text-2xl font-black text-orange-700">€ 10,00</div>
+                  <div className="mt-1 text-[11px] sm:text-xs font-bold text-gray-600">
+                    einmalige Seriengebühr pro Spieler
+                  </div>
+                </div>
+                <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-center">
+                  <div className="text-xl sm:text-2xl font-black text-orange-700">€ 5,00</div>
+                  <div className="mt-1 text-[11px] sm:text-xs font-bold text-gray-600">
+                    pro Turnier und Spieler
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

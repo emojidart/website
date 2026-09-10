@@ -448,21 +448,21 @@ export default function App() {
   }, [selectedAge])
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
       <Header />
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
       <motion.main
-        className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl"
+        className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
         {/* HERO */}
         <motion.section variants={itemVariants} className="rounded-3xl border border-orange-200 bg-white shadow-2xl overflow-hidden">
-          <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white">
+          <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] text-white">
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.35),transparent_55%),radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.18),transparent_55%),radial-gradient(circle_at_50%_90%,rgba(255,255,255,0.20),transparent_60%)]" />
-            <div className="relative p-5 sm:p-8">
+            <div className="relative p-4 sm:p-5 lg:p-6">
               <div className="flex items-center justify-center mb-5">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/10 border border-white/20 backdrop-blur flex items-center justify-center">
                   <Target className="w-8 h-8 sm:w-9 sm:h-9 text-white" />
@@ -945,8 +945,8 @@ export default function App() {
 
         {/* CTA */}
         <motion.section variants={itemVariants} className="mt-6">
-          <div className="rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white shadow-2xl overflow-hidden">
-            <div className="p-5 sm:p-8">
+          <div className="rounded-3xl border border-orange-200 bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] text-white shadow-2xl overflow-hidden">
+            <div className="p-4 sm:p-5 lg:p-6">
               <p className="text-xs font-black uppercase tracking-wider text-orange-100">Jetzt starten</p>
               <p className="mt-1 text-xl sm:text-2xl font-black">Sei dabei – Anmeldung in 30 Sekunden</p>
               <p className="mt-2 text-sm text-orange-100">
