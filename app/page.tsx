@@ -1972,11 +1972,16 @@ useEffect(() => {
       <Header />
 
       {/* Abstand für fixed Header */}
-<div className="h-12 sm:h-14" aria-hidden="true" />
+      <div className="h-12 sm:h-14" aria-hidden="true" />
 
-<ClubhouseStatusCard />
+      {/* Vereinslokal / Öffnungszeiten – mit sauberem Abstand zum Header */}
+      <section className="mx-auto w-full max-w-[1800px] px-3 pt-4 sm:px-5 sm:pt-5 lg:px-8 xl:px-10">
+        <ClubhouseStatusCard />
+      </section>
 
-<PushEnableBanner />
+      <div className="mt-4 sm:mt-5">
+        <PushEnableBanner />
+      </div>
 
       <PushNotificationDialog />
 
