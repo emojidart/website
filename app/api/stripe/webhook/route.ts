@@ -43,7 +43,7 @@ async function rewriteRequestToActuallyChargedDelta(
 
   const { data: requestRows, error: requestRowsError } = await supabase
     .from("membership_change_request_modules")
-    .select("id,module_id,monthly_price_snapshot,annual_price_snapshot")
+    .select("id,module_id,monthly_price_snapshot,semiannual_price_snapshot,annual_price_snapshot")
     .eq("request_id", requestId)
 
   if (requestRowsError) throw requestRowsError
@@ -69,6 +69,7 @@ async function rewriteRequestToActuallyChargedDelta(
           request_id: requestId,
           module_id: row.module_id,
           monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+          semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
           annual_price_snapshot: Number(row.annual_price_snapshot || 0),
         })),
       )
@@ -150,7 +151,7 @@ async function applyPendingStripeChangeFromSubscription(
 
   const { data: requestRows, error: rowsError } = await supabase
     .from("membership_change_request_modules")
-    .select("module_id,monthly_price_snapshot,annual_price_snapshot")
+    .select("module_id,monthly_price_snapshot,semiannual_price_snapshot,annual_price_snapshot")
     .eq("request_id", requestId)
 
   if (rowsError) throw rowsError
@@ -207,6 +208,7 @@ async function applyPendingStripeChangeFromSubscription(
         membership_id: changeRequest.current_membership_id,
         module_id: row.module_id,
         monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+        semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
         annual_price_snapshot: Number(row.annual_price_snapshot || 0),
       })),
     )
@@ -307,7 +309,7 @@ export async function POST(request: Request) {
 
       const { data: requestRows, error: requestRowsError } = await supabase
         .from("membership_change_request_modules")
-        .select("module_id,monthly_price_snapshot,annual_price_snapshot")
+        .select("module_id,monthly_price_snapshot,semiannual_price_snapshot,annual_price_snapshot")
         .eq("request_id", requestId)
 
       if (requestRowsError) throw requestRowsError
@@ -373,6 +375,7 @@ export async function POST(request: Request) {
             membership_id: membershipId,
             module_id: row.module_id,
             monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+            semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
             annual_price_snapshot: Number(row.annual_price_snapshot || 0),
           })),
         )

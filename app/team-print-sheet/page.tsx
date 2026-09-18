@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-import { Users, Printer, Loader2 } from "lucide-react"
+import { Users, Printer, Loader2, ScanLine } from "lucide-react"
+import { QRCodeSVG } from "qrcode.react"
 
 type TeamMembership = {
   id: string
@@ -108,10 +109,10 @@ export default function TeamPrintSheetPage() {
       .sort((a, b) => (a.club_players?.name || "").localeCompare(b.club_players?.name || ""))
   }, [members, selectedTeamId])
 
-  const selectedNames = useMemo(() => {
+  const selectedPlayers = useMemo(() => {
     return membersOfSelectedTeam
       .filter((m) => selectedPlayerIds.has(m.player_id))
-      .map((m) => m.club_players?.name || "")
+      .map((m) => ({ id: m.player_id, name: m.club_players?.name || "" }))
   }, [membersOfSelectedTeam, selectedPlayerIds])
 
   const togglePlayer = (playerId: string, checked: boolean) => {
@@ -150,7 +151,7 @@ export default function TeamPrintSheetPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] flex flex-col pb-20">
+    <div className="print-shell min-h-screen bg-[#f5f6f8] flex flex-col pb-20">
       {/* Nicht drucken */}
       <div className="no-print">
         <Header variant="app" title="Spielerblatt" subtitle="Drucken" backHref="/member-profile-app" />
@@ -160,13 +161,41 @@ export default function TeamPrintSheetPage() {
         @media print {
           @page {
             size: A4 landscape;
-            margin: 10mm;
+            margin: 6mm;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            min-height: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
+            background: white !important;
           }
           .no-print {
             display: none !important;
           }
+          .print-shell {
+            min-height: 0 !important;
+            height: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+          }
+          .print-main, .print-container {
+            padding: 0 !important;
+            margin: 0 !important;
+            min-height: 0 !important;
+            height: auto !important;
+          }
           .print-only {
             display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .print-container > .h-6 {
+            display: none !important;
           }
         }
         @media screen {
@@ -177,8 +206,8 @@ export default function TeamPrintSheetPage() {
       `}</style>
 
       {/* ✅ UNDER HEADER: */}
-      <main className="w-full pt-14 sm:pt-16">
-        <div className="w-full max-w-none px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
+      <main className="print-main w-full pt-14 sm:pt-16">
+        <div className="print-container w-full max-w-none px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
           {/* TOP WHITE CONTAINER */}
           <section className="no-print relative mb-4 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
@@ -261,6 +290,17 @@ export default function TeamPrintSheetPage() {
                   Drucken
                 </Button>
 
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 rounded-2xl font-black"
+                  onClick={() => router.push("/team-scan-sheet")}
+                  disabled={!canManage}
+                >
+                  <ScanLine className="h-4 w-4 mr-2" />
+                  Statistikblatt scannen (TEST)
+                </Button>
+
                 {!canManage ? (
                   <div className="text-xs text-slate-500">
                     Hinweis: Du brauchst Kapitän/Co-Kapitän Rechte für dieses Team.
@@ -273,9 +313,10 @@ export default function TeamPrintSheetPage() {
           {/* ✅ Nur im Druck sichtbar */}
           <div className="print-only">
             <PrintSheet
+              teamId={selectedTeamId}
               teamName={selectedTeam?.name || ""}
               teamLogoUrl={selectedTeam?.logo_url || null}
-              playerNames={selectedNames}
+              players={selectedPlayers}
             />
           </div>
 
@@ -291,13 +332,15 @@ export default function TeamPrintSheetPage() {
 }
 
 function PrintSheet({
+  teamId,
   teamName,
   teamLogoUrl,
-  playerNames,
+  players,
 }: {
+  teamId: string
   teamName: string
   teamLogoUrl: string | null
-  playerNames: string[]
+  players: { id: string; name: string }[]
 }) {
   const headers = [
     "SPIELER",
@@ -321,21 +364,49 @@ function PrintSheet({
     "SEMP",
   ]
 
-  const totalRows = Math.max(playerNames.length, 12)
-  const names = [...playerNames]
-  while (names.length < totalRows) names.push("")
+  const shortId = (id: string) => id.replace(/-/g, "").toLowerCase().slice(0, 10)
+  const qrValue = `DPSTAT2|${shortId(teamId)}|${players.map((p) => shortId(p.id)).join(",")}`
+
+  const totalRows = Math.max(players.length, 12)
+  const rows = [...players]
+  while (rows.length < totalRows) rows.push({ id: "", name: "" })
 
   return (
-    <div style={{ width: "100%" }}>
-      <div className="flex items-center gap-2 mb-2">
-        {teamLogoUrl ? (
-          <img
-            src={teamLogoUrl}
-            alt="Teamlogo"
-            style={{ width: 30, height: 30, borderRadius: 9999, objectFit: "cover" }}
-          />
+    <div style={{ width: "100%", position: "relative" }}>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {teamLogoUrl ? (
+            <img
+              src={teamLogoUrl}
+              alt="Teamlogo"
+              style={{ width: 30, height: 30, borderRadius: 9999, objectFit: "cover" }}
+            />
+          ) : null}
+          <div>
+            <div className="font-bold text-sm">{teamName ? `TEAM: ${teamName}` : "TEAM:"}</div>
+            <div style={{ fontSize: 8, color: "#666" }}>DartPilot Statistikblatt · Stable Mobile v8.3</div>
+          </div>
+        </div>
+
+        {teamId && players.length ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ fontSize: 8, textAlign: "right", color: "#555" }}>
+              <div style={{ fontWeight: 700 }}>SCAN-CODE</div>
+              <div>{players.length} Spieler</div>
+            </div>
+            <div style={{ background: "white", padding: 2, border: "1px solid #bbb" }}>
+              <QRCodeSVG value={qrValue} size={76} level="L" marginSize={4} />
+            </div>
+          </div>
         ) : null}
-        <div className="font-bold text-sm">{teamName ? `TEAM: ${teamName}` : "TEAM:"}</div>
+      </div>
+
+      {/* Mobile markers are overlays only: they do NOT wrap, shrink or move the original v8 table. */}
+      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, top: 50, bottom: 0, pointerEvents: "none", zIndex: 20 }}>
+        <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: "absolute", left: 0, top: 0, transform: "translate(-50%, -50%)" }}><rect width="20" height="20" fill="#000" /></svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: "absolute", right: 0, top: 0, transform: "translate(50%, -50%)" }}><rect width="20" height="20" fill="#000" /></svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: "absolute", right: 0, bottom: 0, transform: "translate(50%, 50%)" }}><rect width="20" height="20" fill="#000" /></svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: "absolute", left: 0, bottom: 0, transform: "translate(-50%, 50%)" }}><rect width="20" height="20" fill="#000" /></svg>
       </div>
 
       <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
@@ -359,9 +430,9 @@ function PrintSheet({
         </thead>
 
         <tbody>
-          {names.map((name, idx) => (
+          {rows.map((player, idx) => (
             <tr key={idx} style={{ height: 44 }}>
-              <td style={{ border: "1px solid black", paddingLeft: 6, fontSize: 11 }}>{name}</td>
+              <td style={{ border: "1px solid black", paddingLeft: 6, fontSize: 11 }}>{player.name}</td>
               {Array.from({ length: headers.length - 1 }).map((_, i) => (
                 <td key={i} style={{ border: "1px solid black" }} />
               ))}

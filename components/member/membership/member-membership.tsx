@@ -30,7 +30,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-type BillingCycle = "monthly" | "annual"
+type BillingCycle = "monthly" | "semiannual" | "annual"
 type PaymentMethod = "stripe" | "transfer" | "cash"
 type MembershipStatus = "pending" | "active" | "paused" | "cancelled" | "expired"
 
@@ -40,6 +40,7 @@ type MembershipModule = {
   name: string
   description: string | null
   monthly_price: number
+  semiannual_price: number
   annual_price: number
   currency: string
   is_required_base: boolean
@@ -67,6 +68,7 @@ type MembershipModuleRow = {
   membership_id: string
   module_id: string
   monthly_price_snapshot: number
+  semiannual_price_snapshot: number
   annual_price_snapshot: number
 }
 
@@ -80,6 +82,7 @@ type ChangeRequest = {
   request_type: "change" | "cancel"
   requested_end_on: string | null
   monthly_total: number
+  semiannual_total: number
   annual_total: number
   starts_on: string | null
   note: string | null
@@ -109,6 +112,18 @@ function paymentLabel(method: PaymentMethod) {
   if (method === "stripe") return "Stripe"
   if (method === "transfer") return "Überweisung / Erlagschein"
   return "Bar im Verein"
+}
+
+function billingCycleLabel(cycle: BillingCycle) {
+  if (cycle === "monthly") return "Monatlich"
+  if (cycle === "semiannual") return "Halbjährlich"
+  return "Jährlich"
+}
+
+function cycleAmountLabel(cycle: BillingCycle, monthly: number, semiannual: number, annual: number) {
+  if (cycle === "monthly") return `${formatEUR(monthly)} / Monat`
+  if (cycle === "semiannual") return `${formatEUR(semiannual)} / 6 Monate`
+  return `${formatEUR(annual)} / Jahr`
 }
 
 function requestStatusLabel(status: ChangeRequest["requested_status"]) {
@@ -207,7 +222,7 @@ export function MemberMembership() {
 
         supabase
           .from("membership_modules")
-          .select("id,code,name,description,monthly_price,annual_price,currency,is_required_base,is_active,sort_order")
+          .select("id,code,name,description,monthly_price,semiannual_price,annual_price,currency,is_required_base,is_active,sort_order")
           .eq("is_active", true)
           .order("sort_order", { ascending: true }),
 
@@ -223,7 +238,7 @@ export function MemberMembership() {
 
         supabase
           .from("membership_change_requests")
-          .select("id,player_id,current_membership_id,billing_cycle,payment_method,requested_status,request_type,requested_end_on,monthly_total,annual_total,starts_on,note,payment_status,paid_at,created_at")
+          .select("id,player_id,current_membership_id,billing_cycle,payment_method,requested_status,request_type,requested_end_on,monthly_total,semiannual_total,annual_total,starts_on,note,payment_status,paid_at,created_at")
           .eq("player_id", currentPlayerId)
           .eq("requested_status", "pending")
           .order("created_at", { ascending: false })
@@ -249,6 +264,7 @@ export function MemberMembership() {
       const nextModules = ((moduleData || []) as any[]).map((m) => ({
         ...m,
         monthly_price: Number(m.monthly_price || 0),
+        semiannual_price: Number(m.semiannual_price || 0),
         annual_price: Number(m.annual_price || 0),
         is_required_base: !!m.is_required_base,
         is_active: !!m.is_active,
@@ -279,7 +295,7 @@ export function MemberMembership() {
       if (activeMembership) {
         const { data: rowData, error: rowError } = await supabase
           .from("member_membership_modules")
-          .select("membership_id,module_id,monthly_price_snapshot,annual_price_snapshot")
+          .select("membership_id,module_id,monthly_price_snapshot,semiannual_price_snapshot,annual_price_snapshot")
           .eq("membership_id", activeMembership.id)
 
         if (rowError) throw rowError
@@ -287,6 +303,7 @@ export function MemberMembership() {
         currentRows = ((rowData || []) as any[]).map((row) => ({
           ...row,
           monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+          semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
           annual_price_snapshot: Number(row.annual_price_snapshot || 0),
         }))
 
@@ -480,6 +497,11 @@ export function MemberMembership() {
     [selectedModules],
   )
 
+  const semiannualTotal = useMemo(
+    () => selectedModules.reduce((sum, module) => sum + Number(module.semiannual_price || 0), 0),
+    [selectedModules],
+  )
+
   const annualTotal = useMemo(
     () => selectedModules.reduce((sum, module) => sum + Number(module.annual_price || 0), 0),
     [selectedModules],
@@ -487,6 +509,11 @@ export function MemberMembership() {
 
   const currentMonthlyTotal = useMemo(
     () => membershipRows.reduce((sum, row) => sum + Number(row.monthly_price_snapshot || 0), 0),
+    [membershipRows],
+  )
+
+  const currentSemiannualTotal = useMemo(
+    () => membershipRows.reduce((sum, row) => sum + Number(row.semiannual_price_snapshot || 0), 0),
     [membershipRows],
   )
 
@@ -512,16 +539,30 @@ export function MemberMembership() {
   const paymentMonthlyDue = useMemo(() => {
     const requestedTotal = pendingRequest ? Number(pendingRequest.monthly_total || 0) : monthlyTotal
     if (!membership) return requestedTotal
+    if (membership.billing_cycle !== "monthly") return requestedTotal
     return Math.max(0, requestedTotal - currentMonthlyTotal)
   }, [pendingRequest, membership, monthlyTotal, currentMonthlyTotal])
+
+  const paymentSemiannualDue = useMemo(() => {
+    const requestedTotal = pendingRequest ? Number(pendingRequest.semiannual_total || 0) : semiannualTotal
+    if (!membership) return requestedTotal
+    if (membership.billing_cycle !== "semiannual") return requestedTotal
+    return Math.max(0, requestedTotal - currentSemiannualTotal)
+  }, [pendingRequest, membership, semiannualTotal, currentSemiannualTotal])
 
   const paymentAnnualDue = useMemo(() => {
     const requestedTotal = pendingRequest ? Number(pendingRequest.annual_total || 0) : annualTotal
     if (!membership) return requestedTotal
+    if (membership.billing_cycle !== "annual") return requestedTotal
     return Math.max(0, requestedTotal - currentAnnualTotal)
   }, [pendingRequest, membership, annualTotal, currentAnnualTotal])
 
-  const paymentDue = billingCycle === "monthly" ? paymentMonthlyDue : paymentAnnualDue
+  const paymentDue =
+    billingCycle === "monthly"
+      ? paymentMonthlyDue
+      : billingCycle === "semiannual"
+        ? paymentSemiannualDue
+        : paymentAnnualDue
 
   const savedModuleIds = useMemo(
     () => membershipRows.map((row) => row.module_id).sort(),
@@ -559,7 +600,10 @@ export function MemberMembership() {
 
     if (value === "monthly") {
       setPaymentMethod("stripe")
-      setMessage({ type: "info", text: "Monatliche Zahlung ist nur über Stripe möglich." })
+      setMessage({ type: "info", text: "Monatliche Zahlung läuft ausschließlich über Stripe." })
+    } else if (value === "semiannual") {
+      if (paymentMethod === "stripe") setPaymentMethod("transfer")
+      setMessage({ type: "info", text: "Halbjährliche Zahlung ist nur per Überweisung oder bar möglich." })
     } else {
       setMessage(null)
     }
@@ -569,10 +613,12 @@ export function MemberMembership() {
     if (pendingRequest) return
 
     if (billingCycle === "monthly" && value !== "stripe") {
-      setMessage({
-        type: "info",
-        text: "Überweisung und Barzahlung sind nur bei jährlicher Abrechnung möglich.",
-      })
+      setMessage({ type: "info", text: "Monatliche Zahlung läuft ausschließlich über Stripe." })
+      return
+    }
+
+    if (billingCycle === "semiannual" && value === "stripe") {
+      setMessage({ type: "info", text: "Halbjährliche Zahlung ist nur per Überweisung oder bar möglich." })
       return
     }
 
@@ -641,7 +687,12 @@ export function MemberMembership() {
     }
 
     if (billingCycle === "monthly" && paymentMethod !== "stripe") {
-      setMessage({ type: "error", text: "Monatliche Zahlung ist nur über Stripe möglich." })
+      setMessage({ type: "error", text: "Monatliche Zahlung läuft ausschließlich über Stripe." })
+      return
+    }
+
+    if (billingCycle === "semiannual" && paymentMethod === "stripe") {
+      setMessage({ type: "error", text: "Halbjährliche Zahlung ist nur per Überweisung oder bar möglich." })
       return
     }
 
@@ -660,6 +711,7 @@ export function MemberMembership() {
           request_type: "change",
           requested_end_on: null,
           monthly_total: monthlyTotal,
+          semiannual_total: semiannualTotal,
           annual_total: annualTotal,
           starts_on: null,
           note:
@@ -677,6 +729,7 @@ export function MemberMembership() {
         request_id: request.id,
         module_id: module.id,
         monthly_price_snapshot: Number(module.monthly_price),
+        semiannual_price_snapshot: Number(module.semiannual_price),
         annual_price_snapshot: Number(module.annual_price),
       }))
 
@@ -739,6 +792,7 @@ export function MemberMembership() {
           request_type: "cancel",
           requested_end_on: cancelEndOn,
           monthly_total: 0,
+          semiannual_total: 0,
           annual_total: 0,
           starts_on: null,
           payment_status: "pending",
@@ -968,9 +1022,7 @@ export function MemberMembership() {
                 Aktueller Beitrag
               </div>
               <div className="relative mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">
-                {membership.billing_cycle === "monthly"
-                  ? `${formatEUR(currentMonthlyTotal)} / Monat`
-                  : `${formatEUR(currentAnnualTotal)} / Jahr`}
+                {cycleAmountLabel(membership.billing_cycle, currentMonthlyTotal, currentSemiannualTotal, currentAnnualTotal)}
               </div>
               <div className="relative mt-1 text-sm font-semibold text-slate-400">
                 {paymentLabel(membership.payment_method)}
@@ -1126,7 +1178,7 @@ export function MemberMembership() {
               <>
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline" className="rounded-full border-orange-300 bg-white">
-                    {pendingRequest.billing_cycle === "monthly" ? "Monatlich" : "Jährlich"}
+                    {billingCycleLabel(pendingRequest.billing_cycle)}
                   </Badge>
                   <Badge variant="outline" className="rounded-full border-orange-300 bg-white">
                     {paymentLabel(pendingRequest.payment_method)}
@@ -1135,9 +1187,12 @@ export function MemberMembership() {
                     {pendingRequestModuleIds.length} Module
                   </Badge>
                   <Badge variant="outline" className="rounded-full border-orange-300 bg-white">
-                    {pendingRequest.billing_cycle === "monthly"
-                      ? `${formatEUR(pendingRequest.monthly_total)} / Monat`
-                      : `${formatEUR(pendingRequest.annual_total)} / Jahr`}
+                    {cycleAmountLabel(
+                      pendingRequest.billing_cycle,
+                      pendingRequest.monthly_total,
+                      pendingRequest.semiannual_total,
+                      pendingRequest.annual_total,
+                    )}
                   </Badge>
                 </div>
 
@@ -1256,7 +1311,7 @@ export function MemberMembership() {
           <CardHeader>
             <CardTitle>1. Abrechnung & Zahlungsart</CardTitle>
             <CardDescription>
-              Monatliche Zahlung ist ausschließlich über Stripe möglich.
+              Monatlich läuft über Stripe. Halbjährlich ist ausschließlich per Überweisung oder bar möglich.
             </CardDescription>
           </CardHeader>
 
@@ -1273,7 +1328,8 @@ export function MemberMembership() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="monthly">Monatlich</SelectItem>
+                    <SelectItem value="monthly">Monatlich · Stripe</SelectItem>
+                    <SelectItem value="semiannual">Halbjährlich · Bar/Überweisung</SelectItem>
                     <SelectItem value="annual">Jährlich</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1290,7 +1346,7 @@ export function MemberMembership() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="stripe">Stripe</SelectItem>
+                    <SelectItem value="stripe" disabled={billingCycle === "semiannual"}>Stripe</SelectItem>
                     <SelectItem value="transfer" disabled={billingCycle === "monthly"}>
                       Überweisung / Erlagschein
                     </SelectItem>
@@ -1306,6 +1362,11 @@ export function MemberMembership() {
               <div className="mt-4 flex gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm font-semibold text-blue-800">
                 <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
                 Monatliche Abrechnung läuft automatisch über Stripe. Nach erfolgreicher Zahlung wird dein Paket freigeschaltet.
+              </div>
+            ) : billingCycle === "semiannual" ? (
+              <div className="mt-4 flex gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-semibold text-orange-900">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
+                Halbjährliche Zahlung ist nur per Überweisung oder bar möglich. Die Freischaltung erfolgt nach Bestätigung durch den Verein.
               </div>
             ) : null}
           </CardContent>
@@ -1432,6 +1493,9 @@ export function MemberMembership() {
                           {formatEUR(module.monthly_price)} / Monat
                         </Badge>
                         <Badge variant="outline" className="rounded-full">
+                          {formatEUR(module.semiannual_price)} / 6 Monate
+                        </Badge>
+                        <Badge variant="outline" className="rounded-full">
                           {formatEUR(module.annual_price)} / Jahr
                         </Badge>
                       </div>
@@ -1491,24 +1555,23 @@ export function MemberMembership() {
                 {membership ? "Zusätzlich zu zahlen" : "Zu zahlen"}
               </div>
               <div className="mt-1 text-2xl font-black text-gray-900">
-                {billingCycle === "monthly"
-                  ? `${formatEUR(paymentMonthlyDue)} / Monat`
-                  : `${formatEUR(paymentAnnualDue)} / Jahr`}
+                {cycleAmountLabel(billingCycle, paymentMonthlyDue, paymentSemiannualDue, paymentAnnualDue)}
               </div>
 
               {membership ? (
                 <div className="mt-2 text-xs font-semibold text-gray-600">
                   Bereits bezahltes Paket:{" "}
                   <span className="font-black">
-                    {billingCycle === "monthly"
-                      ? `${formatEUR(currentMonthlyTotal)} / Monat`
-                      : `${formatEUR(currentAnnualTotal)} / Jahr`}
+                    {cycleAmountLabel(billingCycle, currentMonthlyTotal, currentSemiannualTotal, currentAnnualTotal)}
                   </span>
                   {" "}· Neues Paket:{" "}
                   <span className="font-black">
-                    {billingCycle === "monthly"
-                      ? `${formatEUR(pendingRequest ? pendingRequest.monthly_total : monthlyTotal)} / Monat`
-                      : `${formatEUR(pendingRequest ? pendingRequest.annual_total : annualTotal)} / Jahr`}
+                    {cycleAmountLabel(
+                      billingCycle,
+                      pendingRequest ? pendingRequest.monthly_total : monthlyTotal,
+                      pendingRequest ? pendingRequest.semiannual_total : semiannualTotal,
+                      pendingRequest ? pendingRequest.annual_total : annualTotal,
+                    )}
                   </span>
                 </div>
               ) : null}
@@ -1627,9 +1690,12 @@ export function MemberMembership() {
                       >
                         <span className="font-bold text-gray-800">{module.name}</span>
                         <span className="shrink-0 font-black text-gray-900">
-                          {billingCycle === "monthly"
-                            ? `${formatEUR(module.monthly_price)} / Monat`
-                            : `${formatEUR(module.annual_price)} / Jahr`}
+                          {cycleAmountLabel(
+                            billingCycle,
+                            module.monthly_price,
+                            module.semiannual_price,
+                            module.annual_price,
+                          )}
                         </span>
                       </div>
                     ))}
@@ -1639,9 +1705,12 @@ export function MemberMembership() {
                     <div className="flex items-center justify-between gap-3">
                       <span className="font-black text-gray-900">Paket gesamt</span>
                       <span className="font-black text-gray-900">
-                        {billingCycle === "monthly"
-                          ? `${formatEUR(pendingRequest ? pendingRequest.monthly_total : monthlyTotal)} / Monat`
-                          : `${formatEUR(pendingRequest ? pendingRequest.annual_total : annualTotal)} / Jahr`}
+                        {cycleAmountLabel(
+                          billingCycle,
+                          pendingRequest ? pendingRequest.monthly_total : monthlyTotal,
+                          pendingRequest ? pendingRequest.semiannual_total : semiannualTotal,
+                          pendingRequest ? pendingRequest.annual_total : annualTotal,
+                        )}
                       </span>
                     </div>
 
@@ -1808,7 +1877,7 @@ export function MemberMembership() {
             <div>
               <div className="font-black text-gray-900">Zahlungsweise</div>
               <div className="mt-1 text-sm font-semibold text-gray-600">
-                {billingCycle === "monthly" ? "Monatlich" : "Jährlich"} · {paymentLabel(paymentMethod)}
+                {billingCycleLabel(billingCycle)} · {paymentLabel(paymentMethod)}
               </div>
             </div>
 
@@ -1848,9 +1917,7 @@ export function MemberMembership() {
                   Dein neues Paket
                 </div>
                 <div className="mt-2 text-3xl font-black text-gray-900">
-                  {billingCycle === "monthly"
-                    ? `${formatEUR(monthlyTotal)} / Monat`
-                    : `${formatEUR(annualTotal)} / Jahr`}
+                  {cycleAmountLabel(billingCycle, monthlyTotal, semiannualTotal, annualTotal)}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {selectedModules.map((module) => (
@@ -1897,9 +1964,7 @@ export function MemberMembership() {
                     <div className="text-xs font-black uppercase text-gray-500">Aktuell</div>
                     <div className="mt-1 text-xl font-black text-gray-900">
                       {membership
-                        ? billingCycle === "monthly"
-                          ? `${formatEUR(currentMonthlyTotal)} / Monat`
-                          : `${formatEUR(currentAnnualTotal)} / Jahr`
+                        ? cycleAmountLabel(billingCycle, currentMonthlyTotal, currentSemiannualTotal, currentAnnualTotal)
                         : "Keine aktive Mitgliedschaft"}
                     </div>
                   </div>
@@ -1907,9 +1972,7 @@ export function MemberMembership() {
                   <div className="rounded-xl border border-orange-200 bg-orange-50 p-3">
                     <div className="text-xs font-black uppercase text-orange-700">Neu</div>
                     <div className="mt-1 text-xl font-black text-gray-900">
-                      {billingCycle === "monthly"
-                        ? `${formatEUR(monthlyTotal)} / Monat`
-                        : `${formatEUR(annualTotal)} / Jahr`}
+                      {cycleAmountLabel(billingCycle, monthlyTotal, semiannualTotal, annualTotal)}
                     </div>
                   </div>
 
@@ -1919,12 +1982,8 @@ export function MemberMembership() {
                     </div>
                     <div className="mt-1 text-xl font-black text-gray-900">
                       {membership
-                        ? billingCycle === "monthly"
-                          ? `${formatEUR(paymentMonthlyDue)} / Monat`
-                          : `${formatEUR(paymentAnnualDue)} / Jahr`
-                        : billingCycle === "monthly"
-                          ? `${formatEUR(monthlyTotal)} / Monat`
-                          : `${formatEUR(annualTotal)} / Jahr`}
+                        ? cycleAmountLabel(billingCycle, paymentMonthlyDue, paymentSemiannualDue, paymentAnnualDue)
+                        : cycleAmountLabel(billingCycle, monthlyTotal, semiannualTotal, annualTotal)}
                     </div>
                   </div>
                 </div>

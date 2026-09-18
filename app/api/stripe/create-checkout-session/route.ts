@@ -28,6 +28,7 @@ async function applyPaidRequest(
     requestRows: Array<{
       module_id: string
       monthly_price_snapshot: number
+      semiannual_price_snapshot: number
       annual_price_snapshot: number
     }>
   },
@@ -63,6 +64,7 @@ async function applyPaidRequest(
         membership_id: args.membershipId,
         module_id: row.module_id,
         monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+        semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
         annual_price_snapshot: Number(row.annual_price_snapshot || 0),
       })),
     )
@@ -150,9 +152,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Diese Anfrage wurde bereits bezahlt." }, { status: 409 })
     }
 
+    if (changeRequest.billing_cycle === "semiannual") {
+      return NextResponse.json(
+        { error: "Halbjährliche Zahlung ist nur per Überweisung oder bar möglich." },
+        { status: 400 },
+      )
+    }
+
     const { data: requestRows, error: requestModulesError } = await supabase
       .from("membership_change_request_modules")
-      .select("module_id,monthly_price_snapshot,annual_price_snapshot")
+      .select("module_id,monthly_price_snapshot,semiannual_price_snapshot,annual_price_snapshot")
       .eq("request_id", requestId)
 
     if (requestModulesError) throw requestModulesError
@@ -299,6 +308,7 @@ export async function POST(request: Request) {
         requestRows: (requestRows || []).map((row) => ({
           module_id: row.module_id,
           monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+          semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
           annual_price_snapshot: Number(row.annual_price_snapshot || 0),
         })),
       })

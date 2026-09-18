@@ -28,7 +28,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-type BillingCycle = "monthly" | "annual"
+type BillingCycle = "monthly" | "semiannual" | "annual"
 type PaymentMethod = "stripe" | "transfer" | "cash"
 type MembershipStatus = "pending" | "active" | "paused" | "cancelled" | "expired"
 type AdminMembershipView = "overview" | "paid" | "trials" | "manage"
@@ -47,6 +47,7 @@ type MembershipModule = {
   name: string
   description: string | null
   monthly_price: number
+  semiannual_price: number
   annual_price: number
   currency: string
   is_required_base: boolean
@@ -75,6 +76,7 @@ type MembershipModuleRow = {
   membership_id: string
   module_id: string
   monthly_price_snapshot: number
+  semiannual_price_snapshot: number
   annual_price_snapshot: number
 }
 
@@ -91,6 +93,7 @@ type MembershipChangeRequest = {
   payment_status: "pending" | "paid"
   paid_at: string | null
   monthly_total: number
+  semiannual_total: number
   annual_total: number
   starts_on: string | null
   note: string | null
@@ -103,6 +106,7 @@ type MembershipChangeRequestModule = {
   request_id: string
   module_id: string
   monthly_price_snapshot: number
+  semiannual_price_snapshot: number
   annual_price_snapshot: number
 }
 
@@ -228,7 +232,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
 
         supabase
           .from("membership_modules")
-          .select("id,code,name,description,monthly_price,annual_price,currency,is_required_base,is_active,sort_order")
+          .select("id,code,name,description,monthly_price,semiannual_price,annual_price,currency,is_required_base,is_active,sort_order")
           .eq("is_active", true)
           .order("sort_order", { ascending: true }),
 
@@ -243,16 +247,16 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
 
         supabase
           .from("member_membership_modules")
-          .select("membership_id,module_id,monthly_price_snapshot,annual_price_snapshot"),
+          .select("membership_id,module_id,monthly_price_snapshot,semiannual_price_snapshot,annual_price_snapshot"),
 
         supabase
           .from("membership_change_requests")
-          .select("id,player_id,current_membership_id,billing_cycle,payment_method,requested_status,request_type,requested_end_on,payment_status,paid_at,monthly_total,annual_total,starts_on,note,reviewed_by,reviewed_at,created_at")
+          .select("id,player_id,current_membership_id,billing_cycle,payment_method,requested_status,request_type,requested_end_on,payment_status,paid_at,monthly_total,semiannual_total,annual_total,starts_on,note,reviewed_by,reviewed_at,created_at")
           .order("created_at", { ascending: false }),
 
         supabase
           .from("membership_change_request_modules")
-          .select("request_id,module_id,monthly_price_snapshot,annual_price_snapshot"),
+          .select("request_id,module_id,monthly_price_snapshot,semiannual_price_snapshot,annual_price_snapshot"),
 
         supabase
           .from("membership_trials")
@@ -280,6 +284,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
       const nextModules = ((moduleData || []) as any[]).map((m) => ({
         ...m,
         monthly_price: Number(m.monthly_price || 0),
+        semiannual_price: Number(m.semiannual_price || 0),
         annual_price: Number(m.annual_price || 0),
         is_required_base: !!m.is_required_base,
         is_active: !!m.is_active,
@@ -290,6 +295,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
       const nextMembershipModuleRows = ((membershipModulesData || []) as any[]).map((row) => ({
         ...row,
         monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+        semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
         annual_price_snapshot: Number(row.annual_price_snapshot || 0),
       })) as MembershipModuleRow[]
 
@@ -303,6 +309,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
         ((changeRequestData || []) as any[]).map((row) => ({
           ...row,
           monthly_total: Number(row.monthly_total || 0),
+          semiannual_total: Number(row.semiannual_total || 0),
           annual_total: Number(row.annual_total || 0),
         })) as MembershipChangeRequest[],
       )
@@ -634,6 +641,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
         membership_id: membershipId,
         module_id: module.id,
         monthly_price_snapshot: Number(module.monthly_price),
+        semiannual_price_snapshot: Number(module.semiannual_price),
         annual_price_snapshot: Number(module.annual_price),
       }))
 
@@ -785,6 +793,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
         membership_id: membershipId,
         module_id: row.module_id,
         monthly_price_snapshot: row.monthly_price_snapshot,
+        semiannual_price_snapshot: row.semiannual_price_snapshot,
         annual_price_snapshot: row.annual_price_snapshot,
       }))
 
