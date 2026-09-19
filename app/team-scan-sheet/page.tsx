@@ -704,7 +704,7 @@ export default function TeamScanSheetTestPage() {
       }
 
       setRows(result)
-      setScanInfo(`Alte Stricherkennung aktiv · ${usedPerspectiveFix ? "Handy-Perspektive über 4 Eckmarken korrigiert · " : "Direktes Raster · "}Raster: ${xs.length - 1} Spalten · ${bodyRows} Datenzeilen · ${qrResolved ? "QR-Spielerzuordnung aktiv" : "OCR-Fallback aktiv"} · ${result.length} Zeilen.`)
+      setScanInfo(`Scan abgeschlossen · ${result.length} Zeilen erkannt.`)
     } catch (e: any) {
       setError(e?.message || "Scan fehlgeschlagen.")
     } finally {
@@ -718,16 +718,16 @@ export default function TeamScanSheetTestPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
-      <Header variant="app" title="Statistikblatt" subtitle="Scanner TEST" backHref="/team-print-sheet" />
+      <Header variant="app" title="Statistikblatt" subtitle="Statistikblatt scannen" backHref="/team-print-sheet" />
       <main className="w-full pt-14 sm:pt-16">
         <div className="mx-auto w-full max-w-[1500px] px-3 py-4 sm:px-5 lg:px-8">
           <section className="overflow-hidden rounded-[26px] bg-slate-950 p-5 text-white shadow-xl sm:p-7">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-500/15"><ScanLine className="h-6 w-6 text-orange-400" /></div>
               <div>
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-orange-300">Nur Test · keine Speicherung</div>
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-orange-300">Statistik erfassen</div>
                 <h1 className="mt-1 text-2xl font-black sm:text-3xl">Spielerblatt scannen</h1>
-                <p className="mt-2 max-w-3xl text-sm font-semibold text-white/55">Foto oder Screenshot laden. Die bewährte ursprüngliche Stricherkennung bleibt unverändert. Handyfotos werden bei Bedarf über vier Eckmarken perspektivisch geradegezogen; die Spielerzuordnung erfolgt über QR. Es wird nichts in Supabase geschrieben.</p>
+                <p className="mt-2 max-w-3xl text-sm font-semibold text-white/55">Foto oder Screenshot des Statistikblatts auswählen. Achte darauf, dass das gesamte Blatt gut sichtbar und möglichst gerade fotografiert ist.</p>
               </div>
             </div>
           </section>
@@ -767,23 +767,23 @@ export default function TeamScanSheetTestPage() {
 
                 <Button disabled={!file || analyzing || !selectedTeamId} onClick={() => void runScan()} className="h-12 w-full rounded-2xl bg-orange-500 font-black hover:bg-orange-600">
                   {analyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
-                  {analyzing ? "Wird analysiert…" : "Scan testen"}
+                  {analyzing ? "Wird gescannt…" : "Blatt scannen"}
                 </Button>
 
                 <div className="rounded-2xl bg-amber-50 p-3 text-xs font-semibold leading-relaxed text-amber-800">
-                  <AlertTriangle className="mr-1 inline h-4 w-4" /> v8.4 Stable: ursprüngliche Strichzählung + QR-Spielerzuordnung. Nur bei schrägen Handyfotos wird die Tabelle über vier Eckmarken geradegezogen; die Strichzählung selbst bleibt unverändert.
+                  <AlertTriangle className="mr-1 inline h-4 w-4" /> Tipp: Fotografiere das Blatt vollständig, gut beleuchtet und ohne starke Schatten. Die vier Eckmarken sollten sichtbar sein.
                 </div>
               </CardContent>
             </Card>
 
             <Card className="rounded-[24px]">
               <CardHeader className="flex-row items-center justify-between gap-3">
-                <div><CardTitle className="text-base">2. Erkannte Werte prüfen</CardTitle>{scanInfo ? <p className="mt-1 text-xs font-semibold text-slate-500">{scanInfo}</p> : null}</div>
+                <div><CardTitle className="text-base">2. Werte prüfen</CardTitle>{scanInfo ? <p className="mt-1 text-xs font-semibold text-slate-500">{scanInfo}</p> : null}</div>
                 {rows.length ? <Badge variant="secondary">{rows.length} Zeilen</Badge> : null}
               </CardHeader>
               <CardContent>
                 {error ? <div className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div> : null}
-                {!rows.length && !error ? <div className="rounded-2xl border border-dashed p-10 text-center text-sm font-semibold text-slate-400">Nach dem Scan erscheint hier die Prüftabelle.</div> : null}
+                {!rows.length && !error ? <div className="rounded-2xl border border-dashed p-10 text-center text-sm font-semibold text-slate-400">Nach dem Scannen erscheinen hier die erkannten Werte.</div> : null}
 
                 {rows.length ? (
                   <div className="overflow-x-auto rounded-2xl border">
@@ -808,8 +808,6 @@ export default function TeamScanSheetTestPage() {
                                   {teamMembers.map((m) => <SelectItem key={m.player_id} value={m.player_id}>{m.club_players?.name}</SelectItem>)}
                                 </SelectContent>
                               </Select>
-                              <div className="mt-1 text-[11px] text-slate-500">Quelle: {row.rawName || "—"}</div>
-                              <div className="text-[11px] font-bold text-slate-400">Treffer: {Math.round(row.matchConfidence * 100)}%</div>
                             </td>
                             {HEADERS.map((h) => (
                               <td key={h} className="border-b p-1.5 text-center">
@@ -833,7 +831,7 @@ export default function TeamScanSheetTestPage() {
 
                 {rows.length ? (
                   <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-xs font-semibold text-slate-500">Noch keine Datenübernahme. Änderungen hier sind nur für den Test.</div>
+                    <div className="text-xs font-semibold text-slate-500">Prüfe die erkannten Werte und korrigiere sie bei Bedarf.</div>
                     <Button variant="outline" onClick={() => { setRows([]); setScanInfo(""); setError("") }}><RotateCcw className="mr-2 h-4 w-4" />Ergebnis zurücksetzen</Button>
                   </div>
                 ) : null}
