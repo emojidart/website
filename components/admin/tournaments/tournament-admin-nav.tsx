@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CalendarDays, Flame, ListChecks, Target, Trophy } from "lucide-react"
+import { CalendarDays, Flame, ListChecks, Target, Trophy, Users } from "lucide-react"
 
 type TournamentAdminNavProps = {
   title: string
@@ -14,6 +14,7 @@ const items = [
   { href: "/dko_tournament_registration", label: "Einzelturniere", icon: Target },
   { href: "/kratzer-tournament", label: "Kratzer", icon: ListChecks },
   { href: "/admin/survival-roulette", label: "Survival Roulette", icon: Flame },
+  { href: "/admin/public-tournament-registrations", label: "Öffentliche Anmeldungen", icon: Users },
   { href: "/admin/tournament-schedules", label: "Serien Spieltag anlegen / bearbeiten", icon: CalendarDays },
 ] as const
 
@@ -42,7 +43,8 @@ export function TournamentAdminNav({ title, description }: TournamentAdminNavPro
                   pathname === item.href ||
                   (item.href === "/admin/turnier_spieltage_starten" && pathname === "/admin/tournament-center") ||
                   (item.href === "/dko_tournament_registration" && pathname?.startsWith("/dko_tournament_registration")) ||
-                  (item.href === "/admin/survival-roulette" && pathname?.startsWith("/admin/survival-roulette"))
+                  (item.href === "/admin/survival-roulette" && pathname?.startsWith("/admin/survival-roulette")) ||
+                  (item.href === "/admin/public-tournament-registrations" && pathname?.startsWith("/admin/public-tournament-registrations"))
 
                 return (
                   <Link

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { PushEnableBanner } from "@/components/push-enable-banner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createBrowserClient } from "@supabase/ssr"
 import {
   Trophy,
@@ -126,6 +126,7 @@ interface CombinedEvent {
   max_participants?: number | null
   sourceKind?: "internal" | "dach"
   internalEventId?: string | null
+  dachEventId?: string | null
 }
 
 interface LionCupEvent {
@@ -945,6 +946,10 @@ useEffect(() => {
         const combined: CombinedEvent[] = []
 
         tournamentsData.forEach((tournament: any) => {
+          const linkedDachEvent = dachData.find(
+            (event: any) => event.internal_event_id && String(event.internal_event_id) === String(tournament.id),
+          )
+
           combined.push({
             id: tournament.id,
             name: tournament.name,
@@ -962,6 +967,7 @@ useEffect(() => {
             mode: tournament.mode ?? null,
             sourceKind: "internal",
             internalEventId: tournament.id,
+            dachEventId: linkedDachEvent?.id ?? null,
           })
         })
 
@@ -985,6 +991,7 @@ useEffect(() => {
               mode: event.mode ?? null,
               sourceKind: "dach",
               internalEventId: event.internal_event_id ?? null,
+              dachEventId: event.id,
             })
           })
 
@@ -1726,245 +1733,87 @@ useEffect(() => {
     .slice(0, 2)
 
   const renderHomeEventCard = (item: CombinedEvent) => {
+    const EventIcon = item.type === "event" && item.eventType ? getEventTypeIcon(item.eventType) : Trophy
+    const badgeText = item.type === "tournament" ? "TURNIER" : getEventTypeLabel(item.eventType || "").toUpperCase()
 
-  const EventIcon = item.type === "event" && item.eventType ? getEventTypeIcon(item.eventType) : Trophy
-  const badgeText = item.type === "tournament" ? "TURNIER" : getEventTypeLabel(item.eventType || "").toUpperCase()
+    const detailsHref =
+      item.type === "tournament" && item.dachEventId
+        ? `/dach-veranstaltungen/${item.dachEventId}`
+        : item.sourceKind === "dach"
+          ? `/dach-veranstaltungen/${item.id}`
+          : `/veranstaltungen/${item.internalEventId || item.id}`
 
-  return (
-    <Dialog key={item.id}>
-      <DialogTrigger asChild>
-        <div className="min-w-[300px] sm:min-w-0 rounded-[22px] border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer active:scale-[0.99]">
-          {/* Image / Header */}
-          <div className="relative h-40 bg-gray-100">
-            {item.photo_url ? (
-              <Image
-                src={item.photo_url || "/placeholder.svg"}
-                alt={item.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
-                <EventIcon className="h-12 w-12 text-orange-600" />
-              </div>
-            )}
-
-            <div className="absolute top-3 left-3">
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-3 py-1 text-[11px] font-black text-gray-900 border border-gray-200">
-                {badgeText}
-              </span>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-4 sm:p-5">
-           <p className="text-[11px] text-gray-500 font-bold mb-1">
-  {formatGermanDateRange(item.start_date, item.end_date, item.date)}
-  {item.time ? ` • ${item.time.slice(0,5)} Uhr` : ""}
-</p>
-
-            <h3 className="font-black text-gray-900 mb-1 line-clamp-2">{item.name}</h3>
-
-            <p className="text-sm text-gray-600 line-clamp-2">
-  {item.type === "tournament" ? (
-    <>
-      {item.details && <span>{item.details} • </span>}
-
-      {item.startgeld_details && (
-        <span>Startgeld: {item.startgeld_details} • </span>
-      )}
-
-      {typeof item.entry_fee === "number" && item.entry_fee > 0 && (
-        <span>Eintritt: €{item.entry_fee.toFixed(2)} • </span>
-      )}
-
-      {item.mode === "edart"
-        ? "E-Dart"
-        : item.mode === "steeldart"
-        ? "Steel Dart"
-        : item.mode === "both"
-        ? "Beide Modi"
-        : ""}
-    </>
-  ) : (
-    item.details || `${getEventTypeLabel(item.eventType || "")} • ${item.location}`
-  )}
-</p>
-
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs text-gray-500 inline-flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-orange-600" />
-                {item.location || "Wird bekannt gegeben"}
-              </span>
-
-              <span className="inline-flex items-center gap-1 text-orange-700 text-xs font-black">
-                Details
-                <ArrowRight className="w-4 h-4" />
-              </span>
-            </div>
-          </div>
-        </div>
-      </DialogTrigger>
-
-      {/* MOBILE: fullscreen sheet | DESKTOP: card modal */}
-     {/* */}
-<DialogContent
-  className={[
-    // Layout / Größe
-    "p-0 gap-0",
-    "w-[calc(100vw-16px)] sm:w-full sm:max-w-3xl",
-    
-    "max-h-[90svh] sm:max-h-[92vh]",
-    
-    "overflow-hidden",
-    
-    "flex flex-col",
-    
-    "rounded-3xl",
-  ].join(" ")}
->
-  {/* Sticky Header */}
-  <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
-    <div className="px-4 sm:px-6 py-4 flex items-start justify-between gap-3">
-      <DialogHeader className="space-y-1">
-        <DialogTitle className="text-lg sm:text-2xl font-black text-gray-900 leading-tight">
-          {item.name}
-        </DialogTitle>
-
-        <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-gray-600 font-semibold">
-          <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5">
-            <EventIcon className="w-3.5 h-3.5" />
-            {badgeText}
-          </span>
-         <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 px-2 py-0.5">
-  <Calendar className="w-3.5 h-3.5" />
-  {formatGermanDateRange(item.start_date, item.end_date, item.date)}
-</span>
-          {item.time ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 px-2 py-0.5">
-              <Clock className="w-3.5 h-3.5" />
-              {item.time?.slice(0,5)} Uhr
-            </span>
-          ) : null}
-        </div>
-      </DialogHeader>
-
-      {/* CLOSE: immer sichtbar */}
-      <DialogClose asChild>
-        <button
-          type="button"
-          className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 text-gray-700 active:scale-[0.98]"
-          aria-label="Schließen"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </DialogClose>
-    </div>
-  </div>
-
-  {/* ✅ Scrollbarer Body */}
-  <div
-    className={[
-      "flex-1", 
-      "overflow-y-auto",
-      "overscroll-contain", 
-      "px-4 sm:px-6 py-4 sm:py-6",
-      "space-y-4 sm:space-y-6",
-      "bg-gray-50",
-      // iOS safe area unten
-      "pb-[max(0.5rem,env(safe-area-inset-bottom))]",
-    ].join(" ")}
-  >
-    {/* Photo */}
-    {item.photo_url ? (
-      <div
-        className="relative w-full h-52 sm:h-72 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm cursor-pointer"
-        onClick={() => setFullscreenPhoto(item.photo_url)}
+    return (
+      <Link
+        key={`${item.sourceKind}:${item.id}`}
+        href={detailsHref}
+        className="block min-w-[300px] sm:min-w-0 rounded-[22px] border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
       >
-        <Image
-          src={item.photo_url || "/placeholder.svg"}
-          alt={item.name}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 900px"
-        />
-      </div>
-    ) : (
-      <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-5 flex items-center gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
-          <EventIcon className="w-5 h-5 text-orange-700" />
+        <div className="relative h-40 bg-gray-100">
+          {item.photo_url ? (
+            <Image
+              src={item.photo_url || "/placeholder.svg"}
+              alt={item.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
+              <EventIcon className="h-12 w-12 text-orange-600" />
+            </div>
+          )}
+
+          <div className="absolute top-3 left-3">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-3 py-1 text-[11px] font-black text-gray-900 border border-gray-200">
+              {badgeText}
+            </span>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="text-sm font-black text-gray-900">Keine Foto-Vorschau</p>
-          <p className="text-xs text-gray-600">Details findest du weiter unten.</p>
+
+        <div className="p-4 sm:p-5">
+          <p className="text-[11px] text-gray-500 font-bold mb-1">
+            {formatGermanDateRange(item.start_date, item.end_date, item.date)}
+            {item.time ? ` • ${item.time.slice(0, 5)} Uhr` : ""}
+          </p>
+
+          <h3 className="font-black text-gray-900 mb-1 line-clamp-2">{item.name}</h3>
+
+          <p className="text-sm text-gray-600 line-clamp-2">
+            {item.type === "tournament" ? (
+              <>
+                {item.details && <span>{item.details} • </span>}
+                {item.startgeld_details && <span>Startgeld: {item.startgeld_details} • </span>}
+                {typeof item.entry_fee === "number" && item.entry_fee > 0 && (
+                  <span>Eintritt: €{item.entry_fee.toFixed(2)} • </span>
+                )}
+                {item.mode === "edart"
+                  ? "E-Dart"
+                  : item.mode === "steeldart"
+                    ? "Steel Dart"
+                    : item.mode === "both"
+                      ? "Beide Modi"
+                      : ""}
+              </>
+            ) : (
+              item.details || `${getEventTypeLabel(item.eventType || "")} • ${item.location}`
+            )}
+          </p>
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <span className="min-w-0 truncate text-xs text-gray-500 inline-flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5 shrink-0 text-orange-600" />
+              <span className="truncate">{item.location || "Wird bekannt gegeben"}</span>
+            </span>
+
+            <span className="shrink-0 inline-flex items-center gap-1 text-orange-700 text-xs font-black">
+              Details
+              <ArrowRight className="w-4 h-4" />
+            </span>
+          </div>
         </div>
-      </div>
-    )}
-
-    {/* Info Cards */}
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-4">
-        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Ort</p>
-        <p className="mt-1 text-sm font-bold text-gray-900 line-clamp-2">
-          {item.location || "Wird bekannt gegeben"}
-        </p>
-      </div>
-
-      <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-4">
-        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Typ</p>
-        <p className="mt-1 text-sm font-bold text-gray-900">
-          {item.type === "tournament" ? "Turnier" : getEventTypeLabel(item.eventType || "")}
-        </p>
-      </div>
-
-      {item.type === "tournament" ? (
-  <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-4">
-    <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Infos</p>
-
-    <p className="mt-1 text-sm font-bold text-gray-900">
-      {item.mode === "edart"
-        ? "E-Dart"
-        : item.mode === "steeldart"
-        ? "Steel Dart"
-        : "Beide Modi"}
-
-      {item.startgeld_details
-  ? ` • Startgeld: ${
-      isNaN(Number(item.startgeld_details))
-        ? item.startgeld_details
-        : `€ ${Number(item.startgeld_details).toFixed(2)}`
-    }`
-  : ""}
-    </p>
-  </div>
-) : null}
-    </div>
-
-    {/* Details */}
-    {item.details ? (
-      <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-4">
-        <div className="flex items-center gap-2">
-          <Info className="w-4 h-4 text-orange-600" />
-          <p className="text-sm font-black text-gray-900">Beschreibung</p>
-        </div>
-        <p className="mt-2 text-sm text-gray-700 leading-relaxed whitespace-pre-line">{item.details}</p>
-      </div>
-    ) : null}
-
-    {/* Bottom Close Button */}
-    <div className="pt-1">
-      <DialogClose asChild>
-        <Button className="w-full h-12 rounded-2xl bg-gray-900 hover:bg-gray-900/90 text-white font-black">
-          Schließen
-        </Button>
-      </DialogClose>
-    </div>
-  </div>
-</DialogContent>
-    </Dialog>
-  )
-
+      </Link>
+    )
   }
 
   return (

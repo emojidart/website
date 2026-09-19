@@ -309,6 +309,9 @@ export function EventsManagement({ user }: EventsManagementProps) {
       )
     }
 
+    const organizerName = form.dach_organizer_name.trim() || "EMD"
+    const isEmdOrganizer = /(^|[^a-z0-9])emd([^a-z0-9]|$)/i.test(organizerName)
+
     const dachData = {
       internal_event_id: eventId,
       name: eventData.name,
@@ -322,11 +325,14 @@ export function EventsManagement({ user }: EventsManagementProps) {
       postal_code: form.dach_postal_code.trim(),
       city: form.dach_city.trim(),
       region: form.dach_region.trim(),
-      organizer_name: form.dach_organizer_name.trim() || "EMD",
+      organizer_name: organizerName,
       organizer_email: user.email || null,
       organizer_phone: null,
       registration_url: null,
       registration_deadline: null,
+      registration_mode: isEmdOrganizer ? "public_form" : "external_url",
+      registration_enabled: isEmdOrganizer,
+      show_participants: isEmdOrganizer,
       entry_fee: eventData.entry_fee,
       max_participants: eventData.max_participants,
       details: eventData.details,
