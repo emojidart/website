@@ -204,8 +204,9 @@ type InternalSignupEvent = {
   id: string
   title: string
   subtitle: string | null
-  event_date: string
+  event_date: string | null
   end_date: string | null
+  date_open: boolean
   start_time: string | null
   location: string | null
   image_url: string | null
@@ -378,7 +379,8 @@ function formatInternalEventDrawDateTime(value:string|null|undefined){
   return new Date(value).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})
 }
 
-function formatInternalEventDateRange(start:string,end:string|null){
+function formatInternalEventDateRange(start:string|null,end:string|null,dateOpen=false){
+  if(dateOpen || !start)return "Termin offen"
   const effectiveEnd=end||start
   const fmt=(v:string)=>new Date(`${v}T12:00:00`).toLocaleDateString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric"})
   return start===effectiveEnd?fmt(start):`${fmt(start)} – ${fmt(effectiveEnd)}`
@@ -1717,11 +1719,11 @@ useEffect(() => {
       const today = new Date().toISOString().slice(0, 10)
       const { data, error } = await supabase
         .from("internal_tournament_events")
-        .select("id,title,subtitle,event_date,end_date,start_time,location,image_url,image_path,max_participants,draft_enabled,draw_mode,draw_datetime,draw_location,draw_attendance_required")
+        .select("id,title,subtitle,event_date,end_date,date_open,start_time,location,image_url,image_path,max_participants,draft_enabled,draw_mode,draw_datetime,draw_location,draw_attendance_required")
         .eq("status", "published")
         .eq("show_on_homepage", true)
-        .gte("event_date", today)
-        .order("event_date", { ascending: true })
+        .or(`date_open.eq.true,end_date.gte.${today},event_date.gte.${today}`)
+        .order("event_date", { ascending: true, nullsFirst: false })
         .limit(2)
 
       if (error) throw error
@@ -2025,7 +2027,7 @@ useEffect(() => {
                         <div className="text-xl font-black leading-tight text-slate-950">{event.title}</div>
                         {event.subtitle ? <div className="mt-1 text-sm font-semibold text-slate-500">{event.subtitle}</div> : null}
                         <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold text-slate-500">
-                          <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-orange-600" />{formatInternalEventDateRange(event.event_date,event.end_date)}</span>
+                          <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-orange-600" />{formatInternalEventDateRange(event.event_date,event.end_date,event.date_open)}</span>
                           {event.start_time ? <span className="flex items-center gap-1.5"><Clock className="h-4 w-4 text-orange-600" />{event.start_time.slice(0,5)} Uhr</span> : null}
                           {event.location ? <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-orange-600" />{event.location}</span> : null}
                         </div>
@@ -2050,7 +2052,7 @@ useEffect(() => {
                                   Turnier
                                 </div>
                                 <div className="mt-1 text-sm font-black text-slate-950">
-                                  {formatInternalEventDateRange(event.event_date,event.end_date)}
+                                  {formatInternalEventDateRange(event.event_date,event.end_date,event.date_open)}
                                 </div>
                                 <div className="mt-0.5 text-xs font-bold text-slate-600">
                                   {event.start_time ? `Beginn ${event.start_time.slice(0,5)} Uhr` : "Spieltermine laut Spielplan"}

@@ -31,8 +31,9 @@ type EventRow={
   description:string|null
   image_url:string|null
   image_path:string|null
-  event_date:string
+  event_date:string|null
   end_date:string|null
+  date_open:boolean
   start_time:string|null
   location:string|null
   registration_open_at:string|null
@@ -214,7 +215,7 @@ function EventContent(){
             <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">{event.title}</h1>
             {event.subtitle?<p className="mt-2 text-base font-semibold text-white/60">{event.subtitle}</p>:null}
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-white/[0.06] p-4"><CalendarDays className="h-5 w-5 text-orange-300"/><div className="mt-2 font-black">{dateRangeLabel(event.event_date,event.end_date)}</div></div>
+              <div className="rounded-2xl bg-white/[0.06] p-4"><CalendarDays className="h-5 w-5 text-orange-300"/><div className="mt-2 font-black">{dateRangeLabel(event.event_date,event.end_date,event.date_open)}</div></div>
               <div className="rounded-2xl bg-white/[0.06] p-4"><Clock3 className="h-5 w-5 text-orange-300"/><div className="mt-2 font-black">Beginn {timeLabel(event.start_time)}</div></div>
               <div className="rounded-2xl bg-white/[0.06] p-4"><MapPin className="h-5 w-5 text-orange-300"/><div className="mt-2 font-black">{event.location||"Vereinsheim"}</div></div>
             </div>

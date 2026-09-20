@@ -20,7 +20,7 @@ function formatEventDateRange(start:string,end:string|null){
   return start===effectiveEnd?fmt(start):`${fmt(start)} – ${fmt(effectiveEnd)}`
 }
 
-type EventRow={id:string;title:string;subtitle:string|null;event_date:string;end_date:string|null;start_time:string|null;location:string|null;image_url:string|null;image_path:string|null;draft_enabled:boolean;draw_mode:"online"|"onsite"|null;draw_datetime:string|null;draw_location:string|null;draw_attendance_required:boolean}
+type EventRow={id:string;title:string;subtitle:string|null;event_date:string|null;end_date:string|null;date_open:boolean;start_time:string|null;location:string|null;image_url:string|null;image_path:string|null;draft_enabled:boolean;draw_mode:"online"|"onsite"|null;draw_datetime:string|null;draw_location:string|null;draw_attendance_required:boolean}
 
 function Content(){
   const [events,setEvents]=useState<EventRow[]>([])
@@ -29,10 +29,10 @@ function Content(){
     const run=async()=>{
       const today=new Date().toISOString().slice(0,10)
       const {data}=await supabase.from("internal_tournament_events")
-        .select("id,title,subtitle,event_date,end_date,start_time,location,image_url,image_path,draft_enabled,draw_mode,draw_datetime,draw_location,draw_attendance_required")
+        .select("id,title,subtitle,event_date,end_date,date_open,start_time,location,image_url,image_path,draft_enabled,draw_mode,draw_datetime,draw_location,draw_attendance_required")
         .in("status",["published","closed"])
-        .gte("event_date",today)
-        .order("event_date")
+        .or(`date_open.eq.true,end_date.gte.${today},event_date.gte.${today}`)
+        .order("event_date",{ascending:true,nullsFirst:false})
       setEvents((data||[]) as EventRow[])
       setLoading(false)
     }
@@ -57,7 +57,7 @@ function Content(){
                   <div className="text-xl font-black">{e.title}</div>
                   {e.subtitle?<div className="mt-1 text-sm font-semibold text-slate-500">{e.subtitle}</div>:null}
                   <div className="mt-4 flex flex-wrap gap-3 text-xs font-bold text-slate-500">
-                    <span className="flex items-center gap-1"><CalendarDays className="h-4 w-4"/>{formatEventDateRange(e.event_date,e.end_date)}</span>
+                    <span className="flex items-center gap-1"><CalendarDays className="h-4 w-4"/>{formatEventDateRange(e.event_date,e.end_date,e.date_open)}</span>
                     {e.location?<span className="flex items-center gap-1"><MapPin className="h-4 w-4"/>{e.location}</span>:null}
                   </div>
                   {e.draw_mode?(

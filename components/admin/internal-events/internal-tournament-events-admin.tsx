@@ -45,8 +45,9 @@ type InternalEvent = {
   description:string|null
   image_url:string|null
   image_path:string|null
-  event_date:string
+  event_date:string|null
   end_date:string|null
+  date_open:boolean
   start_time:string|null
   location:string|null
   registration_open_at:string|null
@@ -130,6 +131,7 @@ const emptyForm = {
   image_path:"",
   event_date:"",
   end_date:"",
+  date_open:false,
   start_time:"19:00",
   location:"",
   registration_open_at:"",
@@ -284,8 +286,9 @@ export function InternalTournamentEventsAdmin(){
       description:e.description||"",
       image_url:e.image_url||"",
       image_path:e.image_path||"",
-      event_date:e.event_date,
-      end_date:e.end_date||e.event_date,
+      event_date:e.event_date||"",
+      end_date:e.end_date||e.event_date||"",
+      date_open:!!e.date_open,
       start_time:(e.start_time||"").slice(0,5),
       location:e.location||"",
       registration_open_at:isoToLocalInput(e.registration_open_at),
@@ -374,11 +377,15 @@ export function InternalTournamentEventsAdmin(){
   }
 
   const saveEvent=async()=>{
-    if(!form.title.trim()||!form.event_date){
-      setMessage("Titel und Startdatum sind Pflicht.")
+    if(!form.title.trim()){
+      setMessage("Titel ist Pflicht.")
       return
     }
-    if(form.end_date && form.end_date < form.event_date){
+    if(!form.date_open && !form.event_date){
+      setMessage("Bitte Startdatum eintragen oder den Termin auf „offen“ setzen.")
+      return
+    }
+    if(!form.date_open && form.end_date && form.event_date && form.end_date < form.event_date){
       setMessage("Enddatum darf nicht vor dem Startdatum liegen.")
       return
     }
@@ -391,8 +398,9 @@ export function InternalTournamentEventsAdmin(){
         description:form.description.trim()||null,
         image_url:null,
         image_path:form.image_path||null,
-        event_date:form.event_date,
-        end_date:form.end_date||form.event_date,
+        event_date:form.date_open?null:form.event_date,
+        end_date:form.date_open?null:(form.end_date||form.event_date),
+        date_open:form.date_open,
         start_time:form.start_time||null,
         location:form.location.trim()||null,
         registration_open_at:localInputToIso(form.registration_open_at),
@@ -402,7 +410,7 @@ export function InternalTournamentEventsAdmin(){
         show_on_homepage:form.show_on_homepage,
         required_module_code:"internal_tournaments",
         draft_enabled:form.draft_enabled,
-        draft_date:form.draft_enabled?(form.draft_date||form.event_date):null,
+        draft_date:form.draft_enabled?(form.draft_date||(!form.date_open?form.event_date:null)):null,
         draft_time:form.draft_enabled?(form.draft_time||null):null,
         captain_count:form.draft_enabled?Math.max(2,Number(form.captain_count)||2):0,
         team_size:form.draft_enabled&&form.team_size?Number(form.team_size):null,
@@ -587,8 +595,46 @@ export function InternalTournamentEventsAdmin(){
               <div className="grid gap-4 md:grid-cols-2">
                 <div><Label>Titel *</Label><Input value={form.title} onChange={(e)=>setForm({...form,title:e.target.value})} className="mt-2"/></div>
                 <div><Label>Untertitel</Label><Input value={form.subtitle} onChange={(e)=>setForm({...form,subtitle:e.target.value})} className="mt-2"/></div>
-                <div><Label>Datum von *</Label><Input type="date" value={form.event_date} onChange={(e)=>setForm({...form,event_date:e.target.value,end_date:form.end_date&&form.end_date<e.target.value?e.target.value:form.end_date})} className="mt-2"/></div>
-                <div><Label>Datum bis</Label><Input type="date" min={form.event_date||undefined} value={form.end_date} onChange={(e)=>setForm({...form,end_date:e.target.value})} className="mt-2"/></div>
+                <div className="md:col-span-2">
+                  <label className={`flex items-center justify-between rounded-2xl border p-4 ${form.date_open?"border-sky-200 bg-sky-50":"border-slate-200 bg-white"}`}>
+                    <span>
+                      <span className="block font-black text-slate-950">Termin noch offen</span>
+                      <span className="mt-1 block text-xs font-semibold text-slate-500">
+                        Aktivieren, wenn Start- und Enddatum des Bewerbs noch nicht feststehen.
+                      </span>
+                    </span>
+                    <Switch
+                      checked={form.date_open}
+                      onCheckedChange={(v)=>setForm({
+                        ...form,
+                        date_open:v,
+                        event_date:v?"":form.event_date,
+                        end_date:v?"":form.end_date,
+                      })}
+                    />
+                  </label>
+                </div>
+                <div>
+                  <Label>Datum von{form.date_open?"":" *"}</Label>
+                  <Input
+                    type="date"
+                    disabled={form.date_open}
+                    value={form.event_date}
+                    onChange={(e)=>setForm({...form,event_date:e.target.value,end_date:form.end_date&&form.end_date<e.target.value?e.target.value:form.end_date})}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Datum bis</Label>
+                  <Input
+                    type="date"
+                    disabled={form.date_open}
+                    min={form.event_date||undefined}
+                    value={form.end_date}
+                    onChange={(e)=>setForm({...form,end_date:e.target.value})}
+                    className="mt-2"
+                  />
+                </div>
                 <div><Label>Ort</Label><Input value={form.location} onChange={(e)=>setForm({...form,location:e.target.value})} className="mt-2"/></div>
                 <div><Label>Beginn</Label><Input type="time" value={form.start_time} onChange={(e)=>setForm({...form,start_time:e.target.value})} className="mt-2"/></div>
                 <div><Label>Anmeldung ab</Label><Input type="datetime-local" value={form.registration_open_at} onChange={(e)=>setForm({...form,registration_open_at:e.target.value})} className="mt-2"/></div>
@@ -801,7 +847,7 @@ export function InternalTournamentEventsAdmin(){
                       {e.draft_enabled?<Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Draft</Badge>:null}
                     </div>
                     <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-500">
-                      <span>{fmtDateRange(e.event_date,e.end_date)}</span>
+                      <span>{fmtDateRange(e.event_date,e.end_date,e.date_open)}</span>
                       {e.start_time?<span>{e.start_time.slice(0,5)} Uhr</span>:null}
                       {e.location?<span>{e.location}</span>:null}
                       <span>{registrations.filter((r)=>r.event_id===e.id&&r.status==="registered").length} Anmeldungen</span>
@@ -827,7 +873,7 @@ export function InternalTournamentEventsAdmin(){
               <Label>Veranstaltung</Label>
               <Select value={selectedEventId} onValueChange={setSelectedEventId}>
                 <SelectTrigger className="mt-2"><SelectValue placeholder="Event wählen"/></SelectTrigger>
-                <SelectContent>{events.map((e)=><SelectItem key={e.id} value={e.id}>{e.title} · {fmtDateRange(e.event_date,e.end_date)}</SelectItem>)}</SelectContent>
+                <SelectContent>{events.map((e)=><SelectItem key={e.id} value={e.id}>{e.title} · {fmtDateRange(e.event_date,e.end_date,e.date_open)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
@@ -1139,7 +1185,7 @@ export function InternalTournamentEventsAdmin(){
                     <SelectContent>
                       {events.map((e)=>(
                         <SelectItem key={e.id} value={e.id}>
-                          {e.title} · {fmtDateRange(e.event_date,e.end_date)}
+                          {e.title} · {fmtDateRange(e.event_date,e.end_date,e.date_open)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1159,7 +1205,7 @@ export function InternalTournamentEventsAdmin(){
               {selectedEvent ? (
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Badge variant="outline">{selectedEvent.title}</Badge>
-                  <Badge variant="outline">{fmtDateRange(selectedEvent.event_date,selectedEvent.end_date)}</Badge>
+                  <Badge variant="outline">{fmtDateRange(selectedEvent.event_date,selectedEvent.end_date,selectedEvent.date_open)}</Badge>
                   {selectedEvent.draft_enabled ? (
                     <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Captain-Draft</Badge>
                   ) : (
