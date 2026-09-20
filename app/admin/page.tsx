@@ -29,6 +29,7 @@ import {
   Activity,
   CreditCard,
   Video,
+  UserPlus,
 } from "lucide-react"
 
 import { AuthSection } from "@/components/auth-section"
@@ -60,6 +61,7 @@ import { AdminMembershipManagement } from "@/components/admin/membership/admin-m
 import { AdminApprovalsManagement } from "@/components/admin/admin-freigaben"
 import { AdminClubMeeting } from "@/components/admin/admin-club-meeting"
 import { AdminClubhouseManagement } from "@/components/admin/admin-clubhouse-management"
+import { InternalTournamentEventsAdmin } from "@/components/admin/internal-events/internal-tournament-events-admin"
 import { PackageCheck } from "lucide-react"
 
 export default function AdminPage() {
@@ -107,6 +109,7 @@ export default function AdminPage() {
 	  | "admin-push"
 | "members-levels"
 | "membership-management"
+| "internal-events"
 | "bonus-vergabe"
 | "praemien-redemptions"
 | "guest-requests"
@@ -497,7 +500,7 @@ useEffect(() => {
 
     // Bei datenintensiven Bereichen zuerst sicherstellen, dass die
     // Supabase-Session im Browser wirklich bereit ist.
-    if (view === "membership-management" || view === "approvals") {
+    if (view === "membership-management" || view === "approvals" || view === "internal-events") {
       await supabase.auth.getSession()
       setDataViewKey((key) => key + 1)
     }
@@ -572,6 +575,14 @@ useEffect(() => {
       color: "bg-purple-500",
       view: "events" as const,
       category: "verein" as const,
+    },
+    {
+      title: "Interne Events & Anmeldungen",
+      description: "Anmeldungen, interne Specials und Captain-Drafts verwalten",
+      icon: UserPlus,
+      color: "bg-orange-600",
+      view: "internal-events" as const,
+      category: "sport" as const,
     },
     {
       title: "Vereinsheim",
@@ -758,6 +769,7 @@ useEffect(() => {
         { key: "history", label: "Historie", icon: History },
         { key: "player-database", label: "Spielerdatenbank", icon: List },
 		{ key: "members-levels", label: "Members Cup Einstufung", icon: Trophy },
+        { key: "internal-events", label: "Interne Events & Anmeldungen", icon: UserPlus },
       ],
     },
     {
@@ -821,7 +833,8 @@ useEffect(() => {
   "dart-competition",
   "history",
   "player-database",
-  "members-levels"
+  "members-levels",
+  "internal-events"
 ].includes(c.view)
   ),
 "Verein": visibleDashboardCards.filter((c) =>
@@ -1451,6 +1464,22 @@ if (!hasAnyPermission) {
   </div>
 )}
 
+
+{currentView === "internal-events" && (
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <UserPlus className="h-5 w-5" />
+          <span>Interne Events & Anmeldungen</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <InternalTournamentEventsAdmin />
+      </CardContent>
+    </Card>
+  </div>
+)}
 
 {currentView === "membership-management" && (
   <div className="space-y-6">

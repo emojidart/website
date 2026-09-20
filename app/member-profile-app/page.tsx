@@ -844,6 +844,7 @@ const fetchProfile = async () => {
       items: [
         { title: "Vereinskalender", description: "Termine & Veranstaltungen", icon: Calendar, href: "/vereinskalender-app" },
         { title: "DACH Turniere", description: "Turniere in AT, DE & CH", icon: Trophy, href: "/dach-veranstaltungen" },
+        { title: "Interne Spiele", description: "Spielplan, Aufstellung & Live-Ergebnisse", icon: Trophy, href: "/internal-matches" },
         { title: "Dartbörse", description: "Darts & Zubehör", icon: ShoppingBag, href: "/dartboerse" },
         { title: "Meine Bonuspunkte", description: "Punkte & Rang ansehen", icon: Sparkles, href: "/meine-bonus-punkte" },
         { title: "Bonusgeld", description: "Belohnungen ansehen", icon: Euro, href: "/member-bonus-app" },

@@ -106,6 +106,11 @@ interface Event {
   description: string | null
   photo_url: string | null
   max_participants: number | null
+  draft_enabled?: boolean
+  draw_mode?: "online" | "onsite" | null
+  draw_datetime?: string | null
+  draw_location?: string | null
+  draw_attendance_required?: boolean
 }
 
 interface CombinedEvent {
@@ -193,6 +198,19 @@ type BirthdayPlayer = {
   name: string
   birthdate: string
   age: number | null
+}
+
+type InternalSignupEvent = {
+  id: string
+  title: string
+  subtitle: string | null
+  event_date: string
+  end_date: string | null
+  start_time: string | null
+  location: string | null
+  image_url: string | null
+  image_path: string | null
+  max_participants: number | null
 }
 
 function CountdownTimer({ targetDate }: { targetDate: Date }) {
@@ -345,16 +363,40 @@ function getLeagueDartTypeForMyTeam(match: any, myTeamIds: string[]) {
   return String(match?.dart_type || "").toLowerCase()
 }
 
+function internalEventImageUrl(path:string|null|undefined,legacyUrl?:string|null){
+  if(path)return supabase.storage.from("internal-events").getPublicUrl(path).data.publicUrl
+  return legacyUrl||""
+}
+
+function formatInternalEventDrawDate(value:string|null|undefined){
+  if(!value)return ""
+  return new Date(value).toLocaleDateString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric"})
+}
+
+function formatInternalEventDrawDateTime(value:string|null|undefined){
+  if(!value)return ""
+  return new Date(value).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})
+}
+
+function formatInternalEventDateRange(start:string,end:string|null){
+  const effectiveEnd=end||start
+  const fmt=(v:string)=>new Date(`${v}T12:00:00`).toLocaleDateString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric"})
+  return start===effectiveEnd?fmt(start):`${fmt(start)} – ${fmt(effectiveEnd)}`
+}
+
 export default function Home() {
   const { loading: membershipLoading, hasModule } = useMembershipAccess()
   const canSeeEDartLeague = hasModule("edart_league")
   const canSeeSteeldartLeague = hasModule("steeldart_league")
+  const canSeeInternalTournaments = hasModule("internal_tournaments")
   const hasLeaguePackage = canSeeEDartLeague || canSeeSteeldartLeague
 
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null)
   const [myLeagueMatches, setMyLeagueMatches] = useState<HomeLeagueMatch[]>([])
   const [myLeagueLoading, setMyLeagueLoading] = useState(false)
   const [myLeagueSaving, setMyLeagueSaving] = useState<string>("")
+  const [internalSignupEvents, setInternalSignupEvents] = useState<InternalSignupEvent[]>([])
+  const [internalSignupLoading, setInternalSignupLoading] = useState(false)
 
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
@@ -1660,6 +1702,41 @@ useEffect(() => {
 }, [authUserId, liveMembersSelfRegEvent])
 
 
+
+useEffect(() => {
+  if (membershipLoading) return
+
+  const loadInternalSignupEvents = async () => {
+    if (!canSeeInternalTournaments) {
+      setInternalSignupEvents([])
+      return
+    }
+
+    try {
+      setInternalSignupLoading(true)
+      const today = new Date().toISOString().slice(0, 10)
+      const { data, error } = await supabase
+        .from("internal_tournament_events")
+        .select("id,title,subtitle,event_date,end_date,start_time,location,image_url,image_path,max_participants,draft_enabled,draw_mode,draw_datetime,draw_location,draw_attendance_required")
+        .eq("status", "published")
+        .eq("show_on_homepage", true)
+        .gte("event_date", today)
+        .order("event_date", { ascending: true })
+        .limit(2)
+
+      if (error) throw error
+      setInternalSignupEvents((data || []) as InternalSignupEvent[])
+    } catch (error) {
+      console.error("internal signup events load error:", error)
+      setInternalSignupEvents([])
+    } finally {
+      setInternalSignupLoading(false)
+    }
+  }
+
+  void loadInternalSignupEvents()
+}, [membershipLoading, canSeeInternalTournaments])
+
 useEffect(() => {
   const loadTodayBirthdays = async () => {
     try {
@@ -1894,6 +1971,107 @@ useEffect(() => {
           </div>
         </div>
       </section>
+
+      {canSeeInternalTournaments && (internalSignupLoading || internalSignupEvents.length > 0) ? (
+        <section className="mx-auto w-full max-w-[1800px] px-3 pt-5 sm:px-5 sm:pt-6 lg:px-8 xl:px-10">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-sm">
+                <Trophy className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">Neu · Vereinsintern</div>
+                <h2 className="text-lg font-black leading-tight text-slate-950 sm:text-xl">Jetzt anmelden</h2>
+              </div>
+            </div>
+            <Button variant="ghost" className="rounded-xl font-black" onClick={() => (window.location.href = "/internal-events")}>
+              Alle anzeigen
+            </Button>
+          </div>
+
+          {internalSignupLoading ? (
+            <div className="rounded-3xl border bg-white p-6 text-center text-sm font-bold text-slate-500">
+              <Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Interne Events werden geladen…
+            </div>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {internalSignupEvents.map((event) => (
+                <Link
+                  key={event.id}
+                  href={`/internal-events/${event.id}`}
+                  className="group overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="grid h-full sm:grid-cols-[240px_1fr]">
+                    <div className="relative overflow-hidden bg-black">
+                      {internalEventImageUrl(event.image_path,event.image_url) ? (
+                        <div className="aspect-video w-full sm:h-full sm:min-h-[170px]">
+                          <img
+                            src={internalEventImageUrl(event.image_path,event.image_url)}
+                            alt={event.title}
+                            className="block h-full w-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex aspect-video min-h-[170px] items-center justify-center bg-gradient-to-br from-slate-950 to-orange-950">
+                          <Trophy className="h-14 w-14 text-orange-400" />
+                        </div>
+                      )}
+                      <div className="absolute left-3 top-3 z-10 rounded-full bg-orange-600 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white">
+                        Anmeldung offen
+                      </div>
+                    </div>
+                    <div className="relative z-10 flex min-w-0 flex-col justify-between bg-white p-5">
+                      <div>
+                        <div className="text-xl font-black leading-tight text-slate-950">{event.title}</div>
+                        {event.subtitle ? <div className="mt-1 text-sm font-semibold text-slate-500">{event.subtitle}</div> : null}
+                        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold text-slate-500">
+                          <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-orange-600" />{formatInternalEventDateRange(event.event_date,event.end_date)}</span>
+                          {event.start_time ? <span className="flex items-center gap-1.5"><Clock className="h-4 w-4 text-orange-600" />{event.start_time.slice(0,5)} Uhr</span> : null}
+                          {event.location ? <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-orange-600" />{event.location}</span> : null}
+                        </div>
+                        {event.draw_mode ? (
+                          <div className={`mt-3 rounded-2xl border px-3 py-3 ${event.draw_mode==="onsite"?"border-amber-200 bg-amber-50":"border-sky-200 bg-sky-50"}`}>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <div>
+                                <div className={`text-[10px] font-black uppercase tracking-widest ${event.draw_mode==="onsite"?"text-amber-700":"text-sky-700"}`}>
+                                  Auslosung
+                                </div>
+                                <div className="mt-1 text-sm font-black text-slate-950">
+                                  {event.draw_datetime ? formatInternalEventDrawDateTime(event.draw_datetime) : "Termin folgt"}
+                                </div>
+                                <div className="mt-0.5 text-xs font-bold text-slate-600">
+                                  {event.draw_mode==="onsite"?"Live vor Ort":"Online"}
+                                  {event.draw_mode==="onsite" && event.draw_attendance_required ? " · Anwesenheit erforderlich" : ""}
+                                </div>
+                              </div>
+
+                              <div className="border-t border-black/10 pt-2 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-orange-700">
+                                  Turnier
+                                </div>
+                                <div className="mt-1 text-sm font-black text-slate-950">
+                                  {formatInternalEventDateRange(event.event_date,event.end_date)}
+                                </div>
+                                <div className="mt-0.5 text-xs font-bold text-slate-600">
+                                  {event.start_time ? `Beginn ${event.start_time.slice(0,5)} Uhr` : "Spieltermine laut Spielplan"}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                      <div className="mt-5 flex items-center justify-between gap-3">
+                        <span className="rounded-full bg-orange-50 px-3 py-1.5 text-[11px] font-black text-orange-700">Paket Interne Turniere</span>
+                        <span className="flex items-center gap-1.5 text-sm font-black text-orange-700">Zur Anmeldung <ArrowRight className="h-4 w-4" /></span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
 
       {/* WICHTIG: persönliche Ligaspiele ganz oben auf der Startseite */}
       <div className="mx-auto w-full max-w-[1800px] px-3 pt-5 sm:px-5 sm:pt-6 lg:px-8 xl:px-10">
