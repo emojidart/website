@@ -236,6 +236,45 @@ async function applyPendingStripeChangeFromSubscription(
   if (approveError) throw approveError
 }
 
+
+async function applyCreditTopupFromCheckout(
+  stripe: Stripe,
+  supabase: ReturnType<typeof createClient>,
+  session: Stripe.Checkout.Session,
+  eventId: string,
+) {
+  if (session.metadata?.payment_kind !== "credit_topup") return false
+  if (session.payment_status !== "paid") return true
+
+  const topupId = session.metadata?.wallet_topup_id || session.client_reference_id
+  if (!topupId) throw new Error("wallet_topup_id fehlt in Stripe Metadata")
+
+  const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null
+  let actualFee = 0
+  let actualNet = Number(session.amount_total || 0) / 100
+
+  if (paymentIntentId) {
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId, { expand: ["latest_charge.balance_transaction"] })
+    const charge: any = pi.latest_charge
+    const bt: any = charge && typeof charge !== "string" ? charge.balance_transaction : null
+    if (bt && typeof bt !== "string") {
+      actualFee = Number(bt.fee || 0) / 100
+      actualNet = Number(bt.net || 0) / 100
+    }
+  }
+
+  const { error } = await supabase.rpc("apply_wallet_topup", {
+    p_topup_id: topupId,
+    p_checkout_session_id: session.id,
+    p_payment_intent_id: paymentIntentId,
+    p_actual_fee: actualFee,
+    p_actual_net: actualNet,
+    p_stripe_event_id: eventId,
+  })
+  if (error) throw error
+  return true
+}
+
 export async function POST(request: Request) {
   if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !supabaseServiceRoleKey) {
     console.error("Stripe webhook: server environment is incomplete")
@@ -266,6 +305,10 @@ export async function POST(request: Request) {
   try {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session
+
+      if (await applyCreditTopupFromCheckout(stripe, supabase, session, event.id)) {
+        return NextResponse.json({ received: true })
+      }
       const requestId = session.metadata?.membership_request_id || session.client_reference_id
 
       if (!requestId) {

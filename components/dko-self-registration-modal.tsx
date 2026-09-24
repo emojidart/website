@@ -107,9 +107,12 @@ export function DKOSelfRegistrationModal(props: {
   title?: string
   dateLabel?: string
   timeLabel?: string
+  date?: string
+  time?: string
   onRegistrationChanged?: (isRegistered: boolean) => void
 
   seriesId?: string | null
+  eventId?: string | null
   startgeld?: number | null
 
   canUnregister?: boolean
@@ -148,17 +151,19 @@ export function DKOSelfRegistrationModal(props: {
   }, [creditBalance, resolvedStartgeld])
 
   const parsedDate = useMemo(() => {
-    if (!props.dateLabel) return null
-    return parseGermanShortDate(props.dateLabel)
-  }, [props.dateLabel])
+    const raw = props.dateLabel ?? props.date
+    if (!raw) return null
+    return parseGermanShortDate(raw)
+  }, [props.dateLabel, props.date])
 
   const datePretty = useMemo(() => {
     if (parsedDate) return parsedDate.toLocaleDateString("de-DE", { weekday: "long", year: "numeric", month: "long", day: "2-digit" })
-    if (props.dateLabel) return props.dateLabel
+    const raw = props.dateLabel ?? props.date
+    if (raw) return raw
     return ""
-  }, [parsedDate, props.dateLabel])
+  }, [parsedDate, props.dateLabel, props.date])
 
-  const timePretty = useMemo(() => props.timeLabel ?? "", [props.timeLabel])
+  const timePretty = useMemo(() => props.timeLabel ?? props.time ?? "", [props.timeLabel, props.time])
 
   // Initial load when modal opens
   useEffect(() => {
@@ -330,63 +335,26 @@ export function DKOSelfRegistrationModal(props: {
       const fee = Number(resolvedStartgeld ?? 0)
 
       if (paymentMode === "credit") {
-        if (!creditAccountId) {
-          setMessage({ type: "error", text: "Kein Guthabenkonto gefunden." })
+        if (!creditAccountId || !props.seriesId || !props.eventId) {
+          setMessage({ type: "error", text: "Turnier- oder Guthabenzuordnung fehlt." })
           return
         }
 
-        const currentBalance = await getCreditBalance(creditAccountId)
-        if (!(currentBalance >= fee && fee > 0)) {
-          setMessage({ type: "error", text: "Nicht genügend Guthaben." })
-          return
-        }
-
-        const newBalance = currentBalance - fee
-
-        // ✅ player_id = clubId UUID
-        const baseRegPayload: any = {
-          player_id: registrationPlayerId,
-          player_name: (spieldbName || playerName) || null,
-          paid: true,
-          entry_fee: fee,
-          deducted_from_credit: true,
-          payment_method: "credit",
-        }
-        if (spieldbId !== null && spieldbId !== undefined) baseRegPayload.spieldatenbank_id = spieldbId
-
-        let regInsErr: any = null
-        try {
-          const { error } = await supabase.from("dko_tournament_registration").insert(baseRegPayload)
-          regInsErr = error
-        } catch (e) {
-          regInsErr = e
-        }
-
-        if (regInsErr && String(regInsErr?.message || regInsErr).toLowerCase().includes("spieldatenbank_id")) {
-          delete baseRegPayload.spieldatenbank_id
-          const { error } = await supabase.from("dko_tournament_registration").insert(baseRegPayload)
-          regInsErr = error
-        }
-
-        if (regInsErr) throw regInsErr
-
-        // Guthaben-Buchung
-        const { error: txErr } = await supabase.from("credit_transactions").insert({
-          player_id: creditAccountId,
-          amount: -fee,
-          balance_after: newBalance,
-          transaction_type: "tournament_entry_fee",
-          admin_id: null,
+        const { data: newBalance, error: rpcErr } = await supabase.rpc("register_dko_with_credit", {
+          p_credit_player_id: creditAccountId,
+          p_registration_player_id: registrationPlayerId,
+          p_player_name: (spieldbName || playerName) || "Mitglied",
+          p_series_id: props.seriesId,
+          p_event_id: props.eventId,
+          p_fee: fee,
         })
-        if (txErr) throw txErr
+        if (rpcErr) throw rpcErr
 
-        await tryUpdatePlayerCredits(creditAccountId, newBalance)
-        setCreditBalance(newBalance)
-
+        setCreditBalance(Number(newBalance ?? 0))
         setAlreadyRegistered(true)
         setLatestReg({ entry_fee: fee, paid: true, deducted_from_credit: true, payment_method: "credit" })
         props.onRegistrationChanged?.(true)
-        setMessage({ type: "success", text: "Erfolgreich angemeldet." })
+        setMessage({ type: "success", text: "Erfolgreich angemeldet und mit Guthaben bezahlt." })
       } else {
         // Vor Ort
         const baseRegPayload: any = {
@@ -396,6 +364,8 @@ export function DKOSelfRegistrationModal(props: {
           entry_fee: fee,
           deducted_from_credit: false,
           payment_method: "on_site",
+          series_id: props.seriesId ?? null,
+          event_id: props.eventId ?? null,
         }
         if (spieldbId !== null && spieldbId !== undefined) baseRegPayload.spieldatenbank_id = spieldbId
 
@@ -460,37 +430,22 @@ export function DKOSelfRegistrationModal(props: {
         return
       }
 
-      // löschen
-      const { error: delErr } = await supabase.from("dko_tournament_registration").delete().eq("id", regRow.id)
-      if (delErr) throw delErr
-
-      setAlreadyRegistered(false)
-      props.onRegistrationChanged?.(false)
-
-      // ✅ RÜCKERSTATTUNG NUR wenn payment_method = 'credit'
+      // Rückerstattung atomar über DB-RPC
       if (regRow?.payment_method === "credit") {
-        if (!creditAccountId) {
-          setMessage({ type: "error", text: "Abmeldung ok, aber kein Guthabenkonto gefunden für Rückerstattung." })
-        } else {
-          const fee = Number(regRow?.entry_fee ?? 0)
-          if (fee > 0) {
-            const currentBalance = await getCreditBalance(creditAccountId)
-            const newBalance = currentBalance + fee
-
-            const { error: txErr } = await supabase.from("credit_transactions").insert({
-              player_id: creditAccountId,
-              amount: fee,
-              balance_after: newBalance,
-              transaction_type: "tournament_refund",
-              admin_id: null,
-            })
-            if (txErr) throw txErr
-
-            await tryUpdatePlayerCredits(creditAccountId, newBalance)
-            setCreditBalance(newBalance)
-            refunded = true
-          }
+        if (!creditAccountId || !props.eventId) {
+          throw new Error("Guthaben- oder Event-Zuordnung fehlt.")
         }
+        const { data: newBalance, error: refundErr } = await supabase.rpc("unregister_dko_with_credit", {
+          p_credit_player_id: creditAccountId,
+          p_registration_player_id: registrationPlayerId,
+          p_event_id: props.eventId,
+        })
+        if (refundErr) throw refundErr
+        setCreditBalance(Number(newBalance ?? 0))
+        refunded = true
+      } else {
+        const { error: delErr } = await supabase.from("dko_tournament_registration").delete().eq("id", regRow.id)
+        if (delErr) throw delErr
       }
 
       setAlreadyRegistered(false)

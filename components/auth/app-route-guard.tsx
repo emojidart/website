@@ -70,6 +70,10 @@ function isDartMarketplaceManagementPath(pathname: string) {
   )
 }
 
+function isTerminalPath(pathname: string) {
+  return pathname === "/terminal" || pathname.startsWith("/terminal/")
+}
+
 function LoadingScreen() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -96,6 +100,14 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
     const checkAccess = async () => {
       try {
         setChecking(true)
+
+        // Club Terminal is a separate public kiosk area.
+        // IMPORTANT: only /terminal and /terminal/* bypass this global guard.
+        // The normal site keeps all existing auth/access checks unchanged.
+        if (isTerminalPath(pathname)) {
+          if (mounted) setChecking(false)
+          return
+        }
 
         if (authLoading) return
 
@@ -314,6 +326,12 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
       mounted = false
     }
   }, [authLoading, session?.user?.id, pathname, router])
+
+  // Never show the global white access-check screen inside the Club Terminal.
+  // All other routes still use the original LoadingScreen and guard behavior.
+  if (isTerminalPath(pathname)) {
+    return <>{children}</>
+  }
 
   if (checking || authLoading) {
     return <LoadingScreen />

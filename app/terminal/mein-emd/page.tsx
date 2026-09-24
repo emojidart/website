@@ -21,6 +21,10 @@ import {
   UsersRound,
   Wifi,
   X,
+  Wallet,
+  History,
+  LogOut,
+  CreditCard,
 } from "lucide-react"
 import TerminalLink from "../_components/TerminalLink"
 
@@ -36,12 +40,27 @@ type ScannedMember = {
   photoUrl: string | null
 }
 
+
+type CreditTransaction = {
+  id: string
+  amount: number
+  balance_after: number
+  transaction_type: string
+  created_at: string
+}
+
 export default function TerminalPersonalPage() {
   const [pin, setPin] = useState("")
   const [scannerOpen, setScannerOpen] = useState(false)
   const [scannerStatus, setScannerStatus] = useState<"idle" | "starting" | "scanning" | "checking" | "error" | "found">("idle")
   const [scannerMessage, setScannerMessage] = useState("")
   const [scannedMember, setScannedMember] = useState<ScannedMember | null>(null)
+  const [cameraDevices, setCameraDevices] = useState<MediaDeviceInfo[]>([])
+  const [selectedCameraId, setSelectedCameraId] = useState("")
+  const [activeMember, setActiveMember] = useState<ScannedMember | null>(null)
+  const [creditBalance, setCreditBalance] = useState(0)
+  const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([])
+  const [personalLoading, setPersonalLoading] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const zxingControlsRef = useRef<{ stop: () => void } | null>(null)
   const scannedCodeRef = useRef<string>("")
@@ -183,16 +202,31 @@ export default function TerminalPersonalPage() {
 
       const codeReader = new BrowserQRCodeReader()
       const devices = await BrowserQRCodeReader.listVideoInputDevices()
+      setCameraDevices(devices)
+
+      if (devices.length === 0) {
+        setScannerStatus("error")
+        setScannerMessage("Keine Kamera auf diesem Gerät gefunden.")
+        return
+      }
+
       const preferred =
         devices.find((device) =>
           /back|rear|environment|rück|hinten/i.test(device.label || ""),
         ) || devices[devices.length - 1]
 
+      const cameraId =
+        selectedCameraId && devices.some((device) => device.deviceId === selectedCameraId)
+          ? selectedCameraId
+          : preferred.deviceId
+
+      if (!selectedCameraId) setSelectedCameraId(cameraId)
+
       setScannerStatus("scanning")
       setScannerMessage("Mitgliedskarte vor die Kamera halten")
 
       const controls = await codeReader.decodeFromVideoDevice(
-        preferred?.deviceId,
+        cameraId,
         video,
         (result, error) => {
           if (result) {
@@ -207,11 +241,20 @@ export default function TerminalPersonalPage() {
       )
 
       zxingControlsRef.current = controls
-    } catch (error) {
+    } catch (error: any) {
       console.error("Terminal QR camera error:", error)
       stopScanner()
       setScannerStatus("error")
-      setScannerMessage("Kamera konnte nicht geöffnet werden. Bitte Kamerazugriff erlauben.")
+
+      if (error?.name === "NotFoundError") {
+        setScannerMessage("Keine Kamera gefunden. Bitte Webcam anschließen oder am Tablet/Handy testen.")
+      } else if (error?.name === "NotAllowedError") {
+        setScannerMessage("Kamerazugriff wurde blockiert. Bitte für diese Website erlauben.")
+      } else if (error?.name === "NotReadableError") {
+        setScannerMessage("Kamera ist gerade belegt. Bitte Teams/Zoom/Kamera-App schließen und erneut versuchen.")
+      } else {
+        setScannerMessage("Kamera konnte nicht geöffnet werden.")
+      }
     }
   }
 
@@ -231,6 +274,227 @@ export default function TerminalPersonalPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scannerOpen])
+
+  const loadPersonalData = async (member: ScannedMember) => {
+    if (!member.playerId) return
+    setPersonalLoading(true)
+    try {
+      const [{ data: creditRows }, { data: txRows }] = await Promise.all([
+        supabase
+          .from("player_credits")
+          .select("credit_balance")
+          .eq("player_id", member.playerId)
+          .limit(1),
+        supabase
+          .from("credit_transactions")
+          .select("id,amount,balance_after,transaction_type,created_at")
+          .eq("player_id", member.playerId)
+          .order("created_at", { ascending: false })
+          .limit(8),
+      ])
+
+      setCreditBalance(Number((creditRows || [])[0]?.credit_balance || 0))
+      setCreditTransactions((txRows || []).map((row: any) => ({
+        id: String(row.id),
+        amount: Number(row.amount || 0),
+        balance_after: Number(row.balance_after || 0),
+        transaction_type: String(row.transaction_type || ""),
+        created_at: String(row.created_at || ""),
+      })))
+    } catch (error) {
+      console.error("Terminal personal data error:", error)
+      setCreditBalance(0)
+      setCreditTransactions([])
+    } finally {
+      setPersonalLoading(false)
+    }
+  }
+
+  const enterPersonalArea = async () => {
+    if (!scannedMember) return
+    stopScanner()
+    setScannerOpen(false)
+    setActiveMember(scannedMember)
+    await loadPersonalData(scannedMember)
+  }
+
+  const logoutPersonalArea = () => {
+    setActiveMember(null)
+    setScannedMember(null)
+    setCreditBalance(0)
+    setCreditTransactions([])
+    setPin("")
+    scannedCodeRef.current = ""
+  }
+
+  const transactionLabel = (type: string) => {
+    if (type === "credit_added") return "Guthaben aufgeladen"
+    if (type === "tournament_entry_fee") return "Turnier-Startgeld"
+    if (type === "tournament_refund") return "Turnier-Rückerstattung"
+    if (type === "credit_refund") return "Rückerstattung"
+    return type || "Buchung"
+  }
+
+  const formatEuro = (value: number) =>
+    new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR" }).format(value || 0)
+
+  if (activeMember) {
+    return (
+      <main className="relative min-h-[100svh] overflow-x-hidden bg-[#050608] text-white">
+        <div
+          className="pointer-events-none fixed inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.58]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.38),rgba(4,6,9,.82)),radial-gradient(circle_at_10%_0%,rgba(249,115,22,.16),transparent_28%),radial-gradient(circle_at_100%_82%,rgba(14,165,233,.11),transparent_30%)]" />
+
+        <div className="relative mx-auto min-h-[100svh] max-w-[1500px] px-5 py-6 lg:px-8 lg:py-8">
+          <header className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <TerminalLink
+                href="/terminal/menu"
+                label="Hauptmenü wird geöffnet"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-black/35 text-white/65 backdrop-blur-xl transition hover:bg-white/[0.08]"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </TerminalLink>
+              <div>
+                <div className="text-[11px] font-black uppercase tracking-[0.34em] text-orange-300/90">
+                  Mein EMD
+                </div>
+                <h1 className="mt-1 text-3xl font-black tracking-[-0.05em] sm:text-4xl">
+                  Persönlicher Bereich
+                </h1>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={logoutPersonalArea}
+              className="flex h-12 items-center gap-2 rounded-2xl border border-white/10 bg-black/35 px-4 text-sm font-black text-white/60 backdrop-blur-xl transition hover:bg-white/[0.08]"
+            >
+              <LogOut className="h-4 w-4" />
+              Abmelden
+            </button>
+          </header>
+
+          <section className="mt-8 grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
+            <div className="overflow-hidden rounded-[38px] border border-orange-400/20 bg-black/32 p-6 backdrop-blur-2xl sm:p-8">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[30px] border border-orange-300/20 bg-orange-500/10">
+                  {activeMember.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={activeMember.photoUrl} alt={activeMember.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <UserRound className="h-12 w-12 text-orange-200" />
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <div className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-200/60">
+                    Angemeldet
+                  </div>
+                  <h2 className="mt-2 text-4xl font-black tracking-[-0.05em] sm:text-6xl">
+                    {activeMember.name}
+                  </h2>
+                  <div className="mt-3 font-mono text-sm font-bold text-white/35">
+                    {activeMember.playerCode}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-[28px] border border-emerald-300/14 bg-emerald-400/[0.06] p-5">
+                  <div className="flex items-center gap-2 text-emerald-200/70">
+                    <Wallet className="h-5 w-5" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Guthaben</span>
+                  </div>
+                  <div className="mt-3 text-4xl font-black">
+                    {personalLoading ? "…" : formatEuro(creditBalance)}
+                  </div>
+                  <div className="mt-2 text-xs font-semibold text-white/35">
+                    Für Members Cup und Lion Cup
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-cyan-300/14 bg-cyan-400/[0.05] p-5">
+                  <div className="flex items-center gap-2 text-cyan-100/70">
+                    <CreditCard className="h-5 w-5" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Mitgliedskarte</span>
+                  </div>
+                  <div className="mt-3 text-xl font-black">QR erkannt</div>
+                  <div className="mt-2 text-xs font-semibold text-white/35">
+                    Persönlicher Terminal-Zugang aktiv
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <TerminalLink
+                  href="/terminal/turniere"
+                  label="Turnierbereich wird geöffnet"
+                  className="flex min-h-24 items-center justify-between rounded-[26px] border border-orange-300/15 bg-orange-500/[0.07] px-5 transition hover:bg-orange-500/[0.12]"
+                >
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-200/55">Turniere</div>
+                    <div className="mt-1 text-xl font-black">Members & Lion Cup</div>
+                  </div>
+                  <Trophy className="h-7 w-7 text-orange-300" />
+                </TerminalLink>
+
+                <button
+                  type="button"
+                  onClick={() => void loadPersonalData(activeMember)}
+                  className="flex min-h-24 items-center justify-between rounded-[26px] border border-white/10 bg-white/[0.035] px-5 text-left transition hover:bg-white/[0.06]"
+                >
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30">Konto</div>
+                    <div className="mt-1 text-xl font-black">Guthaben aktualisieren</div>
+                  </div>
+                  <Wallet className="h-7 w-7 text-white/45" />
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-[38px] border border-white/10 bg-black/30 p-6 backdrop-blur-2xl">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-cyan-200" />
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100/45">Wallet</div>
+                  <div className="text-2xl font-black">Letzte Buchungen</div>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {personalLoading ? (
+                  <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 text-sm font-semibold text-white/40">
+                    Daten werden geladen …
+                  </div>
+                ) : creditTransactions.length === 0 ? (
+                  <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 text-sm font-semibold text-white/40">
+                    Noch keine Guthaben-Buchungen vorhanden.
+                  </div>
+                ) : (
+                  creditTransactions.map((tx) => (
+                    <div key={tx.id} className="flex items-center justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-black">{transactionLabel(tx.transaction_type)}</div>
+                        <div className="mt-1 text-[11px] font-semibold text-white/30">
+                          {tx.created_at ? new Date(tx.created_at).toLocaleString("de-AT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
+                        </div>
+                      </div>
+                      <div className={`shrink-0 text-lg font-black ${tx.amount >= 0 ? "text-emerald-300" : "text-orange-300"}`}>
+                        {tx.amount >= 0 ? "+" : ""}{formatEuro(tx.amount)}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="relative min-h-[100svh] overflow-x-hidden bg-[#050608] text-white">
@@ -468,7 +732,7 @@ export default function TerminalPersonalPage() {
                     </div>
 
                     <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-sm font-semibold leading-6 text-white/42">
-                      Die Mitgliedskarte wurde erfolgreich erkannt. Die eigentliche Terminal-Anmeldung wird im nächsten Schritt mit diesem Mitglied verknüpft.
+                      Die Mitgliedskarte wurde erfolgreich erkannt. Du kannst jetzt deinen persönlichen Mein-EMD-Bereich öffnen.
                     </div>
 
                     <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -489,16 +753,39 @@ export default function TerminalPersonalPage() {
 
                       <button
                         type="button"
-                        onClick={closeScanner}
+                        onClick={() => void enterPersonalArea()}
                         className="flex h-13 items-center justify-center gap-2 rounded-2xl bg-orange-500 text-sm font-black text-white"
                       >
-                        <CheckCircle2 className="h-4 w-4" />
-                        Fertig
+                        <ArrowRight className="h-4 w-4" />
+                        Zu Mein EMD
                       </button>
                     </div>
                   </div>
                 ) : (
                   <>
+                    {cameraDevices.length > 1 && (
+                      <div className="mx-auto mb-4 max-w-[620px]">
+                        <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-white/30">
+                          Kamera auswählen
+                        </label>
+                        <select
+                          value={selectedCameraId}
+                          onChange={(event) => {
+                            setSelectedCameraId(event.target.value)
+                            stopScanner()
+                            window.setTimeout(() => void startScanner(), 80)
+                          }}
+                          className="h-12 w-full rounded-2xl border border-white/10 bg-[#11141a] px-4 text-sm font-black text-white outline-none"
+                        >
+                          {cameraDevices.map((device, index) => (
+                            <option key={device.deviceId} value={device.deviceId}>
+                              {device.label || `Kamera ${index + 1}`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     <div className="relative mx-auto aspect-[4/3] w-full max-w-[620px] overflow-hidden rounded-[28px] border border-white/10 bg-black">
                       <video
                         ref={videoRef}
