@@ -113,6 +113,7 @@ export function DKOSelfRegistrationModal(props: {
 
   seriesId?: string | null
   eventId?: string | null
+  seriesLabel?: string | null
   startgeld?: number | null
 
   canUnregister?: boolean
@@ -336,7 +337,7 @@ export function DKOSelfRegistrationModal(props: {
 
       if (paymentMode === "credit") {
         if (!creditAccountId || !props.seriesId || !props.eventId) {
-          setMessage({ type: "error", text: "Turnier- oder Guthabenzuordnung fehlt." })
+          setMessage({ type: "error", text: "Die Turnierzuordnung konnte nicht geladen werden. Bitte Fenster schließen und erneut öffnen." })
           return
         }
 
@@ -499,7 +500,7 @@ export function DKOSelfRegistrationModal(props: {
 
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
-                    LION CUP
+                    {props.seriesLabel || "CUP"}
                   </span>
 
                   {alreadyRegistered ? (

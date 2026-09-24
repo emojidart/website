@@ -68,6 +68,7 @@ type DkoModalState = {
   time: string
   title: string
   seriesId: string | null
+  eventId: string | null
   startgeld: number | null
 }
 
@@ -193,6 +194,7 @@ export default function UpcomingTournamentsAppPage() {
     time: "",
     title: "Members Champion Cup Anmeldung",
     seriesId: null,
+    eventId: null,
     startgeld: null,
   })
 
@@ -386,6 +388,7 @@ export default function UpcomingTournamentsAppPage() {
       time: ev.timeLabel,
       title: series?.name || "Members Champion Cup Anmeldung",
       seriesId: series?.id ?? null,
+      eventId: ev.id,
       startgeld: Number(series?.startgeld ?? 0),
     })
   }
@@ -714,6 +717,8 @@ export default function UpcomingTournamentsAppPage() {
         time={dkoModal.time}
         title={dkoModal.title}
         seriesId={dkoModal.seriesId}
+        eventId={dkoModal.eventId}
+        seriesLabel="MEMBERS CUP"
         startgeld={dkoModal.startgeld}
       />
 

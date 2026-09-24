@@ -1,9 +1,10 @@
 "use client"
 
 import TerminalLink from "../_components/TerminalLink"
-import { ArrowLeft, ChevronRight, Euro, ListOrdered, Target, Trophy, Users } from "lucide-react"
+import { ArrowLeft, ChevronRight, Euro, ListOrdered, Target, Trophy, Users, Gamepad2 } from "lucide-react"
 
 const tiles = [
+  { title: "Turniermodus", subtitle: "PIN rein · Match laden · Ergebnis speichern", href: "/terminal/turniermodus", icon: Gamepad2, accent: "orange" },
   { title: "Alle Turniere & Cups", subtitle: "Lion Cup · Members Champions Cup · aktive Serien", href: "/terminal/turniere/alle", icon: Trophy, accent: "orange" },
   { title: "Turnier-Ergebnisse", subtitle: "Alle Resultate der Turniere", href: "/terminal/turniere/ergebnisse", icon: Target, accent: "orange" },
   { title: "Preisgeld & Cups", subtitle: "Preisfonds, Beiträge und Cup-Auswahl", href: "/terminal/turniere/preisgeld", icon: Euro, accent: "blue" },

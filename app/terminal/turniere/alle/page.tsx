@@ -188,7 +188,7 @@ export default function TerminalTournamentsPage() {
             </div>
             <div className="rounded-[26px] border border-cyan-300/18 bg-cyan-400/[0.06] p-4 backdrop-blur-xl">
               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100/55">Wertungen</div>
-              <div className="mt-2 text-xl font-black text-cyan-100">Live aus Supabase</div>
+              <div className="mt-2 text-xl font-black text-cyan-100">Echtzeit</div>
             </div>
           </section>
         )}

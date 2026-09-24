@@ -71,11 +71,11 @@ function MatchIntro({
   tournamentName: string
 }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-slate-950 text-white">
-      <div className="absolute inset-0 opacity-70 [background:radial-gradient(circle_at_50%_42%,rgba(16,185,129,.18),transparent_34%),radial-gradient(circle_at_50%_100%,rgba(56,189,248,.10),transparent_42%)]" />
+    <div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-[#050608] text-white">
+      <div className="absolute inset-0 opacity-90 [background:radial-gradient(circle_at_50%_38%,rgba(249,115,22,.16),transparent_32%),radial-gradient(circle_at_50%_100%,rgba(14,165,233,.10),transparent_42%)]" />
 
       <div className="relative w-[min(92vw,1500px)]">
-        <div className="mb-9 text-center">
+        <div className="mb-5 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[13px] font-black uppercase tracking-[0.18em] text-slate-300">
             <Radio className="h-4 w-4 text-emerald-400" />
             Match {item.matchId} startet
@@ -84,32 +84,32 @@ function MatchIntro({
         </div>
 
         <div className="grid items-center gap-5 md:grid-cols-[1fr_auto_1fr]">
-          <div className="animate-[dkoIntroLeft_.42s_cubic-bezier(.2,.8,.2,1)_both] rounded-[30px] border border-white/10 bg-white/[0.055] p-8 text-right shadow-2xl backdrop-blur">
+          <div className="animate-[dkoIntroLeft_.42s_cubic-bezier(.2,.8,.2,1)_both] rounded-[26px] border border-white/10 bg-black/35 p-5 backdrop-blur-xl text-right shadow-2xl backdrop-blur">
             <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Spieler 1</div>
-            <div className="mt-3 break-words text-[clamp(34px,4.2vw,72px)] font-black leading-[0.96] tracking-[-0.045em]">
+            <div className="mt-3 break-words text-[clamp(30px,3vw,54px)] font-black leading-[0.96] tracking-[-0.045em]">
               {item.player1}
             </div>
           </div>
 
           <div className="animate-[dkoIntroPop_.38s_.08s_cubic-bezier(.2,.9,.2,1.1)_both] text-center">
-            <div className="mx-auto grid h-24 w-24 place-items-center rounded-[28px] border border-emerald-300/20 bg-emerald-400 text-4xl font-black tracking-[-0.06em] text-slate-950 shadow-[0_22px_70px_-20px_rgba(16,185,129,.75)]">
+            <div className="mx-auto grid h-20 w-20 place-items-center rounded-[28px] border border-emerald-300/20 bg-emerald-400 text-3xl font-black tracking-[-0.06em] text-slate-950 shadow-[0_22px_70px_-20px_rgba(16,185,129,.75)]">
               VS
             </div>
-            <div className="mx-auto mt-5 inline-flex min-w-40 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3">
+            <div className="mx-auto mt-3 inline-flex min-w-40 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3">
               <Monitor className="h-5 w-5 text-emerald-400" />
               <span className="text-lg font-black">Automat {item.machineNumber}</span>
             </div>
           </div>
 
-          <div className="animate-[dkoIntroRight_.42s_cubic-bezier(.2,.8,.2,1)_both] rounded-[30px] border border-white/10 bg-white/[0.055] p-8 text-left shadow-2xl backdrop-blur">
+          <div className="animate-[dkoIntroRight_.42s_cubic-bezier(.2,.8,.2,1)_both] rounded-[26px] border border-white/10 bg-black/35 p-5 backdrop-blur-xl text-left shadow-2xl backdrop-blur">
             <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Spieler 2</div>
-            <div className="mt-3 break-words text-[clamp(34px,4.2vw,72px)] font-black leading-[0.96] tracking-[-0.045em]">
+            <div className="mt-3 break-words text-[clamp(30px,3vw,54px)] font-black leading-[0.96] tracking-[-0.045em]">
               {item.player2}
             </div>
           </div>
         </div>
 
-        <div className="mx-auto mt-10 h-1.5 max-w-xl overflow-hidden rounded-full bg-white/10">
+        <div className="mx-auto mt-6 h-1.5 max-w-xl overflow-hidden rounded-full bg-white/10">
           <div className="h-full origin-left animate-[dkoIntroProgress_1.75s_linear_forwards] rounded-full bg-emerald-400" />
         </div>
       </div>
@@ -218,7 +218,7 @@ function LiveMatchCard({ match }: { match: DkoMatch }) {
 
   return (
     <div
-      className={`rounded-[24px] border ${bracketSide.border} bg-slate-900/70 p-5 shadow-[0_24px_80px_-50px_rgba(16,185,129,.45)] transition-all duration-300`}
+      className={`rounded-[20px] border ${bracketSide.border} bg-black/38 p-3 shadow-[0_18px_55px_-38px_rgba(249,115,22,.42)] backdrop-blur-xl transition-all duration-300`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="inline-flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.18em] text-emerald-300">
@@ -231,38 +231,38 @@ function LiveMatchCard({ match }: { match: DkoMatch }) {
         </div>
       </div>
 
-      <div className="mt-3">
+      <div className="mt-2">
         <span className={`inline-flex rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] ${bracketSide.badge}`}>
           {bracketSide.label}
         </span>
       </div>
 
-      <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-        <div className="min-w-0 rounded-[18px] border border-white/8 bg-white/[0.025] p-3">
-          <div className="truncate text-[clamp(16px,1.35vw,23px)] font-bold leading-none text-white">
+      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2.5">
+        <div className="min-w-0 rounded-[16px] border border-white/8 bg-white/[0.03] p-2.5">
+          <div className="truncate text-[clamp(14px,1.05vw,19px)] font-bold leading-none text-white">
             {match.player1}
           </div>
-          <div className="mt-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Spieler 1</div>
+          <div className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">Spieler 1</div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-black text-slate-500">
+        <div className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-black text-slate-500">
           VS
         </div>
 
-        <div className="min-w-0 rounded-[18px] border border-white/8 bg-white/[0.025] p-3 text-right">
-          <div className="truncate text-[clamp(16px,1.35vw,23px)] font-bold leading-none text-white">
+        <div className="min-w-0 rounded-[16px] border border-white/8 bg-white/[0.03] p-2.5 text-right">
+          <div className="truncate text-[clamp(14px,1.05vw,19px)] font-bold leading-none text-white">
             {match.player2}
           </div>
-          <div className="mt-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Spieler 2</div>
+          <div className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">Spieler 2</div>
         </div>
       </div>
 
-      <div className="mt-5 flex items-center justify-center gap-3">
-          <div className="min-w-20 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2 text-center text-2xl font-black">
+      <div className="mt-3 flex items-center justify-center gap-2">
+          <div className="min-w-14 rounded-xl border border-white/10 bg-black/45 px-3 py-1.5 text-center text-xl font-black">
             {match.score1}
           </div>
           <span className="text-slate-600">:</span>
-          <div className="min-w-20 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2 text-center text-2xl font-black">
+          <div className="min-w-14 rounded-xl border border-white/10 bg-black/45 px-3 py-1.5 text-center text-xl font-black">
             {match.score2}
           </div>
         </div>
@@ -342,8 +342,8 @@ function StageColumn({
 
   return (
     <section className="min-w-0">
-      <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">{label}</div>
-      <div className="space-y-3">
+      <div className="mb-2 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-600">{label}</div>
+      <div className="space-y-2">
         {matches.map((match) => (
           <BroadcastMatchCard key={match.id} match={match} side={side} />
         ))}
@@ -370,7 +370,7 @@ function SideHeader({
     <div className="flex items-end justify-between gap-4">
       <div>
         <div className={`text-[10px] font-bold uppercase tracking-[0.2em] ${toneText}`}>{eyebrow}</div>
-        <h2 className="mt-1 text-[clamp(22px,2vw,34px)] font-bold tracking-[-0.03em] text-white">{title}</h2>
+        <h2 className="mt-0.5 text-[clamp(20px,1.6vw,28px)] font-bold tracking-[-0.03em] text-white">{title}</h2>
       </div>
       <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
         {count} Paarungen
@@ -398,9 +398,9 @@ function WinnersView({ matches }: { matches: Record<number, DkoMatch> }) {
   const count = stages.reduce((sum, stage) => sum + pick(stage.ids).length, 0)
 
   return (
-    <section className="mt-5 rounded-[26px] border border-sky-300/10 bg-sky-400/[0.018] p-5">
+    <section className="mt-3 min-h-0 flex-1 overflow-hidden rounded-[22px] border border-sky-300/10 bg-sky-400/[0.018] p-3.5 backdrop-blur-xl">
       <SideHeader eyebrow="Gewinnerseite" title="Winners Bracket" tone="sky" count={count} />
-      <div className="mt-5 grid gap-5 xl:grid-cols-3 2xl:grid-cols-6">
+      <div className="mt-3 grid gap-3 xl:grid-cols-3 2xl:grid-cols-6">
         {stages.map((stage) => (
           <StageColumn key={stage.label} label={stage.label} matches={pick(stage.ids)} side="winner" />
         ))}
@@ -432,9 +432,9 @@ function LosersView({ matches }: { matches: Record<number, DkoMatch> }) {
   const count = stages.reduce((sum, stage) => sum + pick(stage.ids).length, 0)
 
   return (
-    <section className="mt-5 rounded-[26px] border border-rose-300/10 bg-rose-400/[0.018] p-5">
+    <section className="mt-3 min-h-0 flex-1 overflow-hidden rounded-[22px] border border-rose-300/10 bg-rose-400/[0.018] p-3.5 backdrop-blur-xl">
       <SideHeader eyebrow="Verliererseite" title="Losers Bracket" tone="rose" count={count} />
-      <div className="mt-5 grid gap-5 xl:grid-cols-5 2xl:grid-cols-10">
+      <div className="mt-3 grid gap-3 xl:grid-cols-5 2xl:grid-cols-10">
         {stages.map((stage) => (
           <StageColumn key={stage.label} label={stage.label} matches={pick(stage.ids)} side="loser" />
         ))}
@@ -451,7 +451,7 @@ function FinalsView({ matches }: { matches: Record<number, DkoMatch> }) {
   const count = Number(finalReady) + Number(resetReady)
 
   return (
-    <section className="mt-5 rounded-[26px] border border-amber-300/10 bg-amber-400/[0.018] p-5">
+    <section className="mt-3 min-h-0 flex-1 overflow-hidden rounded-[22px] border border-amber-300/10 bg-amber-400/[0.018] p-3.5 backdrop-blur-xl">
       <SideHeader eyebrow="Finalphase" title="Grand Final" tone="amber" count={count} />
       <div className="mt-5 grid max-w-[1100px] gap-5 md:grid-cols-2">
         {finalReady && (
@@ -835,7 +835,12 @@ export default function DkoBeamerPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
+    <div className="relative h-screen overflow-hidden bg-[#050608] text-white">
+      <div
+        className="pointer-events-none fixed inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.30]"
+        style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+      />
+      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.52),rgba(4,6,9,.88)),radial-gradient(circle_at_7%_0%,rgba(249,115,22,.16),transparent_29%),radial-gradient(circle_at_100%_82%,rgba(14,165,233,.11),transparent_31%)]" />
       {activeIntro && <MatchIntro item={activeIntro} tournamentName={tournamentName} />}
 
       <style jsx global>{`
@@ -855,20 +860,24 @@ export default function DkoBeamerPage() {
           from { transform: scaleX(0); }
           to { transform: scaleX(1); }
         }
+        html, body { overflow: hidden !important; background: #050608; }
+        @media (min-width: 1200px) and (max-height: 900px) {
+          .emd-tv-hide-short { display: none !important; }
+        }
         @keyframes dkoWinnerIn {
           from { opacity: 0; transform: translateY(-18px) scale(.97); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>
 
-      <div className="mx-auto w-full max-w-[1920px] px-5 py-5 lg:px-8">
-        <header className="grid items-center gap-4 border-b border-white/10 pb-5 lg:grid-cols-[minmax(220px,.75fr)_minmax(360px,1.3fr)_auto]">
+      <div className="relative mx-auto flex h-full w-full max-w-[1760px] flex-col px-4 py-3 lg:px-5 lg:py-4">
+        <header className="grid shrink-0 items-center gap-3 border-b border-white/10 pb-3 lg:grid-cols-[minmax(210px,.72fr)_minmax(300px,1.2fr)_auto]">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.2em] text-slate-500">
               <Radio className="h-4 w-4 text-emerald-400" />
               DKO Live
             </div>
-            <h1 className="mt-1 truncate text-[clamp(24px,2.5vw,42px)] font-black tracking-[-0.045em]">
+            <h1 className="mt-1 truncate text-[clamp(22px,1.8vw,34px)] font-black tracking-[-0.045em]">
               {tournamentName}
             </h1>
           </div>
@@ -877,11 +886,11 @@ export default function DkoBeamerPage() {
             {!activeIntro && winnerFlash ? (
               <WinnerResultBanner item={winnerFlash} />
             ) : (
-              <div className="hidden h-[62px] lg:block" />
+              <div className="hidden h-[48px] lg:block" />
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end gap-2">
             <div className="flex flex-wrap rounded-2xl border border-white/10 bg-white/[0.04] p-1">
               {[
                 ["live", "LIVE"],
@@ -899,7 +908,7 @@ export default function DkoBeamerPage() {
                     type="button"
                     disabled={disabled}
                     onClick={() => selectView(view as "live" | "winners" | "losers" | "finals")}
-                    className={`rounded-xl px-3 py-2 text-[11px] font-bold transition ${
+                    className={`rounded-xl px-2.5 py-1.5 text-[10px] font-bold transition ${
                       activeView === view
                         ? "bg-white text-slate-950"
                         : disabled
@@ -916,7 +925,7 @@ export default function DkoBeamerPage() {
             <button
               type="button"
               onClick={() => setAutoRotate((prev) => !prev)}
-              className={`rounded-2xl border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
+              className={`rounded-2xl border px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] transition ${
                 autoRotate
                   ? "border-emerald-300/20 bg-emerald-400/10 text-emerald-300"
                   : "border-white/10 bg-white/5 text-slate-500"
@@ -929,7 +938,7 @@ export default function DkoBeamerPage() {
             <button
               type="button"
               onClick={openFullscreen}
-              className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white"
+              className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white"
               title="Vollbild"
             >
               <Expand className="h-5 w-5" />
@@ -938,22 +947,22 @@ export default function DkoBeamerPage() {
         </header>
 
         {winner ? (
-          <section className="mt-6 min-h-[66vh] rounded-[32px] border border-amber-300/20 bg-[radial-gradient(circle_at_28%_32%,rgba(251,191,36,.14),transparent_30%),rgba(255,255,255,.025)] p-6 lg:p-8">
-            <div className="grid min-h-[58vh] items-center gap-8 xl:grid-cols-[1.35fr_.65fr]">
+          <section className="mt-4 min-h-0 flex-1 rounded-[32px] border border-amber-300/20 bg-[radial-gradient(circle_at_28%_32%,rgba(251,191,36,.14),transparent_30%),rgba(255,255,255,.025)] p-6 lg:p-8">
+            <div className="grid h-full min-h-0 items-center gap-5 xl:grid-cols-[1.35fr_.65fr]">
               <div className="min-w-0">
                 <div className="text-center xl:text-left">
-                  <div className="inline-grid h-20 w-20 place-items-center rounded-[24px] border border-amber-300/20 bg-amber-300/10">
-                    <Trophy className="h-10 w-10 text-amber-300" />
+                  <div className="inline-grid h-14 w-14 place-items-center rounded-[18px] border border-amber-300/20 bg-amber-300/10">
+                    <Trophy className="h-7 w-7 text-amber-300" />
                   </div>
                   <div className="mt-5 text-[11px] font-black uppercase tracking-[0.26em] text-amber-300">Turnier beendet</div>
-                  <h2 className="mt-2 text-[clamp(32px,4vw,64px)] font-black tracking-[-0.05em] text-white">Podium</h2>
+                  <h2 className="mt-2 text-[clamp(28px,2.7vw,48px)] font-black tracking-[-0.05em] text-white">Podium</h2>
                 </div>
 
-                <div className="mx-auto mt-7 grid max-w-[980px] items-end gap-4 sm:grid-cols-3 xl:mx-0">
+                <div className="mx-auto mt-4 grid max-w-[900px] items-end gap-3 sm:grid-cols-3 xl:mx-0">
                   {[
-                    { place: 2, label: "2. Platz", tone: "border-slate-300/20 bg-slate-300/[0.06] text-slate-200", height: "sm:min-h-[190px]" },
-                    { place: 1, label: "Turniersieger", tone: "border-amber-300/30 bg-amber-300/10 text-amber-200", height: "sm:min-h-[235px]" },
-                    { place: 3, label: "3. Platz", tone: "border-orange-300/20 bg-orange-300/[0.06] text-orange-200", height: "sm:min-h-[165px]" },
+                    { place: 2, label: "2. Platz", tone: "border-slate-300/20 bg-slate-300/[0.06] text-slate-200", height: "sm:min-h-[145px]" },
+                    { place: 1, label: "Turniersieger", tone: "border-amber-300/30 bg-amber-300/10 text-amber-200", height: "sm:min-h-[175px]" },
+                    { place: 3, label: "3. Platz", tone: "border-orange-300/20 bg-orange-300/[0.06] text-orange-200", height: "sm:min-h-[130px]" },
                   ].map((slot) => {
                     const row = rankings.find((ranking) => Number(ranking.placement) === slot.place)
                     const fallbackName =
@@ -966,21 +975,21 @@ export default function DkoBeamerPage() {
                     return (
                       <div
                         key={slot.place}
-                        className={`flex ${slot.height} min-w-0 flex-col justify-between rounded-[24px] border p-5 ${slot.tone}`}
+                        className={`flex ${slot.height} min-w-0 flex-col justify-between rounded-[20px] border p-4 ${slot.tone}`}
                       >
                         <div>
                           <div className="text-[10px] font-black uppercase tracking-[0.18em] opacity-80">{slot.label}</div>
-                          <div className="mt-2 truncate text-[clamp(21px,2.3vw,34px)] font-black leading-tight tracking-[-0.035em] text-white">
+                          <div className="mt-2 truncate text-[clamp(18px,1.7vw,28px)] font-black leading-tight tracking-[-0.035em] text-white">
                             {row?.player_name || fallbackName || "—"}
                           </div>
                         </div>
-                        <div className="mt-5 text-4xl font-black opacity-30">#{slot.place}</div>
+                        <div className="mt-3 text-3xl font-black opacity-30">#{slot.place}</div>
                       </div>
                     )
                   })}
                 </div>
 
-                <div className="mt-5 text-center text-sm font-bold text-slate-600 xl:text-left">
+                <div className="mt-3 text-center text-xs font-bold text-slate-600 xl:text-left">
                   {completedMatches.length} Matches abgeschlossen
                 </div>
               </div>
@@ -1031,42 +1040,42 @@ export default function DkoBeamerPage() {
           <FinalsView matches={matches} />
         ) : (
           <>
-            <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <section className="mt-3 grid shrink-0 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
               {[
                 { label: "LIVE", value: liveMatches.length, icon: Activity, accent: "text-emerald-400" },
                 { label: "Bereit", value: readyMatches.length, icon: Clock3, accent: "text-sky-400" },
                 { label: "Fertig", value: completedMatches.length, icon: CheckCircle2, accent: "text-slate-300" },
                 { label: "Fortschritt", value: `${progress}%`, icon: Trophy, accent: "text-amber-300" },
               ].map(({ label, value, icon: Icon, accent }) => (
-                <div key={label} className="rounded-[22px] border border-white/10 bg-white/[0.045] p-4">
+                <div key={label} className="rounded-[18px] border border-white/10 bg-black/28 p-3 backdrop-blur-xl">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">{label}</span>
                     <Icon className={`h-4 w-4 ${accent}`} />
                   </div>
-                  <div className="mt-2 text-3xl font-black tracking-[-0.04em]">{value}</div>
+                  <div className="mt-1 text-2xl font-black tracking-[-0.04em]">{value}</div>
                 </div>
               ))}
             </section>
 
-            <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
               <div className="h-full rounded-full bg-emerald-400 transition-all duration-500" style={{ width: `${progress}%` }} />
             </div>
 
-            <main className="mt-5 grid gap-5 xl:grid-cols-[1.4fr_.6fr]">
-              <section className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
+            <main className="mt-3 grid min-h-0 flex-1 gap-3 overflow-hidden xl:grid-cols-[1.55fr_.45fr]">
+              <section className="min-h-0 overflow-hidden rounded-[24px] border border-white/10 bg-black/30 p-3.5 backdrop-blur-xl">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">Live Center</div>
-                    <h2 className="mt-1 text-2xl font-black tracking-[-0.035em]">Laufende Matches</h2>
+                    <h2 className="mt-0.5 text-xl font-black tracking-[-0.035em]">Laufende Matches</h2>
                   </div>
                   <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black text-slate-400">
                     {liveMatches.length} aktiv
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-4 2xl:grid-cols-2">
+                <div className="mt-3 grid gap-2.5 xl:grid-cols-2 2xl:grid-cols-3">
                   {liveMatches.length === 0 && !winnerFlash ? (
-                    <div className="col-span-full grid min-h-52 place-items-center rounded-[24px] border border-dashed border-white/10 bg-slate-950/30 text-center">
+                    <div className="col-span-full grid min-h-36 place-items-center rounded-[20px] border border-dashed border-white/10 bg-slate-950/30 text-center">
                       <div>
                         <Activity className="mx-auto h-8 w-8 text-slate-700" />
                         <div className="mt-3 text-base font-black text-slate-400">Aktuell kein Match gestartet</div>
@@ -1083,23 +1092,23 @@ export default function DkoBeamerPage() {
                 </div>
               </section>
 
-              <aside className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
+              <aside className="min-h-0 overflow-hidden rounded-[24px] border border-white/10 bg-black/30 p-3.5 backdrop-blur-xl">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-xs font-black uppercase tracking-[0.2em] text-sky-400">Queue</div>
-                    <h2 className="mt-1 text-2xl font-black tracking-[-0.035em]">Als Nächstes</h2>
+                    <h2 className="mt-0.5 text-xl font-black tracking-[-0.035em]">Als Nächstes</h2>
                   </div>
                   <Users className="h-5 w-5 text-slate-600" />
                 </div>
 
-                <div className="mt-5 space-y-3">
+                <div className="mt-3 space-y-2">
                   {readyMatches.length === 0 ? (
-                    <div className="rounded-[22px] border border-dashed border-white/10 p-6 text-center text-sm font-bold text-slate-600">
+                    <div className="rounded-[18px] border border-dashed border-white/10 p-4 text-center text-xs font-bold text-slate-600">
                       Kein startbereites Match
                     </div>
                   ) : (
                     readyMatches.slice(0, 6).map((match, index) => (
-                      <div key={match.id} className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                      <div key={match.id} className="rounded-[16px] border border-white/10 bg-black/32 p-2.5">
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-xs font-black uppercase tracking-[0.15em] text-slate-600">Match {match.id}</span>
                           {index === 0 && (
@@ -1108,9 +1117,9 @@ export default function DkoBeamerPage() {
                             </span>
                           )}
                         </div>
-                        <div className="mt-2 text-base font-black leading-tight">{match.player1}</div>
-                        <div className="my-1 text-xs font-black text-slate-700">VS</div>
-                        <div className="text-base font-black leading-tight">{match.player2}</div>
+                        <div className="mt-1 text-sm font-black leading-tight">{match.player1}</div>
+                        <div className="my-0.5 text-[10px] font-black text-slate-700">VS</div>
+                        <div className="text-sm font-black leading-tight">{match.player2}</div>
                       </div>
                     ))
                   )}

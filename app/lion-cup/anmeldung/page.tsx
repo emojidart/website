@@ -69,6 +69,7 @@ type DkoModalState = {
   time: string
   title: string
   seriesId: string | null
+  eventId: string | null
   startgeld: number | null
 }
 
@@ -216,6 +217,7 @@ export default function LionCupRegistrationPage() {
     time: "",
     title: "Lion Cup Anmeldung",
     seriesId: null,
+    eventId: null,
     startgeld: null,
   })
 
@@ -537,8 +539,11 @@ export default function LionCupRegistrationPage() {
 
   const openMemberModal = () => {
     if (!todayEvent) return
-    if (!canRegister) return
-    if (memberAlreadyRegistered) return
+
+    // Neu anmelden nur innerhalb des Anmeldefensters.
+    // Bereits angemeldete Mitglieder dürfen das Modal trotzdem öffnen,
+    // damit eine Guthaben-Zahlung bei Abmeldung sauber rückerstattet wird.
+    if (!memberAlreadyRegistered && !canRegister) return
 
     modalOpenedAtRef.current = Date.now()
 
@@ -548,6 +553,7 @@ export default function LionCupRegistrationPage() {
       time: todayEvent.timeLabel,
       title: series?.name || "Lion Cup Anmeldung",
       seriesId: series?.id ?? null,
+      eventId: todayEvent.id,
       startgeld: Number(series?.startgeld ?? 0),
     })
   }
@@ -850,22 +856,12 @@ export default function LionCupRegistrationPage() {
                           ) : (
                             <Button
                               type="button"
-                              disabled={!canUnregister || removing}
-                              onClick={handleUnregister}
+                              onClick={openMemberModal}
                               variant="outline"
-                              className="mt-4 w-full rounded-xl border-red-200 text-red-700 hover:bg-red-50"
+                              className="mt-4 w-full rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
                             >
-                              {removing ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Abmeldung wird gespeichert...
-                                </>
-                              ) : (
-                                <>
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Abmelden
-                                </>
-                              )}
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              Anmeldung anzeigen
                             </Button>
                           )}
 
@@ -1116,7 +1112,15 @@ export default function LionCupRegistrationPage() {
         time={dkoModal.time}
         title={dkoModal.title}
         seriesId={dkoModal.seriesId}
+        eventId={dkoModal.eventId}
+        seriesLabel="LION CUP"
         startgeld={dkoModal.startgeld}
+        canUnregister={canUnregister}
+        unregisterDisabledReason={
+          canUnregister
+            ? null
+            : "Die Abmeldung ist nicht mehr möglich."
+        }
       />
 
       <MobileBottomNav />

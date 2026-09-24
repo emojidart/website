@@ -718,6 +718,7 @@ export default function UpcomingTournamentsAppPage() {
         title={dkoModal.title}
         seriesId={dkoModal.seriesId}
         eventId={dkoModal.eventId}
+        seriesLabel="MEMBERS CUP"
         startgeld={dkoModal.startgeld}
       />
 

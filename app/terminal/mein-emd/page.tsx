@@ -25,6 +25,12 @@ import {
   History,
   LogOut,
   CreditCard,
+  UserCheck,
+  Calendar,
+  Clock,
+  XCircle,
+  Loader2,
+  RefreshCw,
 } from "lucide-react"
 import TerminalLink from "../_components/TerminalLink"
 import TerminalLoader from "../_components/TerminalLoader"
@@ -50,6 +56,39 @@ type CreditTransaction = {
   created_at: string
 }
 
+type TerminalCupSeries = {
+  id: string
+  name: string
+  series_type: "members_cup" | "lion_cup"
+  startgeld: number
+}
+
+type TerminalCupEvent = {
+  id: string
+  series_id: string
+  title: string
+  start_at: string
+  is_matchday: boolean
+  registration_cutoff_minutes: number | null
+  is_rescheduled?: boolean | null
+  rescheduled_at?: string | null
+}
+
+type TerminalCupCard = {
+  key: "members" | "lion"
+  label: string
+  series: TerminalCupSeries | null
+  event: TerminalCupEvent | null
+  eventDate: Date | null
+  registrationOpen: boolean
+  unregisterOpen: boolean
+  statusText: string
+  registered: boolean
+  paymentMethod: string | null
+  entryFee: number
+  registrationId: number | null
+}
+
 export default function TerminalPersonalPage() {
   const [pin, setPin] = useState("")
   const [scannerOpen, setScannerOpen] = useState(false)
@@ -65,6 +104,12 @@ export default function TerminalPersonalPage() {
   const [pinMessage, setPinMessage] = useState("")
   const [pinChecking, setPinChecking] = useState(false)
   const [pinOpening, setPinOpening] = useState(false)
+  const [personalSection, setPersonalSection] = useState<"home" | "registrations">("home")
+  const [sectionTransitionLabel, setSectionTransitionLabel] = useState<string | null>(null)
+  const [cupCards, setCupCards] = useState<TerminalCupCard[]>([])
+  const [cupLoading, setCupLoading] = useState(false)
+  const [cupBusyKey, setCupBusyKey] = useState<"members" | "lion" | null>(null)
+  const [cupMessage, setCupMessage] = useState("")
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const zxingControlsRef = useRef<{ stop: () => void } | null>(null)
   const scannedCodeRef = useRef<string>("")
@@ -328,6 +373,9 @@ export default function TerminalPersonalPage() {
     setCreditBalance(0)
     setCreditTransactions([])
     setPin("")
+    setPersonalSection("home")
+    setCupCards([])
+    setCupMessage("")
     scannedCodeRef.current = ""
   }
 
@@ -386,6 +434,300 @@ export default function TerminalPersonalPage() {
     }
   }
 
+  const switchPersonalSection = (section: "home" | "registrations") => {
+    setSectionTransitionLabel(section === "registrations" ? "Anmeldungen werden geöffnet" : "Mein EMD wird geöffnet")
+    window.setTimeout(() => {
+      setPersonalSection(section)
+      setSectionTransitionLabel(null)
+    }, 2000)
+  }
+
+  const getEffectiveEventDate = (event: TerminalCupEvent) =>
+    new Date(event.is_rescheduled && event.rescheduled_at ? event.rescheduled_at : event.start_at)
+
+  const sameLocalDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+
+  const formatDateTime = (date: Date | null) => {
+    if (!date) return "Kein Termin"
+    return date.toLocaleString("de-AT", {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  const loadCupRegistrations = async (member: ScannedMember) => {
+    if (!member.playerId) return
+
+    setCupLoading(true)
+    setCupMessage("")
+
+    try {
+      const { data: clubPlayer, error: clubError } = await supabase
+        .from("club_players")
+        .select("id,spieldatenbank_id")
+        .eq("id", member.playerId)
+        .maybeSingle()
+
+      if (clubError) throw clubError
+      if (!clubPlayer?.spieldatenbank_id) throw new Error("Keine Spielerzuordnung gefunden.")
+
+      const registrationPlayerId = String(clubPlayer.spieldatenbank_id)
+
+      const { data: seriesRows, error: seriesError } = await supabase
+        .from("dko_series")
+        .select("id,name,series_type,startgeld,is_active")
+        .in("series_type", ["members_cup", "lion_cup"])
+        .eq("is_active", true)
+
+      if (seriesError) throw seriesError
+
+      const seriesByType = new Map<string, TerminalCupSeries>()
+      ;(seriesRows || []).forEach((row: any) => {
+        if (!seriesByType.has(String(row.series_type))) {
+          seriesByType.set(String(row.series_type), {
+            id: String(row.id),
+            name: String(row.name || ""),
+            series_type: row.series_type,
+            startgeld: Number(row.startgeld || 0),
+          })
+        }
+      })
+
+      const seriesIds = Array.from(seriesByType.values()).map((s) => s.id)
+      let eventRows: any[] = []
+
+      if (seriesIds.length > 0) {
+        const { data, error } = await supabase
+          .from("dko_series_events")
+          .select("id,series_id,title,start_at,is_matchday,registration_cutoff_minutes,is_rescheduled,rescheduled_at")
+          .in("series_id", seriesIds)
+          .eq("is_matchday", true)
+          .order("start_at", { ascending: true })
+
+        if (error) throw error
+        eventRows = data || []
+      }
+
+      const now = new Date()
+
+      const makeCard = async (
+        key: "members" | "lion",
+        seriesType: "members_cup" | "lion_cup",
+        label: string,
+      ): Promise<TerminalCupCard> => {
+        const series = seriesByType.get(seriesType) || null
+        let event: TerminalCupEvent | null = null
+        let eventDate: Date | null = null
+
+        if (series) {
+          const possible = eventRows
+            .filter((row: any) => String(row.series_id) === series.id)
+            .map((row: any) => row as TerminalCupEvent)
+            .sort((a, b) => getEffectiveEventDate(a).getTime() - getEffectiveEventDate(b).getTime())
+
+          event =
+            possible.find((row) => sameLocalDay(getEffectiveEventDate(row), now)) ||
+            possible.find((row) => getEffectiveEventDate(row).getTime() >= new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) ||
+            null
+
+          eventDate = event ? getEffectiveEventDate(event) : null
+        }
+
+        let registrationOpen = false
+        let unregisterOpen = false
+        let statusText = "Kein aktiver Spieltag vorhanden."
+
+        if (event && eventDate) {
+          const today = sameLocalDay(eventDate, now)
+
+          if (seriesType === "members_cup") {
+            const regClose = new Date(eventDate)
+            regClose.setHours(17, 0, 0, 0)
+            const unregClose = new Date(eventDate)
+            unregClose.setHours(14, 0, 0, 0)
+
+            registrationOpen = today && now <= regClose
+            unregisterOpen = today && now <= unregClose
+
+            if (!today) {
+              statusText = "Anmeldung öffnet am Turniertag um 00:00 Uhr."
+            } else if (registrationOpen) {
+              statusText = "Anmeldung heute bis 17:00 Uhr · Abmeldung bis 14:00 Uhr."
+            } else {
+              statusText = "Anmeldung für heute geschlossen."
+            }
+          } else {
+            const cutoffMinutes = Number(event.registration_cutoff_minutes ?? 10) || 10
+            const close = new Date(eventDate.getTime() - cutoffMinutes * 60_000)
+
+            registrationOpen = today && now <= close
+            unregisterOpen = registrationOpen
+
+            if (!today) {
+              statusText = "Anmeldung öffnet am Turniertag um 00:00 Uhr."
+            } else if (registrationOpen) {
+              statusText = `An- und Abmeldung bis ${cutoffMinutes} Minuten vor Turnierstart.`
+            } else {
+              statusText = "An- und Abmeldung für heute geschlossen."
+            }
+          }
+        }
+
+        let registered = false
+        let paymentMethod: string | null = null
+        let entryFee = Number(series?.startgeld || 0)
+        let registrationId: number | null = null
+
+        if (event?.id) {
+          const { data: regRows, error: regError } = await supabase
+            .from("dko_tournament_registration")
+            .select("id,payment_method,entry_fee")
+            .eq("player_id", registrationPlayerId)
+            .eq("event_id", event.id)
+            .order("id", { ascending: false })
+            .limit(1)
+
+          if (regError) throw regError
+
+          const reg = (regRows || [])[0]
+          if (reg) {
+            registered = true
+            paymentMethod = reg.payment_method ? String(reg.payment_method) : null
+            entryFee = Number(reg.entry_fee ?? entryFee)
+            registrationId = Number(reg.id)
+          }
+        }
+
+        return {
+          key,
+          label,
+          series,
+          event,
+          eventDate,
+          registrationOpen,
+          unregisterOpen,
+          statusText,
+          registered,
+          paymentMethod,
+          entryFee,
+          registrationId,
+        }
+      }
+
+      const cards = await Promise.all([
+        makeCard("members", "members_cup", "Members Champion Cup"),
+        makeCard("lion", "lion_cup", "Lion Cup"),
+      ])
+
+      setCupCards(cards)
+    } catch (error: any) {
+      console.error("Terminal cup registration load error:", error)
+      setCupCards([])
+      setCupMessage(error?.message || "Anmeldungen konnten nicht geladen werden.")
+    } finally {
+      setCupLoading(false)
+    }
+  }
+
+  const registerCupWithCredit = async (card: TerminalCupCard) => {
+    if (!activeMember?.playerId || !card.series?.id || !card.event?.id) return
+    if (!card.registrationOpen) return
+
+    setCupBusyKey(card.key)
+    setCupMessage("")
+
+    try {
+      const { data: clubPlayer, error: clubError } = await supabase
+        .from("club_players")
+        .select("id,name,spieldatenbank_id")
+        .eq("id", activeMember.playerId)
+        .maybeSingle()
+
+      if (clubError) throw clubError
+      if (!clubPlayer?.spieldatenbank_id) throw new Error("Keine Spielerzuordnung gefunden.")
+
+      const { error } = await supabase.rpc("register_dko_with_credit", {
+        p_credit_player_id: activeMember.playerId,
+        p_registration_player_id: String(clubPlayer.spieldatenbank_id),
+        p_player_name: String(clubPlayer.name || activeMember.name),
+        p_series_id: card.series.id,
+        p_event_id: card.event.id,
+        p_fee: Number(card.entryFee || card.series.startgeld || 0),
+      })
+
+      if (error) throw error
+
+      setCupMessage(`Erfolgreich für ${card.label} angemeldet.`)
+      await Promise.all([
+        loadCupRegistrations(activeMember),
+        loadPersonalData(activeMember),
+      ])
+    } catch (error: any) {
+      console.error("Terminal cup registration error:", error)
+      setCupMessage(error?.message || "Anmeldung fehlgeschlagen.")
+    } finally {
+      setCupBusyKey(null)
+    }
+  }
+
+  const unregisterCup = async (card: TerminalCupCard) => {
+    if (!activeMember?.playerId || !card.event?.id) return
+    if (!card.unregisterOpen) return
+
+    setCupBusyKey(card.key)
+    setCupMessage("")
+
+    try {
+      const { data: clubPlayer, error: clubError } = await supabase
+        .from("club_players")
+        .select("id,spieldatenbank_id")
+        .eq("id", activeMember.playerId)
+        .maybeSingle()
+
+      if (clubError) throw clubError
+      if (!clubPlayer?.spieldatenbank_id) throw new Error("Keine Spielerzuordnung gefunden.")
+
+      if (card.paymentMethod === "credit") {
+        const { error } = await supabase.rpc("unregister_dko_with_credit", {
+          p_credit_player_id: activeMember.playerId,
+          p_registration_player_id: String(clubPlayer.spieldatenbank_id),
+          p_event_id: card.event.id,
+        })
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from("dko_tournament_registration")
+          .delete()
+          .eq("id", card.registrationId)
+
+        if (error) throw error
+      }
+
+      setCupMessage(
+        card.paymentMethod === "credit"
+          ? `Abmeldung erfolgreich. ${formatEuro(card.entryFee)} wurden deinem Guthaben zurückgebucht.`
+          : "Abmeldung erfolgreich.",
+      )
+
+      await Promise.all([
+        loadCupRegistrations(activeMember),
+        loadPersonalData(activeMember),
+      ])
+    } catch (error: any) {
+      console.error("Terminal cup unregister error:", error)
+      setCupMessage(error?.message || "Abmeldung fehlgeschlagen.")
+    } finally {
+      setCupBusyKey(null)
+    }
+  }
+
   const transactionLabel = (type: string) => {
     if (type === "credit_added") return "Guthaben aufgeladen"
     if (type === "tournament_entry_fee") return "Turnier-Startgeld"
@@ -397,8 +739,200 @@ export default function TerminalPersonalPage() {
   const formatEuro = (value: number) =>
     new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR" }).format(value || 0)
 
+  if (sectionTransitionLabel) {
+    return <TerminalLoader label={sectionTransitionLabel} />
+  }
+
   if (pinOpening) {
     return <TerminalLoader label="Mein EMD wird geöffnet" />
+  }
+
+  if (activeMember && personalSection === "registrations") {
+    return (
+      <main className="relative min-h-[100svh] overflow-x-hidden bg-[#050608] text-white">
+        <div
+          className="pointer-events-none fixed inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.58]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.38),rgba(4,6,9,.84)),radial-gradient(circle_at_10%_0%,rgba(249,115,22,.16),transparent_28%),radial-gradient(circle_at_100%_82%,rgba(14,165,233,.11),transparent_30%)]" />
+
+        <div className="relative mx-auto min-h-[100svh] max-w-[1500px] px-5 py-6 lg:px-8 lg:py-8">
+          <header className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => switchPersonalSection("home")}
+                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-black/35 text-white/65 backdrop-blur-xl transition hover:bg-white/[0.08]"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div>
+                <div className="text-[11px] font-black uppercase tracking-[0.34em] text-orange-300/90">
+                  Mein EMD
+                </div>
+                <h1 className="mt-1 text-3xl font-black tracking-[-0.05em] sm:text-4xl">
+                  Meine Anmeldungen
+                </h1>
+                <div className="mt-1 text-sm font-semibold text-white/38">
+                  Members Champion Cup & Lion Cup
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void loadCupRegistrations(activeMember)}
+              disabled={cupLoading}
+              className="flex h-12 items-center gap-2 rounded-2xl border border-white/10 bg-black/35 px-4 text-sm font-black text-white/60 backdrop-blur-xl transition hover:bg-white/[0.08] disabled:opacity-40"
+            >
+              <RefreshCw className={`h-4 w-4 ${cupLoading ? "animate-spin" : ""}`} />
+              Aktualisieren
+            </button>
+          </header>
+
+          <section className="mt-8">
+            <div className="rounded-[34px] border border-white/10 bg-black/30 p-5 backdrop-blur-2xl sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100/45">
+                    Angemeldetes Mitglied
+                  </div>
+                  <div className="mt-1 text-2xl font-black">{activeMember.name}</div>
+                </div>
+                <div className="rounded-2xl border border-emerald-300/15 bg-emerald-400/[0.06] px-4 py-3">
+                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-200/55">Guthaben</div>
+                  <div className="mt-1 text-2xl font-black text-emerald-200">{formatEuro(creditBalance)}</div>
+                </div>
+              </div>
+            </div>
+
+            {cupMessage ? (
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-center text-sm font-bold text-white/70 backdrop-blur-xl">
+                {cupMessage}
+              </div>
+            ) : null}
+
+            {cupLoading && cupCards.length === 0 ? (
+              <div className="mt-5 flex min-h-52 items-center justify-center rounded-[34px] border border-white/10 bg-black/30 backdrop-blur-2xl">
+                <div className="text-center">
+                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-orange-300" />
+                  <div className="mt-3 text-sm font-black text-white/45">Anmeldungen werden geladen …</div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-5 xl:grid-cols-2">
+                {cupCards.map((card) => {
+                  const busy = cupBusyKey === card.key
+                  const hasEvent = !!card.event && !!card.eventDate
+                  const accent = card.key === "members" ? "orange" : "cyan"
+
+                  return (
+                    <article
+                      key={card.key}
+                      className={`overflow-hidden rounded-[34px] border bg-black/30 backdrop-blur-2xl ${
+                        accent === "orange" ? "border-orange-400/20" : "border-cyan-300/20"
+                      }`}
+                    >
+                      <div className="p-6 sm:p-7">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className={`text-[10px] font-black uppercase tracking-[0.2em] ${
+                              accent === "orange" ? "text-orange-200/55" : "text-cyan-100/55"
+                            }`}>
+                              {card.key === "members" ? "EMD Members" : "EMD"}
+                            </div>
+                            <h2 className="mt-1 text-3xl font-black tracking-[-0.04em]">{card.label}</h2>
+                          </div>
+
+                          <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border ${
+                            accent === "orange"
+                              ? "border-orange-300/20 bg-orange-500/10 text-orange-300"
+                              : "border-cyan-300/20 bg-cyan-400/[0.08] text-cyan-200"
+                          }`}>
+                            <Trophy className="h-7 w-7" />
+                          </div>
+                        </div>
+
+                        {hasEvent ? (
+                          <>
+                            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                                <div className="flex items-center gap-2 text-white/35">
+                                  <Calendar className="h-4 w-4" />
+                                  <span className="text-[10px] font-black uppercase tracking-[0.16em]">Spieltag</span>
+                                </div>
+                                <div className="mt-2 text-base font-black">{formatDateTime(card.eventDate)}</div>
+                              </div>
+
+                              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                                <div className="flex items-center gap-2 text-white/35">
+                                  <Wallet className="h-4 w-4" />
+                                  <span className="text-[10px] font-black uppercase tracking-[0.16em]">Startgeld</span>
+                                </div>
+                                <div className="mt-2 text-2xl font-black">{formatEuro(card.entryFee)}</div>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                              <div className="flex items-start gap-3">
+                                <Clock className={`mt-0.5 h-5 w-5 shrink-0 ${
+                                  card.registrationOpen || (card.registered && card.unregisterOpen)
+                                    ? "text-emerald-300"
+                                    : "text-orange-300"
+                                }`} />
+                                <div>
+                                  <div className="text-sm font-black">
+                                    {card.registered ? "Du bist angemeldet" : "Anmeldestatus"}
+                                  </div>
+                                  <div className="mt-1 text-xs font-semibold leading-5 text-white/40">
+                                    {card.statusText}
+                                  </div>
+                                  {card.registered && card.paymentMethod === "credit" ? (
+                                    <div className="mt-2 text-xs font-bold text-emerald-200/75">
+                                      Mit Guthaben bezahlt · bei rechtzeitiger Abmeldung wird {formatEuro(card.entryFee)} zurückgebucht.
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </div>
+
+                            {!card.registered ? (
+                              <button
+                                type="button"
+                                disabled={!card.registrationOpen || busy || card.entryFee <= 0}
+                                onClick={() => void registerCupWithCredit(card)}
+                                className="mt-5 flex h-15 w-full items-center justify-center gap-3 rounded-2xl bg-orange-500 text-base font-black text-white transition enabled:hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-30"
+                              >
+                                {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserCheck className="h-5 w-5" />}
+                                {busy ? "Anmeldung läuft …" : `Mit Guthaben anmelden · ${formatEuro(card.entryFee)}`}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={!card.unregisterOpen || busy}
+                                onClick={() => void unregisterCup(card)}
+                                className="mt-5 flex h-15 w-full items-center justify-center gap-3 rounded-2xl border border-red-300/20 bg-red-500/[0.08] text-base font-black text-red-100 transition enabled:hover:bg-red-500/[0.14] disabled:cursor-not-allowed disabled:opacity-30"
+                              >
+                                {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <XCircle className="h-5 w-5" />}
+                                {busy ? "Abmeldung läuft …" : "Abmelden"}
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <div className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 text-sm font-semibold text-white/40">
+                            Aktuell ist kein kommender Spieltag eingetragen.
+                          </div>
+                        )}
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+    )
   }
 
   if (activeMember) {
@@ -492,17 +1026,21 @@ export default function TerminalPersonalPage() {
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <TerminalLink
-                  href="/terminal/turniere"
-                  label="Turnierbereich wird geöffnet"
-                  className="flex min-h-24 items-center justify-between rounded-[26px] border border-orange-300/15 bg-orange-500/[0.07] px-5 transition hover:bg-orange-500/[0.12]"
+                <button
+                  type="button"
+                  onClick={() => {
+                    void loadCupRegistrations(activeMember)
+                    switchPersonalSection("registrations")
+                  }}
+                  className="flex min-h-24 items-center justify-between rounded-[26px] border border-orange-300/15 bg-orange-500/[0.07] px-5 text-left transition hover:bg-orange-500/[0.12]"
                 >
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-200/55">Turniere</div>
-                    <div className="mt-1 text-xl font-black">Members & Lion Cup</div>
+                    <div className="mt-1 text-xl font-black">Anmeldungen</div>
+                    <div className="mt-1 text-xs font-semibold text-white/30">Members Cup & Lion Cup</div>
                   </div>
-                  <Trophy className="h-7 w-7 text-orange-300" />
-                </TerminalLink>
+                  <UserCheck className="h-7 w-7 text-orange-300" />
+                </button>
 
                 <button
                   type="button"
@@ -615,7 +1153,7 @@ export default function TerminalPersonalPage() {
                     Bei Mein EMD anmelden
                   </h2>
                   <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/45 sm:text-base">
-                    Gib deine persönliche Terminal-PIN ein. Die echte Anmeldung wird später mit deinem EMD-Mitgliedskonto verbunden.
+                    Gib deine persönliche 4-stellige Terminal-PIN ein. Die PIN legst du einmalig in deiner EMD App im Mitgliederbereich fest.
                   </p>
                 </div>
               </div>
@@ -731,16 +1269,6 @@ export default function TerminalPersonalPage() {
 
               <div className="mt-3 text-center text-[10px] font-black uppercase tracking-[0.18em] text-white/25">
                 Bestehende EMD-Mitgliedskarte
-              </div>
-            </div>
-
-            <div className="rounded-[30px] border border-orange-300/12 bg-black/28 p-6 backdrop-blur-xl">
-              <div className="flex items-center gap-2">
-                <Wifi className="h-5 w-5 text-orange-300" />
-                <div className="text-xl font-black">NFC</div>
-              </div>
-              <div className="mt-2 text-sm font-semibold leading-6 text-white/40">
-                NFC ist ebenfalls für die spätere schnelle Terminal-Anmeldung vorgesehen.
               </div>
             </div>
 

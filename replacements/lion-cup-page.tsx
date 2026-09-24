@@ -1120,6 +1120,7 @@ export default function LionCupRegistrationPage() {
         title={dkoModal.title}
         seriesId={dkoModal.seriesId}
         eventId={dkoModal.eventId}
+        seriesLabel="LION CUP"
         startgeld={dkoModal.startgeld}
       />
 
