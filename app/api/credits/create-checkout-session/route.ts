@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic"
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-const ALLOWED = new Set([10, 20, 30, 50])
 
 function baseUrl(request: Request) {
   return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || new URL(request.url).origin
@@ -32,11 +31,22 @@ export async function POST(request: Request) {
     if (!token) return NextResponse.json({ error: "Nicht eingeloggt." }, { status: 401 })
 
     const body = await request.json().catch(() => ({}))
-    const amount = Number(body?.amount)
+    const rawAmount = Number(body?.amount)
     const quoteOnly = body?.quoteOnly === true
-    if (!ALLOWED.has(amount)) {
-      return NextResponse.json({ error: "Erlaubt sind 10, 20, 30 oder 50 Euro." }, { status: 400 })
+
+    if (!Number.isFinite(rawAmount)) {
+      return NextResponse.json({ error: "Bitte einen gültigen Betrag eingeben." }, { status: 400 })
     }
+
+    const amountCents = Math.round(rawAmount * 100)
+    if (amountCents < 100) {
+      return NextResponse.json({ error: "Der Mindestbetrag beträgt 1,00 €." }, { status: 400 })
+    }
+    if (amountCents > 50000) {
+      return NextResponse.json({ error: "Der maximale Aufladebetrag beträgt 500,00 €." }, { status: 400 })
+    }
+
+    const amount = amountCents / 100
 
     const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
     const { data: authData } = await supabase.auth.getUser(token)

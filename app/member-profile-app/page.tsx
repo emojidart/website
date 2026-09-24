@@ -44,6 +44,7 @@ import {
   Trash2,
   ShoppingBag,
   Gift,
+  KeyRound,
   CreditCard,
 } from "lucide-react"
 import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
@@ -172,6 +173,12 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
   const [photoUploading, setPhotoUploading] = useState(false)
   const [photoMessage, setPhotoMessage] = useState("")
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false)
+  const [isTerminalPinDialogOpen, setIsTerminalPinDialogOpen] = useState(false)
+  const [terminalPin, setTerminalPin] = useState("")
+  const [terminalPinConfirm, setTerminalPinConfirm] = useState("")
+  const [terminalPinSaving, setTerminalPinSaving] = useState(false)
+  const [terminalPinMessage, setTerminalPinMessage] = useState("")
+
 
   const [statistics, setStatistics] = useState({
   legsWon: 0,
@@ -739,6 +746,52 @@ const fetchProfile = async () => {
     router.push("/")
   }
 
+  const saveTerminalPin = async () => {
+    setTerminalPinMessage("")
+
+    if (!/^\d{4}$/.test(terminalPin)) {
+      setTerminalPinMessage("Bitte genau 4 Ziffern eingeben.")
+      return
+    }
+
+    if (terminalPin !== terminalPinConfirm) {
+      setTerminalPinMessage("Die beiden PINs stimmen nicht überein.")
+      return
+    }
+
+    try {
+      setTerminalPinSaving(true)
+
+      const { error } = await supabase.rpc("terminal_set_my_pin", {
+        p_pin: terminalPin,
+      })
+
+      if (error) {
+        const message = String(error.message || "").toLowerCase()
+        if (message.includes("already in use")) {
+          setTerminalPinMessage("Diese PIN wird bereits verwendet. Bitte wähle eine andere.")
+        } else {
+          setTerminalPinMessage("PIN konnte nicht gespeichert werden.")
+        }
+        return
+      }
+
+      setTerminalPinMessage("Terminal-PIN wurde gespeichert.")
+      setTerminalPin("")
+      setTerminalPinConfirm("")
+
+      window.setTimeout(() => {
+        setIsTerminalPinDialogOpen(false)
+        setTerminalPinMessage("")
+      }, 1200)
+    } catch (error) {
+      console.error("Terminal PIN save error:", error)
+      setTerminalPinMessage("PIN konnte nicht gespeichert werden.")
+    } finally {
+      setTerminalPinSaving(false)
+    }
+  }
+
   const handlePhotoUpload = async () => {
     if (!photoFile || !(profile as any)?.club_players?.id) return
 
@@ -1094,6 +1147,20 @@ if (error || !profile) {
                     <CreditCard className="mr-2 h-4 w-4" />
                     Mitgliedskarte
                   </Link>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setTerminalPin("")
+                    setTerminalPinConfirm("")
+                    setTerminalPinMessage("")
+                    setIsTerminalPinDialogOpen(true)
+                  }}
+                  className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                >
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Terminal-PIN
                 </Button>
                 <Button asChild variant="outline" className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
                   <Link href="/member-membership">Mitgliedschaft</Link>
@@ -1502,6 +1569,113 @@ if (error || !profile) {
           </div>
         </div>
       )}
+
+      {isTerminalPinDialogOpen ? (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={() => !terminalPinSaving && setIsTerminalPinDialogOpen(false)}
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="border-b border-slate-100 bg-slate-950 p-5 text-white">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                  <KeyRound className="h-5 w-5 text-orange-400" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">Club Terminal</div>
+                  <div className="text-xl font-black">Terminal-PIN festlegen</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5">
+              <p className="text-sm leading-6 text-slate-600">
+                Lege eine persönliche 4-stellige PIN fest. Damit kannst du dich am EMD Club Terminal schnell anmelden.
+              </p>
+
+              <div className="mt-5 space-y-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500">
+                    Neue PIN
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={terminalPin}
+                    onChange={(e) => setTerminalPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-center text-2xl font-black tracking-[0.5em] text-slate-950 outline-none focus:border-orange-400"
+                    placeholder="••••"
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500">
+                    PIN wiederholen
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={terminalPinConfirm}
+                    onChange={(e) => setTerminalPinConfirm(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void saveTerminalPin()
+                    }}
+                    className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-center text-2xl font-black tracking-[0.5em] text-slate-950 outline-none focus:border-orange-400"
+                    placeholder="••••"
+                    autoComplete="new-password"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3 min-h-5 text-center text-xs font-bold text-slate-500">
+                {terminalPinMessage}
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={terminalPinSaving}
+                  onClick={() => setIsTerminalPinDialogOpen(false)}
+                  className="h-12 rounded-xl"
+                >
+                  Abbrechen
+                </Button>
+                <Button
+                  type="button"
+                  disabled={terminalPinSaving || terminalPin.length !== 4 || terminalPinConfirm.length !== 4}
+                  onClick={() => void saveTerminalPin()}
+                  className="h-12 rounded-xl bg-orange-500 font-black text-white hover:bg-orange-600"
+                >
+                  {terminalPinSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Speichern …
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="mr-2 h-4 w-4" />
+                      PIN speichern
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <p className="mt-4 text-center text-[11px] leading-5 text-slate-400">
+                Wenn deine gewünschte PIN bereits verwendet wird, musst du eine andere 4-stellige Kombination wählen.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <MobileBottomNav />
     </div>

@@ -132,7 +132,7 @@ export function CreditTopupCard({ onTopupComplete }: { onTopupComplete?: () => v
         ) : null}
 
         <p className="text-sm font-medium leading-6 text-slate-600">
-          Wähle den gewünschten Guthabenbetrag. Die Zahlungsgebühr trägt der Spieler und wird vor dem Bezahlen transparent angezeigt.
+          Wähle den gewünschten Guthabenbetrag. Die anfallende Zahlungsgebühr wird zusätzlich berechnet und vor dem Bezahlen angezeigt.
         </p>
 
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">

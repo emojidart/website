@@ -27,6 +27,7 @@ import {
   CreditCard,
 } from "lucide-react"
 import TerminalLink from "../_components/TerminalLink"
+import TerminalLoader from "../_components/TerminalLoader"
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -61,6 +62,9 @@ export default function TerminalPersonalPage() {
   const [creditBalance, setCreditBalance] = useState(0)
   const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([])
   const [personalLoading, setPersonalLoading] = useState(false)
+  const [pinMessage, setPinMessage] = useState("")
+  const [pinChecking, setPinChecking] = useState(false)
+  const [pinOpening, setPinOpening] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const zxingControlsRef = useRef<{ stop: () => void } | null>(null)
   const scannedCodeRef = useRef<string>("")
@@ -102,7 +106,7 @@ export default function TerminalPersonalPage() {
   )
 
   const addDigit = (digit: string) => {
-    if (pin.length >= 6) return
+    if (pin.length >= 4) return
     setPin((value) => `${value}${digit}`)
   }
 
@@ -327,6 +331,61 @@ export default function TerminalPersonalPage() {
     scannedCodeRef.current = ""
   }
 
+  const loginWithPin = async () => {
+    if (pin.length !== 4 || pinChecking || pinOpening) return
+
+    setPinChecking(true)
+    setPinMessage("PIN wird geprüft …")
+
+    try {
+      const { data, error } = await supabase.rpc("terminal_verify_pin_code", {
+        p_pin: pin,
+      })
+
+      if (error) {
+        if (String(error.message || "").toLowerCase().includes("rate limited")) {
+          setPinMessage("Zu viele Fehlversuche. Bitte 10 Minuten warten.")
+        } else {
+          setPinMessage("PIN konnte nicht geprüft werden.")
+        }
+        setPin("")
+        return
+      }
+
+      const member = Array.isArray(data) ? data[0] : null
+
+      if (!member?.player_id) {
+        setPinMessage("PIN nicht erkannt.")
+        setPin("")
+        return
+      }
+
+      const resolvedMember: ScannedMember = {
+        playerCode: String(member.player_code || ""),
+        playerId: String(member.player_id),
+        name: String(member.name || "EMD Mitglied"),
+        photoUrl: member.photo_url ? String(member.photo_url) : null,
+      }
+
+      setPinOpening(true)
+      setPinMessage("Willkommen!")
+      void loadPersonalData(resolvedMember)
+
+      window.setTimeout(() => {
+        setActiveMember(resolvedMember)
+        setPin("")
+        setPinMessage("")
+        setPinOpening(false)
+      }, 2000)
+    } catch (error) {
+      console.error("Terminal PIN login error:", error)
+      setPinMessage("PIN konnte nicht geprüft werden.")
+      setPin("")
+    } finally {
+      setPinChecking(false)
+    }
+  }
+
   const transactionLabel = (type: string) => {
     if (type === "credit_added") return "Guthaben aufgeladen"
     if (type === "tournament_entry_fee") return "Turnier-Startgeld"
@@ -337,6 +396,10 @@ export default function TerminalPersonalPage() {
 
   const formatEuro = (value: number) =>
     new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR" }).format(value || 0)
+
+  if (pinOpening) {
+    return <TerminalLoader label="Mein EMD wird geöffnet" />
+  }
 
   if (activeMember) {
     return (
@@ -564,7 +627,7 @@ export default function TerminalPersonalPage() {
                   </div>
 
                   <div className="mt-4 flex justify-center gap-3">
-                    {Array.from({ length: 6 }).map((_, index) => (
+                    {Array.from({ length: 4 }).map((_, index) => (
                       <div
                         key={index}
                         className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${
@@ -622,16 +685,21 @@ export default function TerminalPersonalPage() {
 
                 <button
                   type="button"
-                  disabled={pin.length < 4}
+                  onClick={() => void loginWithPin()}
+                  disabled={pin.length !== 4 || pinChecking || pinOpening}
                   className="mx-auto mt-5 flex h-14 w-full max-w-[420px] items-center justify-center gap-3 rounded-2xl bg-orange-500 text-base font-black text-white transition enabled:hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-30"
                 >
                   <KeyRound className="h-5 w-5" />
-                  Anmelden
+                  {pinChecking ? "PIN wird geprüft …" : "Anmelden"}
                   <ArrowRight className="h-5 w-5" />
                 </button>
 
-                <div className="mt-3 text-center text-[11px] font-semibold text-white/25">
-                  PIN-Logik folgt später.
+                <div className={`mt-3 min-h-5 text-center text-[11px] font-semibold ${
+                  pinMessage === "PIN nicht erkannt." || pinMessage.includes("Fehlversuche") || pinMessage.includes("konnte")
+                    ? "text-red-300/80"
+                    : "text-white/35"
+                }`}>
+                  {pinMessage || "4-stellige Terminal-PIN aus der EMD App"}
                 </div>
               </div>
             </div>
