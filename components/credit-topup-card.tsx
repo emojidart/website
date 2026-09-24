@@ -12,6 +12,7 @@ export function CreditTopupCard({ onTopupComplete }: { onTopupComplete?: () => v
   const [quote, setQuote] = useState<Quote | null>(null)
   const [error, setError] = useState("")
   const [returnState, setReturnState] = useState<"success" | "cancelled" | null>(null)
+  const [customAmount, setCustomAmount] = useState("")
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -57,6 +58,23 @@ export function CreditTopupCard({ onTopupComplete }: { onTopupComplete?: () => v
     } finally {
       setBusy(null)
     }
+  }
+
+  async function chooseCustom() {
+    const normalized = customAmount.replace(",", ".").trim()
+    const amount = Number(normalized)
+
+    if (!Number.isFinite(amount) || amount < 1) {
+      setError("Der Mindestbetrag beträgt 1,00 €.")
+      return
+    }
+
+    if (amount > 500) {
+      setError("Der maximale Aufladebetrag beträgt 500,00 €.")
+      return
+    }
+
+    await choose(Math.round(amount * 100) / 100)
   }
 
   async function pay() {
@@ -133,6 +151,43 @@ export function CreditTopupCard({ onTopupComplete }: { onTopupComplete?: () => v
               {busy === amount ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : `${amount} €`}
             </button>
           ))}
+        </div>
+
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+          <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
+            Beliebiger Betrag
+          </div>
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <div className="relative">
+              <input
+                type="text"
+                inputMode="decimal"
+                value={customAmount}
+                onChange={(e) => {
+                  setCustomAmount(e.target.value.replace(/[^0-9.,]/g, ""))
+                  setError("")
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void chooseCustom()
+                }}
+                placeholder="z. B. 15,00"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 pr-12 text-base font-black text-slate-950 outline-none transition focus:border-orange-400"
+              />
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 font-black text-slate-400">€</span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy !== null}
+              onClick={() => void chooseCustom()}
+              className="h-12 rounded-xl border-slate-200 bg-white px-5 font-black text-slate-950 hover:bg-orange-50"
+            >
+              Betrag wählen
+            </Button>
+          </div>
+          <div className="mt-2 text-xs font-medium text-slate-500">
+            Mindestbetrag 1,00 € · maximal 500,00 €
+          </div>
         </div>
 
         {quote ? (
