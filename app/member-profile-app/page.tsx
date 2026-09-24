@@ -44,6 +44,7 @@ import {
   Trash2,
   ShoppingBag,
   Gift,
+  CreditCard,
 } from "lucide-react"
 import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
 
@@ -842,6 +843,7 @@ const fetchProfile = async () => {
       title: "Verein & Extras",
       description: "Mitgliedschaft, Termine und weitere Bereiche",
       items: [
+        { title: "Meine Mitgliedskarte", description: "QR-Code, Guthaben & Historie", icon: CreditCard, href: "/member-card" },
         { title: "Vereinskalender", description: "Termine & Veranstaltungen", icon: Calendar, href: "/vereinskalender-app" },
         { title: "DACH Turniere", description: "Turniere in AT, DE & CH", icon: Trophy, href: "/dach-veranstaltungen" },
         { title: "Interne Spiele", description: "Spielplan, Aufstellung & Live-Ergebnisse", icon: Trophy, href: "/internal-matches" },
@@ -1088,6 +1090,12 @@ if (error || !profile) {
                   </Link>
                 </Button>
                 <Button asChild className="h-10 rounded-xl bg-orange-500 text-white hover:bg-orange-600">
+                  <Link href="/member-card">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Mitgliedskarte
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
                   <Link href="/member-membership">Mitgliedschaft</Link>
                 </Button>
                 <Button asChild variant="outline" className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">

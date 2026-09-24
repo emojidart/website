@@ -14,6 +14,7 @@ import type { UserProfile } from "@/types"
 import { QRCodeSVG } from "qrcode.react"
 import html2canvas from "html2canvas"
 import Image from "next/image"
+import { CreditTopupCard } from "@/components/credit-topup-card"
 
 /* ---------------- types ---------------- */
 
@@ -263,7 +264,7 @@ export default function MemberCardPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900">
+      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950">
         <Header />
         <div className="h-12 sm:h-14" aria-hidden="true" />
         <main className="mx-auto w-full px-4 py-10 flex items-center justify-center max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
@@ -276,7 +277,7 @@ export default function MemberCardPage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900">
+      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950">
         <Header />
         <div className="h-12 sm:h-14" aria-hidden="true" />
        <main className="mx-auto w-full px-4 py-10 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
@@ -299,81 +300,101 @@ export default function MemberCardPage() {
   /* ---------------- ui ---------------- */
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950">
       <Header />
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
-      <main className="mx-auto w-full px-4 py-6 sm:py-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
+      <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 lg:pb-12">
         {/* top hero */}
-        <div className="rounded-3xl border border-orange-200 bg-white shadow-sm overflow-hidden">
-          <div className="p-5 sm:p-7 bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 text-white relative">
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.35),transparent_55%),radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.18),transparent_55%),radial-gradient(circle_at_50%_90%,rgba(255,255,255,0.20),transparent_60%)]" />
-            <div className="relative flex items-center justify-between gap-3">
+        <section className="relative mt-2 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mt-4 sm:rounded-[28px] xl:rounded-[30px]">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
+
+          <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-11 h-11 rounded-2xl bg-white/10 border border-white/20 backdrop-blur flex items-center justify-center">
-                    <CreditCard className="w-5 h-5 text-white" />
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                  Mitgliederbereich
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                    <CreditCard className="h-6 w-6 text-orange-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-wider text-white/80">Mitgliedsbereich</p>
-                    <h1 className="text-lg sm:text-2xl font-black leading-tight truncate">Meine Mitgliedskarte</h1>
+                    <h1 className="text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
+                      Meine Mitgliedskarte
+                    </h1>
+                    <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">
+                      Digitale Vereinskarte, QR-Code, Guthaben und Buchungen an einem Ort.
+                    </p>
                   </div>
                 </div>
-                <p className="mt-2 text-sm text-white/85">Digitale Vereinskarte • QR • Guthaben • Historie</p>
               </div>
 
-              <Image src="/icon-192.png" alt="EMD Logo" width={56} height={56} className="opacity-95 drop-shadow-lg" />
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:justify-end">
+                <Button
+                  type="button"
+                  onClick={() => setActiveTab("card")}
+                  variant="outline"
+                  className={`h-10 rounded-xl border-white/10 text-white hover:text-white ${
+                    activeTab === "card" ? "bg-orange-500 hover:bg-orange-600" : "bg-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Karte
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setActiveTab("history")}
+                  variant="outline"
+                  className={`h-10 rounded-xl border-white/10 text-white hover:text-white ${
+                    activeTab === "history" ? "bg-orange-500 hover:bg-orange-600" : "bg-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  <History className="mr-2 h-4 w-4" />
+                  Historie
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/member-profile-app")}
+                  className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                >
+                  Zum Profil
+                </Button>
+              </div>
             </div>
 
-            <div className="relative mt-4 flex flex-wrap gap-2">
-              <Chip tone="amber">
-                <Wallet className="w-3.5 h-3.5" />
-                Guthaben: {formatEuro(creditBalance)}
-              </Chip>
-              <Chip tone="gray">
-                <History className="w-3.5 h-3.5" />
-                {quickStats.txCount} Transaktionen
-              </Chip>
-              <Chip tone="gray">
-                <Target className="w-3.5 h-3.5" />
-                Code: <span className="font-mono">{memberNumber}</span>
-              </Chip>
+            <div className="mt-5 grid grid-cols-3 gap-2 sm:mt-6 sm:gap-3">
+              <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-sm sm:p-4">
+                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40 sm:text-[11px] sm:tracking-[0.16em]">Guthaben</div>
+                <div className="mt-2 flex items-end justify-between gap-2">
+                  <div className="whitespace-nowrap text-lg font-black text-white sm:text-2xl">{formatEuro(creditBalance)}</div>
+                  <Wallet className="h-5 w-5 shrink-0 text-orange-400" />
+                </div>
+              </div>
+              <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-sm sm:p-4">
+                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40 sm:text-[11px] sm:tracking-[0.16em]">Buchungen</div>
+                <div className="mt-2 flex items-end justify-between gap-2">
+                  <div className="text-2xl font-black text-white">{quickStats.txCount}</div>
+                  <History className="h-5 w-5 shrink-0 text-orange-400" />
+                </div>
+              </div>
+              <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-sm sm:p-4">
+                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40 sm:text-[11px] sm:tracking-[0.16em]">Spielercode</div>
+                <div className="mt-2 flex items-end justify-between gap-2">
+                  <div className="truncate font-mono text-[11px] font-black text-white sm:text-sm">{memberNumber}</div>
+                  <Target className="hidden h-5 w-5 shrink-0 text-orange-400 sm:block" />
+                </div>
+              </div>
             </div>
           </div>
+        </section>
 
-          {/* tabs */}
-          <div className="p-3 sm:p-4 bg-white border-t border-orange-100">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab("card")}
-                className={[
-                  "h-11 rounded-2xl border font-black text-sm flex items-center justify-center gap-2 transition active:scale-[0.99]",
-                  activeTab === "card"
-                    ? "bg-orange-600 text-white border-orange-600 shadow-sm"
-                    : "bg-white text-gray-800 border-gray-200 hover:bg-gray-50",
-                ].join(" ")}
-              >
-                <CreditCard className="w-4 h-4" />
-                Karte
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("history")}
-                className={[
-                  "h-11 rounded-2xl border font-black text-sm flex items-center justify-center gap-2 transition active:scale-[0.99]",
-                  activeTab === "history"
-                    ? "bg-orange-600 text-white border-orange-600 shadow-sm"
-                    : "bg-white text-gray-800 border-gray-200 hover:bg-gray-50",
-                ].join(" ")}
-              >
-                <History className="w-4 h-4" />
-                Historie
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* wallet top-up */}
+        <CreditTopupCard onTopupComplete={() => void fetchProfile()} />
 
         {/* content */}
         <div className="mt-4">
@@ -382,10 +403,10 @@ export default function MemberCardPage() {
               {/* card preview (download target) */}
               <Card
                 ref={cardRef}
-                className="rounded-3xl border-0 shadow-2xl overflow-hidden bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 relative"
+                className="rounded-[24px] border border-slate-800/10 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.5)] overflow-hidden bg-slate-950 relative sm:rounded-[28px]"
               >
-                <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full -mr-36 -mt-36" />
-                <div className="absolute bottom-0 left-0 w-56 h-56 bg-black/10 rounded-full -ml-28 -mb-28" />
+                <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+                <div className="absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
 
                 <CardContent className="p-6 sm:p-8 relative z-10">
                   <div className="flex items-center justify-between mb-6">
@@ -445,7 +466,7 @@ export default function MemberCardPage() {
               </Card>
 
               {/* QR block */}
-              <div className="mt-4 rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="mt-4 rounded-[24px] border border-slate-200 bg-white shadow-[0_14px_38px_-28px_rgba(15,23,42,0.28)] overflow-hidden sm:rounded-[28px]">
                 <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-black uppercase tracking-wider text-gray-500">QR-Code</p>
@@ -502,10 +523,10 @@ export default function MemberCardPage() {
               </div>
 
               {/* benefits */}
-              <div className="mt-4 rounded-3xl border border-orange-200 bg-orange-50 shadow-sm overflow-hidden">
+              <div className="mt-4 rounded-[24px] border border-slate-200 bg-white shadow-[0_14px_38px_-28px_rgba(15,23,42,0.28)] overflow-hidden sm:rounded-[28px]">
                 <div className="p-4 sm:p-6 border-b border-orange-200">
-                  <p className="text-xs font-black uppercase tracking-wider text-orange-700/70">So nutzt du’s</p>
-                  <p className="text-lg font-black text-orange-950">Schnell • Bargeldlos • Flexibel</p>
+                  <p className="text-xs font-black uppercase tracking-wider text-slate-400">So nutzt du’s</p>
+                  <p className="text-lg font-black text-slate-950">Schnell • Bargeldlos • Flexibel</p>
                 </div>
 
                 <div className="p-4 sm:p-6 grid sm:grid-cols-3 gap-3">
@@ -513,8 +534,8 @@ export default function MemberCardPage() {
                     <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center mb-3">
                       <HandCoins className="w-5 h-5 text-orange-700" />
                     </div>
-                    <p className="text-sm font-black text-gray-900">Vor Ort aufladen</p>
-                    <p className="text-sm text-gray-700 mt-1">Guthaben direkt im Vereinsheim aufladen und flexibel zahlen.</p>
+                    <p className="text-sm font-black text-gray-900">Online aufladen</p>
+                    <p className="text-sm text-gray-700 mt-1">10, 20, 30 oder 50 € wählen und sicher über Stripe bezahlen.</p>
                   </div>
 
                   <div className="rounded-2xl border border-orange-200 bg-white p-4">
@@ -529,14 +550,14 @@ export default function MemberCardPage() {
                     <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center mb-3">
                       <Smartphone className="w-5 h-5 text-orange-700" />
                     </div>
-                    <p className="text-sm font-black text-gray-900">Jederzeit auszahlen</p>
-                    <p className="text-sm text-gray-700 mt-1">Dein Guthaben kann jederzeit ausgezahlt werden.</p>
+                    <p className="text-sm font-black text-gray-900">Für Cups verwenden</p>
+                    <p className="text-sm text-gray-700 mt-1">Guthaben zunächst für Members Cup und Lion Cup verwenden.</p>
                   </div>
                 </div>
               </div>
 
               {/* info blocks */}
-              <div className="mt-4 rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="mt-4 rounded-[24px] border border-slate-200 bg-white shadow-[0_14px_38px_-28px_rgba(15,23,42,0.28)] overflow-hidden sm:rounded-[28px]">
                 <div className="p-4 sm:p-6 border-b border-gray-100">
                   <p className="text-xs font-black uppercase tracking-wider text-gray-500">Profil</p>
                   <p className="text-lg font-black text-gray-900">Mitgliedsinformationen</p>
@@ -647,7 +668,7 @@ export default function MemberCardPage() {
             </>
           ) : (
             /* HISTORY */
-            <div className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-[24px] border border-slate-200 bg-white shadow-[0_14px_38px_-28px_rgba(15,23,42,0.28)] overflow-hidden sm:rounded-[28px]">
               <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-black uppercase tracking-wider text-gray-500">Guthaben</p>
