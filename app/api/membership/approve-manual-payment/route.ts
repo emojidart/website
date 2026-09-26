@@ -66,7 +66,7 @@ export async function POST(request: Request) {
 
     const { data: changeRequest, error: requestError } = await supabase
       .from("membership_change_requests")
-      .select("id,player_id,current_membership_id,billing_cycle,payment_method,requested_status,request_type,payment_status,starts_on")
+      .select("id,player_id,current_membership_id,billing_cycle,payment_method,requested_status,request_type,payment_status,starts_on,monthly_total,semiannual_total,annual_total,note")
       .eq("id", requestId)
       .single()
 
@@ -215,6 +215,80 @@ export async function POST(request: Request) {
       .eq("requested_status", "pending")
 
     if (approveError) throw approveError
+
+    const moduleIds = requestRows.map((row) => row.module_id)
+    const { data: paymentModules, error: paymentModulesError } = await supabase
+      .from("membership_modules")
+      .select("id,code,name,sort_order")
+      .in("id", moduleIds)
+
+    if (paymentModulesError) throw paymentModulesError
+
+    const moduleMap = new Map((paymentModules || []).map((module) => [module.id, module]))
+    const amount =
+      changeRequest.billing_cycle === "monthly"
+        ? Number(changeRequest.monthly_total || 0)
+        : changeRequest.billing_cycle === "semiannual"
+          ? Number(changeRequest.semiannual_total || 0)
+          : Number(changeRequest.annual_total || 0)
+
+    const periodStart = changeRequest.starts_on || todayISO()
+    const periodEndDate = new Date(`${periodStart}T12:00:00Z`)
+    if (changeRequest.billing_cycle === "monthly") periodEndDate.setUTCMonth(periodEndDate.getUTCMonth() + 1)
+    else if (changeRequest.billing_cycle === "semiannual") periodEndDate.setUTCMonth(periodEndDate.getUTCMonth() + 6)
+    else periodEndDate.setUTCFullYear(periodEndDate.getUTCFullYear() + 1)
+    periodEndDate.setUTCDate(periodEndDate.getUTCDate() - 1)
+
+    const lineItems = requestRows.map((row) => {
+      const module = moduleMap.get(row.module_id) as any
+      const rowAmount =
+        changeRequest.billing_cycle === "monthly"
+          ? Number(row.monthly_price_snapshot || 0)
+          : changeRequest.billing_cycle === "semiannual"
+            ? Number(row.semiannual_price_snapshot || 0)
+            : Number(row.annual_price_snapshot || 0)
+
+      return {
+        module_id: row.module_id,
+        code: module?.code || null,
+        name: module?.name || "Mitgliedschaft",
+        amount_cents: Math.round(rowAmount * 100),
+        quantity: 1,
+      }
+    })
+
+    const { data: existingLedger, error: existingLedgerError } = await supabase
+      .from("membership_payments")
+      .select("id")
+      .eq("change_request_id", requestId)
+      .eq("source", "manual_confirmation")
+      .maybeSingle()
+
+    if (existingLedgerError) throw existingLedgerError
+
+    if (!existingLedger) {
+      const { error: ledgerError } = await supabase.from("membership_payments").insert({
+        player_id: changeRequest.player_id,
+        membership_id: membershipId,
+        change_request_id: requestId,
+        paid_at: now,
+        amount_cents: Math.round(amount * 100),
+        currency: "EUR",
+        interval: changeRequest.billing_cycle,
+        period_start: periodStart,
+        period_end: periodEndDate.toISOString().slice(0, 10),
+        notes: changeRequest.note || "Manuell bestätigter Mitgliedsbeitrag",
+        payment_method: changeRequest.payment_method,
+        source: "manual_confirmation",
+        status: "paid",
+        billing_cycle: changeRequest.billing_cycle,
+        fee_cents: 0,
+        net_amount_cents: Math.round(amount * 100),
+        line_items: lineItems,
+      })
+
+      if (ledgerError) throw ledgerError
+    }
 
     return NextResponse.json({ ok: true, membershipId })
   } catch (error: any) {

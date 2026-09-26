@@ -27,6 +27,7 @@ import {
   CalendarDays,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { MembershipAccountingPanel } from "@/components/admin/membership-accounting-panel"
 
 type BillingCycle = "monthly" | "semiannual" | "annual"
 type PaymentMethod = "stripe" | "transfer" | "cash"
@@ -740,14 +741,14 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
   const approveChangeRequest = async (request: MembershipChangeRequest) => {
     if (!user) return
 
-    if (
-      request.request_type !== "cancel" &&
-      request.payment_method === "stripe" &&
-      request.payment_status !== "paid"
-    ) {
+    if (request.request_type === "cancel") return
+
+    if (request.payment_method === "stripe") {
       setMessage({
         type: "info",
-        text: "Diese Stripe-Paketänderung wird automatisch verarbeitet. Bitte nicht manuell bestätigen, solange Stripe die Zahlung noch nicht abgeschlossen hat.",
+        text: request.payment_status === "paid"
+          ? "Diese Stripe-Zahlung wurde bereits von Stripe verarbeitet. Bitte die Ansicht neu laden."
+          : "Stripe-Zahlungen werden automatisch verarbeitet und dürfen nicht manuell bestätigt werden.",
       })
       return
     }
@@ -756,90 +757,32 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
       setReviewingRequestId(request.id)
       setMessage(null)
 
-      const requestRows = changeRequestModules.filter(
-        (row) => row.request_id === request.id,
-      )
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
 
-      if (requestRows.length === 0) {
-        throw new Error("Für diese Anfrage wurden keine Module gefunden.")
+      const accessToken = sessionData.session?.access_token
+      if (!accessToken) throw new Error("Deine Sitzung ist abgelaufen. Bitte melde dich neu an.")
+
+      const response = await fetch("/api/stripe/approve-manual-membership", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ requestId: request.id }),
+      })
+
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(payload?.error || "Die Zahlung konnte nicht bestätigt werden.")
       }
-
-      let membershipId = request.current_membership_id || ""
-
-      if (membershipId) {
-        const { error: membershipError } = await supabase
-          .from("member_memberships")
-          .update({
-            billing_cycle: request.billing_cycle,
-            payment_method: request.payment_method,
-            status: "active",
-            starts_on: request.starts_on || todayISO(),
-            ends_on: null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", membershipId)
-
-        if (membershipError) throw membershipError
-      } else {
-        const { data: newMembership, error: membershipError } = await supabase
-          .from("member_memberships")
-          .insert({
-            player_id: request.player_id,
-            billing_cycle: request.billing_cycle,
-            payment_method: request.payment_method,
-            status: "active",
-            starts_on: request.starts_on || todayISO(),
-            ends_on: null,
-            note: "Über Mitgliedschaftsanfrage freigegeben",
-          })
-          .select("id")
-          .single()
-
-        if (membershipError) throw membershipError
-        membershipId = newMembership.id
-      }
-
-      const { error: deleteError } = await supabase
-        .from("member_membership_modules")
-        .delete()
-        .eq("membership_id", membershipId)
-
-      if (deleteError) throw deleteError
-
-      const moduleRows = requestRows.map((row) => ({
-        membership_id: membershipId,
-        module_id: row.module_id,
-        monthly_price_snapshot: row.monthly_price_snapshot,
-        semiannual_price_snapshot: row.semiannual_price_snapshot,
-        annual_price_snapshot: row.annual_price_snapshot,
-      }))
-
-      const { error: insertError } = await supabase
-        .from("member_membership_modules")
-        .insert(moduleRows)
-
-      if (insertError) throw insertError
-
-      await endActiveTrialsForPlayer(request.player_id)
-
-      const { error: requestError } = await supabase
-        .from("membership_change_requests")
-        .update({
-          requested_status: "approved",
-          reviewed_by: user.id,
-          reviewed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", request.id)
-
-      if (requestError) throw requestError
 
       await loadData()
 
       const player = players.find((p) => p.id === request.player_id)
       setMessage({
         type: "success",
-        text: `Mitgliedschaftsanfrage von ${player?.name || "dem Mitglied"} wurde bestätigt. Die gewünschten Änderungen wurden übernommen.`,
+        text: `Zahlung von ${player?.name || "dem Mitglied"} wurde bestätigt, verbucht und als Buchhaltungsbeleg erfasst.`,
       })
     } catch (error: any) {
       console.error("approve membership request error:", error)
@@ -1420,7 +1363,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
       <div className="grid grid-cols-2 gap-2 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm lg:grid-cols-4">
         {([
           ["overview", "Übersicht"],
-          ["paid", `Zahlungen (${paidPaymentTransactions.length})`],
+          ["paid", "Zahlungen"],
           ["trials", `Test (${activeTrialOnlyGroups.length})`],
           ["manage", "Verwalten"],
         ] as Array<[AdminMembershipView, string]>).map(([view, label]) => (
@@ -1564,86 +1507,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
       ) : null}
 
       {activeView === "paid" ? (
-        <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <CardHeader className="border-b border-gray-100">
-            <CardTitle>Echte Zahlungseingänge</CardTitle>
-            <CardDescription>
-              Nur bestätigte Zahlungen mit Zahlungsdatum. Jede Zeile ist ein tatsächlich als bezahlt verbuchter Vorgang.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 p-4 sm:p-5">
-            {paidPaymentTransactions.length === 0 ? (
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm font-semibold text-gray-500">
-                Noch keine bestätigten Zahlungseingänge vorhanden.
-              </div>
-            ) : (
-              paidPaymentTransactions.map((transaction) => (
-                <div key={transaction.request.id} className="rounded-2xl border border-green-200 p-4">
-                  <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="text-base font-black text-gray-900">
-                          {transaction.player?.name || "Unbekanntes Mitglied"}
-                        </div>
-                        <Badge className="rounded-full bg-green-100 text-green-800 hover:bg-green-100">
-                          BEZAHLT
-                        </Badge>
-                        <Badge variant="outline" className="rounded-full">
-                          {transaction.request.billing_cycle === "monthly" ? "Monatlich" : "Jährlich"}
-                        </Badge>
-                        <Badge variant="outline" className="rounded-full">
-                          {paymentLabel(transaction.request.payment_method)}
-                        </Badge>
-                      </div>
-
-                      {transaction.player?.email ? (
-                        <div className="mt-1 text-xs font-semibold text-gray-500">
-                          {transaction.player.email}
-                        </div>
-                      ) : null}
-
-                      <div className="mt-3 text-sm font-bold text-gray-700">
-                        Bezahlt am{" "}
-                        {transaction.request.paid_at
-                          ? new Date(transaction.request.paid_at).toLocaleString("de-AT")
-                          : "–"}
-                      </div>
-
-                      <div className="mt-4">
-                        <div className="text-xs font-black uppercase tracking-wide text-green-700">
-                          Dafür tatsächlich bezahlt
-                        </div>
-                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                          {transaction.modules.map(({ row, module, paidAmount }) => (
-                            <div
-                              key={row.module_id}
-                              className="flex items-center justify-between gap-3 rounded-xl border border-green-100 bg-green-50 px-3 py-2"
-                            >
-                              <span className="font-bold text-green-900">{module?.name}</span>
-                              <span className="shrink-0 font-black text-green-900">
-                                {formatEUR(paidAmount)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="shrink-0 rounded-2xl bg-gray-900 px-5 py-4 text-white xl:text-right">
-                      <div className="text-xs font-bold uppercase tracking-wide text-gray-300">
-                        Zahlungseingang
-                      </div>
-                      <div className="mt-1 text-2xl font-black">{formatEUR(transaction.paidAmount)}</div>
-                      <div className="text-xs font-semibold text-gray-300">
-                        tatsächlich bezahlt
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+        <MembershipAccountingPanel user={user} />
       ) : null}
 
       {activeView === "trials" ? (

@@ -35,6 +35,126 @@ function stripeId(value: string | Stripe.Customer | Stripe.Subscription | null |
   return typeof value === "string" ? value : value.id
 }
 
+function stripeAnyId(value: any): string | null {
+  if (!value) return null
+  return typeof value === "string" ? value : value.id || null
+}
+
+function unixDate(value: number | null | undefined) {
+  if (!value) return null
+  return new Date(value * 1000).toISOString().slice(0, 10)
+}
+
+async function getStripeFeeAndNet(stripe: Stripe, invoice: any) {
+  let paymentIntentId = stripeAnyId(invoice.payment_intent)
+  let feeCents = 0
+  let netCents = Number(invoice.amount_paid || 0)
+
+  try {
+    const chargeId = stripeAnyId(invoice.charge)
+    if (chargeId) {
+      const charge: any = await stripe.charges.retrieve(chargeId, { expand: ["balance_transaction"] })
+      const bt: any = charge?.balance_transaction
+      if (bt && typeof bt !== "string") {
+        feeCents = Number(bt.fee || 0)
+        netCents = Number(bt.net || 0)
+      }
+      paymentIntentId = paymentIntentId || stripeAnyId(charge?.payment_intent)
+      return { feeCents, netCents, paymentIntentId }
+    }
+
+    if (paymentIntentId) {
+      const pi: any = await stripe.paymentIntents.retrieve(paymentIntentId, {
+        expand: ["latest_charge.balance_transaction"],
+      })
+      const charge: any = pi?.latest_charge
+      const bt: any = charge && typeof charge !== "string" ? charge.balance_transaction : null
+      if (bt && typeof bt !== "string") {
+        feeCents = Number(bt.fee || 0)
+        netCents = Number(bt.net || 0)
+      }
+    }
+  } catch (error) {
+    console.warn("membership invoice fee lookup warning", invoice?.id, error)
+  }
+
+  return { feeCents, netCents, paymentIntentId }
+}
+
+async function recordStripeInvoicePayment(
+  stripe: Stripe,
+  supabase: ReturnType<typeof createClient>,
+  invoice: any,
+  eventId: string | null,
+) {
+  const subscriptionId =
+    stripeAnyId(invoice.subscription) ||
+    stripeAnyId(invoice.parent?.subscription_details?.subscription) ||
+    null
+
+  if (!subscriptionId || !invoice?.id || Number(invoice.amount_paid || 0) <= 0) return
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("member_memberships")
+    .select("id,player_id,billing_cycle,stripe_customer_id,stripe_subscription_id")
+    .eq("stripe_subscription_id", subscriptionId)
+    .maybeSingle()
+
+  if (membershipError) throw membershipError
+  if (!membership) {
+    console.warn("invoice.paid without matching membership yet", invoice.id, subscriptionId)
+    return
+  }
+
+  const { feeCents, netCents, paymentIntentId } = await getStripeFeeAndNet(stripe, invoice)
+  const firstLine: any = invoice.lines?.data?.[0] || null
+  const paidAtUnix = invoice.status_transitions?.paid_at || invoice.created
+  const paidAt = new Date(Number(paidAtUnix || 0) * 1000).toISOString()
+
+  const lineItems = (invoice.lines?.data || []).map((line: any) => ({
+    name: line.description || line.price?.nickname || "Mitgliedschaft",
+    description: line.description || null,
+    amount_cents: Number(line.amount || 0),
+    quantity: Number(line.quantity || 1),
+    price_id: stripeAnyId(line.price),
+  }))
+
+  const { error } = await supabase
+    .from("membership_payments")
+    .upsert(
+      {
+        player_id: membership.player_id,
+        membership_id: membership.id,
+        paid_at: paidAt,
+        amount_cents: Number(invoice.amount_paid || 0),
+        currency: String(invoice.currency || "eur").toUpperCase(),
+        interval: membership.billing_cycle || null,
+        period_start: unixDate(firstLine?.period?.start || invoice.period_start),
+        period_end: unixDate(firstLine?.period?.end || invoice.period_end),
+        notes: invoice.billing_reason ? `Stripe · ${invoice.billing_reason}` : "Stripe-Zahlung",
+        payment_method: "stripe",
+        source: "stripe_invoice",
+        status: "paid",
+        billing_cycle: membership.billing_cycle || null,
+        fee_cents: feeCents,
+        net_amount_cents: netCents,
+        stripe_invoice_id: invoice.id,
+        stripe_invoice_number: invoice.number || null,
+        stripe_invoice_pdf_url: invoice.invoice_pdf || null,
+        stripe_hosted_invoice_url: invoice.hosted_invoice_url || null,
+        stripe_payment_intent_id: paymentIntentId,
+        stripe_customer_id: stripeAnyId(invoice.customer) || membership.stripe_customer_id || null,
+        stripe_subscription_id: subscriptionId,
+        stripe_event_id: eventId,
+        line_items: lineItems,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "stripe_invoice_id" },
+    )
+
+  if (error) throw error
+}
+
 
 async function rewriteRequestToActuallyChargedDelta(
   supabase: ReturnType<typeof createClient>,
@@ -582,11 +702,9 @@ export async function POST(request: Request) {
     if (event.type === "invoice.paid") {
       const invoice = event.data.object as any
       const subscriptionId =
-        typeof invoice.subscription === "string"
-          ? invoice.subscription
-          : invoice.subscription?.id ||
-            invoice.parent?.subscription_details?.subscription ||
-            null
+        stripeAnyId(invoice.subscription) ||
+        stripeAnyId(invoice.parent?.subscription_details?.subscription) ||
+        null
 
       if (subscriptionId) {
         const { error } = await supabase
@@ -600,6 +718,8 @@ export async function POST(request: Request) {
 
         if (error) throw error
       }
+
+      await recordStripeInvoicePayment(stripe, supabase, invoice, event.id)
     }
 
     return NextResponse.json({ received: true })
