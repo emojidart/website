@@ -174,7 +174,7 @@ export function useMembershipAccess() {
           .map((module: any) => module.code as MembershipModuleCode)
       }
 
-      const activeTrials = ((trials || []) as any[]).map((trial) => ({
+      const rawActiveTrials = ((trials || []) as any[]).map((trial) => ({
         id: trial.id,
         module_code: trial.module_code as MembershipModuleCode,
         starts_on: trial.starts_on,
@@ -183,14 +183,19 @@ export function useMembershipAccess() {
         note: trial.note ?? null,
       })) as MembershipTrialAccess[]
 
+      // Klare Priorität:
+      // Sobald eine reguläre Mitgliedschaft aktiv ist, zählt ausschließlich das Abo.
+      // Alte Testzugänge dürfen dann weder zusätzlich freischalten noch später
+      // unbemerkt wieder "aufleben".
+      const activeTrials = activeMembership ? [] : rawActiveTrials
+
       const trialModuleCodes = Array.from(
         new Set(activeTrials.map((trial) => trial.module_code)),
       )
 
-      // Wichtig: Test und bezahlt werden für den Zugriff zusammengeführt.
-      const moduleCodes = Array.from(
-        new Set([...paidModuleCodes, ...trialModuleCodes]),
-      ) as MembershipModuleCode[]
+      const moduleCodes = activeMembership
+        ? Array.from(new Set(paidModuleCodes)) as MembershipModuleCode[]
+        : Array.from(new Set(trialModuleCodes)) as MembershipModuleCode[]
 
       setState({
         loading: false,

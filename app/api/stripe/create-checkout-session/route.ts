@@ -15,6 +15,23 @@ function getBaseUrl(request: Request) {
   return new URL(request.url).origin
 }
 
+
+async function endActiveTrialsForPlayer(
+  supabase: ReturnType<typeof createClient>,
+  playerId: string,
+) {
+  const { error } = await supabase
+    .from("membership_trials")
+    .update({
+      status: "cancelled",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("player_id", playerId)
+    .eq("status", "active")
+
+  if (error) throw error
+}
+
 async function applyPaidRequest(
   supabase: ReturnType<typeof createClient>,
   args: {
@@ -70,6 +87,9 @@ async function applyPaidRequest(
     )
 
   if (insertError) throw insertError
+
+  // Bezahlte Mitgliedschaft hat Vorrang: alte Testfreischaltungen beenden.
+  await endActiveTrialsForPlayer(supabase, args.playerId)
 
   const { error: approveError } = await supabase
     .from("membership_change_requests")

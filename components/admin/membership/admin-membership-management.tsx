@@ -567,6 +567,19 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
     setMessage(null)
   }
 
+  const endActiveTrialsForPlayer = async (playerId: string) => {
+    const { error } = await supabase
+      .from("membership_trials")
+      .update({
+        status: "cancelled",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("player_id", playerId)
+      .eq("status", "active")
+
+    if (error) throw error
+  }
+
   const saveMembership = async () => {
     if (!user) {
       setMessage({ type: "error", text: "Nicht eingeloggt." })
@@ -650,6 +663,10 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
         .insert(rows)
 
       if (insertError) throw insertError
+
+      if (status === "active") {
+        await endActiveTrialsForPlayer(selectedPlayerId)
+      }
 
       setMessage({
         type: "success",
@@ -802,6 +819,8 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
         .insert(moduleRows)
 
       if (insertError) throw insertError
+
+      await endActiveTrialsForPlayer(request.player_id)
 
       const { error: requestError } = await supabase
         .from("membership_change_requests")
@@ -976,7 +995,37 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
       setSavingTrial(true)
       setMessage(null)
 
+      const today = todayISO()
+      const hasActivePaidMembership = memberships.some(
+        (membership) =>
+          membership.player_id === selectedPlayerId &&
+          membership.status === "active" &&
+          membership.starts_on <= today &&
+          (!membership.ends_on || membership.ends_on >= today),
+      )
+
+      if (hasActivePaidMembership) {
+        setMessage({
+          type: "info",
+          text: "Für dieses Mitglied ist bereits eine reguläre Mitgliedschaft aktiv. Eine zusätzliche Testphase wird nicht angelegt.",
+        })
+        return
+      }
+
       const codes = Array.from(new Set(trialPresetCodes(trialPreset)))
+
+      // Vorhandene aktive Tests zuerst beenden. Dadurch gibt es je Mitglied
+      // nur ein aktuelles Testpaket und keine doppelten Freischaltungen.
+      const { error: cancelExistingError } = await supabase
+        .from("membership_trials")
+        .update({
+          status: "cancelled",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("player_id", selectedPlayerId)
+        .eq("status", "active")
+
+      if (cancelExistingError) throw cancelExistingError
 
       const rows = codes.map((code) => ({
         player_id: selectedPlayerId,

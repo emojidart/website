@@ -276,9 +276,20 @@ export function MemberMembership() {
       setDependencies((dependencyData || []) as ModuleDependency[])
 
       const memberships = (membershipData || []) as Membership[]
+      const today = new Date().toISOString().split("T")[0]
       const activeMembership =
-        memberships.find((m) => m.status === "active") ||
-        memberships.find((m) => m.status === "pending" || m.status === "paused") ||
+        memberships.find(
+          (m) =>
+            m.status === "active" &&
+            m.starts_on <= today &&
+            (!m.ends_on || m.ends_on >= today),
+        ) ||
+        memberships.find(
+          (m) =>
+            (m.status === "pending" || m.status === "paused") &&
+            m.starts_on <= today &&
+            (!m.ends_on || m.ends_on >= today),
+        ) ||
         null
 
       const currentTrials = (trialData || []) as MembershipTrial[]

@@ -13,6 +13,23 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10)
 }
 
+
+async function endActiveTrialsForPlayer(
+  supabase: ReturnType<typeof createClient>,
+  playerId: string,
+) {
+  const { error } = await supabase
+    .from("membership_trials")
+    .update({
+      status: "cancelled",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("player_id", playerId)
+    .eq("status", "active")
+
+  if (error) throw error
+}
+
 export async function POST(request: Request) {
   try {
     if (!supabaseUrl || !supabaseServiceRoleKey) {
@@ -163,6 +180,9 @@ export async function POST(request: Request) {
       })),
     )
     if (insertError) throw insertError
+
+    // Sobald eine reguläre Mitgliedschaft aktiv wird, endet die Testphase vollständig.
+    await endActiveTrialsForPlayer(supabase, changeRequest.player_id)
 
     const { data: baseModule, error: baseError } = await supabase
       .from("membership_modules")

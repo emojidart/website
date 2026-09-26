@@ -14,6 +14,22 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10)
 }
 
+async function endActiveTrialsForPlayer(
+  supabase: ReturnType<typeof createClient>,
+  playerId: string,
+) {
+  const { error } = await supabase
+    .from("membership_trials")
+    .update({
+      status: "cancelled",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("player_id", playerId)
+    .eq("status", "active")
+
+  if (error) throw error
+}
+
 function stripeId(value: string | Stripe.Customer | Stripe.Subscription | null | undefined) {
   if (!value) return null
   return typeof value === "string" ? value : value.id
@@ -214,6 +230,8 @@ async function applyPendingStripeChangeFromSubscription(
     )
 
   if (insertError) throw insertError
+
+  await endActiveTrialsForPlayer(supabase, changeRequest.player_id)
 
   await activateMemberProfileIfBaseIncluded(
     supabase,
@@ -424,6 +442,8 @@ export async function POST(request: Request) {
         )
 
       if (insertError) throw insertError
+
+      await endActiveTrialsForPlayer(supabase, changeRequest.player_id)
 
       // Erst eine bezahlte Grundmitgliedschaft macht aus einem aufgenommenen
       // Gastprofil einen voll freigeschalteten Vereinsaccount.

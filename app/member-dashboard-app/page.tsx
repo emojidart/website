@@ -1231,18 +1231,53 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
     return "Unbekannt"
   }
 
-  const updateMatchScore = async (matchId: string, homeScore: number, awayScore: number) => {
-    if (!isLeadershipRole()) return
+  const getLocalDateString = () => {
+    const now = new Date()
+    const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+    return localNow.toISOString().split("T")[0]
+  }
+
+  const isFutureMatch = (match: Match) => match.match_date > getLocalDateString()
+
+  const updateMatchScore = async (matchId: string, homeScore: number, awayScore: number): Promise<boolean> => {
+    if (!isLeadershipRole()) return false
 
     const match = matches.find((m) => m.id === matchId)
-    if (!match) return
+    if (!match) return false
 
     const hasHomeTeamLeadership = hasLeadershipInTeam(match.home_team_id)
     const hasAwayTeamLeadership = hasLeadershipInTeam(match.away_team_id)
 
     if (!hasHomeTeamLeadership && !hasAwayTeamLeadership) {
       console.log("[v0] User doesn't have leadership role in either team for this match")
-      return
+      return false
+    }
+
+    if (isFutureMatch(match)) {
+      toast({
+        title: "Ergebnis noch nicht möglich",
+        description: "Ein Ergebnis kann erst am Spieltag eingetragen werden.",
+        variant: "destructive",
+      })
+      return false
+    }
+
+    if (homeScore === 0 && awayScore === 0) {
+      toast({
+        title: "Ungültiges Ergebnis",
+        description: "Ein Spiel kann nicht mit 0:0 als beendet gespeichert werden.",
+        variant: "destructive",
+      })
+      return false
+    }
+
+    if (!Number.isInteger(homeScore) || !Number.isInteger(awayScore) || homeScore < 0 || awayScore < 0) {
+      toast({
+        title: "Ungültiges Ergebnis",
+        description: "Bitte ein gültiges Ergebnis eingeben.",
+        variant: "destructive",
+      })
+      return false
     }
 
     try {
@@ -1255,12 +1290,24 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
         })
         .eq("id", matchId)
 
-      if (!error) {
-        fetchMatches()
-        fetchLigaStatistics()
-      }
+      if (error) throw error
+
+      await fetchMatches()
+      fetchLigaStatistics()
+
+      toast({
+        title: "Ergebnis gespeichert",
+        description: `${homeScore}:${awayScore} wurde eingetragen.`,
+      })
+      return true
     } catch (error) {
       console.error("Error updating match score:", error)
+      toast({
+        title: "Fehler",
+        description: "Das Ergebnis konnte nicht gespeichert werden.",
+        variant: "destructive",
+      })
+      return false
     }
   }
 
@@ -2263,7 +2310,10 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                       <Button
                         size="sm"
                         variant="outline"
+                        disabled={isFutureMatch(match)}
+                        title={isFutureMatch(match) ? "Ergebnis kann erst am Spieltag eingetragen werden" : undefined}
                         onClick={() => {
+                          if (isFutureMatch(match)) return
                           setSelectedMatchForResults(match.id)
                           setIsResultsDialogOpen(true)
                           setEditMatchScores({
@@ -2271,10 +2321,10 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                             away: match.away_score || 0,
                           })
                         }}
-                        className="h-10 rounded-xl border-slate-200 bg-white font-bold text-slate-700 shadow-none hover:bg-slate-100"
+                        className="h-10 rounded-xl border-slate-200 bg-white font-bold text-slate-700 shadow-none hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Edit className="h-4 w-4 mr-2" />
-                        {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
+                        {isFutureMatch(match) ? "Ergebnis gesperrt" : match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
                       </Button>
 
                       {/* Foto (neutral) */}
@@ -2965,17 +3015,19 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
       <Button
         className="h-10 rounded-xl bg-slate-950 font-bold text-white hover:bg-slate-800"
-        onClick={() => {
-          if (selectedMatchForResults) {
-            updateMatchScore(
-              selectedMatchForResults,
-              editMatchScores.home,
-              editMatchScores.away
-            )
+        onClick={async () => {
+          if (!selectedMatchForResults) return
+
+          const saved = await updateMatchScore(
+            selectedMatchForResults,
+            editMatchScores.home,
+            editMatchScores.away
+          )
+
+          if (saved) {
+            setIsResultsDialogOpen(false)
+            setSelectedMatchForResults(null)
           }
-          // DIREKT SCHLIESSEN
-          setIsResultsDialogOpen(false)
-          setSelectedMatchForResults(null)
         }}
       >
         Speichern
