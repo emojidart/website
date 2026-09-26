@@ -384,7 +384,7 @@ export function MembershipAccountingPanel({ user }: { user: User | null }) {
   const topupGross = paidTopups.reduce((sum, topup) => sum + Number(topup.gross_amount || 0), 0)
   const topupCredit = paidTopups.reduce((sum, topup) => sum + Number(topup.credit_amount || 0), 0)
   const topupFees = paidTopups.reduce((sum, topup) => sum + Number(topup.actual_stripe_fee ?? 0), 0)
-  const topupNet = paidTopups.reduce((sum, topup) => sum + Number(topup.actual_stripe_net ?? topup.gross_amount || 0), 0)
+  const topupNet = paidTopups.reduce((sum, topup) => sum + Number(topup.actual_stripe_net ?? topup.gross_amount ?? 0), 0)
   const openPaymentReviews = payments.filter((payment) => !payment.reviewed_at).length
   const openTopupReviews = topups.filter((topup) => topup.status === "paid" && !topup.reviewed_at).length
 
