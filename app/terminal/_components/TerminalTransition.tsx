@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import TerminalLoader from "./TerminalLoader"
+import TerminalIdleGuard from "./TerminalIdleGuard"
 
 type TransitionContextValue = {
   navigate: (href: string, label?: string) => void
@@ -45,8 +46,6 @@ export function TerminalTransitionProvider({ children }: { children: ReactNode }
     setLabel(nextLabel)
     setActive(true)
 
-    // Neue Route schon VOR Ende der 2 Sekunden einsetzen.
-    // Der dunkle Loader bleibt dabei oben und verdeckt jeden Paint-Wechsel.
     navTimerRef.current = window.setTimeout(() => {
       router.push(href)
       navTimerRef.current = null
@@ -62,8 +61,6 @@ export function TerminalTransitionProvider({ children }: { children: ReactNode }
     const elapsed = performance.now() - startedAtRef.current
     const remaining = Math.max(TOTAL_TRANSITION_MS - elapsed, SAFETY_AFTER_ROUTE_MS)
 
-    // Overlay bleibt bis mindestens Sekunde 2 stehen und zusätzlich lange genug,
-    // dass die neue Route bereits einen dunklen Frame gepainted hat.
     hideTimerRef.current = window.setTimeout(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -92,6 +89,7 @@ export function TerminalTransitionProvider({ children }: { children: ReactNode }
         <div className="pointer-events-none fixed inset-0 -z-50 bg-[#050608]" />
         {children}
       </div>
+      {!active && <TerminalIdleGuard />}
       {active && <TerminalLoader label={label} />}
     </TransitionContext.Provider>
   )

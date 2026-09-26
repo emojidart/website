@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   XCircle,
   Eye,
+  ClipboardCheck,
   Copy,
   MoveRight,
   X,
@@ -38,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 import { useClubDocuments, type ClubDocumentItem } from "@/hooks/vereinsverwaltung/useClubDocuments"
+import { supabase } from "@/lib/supabase"
 
 function formatBytes(bytes?: number) {
   if (!bytes && bytes !== 0) return "–"
@@ -62,6 +64,29 @@ type UploadJob = {
   size: number
   status: "queued" | "uploading" | "done" | "error"
   error?: string
+}
+
+type JoinDocumentConfig = {
+  id: string
+  owner_user_id: string
+  storage_path: string
+  title: string
+  category: "application" | "statutes" | "confidentiality" | "privacy" | "guardian" | "other"
+  version: string
+  is_required: boolean
+  minors_only: boolean
+  is_active: boolean
+  sort_order: number
+}
+
+function fullStoragePath(rootPrefix: string, relativePath: string) {
+  return `${rootPrefix.replace(/\/+$/, "")}/${relativePath.replace(/^\/+/, "")}`
+}
+
+function isPdf(item: ClubDocumentItem) {
+  if (item.kind !== "file") return false
+  const ct = String(item.contentType || "").toLowerCase()
+  return ct.includes("pdf") || item.name.toLowerCase().endsWith(".pdf")
 }
 
 function sortItems(items: ClubDocumentItem[], key: SortKey, dir: SortDir) {
@@ -144,6 +169,7 @@ function ItemMenu({
   onOpenFolder,
   onDownload,
   onPreview,
+  onJoinConfig,
   onRename,
   onMove,
   onCopy,
@@ -154,6 +180,7 @@ function ItemMenu({
   onOpenFolder: () => void
   onDownload: () => void
   onPreview: () => void
+  onJoinConfig: () => void
   onRename: () => void
   onMove: () => void
   onCopy: () => void
@@ -185,6 +212,12 @@ function ItemMenu({
               <Eye className="h-4 w-4 mr-2" />
               Vorschau
             </DropdownMenuItem>
+            {isPdf(item) && (
+              <DropdownMenuItem onClick={onJoinConfig} disabled={disabled}>
+                <ClipboardCheck className="h-4 w-4 mr-2" />
+                Für Beitritt konfigurieren…
+              </DropdownMenuItem>
+            )}
           </>
         )}
 
@@ -259,6 +292,94 @@ export function DocumentsTab({ user }: { user: User | null }) {
   const [createFolderName, setCreateFolderName] = useState("")
   const [createFolderBusy, setCreateFolderBusy] = useState(false)
 
+  // Beitrittsdokumente
+  const [joinDocuments, setJoinDocuments] = useState<JoinDocumentConfig[]>([])
+  const [joinConfigOpen, setJoinConfigOpen] = useState(false)
+  const [joinConfigItem, setJoinConfigItem] = useState<ClubDocumentItem | null>(null)
+  const [joinConfigBusy, setJoinConfigBusy] = useState(false)
+  const [joinConfig, setJoinConfig] = useState({
+    title: "",
+    category: "other" as JoinDocumentConfig["category"],
+    version: "1.0",
+    is_required: true,
+    minors_only: false,
+    is_active: true,
+    sort_order: 0,
+  })
+
+  const loadJoinDocuments = useCallback(async () => {
+    if (!user) {
+      setJoinDocuments([])
+      return
+    }
+    const { data, error } = await supabase
+      .from("club_join_documents")
+      .select("id,owner_user_id,storage_path,title,category,version,is_required,minors_only,is_active,sort_order")
+      .order("sort_order", { ascending: true })
+    if (error) {
+      console.warn("Beitrittsdokumente konnten nicht geladen werden:", error)
+      return
+    }
+    setJoinDocuments((data || []) as JoinDocumentConfig[])
+  }, [user])
+
+  useEffect(() => {
+    void loadJoinDocuments()
+  }, [loadJoinDocuments])
+
+  const joinDocumentForItem = (item: ClubDocumentItem) => {
+    if (item.kind !== "file") return null
+    const path = fullStoragePath(docs.rootPrefix, item.path)
+    return joinDocuments.find((entry) => entry.storage_path === path) || null
+  }
+
+  const openJoinConfig = (item: ClubDocumentItem) => {
+    if (!isPdf(item)) return
+    const existing = joinDocumentForItem(item)
+    setJoinConfigItem(item)
+    setJoinConfig({
+      title: existing?.title || item.name.replace(/\.pdf$/i, ""),
+      category: existing?.category || "other",
+      version: existing?.version || "1.0",
+      is_required: existing?.is_required ?? true,
+      minors_only: existing?.minors_only ?? false,
+      is_active: existing?.is_active ?? true,
+      sort_order: existing?.sort_order ?? joinDocuments.length + 1,
+    })
+    setJoinConfigOpen(true)
+  }
+
+  const saveJoinConfig = async () => {
+    if (!user || !joinConfigItem || !isPdf(joinConfigItem)) return
+    if (!joinConfig.title.trim()) return
+    setJoinConfigBusy(true)
+    try {
+      const storagePath = fullStoragePath(docs.rootPrefix, joinConfigItem.path)
+      const { error } = await supabase
+        .from("club_join_documents")
+        .upsert({
+          owner_user_id: user.id,
+          storage_path: storagePath,
+          title: joinConfig.title.trim(),
+          category: joinConfig.category,
+          version: joinConfig.version.trim() || "1.0",
+          is_required: joinConfig.is_required,
+          minors_only: joinConfig.minors_only,
+          is_active: joinConfig.is_active,
+          sort_order: Number(joinConfig.sort_order || 0),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "storage_path" })
+      if (error) throw error
+      await loadJoinDocuments()
+      setJoinConfigOpen(false)
+      setJoinConfigItem(null)
+    } catch (error: any) {
+      window.alert(error?.message || "Beitrittsdokument konnte nicht gespeichert werden.")
+    } finally {
+      setJoinConfigBusy(false)
+    }
+  }
+
   const openDelete = (item: ClubDocumentItem) => {
     setDeleteItem(item)
     setDeleteOpen(true)
@@ -275,7 +396,12 @@ export function DocumentsTab({ user }: { user: User | null }) {
     if (!deleteItem) return
     setDeleteBusy(true)
     try {
+      if (deleteItem.kind === "file") {
+        const path = fullStoragePath(docs.rootPrefix, deleteItem.path)
+        await supabase.from("club_join_documents").delete().eq("storage_path", path)
+      }
       await docs.deleteItem(deleteItem)
+      await loadJoinDocuments()
       setDeleteOpen(false)
       setDeleteItem(null)
     } finally {
@@ -366,6 +492,11 @@ export function DocumentsTab({ user }: { user: User | null }) {
   }
 
   const promptRename = async (item: ClubDocumentItem) => {
+    const linked = joinDocumentForItem(item)
+    if (linked?.is_active) {
+      window.alert("Dieses PDF ist aktuell für Beitrittsanfragen aktiv. Bitte zuerst in ‚Für Beitritt konfigurieren‘ deaktivieren, bevor du es umbenennst.")
+      return
+    }
     const next = window.prompt("Neuer Name:", item.name)
     if (!next) return
     await docs.renameItem(item, next)
@@ -434,6 +565,11 @@ export function DocumentsTab({ user }: { user: User | null }) {
     if (!user) return
     setActionBusy(true)
     try {
+      const linked = joinDocumentForItem(actionItem)
+      if (actionMode === "move" && linked?.is_active) {
+        window.alert("Dieses PDF ist aktuell für Beitrittsanfragen aktiv. Bitte zuerst deaktivieren, bevor du es verschiebst.")
+        return
+      }
       if (actionMode === "move") {
         await docs.moveItem(actionItem, targetFolder, targetName)
       } else {
@@ -734,6 +870,11 @@ export function DocumentsTab({ user }: { user: User | null }) {
                           <div className="text-xs text-gray-500 truncate">
                             {item.kind === "folder" ? "Ordner" : `${item.contentType || "Datei"} · ${formatBytes(item.size)}`}
                           </div>
+                          {joinDocumentForItem(item)?.is_active ? (
+                            <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-black text-green-800">
+                              <ClipboardCheck className="h-3 w-3" /> Beitritt aktiv
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     </button>
@@ -744,6 +885,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
                       onOpenFolder={() => docs.goInto(item.name)}
                       onDownload={() => download(item)}
                       onPreview={() => openPreview(item)}
+                      onJoinConfig={() => openJoinConfig(item)}
                       onRename={() => promptRename(item)}
                       onMove={() => openAction("move", item)}
                       onCopy={() => openAction("copy", item)}
@@ -779,6 +921,11 @@ export function DocumentsTab({ user }: { user: User | null }) {
                       <div className="mt-1 text-xs text-gray-500 truncate">
                         {item.kind === "folder" ? "Ordner" : `${item.contentType || "Datei"} · ${formatBytes(item.size)}`}
                       </div>
+                      {joinDocumentForItem(item)?.is_active ? (
+                        <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-black text-green-800">
+                          <ClipboardCheck className="h-3 w-3" /> Beitritt aktiv
+                        </div>
+                      ) : null}
                     </button>
 
                     <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition flex-none">
@@ -788,6 +935,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
                         onOpenFolder={() => docs.goInto(item.name)}
                         onDownload={() => download(item)}
                         onPreview={() => openPreview(item)}
+                        onJoinConfig={() => openJoinConfig(item)}
                         onRename={() => promptRename(item)}
                         onMove={() => openAction("move", item)}
                         onCopy={() => openAction("copy", item)}
@@ -979,6 +1127,71 @@ export function DocumentsTab({ user }: { user: User | null }) {
             )}
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={joinConfigOpen}
+        title={joinConfigItem ? `Beitrittsdokument: ${joinConfigItem.name}` : "Beitrittsdokument"}
+        onClose={() => { if (!joinConfigBusy) { setJoinConfigOpen(false); setJoinConfigItem(null) } }}
+        widthClass="max-w-2xl"
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => { setJoinConfigOpen(false); setJoinConfigItem(null) }} disabled={joinConfigBusy}>Abbrechen</Button>
+            <Button onClick={() => void saveJoinConfig()} disabled={joinConfigBusy || !joinConfig.title.trim()} className="bg-green-700 text-white hover:bg-green-800">
+              {joinConfigBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ClipboardCheck className="mr-2 h-4 w-4" />}
+              Speichern
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm font-semibold text-blue-800">
+            Aktive PDFs werden Antragstellern im digitalen Beitrittsprozess angezeigt. Die gespeicherte Version wird bei jeder Bestätigung mitprotokolliert.
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-gray-900">Anzeigename</div>
+            <Input value={joinConfig.title} onChange={(e) => setJoinConfig((p) => ({ ...p, title: e.target.value }))} placeholder="z. B. Vereinssatzung" />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2 sm:col-span-2">
+              <div className="text-sm font-medium text-gray-900">Kategorie</div>
+              <select value={joinConfig.category} onChange={(e) => setJoinConfig((p) => ({ ...p, category: e.target.value as JoinDocumentConfig["category"] }))} className="h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm">
+                <option value="application">Aufnahmeantrag / Beitrittserklärung</option>
+                <option value="statutes">Vereinssatzung / Vereinsregeln</option>
+                <option value="confidentiality">Verschwiegenheitserklärung</option>
+                <option value="privacy">Datenschutz / DSGVO</option>
+                <option value="guardian">Einverständnis gesetzliche Vertretung</option>
+                <option value="other">Weiteres Dokument</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-gray-900">Version</div>
+              <Input value={joinConfig.version} onChange={(e) => setJoinConfig((p) => ({ ...p, version: e.target.value }))} placeholder="1.0" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-gray-900">Reihenfolge</div>
+            <Input type="number" value={joinConfig.sort_order} onChange={(e) => setJoinConfig((p) => ({ ...p, sort_order: Number(e.target.value || 0) }))} />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl border p-3">
+              <input type="checkbox" checked={joinConfig.is_required} onChange={(e) => setJoinConfig((p) => ({ ...p, is_required: e.target.checked }))} className="h-5 w-5" />
+              <span className="text-sm font-bold text-gray-800">Pflichtdokument</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl border p-3">
+              <input type="checkbox" checked={joinConfig.minors_only} onChange={(e) => setJoinConfig((p) => ({ ...p, minors_only: e.target.checked }))} className="h-5 w-5" />
+              <span className="text-sm font-bold text-gray-800">Nur Minderjährige</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl border p-3">
+              <input type="checkbox" checked={joinConfig.is_active} onChange={(e) => setJoinConfig((p) => ({ ...p, is_active: e.target.checked }))} className="h-5 w-5" />
+              <span className="text-sm font-bold text-gray-800">Aktiv anzeigen</span>
+            </label>
+          </div>
+        </div>
       </Modal>
 
       <Modal

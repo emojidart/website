@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { Fingerprint, Sparkles } from "lucide-react"
 import TerminalLink from "./_components/TerminalLink"
 
@@ -27,6 +27,13 @@ export default function TerminalPage() {
     [],
   )
 
+  const enterFullscreen = useCallback(() => {
+    if (typeof document === "undefined" || document.fullscreenElement) return
+
+    void document.documentElement.requestFullscreen().catch(() => {
+      // Falls der Browser Vollbild blockiert, läuft der Terminal trotzdem normal weiter.
+    })
+  }, [])
 
   return (
     <main className="relative min-h-[100svh] overflow-hidden bg-[#050608] text-white">
@@ -85,7 +92,10 @@ export default function TerminalPage() {
           </div>
 
           <div className="pb-8 sm:pb-10">
-            <div className="mx-auto flex max-w-[560px] justify-center animate-fade-up [animation-delay:.45s] [animation-fill-mode:both]">
+            <div
+              onPointerDown={enterFullscreen}
+              className="mx-auto flex max-w-[560px] justify-center animate-fade-up [animation-delay:.45s] [animation-fill-mode:both]"
+            >
               <TerminalLink
                 href="/terminal/menu"
                 label="Club Terminal wird geöffnet"

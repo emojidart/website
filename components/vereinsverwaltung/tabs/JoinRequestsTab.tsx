@@ -6,6 +6,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
+  FileCheck2,
+  PenLine,
+  Sparkles,
   Loader2,
   RefreshCw,
   Search,
@@ -43,6 +46,24 @@ type JoinRequest = {
   created_at: string
   approved_at: string | null
   rejected_at: string | null
+  trial_requested: boolean
+  signature_data_url: string | null
+  signed_at: string | null
+  document_acceptances: Array<{
+    document_id: string
+    title: string
+    category: string
+    version: string
+    storage_path: string
+    opened_at: string
+    accepted_at: string
+  }> | null
+  documents_accepted_at: string | null
+  guardian_full_name: string | null
+  guardian_signature_data_url: string | null
+  guardian_signed_at: string | null
+  trial_granted_at: string | null
+  trial_ends_on: string | null
 }
 
 type SpielerOption = {
@@ -83,6 +104,24 @@ function statusClass(status: JoinStatus) {
   return "border-gray-200 bg-gray-50 text-gray-700"
 }
 
+function isMinorBirthdate(value: string | null | undefined) {
+  if (!value) return false
+  const birth = new Date(`${String(value).split("T")[0]}T00:00:00`)
+  if (Number.isNaN(birth.getTime())) return false
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const month = today.getMonth() - birth.getMonth()
+  if (month < 0 || (month === 0 && today.getDate() < birth.getDate())) age--
+  return age < 18
+}
+
+function addDaysISO(days: number) {
+  const d = new Date()
+  d.setHours(12, 0, 0, 0)
+  d.setDate(d.getDate() + Math.max(0, days))
+  return d.toISOString().slice(0, 10)
+}
+
 async function sendClubJoinApprovedMail(row: JoinRequest) {
   if (!row.email) {
     throw new Error("Für dieses Mitglied ist keine E-Mail-Adresse hinterlegt.")
@@ -117,6 +156,9 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
   const [search, setSearch] = useState("")
   const [selectedSpieldatenbank, setSelectedSpieldatenbank] = useState<Record<string, string>>({})
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({})
+  const [trialDurationDays, setTrialDurationDays] = useState(90)
+  const [trialPreset, setTrialPreset] = useState<"edart" | "steeldart" | "both" | "full">("full")
+  const [savingSettings, setSavingSettings] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   const load = useCallback(async () => {
@@ -124,17 +166,23 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
       setLoading(true)
       setMessage(null)
 
-      const [requestRes, playerRes] = await Promise.all([
+      const [requestRes, playerRes, settingsRes] = await Promise.all([
         supabase.from("club_join_requests").select("*").order("created_at", { ascending: false }),
         supabase.from("spieldatenbank").select("id,name,verein").order("name", { ascending: true }),
+        supabase.from("club_join_settings").select("trial_duration_days,trial_preset").eq("id", "default").maybeSingle(),
       ])
 
       if (requestRes.error) throw requestRes.error
       if (playerRes.error) throw playerRes.error
+      if (settingsRes.error) throw settingsRes.error
 
       const nextRows = (requestRes.data || []) as JoinRequest[]
       setRows(nextRows)
       setPlayers((playerRes.data || []) as SpielerOption[])
+      if (settingsRes.data) {
+        setTrialDurationDays(Number(settingsRes.data.trial_duration_days || 90))
+        setTrialPreset((settingsRes.data.trial_preset || "full") as "edart" | "steeldart" | "both" | "full")
+      }
 
       const defaults: Record<string, string> = {}
       const notes: Record<string, string> = {}
@@ -184,6 +232,91 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
         .includes(q)
     })
   }, [rows, filter, search])
+
+  async function saveTrialSettings() {
+    if (!user?.id) return
+    try {
+      setSavingSettings(true)
+      setMessage(null)
+      const duration = Math.min(730, Math.max(1, Number(trialDurationDays || 90)))
+      const { error } = await supabase
+        .from("club_join_settings")
+        .update({
+          trial_duration_days: duration,
+          trial_preset: trialPreset,
+          updated_at: new Date().toISOString(),
+          updated_by: user.id,
+        })
+        .eq("id", "default")
+      if (error) throw error
+      setTrialDurationDays(duration)
+      setMessage({ type: "success", text: `Standard-Testphase gespeichert: ${duration} Tage.` })
+    } catch (error: any) {
+      setMessage({ type: "error", text: error?.message || "Testphasen-Einstellung konnte nicht gespeichert werden." })
+    } finally {
+      setSavingSettings(false)
+    }
+  }
+
+  async function grantRequestedTrial(playerId: string, row: JoinRequest) {
+    if (!row.trial_requested || !user?.id) return { grantedAt: null as string | null, endsOn: null as string | null }
+
+    const { data: settings, error: settingsError } = await supabase
+      .from("club_join_settings")
+      .select("trial_enabled,trial_duration_days,trial_preset")
+      .eq("id", "default")
+      .single()
+    if (settingsError) throw settingsError
+    if (!settings?.trial_enabled) return { grantedAt: null, endsOn: null }
+
+    const { data: moduleRows, error: moduleError } = await supabase
+      .from("membership_modules")
+      .select("code,is_required_base,is_active")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+    if (moduleError) throw moduleError
+
+    const modules = moduleRows || []
+    const baseCodes = modules.filter((m: any) => m.is_required_base).map((m: any) => m.code)
+    let codes: string[] = []
+    const preset = String(settings.trial_preset || "full")
+    if (preset === "edart") codes = [...baseCodes, "premium_app", "edart_league"]
+    else if (preset === "steeldart") codes = [...baseCodes, "premium_app", "steeldart_league"]
+    else if (preset === "both") codes = [...baseCodes, "premium_app", "edart_league", "steeldart_league"]
+    else codes = modules.map((m: any) => m.code)
+    codes = Array.from(new Set(codes.filter((code) => modules.some((m: any) => m.code === code))))
+
+    const startsOn = new Date().toISOString().slice(0, 10)
+    const duration = Math.max(1, Number(settings.trial_duration_days || 90))
+    const endsOn = addDaysISO(duration - 1)
+
+    const { data: currentTrials, error: currentTrialsError } = await supabase
+      .from("membership_trials")
+      .select("module_code")
+      .eq("player_id", playerId)
+      .eq("status", "active")
+    if (currentTrialsError) throw currentTrialsError
+
+    const existingCodes = new Set((currentTrials || []).map((t: any) => t.module_code))
+    const rowsToInsert = codes
+      .filter((code) => !existingCodes.has(code))
+      .map((code) => ({
+        player_id: playerId,
+        module_code: code,
+        starts_on: startsOn,
+        ends_on: endsOn,
+        status: "active",
+        note: `Automatische Testphase aus Beitrittsanfrage ${row.id}`,
+        created_by: user.id,
+      }))
+
+    if (rowsToInsert.length > 0) {
+      const { error: insertError } = await supabase.from("membership_trials").insert(rowsToInsert)
+      if (insertError) throw insertError
+    }
+
+    return { grantedAt: new Date().toISOString(), endsOn }
+  }
 
   async function findExistingClubPlayer(row: JoinRequest, spieldatenbankId: string | null) {
     if (spieldatenbankId) {
@@ -271,6 +404,8 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
         .eq("user_id", row.user_id)
       if (profileError) throw profileError
 
+      const trialResult = await grantRequestedTrial(clubPlayerId, row)
+
       const { error: requestError } = await supabase
         .from("club_join_requests")
         .update({
@@ -280,6 +415,8 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
           approved_at: new Date().toISOString(),
           rejected_at: null,
           decided_by: user.id,
+          trial_granted_at: trialResult.grantedAt,
+          trial_ends_on: trialResult.endsOn,
         })
         .eq("id", row.id)
         .eq("status", "pending")
@@ -299,8 +436,8 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
       setMessage({
         type: mailSent ? "success" : "error",
         text: mailSent
-          ? `${row.full_name} wurde aufgenommen. Bis zur aktiven Grundmitgliedschaft bleibt der Zugang eingeschränkt. Die Infomail wurde gesendet.`
-          : `${row.full_name} wurde aufgenommen. Bis zur aktiven Grundmitgliedschaft bleibt der Zugang eingeschränkt. Achtung: ${mailErrorText}`,
+          ? `${row.full_name} wurde aufgenommen.${row.trial_requested && trialResult.endsOn ? ` Testphase bis ${fmtDate(trialResult.endsOn)} aktiviert.` : ""} Die Infomail wurde gesendet.`
+          : `${row.full_name} wurde aufgenommen.${row.trial_requested && trialResult.endsOn ? ` Testphase bis ${fmtDate(trialResult.endsOn)} aktiviert.` : ""} Achtung: ${mailErrorText}`,
       })
 
       await load()
@@ -353,6 +490,36 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
               Gäste bleiben Gäste, bis du den Beitritt bestätigst. Bei „Mitglied aufnehmen“
               wird der bestehende Gast-Account direkt mit dem Vereinsmitglied verbunden.
             </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-purple-200 bg-purple-50 p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2 font-black text-purple-900"><Sparkles className="h-5 w-5" /> Standard-Testphase für neue Mitglieder</div>
+            <p className="mt-1 text-xs font-semibold text-purple-700">Nur wenn der Antragsteller „Ja“ gewählt hat und du den Beitritt genehmigst.</p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-[150px_220px_auto]">
+            <div className="space-y-1">
+              <Label className="text-xs">Dauer in Tagen</Label>
+              <Input type="number" min={1} max={730} value={trialDurationDays} onChange={(e) => setTrialDurationDays(Number(e.target.value || 90))} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Testpaket</Label>
+              <Select value={trialPreset} onValueChange={(v) => setTrialPreset(v as typeof trialPreset)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full">Komplettpaket</SelectItem>
+                  <SelectItem value="both">E-Dart + Steeldart</SelectItem>
+                  <SelectItem value="edart">E-Dart</SelectItem>
+                  <SelectItem value="steeldart">Steeldart</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="button" onClick={() => void saveTrialSettings()} disabled={savingSettings} className="bg-purple-700 text-white hover:bg-purple-800">
+              {savingSettings ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Speichern
+            </Button>
           </div>
         </div>
       </div>
@@ -462,6 +629,59 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
                     </div>
                   ) : null}
 
+                  {(() => {
+                    const docs = Array.isArray(row.document_acceptances) ? row.document_acceptances : []
+                    const minor = isMinorBirthdate(row.birthdate)
+                    const applicantSigned = !!row.signature_data_url && !!row.signed_at
+                    const guardianSigned = !minor || (!!row.guardian_full_name && !!row.guardian_signature_data_url && !!row.guardian_signed_at)
+                    const docsComplete = !!row.documents_accepted_at
+                    const complete = applicantSigned && guardianSigned && docsComplete
+
+                    return (
+                      <div className={complete ? "rounded-2xl border border-green-200 bg-green-50 p-4" : "rounded-2xl border border-red-200 bg-red-50 p-4"}>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 font-black text-gray-900"><FileCheck2 className="h-5 w-5" /> Digitale Unterlagen</div>
+                          <Badge className={complete ? "bg-green-600 text-white" : "bg-red-600 text-white"}>{complete ? "Vollständig" : "Unvollständig"}</Badge>
+                        </div>
+                        <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                          <div className={docsComplete ? "font-bold text-green-800" : "font-bold text-red-700"}>Dokumente: {docsComplete ? `✓ ${docs.length} bestätigt` : "✗ fehlt"}</div>
+                          <div className={applicantSigned ? "font-bold text-green-800" : "font-bold text-red-700"}>Unterschrift: {applicantSigned ? "✓ vorhanden" : "✗ fehlt"}</div>
+                          <div className={guardianSigned ? "font-bold text-green-800" : "font-bold text-red-700"}>Vertretung: {minor ? (guardianSigned ? "✓ vorhanden" : "✗ fehlt") : "nicht erforderlich"}</div>
+                          <div className="font-bold text-gray-800">Testphase: {row.trial_requested ? "JA" : "NEIN"}</div>
+                        </div>
+
+                        {docs.length > 0 ? (
+                          <div className="mt-3 space-y-1 rounded-xl bg-white/80 p-3">
+                            {docs.map((doc, idx) => (
+                              <div key={`${doc.document_id}-${idx}`} className="text-xs font-semibold text-gray-700">
+                                ✓ {doc.title} · Version {doc.version} · bestätigt {fmtDateTime(doc.accepted_at)}
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        {(row.signature_data_url || row.guardian_signature_data_url) ? (
+                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                            {row.signature_data_url ? (
+                              <div className="rounded-xl border bg-white p-3">
+                                <div className="mb-2 flex items-center gap-2 text-xs font-black text-gray-600"><PenLine className="h-4 w-4" /> Antragsteller · {fmtDateTime(row.signed_at)}</div>
+                                <img src={row.signature_data_url} alt={`Unterschrift ${row.full_name}`} className="h-24 w-full object-contain" />
+                              </div>
+                            ) : null}
+                            {row.guardian_signature_data_url ? (
+                              <div className="rounded-xl border bg-white p-3">
+                                <div className="mb-2 text-xs font-black text-gray-600">Gesetzliche Vertretung: {row.guardian_full_name || "—"} · {fmtDateTime(row.guardian_signed_at)}</div>
+                                <img src={row.guardian_signature_data_url} alt="Unterschrift gesetzliche Vertretung" className="h-24 w-full object-contain" />
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+
+                        {row.trial_granted_at ? <div className="mt-3 text-xs font-black text-purple-800">Testphase aktiviert am {fmtDateTime(row.trial_granted_at)}{row.trial_ends_on ? ` · gültig bis ${fmtDate(row.trial_ends_on)}` : ""}</div> : null}
+                      </div>
+                    )
+                  })()}
+
                   {row.status === "pending" ? (
                     <>
                       <div className="grid min-w-0 gap-3 xl:grid-cols-2">
@@ -512,9 +732,10 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
 
                         <Button
                           type="button"
-                          disabled={saving}
+                          disabled={saving || !row.signature_data_url || !row.signed_at || !row.documents_accepted_at || (isMinorBirthdate(row.birthdate) && (!row.guardian_full_name || !row.guardian_signature_data_url || !row.guardian_signed_at))}
                           onClick={() => void approve(row)}
-                          className="bg-green-600 text-white hover:bg-green-700"
+                          className="bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-300"
+                          title={!row.signature_data_url || !row.documents_accepted_at ? "Digitale Unterlagen sind noch nicht vollständig." : undefined}
                         >
                           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                           Mitglied aufnehmen
