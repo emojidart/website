@@ -437,7 +437,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
       setJoinSettingsMessage(
         nextDocumentsEnabled
           ? "Digitaler Dokumentenprozess ist freigeschaltet."
-          : "Dokumentenprozess ist deaktiviert. Mitglieder und Antragsteller sehen keine Test-/Beitrittsdokumente.",
+          : "Dokumentenprozess ist deaktiviert.",
       )
     } catch (error: any) {
       setJoinSettingsMessage(error?.message || "Einstellung konnte nicht gespeichert werden.")
@@ -756,7 +756,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
                   <p className="mt-1 text-sm font-semibold text-gray-600">
                     {documentsEnabled
                       ? "Freigeschaltet: aktive Beitrittsdokumente werden Antragstellern und Mitgliedern angezeigt."
-                      : "Noch nicht freigeschaltet. So kannst du Test-PDFs vorbereiten, ohne dass Mitglieder sie sehen."}
+                      : "Die Vereinsunterlagen sind derzeit noch nicht für Mitglieder freigeschaltet. Die Dokumente können zunächst vollständig vorbereitet und anschließend gesammelt veröffentlicht werden."}
                   </p>
                 </div>
                 <label className="flex shrink-0 cursor-pointer items-center gap-3 rounded-xl border border-white/80 bg-white px-3 py-2 shadow-sm">
