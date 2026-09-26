@@ -6,6 +6,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
+  Download,
   FileCheck2,
   PenLine,
   Sparkles,
@@ -152,12 +153,14 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
   const [players, setPlayers] = useState<SpielerOption[]>([])
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [archiveLoading, setArchiveLoading] = useState<string | null>(null)
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending")
   const [search, setSearch] = useState("")
   const [selectedSpieldatenbank, setSelectedSpieldatenbank] = useState<Record<string, string>>({})
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({})
   const [trialDurationDays, setTrialDurationDays] = useState(90)
   const [trialPreset, setTrialPreset] = useState<"edart" | "steeldart" | "both" | "full">("full")
+  const [documentsEnabled, setDocumentsEnabled] = useState(false)
   const [savingSettings, setSavingSettings] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -169,7 +172,7 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
       const [requestRes, playerRes, settingsRes] = await Promise.all([
         supabase.from("club_join_requests").select("*").order("created_at", { ascending: false }),
         supabase.from("spieldatenbank").select("id,name,verein").order("name", { ascending: true }),
-        supabase.from("club_join_settings").select("trial_duration_days,trial_preset").eq("id", "default").maybeSingle(),
+        supabase.from("club_join_settings").select("trial_duration_days,trial_preset,documents_enabled").eq("id", "default").maybeSingle(),
       ])
 
       if (requestRes.error) throw requestRes.error
@@ -182,6 +185,7 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
       if (settingsRes.data) {
         setTrialDurationDays(Number(settingsRes.data.trial_duration_days || 90))
         setTrialPreset((settingsRes.data.trial_preset || "full") as "edart" | "steeldart" | "both" | "full")
+        setDocumentsEnabled(!!settingsRes.data.documents_enabled)
       }
 
       const defaults: Record<string, string> = {}
@@ -342,6 +346,40 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
     return null
   }
 
+  async function callArchiveApi(requestId: string, stage: "submitted" | "approved", action: "generate" | "download") {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError) throw sessionError
+    const accessToken = sessionData.session?.access_token
+    if (!accessToken) throw new Error("Deine Sitzung ist abgelaufen. Bitte melde dich neu an.")
+
+    const response = await fetch("/api/club-join-archive", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ requestId, stage, action }),
+    })
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(payload?.error || "Die Beitrittsakte konnte nicht verarbeitet werden.")
+    return payload as { url?: string; fileName?: string; sha256?: string }
+  }
+
+  async function downloadArchive(row: JoinRequest, stage: "submitted" | "approved") {
+    const key = `${row.id}:${stage}`
+    try {
+      setArchiveLoading(key)
+      setMessage(null)
+      const payload = await callArchiveApi(row.id, stage, "download")
+      if (!payload.url) throw new Error("Für diese Beitrittsakte konnte kein Download erstellt werden.")
+      window.open(payload.url, "_blank", "noopener,noreferrer")
+    } catch (error: any) {
+      setMessage({ type: "error", text: error?.message || "Die Beitrittsakte konnte nicht geöffnet werden." })
+    } finally {
+      setArchiveLoading(null)
+    }
+  }
+
   async function approve(row: JoinRequest) {
     if (!user?.id) return
 
@@ -421,6 +459,14 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
         .eq("id", row.id)
         .eq("status", "pending")
       if (requestError) throw requestError
+
+      if (documentsEnabled || row.documents_accepted_at) {
+        try {
+          await callArchiveApi(row.id, "approved", "generate")
+        } catch (archiveError) {
+          console.error("club join approved archive error:", archiveError)
+        }
+      }
 
       let mailSent = true
       let mailErrorText = ""
@@ -635,20 +681,28 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
                     const applicantSigned = !!row.signature_data_url && !!row.signed_at
                     const guardianSigned = !minor || (!!row.guardian_full_name && !!row.guardian_signature_data_url && !!row.guardian_signed_at)
                     const docsComplete = !!row.documents_accepted_at
-                    const complete = applicantSigned && guardianSigned && docsComplete
+                    const complete = !documentsEnabled || (applicantSigned && guardianSigned && docsComplete)
 
                     return (
                       <div className={complete ? "rounded-2xl border border-green-200 bg-green-50 p-4" : "rounded-2xl border border-red-200 bg-red-50 p-4"}>
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2 font-black text-gray-900"><FileCheck2 className="h-5 w-5" /> Digitale Unterlagen</div>
-                          <Badge className={complete ? "bg-green-600 text-white" : "bg-red-600 text-white"}>{complete ? "Vollständig" : "Unvollständig"}</Badge>
+                          <Badge className={!documentsEnabled ? "bg-gray-600 text-white" : complete ? "bg-green-600 text-white" : "bg-red-600 text-white"}>
+                            {!documentsEnabled ? "Noch nicht freigeschaltet" : complete ? "Vollständig" : "Unvollständig"}
+                          </Badge>
                         </div>
-                        <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
-                          <div className={docsComplete ? "font-bold text-green-800" : "font-bold text-red-700"}>Dokumente: {docsComplete ? `✓ ${docs.length} bestätigt` : "✗ fehlt"}</div>
-                          <div className={applicantSigned ? "font-bold text-green-800" : "font-bold text-red-700"}>Unterschrift: {applicantSigned ? "✓ vorhanden" : "✗ fehlt"}</div>
-                          <div className={guardianSigned ? "font-bold text-green-800" : "font-bold text-red-700"}>Vertretung: {minor ? (guardianSigned ? "✓ vorhanden" : "✗ fehlt") : "nicht erforderlich"}</div>
-                          <div className="font-bold text-gray-800">Testphase: {row.trial_requested ? "JA" : "NEIN"}</div>
-                        </div>
+                        {!documentsEnabled ? (
+                          <div className="mt-3 rounded-xl bg-white/80 p-3 text-sm font-semibold text-gray-700">
+                            Der digitale Dokumentenprozess ist derzeit deaktiviert. Diese Anfrage darf deshalb auch ohne digitale Unterlagen bearbeitet werden.
+                          </div>
+                        ) : (
+                          <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                            <div className={docsComplete ? "font-bold text-green-800" : "font-bold text-red-700"}>Dokumente: {docsComplete ? `✓ ${docs.length} bestätigt` : "✗ fehlt"}</div>
+                            <div className={applicantSigned ? "font-bold text-green-800" : "font-bold text-red-700"}>Unterschrift: {applicantSigned ? "✓ vorhanden" : "✗ fehlt"}</div>
+                            <div className={guardianSigned ? "font-bold text-green-800" : "font-bold text-red-700"}>Vertretung: {minor ? (guardianSigned ? "✓ vorhanden" : "✗ fehlt") : "nicht erforderlich"}</div>
+                            <div className="font-bold text-gray-800">Testphase: {row.trial_requested ? "JA" : "NEIN"}</div>
+                          </div>
+                        )}
 
                         {docs.length > 0 ? (
                           <div className="mt-3 space-y-1 rounded-xl bg-white/80 p-3">
@@ -678,6 +732,35 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
                         ) : null}
 
                         {row.trial_granted_at ? <div className="mt-3 text-xs font-black text-purple-800">Testphase aktiviert am {fmtDateTime(row.trial_granted_at)}{row.trial_ends_on ? ` · gültig bis ${fmtDate(row.trial_ends_on)}` : ""}</div> : null}
+
+                        {(documentsEnabled || row.documents_accepted_at) ? (
+                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={archiveLoading === `${row.id}:submitted`}
+                            onClick={() => void downloadArchive(row, "submitted")}
+                            className="bg-white"
+                          >
+                            {archiveLoading === `${row.id}:submitted` ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                            Eingereichten Antrag (PDF)
+                          </Button>
+                          {row.status === "approved" ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={archiveLoading === `${row.id}:approved`}
+                              onClick={() => void downloadArchive(row, "approved")}
+                              className="border-green-300 bg-white text-green-800"
+                            >
+                              {archiveLoading === `${row.id}:approved` ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                              Aufnahmebestätigung (PDF)
+                            </Button>
+                          ) : null}
+                        </div>
+                        ) : null}
                       </div>
                     )
                   })()}
@@ -732,10 +815,10 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
 
                         <Button
                           type="button"
-                          disabled={saving || !row.signature_data_url || !row.signed_at || !row.documents_accepted_at || (isMinorBirthdate(row.birthdate) && (!row.guardian_full_name || !row.guardian_signature_data_url || !row.guardian_signed_at))}
+                          disabled={saving || (documentsEnabled && (!row.signature_data_url || !row.signed_at || !row.documents_accepted_at || (isMinorBirthdate(row.birthdate) && (!row.guardian_full_name || !row.guardian_signature_data_url || !row.guardian_signed_at))))}
                           onClick={() => void approve(row)}
                           className="bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-300"
-                          title={!row.signature_data_url || !row.documents_accepted_at ? "Digitale Unterlagen sind noch nicht vollständig." : undefined}
+                          title={documentsEnabled && (!row.signature_data_url || !row.documents_accepted_at) ? "Digitale Unterlagen sind noch nicht vollständig." : undefined}
                         >
                           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                           Mitglied aufnehmen

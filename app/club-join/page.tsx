@@ -6,6 +6,7 @@ import Link from "next/link"
 import {
   Check,
   CheckCircle2,
+  Download,
   ExternalLink,
   FileCheck2,
   FileText,
@@ -199,6 +200,7 @@ function SignaturePad({
 export default function ClubJoinPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [archiveLoading, setArchiveLoading] = useState<"submitted" | "approved" | null>(null)
   const [userId, setUserId] = useState("")
   const [existing, setExisting] = useState<JoinRequestLite | null>(null)
   const [linkedSpieldatenbankId, setLinkedSpieldatenbankId] = useState<string | null>(null)
@@ -215,6 +217,7 @@ export default function ClubJoinPage() {
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [trialRequested, setTrialRequested] = useState<boolean | null>(null)
+  const [documentsEnabled, setDocumentsEnabled] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   const [form, setForm] = useState({
@@ -246,7 +249,7 @@ export default function ClubJoinPage() {
 
         setUserId(user.id)
 
-        const [requestRes, guestRes, docsRes] = await Promise.all([
+        const [requestRes, guestRes, docsRes, settingsRes] = await Promise.all([
           supabase
             .from("club_join_requests")
             .select("id,status,created_at")
@@ -268,12 +271,19 @@ export default function ClubJoinPage() {
             .eq("is_active", true)
             .order("sort_order", { ascending: true })
             .order("created_at", { ascending: true }),
+          supabase
+            .from("club_join_settings")
+            .select("documents_enabled")
+            .eq("id", "default")
+            .maybeSingle(),
         ])
 
         if (requestRes.error) throw requestRes.error
         if (guestRes.error) throw guestRes.error
         if (docsRes.error) throw docsRes.error
+        if (settingsRes.error) throw settingsRes.error
 
+        setDocumentsEnabled(!!settingsRes.data?.documents_enabled)
         setExisting((requestRes.data || null) as JoinRequestLite | null)
         setLinkedSpieldatenbankId(guestRes.data?.linked_spieldatenbank_id || null)
         setDocuments((docsRes.data || []) as JoinDocument[])
@@ -302,8 +312,8 @@ export default function ClubJoinPage() {
   const age = useMemo(() => calculateAge(form.birthdate), [form.birthdate])
   const isMinor = age !== null && age < 18
   const visibleDocuments = useMemo(
-    () => documents.filter((doc) => !doc.minors_only || isMinor),
-    [documents, isMinor],
+    () => documentsEnabled ? documents.filter((doc) => !doc.minors_only || isMinor) : [],
+    [documents, isMinor, documentsEnabled],
   )
   const requiredDocuments = visibleDocuments.filter((doc) => doc.is_required)
   const acceptedRequiredCount = requiredDocuments.filter((doc) => !!accepted[doc.id]).length
@@ -313,9 +323,7 @@ export default function ClubJoinPage() {
   const readyToSend =
     !!form.full_name.trim() &&
     !!form.birthdate &&
-    allRequiredAccepted &&
-    !!signature &&
-    guardianComplete &&
+    (!documentsEnabled || (allRequiredAccepted && !!signature && guardianComplete)) &&
     trialRequested !== null
 
   const setField = (key: keyof typeof form, value: string) => {
@@ -362,6 +370,41 @@ export default function ClubJoinPage() {
     setViewerReadyAt(null)
   }
 
+  async function archiveRequest(requestId: string, stage: "submitted" | "approved", action: "generate" | "download") {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError) throw sessionError
+    const accessToken = sessionData.session?.access_token
+    if (!accessToken) throw new Error("Deine Sitzung ist abgelaufen. Bitte melde dich neu an.")
+
+    const response = await fetch("/api/club-join-archive", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ requestId, stage, action }),
+    })
+
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(payload?.error || "Die Beitrittsakte konnte nicht erstellt werden.")
+    return payload as { url?: string; fileName?: string; sha256?: string }
+  }
+
+  async function downloadArchive(stage: "submitted" | "approved") {
+    if (!existing?.id) return
+    try {
+      setArchiveLoading(stage)
+      setMessage(null)
+      const payload = await archiveRequest(existing.id, stage, "download")
+      if (!payload.url) throw new Error("Für diese Beitrittsakte konnte kein Download erstellt werden.")
+      window.open(payload.url, "_blank", "noopener,noreferrer")
+    } catch (error: any) {
+      setMessage({ type: "error", text: error?.message || "Die Beitrittsakte konnte nicht geöffnet werden." })
+    } finally {
+      setArchiveLoading(null)
+    }
+  }
+
   async function submit() {
     if (!userId) return
     if (!form.full_name.trim()) {
@@ -372,17 +415,19 @@ export default function ClubJoinPage() {
       setMessage({ type: "error", text: "Bitte gib dein Geburtsdatum ein." })
       return
     }
-    if (!allRequiredAccepted) {
-      setMessage({ type: "error", text: "Bitte lies und bestätige zuerst alle Pflichtdokumente." })
-      return
-    }
-    if (!signature) {
-      setMessage({ type: "error", text: "Bitte unterschreibe den Beitrittsantrag." })
-      return
-    }
-    if (isMinor && (!guardianName.trim() || !guardianSignature)) {
-      setMessage({ type: "error", text: "Bei Minderjährigen fehlt die Zustimmung der gesetzlichen Vertretung." })
-      return
+    if (documentsEnabled) {
+      if (!allRequiredAccepted) {
+        setMessage({ type: "error", text: "Bitte lies und bestätige zuerst alle Pflichtdokumente." })
+        return
+      }
+      if (!signature) {
+        setMessage({ type: "error", text: "Bitte unterschreibe den Beitrittsantrag." })
+        return
+      }
+      if (isMinor && (!guardianName.trim() || !guardianSignature)) {
+        setMessage({ type: "error", text: "Bei Minderjährigen fehlt die Zustimmung der gesetzlichen Vertretung." })
+        return
+      }
     }
     if (trialRequested === null) {
       setMessage({ type: "error", text: "Bitte wähle aus, ob du die kostenlose Testphase nutzen möchtest." })
@@ -394,9 +439,9 @@ export default function ClubJoinPage() {
       setMessage(null)
       const now = new Date().toISOString()
 
-      const acceptanceSnapshot = visibleDocuments
-        .filter((doc) => accepted[doc.id])
-        .map((doc) => accepted[doc.id])
+      const acceptanceSnapshot = documentsEnabled
+        ? visibleDocuments.filter((doc) => accepted[doc.id]).map((doc) => accepted[doc.id])
+        : []
 
       const { data, error } = await supabase
         .from("club_join_requests")
@@ -415,18 +460,26 @@ export default function ClubJoinPage() {
           note: form.note.trim() || null,
           status: "pending",
           trial_requested: trialRequested,
-          signature_data_url: signature,
-          signed_at: now,
+          signature_data_url: documentsEnabled ? signature : null,
+          signed_at: documentsEnabled ? now : null,
           document_acceptances: acceptanceSnapshot,
-          documents_accepted_at: now,
-          guardian_full_name: isMinor ? guardianName.trim() : null,
-          guardian_signature_data_url: isMinor ? guardianSignature : null,
-          guardian_signed_at: isMinor ? now : null,
+          documents_accepted_at: documentsEnabled ? now : null,
+          guardian_full_name: documentsEnabled && isMinor ? guardianName.trim() : null,
+          guardian_signature_data_url: documentsEnabled && isMinor ? guardianSignature : null,
+          guardian_signed_at: documentsEnabled && isMinor ? now : null,
         })
         .select("id,status,created_at")
         .single()
 
       if (error) throw error
+
+      if (documentsEnabled) {
+        try {
+          await archiveRequest(data.id, "submitted", "generate")
+        } catch (archiveError) {
+          console.error("[club-join] Beitrittsakte konnte nicht sofort archiviert werden:", archiveError)
+        }
+      }
 
       try {
         const notifyResponse = await fetch("/api/notify-new-request", {
@@ -486,6 +539,16 @@ export default function ClubJoinPage() {
                   Deine Unterlagen wurden übermittelt. Die Vereinsleitung prüft jetzt deine Anfrage.
                 </p>
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={archiveLoading === "submitted"}
+                onClick={() => void downloadArchive("submitted")}
+                className="w-full rounded-xl border-orange-300 bg-white font-black text-orange-800 hover:bg-orange-100"
+              >
+                {archiveLoading === "submitted" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                Kopie meiner Beitrittsanfrage (PDF)
+              </Button>
               <Button asChild variant="outline" className="w-full rounded-xl border-orange-300 bg-white font-black text-orange-800 hover:bg-orange-100">
                 <Link href="/guest-profile-app">Zurück zum Gastprofil</Link>
               </Button>
@@ -497,6 +560,28 @@ export default function ClubJoinPage() {
                   <CheckCircle2 className="h-5 w-5" /> Beitritt bestätigt
                 </div>
                 <p className="mt-1 text-sm font-semibold text-green-800">Du wurdest als Vereinsmitglied aufgenommen.</p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={archiveLoading === "submitted"}
+                  onClick={() => void downloadArchive("submitted")}
+                  className="rounded-xl border-green-300 bg-white font-black text-green-800 hover:bg-green-100"
+                >
+                  {archiveLoading === "submitted" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                  Eingereichten Antrag
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={archiveLoading === "approved"}
+                  onClick={() => void downloadArchive("approved")}
+                  className="rounded-xl border-green-300 bg-white font-black text-green-800 hover:bg-green-100"
+                >
+                  {archiveLoading === "approved" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                  Aufnahmebestätigung
+                </Button>
               </div>
               <Button asChild className="w-full rounded-xl bg-green-700 font-black text-white hover:bg-green-800">
                 <Link href="/member-profile-app">EMD VereinsApp öffnen</Link>
@@ -531,7 +616,7 @@ export default function ClubJoinPage() {
                   <div className="space-y-2">
                     <Label>Geburtsdatum *</Label>
                     <Input type="date" value={form.birthdate} onChange={(e) => setField("birthdate", e.target.value)} />
-                    {isMinor ? (
+                    {documentsEnabled && isMinor ? (
                       <p className="rounded-lg bg-purple-50 px-3 py-2 text-xs font-bold text-purple-800">
                         Für Minderjährige werden automatisch die zusätzlich erforderlichen Dokumente und die Zustimmung der gesetzlichen Vertretung eingeblendet.
                       </p>
@@ -550,6 +635,8 @@ export default function ClubJoinPage() {
                 </div>
               </section>
 
+              {documentsEnabled ? (
+                <>
               <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
                 <div className="mb-4 flex items-start gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 font-black text-orange-700">2</div>
@@ -627,9 +714,24 @@ export default function ClubJoinPage() {
                 ) : null}
               </section>
 
+                </>
+              ) : (
+                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+                    <div>
+                      <h2 className="font-black text-slate-900">Vereinsunterlagen</h2>
+                      <p className="mt-1 text-sm font-semibold text-slate-600">
+                        Der digitale Dokumentenprozess ist derzeit noch nicht freigeschaltet. Deine Beitrittsanfrage kann trotzdem geprüft werden.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              )}
+
               <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
                 <div className="mb-4 flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 font-black text-orange-700">4</div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 font-black text-orange-700">{documentsEnabled ? 4 : 2}</div>
                   <div>
                     <h2 className="font-black text-gray-900">Kostenlose Testphase</h2>
                     <p className="text-xs font-semibold text-gray-500">Eine Testphase wird erst nach Genehmigung deiner Beitrittsanfrage aktiviert.</p>
@@ -653,7 +755,7 @@ export default function ClubJoinPage() {
                   {saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}
                   Beitrittsanfrage verbindlich senden
                 </Button>
-                {!readyToSend ? <div className="mt-2 text-center text-xs font-semibold text-gray-500">Alle Pflichtfelder, Dokumente, Unterschriften und die Testphasen-Auswahl müssen vollständig sein.</div> : null}
+                {!readyToSend ? <div className="mt-2 text-center text-xs font-semibold text-gray-500">{documentsEnabled ? "Alle Pflichtfelder, Dokumente, Unterschriften und die Testphasen-Auswahl müssen vollständig sein." : "Bitte fülle die Pflichtfelder aus und wähle aus, ob du die Testphase nutzen möchtest."}</div> : null}
               </div>
             </>
           )}

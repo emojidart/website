@@ -25,6 +25,7 @@ import {
   XCircle,
   Eye,
   ClipboardCheck,
+  ShieldCheck,
   Copy,
   MoveRight,
   X,
@@ -77,6 +78,26 @@ type JoinDocumentConfig = {
   minors_only: boolean
   is_active: boolean
   sort_order: number
+}
+
+type MemberComplianceRow = {
+  userId: string
+  playerName: string
+  complete: boolean
+  signedAt: string | null
+  acceptedCount: number
+  requiredCount: number
+}
+
+function ageFromBirthdate(value?: string | null) {
+  if (!value) return null
+  const birth = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(birth.getTime())) return null
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+  return age
 }
 
 function fullStoragePath(rootPrefix: string, relativePath: string) {
@@ -307,6 +328,13 @@ export function DocumentsTab({ user }: { user: User | null }) {
     sort_order: 0,
   })
 
+  const [documentsEnabled, setDocumentsEnabled] = useState(false)
+  const [existingMembersMustAccept, setExistingMembersMustAccept] = useState(false)
+  const [joinSettingsBusy, setJoinSettingsBusy] = useState(false)
+  const [joinSettingsMessage, setJoinSettingsMessage] = useState<string | null>(null)
+  const [memberCompliance, setMemberCompliance] = useState<MemberComplianceRow[]>([])
+  const [memberComplianceLoading, setMemberComplianceLoading] = useState(false)
+
   const loadJoinDocuments = useCallback(async () => {
     if (!user) {
       setJoinDocuments([])
@@ -326,6 +354,97 @@ export function DocumentsTab({ user }: { user: User | null }) {
   useEffect(() => {
     void loadJoinDocuments()
   }, [loadJoinDocuments])
+
+  const loadJoinSettings = useCallback(async () => {
+    if (!user) return
+    const { data, error } = await supabase
+      .from("club_join_settings")
+      .select("documents_enabled,existing_members_must_accept")
+      .eq("id", "default")
+      .maybeSingle()
+    if (error) {
+      console.warn("Dokumenten-Einstellungen konnten nicht geladen werden:", error)
+      return
+    }
+    setDocumentsEnabled(!!data?.documents_enabled)
+    setExistingMembersMustAccept(!!data?.existing_members_must_accept)
+  }, [user])
+
+  useEffect(() => {
+    void loadJoinSettings()
+  }, [loadJoinSettings])
+
+  const loadMemberCompliance = useCallback(async () => {
+    if (!user || !documentsEnabled) {
+      setMemberCompliance([])
+      return
+    }
+    try {
+      setMemberComplianceLoading(true)
+      const [profilesRes, acceptancesRes] = await Promise.all([
+        supabase.from("user_profiles").select("user_id,player_id,club_players(id,name,birthdate,is_active,club_left_at)").not("player_id", "is", null),
+        supabase.from("member_document_acceptances").select("user_id,document_acceptances,signed_at,guardian_full_name,guardian_signed_at,created_at").order("created_at", { ascending: false }),
+      ])
+      if (profilesRes.error) throw profilesRes.error
+      if (acceptancesRes.error) throw acceptancesRes.error
+      const latest = new Map<string, any>()
+      for (const row of acceptancesRes.data || []) if (!latest.has(row.user_id)) latest.set(row.user_id, row)
+      const requiredActive = joinDocuments.filter((doc) => doc.is_active && doc.is_required)
+      const rows: MemberComplianceRow[] = []
+      for (const profile of (profilesRes.data || []) as any[]) {
+        const player = profile.club_players
+        if (!player?.id || player.club_left_at || player.is_active === false) continue
+        const age = ageFromBirthdate(player.birthdate)
+        const minor = age !== null && age < 18
+        const required = requiredActive.filter((doc) => !doc.minors_only || minor)
+        const acceptance = latest.get(profile.user_id) || null
+        const accepted = new Map<string, any>(((acceptance?.document_acceptances || []) as any[]).map((doc) => [doc.document_id, doc]))
+        const acceptedCount = required.filter((doc) => accepted.get(doc.id)?.version === doc.version && !!accepted.get(doc.id)?.accepted_at).length
+        const guardianOk = !minor || (!!acceptance?.guardian_full_name && !!acceptance?.guardian_signed_at)
+        const complete = required.length === 0 || (!!acceptance?.signed_at && acceptedCount === required.length && guardianOk)
+        rows.push({ userId: profile.user_id, playerName: player.name || "Mitglied", complete, signedAt: acceptance?.signed_at || null, acceptedCount, requiredCount: required.length })
+      }
+      rows.sort((a, b) => Number(a.complete) - Number(b.complete) || a.playerName.localeCompare(b.playerName))
+      setMemberCompliance(rows)
+    } catch (error) {
+      console.warn("Mitglieder-Dokumentstatus konnte nicht geladen werden:", error)
+    } finally {
+      setMemberComplianceLoading(false)
+    }
+  }, [user, documentsEnabled, joinDocuments])
+
+  useEffect(() => {
+    void loadMemberCompliance()
+  }, [loadMemberCompliance])
+
+  const saveJoinSettings = async (nextDocumentsEnabled: boolean, nextExistingRequired: boolean) => {
+    if (!user) return
+    setJoinSettingsBusy(true)
+    setJoinSettingsMessage(null)
+    try {
+      const { error } = await supabase
+        .from("club_join_settings")
+        .update({
+          documents_enabled: nextDocumentsEnabled,
+          existing_members_must_accept: nextDocumentsEnabled ? nextExistingRequired : false,
+          updated_at: new Date().toISOString(),
+          updated_by: user.id,
+        })
+        .eq("id", "default")
+      if (error) throw error
+      setDocumentsEnabled(nextDocumentsEnabled)
+      setExistingMembersMustAccept(nextDocumentsEnabled ? nextExistingRequired : false)
+      setJoinSettingsMessage(
+        nextDocumentsEnabled
+          ? "Digitaler Dokumentenprozess ist freigeschaltet."
+          : "Dokumentenprozess ist deaktiviert. Mitglieder und Antragsteller sehen keine Test-/Beitrittsdokumente.",
+      )
+    } catch (error: any) {
+      setJoinSettingsMessage(error?.message || "Einstellung konnte nicht gespeichert werden.")
+    } finally {
+      setJoinSettingsBusy(false)
+    }
+  }
 
   const joinDocumentForItem = (item: ClubDocumentItem) => {
     if (item.kind !== "file") return null
@@ -623,6 +742,91 @@ export function DocumentsTab({ user }: { user: User | null }) {
                 Vorschau (PDF/Bilder) · Verschieben/Kopieren · Drag&Drop · Grid/Liste · Suche & Sortierung
               </CardDescription>
             </div>
+
+            <div className={cn(
+              "rounded-2xl border p-4",
+              documentsEnabled ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50",
+            )}>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 font-black text-gray-900">
+                    <ShieldCheck className={cn("h-5 w-5", documentsEnabled ? "text-green-700" : "text-amber-700")} />
+                    Digitale Vereinsunterlagen
+                  </div>
+                  <p className="mt-1 text-sm font-semibold text-gray-600">
+                    {documentsEnabled
+                      ? "Freigeschaltet: aktive Beitrittsdokumente werden Antragstellern und Mitgliedern angezeigt."
+                      : "Noch nicht freigeschaltet. So kannst du Test-PDFs vorbereiten, ohne dass Mitglieder sie sehen."}
+                  </p>
+                </div>
+                <label className="flex shrink-0 cursor-pointer items-center gap-3 rounded-xl border border-white/80 bg-white px-3 py-2 shadow-sm">
+                  <input
+                    type="checkbox"
+                    checked={documentsEnabled}
+                    disabled={joinSettingsBusy}
+                    onChange={(e) => void saveJoinSettings(e.target.checked, existingMembersMustAccept)}
+                    className="h-5 w-5 accent-orange-600"
+                  />
+                  <span className="text-sm font-black text-gray-900">Für Mitglieder freischalten</span>
+                </label>
+              </div>
+
+              <div className="mt-3 border-t border-black/5 pt-3">
+                <label className={cn(
+                  "flex items-start gap-3 rounded-xl border px-3 py-3",
+                  documentsEnabled ? "cursor-pointer border-white/80 bg-white" : "cursor-not-allowed border-gray-200 bg-gray-100 opacity-60",
+                )}>
+                  <input
+                    type="checkbox"
+                    checked={existingMembersMustAccept}
+                    disabled={!documentsEnabled || joinSettingsBusy}
+                    onChange={(e) => void saveJoinSettings(documentsEnabled, e.target.checked)}
+                    className="mt-0.5 h-5 w-5 accent-orange-600"
+                  />
+                  <span>
+                    <span className="block text-sm font-black text-gray-900">Bestehende Mitglieder verpflichten</span>
+                    <span className="mt-0.5 block text-xs font-semibold text-gray-500">
+                      Wenn aktiv, müssen bestehende Mitglieder alle aktuell erforderlichen Dokumente nachträglich bestätigen und unterschreiben.
+                    </span>
+                  </span>
+                </label>
+              </div>
+
+              {joinSettingsMessage ? (
+                <div className="mt-3 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700">
+                  {joinSettingsMessage}
+                </div>
+              ) : null}
+            </div>
+
+            {documentsEnabled ? (
+              <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="font-black text-gray-900">Bestehende Mitglieder · Nachholstatus</div>
+                    <div className="mt-1 text-xs font-semibold text-gray-500">Hier siehst du, wer die aktuell freigeschalteten Pflichtunterlagen bereits bestätigt hat.</div>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={() => void loadMemberCompliance()} disabled={memberComplianceLoading}>
+                    {memberComplianceLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />} Status aktualisieren
+                  </Button>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  <div className="rounded-xl bg-gray-50 p-3"><div className="text-xs font-bold text-gray-500">Mitglieder</div><div className="text-xl font-black text-gray-900">{memberCompliance.length}</div></div>
+                  <div className="rounded-xl bg-green-50 p-3"><div className="text-xs font-bold text-green-700">Vollständig</div><div className="text-xl font-black text-green-800">{memberCompliance.filter((r) => r.complete).length}</div></div>
+                  <div className="rounded-xl bg-red-50 p-3"><div className="text-xs font-bold text-red-700">Offen</div><div className="text-xl font-black text-red-800">{memberCompliance.filter((r) => !r.complete).length}</div></div>
+                </div>
+                {memberCompliance.length > 0 ? (
+                  <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
+                    {memberCompliance.map((row) => (
+                      <div key={row.userId} className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 px-3 py-2">
+                        <div className="min-w-0"><div className="truncate text-sm font-black text-gray-900">{row.playerName}</div><div className="text-xs font-semibold text-gray-500">{row.acceptedCount}/{row.requiredCount} Pflichtdokumente{row.signedAt ? ` · unterschrieben ${new Date(row.signedAt).toLocaleDateString("de-AT")}` : ""}</div></div>
+                        <span className={row.complete ? "shrink-0 rounded-full bg-green-100 px-2.5 py-1 text-xs font-black text-green-800" : "shrink-0 rounded-full bg-red-100 px-2.5 py-1 text-xs font-black text-red-800"}>{row.complete ? "✓ vollständig" : "offen"}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
               <Button

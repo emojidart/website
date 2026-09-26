@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useDues } from "@/hooks/vereinsverwaltung/useDues"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import {
   Calendar,
@@ -46,6 +46,14 @@ import {
   Gift,
   KeyRound,
   CreditCard,
+  FileText,
+  FileCheck2,
+  Download,
+  ExternalLink,
+  PenLine,
+  RotateCcw,
+  LockKeyhole,
+  X,
 } from "lucide-react"
 import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
 
@@ -147,6 +155,166 @@ const trialModuleLabel = (code: string) => {
   return code
 }
 
+type MemberJoinDocument = {
+  id: string
+  storage_path: string
+  title: string
+  category: string
+  version: string
+  is_required: boolean
+  minors_only: boolean
+  sort_order: number
+}
+
+type MemberDocAcceptanceSnapshot = {
+  document_id: string
+  title: string
+  category: string
+  version: string
+  storage_path: string
+  opened_at: string
+  accepted_at: string
+}
+
+type MemberDocAcceptanceRow = {
+  id: string
+  document_acceptances: MemberDocAcceptanceSnapshot[]
+  signed_at: string
+  guardian_full_name: string | null
+  guardian_signed_at: string | null
+  archive_file_name: string | null
+  archive_sha256: string | null
+  created_at: string
+}
+
+type JoinArchiveRow = {
+  id: string
+  request_id: string
+  stage: "submitted" | "approved"
+  file_name: string
+  sha256: string
+  generated_at: string
+}
+
+const MEMBER_DOC_CATEGORY_LABELS: Record<string, string> = {
+  application: "Aufnahmeantrag / Beitrittserklärung",
+  statutes: "Vereinssatzung / Vereinsregeln",
+  confidentiality: "Verschwiegenheitserklärung",
+  privacy: "Datenschutz / DSGVO",
+  guardian: "Einverständnis gesetzliche Vertretung",
+  other: "Vereinsdokument",
+}
+
+function memberDocAge(birthdate?: string | null) {
+  if (!birthdate) return null
+  const birth = new Date(`${birthdate}T00:00:00`)
+  if (Number.isNaN(birth.getTime())) return null
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const month = today.getMonth() - birth.getMonth()
+  if (month < 0 || (month === 0 && today.getDate() < birth.getDate())) age--
+  return age
+}
+
+function MemberSignaturePad({ label, onChange }: { label: string; onChange: (value: string | null) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const drawingRef = useRef(false)
+  const lastRef = useRef<{ x: number; y: number } | null>(null)
+  const [hasInk, setHasInk] = useState(false)
+
+  const resize = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    if (!rect.width) return
+    const previous = hasInk ? canvas.toDataURL("image/png") : null
+    const dpr = Math.max(1, window.devicePixelRatio || 1)
+    canvas.width = Math.round(rect.width * dpr)
+    canvas.height = Math.round(175 * dpr)
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctx.lineCap = "round"
+    ctx.lineJoin = "round"
+    ctx.lineWidth = 2.4
+    ctx.strokeStyle = "#0f172a"
+    if (previous) {
+      const img = new Image()
+      img.onload = () => ctx.drawImage(img, 0, 0, rect.width, 175)
+      img.src = previous
+    }
+  }
+
+  useEffect(() => {
+    resize()
+    window.addEventListener("resize", resize)
+    return () => window.removeEventListener("resize", resize)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const point = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top }
+  }
+  const start = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId)
+    drawingRef.current = true
+    lastRef.current = point(event)
+  }
+  const move = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current || !lastRef.current) return
+    const canvas = canvasRef.current
+    const ctx = canvas?.getContext("2d")
+    if (!canvas || !ctx) return
+    const next = point(event)
+    const dpr = Math.max(1, window.devicePixelRatio || 1)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctx.beginPath()
+    ctx.moveTo(lastRef.current.x, lastRef.current.y)
+    ctx.lineTo(next.x, next.y)
+    ctx.stroke()
+    lastRef.current = next
+    if (!hasInk) setHasInk(true)
+  }
+  const finish = () => {
+    if (!drawingRef.current) return
+    drawingRef.current = false
+    lastRef.current = null
+    const canvas = canvasRef.current
+    if (canvas && hasInk) onChange(canvas.toDataURL("image/png", 0.85))
+  }
+  const clear = () => {
+    const canvas = canvasRef.current
+    const ctx = canvas?.getContext("2d")
+    if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height)
+    setHasInk(false)
+    onChange(null)
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-black text-slate-900">{label}</div>
+        <Button type="button" variant="ghost" size="sm" onClick={clear} disabled={!hasInk}>
+          <RotateCcw className="mr-1 h-4 w-4" /> Neu
+        </Button>
+      </div>
+      <div className="overflow-hidden rounded-2xl border-2 border-dashed border-slate-300 bg-white">
+        <canvas
+          ref={canvasRef}
+          className="block h-[175px] w-full touch-none cursor-crosshair"
+          onPointerDown={start}
+          onPointerMove={move}
+          onPointerUp={finish}
+          onPointerCancel={finish}
+          onPointerLeave={finish}
+        />
+      </div>
+      <div className="text-xs font-semibold text-slate-500">Mit Maus, Touchpad, Finger oder Stift unterschreiben.</div>
+    </div>
+  )
+}
+
 export default function MemberProfileAppPage() {
   const CHAT_SCOPE: "team" | "captains" | "club" = "team"
 
@@ -178,6 +346,25 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
   const [terminalPinConfirm, setTerminalPinConfirm] = useState("")
   const [terminalPinSaving, setTerminalPinSaving] = useState(false)
   const [terminalPinMessage, setTerminalPinMessage] = useState("")
+
+  const [memberDocsEnabled, setMemberDocsEnabled] = useState(false)
+  const [memberDocsMandatory, setMemberDocsMandatory] = useState(false)
+  const [memberDocs, setMemberDocs] = useState<MemberJoinDocument[]>([])
+  const [memberDocAcceptances, setMemberDocAcceptances] = useState<MemberDocAcceptanceRow[]>([])
+  const [joinArchives, setJoinArchives] = useState<JoinArchiveRow[]>([])
+  const [memberDocsLoading, setMemberDocsLoading] = useState(false)
+  const [memberDocsSaving, setMemberDocsSaving] = useState(false)
+  const [memberDocsMessage, setMemberDocsMessage] = useState<string | null>(null)
+  const [memberDocsModalOpen, setMemberDocsModalOpen] = useState(false)
+  const [memberDocsAccepted, setMemberDocsAccepted] = useState<Record<string, MemberDocAcceptanceSnapshot>>({})
+  const [memberDocsOpened, setMemberDocsOpened] = useState<Record<string, string>>({})
+  const [memberDocsViewer, setMemberDocsViewer] = useState<{ doc: MemberJoinDocument; url: string } | null>(null)
+  const [memberDocsViewerReadyAt, setMemberDocsViewerReadyAt] = useState<number | null>(null)
+  const [, setMemberDocsViewerTick] = useState(0)
+  const [memberSignature, setMemberSignature] = useState<string | null>(null)
+  const [memberGuardianName, setMemberGuardianName] = useState("")
+  const [memberGuardianSignature, setMemberGuardianSignature] = useState<string | null>(null)
+  const [memberArchiveLoading, setMemberArchiveLoading] = useState<string | null>(null)
 
 
   const [statistics, setStatistics] = useState({
@@ -616,6 +803,13 @@ const fetchProfile = async () => {
           photo_url,
           throwing_hand,
           age,
+          birthdate,
+          email,
+          phone,
+          street,
+          house_number,
+          postal_code,
+          city,
           origin,
           club_joined_at,
           club_left_at
@@ -740,6 +934,174 @@ const fetchProfile = async () => {
 
 	  
 
+
+  const loadMemberDocuments = async () => {
+    if (!session?.user) return
+    try {
+      setMemberDocsLoading(true)
+      const [settingsRes, docsRes, acceptanceRes, joinArchiveRes] = await Promise.all([
+        supabase.from("club_join_settings").select("documents_enabled,existing_members_must_accept").eq("id", "default").maybeSingle(),
+        supabase.from("club_join_documents").select("id,storage_path,title,category,version,is_required,minors_only,sort_order").eq("is_active", true).order("sort_order", { ascending: true }),
+        supabase.from("member_document_acceptances").select("id,document_acceptances,signed_at,guardian_full_name,guardian_signed_at,archive_file_name,archive_sha256,created_at").eq("user_id", session.user.id).order("created_at", { ascending: false }),
+        supabase.from("club_join_archives").select("id,request_id,stage,file_name,sha256,generated_at").eq("user_id", session.user.id).order("generated_at", { ascending: false }),
+      ])
+      if (settingsRes.error) throw settingsRes.error
+      if (docsRes.error) throw docsRes.error
+      if (acceptanceRes.error) throw acceptanceRes.error
+      if (joinArchiveRes.error) throw joinArchiveRes.error
+      setMemberDocsEnabled(!!settingsRes.data?.documents_enabled)
+      setMemberDocsMandatory(!!settingsRes.data?.existing_members_must_accept)
+      setMemberDocs((docsRes.data || []) as MemberJoinDocument[])
+      setMemberDocAcceptances((acceptanceRes.data || []) as MemberDocAcceptanceRow[])
+      setJoinArchives((joinArchiveRes.data || []) as JoinArchiveRow[])
+    } catch (error: any) {
+      console.error("member documents load error:", error)
+      setMemberDocsMessage(error?.message || "Vereinsunterlagen konnten nicht geladen werden.")
+    } finally {
+      setMemberDocsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (session?.user?.id && (profile as any)?.club_players?.id) void loadMemberDocuments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id, (profile as any)?.club_players?.id])
+
+  useEffect(() => {
+    if (!memberDocsViewerReadyAt) return
+    const timer = window.setInterval(() => setMemberDocsViewerTick((v) => v + 1), 1000)
+    return () => window.clearInterval(timer)
+  }, [memberDocsViewerReadyAt])
+
+  const memberAge = memberDocAge((profile as any)?.club_players?.birthdate)
+  const memberIsMinor = memberAge !== null && memberAge < 18
+  const visibleMemberDocs = useMemo(
+    () => memberDocsEnabled ? memberDocs.filter((doc) => !doc.minors_only || memberIsMinor) : [],
+    [memberDocs, memberDocsEnabled, memberIsMinor],
+  )
+  const requiredMemberDocs = visibleMemberDocs.filter((doc) => doc.is_required)
+  const latestMemberAcceptance = memberDocAcceptances[0] || null
+  const memberDocsCurrent = useMemo(() => {
+    if (!memberDocsEnabled || requiredMemberDocs.length === 0) return true
+    if (!latestMemberAcceptance?.signed_at) return false
+    const accepted = new Map<string, MemberDocAcceptanceSnapshot>((latestMemberAcceptance.document_acceptances || []).map((doc) => [doc.document_id, doc]))
+    const requiredOk = requiredMemberDocs.every((doc) => {
+      const row = accepted.get(doc.id)
+      return !!row && row.version === doc.version && !!row.accepted_at
+    })
+    const guardianOk = !memberIsMinor || (!!latestMemberAcceptance.guardian_full_name && !!latestMemberAcceptance.guardian_signed_at)
+    return requiredOk && guardianOk
+  }, [memberDocsEnabled, requiredMemberDocs, latestMemberAcceptance, memberIsMinor])
+  const memberDocsBlockAccess = memberDocsEnabled && memberDocsMandatory && requiredMemberDocs.length > 0 && !memberDocsCurrent
+
+  useEffect(() => {
+    if (memberDocsBlockAccess) setMemberDocsModalOpen(true)
+  }, [memberDocsBlockAccess])
+
+  const openMemberDocument = async (doc: MemberJoinDocument) => {
+    try {
+      setMemberDocsMessage(null)
+      const { data, error } = await supabase.storage.from("club-documents").createSignedUrl(doc.storage_path, 900)
+      if (error) throw error
+      if (!data?.signedUrl) throw new Error("Dokument konnte nicht geöffnet werden.")
+      const now = new Date().toISOString()
+      setMemberDocsOpened((prev) => ({ ...prev, [doc.id]: prev[doc.id] || now }))
+      setMemberDocsViewer({ doc, url: data.signedUrl })
+      setMemberDocsViewerReadyAt(Date.now())
+      setMemberDocsViewerTick(0)
+    } catch (error: any) {
+      setMemberDocsMessage(error?.message || "Dokument konnte nicht geöffnet werden.")
+    }
+  }
+
+  const memberViewerCanAccept = !!memberDocsViewerReadyAt && Date.now() - memberDocsViewerReadyAt >= 1800
+  const acceptMemberViewer = () => {
+    if (!memberDocsViewer || !memberViewerCanAccept) return
+    const now = new Date().toISOString()
+    setMemberDocsAccepted((prev) => ({
+      ...prev,
+      [memberDocsViewer.doc.id]: {
+        document_id: memberDocsViewer.doc.id,
+        title: memberDocsViewer.doc.title,
+        category: memberDocsViewer.doc.category,
+        version: memberDocsViewer.doc.version,
+        storage_path: memberDocsViewer.doc.storage_path,
+        opened_at: memberDocsOpened[memberDocsViewer.doc.id] || now,
+        accepted_at: now,
+      },
+    }))
+    setMemberDocsViewer(null)
+    setMemberDocsViewerReadyAt(null)
+  }
+
+  const memberAllRequiredAccepted = requiredMemberDocs.every((doc) => !!memberDocsAccepted[doc.id])
+  const memberGuardianComplete = !memberIsMinor || (!!memberGuardianName.trim() && !!memberGuardianSignature)
+  const memberDocsReadyToSubmit = memberAllRequiredAccepted && !!memberSignature && memberGuardianComplete
+
+  const submitMemberDocuments = async () => {
+    if (!session?.access_token || !memberDocsReadyToSubmit) return
+    try {
+      setMemberDocsSaving(true)
+      setMemberDocsMessage(null)
+      const response = await fetch("/api/member-documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          documents: visibleMemberDocs.filter((doc) => memberDocsAccepted[doc.id]).map((doc) => memberDocsAccepted[doc.id]),
+          signature: memberSignature,
+          guardianName: memberIsMinor ? memberGuardianName.trim() : null,
+          guardianSignature: memberIsMinor ? memberGuardianSignature : null,
+        }),
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(payload?.error || "Unterlagen konnten nicht gespeichert werden.")
+      setMemberDocsMessage("Unterlagen wurden vollständig bestätigt und archiviert.")
+      setMemberDocsAccepted({})
+      setMemberSignature(null)
+      setMemberGuardianName("")
+      setMemberGuardianSignature(null)
+      await loadMemberDocuments()
+      setMemberDocsModalOpen(false)
+    } catch (error: any) {
+      setMemberDocsMessage(error?.message || "Unterlagen konnten nicht gespeichert werden.")
+    } finally {
+      setMemberDocsSaving(false)
+    }
+  }
+
+  const downloadMemberAcceptance = async (row: MemberDocAcceptanceRow) => {
+    if (!session?.access_token) return
+    try {
+      setMemberArchiveLoading(`member:${row.id}`)
+      const response = await fetch(`/api/member-documents?id=${encodeURIComponent(row.id)}`, { headers: { Authorization: `Bearer ${session.access_token}` } })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok || !payload?.url) throw new Error(payload?.error || "PDF konnte nicht geöffnet werden.")
+      window.open(payload.url, "_blank", "noopener,noreferrer")
+    } catch (error: any) {
+      setMemberDocsMessage(error?.message || "PDF konnte nicht geöffnet werden.")
+    } finally {
+      setMemberArchiveLoading(null)
+    }
+  }
+
+  const downloadJoinArchiveForMember = async (row: JoinArchiveRow) => {
+    if (!session?.access_token) return
+    try {
+      setMemberArchiveLoading(`join:${row.id}`)
+      const response = await fetch("/api/club-join-archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ requestId: row.request_id, stage: row.stage, action: "download" }),
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok || !payload?.url) throw new Error(payload?.error || "PDF konnte nicht geöffnet werden.")
+      window.open(payload.url, "_blank", "noopener,noreferrer")
+    } catch (error: any) {
+      setMemberDocsMessage(error?.message || "PDF konnte nicht geöffnet werden.")
+    } finally {
+      setMemberArchiveLoading(null)
+    }
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -904,6 +1266,7 @@ const fetchProfile = async () => {
         { title: "Meine Bonuspunkte", description: "Punkte & Rang ansehen", icon: Sparkles, href: "/meine-bonus-punkte" },
         { title: "Bonusgeld", description: "Belohnungen ansehen", icon: Euro, href: "/member-bonus-app" },
         { title: "Meine Mitgliedschaft", description: "Paket & Zahlungsweise", icon: Euro, href: "/member-membership" },
+        { title: "Vereinsunterlagen", description: "Bestätigungen & PDF-Akten", icon: FileText, href: "#vereinsunterlagen" },
         { title: "Support", description: "Hilfe & Anfragen", icon: HelpCircle, href: "/support-app" },
         { title: "Statistikblätter drucken", description: "Nur für Teamleitung", icon: Printer, href: "/team-print-sheet", requiresLeadership: true },
       ],
@@ -1249,6 +1612,69 @@ if (error || !profile) {
           </div>
         ) : null}
 
+        <section id="vereinsunterlagen" className="mt-4 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_14px_38px_-28px_rgba(15,23,42,0.28)]">
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div>
+              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                <FileCheck2 className="h-4 w-4" /> Vereinsunterlagen
+              </div>
+              <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 sm:text-xl">Meine Dokumente & Bestätigungen</h2>
+            </div>
+            {memberDocsEnabled && requiredMemberDocs.length > 0 ? (
+              <Badge className={memberDocsCurrent ? "w-fit bg-green-600 text-white" : "w-fit bg-amber-600 text-white"}>
+                {memberDocsCurrent ? "Aktuell vollständig" : "Bestätigung offen"}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="w-fit">Noch nicht freigeschaltet</Badge>
+            )}
+          </div>
+
+          <div className="space-y-4 p-4 sm:p-5">
+            {memberDocsLoading ? (
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-600"><Loader2 className="h-4 w-4 animate-spin" /> Unterlagen werden geladen…</div>
+            ) : !memberDocsEnabled ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                <div className="font-black text-slate-900">Aktuell keine Vereinsunterlagen zur digitalen Bestätigung freigeschaltet.</div>
+                <div className="mt-1 text-sm font-semibold text-slate-600">Sobald die Vereinsleitung die finalen Dokumente freigibt, erscheinen sie automatisch hier.</div>
+              </div>
+            ) : visibleMemberDocs.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-600">Aktuell sind keine aktiven Dokumente hinterlegt.</div>
+            ) : (
+              <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="font-black text-slate-900">{visibleMemberDocs.length} Dokument{visibleMemberDocs.length === 1 ? "" : "e"} freigeschaltet</div>
+                  <div className="mt-1 text-sm font-semibold text-slate-600">{memberDocsCurrent ? "Du hast die aktuell erforderlichen Versionen bereits bestätigt." : "Bitte lies und bestätige die aktuell erforderlichen Unterlagen."}</div>
+                </div>
+                <Button type="button" onClick={() => setMemberDocsModalOpen(true)} className="rounded-xl bg-orange-600 text-white hover:bg-orange-700">
+                  <FileText className="mr-2 h-4 w-4" /> {memberDocsCurrent ? "Unterlagen ansehen" : "Jetzt bestätigen"}
+                </Button>
+              </div>
+            )}
+
+            {(joinArchives.length > 0 || memberDocAcceptances.some((r) => r.archive_file_name)) ? (
+              <div>
+                <div className="mb-2 text-sm font-black text-slate-900">Meine PDF-Akten</div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {joinArchives.map((row) => (
+                    <button key={row.id} type="button" onClick={() => void downloadJoinArchiveForMember(row)} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:bg-slate-50">
+                      <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{row.stage === "approved" ? "Aufnahmebestätigung" : "Beitrittsanfrage"}</div><div className="text-xs font-semibold text-slate-500">{formatDate(row.generated_at)}</div></div>
+                      {memberArchiveLoading === `join:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 text-slate-500" />}
+                    </button>
+                  ))}
+                  {memberDocAcceptances.filter((r) => r.archive_file_name).map((row) => (
+                    <button key={row.id} type="button" onClick={() => void downloadMemberAcceptance(row)} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:bg-slate-50">
+                      <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">Vereinsunterlagen bestätigt</div><div className="text-xs font-semibold text-slate-500">{formatDate(row.created_at)}</div></div>
+                      {memberArchiveLoading === `member:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 text-slate-500" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {memberDocsMessage ? <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700">{memberDocsMessage}</div> : null}
+          </div>
+        </section>
+
         {/* Hauptbereich */}
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
           <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_14px_38px_-28px_rgba(15,23,42,0.28)]">
@@ -1518,6 +1944,100 @@ if (error || !profile) {
       </main>
 
       {/* Foto Dialog */}
+      {memberDocsModalOpen ? (
+        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-sm">
+          <div className="flex h-full w-full items-stretch justify-center sm:p-4">
+            <div className="flex h-full w-full max-w-4xl flex-col overflow-hidden bg-white sm:h-[calc(100vh-2rem)] sm:rounded-3xl sm:shadow-2xl">
+              <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 sm:px-6">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-[0.14em] text-orange-600">Vereinsunterlagen</div>
+                  <div className="mt-1 text-xl font-black text-slate-950">Dokumente lesen & bestätigen</div>
+                  {memberDocsBlockAccess ? <div className="mt-1 text-xs font-bold text-red-700">Diese Bestätigung ist für bestehende Mitglieder verpflichtend.</div> : null}
+                </div>
+                {!memberDocsBlockAccess ? (
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setMemberDocsModalOpen(false)}><X className="h-5 w-5" /></Button>
+                ) : (
+                  <LockKeyhole className="mt-2 h-5 w-5 text-red-600" />
+                )}
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                {memberDocsCurrent ? (
+                  <div className="rounded-2xl border border-green-200 bg-green-50 p-5 text-green-900">
+                    <div className="flex items-center gap-2 font-black"><CheckCircle className="h-5 w-5" /> Alles aktuell bestätigt</div>
+                    <div className="mt-1 text-sm font-semibold text-green-800">Für die derzeit aktiven Dokumentversionen ist keine weitere Unterschrift erforderlich.</div>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    <div className="space-y-3">
+                      {visibleMemberDocs.map((doc, index) => {
+                        const accepted = !!memberDocsAccepted[doc.id]
+                        return (
+                          <div key={doc.id} className={accepted ? "rounded-2xl border border-green-200 bg-green-50 p-4" : "rounded-2xl border border-slate-200 bg-slate-50 p-4"}>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 font-black text-slate-900"><FileText className="h-5 w-5 text-orange-600" /> {index + 1}. {doc.title}</div>
+                                <div className="mt-1 text-xs font-semibold text-slate-500">{MEMBER_DOC_CATEGORY_LABELS[doc.category] || "Vereinsdokument"}</div>
+                              </div>
+                              <Button type="button" variant={accepted ? "outline" : "default"} onClick={() => void openMemberDocument(doc)} className="w-full sm:w-auto">
+                                <ExternalLink className="mr-2 h-4 w-4" /> {accepted ? "Erneut ansehen" : "Dokument öffnen"}
+                              </Button>
+                            </div>
+                            <div className={accepted ? "mt-3 text-sm font-black text-green-800" : "mt-3 text-sm font-semibold text-slate-500"}>
+                              {accepted ? "✓ Gelesen und akzeptiert" : memberDocsOpened[doc.id] ? "Geöffnet – Bestätigung noch ausständig" : "Noch nicht geöffnet"}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <div className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white">
+                      Pflichtdokumente: {requiredMemberDocs.filter((doc) => !!memberDocsAccepted[doc.id]).length}/{requiredMemberDocs.length} bestätigt
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
+                      <div className="mb-3 flex items-center gap-2 font-black text-slate-900"><PenLine className="h-5 w-5 text-orange-600" /> Digitale Unterschrift</div>
+                      <MemberSignaturePad label="Unterschrift Mitglied *" onChange={setMemberSignature} />
+                      {memberIsMinor ? (
+                        <div className="mt-5 space-y-4 rounded-2xl border border-purple-200 bg-purple-50 p-4">
+                          <div className="font-black text-purple-900">Gesetzliche Vertretung</div>
+                          <input value={memberGuardianName} onChange={(e) => setMemberGuardianName(e.target.value)} placeholder="Vor- und Nachname" className="h-11 w-full rounded-xl border border-purple-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-purple-300" />
+                          <MemberSignaturePad label="Unterschrift gesetzliche Vertretung *" onChange={setMemberGuardianSignature} />
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <Button type="button" disabled={!memberDocsReadyToSubmit || memberDocsSaving} onClick={() => void submitMemberDocuments()} className="h-12 w-full rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700 disabled:opacity-50">
+                      {memberDocsSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileCheck2 className="mr-2 h-5 w-5" />} Verbindlich bestätigen & PDF archivieren
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {memberDocsViewer ? (
+        <div className="fixed inset-0 z-[120] bg-black/80 p-0 sm:p-4">
+          <div className="mx-auto flex h-full max-w-5xl flex-col overflow-hidden bg-white sm:rounded-2xl">
+            <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+              <div className="min-w-0">
+                <div className="truncate font-black text-slate-900">{memberDocsViewer.doc.title}</div>
+                <div className="text-xs font-semibold text-slate-500">Bitte vollständig lesen.</div>
+              </div>
+              <Button type="button" variant="ghost" size="icon" onClick={() => setMemberDocsViewer(null)}><X className="h-5 w-5" /></Button>
+            </div>
+            <iframe title={memberDocsViewer.doc.title} src={memberDocsViewer.url} className="min-h-0 flex-1 bg-slate-100" />
+            <div className="border-t bg-white p-3 sm:p-4">
+              <Button type="button" disabled={!memberViewerCanAccept} onClick={acceptMemberViewer} className="h-11 w-full rounded-xl bg-green-600 font-black text-white hover:bg-green-700 disabled:bg-slate-300">
+                {memberViewerCanAccept ? "Gelesen und akzeptiert" : `Bitte kurz lesen… ${Math.max(0, 2 - Math.floor((Date.now() - (memberDocsViewerReadyAt || Date.now())) / 1000))}s`}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {isPhotoDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
           <div className="w-full rounded-t-[28px] border border-slate-200 bg-white p-5 shadow-2xl sm:max-w-md sm:rounded-[28px] sm:p-6">
