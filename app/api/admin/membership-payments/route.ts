@@ -153,7 +153,7 @@ async function upsertStripeInvoice(
 async function listPayments(supabase: ReturnType<typeof createClient>) {
   const { data: payments, error: paymentsError } = await supabase
     .from("membership_payments")
-    .select("id,player_id,membership_id,change_request_id,paid_at,amount_cents,currency,interval,period_start,period_end,notes,payment_method,source,status,billing_cycle,fee_cents,net_amount_cents,receipt_no,stripe_invoice_id,stripe_invoice_number,stripe_invoice_pdf_url,stripe_hosted_invoice_url,stripe_payment_intent_id,stripe_customer_id,stripe_subscription_id,line_items")
+    .select("id,player_id,membership_id,change_request_id,paid_at,amount_cents,currency,interval,period_start,period_end,notes,payment_method,source,status,billing_cycle,fee_cents,net_amount_cents,receipt_no,stripe_invoice_id,stripe_invoice_number,stripe_invoice_pdf_url,stripe_hosted_invoice_url,stripe_payment_intent_id,stripe_customer_id,stripe_subscription_id,line_items,reviewed_at,reviewed_by,review_note")
     .eq("status", "paid")
     .order("paid_at", { ascending: false })
 
@@ -174,12 +174,39 @@ async function listPayments(supabase: ReturnType<typeof createClient>) {
   }))
 }
 
+
+async function listWalletTopups(supabase: ReturnType<typeof createClient>) {
+  const { data: topups, error: topupsError } = await supabase
+    .from("wallet_topups")
+    .select("id,player_id,credit_amount,fee_charged,gross_amount,actual_stripe_fee,actual_stripe_net,stripe_checkout_session_id,stripe_payment_intent_id,stripe_event_id,status,created_at,paid_at,updated_at,reviewed_at,reviewed_by,review_note")
+    .order("created_at", { ascending: false })
+
+  if (topupsError) throw topupsError
+
+  const playerIds = Array.from(new Set((topups || []).map((row: any) => row.player_id).filter(Boolean)))
+  const { data: players, error: playersError } = playerIds.length
+    ? await supabase.from("club_players").select("id,name,email").in("id", playerIds)
+    : { data: [], error: null as any }
+
+  if (playersError) throw playersError
+  const playerMap = new Map((players || []).map((player: any) => [player.id, player]))
+
+  return (topups || []).map((row: any) => ({
+    ...row,
+    player_name: playerMap.get(row.player_id)?.name || "Unbekanntes Mitglied",
+    player_email: playerMap.get(row.player_id)?.email || null,
+  }))
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await requireAdmin(request)
     if (auth.error) return auth.error
-    const payments = await listPayments(auth.supabase!)
-    return NextResponse.json({ payments })
+    const [payments, topups] = await Promise.all([
+      listPayments(auth.supabase!),
+      listWalletTopups(auth.supabase!),
+    ])
+    return NextResponse.json({ payments, topups })
   } catch (error: any) {
     console.error("membership accounting GET error", error)
     return NextResponse.json({ error: error?.message || "Buchhaltungsdaten konnten nicht geladen werden." }, { status: 500 })
@@ -188,17 +215,48 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    if (!stripeSecretKey) {
-      return NextResponse.json({ error: "STRIPE_SECRET_KEY fehlt." }, { status: 500 })
-    }
-
     const auth = await requireAdmin(request)
     if (auth.error) return auth.error
     const supabase = auth.supabase!
 
     const body = await request.json().catch(() => ({}))
+
+    if (body?.action === "set_reviewed") {
+      const target = body?.target === "topup" ? "topup" : "payment"
+      const id = String(body?.id || "")
+      const reviewed = body?.reviewed !== false
+      const reviewNote = typeof body?.review_note === "string" ? body.review_note.trim() : null
+
+      if (!id) {
+        return NextResponse.json({ error: "Zahlungs-ID fehlt." }, { status: 400 })
+      }
+
+      const table = target === "topup" ? "wallet_topups" : "membership_payments"
+      const { error: reviewError } = await supabase
+        .from(table)
+        .update({
+          reviewed_at: reviewed ? new Date().toISOString() : null,
+          reviewed_by: reviewed ? auth.user!.id : null,
+          review_note: reviewed ? reviewNote || null : null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+
+      if (reviewError) throw reviewError
+
+      const [payments, topups] = await Promise.all([
+        listPayments(supabase),
+        listWalletTopups(supabase),
+      ])
+      return NextResponse.json({ ok: true, payments, topups })
+    }
+
     if (body?.action !== "sync_stripe") {
       return NextResponse.json({ error: "Unbekannte Aktion." }, { status: 400 })
+    }
+
+    if (!stripeSecretKey) {
+      return NextResponse.json({ error: "STRIPE_SECRET_KEY fehlt." }, { status: 500 })
     }
 
     const stripe = new Stripe(stripeSecretKey)
@@ -231,8 +289,11 @@ export async function POST(request: Request) {
       } while (startingAfter)
     }
 
-    const payments = await listPayments(supabase)
-    return NextResponse.json({ ok: true, synced, payments })
+    const [payments, topups] = await Promise.all([
+      listPayments(supabase),
+      listWalletTopups(supabase),
+    ])
+    return NextResponse.json({ ok: true, synced, payments, topups })
   } catch (error: any) {
     console.error("membership accounting sync error", error)
     return NextResponse.json({ error: error?.message || "Stripe-Zahlungen konnten nicht synchronisiert werden." }, { status: 500 })
