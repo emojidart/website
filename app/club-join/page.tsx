@@ -72,6 +72,12 @@ function calculateAge(birthdate: string) {
   return age
 }
 
+function splitFullName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) return { firstName: parts[0] || "", lastName: "" }
+  return { firstName: parts.slice(0, -1).join(" "), lastName: parts.at(-1) || "" }
+}
+
 function SignaturePad({
   label,
   onChange,
@@ -206,6 +212,8 @@ export default function ClubJoinPage() {
   const [signature, setSignature] = useState<string | null>(null)
   const [guardianSignature, setGuardianSignature] = useState<string | null>(null)
   const [guardianName, setGuardianName] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [trialRequested, setTrialRequested] = useState<boolean | null>(null)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -249,7 +257,7 @@ export default function ClubJoinPage() {
             .maybeSingle(),
           supabase
             .from("guest_requests")
-            .select("full_name,player_name,linked_spieldatenbank_id")
+            .select("full_name,player_name,email,phone,linked_spieldatenbank_id")
             .eq("auth_user_id", user.id)
             .order("created_at", { ascending: false })
             .limit(1)
@@ -269,10 +277,17 @@ export default function ClubJoinPage() {
         setExisting((requestRes.data || null) as JoinRequestLite | null)
         setLinkedSpieldatenbankId(guestRes.data?.linked_spieldatenbank_id || null)
         setDocuments((docsRes.data || []) as JoinDocument[])
+
+        const lockedFullName = guestRes.data?.full_name || guestRes.data?.player_name || ""
+        const lockedNameParts = splitFullName(lockedFullName)
+        setFirstName(lockedNameParts.firstName)
+        setLastName(lockedNameParts.lastName)
+
         setForm((prev) => ({
           ...prev,
-          full_name: guestRes.data?.full_name || guestRes.data?.player_name || prev.full_name,
-          email: user.email || prev.email,
+          full_name: lockedFullName || prev.full_name,
+          email: user.email || guestRes.data?.email || prev.email,
+          phone: guestRes.data?.phone || prev.phone,
         }))
       } catch (error: any) {
         setMessage({ type: "error", text: error?.message || "Beitrittsseite konnte nicht geladen werden." })
@@ -499,17 +514,28 @@ export default function ClubJoinPage() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label>Vor- und Nachname *</Label>
-                    <Input value={form.full_name} onChange={(e) => setField("full_name", e.target.value)} />
+                  <div className="space-y-2">
+                    <Label>Vorname</Label>
+                    <Input value={firstName} readOnly className="bg-gray-100 text-gray-700" />
+                    <p className="text-[11px] font-semibold text-gray-500">Aus deinem Gastkonto übernommen.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nachname</Label>
+                    <Input value={lastName} readOnly className="bg-gray-100 text-gray-700" />
+                    <p className="text-[11px] font-semibold text-gray-500">Aus deinem Gastkonto übernommen.</p>
                   </div>
                   <div className="space-y-2">
                     <Label>E-Mail</Label>
-                    <Input type="email" value={form.email} onChange={(e) => setField("email", e.target.value)} />
+                    <Input type="email" value={form.email} readOnly className="bg-gray-100 text-gray-700" />
                   </div>
                   <div className="space-y-2">
                     <Label>Geburtsdatum *</Label>
                     <Input type="date" value={form.birthdate} onChange={(e) => setField("birthdate", e.target.value)} />
+                    {isMinor ? (
+                      <p className="rounded-lg bg-purple-50 px-3 py-2 text-xs font-bold text-purple-800">
+                        Für Minderjährige werden automatisch die zusätzlich erforderlichen Dokumente und die Zustimmung der gesetzlichen Vertretung eingeblendet.
+                      </p>
+                    ) : null}
                   </div>
                   <div className="space-y-2"><Label>Straße</Label><Input value={form.street} onChange={(e) => setField("street", e.target.value)} /></div>
                   <div className="space-y-2"><Label>Hausnummer</Label><Input value={form.house_number} onChange={(e) => setField("house_number", e.target.value)} /></div>
@@ -530,14 +556,14 @@ export default function ClubJoinPage() {
                   <div className="min-w-0">
                     <h2 className="font-black text-gray-900">Vereinsdokumente lesen & bestätigen</h2>
                     <p className="text-xs font-semibold text-gray-500">
-                      Öffne jedes Pflichtdokument, lies es vollständig und bestätige es anschließend.
+                      Öffne die angezeigten Dokumente, lies sie vollständig und bestätige sie anschließend.
                     </p>
                   </div>
                 </div>
 
                 {visibleDocuments.length === 0 ? (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
-                    Aktuell sind noch keine Beitrittsdokumente hinterlegt. Für den Test kann der Antrag trotzdem weitergeführt werden.
+                    Aktuell sind für deinen Beitritt keine Dokumente hinterlegt.
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -550,10 +576,8 @@ export default function ClubJoinPage() {
                               <div className="flex flex-wrap items-center gap-2">
                                 <FileText className="h-5 w-5 shrink-0 text-orange-600" />
                                 <span className="font-black text-gray-900">{index + 1}. {doc.title}</span>
-                                {doc.is_required ? <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-black text-red-700">Pflicht</span> : null}
-                                {doc.minors_only ? <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-black text-purple-700">Minderjährige</span> : null}
                               </div>
-                              <div className="mt-1 text-xs font-semibold text-gray-500">{CATEGORY_LABELS[doc.category]} · Version {doc.version}</div>
+                              <div className="mt-1 text-xs font-semibold text-gray-500">{CATEGORY_LABELS[doc.category]}</div>
                             </div>
                             <Button type="button" variant={isAccepted ? "outline" : "default"} onClick={() => void openDocument(doc)} disabled={viewerLoading} className="w-full sm:w-auto">
                               {isAccepted ? <Check className="mr-2 h-4 w-4 text-green-700" /> : <ExternalLink className="mr-2 h-4 w-4" />}
@@ -648,7 +672,7 @@ export default function ClubJoinPage() {
             <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
               <div className="min-w-0">
                 <div className="truncate font-black text-gray-900">{viewer.doc.title}</div>
-                <div className="text-xs font-semibold text-gray-500">Version {viewer.doc.version}</div>
+                <div className="text-xs font-semibold text-gray-500">{CATEGORY_LABELS[viewer.doc.category]}</div>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={() => { setViewer(null); setViewerReadyAt(null) }}>Schließen</Button>
             </div>
@@ -659,7 +683,7 @@ export default function ClubJoinPage() {
 
             <div className="border-t bg-white p-3 sm:p-4">
               <div className="mb-3 text-xs font-semibold text-gray-600">
-                Bitte lies das Dokument vollständig bis zum Ende. Die Bestätigung wird nach kurzer Lesezeit freigeschaltet.
+                Bitte lies das Dokument vollständig. Anschließend kannst du bestätigen, dass du es gelesen und akzeptiert hast.
               </div>
               <Button type="button" onClick={acceptViewer} disabled={!canConfirmViewer} className="h-12 w-full rounded-xl bg-green-600 font-black text-white hover:bg-green-700 disabled:bg-gray-300">
                 {canConfirmViewer ? <CheckCircle2 className="mr-2 h-5 w-5" /> : <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
